@@ -1,1 +1,14 @@
 node_modules
+
+# sbt specific
+target/
+project/project/
+project/target/
+
+# Scala-IDE specific
+.project
+.settings/
+.classpath
+
+nohup.out
+

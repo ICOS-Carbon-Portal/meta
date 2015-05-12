@@ -1,39 +1,41 @@
+'use strict';
+
 var gulp = require('gulp');
-var browserify = require('browserify');  // Bundles JS.
-var del = require('del');  // Deletes files.
-var reactify = require('reactify');  // Transforms React JSX to JS.
+var browserify = require('browserify');
+var del = require('del');
+var reactify = require('reactify');
 var source = require('vinyl-source-stream');
  
-// Define some paths.
 var paths = {
-  jsx: ['src/main/jsx/**/*.jsx'],
+  main: 'src/main/js/main.jsx',
+  jsx: ['src/main/js/**/*.jsx'],
   js: ['src/main/js/**/*.js'],
-  targetJs: 'src/main/resources/www/bundle.js'
+  target: 'src/main/resources/www/',
+  bundleFile: 'bundle.js'
 };
  
-// An example of a dependency task, it will be run before the css/js tasks.
-// Dependency tasks should call the callback to tell the parent task that
-// they're done.
 gulp.task('clean', function(done) {
-  del([paths.targetJs], done);
+  del([paths.target + paths.bundleFile], done);
 });
  
-// Our JS task. It will Browserify our code and compile React JSX files.
 gulp.task('js', ['clean'], function() {
-  // Browserify/bundle the JS.
-  browserify(paths.jsx)
-    .transform(reactify)
-// TODO Finish this
-//    .bundle()
-//    .pipe(source('bundle.js'))
-//    .pipe(gulp.dest('./src/'));
+
+    return browserify({
+	    entries: [paths.main],
+	    debug: false,
+	    transform: [reactify]
+	  })
+	  .bundle()
+	  .pipe(source(paths.bundleFile))
+	  .pipe(gulp.dest(paths.target));
+
 });
  
-// Rerun tasks whenever a file changes.
 gulp.task('watch', function() {
-  gulp.watch(paths.js, ['js']);
+	var sources = paths.js.concat(paths.jsx);
+  gulp.watch(sources, ['js']);
 });
  
-// The default task (called when we run `gulp` from cli)
 gulp.task('default', ['watch', 'js']);
+
 

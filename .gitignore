@@ -1,4 +1,6 @@
+#Node specific
 node_modules
+npm-debug.log
 
 # sbt specific
 target/
@@ -10,5 +12,9 @@ project/target/
 .settings/
 .classpath
 
+#Miscellaneous
 nohup.out
+
+#Front end
+src/main/resources/www/bundle.js
 

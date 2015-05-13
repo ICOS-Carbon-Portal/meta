@@ -7,7 +7,7 @@ var reactify = require('reactify');
 var source = require('vinyl-source-stream');
  
 var paths = {
-  main: 'src/main/js/main.jsx',
+  main: 'src/main/js/main.js',
   jsx: ['src/main/js/**/*.jsx'],
   js: ['src/main/js/**/*.js'],
   target: 'src/main/resources/www/',

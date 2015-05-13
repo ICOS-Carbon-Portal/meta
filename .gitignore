@@ -12,6 +12,10 @@ project/target/
 .settings/
 .classpath
 
+#Sublime
+*.sublime-project
+*.sublime-workspace
+
 #Miscellaneous
 nohup.out
 

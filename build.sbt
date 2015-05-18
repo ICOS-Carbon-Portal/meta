@@ -26,4 +26,8 @@ scalacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
+initialCommands in console := """
+import se.lu.nateko.cp.meta._
+"""
+
 Revolver.settings

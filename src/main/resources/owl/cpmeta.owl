@@ -1,3 +1,4 @@
+Prefix: : <http://meta.icos-cp.eu/ontologies/cpmeta/>
 Prefix: dc: <http://purl.org/dc/elements/1.1/>
 Prefix: owl: <http://www.w3.org/2002/07/owl#>
 Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -10,10 +11,13 @@ Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 
 
-AnnotationProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/isoName>
+AnnotationProperty: isoName
 
     
 AnnotationProperty: rdfs:comment
+
+    
+Datatype: xsd:double
 
     
 Datatype: xsd:dateTime
@@ -23,9 +27,6 @@ Datatype: xsd:float
 
     
 Datatype: rdfs:Literal
-
-    
-Datatype: xsd:double
 
     
 Datatype: <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>
@@ -43,109 +44,121 @@ Datatype: xsd:string
 Datatype: rdf:PlainLiteral
 
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasClass>
+ObjectProperty: hasOperationInterval
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        Instrument or Station
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/StationClass>
+        TimeInterval
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite>
+ObjectProperty: measures
+
+    
+ObjectProperty: belongsToSite
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        Station
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
+        Site
     
     Characteristics: 
         Functional
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf>
+ObjectProperty: belongsToTheNetworkOf
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        Station
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility>
+        CentralFacility
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasPI>
+ObjectProperty: hasDirector
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        ThematicCenter
     
     SubPropertyOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasContactPerson>
+        hasContactPerson
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasGeoCoordinate>
-
-    Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/GeoCoordinate>
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/measures>
-
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedFrom>
-
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasOperationInterval>
+ObjectProperty: hasPI
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Instrument> or <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
-    
-    Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/TimeInterval>
-    
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasGeoLocation>
-
-    Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/GeoLocation>
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasDirector>
-
-    Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        Station
     
     SubPropertyOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasContactPerson>
+        hasContactPerson
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/isBasedOnTechnique>
-
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedVia>
-
-    
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/involvesCalibration>
+ObjectProperty: hasGeoCoordinate
 
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Calibration>
+        GeoCoordinate
+    
+    Characteristics: 
+        Functional
     
     
-ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasContactPerson>
+ObjectProperty: hasContactPerson
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station> or <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility> or <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
+        CentralFacility or Site or Station
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+        Person
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasCountry>
+ObjectProperty: wasProducedFrom
+
+    
+ObjectProperty: hasClass
+
+    Domain: 
+        Station
+    
+    Range: 
+        StationClass
+    
+    
+ObjectProperty: hasGeoLocation
+
+    Range: 
+        GeoLocation
+    
+    Characteristics: 
+        Functional
+    
+    
+ObjectProperty: isBasedOnTechnique
+
+    
+ObjectProperty: wasProducedVia
+
+    
+ObjectProperty: involvesCalibration
+
+    Range: 
+        Calibration
+    
+    
+DataProperty: hasEmail
+
+    Domain: 
+        Person
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasCountry
 
     Range: 
         xsd:string
@@ -154,46 +167,22 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasCountry>
         Functional
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>
+DataProperty: hasShortName
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
-
-    Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station> or <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility> or <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasShortName>
-
-    Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        Station
     
     Range: 
         xsd:string
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude>
+DataProperty: hasLatitude
 
     Annotations: 
         rdfs:comment "Decimal degrees in WGS84/GRS80"
     
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/GeoCoordinate>
+        GeoCoordinate
     
     Range: 
         <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
@@ -202,28 +191,28 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude>
         Functional
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>
+DataProperty: hasLastName
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+        Person
     
     Range: 
         xsd:string
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime>
+DataProperty: hasEndTime
 
     Range: 
         xsd:dateTime
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude>
+DataProperty: hasLongitude
 
     Annotations: 
         rdfs:comment "Decimal degrees in WGS84/GRS80"
     
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/GeoCoordinate>
+        GeoCoordinate
     
     Range: 
         <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>
@@ -232,13 +221,13 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude>
         Functional
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation>
+DataProperty: hasElevation
 
     Annotations: 
         rdfs:comment "Elevation above sea level in meters"
     
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/GeoLocation>
+        GeoLocation
     
     Range: 
         xsd:float
@@ -247,211 +236,223 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation>
         Functional
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>
+DataProperty: hasFirstName
 
     Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+        Person
     
     Range: 
         xsd:string
     
     
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId>
-
-    Domain: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
-    
-    Range: 
-        xsd:string
-    
-    
-DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime>
+DataProperty: hasStartTime
 
     Range: 
         xsd:dateTime
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/GeoLocation>
+DataProperty: hasStationId
+
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    
+DataProperty: hasName
+
+    Domain: 
+        CentralFacility or Site or Station
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+Class: DataProductionTechnique
+
+    
+Class: GeoLocation
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation> exactly 1 rdfs:Literal,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasGeoCoordinate> some <http://meta.icos-cp.eu/ontologies/cpmeta/GeoCoordinate>
+        hasElevation exactly 1 rdfs:Literal,
+        hasGeoCoordinate some GeoCoordinate
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/OTC>
+Class: DataProvider
+
+    
+Class: RawDataSetArchive
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        DataSet
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/RawDataSetArchive>
+Class: DataSet
+
+    
+Class: Station
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/DataSet>
+        hasContactPerson some Person,
+        hasOperationInterval some TimeInterval,
+        hasName some rdfs:Literal,
+        hasCountry some rdfs:Literal,
+        belongsToTheNetworkOf some owl:Thing,
+        hasGeoLocation some GeoLocation,
+        belongsToSite some owl:Thing
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/DataSet>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
-
-    SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasGeoLocation> some <http://meta.icos-cp.eu/ontologies/cpmeta/GeoLocation>,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf> some owl:Thing,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite> some owl:Thing,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasOperationInterval> some <http://meta.icos-cp.eu/ontologies/cpmeta/TimeInterval>,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasName> some rdfs:Literal,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasCountry> some rdfs:Literal,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasContactPerson> some <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
-    
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/DataProductionProcess>
+Class: ETC
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/isBasedOnTechnique> some <http://meta.icos-cp.eu/ontologies/cpmeta/DataProductionTechnique>
+        ThematicCenter
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/StationClass>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
+Class: DataProductionProcess
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        isBasedOnTechnique some DataProductionTechnique
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/GeoCoordinate>
+Class: GeoCoordinate
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude> exactly 1 rdfs:Literal,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude> exactly 1 rdfs:Literal
+        hasLatitude exactly 1 rdfs:Literal,
+        hasLongitude exactly 1 rdfs:Literal
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/DataProductionTechnique>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Level_0_DataSet>
+Class: Level_0_DataSet
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedVia> some <http://meta.icos-cp.eu/ontologies/cpmeta/DataProductionProcess>,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedFrom> some <http://meta.icos-cp.eu/ontologies/cpmeta/RawDataSet>,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/DataSet>
+        wasProducedVia some DataProductionProcess,
+        wasProducedFrom some RawDataSet,
+        DataSet
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/CalibrationType>
+Class: CalibrationType
 
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
-
-    SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasName> some rdfs:Literal,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasGeoLocation> some owl:Thing,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasCountry> some rdfs:Literal
-    
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ETC>
+Class: Instrument
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        measures some Variable
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/DataProvider>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Calibration>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/CAL>
+Class: OS
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility>
+        Station
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/PI>
+Class: CentralFacility
+
+    
+Class: Calibration
+
+    
+Class: AS
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+        Station
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Variable>
+Class: PI
+
+    SubClassOf: 
+        Person
+    
+    
+Class: ES
+
+    SubClassOf: 
+        Station
+    
+    
+Class: Variable
 
     
 Class: owl:Thing
 
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+Class: ThematicCenter
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasDirector> some <http://meta.icos-cp.eu/ontologies/cpmeta/Person>,
-        <http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility>
+        hasDirector some Person,
+        CentralFacility
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/TimeInterval>
+Class: TimeInterval
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime> some xsd:dateTime
+        hasStartTime some xsd:dateTime
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/OS>
+Class: CAL
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        CentralFacility
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/RawDataSet>
+Class: OTC
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/DataSet>
+        ThematicCenter
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Instrument>
+Class: RawDataSet
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/measures> some <http://meta.icos-cp.eu/ontologies/cpmeta/Variable>
+        DataSet
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
-
-    
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Technician>
+Class: Technician
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+        Person
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ES>
+Class: Person
+
+    
+Class: StationClass
+
+    
+Class: Site
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        hasGeoLocation some owl:Thing,
+        hasCountry some rdfs:Literal,
+        hasName some rdfs:Literal
     
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ATC>
+Class: ATC
 
     SubClassOf: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        ThematicCenter
     
     
-Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/Class_II>
+Individual: Class_I
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/StationClass>
+        StationClass
     
     
-Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/Class_I>
-
-    Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/StationClass>
-    
-    
-Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/CO2moleFraction>
+Individual: CO2moleFraction
 
     Annotations: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/isoName> "Carbon dioxide mole fraction"
+        isoName "Carbon dioxide mole fraction"
     
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Variable>
+        Variable
+    
+    
+Individual: Class_II
+
+    Types: 
+        StationClass
     
     

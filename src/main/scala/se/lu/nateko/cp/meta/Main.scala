@@ -1,30 +1,34 @@
 package se.lu.nateko.cp.meta
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.pattern.ask
-import akka.io.IO
-import akka.util.Timeout
-
-import scala.concurrent.duration._
-
+import spray.http.StatusCodes
+import spray.routing.ExceptionHandler
+import spray.routing.SimpleRoutingApp
 import spray.can.Http
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 
-object Main extends App {
+object Main extends App with SimpleRoutingApp {
 
 	implicit val system = ActorSystem("cpauth")
-	implicit val timeout = Timeout(5 seconds)
 	implicit val dispatcher = system.dispatcher
+	implicit val scheduler = system.scheduler
 
-	val handler = system.actorOf(Props(new ServiceActor), name = "handler")
-	
-	IO(Http).ask(Http.Bind(handler, interface = "localhost", port = 9011))
-		.onSuccess{ case _ =>
-			sys.addShutdownHook{
-				akka.io.IO(Http) ! akka.actor.PoisonPill
-				Thread.sleep(1000)
-				system.shutdown()
+
+	val exceptionHandler = ExceptionHandler{
+		case ex => complete((StatusCodes.InternalServerError, ex.getMessage + "\n" + ex.getStackTrace))
+	}
+
+	startServer(interface = "::0", port = 9094) {
+		handleExceptions(exceptionHandler){
+			get{
+				path("listClasses"){
+					complete("Ok")
+				}
 			}
 		}
+	}
 
 }

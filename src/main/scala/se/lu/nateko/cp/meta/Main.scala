@@ -9,13 +9,15 @@ import spray.can.Http
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+import CpmetaJsonProtocol._
 
 object Main extends App with SimpleRoutingApp {
 
-	implicit val system = ActorSystem("cpauth")
+	implicit val system = ActorSystem("cpmeta")
 	implicit val dispatcher = system.dispatcher
 	implicit val scheduler = system.scheduler
 
+	val onto = new Onto("/owl/cpmeta.owl")
 
 	val exceptionHandler = ExceptionHandler{
 		case ex => complete((StatusCodes.InternalServerError, ex.getMessage + "\n" + ex.getStackTrace))
@@ -25,7 +27,7 @@ object Main extends App with SimpleRoutingApp {
 		handleExceptions(exceptionHandler){
 			get{
 				path("listClasses"){
-					complete("Ok")
+					complete(onto.getExposedClasses)
 				}
 			}
 		}

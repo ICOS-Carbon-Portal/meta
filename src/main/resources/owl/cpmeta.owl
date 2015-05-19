@@ -11,8 +11,53 @@ Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 
 
+AnnotationProperty: displayProperty
+
+    Domain: 
+        <http://www.w3.org/2002/07/owl#Class>
+    
+    Range: 
+        <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property>
+    
+    
 AnnotationProperty: isoName
 
+    
+AnnotationProperty: isExposedToUsers
+
+    Domain: 
+        <http://www.w3.org/2002/07/owl#Class>
+    
+    Range: 
+        <http://www.w3.org/2001/XMLSchema#boolean>
+    
+    
+AnnotationProperty: displayProperty1
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
+AnnotationProperty: displayProperty2
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
+AnnotationProperty: rdfs:label
+
+    
+AnnotationProperty: displayProperty3
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
+AnnotationProperty: displayProperty4
+
+    SubPropertyOf: 
+        displayProperty
+    
     
 AnnotationProperty: rdfs:comment
 
@@ -39,6 +84,9 @@ Datatype: <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>
     
     
 Datatype: xsd:string
+
+    
+Datatype: xsd:boolean
 
     
 Datatype: rdf:PlainLiteral
@@ -296,6 +344,10 @@ Class: DataSet
     
 Class: Station
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>,
+        isExposedToUsers true
+    
     SubClassOf: 
         hasContactPerson some Person,
         hasOperationInterval some TimeInterval,
@@ -345,11 +397,18 @@ Class: Instrument
 Class: OS
 
     SubClassOf: 
+        belongsToTheNetworkOf some OTC,
         Station
     
     
 Class: CentralFacility
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+    
+    SubClassOf: 
+        hasName some rdfs:Literal
+    
     
 Class: Calibration
 
@@ -357,7 +416,8 @@ Class: Calibration
 Class: AS
 
     SubClassOf: 
-        Station
+        Station,
+        belongsToTheNetworkOf some ATC
     
     
 Class: PI
@@ -369,7 +429,8 @@ Class: PI
 Class: ES
 
     SubClassOf: 
-        Station
+        Station,
+        belongsToTheNetworkOf some ETC
     
     
 Class: Variable
@@ -380,6 +441,10 @@ Class: owl:Thing
     
 Class: ThematicCenter
 
+    Annotations: 
+        isExposedToUsers true,
+        rdfs:label "Thematic Center"^^xsd:string
+    
     SubClassOf: 
         hasDirector some Person,
         CentralFacility
@@ -417,12 +482,27 @@ Class: Technician
     
 Class: Person
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>,
+        isExposedToUsers true
+    
+    SubClassOf: 
+        hasFirstName some rdfs:Literal,
+        hasEmail some rdfs:Literal,
+        hasLastName some rdfs:Literal
+    
     
 Class: StationClass
 
+    EquivalentTo: 
+        {Class_I , Class_II}
+    
     
 Class: Site
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+    
     SubClassOf: 
         hasGeoLocation some owl:Thing,
         hasCountry some rdfs:Literal,
@@ -437,6 +517,9 @@ Class: ATC
     
 Individual: Class_I
 
+    Annotations: 
+        rdfs:label "Station Class I"^^xsd:string
+    
     Types: 
         StationClass
     
@@ -452,6 +535,9 @@ Individual: CO2moleFraction
     
 Individual: Class_II
 
+    Annotations: 
+        rdfs:label "Station Class II"^^xsd:string
+    
     Types: 
         StationClass
     

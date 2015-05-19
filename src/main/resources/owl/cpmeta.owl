@@ -501,6 +501,7 @@ Class: StationClass
 Class: Site
 
     Annotations: 
+        isExposedToUsers true,
         displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
     SubClassOf: 

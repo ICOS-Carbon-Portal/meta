@@ -2,7 +2,8 @@ var actions = Reflux.createActions([
 	"chooseMetaType"
 ]);
 
-var TypesStore = require('./TypesStoreFactory.js')(actions.chooseMetaType);
+var Backend = require('./dataFetcher.js');
+var TypesStore = require('./TypesStoreFactory.js')(actions.chooseMetaType, Backend);
 var TypesList = require('./TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
 
 module.exports = React.createClass({

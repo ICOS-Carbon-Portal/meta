@@ -1,4 +1,4 @@
-module.exports = function(chooseTypeAction){
+module.exports = function(chooseTypeAction, Backend){
 	return Reflux.createStore({
 		publishState: function(){
 			this.trigger(this.state);
@@ -9,13 +9,23 @@ module.exports = function(chooseTypeAction){
 		init: function(){
 			this.listenTo(chooseTypeAction, this.setChosenType);
 			this.state = {
-				types: [
-					{displayName: "Station", uri: "station", chosen: false},
-					{displayName: "Thematic Center", uri: "center", chosen: false},
-					{displayName: "Person", uri: "person", chosen: false}
-				],
+				types: [],
 				chosen: null
 			};
+			var self = this;
+			
+			Backend.listClasses()
+				.then(function(types){
+					self.state.types = _.chain(types)
+						.map(function(theType){
+							return _.extend({}, theType, {chosen: false});
+						})
+						.sortBy('displayName')
+						.value();
+					self.publishState();
+				})
+				.catch(function(err){console.log(err);});
+			
 		},
 		setChosenType: function(chosenType){
 

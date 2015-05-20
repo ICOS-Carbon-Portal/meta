@@ -4,7 +4,9 @@ var actions = Reflux.createActions([
 
 var Backend = require('./dataFetcher.js');
 var TypesStore = require('./TypesStoreFactory.js')(actions.chooseMetaType, Backend);
+var IndividualsStore = require('./IndividualsStoreFactory.js')(actions.chooseMetaType, Backend);
 var TypesList = require('./TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
+var IndividualsList = require('./IndividualsListFactory.jsx')(IndividualsStore);
 
 module.exports = React.createClass({
 	render: function(){
@@ -14,8 +16,8 @@ module.exports = React.createClass({
 		}
 
 		var entryTypeCol = _.partial(colDiv, "col-md-1");
-		var entryListCol = _.partial(colDiv, "col-md-1");
-		var entryEditCol = _.partial(colDiv, "col-md-10");
+		var entryListCol = _.partial(colDiv, "col-md-2");
+		var entryEditCol = _.partial(colDiv, "col-md-9");
 
 		return <div className="container-fluid">
 			<div className="row">
@@ -25,7 +27,7 @@ module.exports = React.createClass({
 			</div>
 			<div className="row">
 				{entryTypeCol(<TypesList />)}
-				{entryListCol()}
+				{entryListCol(<IndividualsList />)}
 				{entryEditCol()}
 			</div>
 		</div>;

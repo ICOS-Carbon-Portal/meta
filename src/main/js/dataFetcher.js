@@ -29,5 +29,9 @@ function getJson(url){
 module.exports = {
 	listClasses: function(){
 		return getJson('/api/listClasses');
+	},
+	listIndividuals: function(classUri){
+		var url = '/api/listIndividuals?classUri=' + encodeURIComponent(classUri);
+		return getJson(url);
 	}
 };

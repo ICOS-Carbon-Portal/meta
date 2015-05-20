@@ -442,8 +442,9 @@ Class: owl:Thing
 Class: ThematicCenter
 
     Annotations: 
+        rdfs:label "Thematic Center"^^xsd:string,
         isExposedToUsers true,
-        rdfs:label "Thematic Center"^^xsd:string
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
     SubClassOf: 
         hasDirector some Person,
@@ -483,7 +484,7 @@ Class: Technician
 Class: Person
 
     Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>,
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>,
         isExposedToUsers true
     
     SubClassOf: 

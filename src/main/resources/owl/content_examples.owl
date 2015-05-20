@@ -1,0 +1,115 @@
+Prefix: owl: <http://www.w3.org/2002/07/owl#>
+Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+Prefix: xml: <http://www.w3.org/XML/1998/namespace>
+Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+
+
+Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/>
+
+Import: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+
+Datatype: xsd:string
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_ES>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa ecosystem station"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ETC>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Ecosystem thematic center"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/John_Smith>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>  "Smith"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>  "John"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "john.smith@icos-ri.eu"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Ocean thematic center"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_AS>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa atmospheric station"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_site>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Jane_Doe>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>  "Doe"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "jane.doe@icos-ri.eu"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>  "Jane"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
+    
+    

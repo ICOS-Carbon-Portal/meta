@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta
 
+import CpmetaJsonProtocol._
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import spray.http.StatusCodes
@@ -8,7 +9,6 @@ import spray.routing.SimpleRoutingApp
 import spray.can.Http
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import CpmetaJsonProtocol._
 import spray.http.HttpResponse
 import spray.http.ContentType
 import spray.http.HttpEntity
@@ -16,6 +16,8 @@ import spray.http.ContentTypes
 import spray.http.MediaTypes
 import spray.http.HttpCharsets
 import spray.http.MediaType
+import java.net.URI
+import org.semanticweb.owlapi.apibinding.OWLManager
 
 object Main extends App with SimpleRoutingApp {
 
@@ -23,10 +25,17 @@ object Main extends App with SimpleRoutingApp {
 	implicit val dispatcher = system.dispatcher
 	implicit val scheduler = system.scheduler
 
-	val onto = new Onto("/owl/cpmeta.owl")
+	val manager = OWLManager.createOWLOntologyManager
+	val onto = new Onto("/owl/cpmeta.owl", manager)
+	val instOnto = new InstOnto("/owl/content_examples.owl", onto, manager)
 
 	val exceptionHandler = ExceptionHandler{
-		case ex => complete((StatusCodes.InternalServerError, ex.getMessage + "\n" + ex.getStackTrace))
+		case ex =>
+			val traceWriter = new java.io.StringWriter()
+			ex.printStackTrace(new java.io.PrintWriter(traceWriter))
+			val trace = traceWriter.toString
+			val msg = if(ex.getMessage == null) "" else ex.getMessage
+			complete((StatusCodes.InternalServerError, s"$msg\n$trace"))
 	}
 
 	def fromResource(path: String, mediaType: MediaType): HttpResponse = {
@@ -42,6 +51,11 @@ object Main extends App with SimpleRoutingApp {
 				pathPrefix("api"){
 					pathSuffix("listClasses"){
 						complete(onto.getExposedClasses)
+					} ~
+					pathSuffix("listIndividuals"){
+						parameter('classUri){ uriStr =>
+							complete(instOnto.listInstances(new URI(uriStr)))
+						}
 					}
 				} ~
 				pathEndOrSingleSlash{

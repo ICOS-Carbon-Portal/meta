@@ -6,17 +6,11 @@ module.exports = function(typesStore, chooseTypeAction){
 	return React.createClass({
 		mixins: [Reflux.connect(typesStore)],
 		render: function(){
-			return <table className="table">
-				<tbody>
+			return <div className="btn-group-vertical" role="group">
 					{this.state.types.map(function(theType){
-						return <tr key={theType.uri}>
-							<td>
-								<MetadataType {...theType} />
-							</td>
-						</tr>;
+						return <MetadataType {...theType}  key={theType.uri}/>;
 					})}
-				</tbody>
-			</table>;
+			</div>;
 		}
 	});
 }

@@ -52,6 +52,9 @@ object Main extends App with SimpleRoutingApp {
 					pathSuffix("listClasses"){
 						complete(onto.getExposedClasses)
 					} ~
+					pathSuffix("listAllTopClasses"){
+						complete(onto.getTopLevelClasses)
+					} ~
 					pathSuffix("listIndividuals"){
 						parameter('classUri){ uriStr =>
 							complete(instOnto.listInstances(new URI(uriStr)))

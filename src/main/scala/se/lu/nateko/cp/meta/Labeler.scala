@@ -26,7 +26,7 @@ trait Labeler[-T <: OWLEntity] {
 		.collect{case Some(lit) => lit.getLiteral}
 		.headOption
 
-	final def getInfo(entity: T, onto: OWLOntology) = ResourceInfo(
+	final def getInfo(entity: T, onto: OWLOntology) = ResourceDto(
 		displayName = getLabel(entity, onto),
 		uri = entity.getIRI.toURI
 	)

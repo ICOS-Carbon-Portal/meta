@@ -5,9 +5,14 @@ import spray.json._
 import java.net.URI
 import java.net.URISyntaxException
 
-case class ResourceInfo(displayName: String, uri: URI)
-
 object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
+
+	private implicit class ExtendableJsObj(val js: JsValue) extends AnyVal{
+		def +(kv: (String, String)): JsObject = {
+			val jsKv: (String, JsValue) = (kv._1, JsString(kv._2))
+			JsObject(js.asJsObject.fields + jsKv)
+		}
+	}
 
 	implicit object UriJsonFormat extends RootJsonFormat[URI]{
 
@@ -23,6 +28,43 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 		def write(uri: URI) = JsString(uri.toString)
 	}
 
-	implicit val resourceInfoFormat = jsonFormat2(ResourceInfo)
+	implicit val resourceDtoFormat = jsonFormat2(ResourceDto)
+	implicit val literalValueDtoFormat = jsonFormat2(LiteralValueDto)
+	implicit val objectValueDtoFormat = jsonFormat2(ObjectValueDto)
 
+	implicit val minRestrictionDtoFormat = jsonFormat1(MinRestrictionDto)
+	implicit val maxRestrictionDtoFormat = jsonFormat1(MaxRestrictionDto)
+	implicit val regexpRestrictionDtoFormat = jsonFormat1(RegexpRestrictionDto)
+
+	implicit object ValueDtoFormat extends JsonFormat[ValueDto]{
+		override def write(dto: ValueDto) = dto match{
+			case dto: LiteralValueDto => dto.toJson + ("type" -> "literal")
+			case dto: ObjectValueDto => dto.toJson + ("type" -> "individual")
+		}
+		override def read(value: JsValue) = ???
+	}
+
+	implicit object RestrictionDtoFormat extends JsonFormat[DataRestrictionDto]{
+		override def write(dto: DataRestrictionDto) = dto match{
+			case dto: MinRestrictionDto => dto.toJson + ("type" -> "minValue")
+			case dto: MaxRestrictionDto => dto.toJson + ("type" -> "maxValue")
+			case dto: RegexpRestrictionDto => dto.toJson + ("type" -> "regexp")
+		}
+		override def read(value: JsValue) = ???
+	}
+
+	implicit val dataRangeDtoFormat = jsonFormat2(DataRangeDto)
+	implicit val dataPropertyDtoFormat = jsonFormat3(DataPropertyDto)
+	implicit val objectPropertyDtoFormat = jsonFormat3(ObjectPropertyDto)
+
+	implicit object PropertyDtoFormat extends JsonFormat[PropertyDto]{
+		override def write(dto: PropertyDto) = dto match{
+			case dto: DataPropertyDto => dto.toJson + ("type" -> "dataProperty")
+			case dto: ObjectPropertyDto => dto.toJson + ("type" -> "objectProperty")
+		}
+		override def read(value: JsValue) = ???
+	}
+	
+	implicit val classDtoFormat = jsonFormat2(ClassDto)
+	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
 }

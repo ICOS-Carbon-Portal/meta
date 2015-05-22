@@ -20,7 +20,7 @@ class InstOnto (resourcePath: String, onto: Onto, manager: OWLOntologyManager){
 		manager.loadOntologyFromOntologyDocument(stream)
 	}
 
-	def listInstances(classUri: URI): Seq[ResourceInfo] = {
+	def listInstances(classUri: URI): Seq[ResourceDto] = {
 		val labeler = onto.getLabelerForClass(classUri)
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 		

@@ -12,8 +12,9 @@ import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLOntologyManager
+import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory
 
-class Onto (resourcePath: String, manager: OWLOntologyManager){
+class Onto (resourcePath: String, manager: OWLOntologyManager) extends java.io.Closeable{
 
 	private val factory = manager.getOWLDataFactory
 
@@ -22,10 +23,16 @@ class Onto (resourcePath: String, manager: OWLOntologyManager){
 		manager.loadOntologyFromOntologyDocument(stream)
 	}
 
-	private val rdfsLabeling: OWLEntity => ResourceInfo =
+	private val reasoner = new StructuralReasonerFactory().createReasoner(ontology)
+
+	private val rdfsLabeling: OWLEntity => ResourceDto =
 		Labeler.rdfs.getInfo(_, ontology)
 
-	def getExposedClasses: Seq[ResourceInfo] =
+	override def close(): Unit = {
+		reasoner.dispose()
+	}
+
+	def getExposedClasses: Seq[ResourceDto] =
 		ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION).toIterable
 			.filter(axiom =>
 				axiom.getProperty == Vocab.exposedToUsersAnno && {
@@ -59,4 +66,9 @@ class Onto (resourcePath: String, manager: OWLOntologyManager){
 		}
 	}
 
+	def getTopLevelClasses: Seq[ResourceDto] = reasoner
+		.getSubClasses(factory.getOWLThing, true)
+		.getFlattened
+		.map(rdfsLabeling)
+		.toSeq
 }

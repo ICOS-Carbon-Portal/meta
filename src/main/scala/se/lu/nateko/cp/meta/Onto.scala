@@ -27,7 +27,14 @@ class Onto (resourcePath: String, manager: OWLOntologyManager){
 
 	def getExposedClasses: Seq[ResourceInfo] =
 		ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION).toIterable
-			.filter(_.getProperty == Vocab.exposedToUsersAnno)
+			.filter(axiom =>
+				axiom.getProperty == Vocab.exposedToUsersAnno && {
+					axiom.getValue.asLiteral.toOption match {
+						case Some(owlLit) if(owlLit.isBoolean) => owlLit.parseBoolean
+						case _ => false
+					}
+				}
+			)
 			.map(_.getSubject)
 			.collect{case iri: IRI => factory.getOWLClass(iri)}
 			.map(rdfsLabeling)

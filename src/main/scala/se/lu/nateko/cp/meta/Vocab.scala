@@ -7,6 +7,7 @@ import org.semanticweb.owlapi.model.PrefixManager
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
 import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLClass
 
 object Vocab {
 
@@ -18,10 +19,13 @@ object Vocab {
 	private val prefixManager: PrefixManager =
 		new DefaultPrefixManager(null, null, ontoIri.toString)
 
-	private def getDataProperty(localName: String): OWLDataProperty =
+	def getOWLClass(localName: String): OWLClass =
+		factory.getOWLClass(localName, prefixManager)
+
+	def getDataProperty(localName: String): OWLDataProperty =
 		factory.getOWLDataProperty(localName, prefixManager)
 		
-	private def getAnnotationProperty(localName: String): OWLAnnotationProperty =
+	def getAnnotationProperty(localName: String): OWLAnnotationProperty =
 		factory.getOWLAnnotationProperty(localName, prefixManager)
 
 	val exposedToUsersAnno: OWLAnnotationProperty = getAnnotationProperty("isExposedToUsers")

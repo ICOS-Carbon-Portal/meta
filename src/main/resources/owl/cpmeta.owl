@@ -44,14 +44,14 @@ AnnotationProperty: displayProperty2
         displayProperty
     
     
-AnnotationProperty: rdfs:label
-
-    
 AnnotationProperty: displayProperty3
 
     SubPropertyOf: 
         displayProperty
     
+    
+AnnotationProperty: rdfs:label
+
     
 AnnotationProperty: displayProperty4
 
@@ -73,15 +73,6 @@ Datatype: xsd:float
     
 Datatype: rdfs:Literal
 
-    
-Datatype: <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>
-
-    Annotations: 
-        rdfs:comment "Decimal degrees in WGS84/GRS80"
-    
-    EquivalentTo: 
-        xsd:double[>= "-180.0"^^xsd:double , <= "180.0"^^xsd:double]
-    
     
 Datatype: xsd:string
 
@@ -116,28 +107,10 @@ ObjectProperty: belongsToSite
         Functional
     
     
-ObjectProperty: belongsToTheNetworkOf
-
-    Domain: 
-        Station
-    
-    Range: 
-        CentralFacility
-    
-    
 ObjectProperty: hasDirector
 
     Domain: 
         ThematicCenter
-    
-    SubPropertyOf: 
-        hasContactPerson
-    
-    
-ObjectProperty: hasPI
-
-    Domain: 
-        Station
     
     SubPropertyOf: 
         hasContactPerson
@@ -150,6 +123,24 @@ ObjectProperty: hasGeoCoordinate
     
     Characteristics: 
         Functional
+    
+    
+ObjectProperty: hasPI
+
+    Domain: 
+        Station
+    
+    SubPropertyOf: 
+        hasContactPerson
+    
+    
+ObjectProperty: belongsToTheNetworkOf
+
+    Domain: 
+        Station
+    
+    Range: 
+        CentralFacility
     
     
 ObjectProperty: hasContactPerson
@@ -170,7 +161,7 @@ ObjectProperty: hasClass
         Station
     
     Range: 
-        StationClass
+        {Class_I , Class_II}
     
     
 ObjectProperty: hasGeoLocation
@@ -233,7 +224,7 @@ DataProperty: hasLatitude
         GeoCoordinate
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
+        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
     
     Characteristics: 
         Functional
@@ -263,7 +254,7 @@ DataProperty: hasLongitude
         GeoCoordinate
     
     Range: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta//wgs84degrees>
+        xsd:double[>= "-180.0"^^xsd:double , <= "180.0"^^xsd:double]
     
     Characteristics: 
         Functional
@@ -322,16 +313,22 @@ DataProperty: hasName
     
 Class: DataProductionTechnique
 
+    SubClassOf: 
+        DataRelatedThing
+    
     
 Class: GeoLocation
 
     SubClassOf: 
         hasElevation exactly 1 rdfs:Literal,
-        hasGeoCoordinate some GeoCoordinate
+        hasGeoCoordinate some owl:Thing
     
     
 Class: DataProvider
 
+    SubClassOf: 
+        DataRelatedThing
+    
     
 Class: RawDataSetArchive
 
@@ -341,21 +338,8 @@ Class: RawDataSetArchive
     
 Class: DataSet
 
-    
-Class: Station
-
-    Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>,
-        isExposedToUsers true
-    
     SubClassOf: 
-        hasContactPerson some Person,
-        hasOperationInterval some TimeInterval,
-        hasName some rdfs:Literal,
-        hasCountry some rdfs:Literal,
-        belongsToTheNetworkOf some owl:Thing,
-        hasGeoLocation some GeoLocation,
-        belongsToSite some owl:Thing
+        DataRelatedThing
     
     
 Class: ETC
@@ -364,11 +348,28 @@ Class: ETC
         ThematicCenter
     
     
+Class: AS
+
+    SubClassOf: 
+        Station,
+        belongsToTheNetworkOf some ATC
+    
+    
+Class: Variable
+
+    SubClassOf: 
+        DataRelatedThing
+    
+    
 Class: DataProductionProcess
 
     SubClassOf: 
-        isBasedOnTechnique some DataProductionTechnique
+        isBasedOnTechnique some DataProductionTechnique,
+        DataRelatedThing
     
+    
+Class: DataRelatedThing
+
     
 Class: GeoCoordinate
 
@@ -377,21 +378,28 @@ Class: GeoCoordinate
         hasLongitude exactly 1 rdfs:Literal
     
     
-Class: Level_0_DataSet
+Class: Person
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>,
+        isExposedToUsers true
+    
     SubClassOf: 
-        wasProducedVia some DataProductionProcess,
-        wasProducedFrom some RawDataSet,
-        DataSet
+        hasFirstName some rdfs:Literal,
+        hasEmail some rdfs:Literal,
+        hasLastName some rdfs:Literal
     
     
 Class: CalibrationType
 
+    SubClassOf: 
+        DataRelatedThing
     
-Class: Instrument
+    
+Class: CAL
 
     SubClassOf: 
-        measures some Variable
+        CentralFacility
     
     
 Class: OS
@@ -409,15 +417,14 @@ Class: CentralFacility
     SubClassOf: 
         hasName some rdfs:Literal
     
+    DisjointUnionOf: 
+        CAL, ThematicCenter
+    
     
 Class: Calibration
 
-    
-Class: AS
-
     SubClassOf: 
-        Station,
-        belongsToTheNetworkOf some ATC
+        DataRelatedThing
     
     
 Class: PI
@@ -433,8 +440,11 @@ Class: ES
         belongsToTheNetworkOf some ETC
     
     
-Class: Variable
+Class: TimeInterval
 
+    SubClassOf: 
+        hasStartTime some xsd:dateTime
+    
     
 Class: owl:Thing
 
@@ -447,20 +457,19 @@ Class: ThematicCenter
         displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
     SubClassOf: 
-        hasDirector some Person,
-        CentralFacility
+        CentralFacility,
+        hasDirector some Person
+    
+    DisjointUnionOf: 
+        ATC, ETC, OTC
     
     
-Class: TimeInterval
+Class: Level_0_DataSet
 
     SubClassOf: 
-        hasStartTime some xsd:dateTime
-    
-    
-Class: CAL
-
-    SubClassOf: 
-        CentralFacility
+        wasProducedVia some DataProductionProcess,
+        wasProducedFrom some RawDataSet,
+        DataSet
     
     
 Class: OTC
@@ -475,28 +484,36 @@ Class: RawDataSet
         DataSet
     
     
+Class: Instrument
+
+    SubClassOf: 
+        DataRelatedThing,
+        measures some Variable
+    
+    
+Class: Station
+
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>,
+        isExposedToUsers true
+    
+    SubClassOf: 
+        hasContactPerson some Person,
+        hasOperationInterval some TimeInterval,
+        hasName some rdfs:Literal,
+        hasCountry some rdfs:Literal,
+        belongsToTheNetworkOf some owl:Thing,
+        hasGeoLocation some GeoLocation,
+        belongsToSite some owl:Thing
+    
+    DisjointUnionOf: 
+        AS, ES, OS
+    
+    
 Class: Technician
 
     SubClassOf: 
         Person
-    
-    
-Class: Person
-
-    Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>,
-        isExposedToUsers true
-    
-    SubClassOf: 
-        hasFirstName some rdfs:Literal,
-        hasEmail some rdfs:Literal,
-        hasLastName some rdfs:Literal
-    
-    
-Class: StationClass
-
-    EquivalentTo: 
-        {Class_I , Class_II}
     
     
 Class: Site
@@ -522,9 +539,6 @@ Individual: Class_I
     Annotations: 
         rdfs:label "Station Class I"^^xsd:string
     
-    Types: 
-        StationClass
-    
     
 Individual: CO2moleFraction
 
@@ -539,8 +553,5 @@ Individual: Class_II
 
     Annotations: 
         rdfs:label "Station Class II"^^xsd:string
-    
-    Types: 
-        StationClass
     
     

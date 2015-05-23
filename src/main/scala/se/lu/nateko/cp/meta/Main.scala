@@ -26,8 +26,10 @@ object Main extends App with SimpleRoutingApp {
 	implicit val scheduler = system.scheduler
 
 	val manager = OWLManager.createOWLOntologyManager
-	val onto = new Onto("/owl/cpmeta.owl", manager)
-	val instOnto = new InstOnto("/owl/content_examples.owl", onto, manager)
+	val owl = Utils.getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
+	val instOwl = Utils.getOntologyFromJarResourceFile("/owl/content_examples.owl", manager)
+	val onto = new Onto(owl)
+	val instOnto = new InstOnto(instOwl, onto)
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>

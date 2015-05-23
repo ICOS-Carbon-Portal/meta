@@ -8,6 +8,7 @@ import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLClass
+import org.semanticweb.owlapi.model.OWLObjectProperty
 
 object Vocab {
 
@@ -24,6 +25,9 @@ object Vocab {
 
 	def getDataProperty(localName: String): OWLDataProperty =
 		factory.getOWLDataProperty(localName, prefixManager)
+
+	def getObjectProperty(localName: String): OWLObjectProperty =
+		factory.getOWLObjectProperty(localName, prefixManager)
 		
 	def getAnnotationProperty(localName: String): OWLAnnotationProperty =
 		factory.getOWLAnnotationProperty(localName, prefixManager)

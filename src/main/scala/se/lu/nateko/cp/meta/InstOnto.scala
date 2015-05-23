@@ -11,14 +11,9 @@ import org.semanticweb.owlapi.model.OWLOntologyLoaderConfiguration
 import org.semanticweb.owlapi.io.StreamDocumentSource
 import org.semanticweb.owlapi.model.OWLOntologyManager
 
-class InstOnto (resourcePath: String, onto: Onto, manager: OWLOntologyManager){
+class InstOnto (ontology: OWLOntology, onto: Onto){
 
-	private val factory = manager.getOWLDataFactory
-
-	val ontology: OWLOntology = {
-		val stream = getClass.getResourceAsStream(resourcePath)
-		manager.loadOntologyFromOntologyDocument(stream)
-	}
+	private val factory = ontology.getOWLOntologyManager.getOWLDataFactory
 
 	def listInstances(classUri: URI): Seq[ResourceDto] = {
 		val labeler = onto.getLabelerForClass(classUri)

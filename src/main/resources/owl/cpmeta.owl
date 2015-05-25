@@ -86,7 +86,7 @@ Datatype: rdf:PlainLiteral
 ObjectProperty: hasOperationInterval
 
     Domain: 
-        Instrument or Station
+        Instrument or Station or TimeLimitedRole
     
     Range: 
         TimeInterval
@@ -94,6 +94,9 @@ ObjectProperty: hasOperationInterval
     
 ObjectProperty: measures
 
+    SubPropertyOf: 
+        dataRelatedProp
+    
     
 ObjectProperty: belongsToSite
 
@@ -107,13 +110,19 @@ ObjectProperty: belongsToSite
         Functional
     
     
-ObjectProperty: hasDirector
+ObjectProperty: hasRole
 
     Domain: 
-        ThematicCenter
+        Person
     
+    Range: 
+        TimeLimitedRole
+    
+    
+ObjectProperty: wasProducedVia
+
     SubPropertyOf: 
-        hasContactPerson
+        dataRelatedProp
     
     
 ObjectProperty: hasGeoCoordinate
@@ -125,13 +134,16 @@ ObjectProperty: hasGeoCoordinate
         Functional
     
     
-ObjectProperty: hasPI
+ObjectProperty: hasStationClass
 
     Domain: 
         Station
     
-    SubPropertyOf: 
-        hasContactPerson
+    Range: 
+        {Class_I , Class_II}
+    
+    Characteristics: 
+        Functional
     
     
 ObjectProperty: belongsToTheNetworkOf
@@ -142,26 +154,26 @@ ObjectProperty: belongsToTheNetworkOf
     Range: 
         CentralFacility
     
-    
-ObjectProperty: hasContactPerson
-
-    Domain: 
-        CentralFacility or Site or Station
-    
-    Range: 
-        Person
+    Characteristics: 
+        Functional
     
     
 ObjectProperty: wasProducedFrom
 
+    SubPropertyOf: 
+        dataRelatedProp
     
-ObjectProperty: hasClass
+    
+ObjectProperty: hasBaseRole
 
     Domain: 
-        Station
+        TimeLimitedRole
     
     Range: 
-        {Class_I , Class_II}
+        Role
+    
+    Characteristics: 
+        Functional
     
     
 ObjectProperty: hasGeoLocation
@@ -173,22 +185,28 @@ ObjectProperty: hasGeoLocation
         Functional
     
     
-ObjectProperty: isBasedOnTechnique
+ObjectProperty: dataRelatedProp
 
     
-ObjectProperty: wasProducedVia
+ObjectProperty: isBasedOnTechnique
 
+    SubPropertyOf: 
+        dataRelatedProp
+    
     
 ObjectProperty: involvesCalibration
 
     Range: 
         Calibration
     
+    SubPropertyOf: 
+        dataRelatedProp
+    
     
 DataProperty: hasEmail
 
     Domain: 
-        Person
+        Person or Role
     
     Range: 
         xsd:string
@@ -197,8 +215,11 @@ DataProperty: hasEmail
         Functional
     
     
-DataProperty: hasCountry
+DataProperty: hasOrcidId
 
+    Domain: 
+        Person
+    
     Range: 
         xsd:string
     
@@ -238,11 +259,20 @@ DataProperty: hasLastName
     Range: 
         xsd:string
     
+    Characteristics: 
+        Functional
+    
     
 DataProperty: hasEndTime
 
+    Domain: 
+        TimeInterval
+    
     Range: 
         xsd:dateTime
+    
+    Characteristics: 
+        Functional
     
     
 DataProperty: hasLongitude
@@ -283,11 +313,20 @@ DataProperty: hasFirstName
     Range: 
         xsd:string
     
+    Characteristics: 
+        Functional
+    
     
 DataProperty: hasStartTime
 
+    Domain: 
+        TimeInterval
+    
     Range: 
         xsd:dateTime
+    
+    Characteristics: 
+        Functional
     
     
 DataProperty: hasStationId
@@ -298,11 +337,38 @@ DataProperty: hasStationId
     Range: 
         xsd:string
     
+    Characteristics: 
+        Functional
+    
     
 DataProperty: hasName
 
     Domain: 
-        CentralFacility or Site or Station
+        Organization
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasCountry
+
+    Domain: 
+        Organization
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasTitle
+
+    Domain: 
+        Role
     
     Range: 
         xsd:string
@@ -330,10 +396,10 @@ Class: DataProvider
         DataRelatedThing
     
     
-Class: RawDataSetArchive
+Class: Role
 
     SubClassOf: 
-        DataSet
+        hasTitle some rdfs:Literal
     
     
 Class: DataSet
@@ -385,15 +451,21 @@ Class: Person
         isExposedToUsers true
     
     SubClassOf: 
-        hasFirstName some rdfs:Literal,
+        hasLastName some rdfs:Literal,
         hasEmail some rdfs:Literal,
-        hasLastName some rdfs:Literal
+        hasFirstName some rdfs:Literal
     
     
 Class: CalibrationType
 
     SubClassOf: 
         DataRelatedThing
+    
+    
+Class: RawDataSetArchive
+
+    SubClassOf: 
+        DataSet
     
     
 Class: CAL
@@ -415,7 +487,8 @@ Class: CentralFacility
         displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
     SubClassOf: 
-        hasName some rdfs:Literal
+        hasName some rdfs:Literal,
+        Organization
     
     DisjointUnionOf: 
         CAL, ThematicCenter
@@ -425,12 +498,6 @@ Class: Calibration
 
     SubClassOf: 
         DataRelatedThing
-    
-    
-Class: PI
-
-    SubClassOf: 
-        Person
     
     
 Class: ES
@@ -443,7 +510,8 @@ Class: ES
 Class: TimeInterval
 
     SubClassOf: 
-        hasStartTime some xsd:dateTime
+        hasStartTime some xsd:dateTime,
+        TemporalThing
     
     
 Class: owl:Thing
@@ -457,11 +525,18 @@ Class: ThematicCenter
         displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
     SubClassOf: 
-        CentralFacility,
-        hasDirector some Person
+        CentralFacility
     
     DisjointUnionOf: 
         ATC, ETC, OTC
+    
+    
+Class: TimeLimitedRole
+
+    SubClassOf: 
+        hasOperationInterval exactly 1 owl:Thing,
+        TemporalThing,
+        hasBaseRole some owl:Thing
     
     
 Class: Level_0_DataSet
@@ -498,8 +573,8 @@ Class: Station
         isExposedToUsers true
     
     SubClassOf: 
-        hasContactPerson some Person,
         hasOperationInterval some TimeInterval,
+        Organization,
         hasName some rdfs:Literal,
         hasCountry some rdfs:Literal,
         belongsToTheNetworkOf some owl:Thing,
@@ -508,12 +583,6 @@ Class: Station
     
     DisjointUnionOf: 
         AS, ES, OS
-    
-    
-Class: Technician
-
-    SubClassOf: 
-        Person
     
     
 Class: Site
@@ -525,14 +594,21 @@ Class: Site
     SubClassOf: 
         hasGeoLocation some owl:Thing,
         hasCountry some rdfs:Literal,
-        hasName some rdfs:Literal
+        hasName some rdfs:Literal,
+        Organization
     
+    
+Class: Organization
+
     
 Class: ATC
 
     SubClassOf: 
         ThematicCenter
     
+    
+Class: TemporalThing
+
     
 Individual: Class_I
 

@@ -20,7 +20,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 	private val factory = ontology.getOWLOntologyManager.getOWLDataFactory
 	private val reasoner: Reasoner = new HermitBasedReasoner(ontology)
 
-	private val rdfsLabeling: OWLEntity => ResourceDto =
+	val rdfsLabeling: OWLEntity => ResourceDto =
 		Labeler.rdfs.getInfo(_, ontology)
 
 	override def close(): Unit = {
@@ -44,7 +44,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 			.distinct
 
 	//TODO Cache this method
-	def getLabelerForClass(classUri: URI): Labeler[OWLNamedIndividual] = {
+	def getLabelerForClassIndividuals(classUri: URI): Labeler[OWLNamedIndividual] = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 
 		val displayProp: Option[OWLDataProperty] =
@@ -61,5 +61,15 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 		}
 	}
 
+	def getUniversalLabeler: Labeler[OWLNamedIndividual] = ???
+
 	def getTopLevelClasses: Seq[ResourceDto] = reasoner.getTopLevelClasses.map(rdfsLabeling)
+
+	def getClassInfo(classUri: URI): ClassDto = {
+		val owlClass = factory.getOWLClass(IRI.create(classUri))
+		val relevantProps = reasoner.getPropertiesWhoseDomainIncludes(owlClass)
+		//rdfsLabeling(owlClass)
+		???
+	}
+	
 }

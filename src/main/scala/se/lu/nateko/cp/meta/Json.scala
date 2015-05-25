@@ -39,7 +39,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 	implicit object ValueDtoFormat extends JsonFormat[ValueDto]{
 		override def write(dto: ValueDto) = dto match{
 			case dto: LiteralValueDto => dto.toJson + ("type" -> "literal")
-			case dto: ObjectValueDto => dto.toJson + ("type" -> "individual")
+			case dto: ObjectValueDto => dto.toJson + ("type" -> "object")
 		}
 		override def read(value: JsValue) = ???
 	}
@@ -54,6 +54,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 	}
 
 	implicit val dataRangeDtoFormat = jsonFormat2(DataRangeDto)
+	implicit val cardinalityDtoFormat = jsonFormat2(CardinalityDto)
 	implicit val dataPropertyDtoFormat = jsonFormat3(DataPropertyDto)
 	implicit val objectPropertyDtoFormat = jsonFormat3(ObjectPropertyDto)
 

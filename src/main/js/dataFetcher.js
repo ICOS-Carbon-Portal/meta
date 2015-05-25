@@ -28,10 +28,10 @@ function getJson(url){
 
 module.exports = {
 	listClasses: function(){
-		return getJson('/api/listClasses');
+		return getJson('/api/getExposedClasses');
 	},
 	listIndividuals: function(classUri){
-		var url = '/api/listIndividuals?classUri=' + encodeURIComponent(classUri);
+		var url = '/api/getIndividuals?classUri=' + encodeURIComponent(classUri);
 		return getJson(url);
 	}
 };

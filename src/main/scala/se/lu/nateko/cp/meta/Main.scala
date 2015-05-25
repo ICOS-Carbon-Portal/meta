@@ -51,15 +51,15 @@ object Main extends App with SimpleRoutingApp {
 		handleExceptions(exceptionHandler){
 			get{
 				pathPrefix("api"){
-					pathSuffix("listClasses"){
+					pathSuffix("getExposedClasses"){
 						complete(onto.getExposedClasses)
 					} ~
-					pathSuffix("listAllTopClasses"){
+					pathSuffix("getTopLevelClasses"){
 						complete(onto.getTopLevelClasses)
 					} ~
 					pathSuffix("listIndividuals"){
 						parameter('classUri){ uriStr =>
-							complete(instOnto.listInstances(new URI(uriStr)))
+							complete(instOnto.getIndividuals(new URI(uriStr)))
 						}
 					}
 				} ~

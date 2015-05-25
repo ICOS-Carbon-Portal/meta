@@ -35,6 +35,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 	implicit val minRestrictionDtoFormat = jsonFormat1(MinRestrictionDto)
 	implicit val maxRestrictionDtoFormat = jsonFormat1(MaxRestrictionDto)
 	implicit val regexpRestrictionDtoFormat = jsonFormat1(RegexpRestrictionDto)
+	implicit val oneOfRestrictionDtoFormat = jsonFormat1(OneOfRestrictionDto)
 
 	implicit object ValueDtoFormat extends JsonFormat[ValueDto]{
 		override def write(dto: ValueDto) = dto match{
@@ -49,6 +50,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 			case dto: MinRestrictionDto => dto.toJson + ("type" -> "minValue")
 			case dto: MaxRestrictionDto => dto.toJson + ("type" -> "maxValue")
 			case dto: RegexpRestrictionDto => dto.toJson + ("type" -> "regexp")
+			case dto: OneOfRestrictionDto => dto.toJson + ("type" -> "oneof")
 		}
 		override def read(value: JsValue) = ???
 	}

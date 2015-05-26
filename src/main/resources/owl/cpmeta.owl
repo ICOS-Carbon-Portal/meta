@@ -92,12 +92,6 @@ ObjectProperty: hasOperationInterval
         TimeInterval
     
     
-ObjectProperty: measures
-
-    SubPropertyOf: 
-        dataRelatedProp
-    
-    
 ObjectProperty: hasRole
 
     Domain: 
@@ -129,6 +123,12 @@ ObjectProperty: belongsToTheNetworkOf
     
     Characteristics: 
         Functional
+    
+    
+ObjectProperty: measures
+
+    SubPropertyOf: 
+        dataRelatedProp
     
     
 ObjectProperty: wasProducedFrom
@@ -610,12 +610,6 @@ Class: ATC
         ThematicCenter
     
     
-Individual: Class_I
-
-    Annotations: 
-        rdfs:label "Station Class I"^^xsd:string
-    
-    
 Individual: CO2moleFraction
 
     Annotations: 
@@ -623,11 +617,5 @@ Individual: CO2moleFraction
     
     Types: 
         Variable
-    
-    
-Individual: Class_II
-
-    Annotations: 
-        rdfs:label "Station Class II"^^xsd:string
     
     

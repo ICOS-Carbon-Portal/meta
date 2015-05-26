@@ -9,6 +9,7 @@ import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.vocab.OWLFacet
 import org.semanticweb.owlapi.model._
 import se.lu.nateko.cp.meta.labeler.Labeler
+import se.lu.nateko.cp.meta.labeler.SingleClassLabeler
 
 
 class Onto (ontology: OWLOntology) extends java.io.Closeable{
@@ -42,19 +43,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 	//TODO Cache this method
 	def getLabelerForClassIndividuals(classUri: URI): Labeler[OWLNamedIndividual] = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
-
-		val displayProp: Option[OWLDataProperty] =
-			EntitySearcher.getAnnotations(owlClass, ontology, Vocab.displayPropAnno)
-				.toIterable
-				.map(_.getValue.asIRI.toOption)
-				.collect{case Some(iri) => factory.getOWLDataProperty(iri)}
-				.filter(ontology.isDeclared)
-				.headOption
-
-		displayProp match{
-			case Some(prop) => Labeler.singleProp(prop)
-			case None => Labeler.rdfs
-		}
+		SingleClassLabeler(owlClass, ontology)
 	}
 
 	def getUniversalLabeler: Labeler[OWLNamedIndividual] = ???

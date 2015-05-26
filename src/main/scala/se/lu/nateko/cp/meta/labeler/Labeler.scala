@@ -4,14 +4,11 @@ import scala.collection.JavaConversions._
 import se.lu.nateko.cp.meta._
 import Utils._
 
-import org.semanticweb.owlapi.model.OWLEntity
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLNamedIndividual
 import org.semanticweb.owlapi.search.EntitySearcher
-import org.semanticweb.owlapi.model.OWLDataFactory
-import org.semanticweb.owlapi.io.XMLUtils
-import org.semanticweb.owlapi.model.OWLDataProperty
+
 import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl
+
+import org.semanticweb.owlapi.model._
 
 trait Labeler[-T <: OWLEntity] {
 
@@ -19,7 +16,7 @@ trait Labeler[-T <: OWLEntity] {
 
 	// rdfs:label is the default, to be overridden in some implementations
 	def getLabel(entity: T, onto: OWLOntology): String =
-		getRdfsLabel(entity, onto).getOrElse(XMLUtils.getNCNameSuffix(entity.getIRI.toString))
+		getRdfsLabel(entity, onto).getOrElse(Utils.getLastFragment(entity.getIRI))
 
 	final def getRdfsLabel(entity: T, onto: OWLOntology): Option[String] = EntitySearcher
 		.getAnnotations(entity, onto, factory.getRDFSLabel)
@@ -41,25 +38,9 @@ object Labeler{
 
 	def singleProp(prop: OWLDataProperty) =
 		new SinglePropIndividualLabeler(prop, factory)
+
+	def joinMultiValues(values: Iterable[String]) = values.mkString("{", ",", "}")
 }
 
 class RdfsLabeler(protected val factory: OWLDataFactory) extends Labeler[OWLEntity]
 
-class SinglePropIndividualLabeler(
-	prop: OWLDataProperty,
-	protected val factory: OWLDataFactory
-) extends Labeler[OWLNamedIndividual] {
-
-	override def getLabel(instance: OWLNamedIndividual, onto: OWLOntology): String = {
-
-		val propVals: List[String] = EntitySearcher.getDataPropertyValues(instance, prop, onto)
-			.toList
-			.map(_.getLiteral)
-
-		propVals match {
-			case single :: Nil => single
-			case Nil => super.getLabel(instance, onto)
-			case multi => multi.mkString("{", ",", "}")
-		}
-	}
-}

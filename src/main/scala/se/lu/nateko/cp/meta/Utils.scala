@@ -3,6 +3,8 @@ package se.lu.nateko.cp.meta
 import com.google.common.base.Optional
 import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.io.XMLUtils
+import org.semanticweb.owlapi.model.IRI
 
 object Utils {
 
@@ -15,6 +17,10 @@ object Utils {
 			manager: OWLOntologyManager): OWLOntology = {
 		val stream = getClass.getResourceAsStream(resourcePath)
 		manager.loadOntologyFromOntologyDocument(stream)
+	}
+	
+	def getLastFragment(iri: IRI): String = {
+		XMLUtils.getNCNameSuffix(iri.toString)
 	}
 
 }

@@ -1,7 +1,9 @@
-package se.lu.nateko.cp.meta
+package se.lu.nateko.cp.meta.labeler
 
 import scala.collection.JavaConversions._
+import se.lu.nateko.cp.meta._
 import Utils._
+
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OWLNamedIndividual

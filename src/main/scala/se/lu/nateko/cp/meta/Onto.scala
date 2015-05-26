@@ -2,22 +2,13 @@ package se.lu.nateko.cp.meta
 
 import java.net.URI
 import scala.collection.JavaConversions._
+import se.lu.nateko.cp.meta.reasoner.Reasoner
+import se.lu.nateko.cp.meta.reasoner.HermitBasedReasoner
 import Utils._
-import org.semanticweb.owlapi.model.AxiomType
-import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLDataProperty
-import org.semanticweb.owlapi.model.OWLEntity
-import org.semanticweb.owlapi.model.OWLNamedIndividual
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.search.EntitySearcher
-import org.semanticweb.owlapi.model.OWLObjectProperty
-import org.semanticweb.owlapi.model.OWLClass
-import org.semanticweb.owlapi.model.OWLProperty
-import org.semanticweb.owlapi.model.OWLDatatype
-import org.semanticweb.owlapi.model.OWLDatatypeRestriction
 import org.semanticweb.owlapi.vocab.OWLFacet
-import org.semanticweb.owlapi.model.OWLDataOneOf
+import org.semanticweb.owlapi.model._
+import se.lu.nateko.cp.meta.labeler.Labeler
 
 
 class Onto (ontology: OWLOntology) extends java.io.Closeable{
@@ -80,7 +71,8 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 			}
 		)
 	}
-	
+
+	//TODO Take property restrictions into account for range calculations
 	def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
 		val ranges = EntitySearcher.getRanges(prop, ontology).collect{
 			case owlClass: OWLClass => rdfsLabeling(owlClass)
@@ -126,7 +118,29 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 	}
 	
 	def getCardinalityInfo(prop: OWLProperty, ctxt: OWLClass): CardinalityDto = {
-		???
+
+		val restrictions = reasoner.getSuperClasses(ctxt, false).filter{
+			case oor: OWLObjectRestriction if(oor.getProperty == prop) => true
+			case odr: OWLDataRestriction if(odr.getProperty == prop) => true
+			case _ => false
+		}
+
+		val cardinalityRestrictions = restrictions.collect{
+			case _: OWLDataSomeValuesFrom     => CardinalityDto(Some(1), None)
+			case _: OWLObjectSomeValuesFrom   => CardinalityDto(Some(1), None)
+			case r: OWLDataMinCardinality     => CardinalityDto(Some(r.getCardinality), None)
+			case r: OWLObjectMinCardinality   => CardinalityDto(Some(r.getCardinality), None)
+			case r: OWLDataMaxCardinality     => CardinalityDto(None, Some(r.getCardinality))
+			case r: OWLObjectMaxCardinality   => CardinalityDto(None, Some(r.getCardinality))
+			case r: OWLDataExactCardinality   => CardinalityDto(Some(r.getCardinality), Some(r.getCardinality))
+			case r: OWLObjectExactCardinality => CardinalityDto(Some(r.getCardinality), Some(r.getCardinality))
+		}
+
+		val minCardinality = cardinalityRestrictions.map(_.min).flatten.sorted.lastOption
+		val functionalCardinality = if(reasoner.isFunctional(prop)) Some(1) else None
+		val maxCardinality = (cardinalityRestrictions.map(_.max) :+ functionalCardinality).flatten.sorted.headOption
+
+		CardinalityDto(minCardinality, maxCardinality)
 	}
 	
 }

@@ -1,4 +1,4 @@
-module.exports = function(chooseTypeAction, Backend){
+module.exports = function(Backend, chooseTypeAction){
 	return Reflux.createStore({
 	
 		publishState: function(){

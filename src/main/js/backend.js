@@ -31,7 +31,11 @@ module.exports = {
 		return getJson('/api/getExposedClasses');
 	},
 	listIndividuals: function(classUri){
-		var url = '/api/getIndividuals?classUri=' + encodeURIComponent(classUri);
+		var url = '/api/listIndividuals?classUri=' + encodeURIComponent(classUri);
+		return getJson(url);
+	},
+	getIndividual: function(uri){
+		var url = '/api/getIndividual?uri=' + encodeURIComponent(uri);
 		return getJson(url);
 	}
 };

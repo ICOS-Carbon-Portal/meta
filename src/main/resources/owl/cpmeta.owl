@@ -421,6 +421,7 @@ Class: Role
 
     Annotations: 
         displayProperty2 "at"^^xsd:string,
+        isExposedToUsers true,
         displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>,
         displayProperty3 <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>
     

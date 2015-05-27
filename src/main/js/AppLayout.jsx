@@ -1,12 +1,17 @@
 var actions = Reflux.createActions([
-	"chooseMetaType"
+	"chooseMetaType",
+	"chooseIndividual"
 ]);
 
-var Backend = require('./dataFetcher.js');
-var TypesStore = require('./TypesStoreFactory.js')(actions.chooseMetaType, Backend);
-var IndividualsStore = require('./IndividualsStoreFactory.js')(actions.chooseMetaType, Backend);
-var TypesList = require('./TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
-var IndividualsList = require('./IndividualsListFactory.jsx')(IndividualsStore);
+var Backend = require('./backend.js');
+
+var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.chooseMetaType);
+var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.chooseMetaType);
+var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseIndividual);
+
+var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
+var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.chooseIndividual);
+var EditView = require('./views/EditViewFactory.jsx')(EditStore);
 
 module.exports = React.createClass({
 	render: function(){
@@ -28,7 +33,7 @@ module.exports = React.createClass({
 			<div className="row">
 				{entryTypeCol(<TypesList />)}
 				{entryListCol(<IndividualsList />)}
-				{entryEditCol()}
+				{entryEditCol(<EditView />)}
 			</div>
 		</div>;
 	}

@@ -26,6 +26,10 @@ gulp.task('js', ['clean'], function() {
 	    transform: [reactify]
 	  })
 	  .bundle()
+		.on('error', function(err){
+			console.log(err);
+			this.emit('end');
+		})
 	  .pipe(source(paths.bundleFile))
 	  .pipe(gulp.dest(paths.target));
 

@@ -21,16 +21,4 @@ class HermitBasedReasonerTests extends FunSpec{
 		}
 	}
 
-	ignore("getDomain(owlProp)"){
-		it("should return expected classes"){
-			val prop = Vocab.getObjectProperty("hasDirector")
-			val siteClass = Vocab.getOWLClass("Site")
-			//val domains = reasoner.getFullDomain(prop)
-			//val domainSubs = reasoner.getSubClasses(domain, false).getFlattened.toArray
-			//reasoner.getParentProps(prop).map(_.getIRI) foreach println
-			assert(owlOnto.isDeclared(prop))
-			//println(domainSubs.length)
-			//assert(domainSubs.size > 0)
-		}
-	}
 }

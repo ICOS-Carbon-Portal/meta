@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta
 
 import com.google.common.base.Optional
-import org.semanticweb.owlapi.model.OWLOntologyManager
-import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.io.XMLUtils
-import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.search.EntitySearcher
+import scala.collection.JavaConversions._
 
 object Utils {
 
@@ -21,6 +21,16 @@ object Utils {
 	
 	def getLastFragment(iri: IRI): String = {
 		XMLUtils.getNCNameSuffix(iri.toString)
+	}
+
+	def getSingleType(ind: OWLNamedIndividual, instOnto: OWLOntology): OWLClass = {
+		val types = EntitySearcher
+			.getTypes(ind, instOnto)
+			.filterNot(_.isAnonymous)
+			.map(_.asOWLClass)
+			.toSeq
+		assert(types.size == 1, s"Every individual is expected to have exactly one type, but ${ind.getIRI} had ${types.size}")
+		types.head
 	}
 
 }

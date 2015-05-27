@@ -1,3 +1,4 @@
+Prefix: dc: <http://purl.org/dc/elements/1.1/>
 Prefix: owl: <http://www.w3.org/2002/07/owl#>
 Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 Prefix: xml: <http://www.w3.org/XML/1998/namespace>
@@ -13,7 +14,13 @@ Import: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 Datatype: xsd:string
 
     
+ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>
+
+    
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>
 
     
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>
@@ -35,6 +42,9 @@ Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
 
     
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Role>
 
     
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_ES>
@@ -66,6 +76,15 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/John_Smith
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "john.smith@icos-ri.eu"^^xsd:string
     
     
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
+    
+    
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC>
 
     Types: 
@@ -93,6 +112,16 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa"^^xsd:string
     
     
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC_director>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/Role>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>  <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>  "Director"^^xsd:string
+    
+    
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Jane_Doe>
 
     Types: 
@@ -102,14 +131,5 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Jane_Doe>
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>  "Doe"^^xsd:string,
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "jane.doe@icos-ri.eu"^^xsd:string,
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>  "Jane"^^xsd:string
-    
-    
-Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
-
-    Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
-    
-    Facts:  
-     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
     
     

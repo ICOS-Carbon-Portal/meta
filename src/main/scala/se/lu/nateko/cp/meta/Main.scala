@@ -61,6 +61,11 @@ object Main extends App with SimpleRoutingApp {
 						parameter('classUri){ uriStr =>
 							complete(instOnto.getIndividuals(new URI(uriStr)))
 						}
+					} ~
+					pathSuffix("getIndividual"){
+						parameter('uri){ uriStr =>
+							complete(instOnto.getIndividual(new URI(uriStr)))
+						}
 					}
 				} ~
 				pathEndOrSingleSlash{

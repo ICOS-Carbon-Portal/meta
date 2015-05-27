@@ -9,13 +9,15 @@ import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.vocab.OWLFacet
 import org.semanticweb.owlapi.model._
 import se.lu.nateko.cp.meta.labeler.Labeler
-import se.lu.nateko.cp.meta.labeler.SingleClassLabeler
+import se.lu.nateko.cp.meta.labeler.ClassIndividualsLabeler
+import se.lu.nateko.cp.meta.labeler.UniversalLabeler
 
 
 class Onto (ontology: OWLOntology) extends java.io.Closeable{
 
 	private val factory = ontology.getOWLOntologyManager.getOWLDataFactory
 	private val reasoner: Reasoner = new HermitBasedReasoner(ontology)
+	private val labeler = new UniversalLabeler(ontology)
 
 	val rdfsLabeling: OWLEntity => ResourceDto =
 		Labeler.rdfs.getInfo(_, ontology)
@@ -40,13 +42,12 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 			.toSeq
 			.distinct
 
-	//TODO Cache this method
 	def getLabelerForClassIndividuals(classUri: URI): Labeler[OWLNamedIndividual] = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
-		SingleClassLabeler(owlClass, ontology)
+		ClassIndividualsLabeler(owlClass, ontology, labeler)
 	}
 
-	def getUniversalLabeler: Labeler[OWLNamedIndividual] = ???
+	def getUniversalLabeler: Labeler[OWLNamedIndividual] = labeler
 
 	def getTopLevelClasses: Seq[ResourceDto] = reasoner.getTopLevelClasses.map(rdfsLabeling)
 

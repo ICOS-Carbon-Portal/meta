@@ -16,9 +16,6 @@ AnnotationProperty: displayProperty
     Domain: 
         <http://www.w3.org/2002/07/owl#Class>
     
-    Range: 
-        <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property>
-    
     
 AnnotationProperty: isoName
 
@@ -54,6 +51,12 @@ AnnotationProperty: rdfs:label
 
     
 AnnotationProperty: displayProperty4
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
+AnnotationProperty: displayProperty5
 
     SubPropertyOf: 
         displayProperty
@@ -108,6 +111,21 @@ ObjectProperty: hasGeoCoordinate
 
     Range: 
         GeoCoordinate
+    
+    Characteristics: 
+        Functional
+    
+    
+ObjectProperty: atOrganization
+
+    Annotations: 
+        rdfs:label "at Organization"^^xsd:string
+    
+    Domain: 
+        Role
+    
+    Range: 
+        Organization
     
     Characteristics: 
         Functional
@@ -197,7 +215,7 @@ DataProperty: hasEmail
         Person or Role
     
     Range: 
-        xsd:string
+        xsd:string[pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$"]
     
     Characteristics: 
         Functional
@@ -205,6 +223,9 @@ DataProperty: hasEmail
     
 DataProperty: hasTitle
 
+    Annotations: 
+        rdfs:label "Title"^^xsd:string
+    
     Domain: 
         Role
     
@@ -398,8 +419,14 @@ Class: DataProvider
     
 Class: Role
 
+    Annotations: 
+        displayProperty2 "at"^^xsd:string,
+        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>,
+        displayProperty3 <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>
+    
     SubClassOf: 
-        hasTitle some rdfs:Literal
+        hasTitle some rdfs:Literal,
+        atOrganization some owl:Thing
     
     
 Class: RawDataSetArchive

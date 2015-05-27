@@ -32,13 +32,8 @@ class InstOnto (ontology: OWLOntology, onto: Onto){
 		val labeler = onto.getUniversalLabeler
 		val individual = factory.getOWLNamedIndividual(IRI.create(uri))
 
-		val types = EntitySearcher.getTypes(individual, ontology).collect{
-			case named: OWLClass => named.getIRI.toURI
-		}.toSeq
-
-		assert(types.size == 1, "Individuals must have exactly one type!")
-
-		val classInfo = onto.getClassInfo(types.head)
+		val theType: OWLClass = Utils.getSingleType(individual, ontology)
+		val classInfo = onto.getClassInfo(theType.getIRI.toURI)
 
 		val litValues: Iterable[ValueDto] = ontology.getDataPropertyAssertionAxioms(individual)
 			.toIterable

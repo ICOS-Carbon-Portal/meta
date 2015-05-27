@@ -12,14 +12,14 @@ import org.semanticweb.owlapi.model._
 
 trait Labeler[-T <: OWLEntity] {
 
-	protected def factory: OWLDataFactory
-
 	// rdfs:label is the default, to be overridden in some implementations
 	def getLabel(entity: T, onto: OWLOntology): String =
 		getRdfsLabel(entity, onto).getOrElse(Utils.getLastFragment(entity.getIRI))
 
+	protected def getFactory(onto: OWLOntology) = onto.getOWLOntologyManager.getOWLDataFactory
+
 	final def getRdfsLabel(entity: T, onto: OWLOntology): Option[String] = EntitySearcher
-		.getAnnotations(entity, onto, factory.getRDFSLabel)
+		.getAnnotations(entity, onto, getFactory(onto).getRDFSLabel)
 		.toIterable
 		.map(_.getValue.asLiteral.toOption)
 		.collect{case Some(lit) => lit.getLiteral}
@@ -32,15 +32,15 @@ trait Labeler[-T <: OWLEntity] {
 }
 
 object Labeler{
-	private val factory: OWLDataFactory = new OWLDataFactoryImpl(true, false)
 
-	val rdfs = new RdfsLabeler(factory)
+	object rdfs extends Labeler[OWLEntity]{}
 
-	def singleProp(prop: OWLDataProperty) =
-		new SinglePropIndividualLabeler(prop, factory)
+	def joinMultiValues(values: Iterable[String]): String = values.toList match{
+		case only :: Nil => only
+		case Nil => ""
+		case _ => values.mkString("{", ",", "}")
+	}
 
-	def joinMultiValues(values: Iterable[String]) = values.mkString("{", ",", "}")
+	def joinComponents(values: Iterable[String]): String = values.mkString(" ")
 }
-
-class RdfsLabeler(protected val factory: OWLDataFactory) extends Labeler[OWLEntity]
 

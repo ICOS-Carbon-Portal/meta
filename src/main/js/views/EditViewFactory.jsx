@@ -23,7 +23,7 @@ module.exports = function(editStore){
 		
 		render: function(){
 
-			if(!this.state.individual) return <div>Choose an entry to edit here</div>;
+			if(!this.state.individual) return <div></div>;
 			
 			var individ = this.state.individual;
 			var label = individ.resource.displayName;

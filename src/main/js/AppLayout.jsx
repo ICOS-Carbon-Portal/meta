@@ -12,28 +12,33 @@ var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseI
 var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
 var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.chooseIndividual);
 var EditView = require('./views/EditViewFactory.jsx')(EditStore);
+var ScreenHeightColumn = require('./views/ScreenHeightColumn.jsx');
+
+var PanelHeader = React.createClass({
+	render: function(){
+		return <div className={this.props.className}>
+			<div className="panel panel-primary">
+				<div className="panel-heading">
+    				<h2 className="panel-title">{this.props.title}</h2>
+				</div>
+			</div>
+		</div>;
+	}
+});
 
 module.exports = React.createClass({
 	render: function(){
 
-		function colDiv(colClass, content){
-			return <div className={colClass} style={{height: "100%"}}>{content}</div>;
-		}
-
-		var entryTypeCol = _.partial(colDiv, "col-md-1");
-		var entryListCol = _.partial(colDiv, "col-md-2");
-		var entryEditCol = _.partial(colDiv, "col-md-9");
-
-		return <div className="container-fluid" style={{height: "100%"}}>
-			<div className="row">
-				{entryTypeCol(<h4>Types of entry</h4>)}
-				{entryListCol(<h4>Existing entries</h4>)}
-				{entryEditCol(<h4>Entry editor</h4>)}
+		return <div className="container-fluid">
+			<div className="row" style={{marginTop: "5px"}}>
+				<PanelHeader className="col-md-1" title="Types" />
+				<PanelHeader className="col-md-2" title="Entries" />
+				<PanelHeader className="col-md-9" title="Entry editor" />
 			</div>
-			<div className="row" style={{height: "100%"}}>
-				{entryTypeCol(<TypesList />)}
-				{entryListCol(<IndividualsList />)}
-				{entryEditCol(<EditView />)}
+			<div className="row">
+				<ScreenHeightColumn className="col-md-1"><TypesList /></ScreenHeightColumn>
+				<ScreenHeightColumn className="col-md-2"><IndividualsList /></ScreenHeightColumn>
+				<ScreenHeightColumn className="col-md-9"><EditView /></ScreenHeightColumn>
 			</div>
 		</div>;
 	}

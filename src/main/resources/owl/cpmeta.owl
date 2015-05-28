@@ -483,7 +483,8 @@ Class: GeoCoordinate
 Class: Person
 
     Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>,
+        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>,
+        displayProperty2 <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>,
         isExposedToUsers true
     
     SubClassOf: 
@@ -519,11 +520,7 @@ Class: OS
     
 Class: CentralFacility
 
-    Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
-    
     SubClassOf: 
-        hasName some rdfs:Literal,
         Organization
     
     DisjointUnionOf: 
@@ -597,13 +594,11 @@ Class: Instrument
 Class: Station
 
     Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>,
         isExposedToUsers true
     
     SubClassOf: 
         hasOperationInterval some TimeInterval,
         Organization,
-        hasName some rdfs:Literal,
         hasCountry some rdfs:Literal,
         belongsToTheNetworkOf some owl:Thing,
         hasGeoLocation some GeoLocation,
@@ -619,18 +614,22 @@ Class: TemporalThing
 Class: Site
 
     Annotations: 
-        isExposedToUsers true,
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+        isExposedToUsers true
     
     SubClassOf: 
         hasGeoLocation some owl:Thing,
         hasCountry some rdfs:Literal,
-        hasName some rdfs:Literal,
         Organization
     
     
 Class: Organization
 
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+    
+    SubClassOf: 
+        hasName some rdfs:Literal
+    
     
 Class: ATC
 

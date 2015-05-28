@@ -10,7 +10,7 @@ import org.semanticweb.owlapi.search.EntitySearcher
 
 object ClassIndividualsLabeler{
 
-	def apply(owlClass: OWLClass, onto: OWLOntology, nested: UniversalLabeler): Labeler[OWLNamedIndividual] = {
+	def apply(owlClass: OWLClass, onto: OWLOntology, nested: Labeler[OWLNamedIndividual]): Labeler[OWLNamedIndividual] = {
 
 		def getDisplayComponents(prop: OWLAnnotationProperty): Seq[DisplayComponent] =
 			EntitySearcher
@@ -27,8 +27,25 @@ object ClassIndividualsLabeler{
 			else
 				Vocab.displayPropAnnos.flatMap(getDisplayComponents)
 
-		new MultiComponentIndividualLabeler(displayComps, nested)
+		if(displayComps.nonEmpty)
+			new MultiComponentIndividualLabeler(displayComps, nested)
+		else getSingleSuperClass(owlClass, onto) match{
+			case Some(superClass) => apply(superClass, onto, nested)
+			case None => Labeler.rdfs
+		}
 	}
 
+	private def getSingleSuperClass(owlClass: OWLClass, onto: OWLOntology): Option[OWLClass] = {
+		val superClasses = EntitySearcher.getSuperClasses(owlClass, onto)
+			.collect{case oc: OWLClass => oc}.toSeq
+
+		assert(
+			superClasses.size <= 1,
+			s"Expected class ${owlClass.getIRI} to have at most one " +
+				s"named superclass, but it had ${superClasses.size}"
+		)
+
+		superClasses.headOption
+	}
 
 }

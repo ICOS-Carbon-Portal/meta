@@ -26,6 +26,17 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 			direct ++ transitive
 		}
 
+	override def getSubClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClass] =
+		if(direct) EntitySearcher
+			.getSubClasses(owlClass, ontology)
+			.collect{case oc: OWLClass => oc}
+			.toSeq
+		else{
+			val direct = getSubClasses(owlClass, true)
+			val transitive = direct.flatMap(getSubClasses(_, false))
+			direct ++ transitive
+		}
+
 	override def isFunctional(prop: OWLProperty): Boolean = (prop match {
 		case dp: OWLDataProperty => EntitySearcher.isFunctional(dp, ontology)
 		case op: OWLObjectProperty => EntitySearcher.isFunctional(op, ontology)

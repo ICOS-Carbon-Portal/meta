@@ -51,6 +51,11 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 
 	def getTopLevelClasses: Seq[ResourceDto] = reasoner.getTopLevelClasses.map(rdfsLabeling)
 
+	def getSubClasses(classUri: URI, direct: Boolean): Seq[OWLClass] = {
+		val owlClass = factory.getOWLClass(IRI.create(classUri))
+		reasoner.getSubClasses(owlClass, direct)
+	}
+
 	def getClassInfo(classUri: URI): ClassDto = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 		ClassDto(

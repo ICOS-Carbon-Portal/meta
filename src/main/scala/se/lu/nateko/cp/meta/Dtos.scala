@@ -5,7 +5,7 @@ import java.net.URI
 case class ResourceDto(displayName: String, uri: URI)
 
 sealed trait ValueDto
-case class LiteralValueDto(presentation: String, property: ResourceDto) extends ValueDto
+case class LiteralValueDto(value: String, property: ResourceDto) extends ValueDto
 case class ObjectValueDto(value: ResourceDto, property: ResourceDto) extends ValueDto
 
 sealed trait DataRestrictionDto

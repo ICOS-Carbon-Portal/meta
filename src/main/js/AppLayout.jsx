@@ -17,20 +17,20 @@ module.exports = React.createClass({
 	render: function(){
 
 		function colDiv(colClass, content){
-			return <div className={colClass}>{content}</div>;
+			return <div className={colClass} style={{height: "100%"}}>{content}</div>;
 		}
 
 		var entryTypeCol = _.partial(colDiv, "col-md-1");
 		var entryListCol = _.partial(colDiv, "col-md-2");
 		var entryEditCol = _.partial(colDiv, "col-md-9");
 
-		return <div className="container-fluid">
+		return <div className="container-fluid" style={{height: "100%"}}>
 			<div className="row">
 				{entryTypeCol(<h4>Types of entry</h4>)}
 				{entryListCol(<h4>Existing entries</h4>)}
 				{entryEditCol(<h4>Entry editor</h4>)}
 			</div>
-			<div className="row">
+			<div className="row" style={{height: "100%"}}>
 				{entryTypeCol(<TypesList />)}
 				{entryListCol(<IndividualsList />)}
 				{entryEditCol(<EditView />)}

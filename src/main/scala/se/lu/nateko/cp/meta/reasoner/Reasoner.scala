@@ -6,6 +6,7 @@ import org.semanticweb.owlapi.model.OWLClassExpression
 
 trait Reasoner extends java.io.Closeable{
 	def getSuperClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClassExpression]
+	def getSubClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClass]
 	def isFunctional(prop: OWLProperty): Boolean
 	def getPropertiesWhoseDomainIncludes(owlClass: OWLClass): Seq[OWLProperty]
 	def getTopLevelClasses: Seq[OWLClass]

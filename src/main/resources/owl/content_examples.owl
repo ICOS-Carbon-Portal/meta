@@ -32,6 +32,12 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
 
     
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ES>
+
+    
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
 
     
@@ -47,10 +53,19 @@ Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Role>
 
     
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ETC>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ATC>
+
+    
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/OTC>
+
+    
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_ES>
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ES>
     
     Facts:  
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa ecosystem station"^^xsd:string
@@ -59,7 +74,7 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ETC>
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ETC>
     
     Facts:  
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Ecosystem thematic center"^^xsd:string
@@ -79,7 +94,7 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/John_Smith
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ATC>
     
     Facts:  
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
@@ -88,7 +103,7 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC>
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
+        <http://meta.icos-cp.eu/ontologies/cpmeta/OTC>
     
     Facts:  
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Ocean thematic center"^^xsd:string
@@ -97,7 +112,7 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC>
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_AS>
 
     Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/Station>
+        <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
     
     Facts:  
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa atmospheric station"^^xsd:string

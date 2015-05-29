@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseTypeAction){
+module.exports = function(Backend, chooseTypeAction, chooseIndividAction){
 	return Reflux.createStore({
 	
 		publishState: function(){
@@ -11,6 +11,7 @@ module.exports = function(Backend, chooseTypeAction){
 		
 		init: function(){
 			this.listenTo(chooseTypeAction, this.fetchIndividuals);
+			this.listenTo(chooseIndividAction, this.updateChosenIndivid);
 			this.state = {
 				individuals: [],
 				chosen: null
@@ -27,6 +28,11 @@ module.exports = function(Backend, chooseTypeAction){
 					self.publishState();
 				})
 				.catch(function(err){console.log(err);});
+		},
+		
+		updateChosenIndivid: function(chosenIndivid){
+			this.state.chosen = chosenIndivid;
+			this.publishState();
 		}
 
 	});

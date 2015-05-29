@@ -10,19 +10,17 @@ module.exports = function(Backend, chooseIndividAction){
 		},
 		
 		init: function(){
+			this.state = {individual: null};
 			this.listenTo(chooseIndividAction, this.fetchIndividual);
-			this.state = {
-				individual: null
-			};
 		},
 		
-		fetchIndividual: function(individual){
+		fetchIndividual: function(individUri){
 			//don't do anything if the chosen is the same
-			if(this.state.individual && this.state.individual.resource.uri == individual.uri) return;
+			if(this.state.individual && (this.state.individual.resource.uri == individUri)) return;
 			
 			var self = this;
 			
-			Backend.getIndividual(individual.uri)
+			Backend.getIndividual(individUri)
 				.then(function(individualInfo){
 					self.state.individual = individualInfo;
 					self.publishState();

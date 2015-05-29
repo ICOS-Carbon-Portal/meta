@@ -1,4 +1,5 @@
 var capped = require('../utils.js').ensureLength(30);
+var ChoiceButton = require('./ChoiceButton.jsx');
 
 module.exports = function(individualsStore, chooseAction){
 
@@ -7,7 +8,8 @@ module.exports = function(individualsStore, chooseAction){
 		mixins: [Reflux.connect(individualsStore)],
 		
 		render: function(){
-		
+			var self = this;
+
 			return <div className="btn-group-vertical" role="group">{
 
 					this.state.individuals.map(function(individual){
@@ -15,15 +17,10 @@ module.exports = function(individualsStore, chooseAction){
 						var fullName = individual.displayName;
 						var shortName = capped(fullName);
 						var uri = individual.uri;
-						var clickHandler = _.partial(chooseAction, individual);
-						
-						return <button
-							type="button"
-							className="btn btn-default"
-							key={uri}
-							title={fullName}
-							onClick={clickHandler}>{shortName}</button>;
-						
+						var clickHandler = _.partial(chooseAction, individual.uri);
+						var isChosen = (uri == self.state.chosen);
+
+						return <ChoiceButton key={uri} chosen={isChosen} tooltip={fullName} clickHandler={clickHandler}>{shortName}</ChoiceButton>;
 					})
 			}</div>;
 		}

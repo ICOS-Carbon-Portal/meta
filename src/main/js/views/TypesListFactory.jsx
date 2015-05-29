@@ -1,18 +1,24 @@
+var capped = require('../utils.js').ensureLength(20);
+var ChoiceButton = require('./ChoiceButton.jsx');
 
 module.exports = function(typesStore, chooseTypeAction){
-
-	var MetadataType = require('./MetadataTypeFactory.jsx')(chooseTypeAction);
 
 	return React.createClass({
 
 		mixins: [Reflux.connect(typesStore)],
 
 		render: function(){
+			var self = this;
 
 			return <div className="btn-group-vertical" role="group">{
 
 				this.state.types.map(function(theType){
-					return <MetadataType {...theType}  key={theType.uri}/>;
+				
+					var clickHandler = _.partial(chooseTypeAction, theType.uri);
+					var isChosen = (theType.uri == self.state.chosen);
+					var fullName = theType.displayName;
+
+					return <ChoiceButton key={theType.uri} chosen={isChosen} tooltip={fullName} clickHandler={clickHandler}>{capped(fullName)}</ChoiceButton>;
 				})
 				
 			}</div>;

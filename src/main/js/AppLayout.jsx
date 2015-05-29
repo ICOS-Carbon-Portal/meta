@@ -6,7 +6,7 @@ var actions = Reflux.createActions([
 var Backend = require('./backend.js');
 
 var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.chooseMetaType);
-var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.chooseMetaType);
+var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.chooseMetaType, actions.chooseIndividual);
 var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseIndividual);
 
 var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);

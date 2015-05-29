@@ -1,8 +1,9 @@
+var Individual = require('../models/Individual.js');
 
 var Widget = React.createClass({
 
 	render: function(){
-	
+
 		var panelType = this.props.isStatic
 			? "panel panel-success"
 			: "panel panel-info";
@@ -12,47 +13,43 @@ var Widget = React.createClass({
 			<div className="panel-body">{this.props.children}</div>
 		</div>;
 	}
-	
+
 });
 
 module.exports = function(editStore){
 
 	return React.createClass({
-	
+
 		mixins: [Reflux.connect(editStore)],
-		
+
 		render: function(){
 
 			if(!this.state.individual) return <div></div>;
-			
-			var individ = this.state.individual;
-			var label = individ.resource.displayName;
-			var typeName = individ.owlClass.resource.displayName;
-			
-			var propsToVals = _.object(
-				_.map(individ.values, function(indValue){
-					var presentation = indValue.type == "object"
-						? indValue.value.displayName
-						: indValue.value;
-					return [indValue.property.uri, presentation];
-				})
-			);
-			
-			return <div>
-				<Widget widgetTitle="Entry" isStatic="true">{label}</Widget>
-				<Widget widgetTitle="Entry type" isStatic="true">{typeName}</Widget>{
-				
-					_.map(individ.owlClass.properties, function(prop, i){
-						var key = "owlProp_" + i;
-						
-						var presentation = propsToVals[prop.resource.uri] || "";
 
-						return <Widget key={key} widgetTitle={prop.resource.displayName}>{presentation}</Widget>;
-						
+			var individ = new Individual(this.state.individual);
+
+			return <div>
+				<Widget widgetTitle="Entry" isStatic="true">{individ.getLabel()}</Widget>
+				<Widget widgetTitle="Entry type" isStatic="true">{individ.getClassInfo().displayName}</Widget>{
+
+					_.map(individ.getPropertyValues(), function(propValues, i){
+						var key = "owlProp_" + i;
+
+						var selector = propValues.getValuesType() == "dataProperty"
+							? function(val){return val.getValue();}
+							: _.property("displayName");
+
+						var presentation = _.map(propValues.getValues(), selector).join(", ");
+
+						var title = propValues.getPropertyInfo().displayName;
+
+						return <Widget key={key} widgetTitle={title}>{presentation}</Widget>;
+
 					})
-					
+
 				}
 			</div>;
 		}
 	});
 }
+

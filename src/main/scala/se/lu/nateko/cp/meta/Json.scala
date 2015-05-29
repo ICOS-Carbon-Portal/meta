@@ -49,8 +49,8 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 		override def write(dto: DataRestrictionDto) = dto match{
 			case dto: MinRestrictionDto => dto.toJson + ("type" -> "minValue")
 			case dto: MaxRestrictionDto => dto.toJson + ("type" -> "maxValue")
-			case dto: RegexpRestrictionDto => dto.toJson + ("type" -> "regexp")
-			case dto: OneOfRestrictionDto => dto.toJson + ("type" -> "oneof")
+			case dto: RegexpRestrictionDto => dto.toJson + ("type" -> "regExp")
+			case dto: OneOfRestrictionDto => dto.toJson + ("type" -> "oneOf")
 		}
 		override def read(value: JsValue) = ???
 	}

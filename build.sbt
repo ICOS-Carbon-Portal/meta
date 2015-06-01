@@ -20,6 +20,17 @@ libraryDependencies ++= Seq(
 	"org.apache.ws.commons.axiom" % "axiom-impl"  % "1.2.14"  //Hermit
 )
 
+assemblyMergeStrategy in assembly := {
+	case PathList("META-INF", "axiom.xml") => MergeStrategy.first
+	case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
+	case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
+	case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
+	//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
+	case x =>
+		val oldStrategy = (assemblyMergeStrategy in assembly).value
+		oldStrategy(x)
+}
+
 scalacOptions ++= Seq(
   "-unchecked",
   "-deprecation",

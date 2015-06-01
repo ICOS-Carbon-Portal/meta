@@ -12,6 +12,8 @@ project/target/
 .project
 .settings/
 .classpath
+.cache-tests
+.cache-main
 
 #Sublime
 *.sublime-project

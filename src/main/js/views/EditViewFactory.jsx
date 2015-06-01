@@ -1,4 +1,5 @@
 var Individual = require('../models/Individual.js');
+var Widgets = require('./Widgets.jsx');
 
 var Widget = React.createClass({
 
@@ -27,23 +28,17 @@ module.exports = function(editStore){
 			if(!this.state.individual) return <div></div>;
 
 			var individ = new Individual(this.state.individual);
+			var individKey = individ.getKey() + "_";
 
 			return <div>
-				<Widget widgetTitle="Entry" isStatic="true">{individ.getLabel()}</Widget>
-				<Widget widgetTitle="Entry type" isStatic="true">{individ.getClassInfo().displayName}</Widget>{
+				<Widgets.Static widgetTitle="Entry">{individ.getLabel()}</Widgets.Static>
+				<Widgets.Static widgetTitle="Entry type">{individ.getClassInfo().displayName}</Widgets.Static>{
 
 					_.map(individ.getPropertyValues(), function(propValues, i){
-						var key = "owlProp_" + i;
 
-						var selector = propValues.getValuesType() == "dataProperty"
-							? function(val){return val.getValue();}
-							: _.property("displayName");
+						var key = individKey + propValues.getKey();
 
-						var presentation = _.map(propValues.getValues(), selector).join(", ");
-
-						var title = propValues.getPropertyInfo().displayName;
-
-						return <Widget key={key} widgetTitle={title}>{presentation}</Widget>;
+						return <Widgets.Property key={key} propertyValues={propValues} />;
 
 					})
 

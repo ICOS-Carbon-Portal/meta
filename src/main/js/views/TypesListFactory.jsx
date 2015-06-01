@@ -1,4 +1,4 @@
-var capped = require('../utils.js').ensureLength(20);
+var capped = require('../utils.js').ensureLength(30);
 var ChoiceButton = require('./ChoiceButton.jsx');
 
 module.exports = function(typesStore, chooseTypeAction){

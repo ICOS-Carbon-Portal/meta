@@ -18,8 +18,14 @@ trait Labeler[-T <: OWLEntity] {
 
 	protected def getFactory(onto: OWLOntology) = onto.getOWLOntologyManager.getOWLDataFactory
 
-	final def getRdfsLabel(entity: T, onto: OWLOntology): Option[String] = EntitySearcher
-		.getAnnotations(entity, onto, getFactory(onto).getRDFSLabel)
+	final def getRdfsLabel(entity: T, onto: OWLOntology): Option[String] =
+		getAnnotation(entity, getFactory(onto).getRDFSLabel, onto)
+
+	final def getRdfsComment(entity: T, onto: OWLOntology): Option[String] =
+		getAnnotation(entity, getFactory(onto).getRDFSComment, onto)
+
+	private def getAnnotation(entity: T, anno: OWLAnnotationProperty, onto: OWLOntology): Option[String] = EntitySearcher
+		.getAnnotations(entity, onto, anno)
 		.toIterable
 		.map(_.getValue.asLiteral.toOption)
 		.collect{case Some(lit) => lit.getLiteral}
@@ -27,7 +33,8 @@ trait Labeler[-T <: OWLEntity] {
 
 	final def getInfo(entity: T, onto: OWLOntology) = ResourceDto(
 		displayName = getLabel(entity, onto),
-		uri = entity.getIRI.toURI
+		uri = entity.getIRI.toURI,
+		comment = getRdfsComment(entity, onto)
 	)
 }
 

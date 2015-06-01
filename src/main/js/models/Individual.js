@@ -24,12 +24,16 @@ Individual.prototype.getPropertyValues = function(){
 	return this._propVals;
 };
 
+Individual.prototype.getKey = function(){
+	return "ind_" + this.getInfo().uri;
+};
+
 Individual.prototype.makePropertyValues = function(individDto){
 	var propsToVals = _.groupBy(individDto.values, function(indVal){
 		return indVal.property.uri;
 	});
 
-	return _.map(this._dto.owlClass.properties, function(prop){
+	var unordered = _.map(this._dto.owlClass.properties, function(prop){
 
 		var values = propsToVals[prop.resource.uri] || [];
 
@@ -40,6 +44,26 @@ Individual.prototype.makePropertyValues = function(individDto){
 		}
 
 	});
+
+	var sortAlphabetically = function(propValsGroup){
+		return _.sortBy(propValsGroup, function(propVals){
+			return propVals.getPropertyInfo().displayName.toLowerCase();
+		});
+	};
+
+	return _.chain(unordered)
+		.partition(function(propVal){
+			return propVal.isRequired();
+		})
+		.map(function(propValsGroup, i){
+			return _.partition(propValsGroup, function(propVals){
+				return (i == 0) ^ !propVals.isEmpty();
+			});
+		})
+		.flatten(true)
+		.map(sortAlphabetically)
+		.flatten()
+		.value();
 };
 
 module.exports = Individual;

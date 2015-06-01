@@ -51,13 +51,6 @@ var dataTypeValidators = _.object([
 	[xsd + "float", doubleValidator]
 ]);
 
-var restrictionValidators = _.object([
-	["minValue", minValueValidator],
-	["maxValue", maxValueValidator],
-	["regExp", regexpValueValidator],
-	["oneOf", regexpValueValidator]
-]);
-
 function conditionalValidator(conditionValidator, otherValidators){
 	return function(s){
 		var conditionValidity = conditionValidator(s);
@@ -85,6 +78,14 @@ function aggregateValidities(validities){
 	};
 }
 
+
+var restrictionValidators = _.object([
+	["minValue", minValueValidator],
+	["maxValue", maxValueValidator],
+	["regExp", regexpValueValidator],
+	["oneOf", oneOfValueValidator]
+]);
+
 function getValidator(dataRangeDto){
 
 	var dtype = dataRangeDto.dataType;
@@ -92,10 +93,15 @@ function getValidator(dataRangeDto){
 	if(!dtypeValidator) throw new Error("Unsupported data type: '" + dtype + "'");
 
 	var otherValidators = _.map(dataRangeDto.restrictions || [], function(restriction){
-		var rtype = restriction.type;
-		var validator = restrictionValidators[rtype];
-		if(!validator) throw new Error("Unsupported data type restriction: '" + rtype + "'");
-		return validator;
+
+		switch(restriction.type){
+			case "minValue": return minValueValidator(restriction.minValue);
+			case "maxValue": return maxValueValidator(restriction.maxValue);
+			case "regExp":   return regexpValueValidator(restriction.regexp);
+			case "oneOf":    return oneOfValueValidator(restriction.values);
+			default:         throw new Error("Unsupported data type restriction: '" + restriction.type + "'");
+		}
+
 	});
 
 	return conditionalValidator(dtypeValidator, otherValidators);

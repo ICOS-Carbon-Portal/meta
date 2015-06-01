@@ -21,8 +21,8 @@ PropertyValues.prototype.getValidity = function(){
 	var errors = [];
 
 	var nValues = this._values.length;
-	var min = this_.property.cardinality.min;
-	var max = this_.property.cardinality.max;
+	var min = this._property.cardinality.min;
+	var max = this._property.cardinality.max;
 
 	if(min && max && min == max && nValues != min){
 		errors.push("Must have exactly " + min + " value" + (min == 1 ? "." : "s.") );
@@ -37,6 +37,19 @@ PropertyValues.prototype.getValidity = function(){
 		valid = true;
 	}
 	return {valid: valid, errors: errors};
+};
+
+PropertyValues.prototype.getKey = function(){
+	return "prop_" + this.getPropertyInfo().uri;
+};
+
+PropertyValues.prototype.isRequired = function(){
+	var min = this._property.cardinality.min;
+	return min && (min >= 1);
+};
+
+PropertyValues.prototype.isEmpty = function(){
+	return _.isEmpty(this._values);
 };
 
 module.exports = PropertyValues;

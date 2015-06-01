@@ -28,7 +28,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 		def write(uri: URI) = JsString(uri.toString)
 	}
 
-	implicit val resourceDtoFormat = jsonFormat2(ResourceDto)
+	implicit val resourceDtoFormat = jsonFormat3(ResourceDto)
 	implicit val literalValueDtoFormat = jsonFormat2(LiteralValueDto)
 	implicit val objectValueDtoFormat = jsonFormat2(ObjectValueDto)
 

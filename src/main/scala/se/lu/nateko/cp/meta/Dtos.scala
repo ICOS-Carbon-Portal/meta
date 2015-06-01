@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta
 
 import java.net.URI
 
-case class ResourceDto(displayName: String, uri: URI)
+case class ResourceDto(displayName: String, uri: URI, comment: Option[String])
 
 sealed trait ValueDto
 case class LiteralValueDto(value: String, property: ResourceDto) extends ValueDto

@@ -31,14 +31,14 @@ module.exports = React.createClass({
 
 		return <div className="container-fluid">
 			<div className="row" style={{marginTop: "5px"}}>
-				<PanelHeader className="col-md-1" title="Types" />
-				<PanelHeader className="col-md-2" title="Entries" />
-				<PanelHeader className="col-md-9" title="Entry editor" />
+				<PanelHeader className="col-md-2" title="Types" />
+				<PanelHeader className="col-md-3" title="Entries" />
+				<PanelHeader className="col-md-7" title="Entry editor" />
 			</div>
 			<div className="row">
-				<ScreenHeightColumn className="col-md-1"><TypesList /></ScreenHeightColumn>
-				<ScreenHeightColumn className="col-md-2"><IndividualsList /></ScreenHeightColumn>
-				<ScreenHeightColumn className="col-md-9"><EditView /></ScreenHeightColumn>
+				<ScreenHeightColumn className="col-md-2"><TypesList /></ScreenHeightColumn>
+				<ScreenHeightColumn className="col-md-3"><IndividualsList /></ScreenHeightColumn>
+				<ScreenHeightColumn className="col-md-7"><EditView /></ScreenHeightColumn>
 			</div>
 		</div>;
 	}

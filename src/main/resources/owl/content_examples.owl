@@ -11,10 +11,19 @@ Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/>
 
 Import: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 
+Datatype: xsd:double
+
+    
+Datatype: xsd:float
+
+    
 Datatype: xsd:string
 
     
 ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>
+
+    
+ObjectProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite>
 
     
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>
@@ -23,16 +32,28 @@ DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>
 
     
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude>
+
+    
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>
 
     
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>
 
     
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass>
+
+    
+DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation>
+
+    
 DataProperty: <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
 
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Role>
 
     
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ES>
@@ -50,7 +71,7 @@ Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter>
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
 
     
-Class: <http://meta.icos-cp.eu/ontologies/cpmeta/Role>
+Class: <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
 
     
 Class: <http://meta.icos-cp.eu/ontologies/cpmeta/ETC>
@@ -68,6 +89,7 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa
         <http://meta.icos-cp.eu/ontologies/cpmeta/ES>
     
     Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite>  <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_site>,
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa ecosystem station"^^xsd:string
     
     
@@ -91,15 +113,6 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/John_Smith
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "john.smith@icos-ri.eu"^^xsd:string
     
     
-Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
-
-    Types: 
-        <http://meta.icos-cp.eu/ontologies/cpmeta/ATC>
-    
-    Facts:  
-     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
-    
-    
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC>
 
     Types: 
@@ -115,6 +128,8 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa
         <http://meta.icos-cp.eu/ontologies/cpmeta/AS>
     
     Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite>  <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_site>,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass>  "Station Class II"^^xsd:string,
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa atmospheric station"^^xsd:string
     
     
@@ -124,7 +139,10 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa
         <http://meta.icos-cp.eu/ontologies/cpmeta/Site>
     
     Facts:  
-     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa"^^xsd:string
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude>  "13.42"^^xsd:double,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Hyltemössa"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude>  "56.1"^^xsd:double,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation>  115.0f
     
     
 Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC_director>
@@ -143,8 +161,17 @@ Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Jane_Doe>
         <http://meta.icos-cp.eu/ontologies/cpmeta/Person>
     
     Facts:  
-     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>  "Doe"^^xsd:string,
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>  "Jane"^^xsd:string,
      <http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail>  "jane.doe@icos-ri.eu"^^xsd:string,
-     <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>  "Jane"^^xsd:string
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>  "Doe"^^xsd:string
+    
+    
+Individual: <http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC>
+
+    Types: 
+        <http://meta.icos-cp.eu/ontologies/cpmeta/ATC>
+    
+    Facts:  
+     <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>  "Atmosphere thematic center"^^xsd:string
     
     

@@ -73,6 +73,16 @@ object Main extends App with SimpleRoutingApp {
 				} ~
 				pathSuffix("bundle.js"){
 					complete(fromResource("/www/bundle.js", MediaTypes.`application/javascript`))
+				} ~
+				pathPrefix("ontologies" / "cpmeta"){
+					pathSingleSlash{
+						complete(fromResource("/owl/cpmeta.owl", MediaTypes.`text/plain`))
+					} ~
+					pathPrefix("contentexamples"){
+						pathSingleSlash{
+							complete(fromResource("/owl/content_examples.owl", MediaTypes.`text/plain`))
+						}
+					}
 				}
 			}
 		}

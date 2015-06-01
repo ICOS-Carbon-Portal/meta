@@ -16,19 +16,19 @@ class OntoTests extends FunSpec{
 		
 		describe("for Station class"){
 			val props = getClassInfo("Station").properties
-			val expected = 8
+			val expected = 11
 
 			it(s"should find $expected properties"){
 				assert(props.size === expected)
 			}
 		}
 		
-		describe("for GeoCoordinate class"){
-			val classInfo = getClassInfo("GeoCoordinate")
+		describe("for Site class"){
+			val classInfo = getClassInfo("Site")
 			
 			it("should find correct value restrictions for latitude"){
 				val latitudeRestrictions = classInfo.properties.collect{
-					case p: DataPropertyDto if p.resource.displayName == "hasLatitude" => p.range.restrictions
+					case p: DataPropertyDto if p.resource.displayName == "Latitude" => p.range.restrictions
 				}.flatten
 				
 				val expectedRestrs = Set(MinRestrictionDto(-90), MaxRestrictionDto(90))

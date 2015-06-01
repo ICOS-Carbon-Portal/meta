@@ -34,10 +34,12 @@ var DataValueWidget = React.createClass({
 	render: function(){
 		var content = this.state.value.getValue();
 		var validity = this.state.value.getValidity();
-		var style = {backgroundColor: (validity.valid ? "transparent" : "pink")};
+		var style = validity.valid ? {} : {backgroundColor: "pink"};
+		var title = validity.valid ? null : validity.errors.join('\n');
 
 		return <input
-			type="text" className="form-control" style={style} ref="dataValueInput"
+			type="text" className="form-control" ref="dataValueInput"
+			style={style} title={title}
 			onKeyUp={this.changeHandler} value={content} onChange={this.changeHandler}
 		/>;
 	},

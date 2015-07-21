@@ -37,11 +37,14 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 			direct ++ transitive
 		}
 
-	override def isFunctional(prop: OWLProperty): Boolean = (prop match {
-		case dp: OWLDataProperty => EntitySearcher.isFunctional(dp, ontology)
-		case op: OWLObjectProperty => EntitySearcher.isFunctional(op, ontology)
-		case _ => false
-	}) || getParentProps(prop).exists(isFunctional)
+	override def isFunctional(prop: OWLProperty): Boolean = {
+		def isFunctionalSelf(prop: OWLProperty): Boolean = prop match {
+			case dp: OWLDataProperty => EntitySearcher.isFunctional(dp, ontology)
+			case op: OWLObjectProperty => EntitySearcher.isFunctional(op, ontology)
+			case _ => false
+		}
+		isFunctionalSelf(prop) || getParentProps(prop).exists(isFunctionalSelf)
+	}
 
 	override def getPropertiesWhoseDomainIncludes(owlClass: OWLClass): Seq[OWLProperty] = {
 		val dataProps = ontology.getDataPropertiesInSignature(Imports.EXCLUDED)

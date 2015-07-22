@@ -16,12 +16,6 @@ import se.lu.nateko.cp.meta.Onto
 
 class TripleIteratorDocumentSourceTest extends FunSpec{
 
-	private def getIter[T](elems: T*): java.util.Iterator[T] = {
-		val arr = new java.util.ArrayList[T]
-		elems.foreach(arr.add)
-		arr.iterator
-	}
-
 	describe("TripleIteratorDocumentSource"){
 
 		val ontIri = IRI.create("http://www.icos-cp.eu/ontology/")
@@ -34,7 +28,7 @@ class TripleIteratorDocumentSourceTest extends FunSpec{
 			val person = f.createURI("http://www.icos-cp.eu/ontology/Person")
 			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS)
 
-			val source = new TripleIteratorDocumentSource(ontIri, getIter(statement))
+			val source = new TripleIteratorDocumentSource(ontIri, Iterator(statement))
 			val owlOnt = manager.loadOntologyFromOntologyDocument(source)
 			val onto = new Onto(owlOnt)
 

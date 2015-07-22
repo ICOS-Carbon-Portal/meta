@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
 	"ch.qos.logback"     %  "logback-classic"  % "1.1.2",
 	"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test",
 	"net.sourceforge.owlapi" % "owlapi-distribution"     % "4.0.2",
+	"org.openrdf.sesame"     % "sesame-repository-sail"  % "2.7.12",
+	"org.openrdf.sesame"     % "sesame-sail-memory"      % "2.7.12",
 	"dk.brics.automaton"          % "automaton"   % "1.11-8", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-api"   % "1.2.14", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14", //Hermit

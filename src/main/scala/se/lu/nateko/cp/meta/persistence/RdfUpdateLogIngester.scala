@@ -6,7 +6,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import org.openrdf.model.Resource
+import org.openrdf.model.URI
 import org.openrdf.repository.Repository
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
@@ -14,7 +14,7 @@ import org.openrdf.sail.memory.MemoryStore
 
 object RdfUpdateLogIngester{
 
-	def ingest(updates: Iterator[RdfUpdate], context: Resource)(implicit executor: ExecutionContext): Future[Repository] = Future{
+	def ingest(updates: Iterator[RdfUpdate], context: URI)(implicit executor: ExecutionContext): Future[Repository] = Future{
 
 		val repo = new SailRepository(new MemoryStore)
 		repo.initialize()

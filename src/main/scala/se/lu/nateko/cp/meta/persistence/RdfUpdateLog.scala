@@ -8,16 +8,18 @@ import scala.collection.JavaConverters._
 case class RdfUpdate(statement: Statement, isAssertion: Boolean)
 
 trait RdfUpdateLog {
-	def append(updates: Seq[RdfUpdate]): Unit
+	def appendAll(updates: Seq[RdfUpdate]): Unit
+	def append(updates: RdfUpdate*): Unit = appendAll(updates)
 	def updates: Iterator[RdfUpdate]
 }
 
 class InMemoryRdfLog extends RdfUpdateLog{
+
 	private[this] val log = new ConcurrentLinkedQueue[RdfUpdate]()
 
-	override def append(updates: Seq[RdfUpdate]): Unit = {
+	def appendAll(updates: Seq[RdfUpdate]): Unit = {
 		log.addAll(updates.asJavaCollection)
 	}
 
-	override def updates: Iterator[RdfUpdate] = log.iterator.asScala
+	def updates: Iterator[RdfUpdate] = log.iterator.asScala
 }

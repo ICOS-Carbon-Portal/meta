@@ -1,12 +1,15 @@
 package se.lu.nateko.cp.meta.utils
 
+import scala.collection.AbstractIterator
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import org.openrdf.repository.Repository
 import org.openrdf.repository.RepositoryConnection
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
 import org.openrdf.repository.RepositoryResult
-import scala.collection.AbstractIterator
+
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 object SesameUtils{
 
@@ -30,21 +33,7 @@ object SesameUtils{
 			}
 		}
 
-//		def access[T](accessor: RepositoryConnection => T): Try[T] = {
-//			val conn = repo.getConnection
-//			try{
-//				Success(accessor(conn))
-//			}
-//			catch{
-//				case err: Throwable => Failure(err)
-//			}
-//			finally{
-//				conn.close()
-//			}
-//		}
-
-		//TODO Handle the case of incomplete consumption of the returned iterator
-		def access[T](accessor: RepositoryConnection => RepositoryResult[T]): Iterator[T] = {
+		def access[T](accessor: RepositoryConnection => RepositoryResult[T]): CloseableIterator[T] = {
 			val conn = repo.getConnection
 			try{
 				val repRes = accessor(conn)
@@ -59,14 +48,15 @@ object SesameUtils{
 	}
 
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
-		def asScalaIterator: Iterator[T] = new RepositoryResultIterator(res, () => ())
+		def asScalaIterator: CloseableIterator[T] = new RepositoryResultIterator(res, () => ())
 	}
 
-	private class RepositoryResultIterator[T](res: RepositoryResult[T], closer: () => Unit) extends AbstractIterator[T]{
+	//TODO Make this thread-safe
+	private class RepositoryResultIterator[T](res: RepositoryResult[T], closer: () => Unit) extends AbstractIterator[T] with CloseableIterator[T]{
 
 		private[this] var closed: Boolean = false
 
-		private def close(): Unit = {
+		def close(): Unit = {
 			closed = true;
 			res.close()
 			closer()

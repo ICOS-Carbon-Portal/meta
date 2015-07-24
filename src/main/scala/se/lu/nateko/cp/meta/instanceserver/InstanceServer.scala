@@ -4,16 +4,17 @@ import org.openrdf.model.Statement
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.vocabulary.RDF
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 trait InstanceServer {
 
 	/**
-	 * Makes a new URI for the new instance, but does not add it to the repository.
+	 * Makes a new URI for the new instance, but does not add any triples to the repository.
 	 * @param prefix The prefix to start the new URI with
 	 */
 	def makeNewInstance(prefix: URI): URI
 
-	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[URI]): Iterator[Statement]
+	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[URI]): CloseableIterator[Statement]
 	def addAll(statements: Seq[Statement]): Unit
 	def removeAll(statements: Seq[Statement]): Unit
 	def shutDown(): Unit

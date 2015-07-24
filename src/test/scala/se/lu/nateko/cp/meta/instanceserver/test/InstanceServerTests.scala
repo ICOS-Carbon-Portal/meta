@@ -9,6 +9,8 @@ import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.utils.SesameUtils
+import org.openrdf.repository.sail.SailRepository
+import org.openrdf.sail.memory.MemoryStore
 
 class InstanceServerTests extends FunSpec{
 
@@ -64,12 +66,19 @@ class InstanceServerTests extends FunSpec{
 
 	describe("SesameInstanceServer"){
 		describe("makeNewInstance"){
+
+			val repo = new SailRepository(new MemoryStore)
+			val server = new SesameInstanceServer(repo, ctxt)
+
 			it("makes a correct URI if prefix ends with '/'"){
-				pending
+				val uri = server.makeNewInstance(ctxt)
+				assert(!uri.stringValue.contains("/ontology//"))
 			}
 
 			it("makes a correct URI if prefix does not end with '/'"){
-				pending
+				val prefix = makeUri("MyClassName")
+				val uri = server.makeNewInstance(prefix)
+				assert(uri.stringValue.contains("/MyClassName/"))
 			}
 		}
 	}

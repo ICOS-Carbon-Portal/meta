@@ -10,7 +10,7 @@ import org.openrdf.repository.Repository
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
 
-import se.lu.nateko.cp.meta.utils.SesameUtils._
+import se.lu.nateko.cp.meta.utils.sesame._
 
 
 object RdfUpdateLogIngester{

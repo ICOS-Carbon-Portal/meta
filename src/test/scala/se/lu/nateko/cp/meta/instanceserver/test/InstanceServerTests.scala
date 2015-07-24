@@ -8,14 +8,13 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.utils.SesameUtils
+import se.lu.nateko.cp.meta.utils.sesame._
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
 
 class InstanceServerTests extends FunSpec{
 
 	import scala.concurrent.ExecutionContext.Implicits.global
-	import SesameUtils._
 
 	val factory = new ValueFactoryImpl()
 	val ctxt = factory.createURI("http://www.icos-cp.eu/ontology/")

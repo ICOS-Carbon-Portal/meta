@@ -7,7 +7,7 @@ import java.net.URI
 class InstOntoTests extends FunSpec{
 
 	val onto = new Onto(TestConfig.owlOnto)
-	val instOnto = new InstOnto(TestConfig.owlInstOnto, onto)
+	val instOnto = new InstOnto(TestConfig.instServer, onto)
 
 	describe("getIndividual"){
 		

@@ -11,11 +11,13 @@ import org.openrdf.repository.Repository
 import info.aduna.iteration.Iterations
 
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.utils.SesameUtils._
+import se.lu.nateko.cp.meta.utils.sesame._
 
 class SesameInstanceServer(repo: Repository, writeContext: URI) extends InstanceServer{
 
-	private[this] val factory = repo.getValueFactory
+	def this(repo: Repository, writeContext: String) = this(repo, repo.getValueFactory.createURI(writeContext))
+
+	val factory = repo.getValueFactory
 
 	def makeNewInstance(prefix: URI): URI =
 		factory.createURI(prefix.stringValue.stripSuffix("/") + "/", UUID.randomUUID.toString)

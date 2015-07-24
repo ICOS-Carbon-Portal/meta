@@ -23,14 +23,4 @@ object Utils {
 		XMLUtils.getNCNameSuffix(iri.toString)
 	}
 
-	def getSingleType(ind: OWLNamedIndividual, instOnto: OWLOntology): OWLClass = {
-		val types = EntitySearcher
-			.getTypes(ind, instOnto)
-			.filterNot(_.isAnonymous)
-			.map(_.asOWLClass)
-			.toSeq
-		assert(types.size == 1, s"Every individual is expected to have exactly one type, but ${ind.getIRI} had ${types.size}")
-		types.head
-	}
-
 }

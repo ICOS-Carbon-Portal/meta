@@ -1,19 +1,29 @@
 package se.lu.nateko.cp.meta.labeler
 
-import org.semanticweb.owlapi.model._
-import se.lu.nateko.cp.meta.Utils
+import scala.collection.mutable.Map
 
-class UniversalLabeler(ontology: OWLOntology) extends Labeler[OWLNamedIndividual]{
+import org.openrdf.model.URI
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLOntology
+
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.utils.sesame._
+
+class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 
 	import scala.collection.mutable.Map
-	private val cache: Map[OWLClass, Labeler[OWLNamedIndividual]] = Map()
+	private val cache: Map[URI, InstanceLabeler] = Map()
+	private[this] val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
 
-	override def getLabel(ind: OWLNamedIndividual, instOnto: OWLOntology): String = {
+	override def getLabel(instUri: URI, instServer: InstanceServer): String = {
 
-		val theType: OWLClass = Utils.getSingleType(ind, instOnto)
+		val theType: URI = LabelerHelpers.getSingleType(instUri.toJava, instServer)
 
-		val labeler = cache.getOrElseUpdate(theType, ClassIndividualsLabeler(theType, ontology, this))
+		val theClass = owlFactory.getOWLClass(IRI.create(theType.toJava))
 
-		labeler.getLabel(ind, instOnto)
+		val labeler = cache.getOrElseUpdate(theType, ClassIndividualsLabeler(theClass, ontology, this))
+
+		labeler.getLabel(instUri, instServer)
 	}
+
 }

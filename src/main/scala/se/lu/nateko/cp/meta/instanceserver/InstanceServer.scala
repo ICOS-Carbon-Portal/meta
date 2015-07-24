@@ -1,9 +1,13 @@
 package se.lu.nateko.cp.meta.instanceserver
 
+import scala.annotation.migration
+
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
 import org.openrdf.model.Value
+import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.RDF
+
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 trait InstanceServer {
@@ -13,13 +17,13 @@ trait InstanceServer {
 	 * @param prefix The prefix to start the new URI with
 	 */
 	def makeNewInstance(prefix: URI): URI
+	def factory: ValueFactory
 
 	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[URI]): CloseableIterator[Statement]
 	def addAll(statements: Seq[Statement]): Unit
 	def removeAll(statements: Seq[Statement]): Unit
 	def shutDown(): Unit
 
-	private[this] val factory = new org.openrdf.model.impl.ValueFactoryImpl()
 
 	def getInstances(classUri: URI): Seq[URI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))

@@ -10,7 +10,7 @@ import org.semanticweb.owlapi.search.EntitySearcher
 
 object ClassIndividualsLabeler{
 
-	def apply(owlClass: OWLClass, onto: OWLOntology, nested: Labeler[OWLNamedIndividual]): Labeler[OWLNamedIndividual] = {
+	def apply(owlClass: OWLClass, onto: OWLOntology, nested: InstanceLabeler): InstanceLabeler = {
 
 		def getDisplayComponents(prop: OWLAnnotationProperty): Seq[DisplayComponent] =
 			EntitySearcher

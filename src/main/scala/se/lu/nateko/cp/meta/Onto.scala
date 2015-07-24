@@ -11,16 +11,17 @@ import org.semanticweb.owlapi.model._
 import se.lu.nateko.cp.meta.labeler.Labeler
 import se.lu.nateko.cp.meta.labeler.ClassIndividualsLabeler
 import se.lu.nateko.cp.meta.labeler.UniversalLabeler
+import se.lu.nateko.cp.meta.labeler.InstanceLabeler
 
 
 class Onto (ontology: OWLOntology) extends java.io.Closeable{
 
-	private val factory = ontology.getOWLOntologyManager.getOWLDataFactory
+	val factory = ontology.getOWLOntologyManager.getOWLDataFactory
 	private val reasoner: Reasoner = new HermitBasedReasoner(ontology)
 	private val labeler = new UniversalLabeler(ontology)
 
-	val rdfsLabeling: OWLEntity => ResourceDto =
-		Labeler.rdfs.getInfo(_, ontology)
+	def rdfsLabeling(entity: OWLEntity): ResourceDto =
+		Labeler.getInfo(entity, ontology)
 
 	override def close(): Unit = {
 		reasoner.close()
@@ -42,12 +43,12 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 			.toSeq
 			.distinct
 
-	def getLabelerForClassIndividuals(classUri: URI): Labeler[OWLNamedIndividual] = {
+	def getLabelerForClassIndividuals(classUri: URI): InstanceLabeler = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 		ClassIndividualsLabeler(owlClass, ontology, labeler)
 	}
 
-	def getUniversalLabeler: Labeler[OWLNamedIndividual] = labeler
+	def getUniversalLabeler: InstanceLabeler = labeler
 
 	def getTopLevelClasses: Seq[ResourceDto] = reasoner.getTopLevelClasses.map(rdfsLabeling)
 

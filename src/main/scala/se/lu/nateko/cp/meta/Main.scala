@@ -18,6 +18,11 @@ import spray.http.HttpCharsets
 import spray.http.MediaType
 import java.net.URI
 import org.semanticweb.owlapi.apibinding.OWLManager
+import org.openrdf.repository.sail.SailRepository
+import org.openrdf.sail.memory.MemoryStore
+import se.lu.nateko.cp.meta.utils.sesame._
+import org.openrdf.rio.RDFFormat
+import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 
 object Main extends App with SimpleRoutingApp {
 
@@ -27,9 +32,12 @@ object Main extends App with SimpleRoutingApp {
 
 	val manager = OWLManager.createOWLOntologyManager
 	val owl = Utils.getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
-	val instOwl = Utils.getOntologyFromJarResourceFile("/owl/content_examples.owl", manager)
 	val onto = new Onto(owl)
-	val instOnto = new InstOnto(instOwl, onto)
+
+	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/"
+	val repo = Loading.fromResource("/owl/content_examples.owl", ontUri)
+	val instServer = new SesameInstanceServer(repo, ontUri)
+	val instOnto = new InstOnto(instServer, onto)
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>

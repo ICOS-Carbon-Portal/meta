@@ -26,5 +26,8 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 		inner.removeAll(statements)
 	}
 
-	def shutDown(): Unit = inner.shutDown()
+	def shutDown(): Unit = {
+		inner.shutDown()
+		log.close()
+	}
 }

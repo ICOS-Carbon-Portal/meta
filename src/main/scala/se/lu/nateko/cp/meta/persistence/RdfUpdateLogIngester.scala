@@ -15,6 +15,8 @@ import se.lu.nateko.cp.meta.utils.sesame._
 
 object RdfUpdateLogIngester{
 
+	private val chunkSize = 5000
+
 	def ingest(updates: Iterator[RdfUpdate], context: URI)(implicit executor: ExecutionContext): Future[Repository] = Future{
 
 		val repo = new SailRepository(new MemoryStore)
@@ -30,7 +32,7 @@ object RdfUpdateLogIngester{
 				}
 			})
 
-		updates.sliding(1000, 1000)
+		updates.sliding(chunkSize, chunkSize)
 			.map(commitChunk)
 			.collectFirst{case Failure(err) => err}
 			match {

@@ -8,8 +8,8 @@ class InMemoryRdfLog extends RdfUpdateLog{
 
 	private[this] val log = new ConcurrentLinkedQueue[RdfUpdate]()
 
-	def appendAll(updates: Seq[RdfUpdate]): Unit = {
-		log.addAll(updates.asJavaCollection)
+	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit = {
+		log.addAll(updates.toIterable.asJavaCollection)
 	}
 
 	def updates: Iterator[RdfUpdate] = log.iterator.asScala

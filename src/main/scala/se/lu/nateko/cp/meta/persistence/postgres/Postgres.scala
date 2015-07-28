@@ -6,14 +6,15 @@ import java.sql.DriverManager
 import scala.util.Try
 
 case class DbCredentials(db: String, user: String, password: String)
+case class DbServer(host: String, port: Int)
 
 object Postgres {
 
 	private lazy val driverClass = Class.forName("org.postgresql.Driver")
 
-	def getConnection(creds: DbCredentials): Try[Connection] = Try{
+	def getConnection(serv: DbServer, creds: DbCredentials): Try[Connection] = Try{
 		driverClass
-		val url = s"jdbc:postgresql:${creds.db}"
+		val url = s"jdbc:postgresql://${serv.host}:${serv.port}/${creds.db}"
 		DriverManager.getConnection(url, creds.user, creds.password)
 	}
 }

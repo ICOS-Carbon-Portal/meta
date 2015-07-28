@@ -2,7 +2,7 @@ name := "cpmeta"
 
 version := "0.1"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
 	"io.spray"           %% "spray-can"        % "1.3.3",

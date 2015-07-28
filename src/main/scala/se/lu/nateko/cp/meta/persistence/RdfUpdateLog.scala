@@ -8,7 +8,7 @@ case class RdfUpdate(statement: Statement, isAssertion: Boolean)
 
 trait RdfUpdateLog extends Closeable{
 
-	def appendAll(updates: Seq[RdfUpdate]): Unit
+	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit
 	def append(updates: RdfUpdate*): Unit = appendAll(updates)
 
 	def updates: Iterator[RdfUpdate]

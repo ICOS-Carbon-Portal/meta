@@ -4,7 +4,7 @@ import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.Vocab
 import se.lu.nateko.cp.meta.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig
-import se.lu.nateko.cp.meta.Utils
+import se.lu.nateko.cp.meta.utils.owlapi._
 
 class HermitBasedReasonerTests extends FunSpec{
 
@@ -16,7 +16,7 @@ class HermitBasedReasonerTests extends FunSpec{
 		it("should return expected props"){
 			val owlClass = Vocab.getOWLClass("ThematicCenter")
 			val props = reasoner.getPropertiesWhoseDomainIncludes(owlClass)
-				.map(oc => Utils.getLastFragment(oc.getIRI))
+				.map(oc => getLastFragment(oc.getIRI))
 			assert(props.toSet === Set("hasName", "hasCountry"))
 		}
 	}

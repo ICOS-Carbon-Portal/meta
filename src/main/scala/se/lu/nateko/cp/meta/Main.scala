@@ -31,7 +31,7 @@ object Main extends App with SimpleRoutingApp {
 	implicit val scheduler = system.scheduler
 
 	val manager = OWLManager.createOWLOntologyManager
-	val owl = Utils.getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
+	val owl = utils.owlapi.getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
 	val onto = new Onto(owl)
 
 	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/"
@@ -90,6 +90,16 @@ object Main extends App with SimpleRoutingApp {
 						pathSingleSlash{
 							complete(fromResource("/owl/content_examples.owl", MediaTypes.`text/plain`))
 						}
+					}
+				}
+			} ~
+			post{
+				pathPrefix("api"){
+					pathSuffix("update"){
+						entity(as[UpdateDto])(update => {
+							instOnto.performUpdate(update)
+							complete(StatusCodes.OK)
+						})
 					}
 				}
 			}

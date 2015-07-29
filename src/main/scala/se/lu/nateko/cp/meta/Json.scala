@@ -70,4 +70,5 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 	
 	implicit val classDtoFormat = jsonFormat2(ClassDto)
 	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
+	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
 }

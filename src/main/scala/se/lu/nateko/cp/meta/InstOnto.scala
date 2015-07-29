@@ -1,16 +1,13 @@
 package se.lu.nateko.cp.meta
 
 import java.net.URI
-
 import org.openrdf.model.Literal
 import org.openrdf.model.{ URI => SesameURI }
 import org.semanticweb.owlapi.model.IRI
-
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.labeler.LabelerHelpers
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
-import se.lu.nateko.cp.meta.utils.sesame.SesameStatement
-import se.lu.nateko.cp.meta.utils.sesame.ToJavaUriConverter
+import se.lu.nateko.cp.meta.utils.sesame._
+import org.openrdf.model.Value
 
 class InstOnto (instServer: InstanceServer, onto: Onto){
 
@@ -57,6 +54,27 @@ class InstOnto (instServer: InstanceServer, onto: Onto){
 			owlClass = classInfo,
 			values = values
 		)
+	}
+
+	def performUpdate(update: UpdateDto): Unit = {
+		val factory = instServer.factory
+		val subj = factory.createURI(update.subject)
+		val pred = factory.createURI(update.predicate)
+		
+		val classUri = LabelerHelpers.getSingleType(update.subject, instServer).toJava
+
+		val obj: Value = onto.getPropInfo(update.predicate, classUri) match{
+			case dp: DataPropertyDto =>
+				val dtype = dp.range.dataType
+				factory.createLiteral(update.obj, dtype)
+
+			case op: ObjectPropertyDto => factory.createURI(update.obj)
+		}
+
+		val statement = factory.createStatement(subj, pred, obj)
+
+		if(update.isAssertion) instServer.add(statement)
+		else instServer.remove(statement)
 	}
 
 }

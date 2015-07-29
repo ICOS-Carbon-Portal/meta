@@ -23,3 +23,5 @@ case class ObjectPropertyDto(resource: ResourceDto, cardinality: CardinalityDto,
 
 case class ClassDto(resource: ResourceDto, properties: Seq[PropertyDto])
 case class IndividualDto(resource: ResourceDto, owlClass: ClassDto, values: Seq[ValueDto])
+
+case class UpdateDto(isAssertion: Boolean, subject: URI, predicate: URI, obj: String)

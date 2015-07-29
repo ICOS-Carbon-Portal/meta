@@ -16,6 +16,7 @@ package object sesame {
 
 	implicit class EnrichedValueFactory(val factory: ValueFactory) extends AnyVal{
 		def createURI(uri: java.net.URI): URI = factory.createURI(uri.toString)
+		def createLiteral(label: String, dtype: java.net.URI) = factory.createLiteral(label, createURI(dtype))
 	}
 
 	implicit class ToJavaUriConverter(val uri: URI) extends AnyVal{

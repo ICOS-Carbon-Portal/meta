@@ -4,7 +4,7 @@ import java.net.URI
 import scala.collection.JavaConversions._
 import se.lu.nateko.cp.meta.reasoner.Reasoner
 import se.lu.nateko.cp.meta.reasoner.HermitBasedReasoner
-import Utils._
+import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.vocab.OWLFacet
 import org.semanticweb.owlapi.model._
@@ -66,6 +66,19 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 				case dp: OWLDataProperty => getPropInfo(dp, owlClass)
 			}
 		)
+	}
+
+	def getPropInfo(propUri: URI, classUri: URI): PropertyDto = {
+		val iri = IRI.create(propUri)
+		val owlClass = factory.getOWLClass(IRI.create(classUri))
+
+		if(ontology.containsDataPropertyInSignature(iri))
+			getPropInfo(factory.getOWLDataProperty(iri), owlClass)
+
+		else if(ontology.containsObjectPropertyInSignature(iri))
+			getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
+
+		else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")
 	}
 
 	//TODO Take property restrictions into account for range calculations

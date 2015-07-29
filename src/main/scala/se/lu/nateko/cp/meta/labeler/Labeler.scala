@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.search.EntitySearcher
-import se.lu.nateko.cp.meta.Utils
+import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
 
 trait InstanceLabeler {
@@ -33,7 +33,6 @@ object Labeler{
 
 	object rdfs extends InstanceLabeler
 
-	import Utils._
 	import scala.collection.JavaConversions._
 
 	def joinMultiValues(values: Iterable[String]): String = values.toList match{
@@ -45,7 +44,7 @@ object Labeler{
 	def joinComponents(values: Iterable[String]): String = values.mkString(" ")
 
 	def getLabel(entity: OWLEntity, onto: OWLOntology): String =
-		getRdfsLabel(entity, onto).getOrElse(Utils.getLastFragment(entity.getIRI))
+		getRdfsLabel(entity, onto).getOrElse(getLastFragment(entity.getIRI))
 
 	def getRdfsLabel(entity: OWLEntity, onto: OWLOntology): Option[String] =
 		getAnnotation(entity, getFactory(onto).getRDFSLabel, onto)

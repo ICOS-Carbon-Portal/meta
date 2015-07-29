@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.labeler
 
 import se.lu.nateko.cp.meta._
-import Utils._
+import utils.owlapi._
 
 import scala.collection.JavaConversions._
 import org.semanticweb.owlapi.model._

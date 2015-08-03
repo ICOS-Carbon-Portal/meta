@@ -5,7 +5,7 @@ import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.OWL
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.persistence.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import info.aduna.iteration.Iterations

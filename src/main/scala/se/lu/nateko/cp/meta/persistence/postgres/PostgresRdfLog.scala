@@ -8,7 +8,7 @@ import org.openrdf.model.URI
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.XMLSchema
 
-import se.lu.nateko.cp.meta.persistence.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{

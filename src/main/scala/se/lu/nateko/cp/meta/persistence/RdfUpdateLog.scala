@@ -3,8 +3,7 @@ package se.lu.nateko.cp.meta.persistence
 import org.openrdf.model.Statement
 import java.io.Closeable
 import java.sql.Timestamp
-
-case class RdfUpdate(statement: Statement, isAssertion: Boolean)
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 trait RdfUpdateLog extends Closeable{
 

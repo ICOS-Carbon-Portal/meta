@@ -6,7 +6,7 @@ import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.ValueFactory
 
-import se.lu.nateko.cp.meta.persistence.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 class RdfUpdateResultSetIterator(rs: ResultSet, factory: ValueFactory, closer: () => Unit) extends ResultSetIterator[RdfUpdate](rs){
 

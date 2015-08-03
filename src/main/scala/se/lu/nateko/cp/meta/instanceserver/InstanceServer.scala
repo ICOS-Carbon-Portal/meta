@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import scala.annotation.migration
-
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.RDF
-
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import scala.util.Try
 
 trait InstanceServer {
 
@@ -19,11 +18,12 @@ trait InstanceServer {
 	def makeNewInstance(prefix: URI): URI
 	def factory: ValueFactory
 
-	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[URI]): CloseableIterator[Statement]
-	def addAll(statements: Seq[Statement]): Unit
-	def removeAll(statements: Seq[Statement]): Unit
+	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): CloseableIterator[Statement]
+	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
 	def shutDown(): Unit
 
+	def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))
+	def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))
 
 	def getInstances(classUri: URI): Seq[URI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))
@@ -39,17 +39,17 @@ trait InstanceServer {
 			.toIndexedSeq
 
 
-	def add(statements: Statement*): Unit = addAll(statements)
-	def remove(statements: Statement*): Unit = removeAll(statements)
+	def add(statements: Statement*): Try[Unit] = addAll(statements)
+	def remove(statements: Statement*): Try[Unit] = removeAll(statements)
 
-	def addInstance(instUri: URI, classUri: URI): Unit =
+	def addInstance(instUri: URI, classUri: URI): Try[Unit] =
 		add(factory.createStatement(instUri, RDF.TYPE, classUri))
 
 	def removeInstance(instUri: URI): Unit = removeAll(getStatements(instUri))
 
-	def addPropertyValue(instUri: URI, propUri: URI, value: Value): Unit =
+	def addPropertyValue(instUri: URI, propUri: URI, value: Value): Try[Unit] =
 		add(factory.createStatement(instUri, propUri, value))
 
-	def removePropertyValue(instUri: URI, propUri: URI, value: Value): Unit =
+	def removePropertyValue(instUri: URI, propUri: URI, value: Value): Try[Unit] =
 		remove(factory.createStatement(instUri, propUri, value))
 }

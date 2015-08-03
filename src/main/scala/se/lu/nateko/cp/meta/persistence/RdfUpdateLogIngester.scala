@@ -4,13 +4,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Try
-
 import org.openrdf.model.URI
 import org.openrdf.repository.Repository
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
-
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 
 object RdfUpdateLogIngester{

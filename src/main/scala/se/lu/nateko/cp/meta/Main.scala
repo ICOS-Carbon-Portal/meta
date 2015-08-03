@@ -23,6 +23,7 @@ import org.openrdf.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.utils.sesame._
 import org.openrdf.rio.RDFFormat
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
+import scala.util.Success
 
 object Main extends App with SimpleRoutingApp {
 
@@ -95,9 +96,15 @@ object Main extends App with SimpleRoutingApp {
 			} ~
 			post{
 				pathPrefix("api"){
-					pathSuffix("update"){
-						entity(as[UpdateDto])(update => {
-							instOnto.performUpdate(update)
+					pathSuffix("applyupdates"){
+						entity(as[Seq[UpdateDto]])(updates => {
+							instOnto.applyUpdates(updates).get
+							complete(StatusCodes.OK)
+						})
+					}
+					pathSuffix("performreplacement"){
+						entity(as[ReplaceDto])(replacement => {
+							instOnto.performReplacement(replacement).get
 							complete(StatusCodes.OK)
 						})
 					}

@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.persistence.postgres.test
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import org.openrdf.model.impl.ValueFactoryImpl
 import se.lu.nateko.cp.meta.persistence.postgres._
-import se.lu.nateko.cp.meta.persistence.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.test.TestConfig

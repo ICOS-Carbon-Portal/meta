@@ -25,3 +25,7 @@ case class ClassDto(resource: ResourceDto, properties: Seq[PropertyDto])
 case class IndividualDto(resource: ResourceDto, owlClass: ClassDto, values: Seq[ValueDto])
 
 case class UpdateDto(isAssertion: Boolean, subject: URI, predicate: URI, obj: String)
+case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject: String){
+	def assertion = UpdateDto(true, subject, predicate, newObject)
+	def retraction = UpdateDto(false, subject, predicate, oldObject)
+}

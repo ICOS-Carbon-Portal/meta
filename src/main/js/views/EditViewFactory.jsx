@@ -1,5 +1,6 @@
 var Individual = require('../models/Individual.js');
 var Widgets = require('./Widgets.jsx');
+var Backend = require('../backend.js');
 
 var Widget = React.createClass({
 
@@ -38,7 +39,7 @@ module.exports = function(editStore){
 
 						var key = individKey + propValues.getKey();
 
-						return <Widgets.Property key={key} propertyValues={propValues} />;
+						return <Widgets.Property key={key} propertyValues={propValues} backend={Backend} subjectUri={individ.getInfo().uri}/>;
 
 					})
 

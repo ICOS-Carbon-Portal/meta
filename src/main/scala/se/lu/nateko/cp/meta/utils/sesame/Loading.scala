@@ -9,12 +9,17 @@ object Loading {
 
 	def fromResource(path: String, baseUri: String): Repository = {
 		val instStream = getClass.getResourceAsStream(path)
-		val repo = new SailRepository(new MemoryStore)
-		repo.initialize()
+		val repo = empty
 		val ontUri = repo.getValueFactory.createURI(baseUri)
 		repo.transact(conn => {
 			conn.add(instStream, baseUri, RDFFormat.RDFXML, ontUri)
 		})
+		repo
+	}
+
+	def empty: Repository = {
+		val repo = new SailRepository(new MemoryStore)
+		repo.initialize()
 		repo
 	}
 }

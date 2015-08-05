@@ -16,10 +16,10 @@ object RdfUpdateLogIngester{
 
 	private val chunkSize = 5000
 
-	def ingest(updates: Iterator[RdfUpdate], context: URI)(implicit executor: ExecutionContext): Future[Repository] = Future{
+	def ingest(updates: Iterator[RdfUpdate], context: URI)(implicit executor: ExecutionContext): Future[Repository] =
+		ingest(updates, Loading.empty, context)
 
-		val repo = new SailRepository(new MemoryStore)
-		repo.initialize()
+	def ingest(updates: Iterator[RdfUpdate], repo: Repository, context: URI)(implicit executor: ExecutionContext): Future[Repository] = Future{
 
 		def commitChunk(chunk: Seq[RdfUpdate]): Try[Unit] =
 			repo.transact(conn => {

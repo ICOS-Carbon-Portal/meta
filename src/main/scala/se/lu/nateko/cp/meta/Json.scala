@@ -20,7 +20,7 @@ object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 			case JsString(uri) => try{
 					new URI(uri)
 				}catch{
-					case err: Throwable => deserializationError(s"Could not parse URI from$uri", err)
+					case err: Throwable => deserializationError(s"Could not parse URI from $uri", err)
 				}
 			case _ => deserializationError("URI string expected")
 		}

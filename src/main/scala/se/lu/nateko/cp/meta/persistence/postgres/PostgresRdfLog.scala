@@ -2,14 +2,13 @@ package se.lu.nateko.cp.meta.persistence.postgres
 
 import java.sql.PreparedStatement
 import java.sql.Timestamp
-
 import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.XMLSchema
-
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
+import se.lu.nateko.cp.meta.AppConfig
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
 
@@ -91,6 +90,14 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		execute(all: _*)
 	}
 
+	def isInitialized: Boolean = {
+		val meta = appendPs.getConnection.getMetaData
+		val tblRes = meta.getTables(null, null, logName, null)
+		val tblPresent = tblRes.next()
+		tblRes.close()
+		tblPresent
+	}
+
 	private def execute(statements: String*): Unit = {
 		val conn = getConnection
 		val st = conn.createStatement
@@ -104,5 +111,17 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	private def safeDatatype(lit: Literal): String =
 		if(lit.getDatatype == null) XMLSchema.STRING.stringValue
 		else lit.getDatatype.stringValue
+
+}
+
+object PostgresRdfLog{
+
+	def fromConfig(appConf: AppConfig, factory: ValueFactory) =
+		new PostgresRdfLog(
+			logName = appConf.rdfLogName,
+			serv = appConf.rdfLogDbServer,
+			creds = appConf.rdfLogDbCredentials,
+			factory = factory
+		)
 
 }

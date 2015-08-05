@@ -18,12 +18,13 @@ import spray.http.HttpCharsets
 import spray.http.MediaType
 import java.net.URI
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.utils.sesame._
-import org.openrdf.rio.RDFFormat
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import scala.util.Success
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
+import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 
 object Main extends App with SimpleRoutingApp {
 
@@ -31,14 +32,36 @@ object Main extends App with SimpleRoutingApp {
 	implicit val dispatcher = system.dispatcher
 	implicit val scheduler = system.scheduler
 
-	val manager = OWLManager.createOWLOntologyManager
-	val owl = utils.owlapi.getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
-	val onto = new Onto(owl)
+	val config: AppConfig = AppConfig.load.get
 
-	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/"
-	val repo = Loading.fromResource("/owl/content_examples.owl", ontUri)
-	val instServer = new SesameInstanceServer(repo, ontUri)
-	val instOnto = new InstOnto(instServer, onto)
+	val onto = {
+		val manager = OWLManager.createOWLOntologyManager
+		val owl = utils.owlapi.getOntologyFromJarResourceFile(config.schemaOwlFileResourcePath, manager)
+		new Onto(owl)
+	}
+
+	val instOnto = {
+
+//		val initRepo = config.instOwlFileResourcePath match{
+//			case Some(resource) => Loading.fromResource(resource, config.instOntUri)
+//			case None => Loading.empty
+//		}
+
+		val initRepo = Loading.empty
+		val factory = initRepo.getValueFactory
+		val context = factory.createURI(config.instOntUri)
+
+		val log = PostgresRdfLog.fromConfig(config, factory)
+		if(!log.isInitialized) log.initLog()
+
+		val repoFut = RdfUpdateLogIngester.ingest(log.updates, initRepo, context)
+		val repo = Await.result(repoFut, Duration.Inf)
+
+		val sesameServer = new SesameInstanceServer(repo, context)
+		val loggingServer = new LoggingInstanceServer(sesameServer, log)
+
+		new InstOnto(loggingServer, onto)
+	}
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>
@@ -85,11 +108,15 @@ object Main extends App with SimpleRoutingApp {
 				} ~
 				pathPrefix("ontologies" / "cpmeta"){
 					pathSingleSlash{
-						complete(fromResource("/owl/cpmeta.owl", MediaTypes.`text/plain`))
+						complete(fromResource(config.schemaOwlFileResourcePath, MediaTypes.`text/plain`))
 					} ~
 					pathPrefix("contentexamples"){
 						pathSingleSlash{
-							complete(fromResource("/owl/content_examples.owl", MediaTypes.`text/plain`))
+							config.instOwlFileResourcePath match{
+								case Some(resource) => complete(fromResource(resource, MediaTypes.`text/plain`))
+								case None => complete(StatusCodes.NotFound)
+							}
+							
 						}
 					}
 				}

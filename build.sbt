@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.11.7"
 
+val sesameVersion = "2.7.12"
+
 libraryDependencies ++= Seq(
 	"io.spray"           %% "spray-can"        % "1.3.3",
 	"io.spray"           %% "spray-routing"    % "1.3.3",
@@ -13,8 +15,9 @@ libraryDependencies ++= Seq(
 	"ch.qos.logback"     %  "logback-classic"  % "1.1.2",
 	"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test",
 	"net.sourceforge.owlapi" % "owlapi-distribution"     % "4.0.2",
-	"org.openrdf.sesame"     % "sesame-repository-sail"  % "2.7.12",
-	"org.openrdf.sesame"     % "sesame-sail-memory"      % "2.7.12",
+	"org.openrdf.sesame"     % "sesame-repository-sail"          % sesameVersion,
+	"org.openrdf.sesame"     % "sesame-sail-memory"              % sesameVersion,
+	"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson" % sesameVersion,
 	"org.postgresql"         % "postgresql"              % "9.4-1201-jdbc41",
 	"dk.brics.automaton"          % "automaton"   % "1.11-8", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-api"   % "1.2.14", //Hermit

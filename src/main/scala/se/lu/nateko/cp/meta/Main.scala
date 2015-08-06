@@ -25,6 +25,10 @@ import scala.util.Success
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
+import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
+import spray.httpx.encoding.Gzip
+import spray.http.HttpHeaders
+import spray.http.AllOrigins
 
 object Main extends App with SimpleRoutingApp {
 
@@ -40,28 +44,28 @@ object Main extends App with SimpleRoutingApp {
 		new Onto(owl)
 	}
 
-	val instOnto = {
-
 //		val initRepo = config.instOwlFileResourcePath match{
 //			case Some(resource) => Loading.fromResource(resource, config.instOntUri)
 //			case None => Loading.empty
 //		}
 
-		val initRepo = Loading.empty
-		val factory = initRepo.getValueFactory
-		val context = factory.createURI(config.instOntUri)
+	val initRepo = Loading.empty
+	val factory = initRepo.getValueFactory
+	val context = factory.createURI(config.instOntUri)
 
-		val log = PostgresRdfLog.fromConfig(config, factory)
-		if(!log.isInitialized) log.initLog()
+	val log = PostgresRdfLog.fromConfig(config, factory)
+	if(!log.isInitialized) log.initLog()
 
-		val repoFut = RdfUpdateLogIngester.ingest(log.updates, initRepo, context)
-		val repo = Await.result(repoFut, Duration.Inf)
+	val repoFut = RdfUpdateLogIngester.ingest(log.updates, initRepo, context)
+	val repo = Await.result(repoFut, Duration.Inf)
 
+	val instOnto = {
 		val sesameServer = new SesameInstanceServer(repo, context)
 		val loggingServer = new LoggingInstanceServer(sesameServer, log)
-
 		new InstOnto(loggingServer, onto)
 	}
+
+	val sparqlServer = new SesameSparqlServer(repo)
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>
@@ -71,6 +75,15 @@ object Main extends App with SimpleRoutingApp {
 			val msg = if(ex.getMessage == null) "" else ex.getMessage
 			complete((StatusCodes.InternalServerError, s"$msg\n$trace"))
 	}
+
+	val sparqlResMediaType = MediaType.custom(
+		mainType = "application",
+		subType = "sparql-results+json",
+		compressible = true,
+		fileExtensions = Seq(".srj")
+	)
+
+	val allowAllOrigins = respondWithHeader(HttpHeaders.`Access-Control-Allow-Origin`(AllOrigins))
 
 	def fromResource(path: String, mediaType: MediaType): HttpResponse = {
 		val is = getClass.getResourceAsStream(path)
@@ -117,6 +130,16 @@ object Main extends App with SimpleRoutingApp {
 								case None => complete(StatusCodes.NotFound)
 							}
 							
+						}
+					}
+				} ~
+				pathPrefix("sparql"){
+					parameter('query){ query =>
+						val json = sparqlServer.executeQuery(query)
+						allowAllOrigins {
+							compressResponse(){
+								complete(HttpResponse(entity = HttpEntity(sparqlResMediaType, json)))
+							}
 						}
 					}
 				}

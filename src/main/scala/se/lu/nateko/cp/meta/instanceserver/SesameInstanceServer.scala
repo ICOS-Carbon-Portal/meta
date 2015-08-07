@@ -11,9 +11,9 @@ import se.lu.nateko.cp.meta.utils.sesame._
 import scala.util.Try
 import org.openrdf.model.Value
 
-class SesameInstanceServer(repo: Repository, writeContext: URI) extends InstanceServer{
+class SesameInstanceServer(repo: Repository, val context: URI) extends InstanceServer{
 
-	def this(repo: Repository, writeContext: String) = this(repo, repo.getValueFactory.createURI(writeContext))
+	def this(repo: Repository, contextUri: String) = this(repo, repo.getValueFactory.createURI(contextUri))
 
 	val factory = repo.getValueFactory
 
@@ -27,13 +27,19 @@ class SesameInstanceServer(repo: Repository, writeContext: URI) extends Instance
 				predicate.getOrElse(null),
 				obj.getOrElse(null),
 				false,
-				writeContext)
+				context)
 		)
+
+	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement] = {
+		repo.accessEagerly{ conn =>
+			statements.filter(st => !conn.hasStatement(st, false, context)).toIndexedSeq
+		}
+	}
 
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = repo.transact(conn => 
 		updates.foreach(update => {
-			if(update.isAssertion) conn.add(update.statement, writeContext)
-			else conn.remove(update.statement, writeContext)
+			if(update.isAssertion) conn.add(update.statement, context)
+			else conn.remove(update.statement, context)
 		})
 	)
 

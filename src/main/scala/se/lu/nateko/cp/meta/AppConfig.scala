@@ -11,6 +11,8 @@ trait AppConfig {
 	def instOwlFileResourcePath: Option[String]
 	def schemaOwlFileResourcePath: String
 
+	def etcIngestionContext: String
+
 	def rdfLogDbServer: DbServer
 	def rdfLogDbCredentials: DbCredentials
 	def rdfLogName: String
@@ -30,6 +32,8 @@ object AppConfig{
 			val instOntUri = conf.getString("instanceOntologyUri")
 			val instOwlFileResourcePath = conf.getOpt[String]("instanceOWLFileResourcePath")
 			val schemaOwlFileResourcePath = conf.getString("schemaOWLFileResourcePath")
+
+			val etcIngestionContext = conf.getString("etcIngestionContext")
 
 			val logDbConf = conf.getConfig("rdfLogDb")
 

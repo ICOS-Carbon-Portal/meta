@@ -48,7 +48,7 @@ scalacOptions ++= Seq(
 )
 
 initialCommands in console := """
-import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.ingestion._
 """
 
 Revolver.settings

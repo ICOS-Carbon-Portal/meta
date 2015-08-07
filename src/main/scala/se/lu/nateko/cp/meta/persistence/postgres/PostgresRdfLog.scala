@@ -17,6 +17,8 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		appenderConn.prepareStatement(s"INSERT INTO $logName VALUES (?, ?, ?, ?, ?, ?, ?)")
 	}
 
+	if(!isInitialized) initLog()
+
 	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit = {
 		appendPs.clearBatch()
 

@@ -59,5 +59,15 @@ package object sesame {
 					throw err
 			}
 		}
+
+		def accessEagerly[T](accessor: RepositoryConnection => T): T = {
+			val conn = repo.getConnection
+			try{
+				accessor(conn)
+			}
+			finally{
+				conn.close()
+			}
+		}
 	}
 }

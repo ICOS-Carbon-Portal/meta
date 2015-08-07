@@ -29,6 +29,7 @@ import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
 import spray.httpx.encoding.Gzip
 import spray.http.HttpHeaders
 import spray.http.AllOrigins
+import se.lu.nateko.cp.meta.ingestion.Ingestion
 
 object Main extends App with SimpleRoutingApp {
 
@@ -54,7 +55,6 @@ object Main extends App with SimpleRoutingApp {
 	val context = factory.createURI(config.instOntUri)
 
 	val log = PostgresRdfLog.fromConfig(config, factory)
-	if(!log.isInitialized) log.initLog()
 
 	val repoFut = RdfUpdateLogIngester.ingest(log.updates, initRepo, context)
 	val repo = Await.result(repoFut, Duration.Inf)
@@ -64,6 +64,8 @@ object Main extends App with SimpleRoutingApp {
 		val loggingServer = new LoggingInstanceServer(sesameServer, log)
 		new InstOnto(loggingServer, onto)
 	}
+
+	//Ingestion.ingestEtc(repo, config)
 
 	val sparqlServer = new SesameSparqlServer(repo)
 

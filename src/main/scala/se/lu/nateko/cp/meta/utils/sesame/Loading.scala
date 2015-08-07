@@ -4,6 +4,10 @@ import org.openrdf.repository.Repository
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
 import org.openrdf.rio.RDFFormat
+import org.openrdf.model.Statement
+import org.openrdf.model.URI
+import scala.util.Failure
+import scala.util.Try
 
 object Loading {
 
@@ -21,5 +25,27 @@ object Loading {
 		val repo = new SailRepository(new MemoryStore)
 		repo.initialize()
 		repo
+	}
+
+	private val chunkSize = 1000
+
+	def fromStatements(statements: Iterator[Statement], context: URI): Repository = {
+
+		val repo = Loading.empty
+
+		def commitChunk(chunk: Seq[Statement]): Try[Unit] =
+			repo.transact(conn => {
+				for(statement <- chunk){
+					conn.add(statement, context)
+				}
+			})
+
+		statements.sliding(chunkSize, chunkSize)
+			.map(commitChunk)
+			.collectFirst{case Failure(err) => err}
+			match {
+			case None => repo
+			case Some(err) => throw err
+		}
 	}
 }

@@ -9,7 +9,8 @@ import org.openrdf.model.Statement
 class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends InstanceServer{
 
 	def factory = inner.factory
-	def context = inner.context
+	def readContexts = inner.readContexts
+	def writeContexts = inner.writeContexts
 	def makeNewInstance(prefix: URI) = inner.makeNewInstance(prefix)
 
 	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]) =

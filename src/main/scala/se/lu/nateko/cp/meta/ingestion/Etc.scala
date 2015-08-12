@@ -12,6 +12,7 @@ import org.openrdf.model.ValueFactory
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
+import java.net.URLEncoder
 
 case class EtcStation(name: String, latitude: Double, longitude: Double, site: String, ecosystem: String)
 
@@ -36,19 +37,21 @@ object Etc extends Ingester{
 	}
 
 	//TODO Make new uri production based on values, not random
-	def getStatements(valueFactory: ValueFactory, newUriMaker: URI => URI): Iterator[Statement] = {
+	def getStatements(valueFactory: ValueFactory): Iterator[Statement] = {
 		val vocab = new Vocab(valueFactory)
 
 		getStations.iterator.flatMap(station => {
-			val uri = newUriMaker(vocab.ecoStation)
+			val uri = valueFactory.createURI(vocab.ecoStation.stringValue + "/" + URLEncoder.encode(station.site, "UTF-8"))
 
 			val name = valueFactory.createLiteral(station.name, XSD.STRING)
+			val stationId = valueFactory.createLiteral(station.site, XSD.STRING)
 			val lat = valueFactory.createLiteral(station.latitude.toString, XSD.DOUBLE)
 			val lon = valueFactory.createLiteral(station.longitude.toString, XSD.DOUBLE)
 
 			Iterator(
 				(RDF.TYPE, vocab.ecoStation),
 				(vocab.hasName, name),
+				(vocab.hasStationId, stationId),
 				(vocab.hasLatitude, lat),
 				(vocab.hasLongitude, lon)
 			).map{

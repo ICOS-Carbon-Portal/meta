@@ -13,10 +13,11 @@ class Vocab(factory: ValueFactory) {
 	def getRelative(baseUri: URI, local: String): URI = factory.createURI(baseUri.stringValue, local)
 
 	val station = getRelative("Station/")
-	val atmoStation  = getRelative(station, "AS")
-	val ecoStation  = getRelative(station, "ES")
+	val atmoStation  = getRelative("AS")
+	val ecoStation  = getRelative("ES")
 
 	val hasLatitude = getRelative("hasLatitude")
 	val hasLongitude = getRelative("hasLongitude")
 	val hasName = getRelative("hasName")
+	val hasStationId = getRelative("hasStationId")
 }

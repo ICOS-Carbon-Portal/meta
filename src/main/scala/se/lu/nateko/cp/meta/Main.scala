@@ -30,6 +30,7 @@ import spray.httpx.encoding.Gzip
 import spray.http.HttpHeaders
 import spray.http.AllOrigins
 import se.lu.nateko.cp.meta.ingestion.Ingestion
+import se.lu.nateko.cp.meta.ingestion.Etc
 
 object Main extends App with SimpleRoutingApp {
 
@@ -60,12 +61,13 @@ object Main extends App with SimpleRoutingApp {
 	val repo = Await.result(repoFut, Duration.Inf)
 
 	val instOnto = {
-		val sesameServer = new SesameInstanceServer(repo, context)
+		val sesameServer = new SesameInstanceServer(repo, Nil, Seq(context))
 		val loggingServer = new LoggingInstanceServer(sesameServer, log)
 		new InstOnto(loggingServer, onto)
 	}
 
-	//Ingestion.ingestEtc(repo, config)
+	val etcInstanceServer = Ingestion.loadEtcFromDb(repo, config)
+	Ingestion.ingest(etcInstanceServer, Etc)
 
 	val sparqlServer = new SesameSparqlServer(repo)
 

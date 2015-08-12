@@ -29,14 +29,14 @@ object Loading {
 
 	private val chunkSize = 1000
 
-	def fromStatements(statements: Iterator[Statement], context: URI): Repository = {
+	def fromStatements(statements: Iterator[Statement], contexts: URI*): Repository = {
 
 		val repo = Loading.empty
 
 		def commitChunk(chunk: Seq[Statement]): Try[Unit] =
 			repo.transact(conn => {
 				for(statement <- chunk){
-					conn.add(statement, context)
+					conn.add(statement, contexts :_*)
 				}
 			})
 

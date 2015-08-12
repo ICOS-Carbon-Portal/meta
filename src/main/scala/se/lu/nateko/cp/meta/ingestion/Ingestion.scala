@@ -16,27 +16,25 @@ import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 
 trait Ingester{
-	def getStatements(valueFactory: ValueFactory, newUriMaker: URI => URI): Iterator[Statement]
+	def getStatements(valueFactory: ValueFactory): Iterator[Statement]
 }
 
 object Ingestion {
 
-	def ingestEtc(repo: Repository, conf: AppConfig): Unit = {
+	def loadEtcFromDb(repo: Repository, conf: AppConfig): InstanceServer = {
 		val factory = repo.getValueFactory
 		val ctxt = factory.createURI(conf.etcIngestionContext)
 		val sesameServer = new SesameInstanceServer(repo, ctxt)
 		val log = new PostgresRdfLog("etc", conf.rdfLogDbServer, conf.rdfLogDbCredentials, factory)
 		sesameServer.applyAll(log.updates.toSeq)
-		val instServer = new LoggingInstanceServer(sesameServer, log)
-		ingest(instServer, Etc)
+		new LoggingInstanceServer(sesameServer, log)
 	}
 
 	def ingest(target: InstanceServer, ingester: Ingester): Unit = {
 
-		val context = target.context
-		val newStatements = ingester.getStatements(target.factory, target.makeNewInstance)
-		val newRepo = Loading.fromStatements(newStatements, context)
-		val source = new SesameInstanceServer(newRepo, context)
+		val newStatements = ingester.getStatements(target.factory)
+		val newRepo = Loading.fromStatements(newStatements)
+		val source = new SesameInstanceServer(newRepo)
 		val updates = computeDiff(target, source)
 		target.applyAll(updates)
 		source.shutDown()

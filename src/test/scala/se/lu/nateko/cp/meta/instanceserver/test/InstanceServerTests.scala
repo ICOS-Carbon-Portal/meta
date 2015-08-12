@@ -18,6 +18,7 @@ class InstanceServerTests extends FunSpec{
 
 	val factory = new ValueFactoryImpl()
 	val ctxt = factory.createURI("http://www.icos-cp.eu/ontology/")
+	val ctxt2 = factory.createURI("http://www.icos-cp.eu/ontology2/")
 
 	def makeUri(suff: String) = factory.createURI(ctxt.stringValue, suff)
 
@@ -78,6 +79,26 @@ class InstanceServerTests extends FunSpec{
 				val prefix = makeUri("MyClassName")
 				val uri = server.makeNewInstance(prefix)
 				assert(uri.stringValue.contains("/MyClassName/"))
+			}
+		}
+
+		describe("Reading with global context"){
+			val repo = new SailRepository(new MemoryStore)
+			repo.initialize()
+			val server1 = new SesameInstanceServer(repo, ctxt)
+			val server2 = new SesameInstanceServer(repo, ctxt2)
+			
+			server1.addInstance(makeUri("inst1"), makeUri("class1"))
+			server2.addInstance(makeUri("inst2"), makeUri("class2"))
+
+			it("Reads all the triples written with different contexts"){
+				val server = new SesameInstanceServer(repo)
+				val statements = server.getStatements(None, None, None).toIndexedSeq
+				try{
+					assert(statements.size === 2)
+				}finally{
+					repo.shutDown()
+				}
 			}
 		}
 	}

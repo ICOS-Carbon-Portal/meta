@@ -16,7 +16,8 @@ trait InstanceServer {
 	 * @param prefix The prefix to start the new URI with
 	 */
 	def makeNewInstance(prefix: URI): URI
-	def context: URI
+	def readContexts: Seq[URI]
+	def writeContexts: Seq[URI]
 	def factory: ValueFactory
 
 	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): CloseableIterator[Statement]

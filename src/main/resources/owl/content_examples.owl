@@ -5,7 +5,6 @@
     <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
     <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
     <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
-    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
     <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
     <!ENTITY cpmeta "http://meta.icos-cp.eu/ontologies/cpmeta/" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
@@ -16,7 +15,6 @@
      xml:base="&cpmeta;contentexamples/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
-     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -235,16 +233,6 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC_director -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/ATC_director">
-        <rdf:type rdf:resource="&cpmeta;Role"/>
-        <cpmeta:hasTitle rdf:datatype="&xsd;string">Director</cpmeta:hasTitle>
-        <cpmeta:atOrganization rdf:resource="&cpmeta;contentexamples/ATC"/>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ETC -->
 
     <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/ETC">
@@ -269,6 +257,9 @@
 
     <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/Hyltemossa_ES">
         <rdf:type rdf:resource="&cpmeta;ES"/>
+        <cpmeta:hasElevation rdf:datatype="&xsd;float">115.0</cpmeta:hasElevation>
+        <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa ecosystem station</cpmeta:hasName>
         <cpmeta:belongsToSite rdf:resource="&cpmeta;contentexamples/Hyltemossa_site"/>
     </owl:NamedIndividual>
@@ -283,6 +274,7 @@
         <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.42</cpmeta:hasLongitude>
         <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.1</cpmeta:hasLatitude>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa</cpmeta:hasName>
+        <cpmeta:countryCode rdf:datatype="&xsd;string">SE</cpmeta:countryCode>
     </owl:NamedIndividual>
     
 
@@ -314,6 +306,16 @@
     <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/OTC">
         <rdf:type rdf:resource="&cpmeta;OTC"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Ocean thematic center</cpmeta:hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/directorRole -->
+
+    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/directorRole">
+        <rdf:type rdf:resource="&cpmeta;Role"/>
+        <rdfs:label rdf:datatype="&xsd;string">Director</rdfs:label>
+        <cpmeta:hasTitle rdf:datatype="&xsd;string">Director</cpmeta:hasTitle>
     </owl:NamedIndividual>
 </rdf:RDF>
 

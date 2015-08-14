@@ -1,9 +1,12 @@
 Prefix: : <http://meta.icos-cp.eu/ontologies/cpmeta/>
 Prefix: dc: <http://purl.org/dc/elements/1.1/>
+Prefix: qb: <http://purl.org/linked-data/cube#>
+Prefix: geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
 Prefix: owl: <http://www.w3.org/2002/07/owl#>
 Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 Prefix: xml: <http://www.w3.org/XML/1998/namespace>
 Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+Prefix: prov: <http://www.w3.org/ns/prov#>
 Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 
@@ -28,6 +31,9 @@ AnnotationProperty: isExposedToUsers
     Range: 
         <http://www.w3.org/2001/XMLSchema#boolean>
     
+    
+AnnotationProperty: rdfs:seeAlso
+
     
 AnnotationProperty: displayProperty1
 
@@ -86,28 +92,40 @@ Datatype: xsd:boolean
 Datatype: rdf:PlainLiteral
 
     
-ObjectProperty: hasOperationInterval
+ObjectProperty: wasAcquiredBy
 
-    Annotations: 
-        rdfs:label "Operation time interval"^^xsd:string
-    
-    Domain: 
-        Instrument or Station or TimeLimitedRole
-    
     Range: 
-        TimeInterval
+        DataAcquisition
+    
+    SubPropertyOf: 
+        prov:wasGeneratedBy
     
     
-ObjectProperty: belongsToSite
+ObjectProperty: locatedAt
 
     Annotations: 
-        rdfs:label "Site"^^xsd:string
+        rdfs:label "located at"^^xsd:string
     
     Domain: 
-        Station
+        Organization
     
     Range: 
         Site
+    
+    Characteristics: 
+        Functional
+    
+    
+ObjectProperty: hasRole
+
+    Annotations: 
+        rdfs:label "has role"^^xsd:string
+    
+    Domain: 
+        Membership
+    
+    Range: 
+        Role
     
     Characteristics: 
         Functional
@@ -119,10 +137,10 @@ ObjectProperty: dataRelatedProp
 ObjectProperty: atOrganization
 
     Annotations: 
-        rdfs:label "at Organization"^^xsd:string
+        rdfs:label "at organization"^^xsd:string
     
     Domain: 
-        Role
+        Membership
     
     Range: 
         Organization
@@ -140,7 +158,7 @@ ObjectProperty: belongsToTheNetworkOf
         Station
     
     Range: 
-        CentralFacility
+        ThematicCenter
     
     Characteristics: 
         Functional
@@ -158,16 +176,25 @@ ObjectProperty: wasProducedFrom
         dataRelatedProp
     
     
-ObjectProperty: hasRole
+ObjectProperty: hasMembership
 
-    Annotations: 
-        rdfs:label "Roles"^^xsd:string
-    
     Domain: 
         Person
     
     Range: 
-        TimeLimitedRole
+        Membership
+    
+    
+ObjectProperty: wasSubmittedBy
+
+    Range: 
+        DataSubmission
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        prov:wasGeneratedBy
     
     
 ObjectProperty: involvesCalibration
@@ -191,37 +218,53 @@ ObjectProperty: wasProducedVia
         dataRelatedProp
     
     
-ObjectProperty: hasBaseRole
+ObjectProperty: prov:wasAssociatedWith
 
     Domain: 
-        TimeLimitedRole
+        prov:Activity
     
     Range: 
-        Role
-    
-    Characteristics: 
-        Functional
+        prov:Agent
     
     
-DataProperty: hasEmail
+ObjectProperty: prov:wasGeneratedBy
+
+    Domain: 
+        prov:Entity
+    
+    Range: 
+        prov:Activity
+    
+    
+ObjectProperty: qb:structure
+
+    
+DataProperty: hasElevation
 
     Annotations: 
-        rdfs:label "E-mail"^^xsd:string
+        rdfs:comment "Elevation above sea level in meters",
+        rdfs:label "Elevation"^^xsd:string
     
     Domain: 
-        Person or Role
+        Site or Station
     
     Range: 
-        xsd:string[pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$"]
+        xsd:float
     
     Characteristics: 
         Functional
     
+    SubPropertyOf: 
+        geo:alt
+    
+    
+DataProperty: geo:lat
+
     
 DataProperty: hasEndTime
 
     Domain: 
-        TimeInterval
+        Membership
     
     Range: 
         xsd:dateTime
@@ -230,56 +273,22 @@ DataProperty: hasEndTime
         Functional
     
     
-DataProperty: hasTitle
+DataProperty: prov:endedAtTime
 
-    Annotations: 
-        rdfs:label "Title"^^xsd:string
-    
     Domain: 
-        Role
+        prov:Activity
     
     Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
+        xsd:dateTime
     
     
-DataProperty: hasShortName
+DataProperty: hasStationId
 
     Annotations: 
-        rdfs:label "Short name"^^xsd:string
+        rdfs:label "Station ID"^^xsd:string
     
     Domain: 
         Station
-    
-    Range: 
-        xsd:string
-    
-    
-DataProperty: hasLatitude
-
-    Annotations: 
-        rdfs:label "Latitude"^^xsd:string,
-        rdfs:comment "Decimal degrees in WGS84/GRS80"
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasFirstName
-
-    Annotations: 
-        rdfs:label "First name"^^xsd:string
-    
-    Domain: 
-        Person
     
     Range: 
         xsd:string
@@ -303,6 +312,33 @@ DataProperty: hasLastName
         Functional
     
     
+DataProperty: hasShortName
+
+    Annotations: 
+        rdfs:label "Short name"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    
+DataProperty: hasName
+
+    Annotations: 
+        rdfs:label "Name"^^xsd:string
+    
+    Domain: 
+        Organization
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
 DataProperty: hasLongitude
 
     Annotations: 
@@ -318,6 +354,9 @@ DataProperty: hasLongitude
     Characteristics: 
         Functional
     
+    SubPropertyOf: 
+        geo:long
+    
     
 DataProperty: hasOrcidId
 
@@ -329,6 +368,84 @@ DataProperty: hasOrcidId
     
     Range: 
         xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasStartTime
+
+    Domain: 
+        Membership
+    
+    Range: 
+        xsd:dateTime
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: geo:long
+
+    
+DataProperty: geo:alt
+
+    
+DataProperty: hasLatitude
+
+    Annotations: 
+        rdfs:comment "Decimal degrees in WGS84/GRS80",
+        rdfs:label "Latitude"^^xsd:string
+    
+    Domain: 
+        Site or Station
+    
+    Range: 
+        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        geo:lat
+    
+    
+DataProperty: prov:startedAtTime
+
+    Domain: 
+        prov:Activity
+    
+    Range: 
+        xsd:dateTime
+    
+    
+DataProperty: countryCode
+
+    Annotations: 
+        rdfs:comment "ISO 3166-1 alpha-2 country code"^^xsd:string,
+        rdfs:label "country code"^^xsd:string,
+        rdfs:seeAlso <https://en.wikipedia.org/wiki/ISO_3166-1>
+    
+    Domain: 
+        Site
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasEmail
+
+    Annotations: 
+        rdfs:label "E-mail"^^xsd:string
+    
+    Domain: 
+        Person or Role
+    
+    Range: 
+        xsd:string[pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$"]
     
     Characteristics: 
         Functional
@@ -349,25 +466,13 @@ DataProperty: hasStationClass
         Functional
     
     
-DataProperty: hasStartTime
-
-    Domain: 
-        TimeInterval
-    
-    Range: 
-        xsd:dateTime
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationId
+DataProperty: hasFirstName
 
     Annotations: 
-        rdfs:label "Station ID"^^xsd:string
+        rdfs:label "First name"^^xsd:string
     
     Domain: 
-        Station
+        Person
     
     Range: 
         xsd:string
@@ -376,148 +481,24 @@ DataProperty: hasStationId
         Functional
     
     
-DataProperty: hasName
+Class: DataAcquisition
 
-    Annotations: 
-        rdfs:label "Name"^^xsd:string
-    
-    Domain: 
-        Organization
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
+    SubClassOf: 
+        prov:wasAssociatedWith some owl:Thing,
+        prov:wasAssociatedWith only Station,
+        prov:Activity
     
     
-DataProperty: hasCountry
-
-    Annotations: 
-        rdfs:label "Country"^^xsd:string
-    
-    Domain: 
-        Organization
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasElevation
-
-    Annotations: 
-        rdfs:comment "Elevation above sea level in meters",
-        rdfs:label "Elevation"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:float
-    
-    Characteristics: 
-        Functional
-    
-    
-Class: DataProductionTechnique
+Class: DataProvider
 
     SubClassOf: 
         DataRelatedThing
-    
-    
-Class: Instrument
-
-    SubClassOf: 
-        DataRelatedThing,
-        measures some Variable
     
     
 Class: Role
 
     Annotations: 
-        displayProperty2 "at"^^xsd:string,
-        isExposedToUsers true,
-        displayProperty3 <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>,
-        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle>
-    
-    SubClassOf: 
-        hasTitle some rdfs:Literal,
-        atOrganization some owl:Thing
-    
-    
-Class: RawDataSetArchive
-
-    SubClassOf: 
-        DataSet
-    
-    
-Class: DataSet
-
-    SubClassOf: 
-        DataRelatedThing
-    
-    
-Class: Station
-
-    Annotations: 
         isExposedToUsers true
-    
-    SubClassOf: 
-        hasOperationInterval some TimeInterval,
-        hasLatitude some rdfs:Literal,
-        Organization,
-        hasCountry some rdfs:Literal,
-        hasLongitude some rdfs:Literal,
-        belongsToTheNetworkOf some owl:Thing,
-        belongsToSite some owl:Thing,
-        hasElevation some rdfs:Literal
-    
-    DisjointUnionOf: 
-        AS, ES, OS
-    
-    
-Class: ETC
-
-    SubClassOf: 
-        ThematicCenter
-    
-    
-Class: DataProductionProcess
-
-    SubClassOf: 
-        isBasedOnTechnique some DataProductionTechnique,
-        DataRelatedThing
-    
-    
-Class: Variable
-
-    SubClassOf: 
-        DataRelatedThing
-    
-    
-Class: DataRelatedThing
-
-    
-Class: AS
-
-    SubClassOf: 
-        Station,
-        belongsToTheNetworkOf some ATC
-    
-    
-Class: CalibrationType
-
-    SubClassOf: 
-        DataRelatedThing
-    
-    
-Class: CAL
-
-    SubClassOf: 
-        CentralFacility
     
     
 Class: OS
@@ -527,16 +508,30 @@ Class: OS
         Station
     
     
-Class: DataProvider
+Class: CalibrationType
 
     SubClassOf: 
         DataRelatedThing
     
     
-Class: Calibration
+Class: qb:DataStructureDefinition
+
+    
+Class: Organization
+
+    Annotations: 
+        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
+    
+    SubClassOf: 
+        hasName some rdfs:Literal,
+        prov:Agent
+    
+    
+Class: DataSubmission
 
     SubClassOf: 
-        DataRelatedThing
+        prov:Activity,
+        prov:wasAssociatedWith some owl:Thing
     
     
 Class: CentralFacility
@@ -548,6 +543,12 @@ Class: CentralFacility
         CAL, ThematicCenter
     
     
+Class: EtcDataSet
+
+    SubClassOf: 
+        DataSet
+    
+    
 Class: ES
 
     SubClassOf: 
@@ -555,15 +556,74 @@ Class: ES
         belongsToTheNetworkOf some ETC
     
     
-Class: TimeInterval
+Class: Site
+
+    Annotations: 
+        isExposedToUsers true,
+        rdfs:comment "The physical location of an organization"^^xsd:string
+    
+    SubClassOf: 
+        countryCode some rdfs:Literal
+    
+    
+Class: DataSet
 
     SubClassOf: 
-        hasStartTime some xsd:dateTime,
-        TemporalThing
+        prov:Entity,
+        qb:DataSet
+    
+    
+Class: EtcDataStructure
+
+    SubClassOf: 
+        qb:DataStructureDefinition
+    
+    
+Class: OtcDataStructure
+
+    SubClassOf: 
+        qb:DataStructureDefinition
+    
+    
+Class: Calibration
+
+    SubClassOf: 
+        DataRelatedThing
+    
+    
+Class: Station
+
+    Annotations: 
+        isExposedToUsers true
+    
+    SubClassOf: 
+        Organization,
+        belongsToTheNetworkOf some owl:Thing,
+        hasLatitude some rdfs:Literal,
+        hasLongitude some rdfs:Literal,
+        hasElevation some rdfs:Literal,
+        locatedAt some owl:Thing
+    
+    DisjointUnionOf: 
+        AS, ES, OS
     
     
 Class: owl:Thing
 
+    
+Class: prov:Agent
+
+    
+Class: Membership
+
+    Annotations: 
+        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasRole>,
+        displayProperty2 <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>
+    
+    SubClassOf: 
+        atOrganization some owl:Thing,
+        hasRole some owl:Thing
+    
     
 Class: ThematicCenter
 
@@ -579,35 +639,26 @@ Class: ThematicCenter
         ATC, ETC, OTC
     
     
-Class: TimeLimitedRole
+Class: RawDataSetArchive
 
     SubClassOf: 
-        TemporalThing,
-        hasOperationInterval exactly 1 owl:Thing,
-        hasBaseRole some owl:Thing
+        DataRelatedThing
     
     
-Class: Level_0_DataSet
+Class: AS
 
     SubClassOf: 
-        wasProducedVia some DataProductionProcess,
-        wasProducedFrom some RawDataSet,
-        DataSet
+        Station,
+        belongsToTheNetworkOf some ATC
     
     
-Class: OTC
-
-    SubClassOf: 
-        ThematicCenter
-    
-    
-Class: RawDataSet
+Class: AtcDataSet
 
     SubClassOf: 
         DataSet
     
     
-Class: TemporalThing
+Class: prov:Activity
 
     
 Class: Person
@@ -620,35 +671,97 @@ Class: Person
     SubClassOf: 
         hasFirstName some rdfs:Literal,
         hasEmail some rdfs:Literal,
+        prov:Agent,
         hasLastName some rdfs:Literal
     
     
-Class: Site
+Class: RawDataSet
 
-    Annotations: 
-        isExposedToUsers true
-    
     SubClassOf: 
-        hasLatitude some rdfs:Literal,
-        hasElevation some rdfs:Literal,
-        hasCountry some rdfs:Literal,
-        hasLongitude some rdfs:Literal,
-        Organization
+        DataRelatedThing
     
     
-Class: Organization
+Class: qb:DataSet
 
-    Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
     
-    SubClassOf: 
-        hasName some rdfs:Literal
-    
+Class: DataRelatedThing
+
     
 Class: ATC
 
     SubClassOf: 
         ThematicCenter
+    
+    
+Class: Level_0_DataSet
+
+    SubClassOf: 
+        DataRelatedThing,
+        wasProducedVia some DataProductionProcess,
+        wasProducedFrom some RawDataSet
+    
+    
+Class: DataProductionTechnique
+
+    SubClassOf: 
+        DataRelatedThing
+    
+    
+Class: OtcDataSet
+
+    SubClassOf: 
+        DataSet
+    
+    
+Class: CAL
+
+    Annotations: 
+        rdfs:label "Central Analytical Laboratory"^^xsd:string,
+        rdfs:comment "A Central Analytical Laboratory for calibration, and air samples analyses including radiocarbon for the entire network"^^xsd:string
+    
+    SubClassOf: 
+        CentralFacility
+    
+    
+Class: AtcDataStructure
+
+    SubClassOf: 
+        qb:DataStructureDefinition
+    
+    
+Class: Variable
+
+    SubClassOf: 
+        DataRelatedThing
+    
+    
+Class: ETC
+
+    SubClassOf: 
+        ThematicCenter
+    
+    
+Class: Instrument
+
+    SubClassOf: 
+        DataRelatedThing,
+        measures some Variable
+    
+    
+Class: prov:Entity
+
+    
+Class: OTC
+
+    SubClassOf: 
+        ThematicCenter
+    
+    
+Class: DataProductionProcess
+
+    SubClassOf: 
+        isBasedOnTechnique some DataProductionTechnique,
+        DataRelatedThing
     
     
 Individual: CO2moleFraction

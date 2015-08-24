@@ -46,6 +46,4 @@ class SesameInstanceServer(repo: Repository, val readContexts: Seq[URI], val wri
 		}
 	}
 
-	def shutDown(): Unit = repo.shutDown()
-
 }

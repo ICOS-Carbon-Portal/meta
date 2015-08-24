@@ -17,7 +17,7 @@ class HermitBasedReasonerTests extends FunSpec{
 			val owlClass = Vocab.getOWLClass("ThematicCenter")
 			val props = reasoner.getPropertiesWhoseDomainIncludes(owlClass)
 				.map(oc => getLastFragment(oc.getIRI))
-			assert(props.toSet === Set("hasName", "hasCountry"))
+			assert(props.toSet === Set("hasName", "locatedAt"))
 		}
 	}
 

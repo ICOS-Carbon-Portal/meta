@@ -8,7 +8,7 @@ import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
-import se.lu.nateko.cp.meta.AppConfig
+import se.lu.nateko.cp.meta.RdflogConfig
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
 
@@ -118,11 +118,11 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 object PostgresRdfLog{
 
-	def fromConfig(appConf: AppConfig, factory: ValueFactory) =
+	def apply(name: String, conf: RdflogConfig, factory: ValueFactory) =
 		new PostgresRdfLog(
-			logName = appConf.rdfLogName,
-			serv = appConf.rdfLogDbServer,
-			creds = appConf.rdfLogDbCredentials,
+			logName = name,
+			serv = conf.server,
+			creds = conf.credentials,
 			factory = factory
 		)
 

@@ -24,7 +24,7 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 		inner.applyAll(updates)
 	}
 
-	def shutDown(): Unit = {
+	override def shutDown(): Unit = {
 		inner.shutDown()
 		log.close()
 	}

@@ -24,195 +24,6 @@
     </owl:Ontology>
     
 
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Datatypes
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://www.w3.org/2001/XMLSchema#double -->
-
-    <rdfs:Datatype rdf:about="&xsd;double"/>
-    
-
-
-    <!-- http://www.w3.org/2001/XMLSchema#float -->
-
-    <rdfs:Datatype rdf:about="&xsd;float"/>
-    
-
-
-    <!-- http://www.w3.org/2001/XMLSchema#string -->
-
-    <rdfs:Datatype rdf:about="&xsd;string"/>
-    
-
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Object Properties
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization -->
-
-    <owl:ObjectProperty rdf:about="&cpmeta;atOrganization"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite -->
-
-    <owl:ObjectProperty rdf:about="&cpmeta;belongsToSite"/>
-    
-
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Data properties
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasElevation"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasEmail"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasFirstName"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasLastName"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasLatitude"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasLongitude"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasName -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasName"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasStationClass"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle -->
-
-    <owl:DatatypeProperty rdf:about="&cpmeta;hasTitle"/>
-    
-
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Classes
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AS -->
-
-    <owl:Class rdf:about="&cpmeta;AS"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ATC -->
-
-    <owl:Class rdf:about="&cpmeta;ATC"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ES -->
-
-    <owl:Class rdf:about="&cpmeta;ES"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ETC -->
-
-    <owl:Class rdf:about="&cpmeta;ETC"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/OTC -->
-
-    <owl:Class rdf:about="&cpmeta;OTC"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Person -->
-
-    <owl:Class rdf:about="&cpmeta;Person"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Role -->
-
-    <owl:Class rdf:about="&cpmeta;Role"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Site -->
-
-    <owl:Class rdf:about="&cpmeta;Site"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Station -->
-
-    <owl:Class rdf:about="&cpmeta;Station"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter -->
-
-    <owl:Class rdf:about="&cpmeta;ThematicCenter"/>
-    
-
-
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
@@ -306,6 +117,16 @@
     <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/OTC">
         <rdf:type rdf:resource="&cpmeta;OTC"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Ocean thematic center</cpmeta:hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/atcDirector -->
+
+    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/atcDirector">
+        <rdf:type rdf:resource="&cpmeta;Membership"/>
+        <cpmeta:atOrganization rdf:resource="&cpmeta;contentexamples/ATC"/>
+        <cpmeta:hasRole rdf:resource="&cpmeta;contentexamples/directorRole"/>
     </owl:NamedIndividual>
     
 

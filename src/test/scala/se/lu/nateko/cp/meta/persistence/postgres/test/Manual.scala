@@ -11,15 +11,15 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
-import se.lu.nateko.cp.meta.AppConfig
+import se.lu.nateko.cp.meta.ConfigLoader
 
 object Manual {
 
 	val factory = new ValueFactoryImpl
 
 	def getLog: PostgresRdfLog = {
-		val config = AppConfig.load.get
-		PostgresRdfLog.fromConfig(config, factory)
+		val config = ConfigLoader.getDefault
+		PostgresRdfLog("rdflog", config.rdfLog, factory)
 	}
 
 	def getServer: InstanceServer = new LoggingInstanceServer(TestConfig.instServer, getLog)
@@ -47,8 +47,7 @@ object Manual {
 		import scala.concurrent.ExecutionContext.Implicits.global
 		val log = getLog
 		val ctxt = factory.createURI(TestConfig.ontUri)
-		val repoFut = RdfUpdateLogIngester.ingest(log.updates, ctxt)
-		val repo = Await.result(repoFut, Duration.Inf)
+		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
 		log.close()
 		new SesameInstanceServer(repo, ctxt)
 	}

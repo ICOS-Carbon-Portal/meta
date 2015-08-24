@@ -28,8 +28,7 @@ class InstanceServerTests extends FunSpec{
 
 			val log = new InMemoryRdfLog()
 
-			val sesameRepoFuture = RdfUpdateLogIngester.ingest(log.updates, ctxt)
-			val sesameRepo = Await.result(sesameRepoFuture, Duration.Inf)
+			val sesameRepo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
 
 			val innerInstServer = new SesameInstanceServer(sesameRepo, ctxt)
 			val loggingServer = new LoggingInstanceServer(innerInstServer, log)

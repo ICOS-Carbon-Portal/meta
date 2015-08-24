@@ -1,75 +1,27 @@
 package se.lu.nateko.cp.meta
 
-import CpmetaJsonProtocol._
 import akka.actor.ActorSystem
-import akka.pattern.ask
-import spray.http.StatusCodes
-import spray.routing.ExceptionHandler
-import spray.routing.SimpleRoutingApp
-import spray.can.Http
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import spray.http.HttpResponse
-import spray.http.ContentType
-import spray.http.HttpEntity
-import spray.http.ContentTypes
-import spray.http.MediaTypes
-import spray.http.HttpCharsets
-import spray.http.MediaType
+import scala.concurrent.duration._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.ExceptionHandler
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.stream.ActorMaterializer
+import akka.http.scaladsl.Http
 import java.net.URI
-import org.semanticweb.owlapi.apibinding.OWLManager
-import org.openrdf.sail.memory.MemoryStore
-import se.lu.nateko.cp.meta.utils.sesame._
-import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
-import scala.util.Success
-import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
-import spray.httpx.encoding.Gzip
-import spray.http.HttpHeaders
-import spray.http.AllOrigins
-import se.lu.nateko.cp.meta.ingestion.Ingestion
-import se.lu.nateko.cp.meta.ingestion.Etc
 
-object Main extends App with SimpleRoutingApp {
+
+object Main extends App with CpmetaJsonProtocol{
 
 	implicit val system = ActorSystem("cpmeta")
+	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
+
 	implicit val dispatcher = system.dispatcher
 	implicit val scheduler = system.scheduler
 
-	val config: AppConfig = AppConfig.load.get
-
-	val onto = {
-		val manager = OWLManager.createOWLOntologyManager
-		val owl = utils.owlapi.getOntologyFromJarResourceFile(config.schemaOwlFileResourcePath, manager)
-		new Onto(owl)
-	}
-
-//		val initRepo = config.instOwlFileResourcePath match{
-//			case Some(resource) => Loading.fromResource(resource, config.instOntUri)
-//			case None => Loading.empty
-//		}
-
-	val initRepo = Loading.empty
-	val factory = initRepo.getValueFactory
-	val context = factory.createURI(config.instOntUri)
-
-	val log = PostgresRdfLog.fromConfig(config, factory)
-
-	val repoFut = RdfUpdateLogIngester.ingest(log.updates, initRepo, context)
-	val repo = Await.result(repoFut, Duration.Inf)
-
-	val instOnto = {
-		val sesameServer = new SesameInstanceServer(repo, Nil, Seq(context))
-		val loggingServer = new LoggingInstanceServer(sesameServer, log)
-		new InstOnto(loggingServer, onto)
-	}
-
-	val etcInstanceServer = Ingestion.loadEtcFromDb(repo, config)
-	Ingestion.ingest(etcInstanceServer, Etc)
-
-	val sparqlServer = new SesameSparqlServer(repo)
+	val config: CpmetaConfig = ConfigLoader.getDefault
+	val db: MetaDb = MetaDb(config)
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>
@@ -83,11 +35,12 @@ object Main extends App with SimpleRoutingApp {
 	val sparqlResMediaType = MediaType.custom(
 		mainType = "application",
 		subType = "sparql-results+json",
+		encoding = MediaType.Encoding.Fixed(HttpCharsets.`UTF-8`),
 		compressible = true,
-		fileExtensions = Seq(".srj")
+		fileExtensions = ".srj" :: Nil
 	)
 
-	val allowAllOrigins = respondWithHeader(HttpHeaders.`Access-Control-Allow-Origin`(AllOrigins))
+	val allowAllOrigins = respondWithHeader(headers.`Access-Control-Allow-Origin`.*)
 
 	def fromResource(path: String, mediaType: MediaType): HttpResponse = {
 		val is = getClass.getResourceAsStream(path)
@@ -96,75 +49,74 @@ object Main extends App with SimpleRoutingApp {
 		HttpResponse(entity = HttpEntity(contType, bytes))
 	}
 
-	startServer(interface = "::0", port = 9094) {
-		handleExceptions(exceptionHandler){
-			get{
-				pathPrefix("api"){
-					pathSuffix("getExposedClasses"){
-						complete(onto.getExposedClasses)
-					} ~
-					pathSuffix("getTopLevelClasses"){
-						complete(onto.getTopLevelClasses)
-					} ~
-					pathSuffix("listIndividuals"){
-						parameter('classUri){ uriStr =>
-							complete(instOnto.getIndividuals(new URI(uriStr)))
-						}
-					} ~
-					pathSuffix("getIndividual"){
-						parameter('uri){ uriStr =>
-							complete(instOnto.getIndividual(new URI(uriStr)))
-						}
+	val route = handleExceptions(exceptionHandler){
+		get{
+			pathPrefix("api"){
+				pathSuffix("getExposedClasses"){
+					complete(db.onto.getExposedClasses)
+				} ~
+				pathSuffix("getTopLevelClasses"){
+					complete(db.onto.getTopLevelClasses)
+				} ~
+				pathSuffix("listIndividuals"){
+					parameter('classUri){ uriStr =>
+						complete(db.instOnto.getIndividuals(new URI(uriStr)))
 					}
 				} ~
-				pathEndOrSingleSlash{
-					complete(fromResource("/www/index.html", MediaTypes.`text/html`))
-				} ~
-				pathSuffix("bundle.js"){
-					complete(fromResource("/www/bundle.js", MediaTypes.`application/javascript`))
-				} ~
-				pathPrefix("ontologies" / "cpmeta"){
-					pathSingleSlash{
-						complete(fromResource(config.schemaOwlFileResourcePath, MediaTypes.`text/plain`))
-					} ~
-					pathPrefix("contentexamples"){
-						pathSingleSlash{
-							config.instOwlFileResourcePath match{
-								case Some(resource) => complete(fromResource(resource, MediaTypes.`text/plain`))
-								case None => complete(StatusCodes.NotFound)
-							}
-							
-						}
-					}
-				} ~
-				pathPrefix("sparql"){
-					parameter('query){ query =>
-						val json = sparqlServer.executeQuery(query)
-						allowAllOrigins {
-							compressResponse(){
-								complete(HttpResponse(entity = HttpEntity(sparqlResMediaType, json)))
-							}
-						}
+				pathSuffix("getIndividual"){
+					parameter('uri){ uriStr =>
+						complete(db.instOnto.getIndividual(new URI(uriStr)))
 					}
 				}
 			} ~
-			post{
-				pathPrefix("api"){
-					pathSuffix("applyupdates"){
-						entity(as[Seq[UpdateDto]])(updates => {
-							instOnto.applyUpdates(updates).get
-							complete(StatusCodes.OK)
-						})
+			pathEndOrSingleSlash{
+				complete(fromResource("/www/index.html", MediaTypes.`text/html`))
+			} ~
+			pathSuffix("bundle.js"){
+				complete(fromResource("/www/bundle.js", MediaTypes.`application/javascript`))
+			} ~
+			path("ontologies" / "cpmeta"){
+				complete(fromResource(config.onto.owlResource, MediaTypes.`text/plain`))
+			} ~
+			pathPrefix("sparql"){
+				parameter('query){ query =>
+					val json = db.sparql.executeQuery(query)
+					allowAllOrigins {
+						encodeResponse{
+							complete(HttpResponse(entity = HttpEntity(sparqlResMediaType, json)))
+						}
 					}
-					pathSuffix("performreplacement"){
-						entity(as[ReplaceDto])(replacement => {
-							instOnto.performReplacement(replacement).get
-							complete(StatusCodes.OK)
-						})
-					}
+				}
+			}
+		} ~
+		post{
+			pathPrefix("api"){
+				pathSuffix("applyupdates"){
+					entity(as[Seq[UpdateDto]])(updates => {
+						db.instOnto.applyUpdates(updates).get
+						complete(StatusCodes.OK)
+					})
+				}
+				pathSuffix("performreplacement"){
+					entity(as[ReplaceDto])(replacement => {
+						db.instOnto.performReplacement(replacement).get
+						complete(StatusCodes.OK)
+					})
 				}
 			}
 		}
 	}
+	Http()
+		.bindAndHandle(route, "localhost", 9094)
+		.onSuccess{
+			case binding =>
+				sys.addShutdownHook{
+					val doneFuture = binding.unbind().andThen{
+						case _ => db.close(); system.shutdown()
+					}
+					Await.result(doneFuture, 3 seconds)
+				}
+				println(binding)
+		}
 
 }

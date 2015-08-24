@@ -47,15 +47,23 @@ package object sesame {
 			}
 		}
 
-		def access[T](accessor: RepositoryConnection => RepositoryResult[T]): CloseableIterator[T] = {
+		def access[T](accessor: RepositoryConnection => RepositoryResult[T]): CloseableIterator[T] = access(accessor, () => ())
+
+		def access[T](accessor: RepositoryConnection => RepositoryResult[T], extraCleanup: () => Unit): CloseableIterator[T] = {
 			val conn = repo.getConnection
+
+			def finalCleanup(): Unit = {
+				conn.close()
+				extraCleanup()
+			}
+
 			try{
 				val repRes = accessor(conn)
-				new RepositoryResultIterator(repRes, conn.close)
+				new RepositoryResultIterator(repRes, finalCleanup)
 			}
 			catch{
 				case err: Throwable =>
-					conn.close()
+					finalCleanup()
 					throw err
 			}
 		}

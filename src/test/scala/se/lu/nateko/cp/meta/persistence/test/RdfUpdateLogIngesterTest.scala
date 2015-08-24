@@ -23,8 +23,7 @@ class RdfUpdateLogIngesterTest extends FunSpec{
 			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS)
 
 			val iter = Iterator(RdfUpdate(statement, true))
-			val repoFuture = RdfUpdateLogIngester.ingest(iter, ctxt)
-			val repo = Await.result(repoFuture, Duration.Inf)
+			val repo = RdfUpdateLogIngester.ingest(iter, ctxt)
 			val conn = repo.getConnection
 			val statements = Iterations.asList(conn.getStatements(null, null, null, false, ctxt)).toArray
 			conn.close()

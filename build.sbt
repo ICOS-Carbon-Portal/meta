@@ -7,13 +7,9 @@ scalaVersion := "2.11.7"
 val sesameVersion = "2.7.12"
 
 libraryDependencies ++= Seq(
-	"io.spray"           %% "spray-can"        % "1.3.3",
-	"io.spray"           %% "spray-routing"    % "1.3.3",
-	"io.spray"           %% "spray-json"       % "1.3.2",
-	"com.typesafe.akka"  %% "akka-actor"       % "2.3.9",
-	"com.typesafe.akka"  %% "akka-slf4j"       % "2.3.9",
+	"com.typesafe.akka"  %% "akka-http-core-experimental"        % "1.0",
+	"com.typesafe.akka"  %% "akka-http-spray-json-experimental"  % "1.0",
 	"ch.qos.logback"     %  "logback-classic"  % "1.1.2",
-	"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test",
 	"net.sourceforge.owlapi" % "owlapi-distribution"     % "4.0.2",
 	"org.openrdf.sesame"     % "sesame-repository-sail"          % sesameVersion,
 	"org.openrdf.sesame"     % "sesame-sail-memory"              % sesameVersion,
@@ -23,7 +19,9 @@ libraryDependencies ++= Seq(
 	"org.apache.ws.commons.axiom" % "axiom-api"   % "1.2.14", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-dom"   % "1.2.14", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-impl"  % "1.2.14"  //Hermit
+	"org.apache.ws.commons.axiom" % "axiom-impl"  % "1.2.14",  //Hermit
+	"se.lu.nateko.cp"    %% "cpauth-core"       % "0.2",
+	"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test"
 )
 
 assemblyMergeStrategy in assembly := {
@@ -32,9 +30,8 @@ assemblyMergeStrategy in assembly := {
 	case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
 	case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
 	//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
-	case x =>
-		val oldStrategy = (assemblyMergeStrategy in assembly).value
-		oldStrategy(x)
+	case "application.conf" => MergeStrategy.concat
+	case x => ((assemblyMergeStrategy in assembly).value)(x)
 }
 
 scalacOptions ++= Seq(

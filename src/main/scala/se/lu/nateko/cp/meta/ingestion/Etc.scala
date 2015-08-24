@@ -36,7 +36,6 @@ object Etc extends Ingester{
 		json.asJsObject.getFields("d").head.convertTo[Seq[EtcStation]]
 	}
 
-	//TODO Make new uri production based on values, not random
 	def getStatements(valueFactory: ValueFactory): Iterator[Statement] = {
 		val vocab = new Vocab(valueFactory)
 

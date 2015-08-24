@@ -1,18 +1,21 @@
 package se.lu.nateko.cp.meta
 
-import spray.httpx.SprayJsonSupport
 import spray.json._
 import java.net.URI
 import java.net.URISyntaxException
 
-object CpmetaJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport{
 
-	private implicit class ExtendableJsObj(val js: JsValue) extends AnyVal{
+object CpmetaJsonProtocol{
+	implicit class ExtendableJsObj(val js: JsValue) extends AnyVal{
 		def +(kv: (String, String)): JsObject = {
 			val jsKv: (String, JsValue) = (kv._1, JsString(kv._2))
 			JsObject(js.asJsObject.fields + jsKv)
 		}
 	}
+}
+
+trait CpmetaJsonProtocol extends DefaultJsonProtocol{
+	import CpmetaJsonProtocol._
 
 	implicit object UriJsonFormat extends RootJsonFormat[URI]{
 

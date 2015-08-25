@@ -7,12 +7,12 @@ import spray.json._
 import DefaultJsonProtocol._
 import se.lu.nateko.cp.meta.utils.sesame.Loading
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
-import org.semarglproject.vocab.XSD
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
 import java.net.URLEncoder
+import org.openrdf.model.vocabulary.XMLSchema
 
 case class EtcStation(name: String, latitude: Double, longitude: Double, site: String, ecosystem: String)
 
@@ -42,10 +42,10 @@ object Etc extends Ingester{
 		getStations.iterator.flatMap(station => {
 			val uri = valueFactory.createURI(vocab.ecoStation.stringValue + "/" + URLEncoder.encode(station.site, "UTF-8"))
 
-			val name = valueFactory.createLiteral(station.name, XSD.STRING)
-			val stationId = valueFactory.createLiteral(station.site, XSD.STRING)
-			val lat = valueFactory.createLiteral(station.latitude.toString, XSD.DOUBLE)
-			val lon = valueFactory.createLiteral(station.longitude.toString, XSD.DOUBLE)
+			val name = valueFactory.createLiteral(station.name, XMLSchema.STRING)
+			val stationId = valueFactory.createLiteral(station.site, XMLSchema.STRING)
+			val lat = valueFactory.createLiteral(station.latitude.toString, XMLSchema.DOUBLE)
+			val lon = valueFactory.createLiteral(station.longitude.toString, XMLSchema.DOUBLE)
 
 			Iterator(
 				(RDF.TYPE, vocab.ecoStation),

@@ -21,7 +21,6 @@ import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
-	val onto: Onto,
 	val instOnto: InstOnto,
 	repo: Repository) extends Closeable{
 
@@ -101,7 +100,7 @@ object MetaDb {
 		) yield{
 			val instOnto = new InstOnto(instServer, onto)
 			val instServers = serverKeys.zip(servers).toMap
-			new MetaDb(instServers, onto, instOnto, repo)
+			new MetaDb(instServers, instOnto, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

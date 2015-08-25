@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import org.openrdf.model.Statement
 import org.openrdf.query.UpdateExecutionException
 
-class InstOnto (instServer: InstanceServer, onto: Onto){
+class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
 
@@ -79,6 +79,7 @@ class InstOnto (instServer: InstanceServer, onto: Onto){
 	}
 	
 	private def hasStatement(statement: Statement): Boolean = {
+
 		val stIter = instServer.getStatements(
 			Some(statement.getSubject.asInstanceOf[SesameURI]),
 			Some(statement.getPredicate),

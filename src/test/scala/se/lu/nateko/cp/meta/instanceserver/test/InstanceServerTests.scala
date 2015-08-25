@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import org.openrdf.repository.sail.SailRepository
 import org.openrdf.sail.memory.MemoryStore
+import org.openrdf.model.vocabulary.RDF
 
 class InstanceServerTests extends FunSpec{
 
@@ -93,11 +94,13 @@ class InstanceServerTests extends FunSpec{
 			it("Reads all the triples written with different contexts"){
 				val server = new SesameInstanceServer(repo)
 				val statements = server.getStatements(None, None, None).toIndexedSeq
-				try{
-					assert(statements.size === 2)
-				}finally{
-					repo.shutDown()
-				}
+				assert(statements.size === 2)
+			}
+			
+			it("Finds an exact triple"){
+				val server = new SesameInstanceServer(repo, Nil, Seq(ctxt))
+				val statements = server.getStatements(Some(makeUri("inst1")), Some(RDF.TYPE), Some(makeUri("class1"))).toIndexedSeq
+				assert(statements.size === 1)
 			}
 		}
 	}

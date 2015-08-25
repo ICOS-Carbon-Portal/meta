@@ -30,6 +30,7 @@ case class OntoConfig(
 )
 
 case class CpmetaConfig(
+	port: Int,
 	instanceServers: Map[String, InstanceServerConfig],
 	rdfLog: RdflogConfig,
 	onto: OntoConfig,
@@ -45,7 +46,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
 	implicit val publicAuthConfigFormat = jsonFormat2(PublicAuthConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
-	implicit val cpmetaConfigFormat = jsonFormat4(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat5(CpmetaConfig)
 
 	def getAppConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

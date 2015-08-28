@@ -29,3 +29,12 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 	def assertion = UpdateDto(true, subject, predicate, newObject)
 	def retraction = UpdateDto(false, subject, predicate, oldObject)
 }
+
+case class UploadMetadataDto(
+	submitter: URI,
+	station: URI,
+	dataStructure: URI,
+	hashSum: String,
+	acquisitionStart: String,
+	acquisitionEnd: String
+)

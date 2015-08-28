@@ -37,10 +37,10 @@ object Etc extends Ingester{
 	}
 
 	def getStatements(valueFactory: ValueFactory): Iterator[Statement] = {
-		val vocab = new Vocab(valueFactory)
+		val vocab = Vocab(valueFactory)
 
 		getStations.iterator.flatMap(station => {
-			val uri = valueFactory.createURI(vocab.ecoStation.stringValue + "/" + URLEncoder.encode(station.site, "UTF-8"))
+			val uri = valueFactory.createURI(vocab.ecoStationClass.stringValue + "/" + URLEncoder.encode(station.site, "UTF-8"))
 
 			val name = valueFactory.createLiteral(station.name, XMLSchema.STRING)
 			val stationId = valueFactory.createLiteral(station.site, XMLSchema.STRING)
@@ -48,7 +48,7 @@ object Etc extends Ingester{
 			val lon = valueFactory.createLiteral(station.longitude.toString, XMLSchema.DOUBLE)
 
 			Iterator(
-				(RDF.TYPE, vocab.ecoStation),
+				(RDF.TYPE, vocab.ecoStationClass),
 				(vocab.hasName, name),
 				(vocab.hasStationId, stationId),
 				(vocab.hasLatitude, lat),

@@ -11,15 +11,15 @@
 ]>
 
 
-<rdf:RDF xmlns="&cpmeta;contentexamples/"
-     xml:base="&cpmeta;contentexamples/"
+<rdf:RDF xmlns="&cpmeta;instances/"
+     xml:base="&cpmeta;instances/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:dc="http://purl.org/dc/elements/1.1/"
      xmlns:cpmeta="http://meta.icos-cp.eu/ontologies/cpmeta/">
-    <owl:Ontology rdf:about="&cpmeta;contentexamples/">
+    <owl:Ontology rdf:about="&cpmeta;instances/">
         <owl:imports rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
     </owl:Ontology>
     
@@ -35,51 +35,51 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ATC -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/ATC -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/ATC">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/ATC">
         <rdf:type rdf:resource="&cpmeta;ATC"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Atmosphere thematic center</cpmeta:hasName>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/ETC -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/ETC -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/ETC">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/ETC">
         <rdf:type rdf:resource="&cpmeta;ETC"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Ecosystem thematic center</cpmeta:hasName>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_AS -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_AS -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/Hyltemossa_AS">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_AS">
         <rdf:type rdf:resource="&cpmeta;AS"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa atmospheric station</cpmeta:hasName>
         <cpmeta:hasStationClass rdf:datatype="&xsd;string">Station Class II</cpmeta:hasStationClass>
-        <cpmeta:belongsToSite rdf:resource="&cpmeta;contentexamples/Hyltemossa_site"/>
+        <cpmeta:belongsToSite rdf:resource="&cpmeta;instances/Hyltemossa_site"/>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_ES -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_ES -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/Hyltemossa_ES">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_ES">
         <rdf:type rdf:resource="&cpmeta;ES"/>
         <cpmeta:hasElevation rdf:datatype="&xsd;float">115.0</cpmeta:hasElevation>
         <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
         <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa ecosystem station</cpmeta:hasName>
-        <cpmeta:belongsToSite rdf:resource="&cpmeta;contentexamples/Hyltemossa_site"/>
+        <cpmeta:belongsToSite rdf:resource="&cpmeta;instances/Hyltemossa_site"/>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Hyltemossa_site -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_site -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/Hyltemossa_site">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_site">
         <rdf:type rdf:resource="&cpmeta;Site"/>
         <cpmeta:hasElevation rdf:datatype="&xsd;float">115.0</cpmeta:hasElevation>
         <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.42</cpmeta:hasLongitude>
@@ -90,9 +90,9 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/Jane_Doe -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Jane_Doe -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/Jane_Doe">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/Jane_Doe">
         <rdf:type rdf:resource="&cpmeta;Person"/>
         <cpmeta:hasLastName rdf:datatype="&xsd;string">Doe</cpmeta:hasLastName>
         <cpmeta:hasFirstName rdf:datatype="&xsd;string">Jane</cpmeta:hasFirstName>
@@ -101,9 +101,9 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/John_Smith -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/John_Smith -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/John_Smith">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/John_Smith">
         <rdf:type rdf:resource="&cpmeta;Person"/>
         <cpmeta:hasFirstName rdf:datatype="&xsd;string">John</cpmeta:hasFirstName>
         <cpmeta:hasLastName rdf:datatype="&xsd;string">Smith</cpmeta:hasLastName>
@@ -112,28 +112,28 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/OTC -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/OTC -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/OTC">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/OTC">
         <rdf:type rdf:resource="&cpmeta;OTC"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Ocean thematic center</cpmeta:hasName>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/atcDirector -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/atcDirector -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/atcDirector">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/atcDirector">
         <rdf:type rdf:resource="&cpmeta;Membership"/>
-        <cpmeta:atOrganization rdf:resource="&cpmeta;contentexamples/ATC"/>
-        <cpmeta:hasRole rdf:resource="&cpmeta;contentexamples/directorRole"/>
+        <cpmeta:atOrganization rdf:resource="&cpmeta;instances/ATC"/>
+        <cpmeta:hasRole rdf:resource="&cpmeta;instances/directorRole"/>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/directorRole -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/directorRole -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;contentexamples/directorRole">
+    <owl:NamedIndividual rdf:about="&cpmeta;instances/directorRole">
         <rdf:type rdf:resource="&cpmeta;Role"/>
         <rdfs:label rdf:datatype="&xsd;string">Director</rdfs:label>
         <cpmeta:hasTitle rdf:datatype="&xsd;string">Director</cpmeta:hasTitle>

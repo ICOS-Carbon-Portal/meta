@@ -93,9 +93,13 @@ object MetaDb {
 			}
 		}.toIndexedSeq
 
+		val instServerId = config.onto.instanceServerId
+		val instServerIndex = serverKeys.indexOf(instServerId)
+		if(instServerIndex < 0) throw new Exception(s"Missing instance server with id '$instServerId'. Check your config.")
+
 		val dbFuture = for(
 			onto <- ontoFut;
-			instServer <- serverFuts(serverKeys.indexOf(config.onto.instanceServerId));
+			instServer <- serverFuts(instServerIndex);
 			servers <- Future.sequence(serverFuts)
 		) yield{
 			val instOnto = new InstOnto(instServer, onto)

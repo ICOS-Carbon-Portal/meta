@@ -7,7 +7,10 @@ import org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
 import org.openrdf.query.QueryLanguage
 
 trait SparqlServer {
-
+	/**
+	 * Executes a SPARQL SELECT query
+	 * @return Query results in SPARQL-JSON format
+	 */
 	def executeQuery(query: String): String
 }
 

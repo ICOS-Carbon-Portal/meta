@@ -75,4 +75,6 @@ trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
 	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
 	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
+	
+	implicit val uploadMetadataDtoFormat = jsonFormat6(UploadMetadataDto)
 }

@@ -14,7 +14,7 @@ trait Ingester{
 object Ingestion {
 
 	val allIngesters: Map[String, Ingester] = Map(
-		"contentExamples" -> new RdfXmlFileIngester("/owl/content_examples.owl"),
+		"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
 		"etcStations" -> Etc
 	)
 

@@ -12,10 +12,10 @@ object TestConfig {
 	val factory = manager.getOWLDataFactory
 	lazy val owlOnto = getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
 
-	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/contentexamples/"
+	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/instances/"
 
 	lazy val instServer: InstanceServer = {
-		val repo = Loading.fromResource("/../classes/owl/content_examples.owl", ontUri)
+		val repo = Loading.fromResource("/../classes/owl/cpmetainstances.owl", ontUri)
 		new SesameInstanceServer(repo, ontUri)
 	}
 }

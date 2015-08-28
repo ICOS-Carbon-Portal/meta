@@ -3,20 +3,33 @@ package se.lu.nateko.cp.meta.utils
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-
 import org.openrdf.model.URI
 import org.openrdf.model.ValueFactory
 import org.openrdf.repository.Repository
 import org.openrdf.repository.RepositoryConnection
 import org.openrdf.repository.RepositoryResult
-
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import org.openrdf.model.Value
+import org.openrdf.model.Statement
+import org.openrdf.model.Literal
+import org.openrdf.model.vocabulary.XMLSchema
 
 package object sesame {
 
 	implicit class EnrichedValueFactory(val factory: ValueFactory) extends AnyVal{
 		def createURI(uri: java.net.URI): URI = factory.createURI(uri.toString)
+		def createURI(base: java.net.URI, fragment: String): URI = factory.createURI(base.toString, fragment)
+		def createURI(base: URI, fragment: String): URI = factory.createURI(base.stringValue, fragment)
 		def createLiteral(label: String, dtype: java.net.URI) = factory.createLiteral(label, createURI(dtype))
+		
+		def tripleToStatement(triple: (URI, URI, Value)): Statement =
+			factory.createStatement(triple._1, triple._2, triple._3)
+
+		def getDateTimeNow: Literal = {
+			val fmt = org.joda.time.format.ISODateTimeFormat.basicDateTime()
+			val dt = fmt.print(new org.joda.time.DateTime())
+			factory.createLiteral(dt, XMLSchema.DATETIME)
+		}
 	}
 
 	implicit class ToJavaUriConverter(val uri: URI) extends AnyVal{

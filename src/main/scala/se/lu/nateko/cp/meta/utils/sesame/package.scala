@@ -26,8 +26,7 @@ package object sesame {
 			factory.createStatement(triple._1, triple._2, triple._3)
 
 		def getDateTimeNow: Literal = {
-			val fmt = org.joda.time.format.ISODateTimeFormat.basicDateTime()
-			val dt = fmt.print(new org.joda.time.DateTime())
+			val dt = DateTimeUtils.defaultFormatter.print(new org.joda.time.DateTime())
 			factory.createLiteral(dt, XMLSchema.DATETIME)
 		}
 	}

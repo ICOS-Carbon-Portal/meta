@@ -19,3 +19,12 @@ Getting started with the back-end part
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run sbt
 - In the sbt console, run `~re-start` for continuous local rebuilds and server restarts
+
+Using the webapp
+----------------
+To get the authentication cookie from Cpauth:
+`curl --cookie-jar cookies.txt --data "mail=<user email>&password=<password>" https://cpauth.icos-cp.eu/password/login`
+The resulting `cookies.txt` file must be edited if you want to use it for tests against localhost via HTTP.
+
+To test the metadata upload (`upload.json` and `cookies.txt` must be in the current directory):
+`curl --cookie cookies.txt -H "Content-Type: application/json" -X POST -d @upload.json 127.0.0.1:9094/upload`

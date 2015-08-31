@@ -24,11 +24,14 @@ object MainRoute {
 		val sparqlRoute = SparqlRoute(db.sparql)
 		val staticRoute = StaticRoute(config)
 		val metaEntryApiRoute = MetadataEntryApiRoute(db.instOnto)
+		val authRouting = new AuthenticationRouting(config.auth)
+		val uploadRoute = UploadApiRoute(db.uploadService, authRouting)
 
 		handleExceptions(exceptionHandler){
+			sparqlRoute ~
 			metaEntryApiRoute ~
 			staticRoute ~
-			sparqlRoute
+			uploadRoute
 		}
 	}
 

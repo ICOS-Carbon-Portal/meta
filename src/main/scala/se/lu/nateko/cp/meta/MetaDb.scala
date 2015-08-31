@@ -18,10 +18,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
 import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
+import se.lu.nateko.cp.meta.datasets.UploadService
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
 	val instOnto: InstOnto,
+	val uploadService: UploadService,
 	repo: Repository) extends Closeable{
 
 	val sparql: SparqlServer = new SesameSparqlServer(repo)
@@ -78,12 +80,22 @@ object MetaDb {
 	}
 
 	def apply(config: CpmetaConfig)(implicit ex: ExecutionContext): MetaDb = {
+
+		val serverKeys = config.instanceServers.keys.toIndexedSeq
+
+		def getIntServerIndex(instanceServerId: String): Int = {
+			val instServerIndex = serverKeys.indexOf(instanceServerId)
+			if(instServerIndex < 0) throw new Exception(s"Missing instance server with id 'instanceServerId'. Check your config.")
+			instServerIndex
+		}
+
+		val ontInstServerIndex = getIntServerIndex(config.onto.instanceServerId)
+		val uploadInstServerIndex = getIntServerIndex(config.dataUploadService.instanceServerId)
+
 		val ontoFut = Future{makeOnto(config.onto)}
 
 		val repo = Loading.empty
 		val valueFactory = repo.getValueFactory
-
-		val serverKeys = config.instanceServers.keys.toIndexedSeq
 
 		val serverFuts = config.instanceServers.values.map { servConf =>
 			val serverFut = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
@@ -93,18 +105,16 @@ object MetaDb {
 			}
 		}.toIndexedSeq
 
-		val instServerId = config.onto.instanceServerId
-		val instServerIndex = serverKeys.indexOf(instServerId)
-		if(instServerIndex < 0) throw new Exception(s"Missing instance server with id '$instServerId'. Check your config.")
-
 		val dbFuture = for(
 			onto <- ontoFut;
-			instServer <- serverFuts(instServerIndex);
+			ontInstServer <- serverFuts(ontInstServerIndex);
+			uploadInstServer <- serverFuts(uploadInstServerIndex);
 			servers <- Future.sequence(serverFuts)
 		) yield{
-			val instOnto = new InstOnto(instServer, onto)
+			val instOnto = new InstOnto(ontInstServer, onto)
 			val instServers = serverKeys.zip(servers).toMap
-			new MetaDb(instServers, instOnto, repo)
+			val uploadService = new UploadService(uploadInstServer, config.dataUploadService)
+			new MetaDb(instServers, instOnto, uploadService, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

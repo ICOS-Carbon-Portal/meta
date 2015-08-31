@@ -2,13 +2,11 @@ package se.lu.nateko.cp.meta.datasets
 
 import scala.util.Try
 import scala.util.control.NoStackTrace
-
 import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.XMLSchema
-
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
@@ -16,14 +14,21 @@ import se.lu.nateko.cp.meta.ingestion.Vocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.DateTimeUtils
 
-class UploadService(server: InstanceServer, sparql: SparqlServer, conf: UploadServiceConfig) {
+sealed abstract class UploadException(message: String) extends RuntimeException(
+		if(message == null) "" else message
+	) with NoStackTrace
+
+final class UploadUserErrorException(message: String) extends UploadException(message)
+final class UnauthorizedUploadException(message: String) extends UploadException(message)
+
+class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
 	private val factory = server.factory
 	private val vocab = Vocab(factory)
 
 	implicit def javaUriToSesame(uri: java.net.URI): URI = factory.createURI(uri)
-	implicit def tupleToLiteral(tuple: (String, URI)): Literal = factory.createLiteral(tuple._1, tuple._2)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
 		val submitter = meta.submitter
@@ -39,22 +44,26 @@ class UploadService(server: InstanceServer, sparql: SparqlServer, conf: UploadSe
 		if(!server.getStatements(datasetUri).isEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
 
+		if(server.getStatements(Some(meta.station), Some(RDF.TYPE), Some(submitterConf.stationClass)).isEmpty)
+			throw new UploadUserErrorException(s"Unknown station: ${meta.station}")
+
+		if(server.getStatements(Some(meta.dataStructure), Some(RDF.TYPE), Some(submitterConf.dataStructureClass)).isEmpty)
+			throw new UploadUserErrorException(s"Unknown data structure: ${meta.dataStructure}")
+
 		val submissionUri = factory.createURI(vocab.submissionClass, "/" + meta.hashSum)
 		val acquisitionUri = factory.createURI(vocab.acquisitionClass, "/" + meta.hashSum)
 
-		//TODO Validate acquisition start/end datetimes
-		//TODO Check that station, submitter, datastructure exist
 		server.addAll(Seq[(URI, URI, Value)](
 
 			(datasetUri, RDF.TYPE, submitterConf.datasetClass),
-			(datasetUri, vocab.hasSha256sum, (meta.hashSum, XMLSchema.HEXBINARY)),
+			(datasetUri, vocab.hasSha256sum, makeSha256Literal(meta.hashSum)),
 			(datasetUri, vocab.qb.structure, meta.dataStructure),
 			(datasetUri, vocab.wasAcquiredBy, acquisitionUri),
 			(datasetUri, vocab.wasSubmittedBy, submissionUri),
 
 			(acquisitionUri, RDF.TYPE, vocab.acquisitionClass),
-			(acquisitionUri, vocab.prov.startedAtTime, (meta.acquisitionStart, XMLSchema.DATETIME)),
-			(acquisitionUri, vocab.prov.endedAtTime, (meta.acquisitionEnd, XMLSchema.DATETIME)),
+			(acquisitionUri, vocab.prov.startedAtTime, makeDateTimeLiteral(meta.acquisitionStart)),
+			(acquisitionUri, vocab.prov.endedAtTime, makeDateTimeLiteral(meta.acquisitionEnd)),
 			(acquisitionUri, vocab.prov.wasAssociatedWith, meta.station),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
@@ -65,9 +74,31 @@ class UploadService(server: InstanceServer, sparql: SparqlServer, conf: UploadSe
 
 		datasetUri.stringValue
 	}
+
+	import UploadService._
+
+	private def makeDateTimeLiteral(dt: String): Literal =
+		factory.createLiteral(dateTimeToUtc(dt), XMLSchema.DATETIME)
+
+	private def makeSha256Literal(sum: String): Literal =
+		factory.createLiteral(ensureSha256(sum), XMLSchema.HEXBINARY)
 }
 
-sealed abstract class UploadException(message: String) extends RuntimeException(message) with NoStackTrace
+object UploadService{
 
-final class UploadUserErrorException(message: String) extends UploadException(message)
-final class UnauthorizedUploadException(message: String) extends UploadException(message)
+	def dateTimeToUtc(dt: String): String = 
+		try{
+			val parsed = DateTimeUtils.defaultFormatter.parseDateTime(dt)
+			DateTimeUtils.defaultFormatter.print(parsed)
+		}catch{
+			case err: IllegalArgumentException =>
+				throw new UploadUserErrorException(err.getMessage)
+		}
+
+	private[this] val shaPattern = """[0-9a-fA-F]{64}""".r.pattern
+
+	def ensureSha256(sum: String): String = {
+		if(shaPattern.matcher(sum).matches) sum.toLowerCase
+		else throw new UploadUserErrorException("Invalid SHA-256 sum, expecting a 32-byte hexadecimal string")
+	}
+}

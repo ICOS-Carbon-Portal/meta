@@ -32,10 +32,11 @@ case class OntoConfig(
 case class DataSubmitterConfig(
 	authorizedUserIds: Seq[String],
 	datasetClass: URI,
+	stationClass: URI,
 	dataStructureClass: URI
 )
 
-case class UploadServiceConfig(submitters: Map[URI, DataSubmitterConfig])
+case class UploadServiceConfig(instanceServerId: String, submitters: Map[URI, DataSubmitterConfig])
 
 case class CpmetaConfig(
 	port: Int,
@@ -55,8 +56,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
 	implicit val publicAuthConfigFormat = jsonFormat2(PublicAuthConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
-	implicit val dataSubmitterConfigFormat = jsonFormat3(DataSubmitterConfig)
-	implicit val uploadServiceConfigFormat = jsonFormat1(UploadServiceConfig)
+	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
+	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
 	implicit val cpmetaConfigFormat = jsonFormat6(CpmetaConfig)
 
 	def getAppConfig: Config = {

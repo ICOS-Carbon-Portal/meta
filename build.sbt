@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
 	"org.apache.ws.commons.axiom" % "axiom-dom"   % "1.2.14", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-impl"  % "1.2.14",  //Hermit
 	"se.lu.nateko.cp"    %% "cpauth-core"       % "0.2",
+	"net.sf.opencsv" % "opencsv" % "2.3",
 	"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test"
 )
 

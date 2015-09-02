@@ -1,4 +1,4 @@
-Prefix: : <http://www.icos-cp.eu/ontologies/stationentry/>
+Prefix: : <http://meta.icos-cp.eu/ontologies/stationentry/>
 Prefix: dc: <http://purl.org/dc/elements/1.1/>
 Prefix: owl: <http://www.w3.org/2002/07/owl#>
 Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -8,7 +8,7 @@ Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 
 
-Ontology: <http://www.icos-cp.eu/ontologies/stationentry/>
+Ontology: <http://meta.icos-cp.eu/ontologies/stationentry/>
 
 
 AnnotationProperty: rdfs:label
@@ -30,9 +30,6 @@ Datatype: xsd:integer
 
     
 Datatype: xsd:string
-
-    
-Datatype: xsd:short
 
     
 Datatype: xsd:boolean
@@ -80,7 +77,7 @@ DataProperty: hasFundingForConstruction
 DataProperty: hasLongName
 
     Annotations: 
-        rdfs:label "long name"^^xsd:short
+        rdfs:label "long name"^^xsd:string
     
     Domain: 
         Station
@@ -95,7 +92,7 @@ DataProperty: hasLongName
 DataProperty: hasLocationDescription
 
     Annotations: 
-        rdfs:label "location description"^^xsd:short
+        rdfs:label "location description"^^xsd:string
     
     Domain: 
         OS
@@ -110,7 +107,7 @@ DataProperty: hasLocationDescription
 DataProperty: hasSiteType
 
     Annotations: 
-        rdfs:label "site type"^^xsd:short
+        rdfs:label "site type"^^xsd:string
     
     Domain: 
         Station
@@ -137,7 +134,7 @@ DataProperty: hasFundingForOperation
 DataProperty: hasLon
 
     Annotations: 
-        rdfs:label "decimal longitude"^^xsd:short
+        rdfs:label "decimal longitude"^^xsd:string
     
     Domain: 
         Station
@@ -164,7 +161,7 @@ DataProperty: hasElevationAboveSea
 DataProperty: hasLat
 
     Annotations: 
-        rdfs:label "decimal latitude"^^xsd:short
+        rdfs:label "decimal latitude"^^xsd:string
     
     Domain: 
         Station
@@ -191,8 +188,8 @@ DataProperty: hasOperationalDateEstimate
 DataProperty: hasStationKind
 
     Annotations: 
-        rdfs:label "kind of station"^^xsd:short,
-        rdfs:comment "TT, aircraft, atm, ground, eco, ocean"^^xsd:short
+        rdfs:label "kind of station"^^xsd:string,
+        rdfs:comment "TT, aircraft, atm, ground, eco, ocean"^^xsd:string
     
     Domain: 
         Station
@@ -219,7 +216,7 @@ DataProperty: isAlreadyOperational
 DataProperty: hasPiName
 
     Annotations: 
-        rdfs:label "principal investigator name"^^xsd:short
+        rdfs:label "principal investigator name"^^xsd:string
     
     Domain: 
         Station
@@ -246,7 +243,7 @@ DataProperty: hasPreIcosMeasurements
 DataProperty: hasShortName
 
     Annotations: 
-        rdfs:label "short name"^^xsd:short
+        rdfs:label "short name"^^xsd:string
     
     Domain: 
         Station
@@ -261,8 +258,8 @@ DataProperty: hasShortName
 DataProperty: hasStationClass
 
     Annotations: 
-        rdfs:label "ICOS station class"^^xsd:short,
-        rdfs:comment "1, 2 or 3"^^xsd:short
+        rdfs:label "ICOS station class"^^xsd:string,
+        rdfs:comment "1, 2 or 3"^^xsd:string
     
     Domain: 
         Station
@@ -277,7 +274,7 @@ DataProperty: hasStationClass
 DataProperty: hasPiEmail
 
     Annotations: 
-        rdfs:label "principal investigator email"^^xsd:short
+        rdfs:label "principal investigator email"^^xsd:string
     
     Domain: 
         Station

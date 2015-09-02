@@ -71,7 +71,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 		val createTable =
 			s"""CREATE TABLE $logName (
-				"TIMESTAMP" timestamp with time zone,
+				"tstamp" timestamptz,
 				"ASSERTION" boolean,
 				"TYPE" smallint,
 				"SUBJECT" text,
@@ -86,8 +86,9 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 //			val colLow = colName.toLowerCase
 //			s"""CREATE INDEX ${colLow}_index ON rdflog USING btree ("$colName" COLLATE pg_catalog."C")"""
 //		})
+		val createIndex = s"""CREATE INDEX ${logName}_index ON ${logName} USING btree (tstamp)"""
 
-		val all = createTable +: setOwner +: Nil// +: makeIndexes
+		val all = createTable +: setOwner +: createIndex +: Nil
 
 		execute(all: _*)
 	}

@@ -15,21 +15,23 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 	def apply(service: UploadService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("upload"){
 		post{
-			entity(as[UploadMetadataDto]){uploadMeta =>
-				authRouting.user{uploader =>
-					service.registerUpload(uploadMeta, uploader) match{
-						case Success(datasetUrl) => complete(datasetUrl)
-						case Failure(err) => err match{
-							case authErr: UnauthorizedUploadException =>
-								complete((StatusCodes.Forbidden, authErr.getMessage))
-							case userErr: UploadUserErrorException =>
-								complete((StatusCodes.BadRequest, userErr.getMessage))
-							case _ => throw err
+			authRouting.user{uploader =>
+				pathEnd{
+					entity(as[UploadMetadataDto]){uploadMeta =>
+						service.registerUpload(uploadMeta, uploader) match{
+							case Success(datasetUrl) => complete(datasetUrl)
+							case Failure(err) => err match{
+								case authErr: UnauthorizedUploadException =>
+									complete((StatusCodes.Unauthorized, authErr.getMessage))
+								case userErr: UploadUserErrorException =>
+									complete((StatusCodes.BadRequest, userErr.getMessage))
+								case _ => throw err
+							}
 						}
-					}
+					} ~
+					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
 				}
-			} ~
-			complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+			}
 		} ~
 		get{
 			complete("OK")

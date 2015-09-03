@@ -28,10 +28,17 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) {
 		}
 	}) ~ forbid(s"Authentication cookie ${authConfig.authCookieName} was not set")
 
-	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
+	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Unauthorized, msg))
 
 	private def toMessage(err: Throwable): String = {
 		val msg = err.getMessage
 		if(msg == null || msg.isEmpty) err.getClass.getName else msg
+	}
+	
+	def allowUsers(userIds: Seq[String])(inner: => Route): Route = user{ uinfo =>
+		if(userIds.isEmpty || userIds.contains(uinfo.mail))
+			inner
+		else
+			forbid(s"User ${uinfo.givenName} ${uinfo.surname} is not authorized to perform this operation")
 	}
 }

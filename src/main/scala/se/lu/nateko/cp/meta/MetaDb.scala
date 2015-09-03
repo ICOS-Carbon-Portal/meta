@@ -22,7 +22,7 @@ import se.lu.nateko.cp.meta.datasets.UploadService
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
-	val instOnto: InstOnto,
+	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
 	repo: Repository) extends Closeable{
 
@@ -57,9 +57,10 @@ object MetaDb {
 
 	}
 
+	private val owlManager = OWLManager.createOWLOntologyManager
+
 	def makeOnto(conf: OntoConfig): Onto = {
-		val manager = OWLManager.createOWLOntologyManager
-		val owl = utils.owlapi.getOntologyFromJarResourceFile(conf.owlResource, manager)
+		val owl = utils.owlapi.getOntologyFromJarResourceFile(conf.owlResource, owlManager)
 		new Onto(owl)
 	}
 
@@ -89,10 +90,15 @@ object MetaDb {
 			instServerIndex
 		}
 
-		val ontInstServerIndex = getIntServerIndex(config.onto.instanceServerId)
+		//doing lookup of server instances eagerly to fail early in the case of a wrong config file
 		val uploadInstServerIndex = getIntServerIndex(config.dataUploadService.instanceServerId)
+		val ontInstServerIndexes = config.onto.map{
+			case (ontId, ontConf) => (ontId, getIntServerIndex(ontConf.instanceServerId))
+		}
 
-		val ontoFut = Future{makeOnto(config.onto)}
+		val ontoFuts = config.onto.values
+			.map(ontConf => Future{makeOnto(ontConf)})
+			.toIndexedSeq //for eagerness
 
 		val repo = Loading.empty
 		val valueFactory = repo.getValueFactory
@@ -106,15 +112,20 @@ object MetaDb {
 		}.toIndexedSeq
 
 		val dbFuture = for(
-			onto <- ontoFut;
-			ontInstServer <- serverFuts(ontInstServerIndex);
-			uploadInstServer <- serverFuts(uploadInstServerIndex);
+			ontos <- Future.sequence(ontoFuts);
 			servers <- Future.sequence(serverFuts)
 		) yield{
-			val instOnto = new InstOnto(ontInstServer, onto)
+			val instOntos = config.onto.keys.zip(ontos).map{
+				case (ontId, onto) =>
+					val instServer = servers(ontInstServerIndexes(ontId))
+					(ontId, new InstOnto(instServer, onto))
+			}.toMap
+
 			val instServers = serverKeys.zip(servers).toMap
+			val uploadInstServer = servers(uploadInstServerIndex)
 			val uploadService = new UploadService(uploadInstServer, config.dataUploadService)
-			new MetaDb(instServers, instOnto, uploadService, repo)
+
+			new MetaDb(instServers, instOntos, uploadService, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

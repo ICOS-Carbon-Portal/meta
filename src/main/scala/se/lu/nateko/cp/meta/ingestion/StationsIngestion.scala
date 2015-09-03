@@ -51,7 +51,7 @@ object StationsIngestion extends Ingester{
 				case (Some(lat), Some(lon)) =>
 					Right((lat, lon))
 				case _ =>
-					val locDescr: String = Seq(opt(4), opt(5)).flatten.distinct.mkString(",")
+					val locDescr: String = Seq(opt(4), opt(5)).flatten.distinct.mkString(", ")
 					Left(if(locDescr.isEmpty) "Undefined" else locDescr)
 			}
 
@@ -62,7 +62,7 @@ object StationsIngestion extends Ingester{
 
 		def dblOpt(ind: Int): Option[Double] =
 			try{Some(dbl(ind))}
-			catch{ case _ => None}
+			catch{ case _ : Throwable => None}
 
 		val basic = BasicStation(
 			shortName = row(0),
@@ -113,18 +113,7 @@ object StationsIngestion extends Ingester{
 			factory.createStatement(statUri, RDF.TYPE, netToSesame(basic.classUri)),
 			factory.createStatement(statUri, uri("hasShortName"), plainLit(basic.shortName)),
 			factory.createStatement(statUri, uri("hasLongName"), plainLit(basic.longName)),
-			factory.createStatement(statUri, uri("hasCountry"), plainLit(basic.country)),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
+			factory.createStatement(statUri, uri("hasCountry"), plainLit(basic.country))
 			//factory.createStatement(, , ),
 			//factory.createStatement(, , ),
 		)

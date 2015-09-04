@@ -6,12 +6,13 @@ import org.openrdf.model.vocabulary.{XMLSchema, RDF}
 import org.openrdf.model.{ValueFactory, Statement}
 
 
-case class BasicStation(
+case class Station(
 	val classUri: URI,
 	val shortName: String,
 	val longName: String,
 	val stationClass: Int,
 	val country: String,
+	val location: Either[String, (Double, Double)],
 	val elevationAG: Option[String],
 	val elevationAS: Option[Float],
 	val fundingForConstruction: String,
@@ -25,13 +26,28 @@ case class BasicStation(
 	val piEmail: String
 )
 
-sealed trait Station{
-	def basic: BasicStation
-}
-case class OceanStation(val basic: BasicStation, val location: Either[String, (Double, Double)]) extends Station
-case class AtmEcoStation(val basic: BasicStation, val lat: Double, val lon: Double) extends Station
-
 object StationsIngestion extends Ingester{
+
+	val prefix = "http://meta.icos-cp.eu/ontologies/stationentry/"
+
+	def uri(fragment: String)(implicit valueFactory: ValueFactory) = valueFactory.createURI(prefix + fragment)
+	def lit(lit: String, dtype: org.openrdf.model.URI)(implicit factory: ValueFactory) = factory.createLiteral(lit, dtype)
+	def lit(lit: String)(implicit factory: ValueFactory) = factory.createLiteral(lit, XMLSchema.STRING)
+	def lit(lit: Int)(implicit factory: ValueFactory) = factory.createLiteral(lit)
+	def lit(lit: Boolean)(implicit factory: ValueFactory) = factory.createLiteral(lit)
+	def lit(lit: Double)(implicit factory: ValueFactory) = factory.createLiteral(lit)
+
+	val es = new URI(prefix + "ES")
+	val as = new URI(prefix + "AS")
+	val os = new URI(prefix + "OS")
+
+	val themeToUri = Map(
+		"eco" -> es,
+		"atm" -> as,
+		"ocean" -> os,
+		"oce" -> os
+	)
+
 
 	def getStationsTable: TextTable = {
 		val stationsStream = getClass.getResourceAsStream("/stations.csv")
@@ -64,11 +80,12 @@ object StationsIngestion extends Ingester{
 			try{Some(dbl(ind))}
 			catch{ case _ : Throwable => None}
 
-		val basic = BasicStation(
+		Station(
 			shortName = row(0),
 			longName = row(1),
 			classUri = themeToUri(row(2).toLowerCase.trim),
 			country = row(3),
+			location = location,
 			elevationAS = opt(6).map(_.toFloat),
 			elevationAG = opt(7),
 			stationClass = row(8).toInt,
@@ -82,62 +99,53 @@ object StationsIngestion extends Ingester{
 			fundingForConstruction = row(16),
 			fundingForOperation = row(17)
 		)
-
-		if (basic.classUri == os){
-			OceanStation(basic, location)
-		} else {
-			AtmEcoStation(basic, dbl(4), dbl(5))
-		}
 	}
+
 
 	def stationToStatements(station: Station, factory: ValueFactory): Seq[Statement] = {
 		implicit val f = factory
 		def netToSesame(uri: URI) = factory.createURI(uri.toString)
-		def plainLit(lit: String) = factory.createLiteral(lit, XMLSchema.STRING)
-		def lit(lit: String, dtype: org.openrdf.model.URI) = factory.createLiteral(lit, dtype)
 
-		val basic = station.basic
-		
-		val statUri = factory.createURI(basic.classUri.toString + "/" + URLEncoder.encode(basic.shortName, "UTF-8"))
+		val statUri = factory.createURI(station.classUri.toString + "/" + URLEncoder.encode(station.shortName, "UTF-8"))
 
 		val conditionals = Seq(
-			basic.elevationAS.map{elevation =>
-				factory.createStatement(statUri, uri("hasElevationAboveSea"), lit(elevation.toString, XMLSchema.FLOAT))
+			station.elevationAS.map{elevation =>
+				(uri("hasElevationAboveSea"), lit(elevation.toString, XMLSchema.FLOAT))
 			},
-			basic.elevationAG.map{elevation =>
-				factory.createStatement(statUri, uri("hasElevationAboveGround"), plainLit(elevation))
+			station.elevationAG.map{elevation =>
+				(uri("hasElevationAboveGround"), lit(elevation))
 			}
 		).flatten
 
-		conditionals ++ Seq(
-			factory.createStatement(statUri, RDF.TYPE, netToSesame(basic.classUri)),
-			factory.createStatement(statUri, uri("hasShortName"), plainLit(basic.shortName)),
-			factory.createStatement(statUri, uri("hasLongName"), plainLit(basic.longName)),
-			factory.createStatement(statUri, uri("hasCountry"), plainLit(basic.country))
-			//factory.createStatement(, , ),
-			//factory.createStatement(, , ),
-		)
+		val position = station.location match {
+			case Left(pos) => Seq(
+				(uri("hasLocationDescription"), lit(pos))
+			)
+			case Right((lat, lon)) => Seq(
+				(uri("hasLat"), lit(lat)),
+				(uri("hasLon"), lit(lon))
+			)
+		}
+
+		(position ++ conditionals ++ Seq(
+			(RDF.TYPE, netToSesame(station.classUri)),
+			(uri("hasShortName"), lit(station.shortName)),
+			(uri("hasLongName"), lit(station.longName)),
+			(uri("hasCountry"), lit(station.country)),
+			(uri("hasStationClass"), lit(station.stationClass)),
+			(uri("hasSiteType"), lit(station.siteType)),
+			(uri("hasStationKind"), lit(station.stationKind)),
+			(uri("hasPiName"), lit(station.piName)),
+			(uri("hasPiEmail"), lit(station.piEmail)),
+			(uri("hasPreIcosMeasurements"), lit(station.hasPreIcosMeas)),
+			(uri("hasOperationalDateEstimate"), lit(station.operationalDateEstimate)),
+			(uri("isAlreadyOperational"), lit(station.isOperational)),
+			(uri("hasFundingForConstruction"), lit(station.fundingForConstruction)),
+			(uri("hasFundingForOperation"), lit(station.fundingForOperation))
+		)).map{
+			case (pred, obj) => factory.createStatement(statUri, pred, obj)
+		}
 	}
-
-	def getUri(stationType: String): URI = {
-		themeToUri(stationType)
-	}
-
-	val prefix = "http://meta.icos-cp.eu/ontologies/stationentry/"
-
-	def uri(fragment: String)(implicit valueFactory: ValueFactory) = valueFactory.createURI(prefix + fragment)
-
-	val es = new URI(prefix + "ES")
-	val as = new URI(prefix + "AS")
-	val os = new URI(prefix + "OS")
-
-	val themeToUri = Map(
-		"eco" -> es,
-		"atm" -> as,
-		"ocean" -> os,
-		"oce" -> os
-	)
-
 
 	override def getStatements(valueFactory: ValueFactory): Iterator[Statement] =
 		getStationsTable.rows.iterator

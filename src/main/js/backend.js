@@ -59,21 +59,21 @@ function makeErrorReport(request){
 
 module.exports = {
 	listClasses: function(){
-		return getJson('/api/getExposedClasses');
+		return getJson('getExposedClasses');
 	},
 	listIndividuals: function(classUri){
-		var url = '/api/listIndividuals?classUri=' + encodeURIComponent(classUri);
+		var url = 'listIndividuals?classUri=' + encodeURIComponent(classUri);
 		return getJson(url);
 	},
 	getIndividual: function(uri){
-		var url = '/api/getIndividual?uri=' + encodeURIComponent(uri);
+		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
 		return getJson(url);
 	},
 	applyUpdates: function(updates){
-		return postJson('/api/applyupdates', updates);
+		return postJson('applyupdates', updates);
 	},
 	performReplacement: function(replacement){
-		return postJson('/api/performreplacement', replacement);
+		return postJson('performreplacement', replacement);
 	}
 };
 

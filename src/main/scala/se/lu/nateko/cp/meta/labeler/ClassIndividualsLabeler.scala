@@ -12,9 +12,11 @@ object ClassIndividualsLabeler{
 
 	def apply(owlClass: OWLClass, onto: OWLOntology, nested: InstanceLabeler): InstanceLabeler = {
 
+		val ontologies = onto.getImportsClosure
+
 		def getDisplayComponents(prop: OWLAnnotationProperty): Seq[DisplayComponent] =
 			EntitySearcher
-				.getAnnotations(owlClass, onto, prop)
+				.getAnnotations(owlClass, ontologies, prop)
 				.map{anno => DisplayComponent(anno.getValue, onto)}
 				.flatten
 				.toSeq
@@ -29,14 +31,14 @@ object ClassIndividualsLabeler{
 
 		if(displayComps.nonEmpty)
 			new MultiComponentIndividualLabeler(displayComps, nested)
-		else getSingleSuperClass(owlClass, onto) match{
+		else getSingleSuperClass(owlClass, ontologies) match{
 			case Some(superClass) => apply(superClass, onto, nested)
 			case None => Labeler.rdfs
 		}
 	}
 
-	private def getSingleSuperClass(owlClass: OWLClass, onto: OWLOntology): Option[OWLClass] = {
-		val superClasses = EntitySearcher.getSuperClasses(owlClass, onto)
+	private def getSingleSuperClass(owlClass: OWLClass, ontologies: java.util.Set[OWLOntology]): Option[OWLClass] = {
+		val superClasses = EntitySearcher.getSuperClasses(owlClass, ontologies)
 			.collect{case oc: OWLClass => oc}.toSeq
 
 		assert(

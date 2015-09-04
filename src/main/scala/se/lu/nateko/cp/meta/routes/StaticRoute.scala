@@ -16,7 +16,7 @@ object StaticRoute {
 
 	def apply(config: CpmetaConfig): Route = get{
 		pathPrefix("edit" / Segment){ontId =>
-			if(config.onto.contains(ontId)){
+			if(config.onto.instOntoServers.contains(ontId)){
 				pathEndOrSingleSlash{
 					complete(fromResource("/www/index.html", MediaTypes.`text/html`))
 				}
@@ -24,11 +24,17 @@ object StaticRoute {
 				complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
 		} ~
 		path("ontologies" / Segment){ ontId =>
-			config.onto.get(ontId) match{
+			config.onto.instOntoServers.get(ontId) match{
 				case None =>
 					complete(StatusCodes.NotFound)
-				case Some(ontConf) => 
-					complete(fromResource(ontConf.owlResource, MediaTypes.`text/plain`))
+				case Some(ontConf) =>
+					val ontId = ontConf.ontoId
+					val ontRes = config.onto.ontologies.find(_.ontoId.contains(ontId)).map(_.owlResource)
+					ontRes match{
+						case None =>
+							complete(StatusCodes.NotFound)
+						case Some(owlResource) => complete(fromResource(owlResource, MediaTypes.`text/plain`))
+					}
 			}
 		} ~
 		path("bundle.js"){

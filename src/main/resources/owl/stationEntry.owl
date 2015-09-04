@@ -38,19 +38,92 @@ Datatype: xsd:boolean
 Datatype: rdf:PlainLiteral
 
     
-DataProperty: hasCountry
+DataProperty: hasPreIcosMeasurements
 
     Domain: 
         Station
     
     Range: 
-        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
+        xsd:boolean
     
     Characteristics: 
         Functional
     
     
-DataProperty: hasElevationAboveGround
+DataProperty: hasStationKind
+
+    Annotations: 
+        rdfs:label "kind of station"^^xsd:string,
+        rdfs:comment "TT, aircraft, atm, ground, eco, ocean"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        {"TT"^^xsd:string , "aircraft"^^xsd:string , "atm"^^xsd:string , "eco"^^xsd:string , "ground"^^xsd:string , "ocean"^^xsd:string}
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasSiteType
+
+    Annotations: 
+        rdfs:label "site type"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasPiName
+
+    Annotations: 
+        rdfs:label "principal investigator name"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasPiEmail
+
+    Annotations: 
+        rdfs:label "principal investigator email"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasElevationAboveSea
+
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:float
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasFundingForOperation
 
     Domain: 
         Station
@@ -62,7 +135,19 @@ DataProperty: hasElevationAboveGround
         Functional
     
     
-DataProperty: hasFundingForConstruction
+DataProperty: hasOperationalDateEstimate
+
+    Domain: 
+        Station
+    
+    Range: 
+        xsd:string
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasElevationAboveGround
 
     Domain: 
         Station
@@ -104,23 +189,11 @@ DataProperty: hasLocationDescription
         Functional
     
     
-DataProperty: hasSiteType
+DataProperty: hasShortName
 
     Annotations: 
-        rdfs:label "site type"^^xsd:string
+        rdfs:label "short name"^^xsd:string
     
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasFundingForOperation
-
     Domain: 
         Station
     
@@ -146,13 +219,17 @@ DataProperty: hasLon
         Functional
     
     
-DataProperty: hasElevationAboveSea
+DataProperty: hasStationClass
 
+    Annotations: 
+        rdfs:comment "1, 2 or 3"^^xsd:string,
+        rdfs:label "ICOS station class"^^xsd:string
+    
     Domain: 
         Station
     
     Range: 
-        xsd:float
+        {1 , 2 , 3}
     
     Characteristics: 
         Functional
@@ -173,7 +250,7 @@ DataProperty: hasLat
         Functional
     
     
-DataProperty: hasOperationalDateEstimate
+DataProperty: hasFundingForConstruction
 
     Domain: 
         Station
@@ -185,17 +262,13 @@ DataProperty: hasOperationalDateEstimate
         Functional
     
     
-DataProperty: hasStationKind
+DataProperty: hasCountry
 
-    Annotations: 
-        rdfs:label "kind of station"^^xsd:string,
-        rdfs:comment "TT, aircraft, atm, ground, eco, ocean"^^xsd:string
-    
     Domain: 
         Station
     
     Range: 
-        {"TT"^^xsd:string , "aircraft"^^xsd:string , "atm"^^xsd:string , "eco"^^xsd:string , "ground"^^xsd:string , "ocean"^^xsd:string}
+        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
     
     Characteristics: 
         Functional
@@ -213,103 +286,33 @@ DataProperty: isAlreadyOperational
         Functional
     
     
-DataProperty: hasPiName
+Class: ES
 
-    Annotations: 
-        rdfs:label "principal investigator name"^^xsd:string
-    
-    Domain: 
+    SubClassOf: 
+        hasLon some rdfs:Literal,
+        hasLat some rdfs:Literal,
         Station
     
-    Range: 
-        xsd:string
     
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasPreIcosMeasurements
+Class: Station
 
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:boolean
-    
-    Characteristics: 
-        Functional
+    SubClassOf: 
+        hasPiEmail some rdfs:Literal,
+        hasPiName some rdfs:Literal,
+        hasShortName some rdfs:Literal
     
     
-DataProperty: hasShortName
+Class: AS
 
-    Annotations: 
-        rdfs:label "short name"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationClass
-
-    Annotations: 
-        rdfs:label "ICOS station class"^^xsd:string,
-        rdfs:comment "1, 2 or 3"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        {1 , 2 , 3}
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasPiEmail
-
-    Annotations: 
-        rdfs:label "principal investigator email"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string[pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$"]
+    SubClassOf: 
+        hasLat some rdfs:Literal,
+        Station,
+        hasLon some rdfs:Literal
     
     
 Class: OS
 
     SubClassOf: 
         Station
-    
-    
-Class: ES
-
-    SubClassOf: 
-        Station,
-        hasLat some rdfs:Literal,
-        hasLon some rdfs:Literal
-    
-    
-Class: Station
-
-    SubClassOf: 
-        hasPiName some rdfs:Literal,
-        hasShortName some rdfs:Literal,
-        hasPiEmail some rdfs:Literal
-    
-    
-Class: AS
-
-    SubClassOf: 
-        Station,
-        hasLat some rdfs:Literal,
-        hasLon some rdfs:Literal
     
     

@@ -57,75 +57,97 @@ object MetaDb {
 
 	}
 
-	private val owlManager = OWLManager.createOWLOntologyManager
+	def makeOntos(confs: Seq[SchemaOntologyConfig]): Map[String, Onto] = {
+		val owlManager = OWLManager.createOWLOntologyManager
 
-	def makeOnto(conf: OntoConfig): Onto = {
-		val owl = utils.owlapi.getOntologyFromJarResourceFile(conf.owlResource, owlManager)
-		new Onto(owl)
+		confs.foldLeft(Map.empty[String, Onto])((acc, conf) => {
+			val owl = utils.owlapi.getOntologyFromJarResourceFile(conf.owlResource, owlManager)
+
+			conf.ontoId match{
+				case None => acc
+				case Some(ontId) => acc + ((ontId, new Onto(owl)))
+			}
+		})
 	}
 
-	def performIngestion(ingesterId: String, serverFut: Future[InstanceServer], factory: ValueFactory)
-												(implicit ex: ExecutionContext): Future[InstanceServer] = {
-		val statementsFut: Future[Iterator[Statement]] = Future{
-			Ingestion.allIngesters(ingesterId).getStatements(factory)
-		}
+	def validateConfig(config: CpmetaConfig): Unit = {
 
-		for(
-			server <- serverFut;
-			statements <- statementsFut;
-			afterIngestion <- Future{
-				Ingestion.ingest(server, statements)
-				server
-			}
-		) yield afterIngestion
+		val instServerIds = config.instanceServers.keys.toSet
+		val schemaOntIds = config.onto.ontologies.map(_.ontoId).flatten.toSet
+
+		def ensureInstServerExists(instanceServerId: String): Unit =
+			if(!instServerIds.contains(instanceServerId))
+				throw new Exception(s"Missing instance server with id '$instanceServerId'. Check your config.")
+
+		def ensureSchemaOntExists(schemaOntId: String): Unit =
+			if(!schemaOntIds.contains(schemaOntId))
+				throw new Exception(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
+		
+		ensureInstServerExists(config.dataUploadService.instanceServerId)
+
+		config.onto.instOntoServers.values.foreach{ conf =>
+			ensureInstServerExists(conf.instanceServerId)
+			ensureSchemaOntExists(conf.ontoId)
+		}
 	}
 
 	def apply(config: CpmetaConfig)(implicit ex: ExecutionContext): MetaDb = {
 
-		val serverKeys = config.instanceServers.keys.toIndexedSeq
+		validateConfig(config)
 
-		def getIntServerIndex(instanceServerId: String): Int = {
-			val instServerIndex = serverKeys.indexOf(instanceServerId)
-			if(instServerIndex < 0) throw new Exception(s"Missing instance server with id 'instanceServerId'. Check your config.")
-			instServerIndex
-		}
-
-		//doing lookup of server instances eagerly to fail early in the case of a wrong config file
-		val uploadInstServerIndex = getIntServerIndex(config.dataUploadService.instanceServerId)
-		val ontInstServerIndexes = config.onto.map{
-			case (ontId, ontConf) => (ontId, getIntServerIndex(ontConf.instanceServerId))
-		}
-
-		val ontoFuts = config.onto.values
-			.map(ontConf => Future{makeOnto(ontConf)})
-			.toIndexedSeq //for eagerness
+		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 
 		val repo = Loading.empty
 		val valueFactory = repo.getValueFactory
 
-		val serverFuts = config.instanceServers.values.map { servConf =>
-			val serverFut = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
-			servConf.ingestion match{
-				case Some(IngestionConfig(ingesterId, Some(true), _)) => performIngestion(ingesterId, serverFut, valueFactory)
-				case _ => serverFut
+
+		def performIngestion(ingesterId: String, serverFut: Future[InstanceServer]): Future[InstanceServer] = {
+
+			val statementsFut: Future[Iterator[Statement]] = Future{
+				Ingestion.allIngesters(ingesterId).getStatements(valueFactory)
 			}
-		}.toIndexedSeq
+	
+			for(
+				server <- serverFut;
+				statements <- statementsFut;
+				afterIngestion <- Future{
+					Ingestion.ingest(server, statements)
+					server
+				}
+			) yield afterIngestion
+		}
+
+		
+		val instanceServersFut: Future[Map[String, InstanceServer]] = {
+
+			val tupleFuts: Iterable[Future[(String, InstanceServer)]] = config.instanceServers.map{
+				case (servId, servConf) =>
+					val serverFut = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
+
+					val finalFut = servConf.ingestion match{
+						case Some(IngestionConfig(ingesterId, Some(true), _)) => performIngestion(ingesterId, serverFut)
+						case _ => serverFut
+					}
+					finalFut.map((servId, _))
+			}
+			Future.sequence(tupleFuts).map(_.toMap)
+		}
 
 		val dbFuture = for(
-			ontos <- Future.sequence(ontoFuts);
-			servers <- Future.sequence(serverFuts)
+			ontos <- ontosFut;
+			instanceServers <- instanceServersFut
 		) yield{
-			val instOntos = config.onto.keys.zip(ontos).map{
-				case (ontId, onto) =>
-					val instServer = servers(ontInstServerIndexes(ontId))
-					(ontId, new InstOnto(instServer, onto))
-			}.toMap
+			val instOntos = config.onto.instOntoServers.map{
+				case (servId, servConf) =>
+					val instServer = instanceServers(servConf.instanceServerId)
+					val onto = ontos(servConf.ontoId)
+					(servId, new InstOnto(instServer, onto))
+			}
 
-			val instServers = serverKeys.zip(servers).toMap
-			val uploadInstServer = servers(uploadInstServerIndex)
+			val uploadInstServer = instanceServers(config.dataUploadService.instanceServerId)
 			val uploadService = new UploadService(uploadInstServer, config.dataUploadService)
 
-			new MetaDb(instServers, instOntos, uploadService, repo)
+			new MetaDb(instanceServers, instOntos, uploadService, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

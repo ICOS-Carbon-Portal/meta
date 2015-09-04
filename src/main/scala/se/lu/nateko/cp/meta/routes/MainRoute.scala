@@ -30,7 +30,7 @@ object MainRoute {
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
-		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto)
+		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)
 
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~

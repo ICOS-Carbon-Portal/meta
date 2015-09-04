@@ -13,10 +13,11 @@ import org.semanticweb.owlapi.model.OWLObjectProperty
 abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 
 	protected val factory = ontology.getOWLOntologyManager.getOWLDataFactory
+	private val ontologies = ontology.getImportsClosure
 
 	override def getSuperClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClassExpression] =
 		if(direct)
-			EntitySearcher.getSuperClasses(owlClass, ontology).toSeq
+			EntitySearcher.getSuperClasses(owlClass, ontologies).toSeq
 		else{
 			val direct = getSuperClasses(owlClass, true)
 			val transitive = direct.flatMap{
@@ -28,7 +29,7 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 
 	override def getSubClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClass] =
 		if(direct) EntitySearcher
-			.getSubClasses(owlClass, ontology)
+			.getSubClasses(owlClass, ontologies)
 			.collect{case oc: OWLClass => oc}
 			.toSeq
 		else{
@@ -39,16 +40,16 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 
 	override def isFunctional(prop: OWLProperty): Boolean = {
 		def isFunctionalSelf(prop: OWLProperty): Boolean = prop match {
-			case dp: OWLDataProperty => EntitySearcher.isFunctional(dp, ontology)
-			case op: OWLObjectProperty => EntitySearcher.isFunctional(op, ontology)
+			case dp: OWLDataProperty => EntitySearcher.isFunctional(dp, ontologies)
+			case op: OWLObjectProperty => EntitySearcher.isFunctional(op, ontologies)
 			case _ => false
 		}
 		isFunctionalSelf(prop) || getParentProps(prop).exists(isFunctionalSelf)
 	}
 
 	override def getPropertiesWhoseDomainIncludes(owlClass: OWLClass): Seq[OWLProperty] = {
-		val dataProps = ontology.getDataPropertiesInSignature(Imports.EXCLUDED)
-		val objProps = ontology.getObjectPropertiesInSignature(Imports.EXCLUDED)
+		val dataProps = ontology.getDataPropertiesInSignature(Imports.INCLUDED)
+		val objProps = ontology.getObjectPropertiesInSignature(Imports.INCLUDED)
 		(dataProps.toSeq ++ objProps).collect{
 			case p: OWLProperty if(isSubClass(owlClass, getFullDomain(p))) => p
 		}
@@ -57,8 +58,8 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 	protected def getParentProps(owlProp: OWLProperty): Seq[OWLProperty]
 
 	private def getOwnDomains(owlProp: OWLProperty): Seq[OWLClassExpression] = owlProp match {
-		case dp: OWLDataProperty => EntitySearcher.getDomains(dp, ontology).toSeq
-		case op: OWLObjectProperty => EntitySearcher.getDomains(op, ontology).toSeq
+		case dp: OWLDataProperty => EntitySearcher.getDomains(dp, ontologies).toSeq
+		case op: OWLObjectProperty => EntitySearcher.getDomains(op, ontologies).toSeq
 		case _ => Nil //ignoring annotation properties
 	}
 

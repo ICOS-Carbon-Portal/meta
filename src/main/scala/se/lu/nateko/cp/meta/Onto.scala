@@ -12,23 +12,25 @@ import se.lu.nateko.cp.meta.labeler.Labeler
 import se.lu.nateko.cp.meta.labeler.ClassIndividualsLabeler
 import se.lu.nateko.cp.meta.labeler.UniversalLabeler
 import se.lu.nateko.cp.meta.labeler.InstanceLabeler
+import org.semanticweb.owlapi.model.parameters.Imports
 
 
-class Onto (ontology: OWLOntology) extends java.io.Closeable{
+class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 
-	val factory = ontology.getOWLOntologyManager.getOWLDataFactory
-	private val reasoner: Reasoner = new HermitBasedReasoner(ontology)
-	private val labeler = new UniversalLabeler(ontology)
+	val factory = owlOntology.getOWLOntologyManager.getOWLDataFactory
+	private val ontologies = owlOntology.getImportsClosure
+	private val reasoner: Reasoner = new HermitBasedReasoner(owlOntology)
+	private val labeler = new UniversalLabeler(owlOntology)
 
 	def rdfsLabeling(entity: OWLEntity): ResourceDto =
-		Labeler.getInfo(entity, ontology)
+		Labeler.getInfo(entity, owlOntology)
 
 	override def close(): Unit = {
 		reasoner.close()
 	}
 
 	def getExposedClasses: Seq[ResourceDto] =
-		ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION).toIterable
+		owlOntology.getAxioms(AxiomType.ANNOTATION_ASSERTION, Imports.INCLUDED).toIterable
 			.filter(axiom =>
 				axiom.getProperty == Vocab.exposedToUsersAnno && {
 					axiom.getValue.asLiteral.toOption match {
@@ -45,7 +47,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 
 	def getLabelerForClassIndividuals(classUri: URI): InstanceLabeler = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
-		ClassIndividualsLabeler(owlClass, ontology, labeler)
+		ClassIndividualsLabeler(owlClass, owlOntology, labeler)
 	}
 
 	def getUniversalLabeler: InstanceLabeler = labeler
@@ -72,10 +74,10 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 		val iri = IRI.create(propUri)
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 
-		if(ontology.containsDataPropertyInSignature(iri))
+		if(owlOntology.containsDataPropertyInSignature(iri))
 			getPropInfo(factory.getOWLDataProperty(iri), owlClass)
 
-		else if(ontology.containsObjectPropertyInSignature(iri))
+		else if(owlOntology.containsObjectPropertyInSignature(iri))
 			getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
 
 		else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")
@@ -83,7 +85,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 
 	//TODO Take property restrictions into account for range calculations
 	def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
-		val ranges = EntitySearcher.getRanges(prop, ontology).collect{
+		val ranges = EntitySearcher.getRanges(prop, ontologies).collect{
 			case owlClass: OWLClass => rdfsLabeling(owlClass)
 		}.toSeq
 
@@ -97,7 +99,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 	}
 	
 	def getPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
-		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontology).collect{
+		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontologies).collect{
 			case dt: OWLDatatype => DataRangeDto(dt.getIRI.toURI, Nil)
 
 			case dtr: OWLDatatypeRestriction =>
@@ -117,7 +119,7 @@ class Onto (ontology: OWLOntology) extends java.io.Closeable{
 				DataRangeDto(dtypes.head.getIRI.toURI, Seq(restriction))
 		}.toSeq
 
-		assert(ranges.size == 1, "Only single data ranges are supported for data properties at the moment")
+		assert(ranges.size == 1, s"Got ${ranges.size} data ranges for property ${prop.getIRI} (expecting exactly 1)")
 
 		DataPropertyDto(
 			resource = rdfsLabeling(prop),

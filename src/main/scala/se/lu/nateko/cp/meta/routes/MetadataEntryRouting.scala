@@ -10,18 +10,18 @@ import se.lu.nateko.cp.meta.ReplaceDto
 import akka.stream.Materializer
 import java.net.URI
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import se.lu.nateko.cp.meta.OntoConfig
+import se.lu.nateko.cp.meta.InstOntoServerConfig
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Materializer) extends CpmetaJsonProtocol{
 
-	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, OntoConfig]): Route = {
+	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, InstOntoServerConfig]): Route = {
 		val ontoInfos = ontoConfs.map{
 			case (ontId, conf) => (ontId, (instOntos(ontId), conf))
 		}
 		entryRoute(ontoInfos)
 	}
 
-	def entryRoute(ontoInfos: Map[String, (InstOnto, OntoConfig)]): Route =
+	def entryRoute(ontoInfos: Map[String, (InstOnto, InstOntoServerConfig)]): Route =
 		pathPrefix("edit" / Segment){ ontId =>
 			ontoInfos.get(ontId) match{
 				case None =>

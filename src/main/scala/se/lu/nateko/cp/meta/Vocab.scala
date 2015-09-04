@@ -12,7 +12,7 @@ import org.semanticweb.owlapi.model.OWLObjectProperty
 
 object Vocab {
 
-	val ontoIri: IRI = IRI.create("http://meta.icos-cp.eu/ontologies/cpmeta/")
+	val ontoIri: IRI = IRI.create("http://meta.icos-cp.eu/ontologies/uiannotations/")
 
 	private val factory: OWLDataFactory =
 		OWLManager.createOWLOntologyManager.getOWLDataFactory
@@ -20,14 +20,14 @@ object Vocab {
 	private val prefixManager: PrefixManager =
 		new DefaultPrefixManager(null, null, ontoIri.toString)
 
-	def getOWLClass(localName: String): OWLClass =
-		factory.getOWLClass(localName, prefixManager)
+//	def getOWLClass(localName: String): OWLClass =
+//		factory.getOWLClass(localName, prefixManager)
+//
+//	def getDataProperty(localName: String): OWLDataProperty =
+//		factory.getOWLDataProperty(localName, prefixManager)
 
-	def getDataProperty(localName: String): OWLDataProperty =
-		factory.getOWLDataProperty(localName, prefixManager)
-
-	def getObjectProperty(localName: String): OWLObjectProperty =
-		factory.getOWLObjectProperty(localName, prefixManager)
+//	def getObjectProperty(localName: String): OWLObjectProperty =
+//		factory.getOWLObjectProperty(localName, prefixManager)
 		
 	def getAnnotationProperty(localName: String): OWLAnnotationProperty =
 		factory.getOWLAnnotationProperty(localName, prefixManager)

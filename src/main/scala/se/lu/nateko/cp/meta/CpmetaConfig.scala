@@ -24,10 +24,17 @@ case class InstanceServerConfig(
 	ingestion: Option[IngestionConfig]
 )
 
+case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
+
+case class InstOntoServerConfig(
+	ontoId: String,
+	instanceServerId: String,
+	authorizedUserIds: Seq[String]
+)
+
 case class OntoConfig(
-	authorizedUserIds: Seq[String],
-	owlResource: String,
-	instanceServerId: String
+	ontologies: Seq[SchemaOntologyConfig],
+	instOntoServers: Map[String, InstOntoServerConfig]
 )
 
 case class DataSubmitterConfig(
@@ -44,7 +51,7 @@ case class CpmetaConfig(
 	dataUploadService: UploadServiceConfig,
 	instanceServers: Map[String, InstanceServerConfig],
 	rdfLog: RdflogConfig,
-	onto: Map[String, OntoConfig],
+	onto: OntoConfig,
 	auth: PublicAuthConfig
 )
 
@@ -56,7 +63,9 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dbCredentialsFormat = jsonFormat3(DbCredentials)
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
 	implicit val publicAuthConfigFormat = jsonFormat2(PublicAuthConfig)
-	implicit val ontoConfigFormat = jsonFormat3(OntoConfig)
+	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
+	implicit val instOntoServerConfigFormat = jsonFormat3(InstOntoServerConfig)
+	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
 	implicit val cpmetaConfigFormat = jsonFormat6(CpmetaConfig)

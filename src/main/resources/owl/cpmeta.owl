@@ -14,59 +14,11 @@ Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 
 
-AnnotationProperty: displayProperty
-
-    Domain: 
-        <http://www.w3.org/2002/07/owl#Class>
-    
-    
-AnnotationProperty: isoName
-
-    
-AnnotationProperty: isExposedToUsers
-
-    Domain: 
-        <http://www.w3.org/2002/07/owl#Class>
-    
-    Range: 
-        <http://www.w3.org/2001/XMLSchema#boolean>
-    
-    
 AnnotationProperty: rdfs:seeAlso
 
     
-AnnotationProperty: displayProperty1
-
-    SubPropertyOf: 
-        displayProperty
-    
-    
-AnnotationProperty: displayProperty2
-
-    SubPropertyOf: 
-        displayProperty
-    
-    
-AnnotationProperty: displayProperty3
-
-    SubPropertyOf: 
-        displayProperty
-    
-    
 AnnotationProperty: rdfs:label
 
-    
-AnnotationProperty: displayProperty4
-
-    SubPropertyOf: 
-        displayProperty
-    
-    
-AnnotationProperty: displayProperty5
-
-    SubPropertyOf: 
-        displayProperty
-    
     
 AnnotationProperty: rdfs:comment
 
@@ -224,17 +176,43 @@ ObjectProperty: prov:wasAssociatedWith
         prov:Agent
     
     
-DataProperty: prov:endedAtTime
+DataProperty: hasElevation
 
+    Annotations: 
+        rdfs:comment "Elevation above sea level in meters",
+        rdfs:label "Elevation"^^xsd:string
+    
     Domain: 
-        prov:Activity
+        Site or Station
     
     Range: 
-        xsd:dateTime
+        xsd:float
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        geo:alt
     
     
-DataProperty: geo:lat
+DataProperty: hasLatitude
 
+    Annotations: 
+        rdfs:comment "Decimal degrees in WGS84/GRS80",
+        rdfs:label "Latitude"^^xsd:string
+    
+    Domain: 
+        Site or Station
+    
+    Range: 
+        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        geo:lat
+    
     
 DataProperty: hasEndTime
 
@@ -246,6 +224,15 @@ DataProperty: hasEndTime
     
     Characteristics: 
         Functional
+    
+    
+DataProperty: prov:endedAtTime
+
+    Domain: 
+        prov:Activity
+    
+    Range: 
+        xsd:dateTime
     
     
 DataProperty: hasStationId
@@ -336,20 +323,8 @@ DataProperty: hasStartTime
         Functional
     
     
-DataProperty: hasLastName
+DataProperty: geo:long
 
-    Annotations: 
-        rdfs:label "Last name"^^xsd:string
-    
-    Domain: 
-        Person
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
     
 DataProperty: hasSha256sum
 
@@ -363,45 +338,25 @@ DataProperty: hasSha256sum
         Functional
     
     
-DataProperty: hasElevation
-
-    Annotations: 
-        rdfs:comment "Elevation above sea level in meters",
-        rdfs:label "Elevation"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:float
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:alt
-    
-    
 DataProperty: geo:alt
 
     
-DataProperty: hasLatitude
+DataProperty: geo:lat
+
+    
+DataProperty: hasLastName
 
     Annotations: 
-        rdfs:comment "Decimal degrees in WGS84/GRS80",
-        rdfs:label "Latitude"^^xsd:string
+        rdfs:label "Last name"^^xsd:string
     
     Domain: 
-        Site or Station
+        Person
     
     Range: 
-        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
+        xsd:string
     
     Characteristics: 
         Functional
-    
-    SubPropertyOf: 
-        geo:lat
     
     
 DataProperty: prov:startedAtTime
@@ -475,11 +430,11 @@ DataProperty: hasFirstName
         Functional
     
     
-DataProperty: geo:long
+Class: AtcDataSet
 
+    SubClassOf: 
+        DataSet
     
-Class: qb:DataSet
-
     
 Class: EtcDataStructure
 
@@ -511,9 +466,6 @@ Class: DataSet
     
 Class: Organization
 
-    Annotations: 
-        displayProperty <http://meta.icos-cp.eu/ontologies/cpmeta/hasName>
-    
     SubClassOf: 
         hasName some rdfs:Literal,
         prov:Agent
@@ -537,11 +489,6 @@ Class: AS
     
 Class: Membership
 
-    Annotations: 
-        displayProperty3 <http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization>,
-        displayProperty2 "at"^^xsd:string,
-        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasRole>
-    
     SubClassOf: 
         atOrganization some owl:Thing,
         hasRole some owl:Thing
@@ -553,13 +500,14 @@ Class: AtcDataStructure
         qb:DataStructureDefinition
     
     
+Class: EtcDataSet
+
+    SubClassOf: 
+        DataSet
+    
+    
 Class: Person
 
-    Annotations: 
-        displayProperty1 <http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName>,
-        displayProperty2 <http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName>,
-        isExposedToUsers true
-    
     SubClassOf: 
         hasFirstName some rdfs:Literal,
         hasEmail some rdfs:Literal,
@@ -575,6 +523,12 @@ Class: DataAcquisition
         prov:Activity
     
     
+Class: ATC
+
+    SubClassOf: 
+        ThematicCenter
+    
+    
 Class: CAL
 
     Annotations: 
@@ -585,15 +539,8 @@ Class: CAL
         CentralFacility
     
     
-Class: OS
+Class: qb:DataSet
 
-    Annotations: 
-        rdfs:label "Oceanic station"^^xsd:string
-    
-    SubClassOf: 
-        belongsToTheNetworkOf some OTC,
-        Station
-    
     
 Class: CentralFacility
 
@@ -607,7 +554,6 @@ Class: CentralFacility
 Class: ThematicCenter
 
     Annotations: 
-        isExposedToUsers true,
         rdfs:label "Thematic Center"^^xsd:string
     
     SubClassOf: 
@@ -617,10 +563,14 @@ Class: ThematicCenter
         ATC, ETC, OTC
     
     
-Class: EtcDataSet
+Class: ES
 
+    Annotations: 
+        rdfs:label "Ecosystem station"^^xsd:string
+    
     SubClassOf: 
-        DataSet
+        belongsToTheNetworkOf some ETC,
+        Station
     
     
 Class: owl:Thing
@@ -629,17 +579,10 @@ Class: owl:Thing
 Class: Site
 
     Annotations: 
-        isExposedToUsers true,
         rdfs:comment "The physical location of an organization"^^xsd:string
     
     SubClassOf: 
         countryCode some rdfs:Literal
-    
-    
-Class: Role
-
-    Annotations: 
-        isExposedToUsers true
     
     
 Class: OTC
@@ -663,9 +606,6 @@ Class: DataSubmission
     
 Class: Station
 
-    Annotations: 
-        isExposedToUsers true
-    
     SubClassOf: 
         belongsToTheNetworkOf some owl:Thing,
         hasStationId some rdfs:Literal,
@@ -675,28 +615,19 @@ Class: Station
         AS, ES, OS
     
     
-Class: ES
+Class: Role
+
+    
+Class: OS
 
     Annotations: 
-        rdfs:label "Ecosystem station"^^xsd:string
+        rdfs:label "Oceanic station"^^xsd:string
     
     SubClassOf: 
-        belongsToTheNetworkOf some ETC,
+        belongsToTheNetworkOf some OTC,
         Station
     
     
 Class: prov:Agent
 
-    
-Class: ATC
-
-    SubClassOf: 
-        ThematicCenter
-    
-    
-Class: AtcDataSet
-
-    SubClassOf: 
-        DataSet
-    
     

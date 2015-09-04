@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.labeler
 
 import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.model.parameters.Imports
 
 
 sealed trait DisplayComponent
@@ -20,10 +21,10 @@ object DisplayComponent{
 		if(anno.asIRI.isPresent){
 			val iri = anno.asIRI.get
 			val dataProp = factory.getOWLDataProperty(iri)
-			if(onto.isDeclared(dataProp)) Some(DataPropComponent(dataProp))
+			if(onto.isDeclared(dataProp, Imports.INCLUDED)) Some(DataPropComponent(dataProp))
 			else{
 				val objProp = factory.getOWLObjectProperty(iri)
-				if(onto.isDeclared(objProp)) Some(ObjectPropComponent(objProp))
+				if(onto.isDeclared(objProp, Imports.INCLUDED)) Some(ObjectPropComponent(objProp))
 				else None
 			}
 		} else if(anno.asLiteral.isPresent)

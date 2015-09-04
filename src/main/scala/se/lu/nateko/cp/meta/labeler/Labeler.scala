@@ -59,7 +59,7 @@ object Labeler{
 	)
 
 	private def getAnnotation(entity: OWLEntity, anno: OWLAnnotationProperty, onto: OWLOntology): Option[String] = EntitySearcher
-		.getAnnotations(entity, onto, anno)
+		.getAnnotations(entity, onto.getImportsClosure, anno)
 		.toIterable
 		.map(_.getValue.asLiteral.toOption)
 		.collect{case Some(lit) => lit.getLiteral}

@@ -11,11 +11,11 @@ class InstOntoTests extends FunSpec{
 
 	describe("getIndividual"){
 		
-		it("correctly constructs display name for Role individual"){
-			val uri = new URI(Vocab.ontoIri.toString + "instances/atcDirector")
-			val roleInfo = instOnto.getIndividual(uri)
+		it("correctly constructs display name for Membership individual"){
+			val uri = new URI(TestConfig.instOntUri + "atcDirector")
+			val indInfo = instOnto.getIndividual(uri)
 			
-			assert(roleInfo.resource.displayName === "Director at Atmosphere thematic center")
+			assert(indInfo.resource.displayName === "Director at Atmosphere thematic center")
 		}
 		
 	}

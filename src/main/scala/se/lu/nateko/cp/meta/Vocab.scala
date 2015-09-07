@@ -20,15 +20,6 @@ object Vocab {
 	private val prefixManager: PrefixManager =
 		new DefaultPrefixManager(null, null, ontoIri.toString)
 
-//	def getOWLClass(localName: String): OWLClass =
-//		factory.getOWLClass(localName, prefixManager)
-//
-//	def getDataProperty(localName: String): OWLDataProperty =
-//		factory.getOWLDataProperty(localName, prefixManager)
-
-//	def getObjectProperty(localName: String): OWLObjectProperty =
-//		factory.getOWLObjectProperty(localName, prefixManager)
-		
 	def getAnnotationProperty(localName: String): OWLAnnotationProperty =
 		factory.getOWLAnnotationProperty(localName, prefixManager)
 

@@ -41,6 +41,26 @@
     </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:hasRole</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">at</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:atOrganization</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
+        <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>cpmeta:Person</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasFirstName</AbbreviatedIRI>
     </AnnotationAssertion>

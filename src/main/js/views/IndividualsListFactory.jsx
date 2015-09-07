@@ -10,17 +10,21 @@ module.exports = function(individualsStore, chooseAction){
 		render: function(){
 			var self = this;
 
+			var individuals = _.chain(this.state.individuals)
+				.map(function(individual){
+					return _.extend({}, individual, {
+						shortName: capped(individual.displayName),
+						clickHandler: _.partial(chooseAction, individual.uri),
+						isChosen: (individual.uri == self.state.chosen)
+					});
+				})
+				.sortBy("displayName")
+				.value();
+
 			return <div className="btn-group-vertical" role="group">{
-
-					this.state.individuals.map(function(individual){
-					
-						var fullName = individual.displayName;
-						var shortName = capped(fullName);
-						var uri = individual.uri;
-						var clickHandler = _.partial(chooseAction, individual.uri);
-						var isChosen = (uri == self.state.chosen);
-
-						return <ChoiceButton key={uri} chosen={isChosen} tooltip={fullName} clickHandler={clickHandler}>{shortName}</ChoiceButton>;
+					individuals.map(function(ind){
+						return <ChoiceButton key={ind.uri} chosen={ind.isChosen} tooltip={ind.displayName}
+							clickHandler={ind.clickHandler} style={{"text-align": "left"}}>{ind.shortName}</ChoiceButton>;
 					})
 			}</div>;
 		}

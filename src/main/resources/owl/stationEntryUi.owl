@@ -28,12 +28,22 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>stations:Station</AbbreviatedIRI>
-        <AbbreviatedIRI>stations:hasShortName</AbbreviatedIRI>
+        <AbbreviatedIRI>stations:hasLongName</AbbreviatedIRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
+        <AbbreviatedIRI>stations:Station</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">(</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
         <AbbreviatedIRI>stations:Station</AbbreviatedIRI>
         <AbbreviatedIRI>stations:hasStationKind</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty4"/>
+        <AbbreviatedIRI>stations:Station</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">)</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>

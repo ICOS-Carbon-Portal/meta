@@ -35,10 +35,13 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) {
 		if(msg == null || msg.isEmpty) err.getClass.getName else msg
 	}
 	
-	def allowUsers(userIds: Seq[String])(inner: => Route): Route = user{ uinfo =>
-		if(userIds.isEmpty || userIds.contains(uinfo.mail))
-			inner
-		else
-			forbid(s"User ${uinfo.givenName} ${uinfo.surname} is not authorized to perform this operation")
-	}
+	def allowUsers(userIds: Seq[String])(inner: => Route): Route =
+		if(userIds.isEmpty) inner else {
+			user{ uinfo =>
+				if(userIds.contains(uinfo.mail.toLowerCase))
+					inner
+				else
+					forbid(s"User ${uinfo.givenName} ${uinfo.surname} is not authorized to perform this operation")
+			}
+		}
 }

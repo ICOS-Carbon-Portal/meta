@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.test
 
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.Vocab
+import org.semanticweb.owlapi.model.parameters.Imports
 
 
 class OwlOntologyTest extends FunSpec{
@@ -11,11 +12,11 @@ class OwlOntologyTest extends FunSpec{
 	describe("OWLOntology.isDeclared"){
 
 		it("should distinguish between entity types even if they have same URI"){
-			val realProp = Vocab.getDataProperty("hasName")
-			val fakeProp = Vocab.getObjectProperty("hasName")
+			val realProp = TestConfig.getDataProperty("hasName")
+			val fakeProp = TestConfig.getObjectProperty("hasName")
 
-			assert(onto.isDeclared(realProp))
-			assert(!onto.isDeclared(fakeProp))
+			assert(onto.isDeclared(realProp, Imports.INCLUDED))
+			assert(!onto.isDeclared(fakeProp, Imports.INCLUDED))
 		}
 	}
 }

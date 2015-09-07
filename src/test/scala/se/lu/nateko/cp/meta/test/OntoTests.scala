@@ -8,7 +8,7 @@ class OntoTests extends FunSpec{
 	val onto = new Onto(TestConfig.owlOnto)
 
 	def getClassInfo(localName: String): ClassDto = {
-		val classUri = Vocab.getOWLClass(localName).getIRI.toURI
+		val classUri = TestConfig.getOWLClass(localName).getIRI.toURI
 		onto.getClassInfo(classUri)
 	}
 	

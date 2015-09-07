@@ -74,10 +74,10 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		val iri = IRI.create(propUri)
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 
-		if(owlOntology.containsDataPropertyInSignature(iri))
+		if(owlOntology.containsDataPropertyInSignature(iri, Imports.INCLUDED))
 			getPropInfo(factory.getOWLDataProperty(iri), owlClass)
 
-		else if(owlOntology.containsObjectPropertyInSignature(iri))
+		else if(owlOntology.containsObjectPropertyInSignature(iri, Imports.INCLUDED))
 			getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
 
 		else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")

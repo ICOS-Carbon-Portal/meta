@@ -135,6 +135,18 @@ DataProperty: hasFundingForOperation
         Functional
     
     
+DataProperty: hasCountry
+
+    Domain: 
+        Station
+    
+    Range: 
+        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
+    
+    Characteristics: 
+        Functional
+    
+    
 DataProperty: hasOperationalDateEstimate
 
     Domain: 
@@ -262,18 +274,6 @@ DataProperty: hasFundingForConstruction
         Functional
     
     
-DataProperty: hasCountry
-
-    Domain: 
-        Station
-    
-    Range: 
-        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
-    
-    Characteristics: 
-        Functional
-    
-    
 DataProperty: isAlreadyOperational
 
     Domain: 
@@ -288,6 +288,9 @@ DataProperty: isAlreadyOperational
     
 Class: ES
 
+    Annotations: 
+        rdfs:label "Ecosystem Station"^^xsd:string
+    
     SubClassOf: 
         hasLon some rdfs:Literal,
         hasLat some rdfs:Literal,
@@ -304,6 +307,9 @@ Class: Station
     
 Class: AS
 
+    Annotations: 
+        rdfs:label "Atmospheric Station"^^xsd:string
+    
     SubClassOf: 
         hasLat some rdfs:Literal,
         Station,
@@ -312,6 +318,9 @@ Class: AS
     
 Class: OS
 
+    Annotations: 
+        rdfs:label "Ocean Station"^^xsd:string
+    
     SubClassOf: 
         Station
     

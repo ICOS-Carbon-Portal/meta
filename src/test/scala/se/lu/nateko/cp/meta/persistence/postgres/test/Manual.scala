@@ -46,7 +46,7 @@ object Manual {
 	def serverFromLog: InstanceServer = {
 		import scala.concurrent.ExecutionContext.Implicits.global
 		val log = getLog
-		val ctxt = factory.createURI(TestConfig.ontUri)
+		val ctxt = factory.createURI(TestConfig.instOntUri)
 		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
 		log.close()
 		new SesameInstanceServer(repo, ctxt)

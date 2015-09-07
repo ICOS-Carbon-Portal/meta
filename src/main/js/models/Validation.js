@@ -8,6 +8,15 @@ function stringValidator(s){
 	return ok;
 }
 
+function intValidator(s){
+	return /\-?\d+/.test(s) ? ok : error("Not a valid integer!");
+}
+
+function boolValidator(s){
+	var sl = s.toLowerCase();
+	return (sl === "true" || sl === "false") ? ok : error("Must be 'true' or 'false'");
+}
+
 function doubleValidator(s){
 	var number = Number.parseFloat(s);
 	return _.isNaN(number) ? error("Not a number!") : ok;
@@ -47,6 +56,8 @@ var xsd = "http://www.w3.org/2001/XMLSchema#";
 
 var dataTypeValidators = _.object([
 	[xsd + "string", stringValidator],
+	[xsd + "integer", intValidator],
+	[xsd + "boolean", boolValidator],
 	[xsd + "double", doubleValidator],
 	[xsd + "float", doubleValidator]
 ]);

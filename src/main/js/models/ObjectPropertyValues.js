@@ -1,7 +1,7 @@
 var PropertyValues = require('./PropertyValues.js');
 
 function ObjectPropertyValues(property, valueDtos){
-	this._property = property;
+	this._propertyDto = property;
 	this._values = _.pluck(valueDtos, "value");
 }
 

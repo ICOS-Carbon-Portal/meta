@@ -33,14 +33,14 @@ Individual.prototype.makePropertyValues = function(individDto){
 		return indVal.property.uri;
 	});
 
-	var unordered = _.map(this._dto.owlClass.properties, function(prop){
+	var unordered = _.map(individDto.owlClass.properties, function(propDto){
 
-		var values = propsToVals[prop.resource.uri] || [];
+		var values = propsToVals[propDto.resource.uri] || [];
 
-		switch(prop.type){
-			case "dataProperty": return new LiteralPropertyValues(prop, values);
-			case "objectProperty" : return new ObjectPropertyValues(prop, values);
-			default: throw new Error("Unknown OWL Property type: " + prop.type);
+		switch(propDto.type){
+			case "dataProperty": return new LiteralPropertyValues(propDto, values);
+			case "objectProperty" : return new ObjectPropertyValues(propDto, values);
+			default: throw new Error("Unknown OWL Property type: " + propDto.type);
 		}
 
 	});

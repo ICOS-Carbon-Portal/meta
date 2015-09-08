@@ -1,8 +1,16 @@
 function PropertyValues(){
 }
 
+PropertyValues.prototype.getPropertyDto = function(){
+	return this._propertyDto;
+};
+
+PropertyValues.prototype.getPropertyUri = function(){
+	return this._propertyDto.resource.uri;
+};
+
 PropertyValues.prototype.getPropertyInfo = function(){
-	return this._property.resource;
+	return this._propertyDto.resource;
 };
 
 PropertyValues.prototype.getValues = function(){
@@ -10,7 +18,7 @@ PropertyValues.prototype.getValues = function(){
 };
 
 PropertyValues.prototype.getValuesType = function(){
-	return this._property.type;
+	return this._propertyDto.type;
 };
 
 PropertyValues.prototype.getValues = function(){
@@ -21,8 +29,8 @@ PropertyValues.prototype.getValidity = function(){
 	var errors = [];
 
 	var nValues = this._values.length;
-	var min = this._property.cardinality.min;
-	var max = this._property.cardinality.max;
+	var min = this._propertyDto.cardinality.min;
+	var max = this._propertyDto.cardinality.max;
 
 	if(min && max && min == max && nValues != min){
 		errors.push("Must have exactly " + min + " value" + (min == 1 ? "." : "s.") );
@@ -40,11 +48,11 @@ PropertyValues.prototype.getValidity = function(){
 };
 
 PropertyValues.prototype.getKey = function(){
-	return "prop_" + this.getPropertyInfo().uri;
+	return "prop_" + this.getPropertyUri();
 };
 
 PropertyValues.prototype.isRequired = function(){
-	var min = this._property.cardinality.min;
+	var min = this._propertyDto.cardinality.min;
 	return min && (min >= 1);
 };
 

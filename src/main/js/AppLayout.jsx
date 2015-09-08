@@ -1,17 +1,18 @@
 var actions = Reflux.createActions([
 	"chooseMetaType",
-	"chooseIndividual"
+	"chooseIndividual",
+	"requestUpdate"
 ]);
 
 var Backend = require('./backend.js');
 
 var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.chooseMetaType);
 var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.chooseMetaType, actions.chooseIndividual);
-var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseIndividual);
+var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseIndividual, actions.requestUpdate);
 
 var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
 var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.chooseIndividual);
-var EditView = require('./views/EditViewFactory.jsx')(EditStore);
+var EditView = require('./views/EditViewFactory.jsx')(EditStore, actions.requestUpdate);
 var ScreenHeightColumn = require('./views/ScreenHeightColumn.jsx');
 
 var PanelHeader = React.createClass({

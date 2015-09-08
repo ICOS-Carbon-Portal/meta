@@ -1,8 +1,9 @@
 var Individual = require('../models/Individual.js');
-var Widgets = require('./Widgets.jsx');
+var StaticWidget = require('./widgets/StaticWidget.jsx');
+var PropertyWidget = require('./widgets/PropertyWidget.jsx');
 var Backend = require('../backend.js');
 
-var Widget = React.createClass({
+/*var Widget = React.createClass({
 
 	render: function(){
 
@@ -16,7 +17,7 @@ var Widget = React.createClass({
 		</div>;
 	}
 
-});
+}); */
 
 module.exports = function(editStore){
 
@@ -32,14 +33,14 @@ module.exports = function(editStore){
 			var individKey = individ.getKey() + "_";
 
 			return <div>
-				<Widgets.Static widgetTitle="Entry">{individ.getLabel()}</Widgets.Static>
-				<Widgets.Static widgetTitle="Entry type">{individ.getClassInfo().displayName}</Widgets.Static>{
+				<StaticWidget widgetTitle="Entry">{individ.getLabel()}</StaticWidget>
+				<StaticWidget widgetTitle="Entry type">{individ.getClassInfo().displayName}</StaticWidget>{
 
 					_.map(individ.getPropertyValues(), function(propValues, i){
 
 						var key = individKey + propValues.getKey();
 
-						return <Widgets.Property key={key} propertyValues={propValues} backend={Backend} subjectUri={individ.getInfo().uri}/>;
+						return <PropertyWidget key={key} propertyValues={propValues} backend={Backend} subjectUri={individ.getInfo().uri}/>;
 
 					})
 

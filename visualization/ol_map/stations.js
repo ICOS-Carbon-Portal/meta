@@ -1,0 +1,345 @@
+function init(){
+	var stationsPromise = fetchStations();
+
+	stationsPromise
+		.done(function(result){
+			initMap(parseStationsJson(result));
+		})
+		.fail(function(request){
+			console.log(request);
+		});
+}
+
+function initMap(stations) {
+	//Layer 0
+	var worlMapBing = new ol.layer.Tile({
+		tag: "worlMapBing",
+		visible: true,
+		source: new ol.source.BingMaps({
+			key: 'AnVI2I3JgdBbAH42y_nepiei9Gx_mxk0pL9gaqs59-thEV66RVxdZF45YtEtX98Y',
+			imagerySet: 'Road'
+		})
+	});
+
+	//Layer 1
+	var worldAerialBing = new ol.layer.Tile({
+		tag: "worldAerialBing",
+		visible: false,
+		source: new ol.source.BingMaps({
+			key: 'AnVI2I3JgdBbAH42y_nepiei9Gx_mxk0pL9gaqs59-thEV66RVxdZF45YtEtX98Y',
+			imagerySet: 'Aerial'
+		})
+	});
+
+	//Layer 2
+	var worldWaterColorStamen = new ol.layer.Tile({
+		tag: "worldWaterColorStamen",
+		visible: false,
+		source: new ol.source.Stamen({
+			layer: 'watercolor'
+		})
+	});
+
+	//Layer 3
+	var oceanESRI = new ol.layer.Tile({
+		tag: "oceanESRI",
+		visible: false,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}'
+		})
+	});
+
+	//Layer 4
+	var physicalMapESRI = new ol.layer.Tile({
+		tag: "physicalMapESRI",
+		visible: false,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}'
+		})
+	});
+
+	//Layer 5
+	var shadedRelMapESRI = new ol.layer.Tile({
+		tag: "shadedRelMapESRI",
+		visible: false,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'
+		})
+	});
+
+	//Layer 6
+	var grayMapESRI = new ol.layer.Tile({
+		tag: "grayMapESRI",
+		visible: false,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+		})
+	});
+
+	//Layer 7
+	var bndryMapESRI = new ol.layer.Tile({
+		tag: "physicalMapESRI",
+		visible: false,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/arcgis/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{z}/{y}/{x}'
+		})
+	});
+
+	//Layer 8
+	var mapQuestMap = new ol.layer.Tile({
+		tag: "mapQuestMap",
+		visible: false,
+		source: new ol.source.MapQuest({layer: 'osm'})
+	});
+
+	//Station layers
+	var AsStations = getPointLayer(stations.AS);
+	AsStations.theme = "AS";
+	var EsStations = getPointLayer(stations.ES);
+	EsStations.theme = "ES";
+	var OsStations = getPointLayer(stations.OS);
+	OsStations.theme = "OS";
+
+	var view = new ol.View({
+		center: ol.proj.transform([10, 55], 'EPSG:4326', 'EPSG:3857'),
+		zoom: 4
+	});
+
+	var map = new ol.Map({
+		layers: [
+			worlMapBing,
+			worldAerialBing,
+			worldWaterColorStamen,
+			oceanESRI,
+			physicalMapESRI,
+			shadedRelMapESRI,
+			grayMapESRI,
+			bndryMapESRI,
+			mapQuestMap,
+			AsStations,
+			EsStations,
+			OsStations
+		],
+		target: 'map',
+		view: view
+		//renderer: 'canvas'
+		//renderer: 'webgl'
+	});
+
+	addSwitchBgMap(map);
+
+	addBtnEv(AsStations);
+	addBtnEv(EsStations);
+	addBtnEv(OsStations);
+
+	//popup(map);
+}
+
+function addBtnEv(layer){
+	var $chBx = $("#" + layer.theme);
+
+	$chBx.click(function(){
+		if ($chBx.prop("checked") == true) {
+			layer.setVisible(true);
+		} else {
+			layer.setVisible(false);
+		}
+	});
+
+	if ($chBx.prop("checked") == false) {
+		$chBx.click();
+	}
+}
+
+function getPointLayer(stations){
+	var iconFeature;
+	var features = [];
+
+	//***************************************
+
+	//var testIconFeature = new ol.Feature({
+	//	geometry: new ol.geom.Point(ol.proj.transform([4.519844, 51.307617], 'EPSG:4326', 'EPSG:3857')),
+	//	name: 'Null Island',
+	//	population: 4000,
+	//	rainfall: 500
+	//});
+	//
+	//var testIconStyle = new ol.style.Style({
+	//	image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+	//		anchor: [0, 0],
+	//		anchorXUnits: 'fraction',
+	//		anchorYUnits: 'pixels',
+	//		opacity: 1,
+	//		src: 'https://ac.gis.lu.se/images/silk/bullet_red.png'
+	//	}))
+	//});
+	//
+	//testIconFeature.setStyle(testIconStyle);
+	//features.push(testIconFeature);
+
+	//***************************************
+
+	var iconStyle = new ol.style.Style({
+		image: getIcon(stations.theme)
+	});
+
+	stations.data.forEach(function (station){
+		iconFeature = new ol.Feature({
+			geometry: new ol.geom.Point(ol.proj.transform(station.pos, 'EPSG:4326', 'EPSG:3857')),
+			name: station.name
+		});
+
+		iconFeature.setStyle(iconStyle);
+		features.push(iconFeature);
+	});
+
+	var vectorSource = new ol.source.Vector({
+		features: features
+	});
+
+	return new ol.layer.Vector({
+		source: vectorSource
+	});
+}
+
+function getIcon(theme){
+	var icon = {
+		anchor: [3, 20],
+		anchorXUnits: 'pixels',
+		anchorYUnits: 'pixels',
+		opacity: 1
+	};
+
+	switch (theme){
+		case "AS":
+			icon.src = 'as.svg';
+			break;
+
+		case "ES":
+			icon.src = 'es.svg';
+			break;
+
+		case "OS":
+			icon.src = 'os.svg';
+			break;
+	}
+
+	return new ol.style.Icon(icon);
+}
+
+function popup(map){
+	var element = document.getElementById('popup');
+
+	var popup = new ol.Overlay({
+		element: element,
+		positioning: 'bottom-center',
+		stopEvent: false
+	});
+	map.addOverlay(popup);
+
+// display popup on click
+	map.on('click', function(evt) {
+		var feature = map.forEachFeatureAtPixel(evt.pixel,
+			function(feature, layer) {
+				return feature;
+			});
+		if (feature) {
+			popup.setPosition(evt.coordinate);
+			$(element).popover({
+				'placement': 'top',
+				'html': true,
+				'content': feature.get('name')
+			});
+			$(element).popover('show');
+		} else {
+			$(element).popover('destroy');
+		}
+	});
+
+// change mouse cursor when over marker
+	map.on('pointermove', function(e) {
+		if (e.dragging) {
+			$(element).popover('destroy');
+			return;
+		}
+		var pixel = map.getEventPixel(e.originalEvent);
+		var hit = map.hasFeatureAtPixel(pixel);
+		map.getTarget().style.cursor = hit ? 'pointer' : '';
+	});
+}
+
+function addSwitchBgMap(map){
+	var $bgMaps = $("input[name=bgMaps]");
+	$bgMaps.filter('[value=map]').prop('checked', true);
+
+	if ($bgMaps.data("event") == null){
+
+		$bgMaps.change(function(){
+			var selectedValue = $bgMaps.filter(':checked').val();
+
+			map.getLayers().forEach(function(item, ind){
+				var tag = item.rc.q.tag;
+
+				if (tag != undefined){
+					if (selectedValue == tag){
+						map.getLayers().item(ind).setVisible(true);
+					} else {
+						map.getLayers().item(ind).setVisible(false);
+					}
+				}
+			});
+		});
+	}
+}
+
+function fetchStations(){
+	var query = 'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>';
+	query += 'SELECT (str(?name) AS ?namestr) (str(?lat) AS ?latstr) (str(?lon) AS ?lonstr) ';
+	query += '(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme) WHERE {';
+	query += '?s a ?class .';
+	query += '?s cpst:hasLongName ?name .';
+	query += '?s cpst:hasLat ?lat .';
+	query += '?s cpst:hasLon ?lon .';
+	query += '}';
+
+	query = encodeURI(query);
+
+	return $.ajax({
+		type: "GET",
+		url: "https://meta.icos-cp.eu/sparql?query=" + query,
+		dataType: "json"
+	});
+}
+
+function parseStationsJson(stationsJson){
+	var stationsAS = [];
+	var stationsES = [];
+	var stationsOS = [];
+
+	stationsJson.results.bindings.forEach(function(station){
+		var tmp = {};
+		tmp.name = station.namestr.value;
+		tmp.pos = [parseFloat(station.lonstr.value), parseFloat(station.latstr.value)];
+
+		switch (station.theme.value){
+			case "AS":
+				stationsAS.push(tmp);
+				break;
+
+			case "ES":
+				stationsES.push(tmp);
+				break;
+
+			case "OS":
+				stationsOS.push(tmp);
+				break;
+		}
+	});
+
+	var stations = {};
+	stations.AS = { theme: "AS", data: stationsAS };
+	stations.ES = { theme: "ES", data: stationsES };
+	stations.OS = { theme: "OS", data: stationsOS };
+
+	return stations;
+}

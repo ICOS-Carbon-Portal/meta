@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Station map</title>
+	<link rel="stylesheet" href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://static.icos-cp.eu/constant/ol/3.5.0/css/ol.css" type="text/css">
+
+	<style type="text/css">
+		#settings-main{
+			position: absolute;
+			top: 0px;
+			right: 0px;
+			height: 100%;
+			background-color: white;
+			padding: 10px 10px 0px 10px;
+		}
+		#bg-layers-control{
+			/*width: 100%;*/
+		}
+		#theme-layer-control{
+			margin-top: 50px;;
+		}
+		.checkbx > label{
+			display: block;
+		}
+	</style>
+
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/ol/3.5.0/js/ol.min.js"></script>
+	<!--<script type="text/javascript" src="http://openlayers.org/en/v3.8.2/build/ol.js"></script>-->
+
+	<script type="text/javascript" src="stations.js"></script>
+
+	<script type="text/javascript">
+		$(function () {
+			init();
+		});
+	</script>
+</head>
+<body>
+
+<div class="container-fluid">
+
+	<div class="row-fluid">
+
+		<div class="span12">
+			<div id="map"><div id="popup"></div></div>
+
+			<div id="settings-main">
+
+				<div id="bg-layers-control">
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap0" name="bgMaps" value="worlMapBing" checked>
+							Bing Map
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap1" name="bgMaps" value="worldAerialBing">
+							Bing Satellite
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap2" name="bgMaps" value="worldWaterColorStamen">
+							Watercolor
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap3" name="bgMaps" value="oceanESRI">
+							ESRI Ocean
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap4" name="bgMaps" value="physicalMapESRI">
+							ESRI Physical + Bndry
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap5" name="bgMaps" value="shadedRelMapESRI">
+							ESRI Shaded Relief
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap6" name="bgMaps" value="grayMapESRI">
+							ESRI Simple Map
+						</label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" id="bgMap7" name="bgMaps" value="mapQuestMap">
+							Map Quest OSM
+						</label>
+					</div>
+				</div>
+
+				<div id="theme-layer-control">
+					<div class="checkbx">
+						<label>
+							<input type="checkbox" id="AS" checked>
+							Atmosphere <img src="as.svg" alt="Atmosphere">
+						</label>
+						<label>
+							<input type="checkbox" id="ES" checked>
+							Ecosystem <img src="es.svg" alt="Ecosystem">
+						</label>
+						<label>
+							<input type="checkbox" id="OS" checked>
+							Ocean <img src="os.svg" alt="Ocean">
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+</div>
+
+</body>
+</html>

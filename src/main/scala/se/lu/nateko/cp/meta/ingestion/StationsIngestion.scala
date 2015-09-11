@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import java.net.{URLEncoder, URI}
-
 import org.openrdf.model.vocabulary.{XMLSchema, RDF}
 import org.openrdf.model.{ValueFactory, Statement}
+import org.openrdf.model.Literal
 
 
 case class Station(
@@ -31,11 +31,12 @@ object StationsIngestion extends Ingester{
 	val prefix = "http://meta.icos-cp.eu/ontologies/stationentry/"
 
 	def uri(fragment: String)(implicit valueFactory: ValueFactory) = valueFactory.createURI(prefix + fragment)
-	def lit(lit: String, dtype: org.openrdf.model.URI)(implicit factory: ValueFactory) = factory.createLiteral(lit, dtype)
-	def lit(lit: String)(implicit factory: ValueFactory) = factory.createLiteral(lit, XMLSchema.STRING)
-	def lit(lit: Int)(implicit factory: ValueFactory) = factory.createLiteral(lit)
-	def lit(lit: Boolean)(implicit factory: ValueFactory) = factory.createLiteral(lit)
-	def lit(lit: Double)(implicit factory: ValueFactory) = factory.createLiteral(lit)
+	def lit(litVal: String, dtype: org.openrdf.model.URI)(implicit factory: ValueFactory) = factory.createLiteral(litVal, dtype)
+	def lit(litVal: String)(implicit factory: ValueFactory) = factory.createLiteral(litVal, XMLSchema.STRING)
+	//important! not INT but INTEGER datatype for integers
+	def lit(litVal: Int)(implicit factory: ValueFactory): Literal = lit(litVal.toString, XMLSchema.INTEGER)
+	def lit(litVal: Boolean)(implicit factory: ValueFactory) = factory.createLiteral(litVal)
+	def lit(litVal: Double)(implicit factory: ValueFactory) = factory.createLiteral(litVal)
 
 	val es = new URI(prefix + "ES")
 	val as = new URI(prefix + "AS")

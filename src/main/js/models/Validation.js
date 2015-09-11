@@ -25,14 +25,14 @@ function doubleValidator(s){
 function minValueValidator(min){
 	return function(s){
 		var number = Number.parseFloat(s);
-		return number < min ? error("Must be more than or equal to " + min) : ok;
+		return number >= min ? ok : error("Must be more than or equal to " + min);
 	};
 }
 
 function maxValueValidator(max){
 	return function(s){
 		var number = Number.parseFloat(s);
-		return number > max ? error("Must be less than or equal to " + max) : ok;
+		return number <= max ? ok : error("Must be less than or equal to " + max);
 	};
 }
 

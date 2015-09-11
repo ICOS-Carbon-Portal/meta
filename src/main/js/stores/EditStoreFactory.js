@@ -1,44 +1,98 @@
 module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 	return Reflux.createStore({
 
-		publishState: function(){
-			this.trigger(this.state);
-		},
-
 		getInitialState: function(){
-			return this.state;
+			return {};
 		},
 
 		init: function(){
-			this.state = {individual: null};
-			this.listenTo(chooseIndividAction, this.fetchIndividual);
-			this.listenTo(requestUpdateAction, this.processRequestUpdate);
+			this.listenTo(chooseIndividAction, this.handleIndividChoice);
+			this.listenTo(requestUpdateAction, this.handleUpdateRequest);
 		},
 
-		fetchIndividual: function(individUri){
+		handleIndividChoice: function(individUri){
+			this.individUri = individUri;
+			this.fetchIndividual(individUri);
+		},
+
+		fetchIndividual: function(individUri, status){
 			var self = this;
-			
+
+			if(self.individUri !== individUri) return;
+
 			Backend.getIndividual(individUri)
-				.then(function(individualInfo){
-					self.state.individual = individualInfo;
-					self.publishState();
-				})
-				.catch(function(err){console.log(err);});
+				.then(
+					function(individualInfo){
+						if(self.individUri == individUri){
+
+							self.individualInfo = individualInfo;
+
+							self.trigger({
+								individual: individualInfo,
+								status: {value: "ok", previous: status}
+							});
+						}
+					},
+					function(err){
+						if(self.individUri == individUri){
+							self.trigger({
+								status: _.extend({value: "error", previous: status}, err)
+							})
+						} else console.log(err);
+					}
+				);
 		},
 
-		processRequestUpdate: function(updateRequest){
+		handleUpdateRequest: function(updateRequest){
 			var self = this;
-			if(updateRequest.type === "replace"){
-				Backend.performReplacement(updateRequest)
-					.then(function(){
-						var individUri = self.state.individual.resource.uri;
 
-						if(individUri === updateRequest.subject){
-							self.fetchIndividual(individUri);
-						}
-					});
-			}
+			var updates = _.map(updateRequest.updates, function(objAndAssertion){
+				var subjectAndPredicate = _.pick(updateRequest, "subject", "predicate");
+				return _.extend(subjectAndPredicate, objAndAssertion);
+			});
+
+			var essentialUpdates = _.filter(updates, function(update){
+				var statementObject = update.obj;
+				return !_.isNull(statementObject) && !_.isUndefined(statementObject);
+			});
+
+			if(_.isEmpty(essentialUpdates))
+				this.handleEmptyUpdates(updates);
+			else Backend.applyUpdates(essentialUpdates)
+				.then(
+					_.bind(this.fetchIndividual, this, updateRequest.subject),
+					function(err){
+						self.fetchIndividual(updateRequest.subject, _.extend({value: "error"}, err));
+					}
+				);
+		},
+
+		handleEmptyUpdates: function(updates){
+			if(updates.length === 0) return;
+			if(updates.length !== 1) throw new Error("Expecting one empty update");
+			var update = updates[0];
+			if(this.individUri !== update.subject) return;
+			if(!update.isAssertion) throw new Error("Expecting an empty-value assertion");
+
+			var props = this.individualInfo.owlClass.properties;
+			var theProperty = _.find(props, function(prop){
+				return (prop.resource.uri === update.predicate);
+			});
+
+			if(!theProperty) throw new Error("Unknown property " + update.predicate);
+			var newValueType = theProperty.type === 'dataProperty' ? 'literal' : 'object';
+			var newValue = {type: newValueType, property: theProperty.resource};
+			var newValues = this.individualInfo.values.concat([newValue]);
+			var newIndividual = _.extend({}, this.individualInfo, {values: newValues});
+
+			this.individualInfo = newIndividual;
+
+			this.trigger({
+				individual: newIndividual,
+				status: {value: "ok", previous: undefined}
+			});
 		}
 
 	});
-}
+};
+

@@ -13,6 +13,7 @@ module.exports = function(editStore, updateRequestAction){
 			if(!this.state.individual) return <div></div>;
 
 			var individ = new Individual(this.state.individual);
+			var indKey = individ.getKey() + '_';
 
 			function requestUpdate(updateRequest){
 				var fullRequest = _.extend({}, updateRequest, {subject: individ.getInfo().uri});
@@ -25,7 +26,7 @@ module.exports = function(editStore, updateRequestAction){
 
 					_.map(individ.getPropertyValues(), function(propValues, i){
 
-						return <PropertyWidget key={propValues.getKey()} propertyValues={propValues} requestUpdate={requestUpdate}/>;
+						return <PropertyWidget key={indKey + propValues.getKey()} propertyValues={propValues} requestUpdate={requestUpdate}/>;
 
 					})
 

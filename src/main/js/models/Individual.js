@@ -55,12 +55,12 @@ Individual.prototype.makePropertyValues = function(individDto){
 		.partition(function(propVal){
 			return propVal.isRequired();
 		})
-		.map(function(propValsGroup, i){
+/*		.map(function(propValsGroup, i){
 			return _.partition(propValsGroup, function(propVals){
 				return (i == 0) ^ !propVals.isEmpty();
 			});
 		})
-		.flatten(true)
+		.flatten(true)*/
 		.map(sortAlphabetically)
 		.flatten()
 		.value();

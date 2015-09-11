@@ -47,6 +47,12 @@ PropertyValues.prototype.getValidity = function(){
 	return {valid: valid, errors: errors};
 };
 
+PropertyValues.prototype.canHaveMoreValues = function(){
+	var nValues = this._values.length;
+	var max = this._propertyDto.cardinality.max;
+	return (_.isUndefined(max) || _.isNumber(max) && (nValues < max));
+};
+
 PropertyValues.prototype.getKey = function(){
 	return "prop_" + this.getPropertyUri();
 };

@@ -6,7 +6,22 @@ module.exports = React.createClass({
 		var givenProps = this.props;
 		var propValues = givenProps.propertyValues;
 
-		return <Widget {...givenProps}>{
+		var addNewValue = _.bind(this.props.requestUpdate, null, {
+			updates: [{
+				isAssertion: true,
+				obj: null
+			}]
+		});
+
+		var widgetProps = _.extend({}, givenProps, {
+			buttons: [{
+				glyphicon: 'plus',
+				isDisabled: !propValues.canHaveMoreValues(),
+				clickHandler: addNewValue
+			}]
+		});
+
+		return <Widget {...widgetProps}>{
 			_.map(propValues.getValues(), function(value, i){
 
 				var props = _.extend({}, givenProps, {

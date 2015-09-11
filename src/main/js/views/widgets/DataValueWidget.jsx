@@ -1,7 +1,6 @@
 module.exports = React.createClass({
 
 	getInitialState: function(){
-
 		return {
 			dataValue: this.props.dataValue,
 			isSaving: false
@@ -41,9 +40,13 @@ module.exports = React.createClass({
 		if(value.getValidity().valid && !this.state.isSaving && newValue !== oldValue){
 
 			this.props.requestUpdate({
-				type: "replace",
-				oldObject: oldValue,
-				newObject: newValue
+				updates: [{
+					isAssertion: false,
+					obj: oldValue
+				}, {
+					isAssertion: true,
+					obj: newValue
+				}]
 			});
 
 			this.setState({

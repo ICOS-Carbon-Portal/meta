@@ -57,8 +57,9 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 					entity(as[Seq[UpdateDto]])(updates => {
 						instOnto.applyUpdates(updates).get
 						complete(StatusCodes.OK)
-					})
-				}
+					}) ~
+					complete((StatusCodes.BadRequest, "Wrong request payload, expecting an array of update objects"))
+				} ~
 				pathSuffix("performreplacement"){
 					entity(as[ReplaceDto])(replacement => {
 						instOnto.performReplacement(replacement).get

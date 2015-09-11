@@ -24,11 +24,22 @@
 		.checkbx > label{
 			display: block;
 		}
+		.popover-title{
+			white-space: nowrap;
+		}
+		dt:after {
+			content: ":";
+		}
+		dd{
+			padding-left: 10px;
+			min-width: 200px;;
+			max-width: 400px;
+		}
 	</style>
 
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/ol/3.5.0/js/ol.min.js"></script>
-	<!--<script type="text/javascript" src="http://openlayers.org/en/v3.8.2/build/ol.js"></script>-->
 
 	<script type="text/javascript" src="stations.js"></script>
 
@@ -45,7 +56,7 @@
 	<div class="row-fluid">
 
 		<div class="span12">
-			<div id="map"><div id="popup"></div></div>
+			<div id="map"><div id="popover"></div></div>
 
 			<div id="settings-main">
 

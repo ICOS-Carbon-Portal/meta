@@ -35,7 +35,7 @@
 			$("#result").hide();
 
 			$("#queryBtn").click(function(){
-				var query = encodeURI($("#query").val());
+				var query = encodeURIComponent($("#query").val());
 
 				$.ajax({
 					type: "GET",

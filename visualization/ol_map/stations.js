@@ -132,7 +132,7 @@ function initMap(stations) {
 	addBtnEv(EsStations);
 	addBtnEv(OsStations);
 
-	//popup(map);
+	popup(map);
 }
 
 function addBtnEv(layer){
@@ -185,9 +185,15 @@ function getPointLayer(stations){
 
 	stations.data.forEach(function (station){
 		iconFeature = new ol.Feature({
-			geometry: new ol.geom.Point(ol.proj.transform(station.pos, 'EPSG:4326', 'EPSG:3857')),
-			name: station.name
+			geometry: new ol.geom.Point(ol.proj.transform(station.pos, 'EPSG:4326', 'EPSG:3857'))
 		});
+
+		//Add all other attributes
+		for (var name in station) {
+			if (name != "pos") {
+				iconFeature.set(name, station[name]);
+			}
+		}
 
 		iconFeature.setStyle(iconStyle);
 		features.push(iconFeature);
@@ -228,43 +234,58 @@ function getIcon(theme){
 }
 
 function popup(map){
-	var element = document.getElementById('popup');
+	var $element = $("#popover");
 
 	var popup = new ol.Overlay({
-		element: element,
-		positioning: 'bottom-center',
+		element: $element[0],
+		positioning: "bottom-center",
 		stopEvent: false
 	});
 	map.addOverlay(popup);
 
 // display popup on click
-	map.on('click', function(evt) {
+	map.on("pointermove", function(evt) {
 		var feature = map.forEachFeatureAtPixel(evt.pixel,
 			function(feature, layer) {
 				return feature;
 			});
+
 		if (feature) {
+			var content = "";
+			var cont = "<dl>";
+
+			for (var name in feature.q) {
+				if (name != "geometry") {
+					content += "<div>" + "<b>" + name.replace("_", " ") + ": </b>" + feature.get(name) + "</div>";
+					cont += "<dt>" + name.replace("_", " ")
+					cont += "<dd>" + feature.get(name);
+				}
+			}
+
+			cont += "</dl>"
+
 			popup.setPosition(evt.coordinate);
-			$(element).popover({
-				'placement': 'top',
-				'html': true,
-				'content': feature.get('name')
+			$element.popover({
+				placement: "top",
+				html: true,
+				title: "Station information",
+				content: cont
 			});
-			$(element).popover('show');
+			$element.popover("show");
 		} else {
-			$(element).popover('destroy');
+			$element.popover("destroy");
 		}
 	});
 
 // change mouse cursor when over marker
-	map.on('pointermove', function(e) {
+	map.on("pointermove", function(e) {
 		if (e.dragging) {
-			$(element).popover('destroy');
+			$element.popover("destroy");
 			return;
 		}
 		var pixel = map.getEventPixel(e.originalEvent);
 		var hit = map.hasFeatureAtPixel(pixel);
-		map.getTarget().style.cursor = hit ? 'pointer' : '';
+		//map.getTarget().style.cursor = hit ? "pointer" : "";
 	});
 }
 
@@ -293,16 +314,25 @@ function addSwitchBgMap(map){
 }
 
 function fetchStations(){
-	var query = 'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>';
-	query += 'SELECT (str(?name) AS ?namestr) (str(?lat) AS ?latstr) (str(?lon) AS ?lonstr) ';
-	query += '(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme) WHERE {';
-	query += '?s a ?class .';
-	query += '?s cpst:hasLongName ?name .';
-	query += '?s cpst:hasLat ?lat .';
-	query += '?s cpst:hasLon ?lon .';
-	query += '}';
+	var query = [
+		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
+		'SELECT',
+		'(str(?sName) AS ?Short_name)',
+		'(str(?lName) AS ?Long_name)',
+		'(str(?country) AS ?Country)',
+		'(str(?lat) AS ?latstr)',
+		'(str(?lon) AS ?lonstr) ',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme) WHERE {',
+		'?s a ?class .',
+		'?s cpst:hasShortName ?sName .',
+		'?s cpst:hasLongName ?lName .',
+		'?s cpst:hasCountry ?country .',
+		'?s cpst:hasLat ?lat .',
+		'?s cpst:hasLon ?lon .',
+		'}'
+	].join("\n");
 
-	query = encodeURI(query);
+	query = encodeURIComponent(query);
 
 	return $.ajax({
 		type: "GET",
@@ -316,12 +346,38 @@ function parseStationsJson(stationsJson){
 	var stationsES = [];
 	var stationsOS = [];
 
-	stationsJson.results.bindings.forEach(function(station){
+	stationsJson.results.bindings.forEach(function(bind){
 		var tmp = {};
-		tmp.name = station.namestr.value;
-		tmp.pos = [parseFloat(station.lonstr.value), parseFloat(station.latstr.value)];
+		var lat = null;
+		var lon = null;
+		var theme = null;
 
-		switch (station.theme.value){
+		for (var name in bind) {
+			if (bind.hasOwnProperty(name)) {
+
+				switch(name){
+					case "theme":
+						theme = bind[name].value;
+						break;
+
+					case "latstr":
+						lat = parseFloat(bind[name].value);
+						break;
+
+					case "lonstr":
+						lon = parseFloat(bind[name].value);
+						break;
+
+					default:
+						tmp[name] = bind[name].value;
+				}
+			}
+		}
+
+		tmp.pos = [lon, lat];
+		//console.log(tmp);
+
+		switch (theme){
 			case "AS":
 				stationsAS.push(tmp);
 				break;
@@ -340,6 +396,8 @@ function parseStationsJson(stationsJson){
 	stations.AS = { theme: "AS", data: stationsAS };
 	stations.ES = { theme: "ES", data: stationsES };
 	stations.OS = { theme: "OS", data: stationsOS };
+
+	console.log(stations);
 
 	return stations;
 }

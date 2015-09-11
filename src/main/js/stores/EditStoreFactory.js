@@ -72,7 +72,6 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 			if(updates.length !== 1) throw new Error("Expecting one empty update");
 			var update = updates[0];
 			if(this.individUri !== update.subject) return;
-			if(!update.isAssertion) throw new Error("Expecting an empty-value assertion");
 
 			var props = this.individualInfo.owlClass.properties;
 			var theProperty = _.find(props, function(prop){
@@ -80,9 +79,20 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 			});
 
 			if(!theProperty) throw new Error("Unknown property " + update.predicate);
-			var newValueType = theProperty.type === 'dataProperty' ? 'literal' : 'object';
-			var newValue = {type: newValueType, property: theProperty.resource};
-			var newValues = this.individualInfo.values.concat([newValue]);
+			var valueType = theProperty.type === 'dataProperty' ? 'literal' : 'object';
+			var oldValues = this.individualInfo.values;
+
+			var newValues = update.isAssertion
+				? oldValues.concat([{
+					type: valueType,
+					property: theProperty.resource
+				}])
+				: _.filter(oldValues, function(value){
+					return !(value.type === valueType && value.property.uri === update.predicate &&
+						(_.isNull(value.value) || _.isUndefined(value.value))
+					);
+				});
+
 			var newIndividual = _.extend({}, this.individualInfo, {values: newValues});
 
 			this.individualInfo = newIndividual;

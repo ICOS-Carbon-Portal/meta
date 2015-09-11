@@ -13,8 +13,10 @@ function intValidator(s){
 }
 
 function boolValidator(s){
+	var boolError = error("Must be 'true' or 'false'");
+	if(_.isEmpty(s)) return boolError;
 	var sl = s.toLowerCase();
-	return (sl === "true" || sl === "false") ? ok : error("Must be 'true' or 'false'");
+	return (sl === "true" || sl === "false") ? ok : boolError;
 }
 
 function doubleValidator(s){

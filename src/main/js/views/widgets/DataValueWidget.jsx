@@ -1,10 +1,19 @@
+
+function stateFromNewProps(props){
+	return {
+		dataValue: props.dataValue,
+		isSaving: false
+	};
+}
+
 module.exports = React.createClass({
 
 	getInitialState: function(){
-		return {
-			dataValue: this.props.dataValue,
-			isSaving: false
-		};
+		return stateFromNewProps(this.props);
+	},
+
+	componentWillReceiveProps: function(newProps){
+		this.setState(stateFromNewProps(newProps));
 	},
 
 	render: function(){
@@ -15,11 +24,17 @@ module.exports = React.createClass({
 			? undefined
 			: validity.errors.join('\n');
 
-		return <input
-			type="text" className="form-control" ref="dataValueInput"
-			style={style} title={title} readOnly={this.state.isSaving}
-			onBlur={this.persistUpdate} value={content} onChange={this.changeHandler}
-		/>;
+		return <div className="input-group">
+			<input
+				type="text" className="form-control" ref="dataValueInput"
+				style={style} title={title} readOnly={this.state.isSaving}
+				onBlur={this.persistUpdate} value={content} onChange={this.changeHandler}
+				onKeyDown={this.keyDownHandler}
+			/>
+			<span className="input-group-addon" onClick={this.deleteSelf}>
+				<span className="glyphicon glyphicon-remove"></span>
+			</span>
+		</div>;
 	},
 
 	changeHandler: function(){
@@ -29,6 +44,13 @@ module.exports = React.createClass({
 		if(currentValue.getValue() != newValueStr) {
 			var updatedValue = currentValue.withValue(newValueStr);
 			this.setState({dataValue: updatedValue});
+		}
+	},
+	
+	keyDownHandler: function(event){
+		if(event.keyCode == 13){
+			var elem = React.findDOMNode(this.refs.dataValueInput);
+			elem.blur();
 		}
 	},
 
@@ -54,6 +76,16 @@ module.exports = React.createClass({
 			});
 
 		}
+	},
+
+	deleteSelf: function(){
+		var value = this.props.dataValue.getValue();
+		this.props.requestUpdate({
+			updates: [{
+				isAssertion: false,
+				obj: value
+			}]
+		});
 	}
 
 });

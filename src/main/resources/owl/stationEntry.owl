@@ -40,6 +40,9 @@ Datatype: rdf:PlainLiteral
     
 DataProperty: hasPreIcosMeasurements
 
+    Annotations: 
+        rdfs:label "has pre-ICOS measurements (true/false)"^^xsd:string
+    
     Domain: 
         Station
     
@@ -53,8 +56,7 @@ DataProperty: hasPreIcosMeasurements
 DataProperty: hasStationKind
 
     Annotations: 
-        rdfs:label "kind of station"^^xsd:string,
-        rdfs:comment "TT, aircraft, atm, ground, eco, ocean"^^xsd:string
+        rdfs:label "kind of station (TT, aircraft, atm, ground, eco, ocean)"^^xsd:string
     
     Domain: 
         Station
@@ -113,6 +115,9 @@ DataProperty: hasPiEmail
     
 DataProperty: hasElevationAboveSea
 
+    Annotations: 
+        rdfs:label "elevation above sea, meters"^^xsd:string
+    
     Domain: 
         Station
     
@@ -125,6 +130,9 @@ DataProperty: hasElevationAboveSea
     
 DataProperty: hasFundingForOperation
 
+    Annotations: 
+        rdfs:label "funding for operation"^^xsd:string
+    
     Domain: 
         Station
     
@@ -135,20 +143,11 @@ DataProperty: hasFundingForOperation
         Functional
     
     
-DataProperty: hasCountry
-
-    Domain: 
-        Station
-    
-    Range: 
-        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
-    
-    Characteristics: 
-        Functional
-    
-    
 DataProperty: hasOperationalDateEstimate
 
+    Annotations: 
+        rdfs:label "estimated date when operational"^^xsd:string
+    
     Domain: 
         Station
     
@@ -161,6 +160,9 @@ DataProperty: hasOperationalDateEstimate
     
 DataProperty: hasElevationAboveGround
 
+    Annotations: 
+        rdfs:label "elevation above ground, meters"^^xsd:string
+    
     Domain: 
         Station
     
@@ -264,6 +266,9 @@ DataProperty: hasLat
     
 DataProperty: hasFundingForConstruction
 
+    Annotations: 
+        rdfs:label "funding for construction"^^xsd:string
+    
     Domain: 
         Station
     
@@ -274,8 +279,27 @@ DataProperty: hasFundingForConstruction
         Functional
     
     
+DataProperty: hasCountry
+
+    Annotations: 
+        rdfs:comment "BE, CH, DE, FI, FR, NO or SE"^^xsd:string,
+        rdfs:label "country code (two-letter)"^^xsd:string
+    
+    Domain: 
+        Station
+    
+    Range: 
+        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
+    
+    Characteristics: 
+        Functional
+    
+    
 DataProperty: isAlreadyOperational
 
+    Annotations: 
+        rdfs:label "already operational (true/false)"^^xsd:string
+    
     Domain: 
         Station
     
@@ -301,6 +325,7 @@ Class: Station
 
     SubClassOf: 
         hasPiEmail some rdfs:Literal,
+        hasLongName some rdfs:Literal,
         hasPiName some rdfs:Literal,
         hasShortName some rdfs:Literal
     

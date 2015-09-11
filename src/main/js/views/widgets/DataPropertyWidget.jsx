@@ -25,7 +25,7 @@ module.exports = React.createClass({
 			_.map(propValues.getValues(), function(value, i){
 
 				var props = _.extend({}, givenProps, {
-					key: ["val", i, value.getValue()].join('_'),
+					key: "val_" + i,
 					dataValue: value
 				});
 

@@ -14,7 +14,7 @@ function initMap(stations) {
 	//Layer 0
 	var worlMapBing = new ol.layer.Tile({
 		tag: "worlMapBing",
-		visible: true,
+		visible: false,
 		source: new ol.source.BingMaps({
 			key: 'AnVI2I3JgdBbAH42y_nepiei9Gx_mxk0pL9gaqs59-thEV66RVxdZF45YtEtX98Y',
 			imagerySet: 'Road'
@@ -43,7 +43,7 @@ function initMap(stations) {
 	//Layer 3
 	var oceanESRI = new ol.layer.Tile({
 		tag: "oceanESRI",
-		visible: false,
+		visible: true,
 		source: new ol.source.XYZ({
 			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}'
 		})
@@ -93,12 +93,15 @@ function initMap(stations) {
 	});
 
 	//Station layers
-	var AsStations = getPointLayer(stations.AS);
-	AsStations.theme = "AS";
-	var EsStations = getPointLayer(stations.ES);
-	EsStations.theme = "ES";
 	var OsStations = getPointLayer(stations.OS);
 	OsStations.theme = "OS";
+	
+	var EsStations = getPointLayer(stations.ES);
+	EsStations.theme = "ES";
+	
+	var AsStations = getPointLayer(stations.AS);
+	AsStations.theme = "AS";
+	
 
 	var view = new ol.View({
 		center: ol.proj.transform([10, 55], 'EPSG:4326', 'EPSG:3857'),
@@ -116,9 +119,9 @@ function initMap(stations) {
 			grayMapESRI,
 			bndryMapESRI,
 			mapQuestMap,
-			AsStations,
+			OsStations,
 			EsStations,
-			OsStations
+			AsStations
 		],
 		target: 'map',
 		view: view
@@ -133,6 +136,8 @@ function initMap(stations) {
 	addBtnEv(OsStations);
 
 	popup(map);
+
+	addRefreshEv(map);
 }
 
 function addBtnEv(layer){
@@ -151,33 +156,91 @@ function addBtnEv(layer){
 	}
 }
 
+function addRefreshEv(map){
+	$("#refreshBtn").click(function(){
+		var stationsPromise = fetchStations();
+
+		stationsPromise
+			.done(function(result){
+				var stations = parseStationsJson(result);
+
+				var OsStations = getPointLayer(stations.OS);
+				OsStations.theme = "OS";
+
+				var EsStations = getPointLayer(stations.ES);
+				EsStations.theme = "ES";
+
+				var AsStations = getPointLayer(stations.AS);
+				AsStations.theme = "AS";
+
+				map.getLayers().forEach(function (layer){
+					if(layer.theme !== undefined) {
+
+						layer.getSource().clear();
+
+						switch (layer.theme){
+							case "AS":
+								layer.getSource().addFeatures(getVectorFeatures(stations.AS));
+								break;
+
+							case "ES":
+								layer.getSource().addFeatures(getVectorFeatures(stations.ES));
+								break;
+
+							case "OS":
+								layer.getSource().addFeatures(getVectorFeatures(stations.OS));
+								break;
+						}
+					}
+				});
+
+			})
+			.fail(function(request){
+				console.log(request);
+			});
+	});
+}
+
 function getPointLayer(stations){
+
+
+	var vectorSource = new ol.source.Vector({
+		features: getVectorFeatures(stations)
+	});
+
+	return new ol.layer.Vector({
+		source: vectorSource
+	});
+}
+
+function getIcon(theme){
+	var icon = {
+		anchor: [3, 20],
+		anchorXUnits: 'pixels',
+		anchorYUnits: 'pixels',
+		opacity: 1
+	};
+
+	switch (theme){
+		case "AS":
+			icon.src = 'icons/as.svg';
+			break;
+
+		case "ES":
+			icon.src = 'icons/es.svg';
+			break;
+
+		case "OS":
+			icon.src = 'icons/os.svg';
+			break;
+	}
+
+	return new ol.style.Icon(icon);
+}
+
+function getVectorFeatures(stations){
 	var iconFeature;
 	var features = [];
-
-	//***************************************
-
-	//var testIconFeature = new ol.Feature({
-	//	geometry: new ol.geom.Point(ol.proj.transform([4.519844, 51.307617], 'EPSG:4326', 'EPSG:3857')),
-	//	name: 'Null Island',
-	//	population: 4000,
-	//	rainfall: 500
-	//});
-	//
-	//var testIconStyle = new ol.style.Style({
-	//	image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
-	//		anchor: [0, 0],
-	//		anchorXUnits: 'fraction',
-	//		anchorYUnits: 'pixels',
-	//		opacity: 1,
-	//		src: 'https://ac.gis.lu.se/images/silk/bullet_red.png'
-	//	}))
-	//});
-	//
-	//testIconFeature.setStyle(testIconStyle);
-	//features.push(testIconFeature);
-
-	//***************************************
 
 	var iconStyle = new ol.style.Style({
 		image: getIcon(stations.theme)
@@ -199,38 +262,7 @@ function getPointLayer(stations){
 		features.push(iconFeature);
 	});
 
-	var vectorSource = new ol.source.Vector({
-		features: features
-	});
-
-	return new ol.layer.Vector({
-		source: vectorSource
-	});
-}
-
-function getIcon(theme){
-	var icon = {
-		anchor: [3, 20],
-		anchorXUnits: 'pixels',
-		anchorYUnits: 'pixels',
-		opacity: 1
-	};
-
-	switch (theme){
-		case "AS":
-			icon.src = 'as.svg';
-			break;
-
-		case "ES":
-			icon.src = 'es.svg';
-			break;
-
-		case "OS":
-			icon.src = 'os.svg';
-			break;
-	}
-
-	return new ol.style.Icon(icon);
+	return features;
 }
 
 function popup(map){
@@ -252,24 +284,19 @@ function popup(map){
 
 		if (feature) {
 			var content = "";
-			var cont = "<dl>";
 
 			for (var name in feature.q) {
 				if (name != "geometry") {
-					content += "<div>" + "<b>" + name.replace("_", " ") + ": </b>" + feature.get(name) + "</div>";
-					cont += "<dt>" + name.replace("_", " ")
-					cont += "<dd>" + feature.get(name);
+					content += "<div><b>" + name.replace("_", " ") + ":</b> " + feature.get(name) + "</div>";
 				}
 			}
-
-			cont += "</dl>"
 
 			popup.setPosition(evt.coordinate);
 			$element.popover({
 				placement: "top",
 				html: true,
 				title: "Station information",
-				content: cont
+				content: content
 			});
 			$element.popover("show");
 		} else {
@@ -322,7 +349,10 @@ function fetchStations(){
 		'(str(?country) AS ?Country)',
 		'(str(?lat) AS ?latstr)',
 		'(str(?lon) AS ?lonstr) ',
-		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme) WHERE {',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme)',
+		//'FROM <http://meta.icos-cp.eu/ontologies/stationtest/>',
+		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
+		'WHERE {',
 		'?s a ?class .',
 		'?s cpst:hasShortName ?sName .',
 		'?s cpst:hasLongName ?lName .',
@@ -396,8 +426,6 @@ function parseStationsJson(stationsJson){
 	stations.AS = { theme: "AS", data: stationsAS };
 	stations.ES = { theme: "ES", data: stationsES };
 	stations.OS = { theme: "OS", data: stationsOS };
-
-	console.log(stations);
 
 	return stations;
 }

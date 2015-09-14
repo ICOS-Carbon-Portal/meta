@@ -11,6 +11,7 @@ import akka.stream.Materializer
 import java.net.URI
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import se.lu.nateko.cp.meta.InstOntoServerConfig
+import spray.json.JsBoolean
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Materializer) extends CpmetaJsonProtocol{
 
@@ -49,6 +50,11 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 				parameter('uri){ uriStr =>
 					complete(instOnto.getIndividual(new URI(uriStr)))
 				}
+			} ~
+			pathSuffix("checkIfUriIsFree"){
+				parameter("uri"){ uriStr =>
+					complete(JsBoolean(!instOnto.hasIndividual(uriStr)))
+				}
 			}
 		} ~
 		post{
@@ -65,6 +71,13 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 						instOnto.performReplacement(replacement).get
 						complete(StatusCodes.OK)
 					})
+				} ~
+				pathSuffix("createIndividual"){
+					parameters('uri, 'typeUri){ (uriStr, typeUriStr) =>
+						instOnto.createIndividual(uriStr, typeUriStr).get
+						complete(StatusCodes.OK)
+					} ~
+					complete((StatusCodes.BadRequest, "Please provide 'uri' and 'typeUri' URL parameters"))
 				}
 			}
 		}

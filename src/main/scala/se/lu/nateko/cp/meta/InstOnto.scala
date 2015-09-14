@@ -12,6 +12,8 @@ import scala.util.Try
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import org.openrdf.model.Statement
 import org.openrdf.query.UpdateExecutionException
+import scala.util.Failure
+import scala.util.control.NoStackTrace
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 
@@ -58,6 +60,20 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			owlClass = classInfo,
 			values = values
 		)
+	}
+
+	def hasIndividual(uriStr: String): Boolean = {
+		val uri = instServer.factory.createURI(uriStr)
+		!instServer.getStatements(uri).isEmpty
+	}
+
+	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
+		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
+		else Try{
+			val uri = instServer.factory.createURI(uriStr)
+			val typeUri = instServer.factory.createURI(typeUriStr)
+			instServer.addInstance(uri, typeUri)
+		}.flatten
 	}
 
 	def performReplacement(replacement: ReplaceDto): Try[Unit] = {

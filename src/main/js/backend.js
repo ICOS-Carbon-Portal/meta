@@ -57,6 +57,11 @@ function makeErrorReport(request){
 	return rep;
 }
 
+function stripSlash(s){
+	if(s.endsWith('/')) return stripSlash(s.substr(0, s.length - 1));
+	else return s;
+}
+
 module.exports = {
 	listClasses: function(){
 		return getJson('getExposedClasses');
@@ -68,6 +73,18 @@ module.exports = {
 	getIndividual: function(uri){
 		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
 		return getJson(url);
+	},
+	createIndividual: function(uri, rdfType){
+		var url = ['createIndividual?uri=', encodeURIComponent(uri), '&typeUri=', encodeURIComponent(rdfType)].join('');
+		return postJson(url, {}); //dummy payload
+	},
+	checkSuffix: function(baseClass, suffix){
+		var uri = stripSlash(baseClass) + '/' + encodeURI(suffix);
+		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
+
+		return getJson(url).then(function(isAvailable){
+			return {candidateUri: uri, suffixAvailable: isAvailable};
+		});
 	},
 	applyUpdates: function(updates){
 		return postJson('applyupdates', updates);

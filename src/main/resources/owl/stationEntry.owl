@@ -282,14 +282,14 @@ DataProperty: hasFundingForConstruction
 DataProperty: hasCountry
 
     Annotations: 
-        rdfs:comment "BE, CH, DE, FI, FR, NO or SE"^^xsd:string,
+        rdfs:comment "BE, CH, CZ, DE, FI, FR, NO,  IE, NL, UK, PL, SE"^^xsd:string,
         rdfs:label "country code (two-letter)"^^xsd:string
     
     Domain: 
         Station
     
     Range: 
-        {"BE"^^xsd:string , "CH"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IT"^^xsd:string , "NO"^^xsd:string , "SE"^^xsd:string}
+        {"BE"^^xsd:string , "CH"^^xsd:string , "CZ"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IE"^^xsd:string , "IT"^^xsd:string , "NL"^^xsd:string , "NO"^^xsd:string , "PL"^^xsd:string , "SE"^^xsd:string , "UK"^^xsd:string}
     
     Characteristics: 
         Functional

@@ -41,6 +41,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 			)
 			.map(_.getSubject)
 			.collect{case iri: IRI => factory.getOWLClass(iri)}
+			.flatMap(getBottomSubClasses)
 			.map(rdfsLabeling)
 			.toSeq
 			.distinct
@@ -57,6 +58,12 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	def getSubClasses(classUri: URI, direct: Boolean): Seq[OWLClass] = {
 		val owlClass = factory.getOWLClass(IRI.create(classUri))
 		reasoner.getSubClasses(owlClass, direct)
+	}
+
+	private def getBottomSubClasses(owlClass: OWLClass): Seq[OWLClass] = {
+		val directSubs = reasoner.getSubClasses(owlClass, false)
+		if(directSubs.isEmpty) Seq(owlClass)
+		else directSubs.flatMap(getBottomSubClasses)
 	}
 
 	def getClassInfo(classUri: URI): ClassDto = {

@@ -17,7 +17,7 @@ module.exports = function(typesStore, chooseTypeAction){
 					<div className="btn-group-vertical" role="group">{
 
 						this.state.types.map(function(theType){
-				
+
 							var clickHandler = _.partial(chooseTypeAction, theType.uri);
 							var isChosen = (theType.uri == self.state.chosen);
 							var fullName = theType.displayName;
@@ -32,3 +32,4 @@ module.exports = function(typesStore, chooseTypeAction){
 
 	});
 }
+

@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseTypeAction){
+module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -6,19 +6,23 @@ module.exports = function(Backend, chooseTypeAction){
 		},
 
 		getInitialState: function(){
-			return this.state;
+			return {
+				types: [],
+				chosen: null,
+				candidateUriSuffix: null,
+				candidateUri: null,
+				suffixAvailable: false
+			};
 		},
 
 		init: function(){
 			this.listenTo(chooseTypeAction, this.setChosenType);
-			this.state = {
-				types: [],
-				chosen: null
-			};
+			this.listenTo(checkSuffixAction, this.checkSuffix);
+			this.state = this.getInitialState();
 			var self = this;
 
-			Backend.listClasses()
-				.then(function(types){
+			Backend.listClasses().then(
+				function(types){
 					self.state.types = _.chain(types)
 						.map(function(theType){
 							return _.extend({}, theType, {chosen: false});
@@ -26,8 +30,9 @@ module.exports = function(Backend, chooseTypeAction){
 						.sortBy('displayName')
 						.value();
 					self.publishState();
-				})
-				.catch(function(err){console.log(err);});
+				},
+				function(err){console.log(err);}
+			);
 		},
 
 		setChosenType: function(chosenType){
@@ -43,6 +48,31 @@ module.exports = function(Backend, chooseTypeAction){
 				this.publishState();
 			}
 
+		},
+
+		checkSuffix: function(suffix){
+			var self = this;
+			var baseClass = this.state.chosen;
+
+			_.extend(this.state, {
+				candidateUriSuffix: suffix,
+				candidateUri: null,
+				suffixAvailable: false
+			});
+
+			if(!baseClass || !suffix) {
+				self.publishState();
+				return;
+			}
+
+			Backend.checkSuffix(baseClass, suffix).then(
+				function(checkRes){
+					if(baseClass !== self.state.chosen || suffix !== self.state.candidateUriSuffix) return;
+					_.extend(self.state, checkRes);
+					self.publishState();
+				},
+				function(err){console.log(err);}
+			);
 		}
 	});
 }

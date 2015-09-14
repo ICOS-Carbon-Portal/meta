@@ -3,14 +3,22 @@ var ChoiceButton = require('./ChoiceButton.jsx');
 var Widget = require('./widgets/Widget.jsx');
 var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
 
-module.exports = function(individualsStore, chooseAction){
+module.exports = function(individualsStore, chooseAction, IndividualAdder){
 
 	return React.createClass({
-	
+
 		mixins: [Reflux.connect(individualsStore)],
-		
+
 		render: function(){
 			var self = this;
+
+			var buttons = [{
+				glyphicon: 'plus',
+				isDisabled: this.state.addingInstance,
+				clickHandler: function(){
+					self.setState({addingInstance: true});
+				}
+			}];
 
 			var individuals = _.chain(this.state.individuals)
 				.map(function(individual){
@@ -23,7 +31,10 @@ module.exports = function(individualsStore, chooseAction){
 				.sortBy("displayName")
 				.value();
 
-			return <Widget widgetType="primary" widgetTitle="Entries">
+			return <Widget widgetType="primary" widgetTitle="Entries" buttons={buttons}>
+
+				{this.state.addingInstance ? <IndividualAdder cancelHandler={this.hideAdder}/> : null}
+
 				<ScreenHeightColumn>
 					<div className="btn-group-vertical" role="group">{
 						individuals.map(function(ind){
@@ -32,7 +43,14 @@ module.exports = function(individualsStore, chooseAction){
 						})
 					}</div>
 				</ScreenHeightColumn>
+
 			</Widget>;
+		},
+
+		hideAdder: function(){
+			this.setState({addingInstance: false});
 		}
+
 	});
 }
+

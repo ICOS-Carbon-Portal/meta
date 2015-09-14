@@ -1,5 +1,7 @@
 var capped = require('../utils.js').ensureLength(45);
 var ChoiceButton = require('./ChoiceButton.jsx');
+var Widget = require('./widgets/Widget.jsx');
+var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
 
 module.exports = function(individualsStore, chooseAction){
 
@@ -21,12 +23,16 @@ module.exports = function(individualsStore, chooseAction){
 				.sortBy("displayName")
 				.value();
 
-			return <div className="btn-group-vertical" role="group">{
-					individuals.map(function(ind){
-						return <ChoiceButton key={ind.uri} chosen={ind.isChosen} tooltip={ind.displayName}
-							clickHandler={ind.clickHandler} style={{"text-align": "left"}}>{ind.shortName}</ChoiceButton>;
-					})
-			}</div>;
+			return <Widget widgetType="primary" widgetTitle="Entries">
+				<ScreenHeightColumn>
+					<div className="btn-group-vertical" role="group">{
+						individuals.map(function(ind){
+							return <ChoiceButton key={ind.uri} chosen={ind.isChosen} tooltip={ind.displayName}
+								clickHandler={ind.clickHandler} style={{"text-align": "left"}}>{ind.shortName}</ChoiceButton>;
+						})
+					}</div>
+				</ScreenHeightColumn>
+			</Widget>;
 		}
 	});
 }

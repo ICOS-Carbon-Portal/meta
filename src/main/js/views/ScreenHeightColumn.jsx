@@ -17,7 +17,7 @@ module.exports = React.createClass({
 	ensureScreenHeight: function(){
 		var elem = React.findDOMNode(this);
 		var top = elem.getBoundingClientRect().top;
-		var desiredHeight = window.innerHeight - top;
+		var desiredHeight = window.innerHeight - top - 20;
 		elem.style.height = desiredHeight + "px";
 	},
 	render: function(){

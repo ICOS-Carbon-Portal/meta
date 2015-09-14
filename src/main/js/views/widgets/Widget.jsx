@@ -15,7 +15,7 @@ module.exports = React.createClass({
 
 				<div style={{display: "inline", float: "right"}}>{
 					_.map(buttons, function(buttProps, i){
-						var props = _.extend({}, buttProps, {key: "propButton_" + i.toString()});
+						var props = _.extend({}, buttProps, {key: "propButton_" + i});
 						return <WidgetButton {...props}/>;
 					})
 				}</div>

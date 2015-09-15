@@ -376,30 +376,30 @@ function parseStationsJson(stationsJson){
 	var stationsES = [];
 	var stationsOS = [];
 
-	stationsJson.results.bindings.forEach(function(bind){
+	stationsJson.results.bindings.forEach(function(binding){
 		var tmp = {};
 		var lat = null;
 		var lon = null;
 		var theme = null;
 
-		for (var name in bind) {
-			if (bind.hasOwnProperty(name)) {
+		for (var name in binding) {
+			if (binding.hasOwnProperty(name)) {
 
 				switch(name){
 					case "theme":
-						theme = bind[name].value;
+						theme = binding[name].value;
 						break;
 
 					case "latstr":
-						lat = parseFloat(bind[name].value);
+						lat = parseFloat(binding[name].value);
 						break;
 
 					case "lonstr":
-						lon = parseFloat(bind[name].value);
+						lon = parseFloat(binding[name].value);
 						break;
 
 					default:
-						tmp[name] = bind[name].value;
+						tmp[name] = binding[name].value;
 				}
 			}
 		}

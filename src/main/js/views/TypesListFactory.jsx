@@ -1,5 +1,4 @@
 var capped = require('../utils.js').ensureLength(30);
-var ChoiceButton = require('./ChoiceButton.jsx');
 var Widget = require('./widgets/Widget.jsx');
 var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
 
@@ -14,7 +13,7 @@ module.exports = function(typesStore, chooseTypeAction){
 
 			return <Widget widgetType="primary" widgetTitle="Types">
 				<ScreenHeightColumn>
-					<div className="btn-group-vertical" role="group">{
+					<div className="list-group">{
 
 						this.state.types.map(function(theType){
 
@@ -22,7 +21,11 @@ module.exports = function(typesStore, chooseTypeAction){
 							var isChosen = (theType.uri == self.state.chosen);
 							var fullName = theType.displayName;
 
-							return <ChoiceButton key={theType.uri} chosen={isChosen} tooltip={fullName} clickHandler={clickHandler}>{capped(fullName)}</ChoiceButton>;
+							return <li
+								className={"list-group-item list-group-item-" + (isChosen ? "info" : "default")}
+								key={theType.uri} title={fullName} onClick={clickHandler}>
+								{capped(fullName)}
+							</li>;
 						})
 				
 					}</div>

@@ -23,7 +23,12 @@ class MultiComponentIndividualLabeler(
 
 		val labelComponents = compMakers.map(_(instUri, instServer))
 
-		if(labelComponents.exists(_.nonEmpty))
+		val nonEmptyExists: Boolean = labelComponents.zip(components).exists{
+			case (_, ConstantComponent(_)) => false
+			case (label, _) => label.nonEmpty
+		}
+
+		if(nonEmptyExists)
 			Labeler.joinComponents(labelComponents)
 		else
 			super.getLabel(instUri, instServer)

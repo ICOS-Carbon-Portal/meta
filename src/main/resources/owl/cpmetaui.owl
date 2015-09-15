@@ -47,7 +47,7 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
-        <Literal datatypeIRI="&xsd;string">at</Literal>
+        <Literal datatypeIRI="&xsd;string"> at </Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>

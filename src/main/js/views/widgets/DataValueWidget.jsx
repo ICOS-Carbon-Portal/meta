@@ -31,8 +31,10 @@ module.exports = React.createClass({
 				onBlur={this.persistUpdate} value={content} onChange={this.changeHandler}
 				onKeyDown={this.keyDownHandler}
 			/>
-			<span className="input-group-addon" onClick={this.deleteSelf}>
-				<span className="glyphicon glyphicon-remove"></span>
+			<span className="input-group-btn">
+				<button className="btn btn-default" type="button" onClick={this.deleteSelf}>
+					<span className="glyphicon glyphicon-remove"></span>
+				</button>
 			</span>
 		</div>;
 	},

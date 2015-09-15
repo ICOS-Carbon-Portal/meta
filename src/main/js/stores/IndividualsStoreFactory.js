@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseTypeAction, chooseIndividAction, createIndividualAction){
+module.exports = function(Backend, chooseTypeAction, chooseIndividAction, createIndividualAction, deleteIndividualAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -18,6 +18,7 @@ module.exports = function(Backend, chooseTypeAction, chooseIndividAction, create
 			this.listenTo(chooseTypeAction, this.fetchIndividuals);
 			this.listenTo(chooseIndividAction, this.updateChosenIndivid);
 			this.listenTo(createIndividualAction, this.createIndividual);
+			this.listenTo(deleteIndividualAction, this.deleteIndividual);
 		},
 
 		fetchIndividuals: function(chosenType){
@@ -51,11 +52,27 @@ module.exports = function(Backend, chooseTypeAction, chooseIndividAction, create
 
 			Backend.createIndividual(newIndReq.uri, newIndReq.type).then(
 				function(){
-					self.state.individuals = self.state.individuals.concat([{
-						displayName: newIndReq.suffix,
-						uri: newIndReq.uri
-					}]);
+					//TODO Revise the next two lines and the related data flow
+					self.fetchIndividuals(newIndReq.type);
 					chooseIndividAction(newIndReq.uri); //will trigger both this store and the EditStore
+				},
+				function(err){console.log(err);}
+			);
+		},
+
+		deleteIndividual: function(indUri){
+			var self = this;
+			Backend.deleteIndividual(indUri).then(
+				function(){
+					self.state.individuals = _.filter(self.state.individuals, function(ind){
+						return ind.uri !== indUri;
+					});
+					//TODO Revise the next lines and the related data flow
+					if(self.state.chosen === indUri) {
+						self.state.chosen == null;
+						chooseIndividAction(null);
+					} else self.publishState();
+					
 				},
 				function(err){console.log(err);}
 			);

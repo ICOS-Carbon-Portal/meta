@@ -1,9 +1,8 @@
-var capped = require('../utils.js').ensureLength(45);
-var ChoiceButton = require('./ChoiceButton.jsx');
+var IndividualListItem = require('./IndividualListItem.jsx');
 var Widget = require('./widgets/Widget.jsx');
 var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
 
-module.exports = function(individualsStore, chooseAction, IndividualAdder){
+module.exports = function(individualsStore, chooseAction, removeAction, IndividualAdder){
 
 	return React.createClass({
 
@@ -23,9 +22,9 @@ module.exports = function(individualsStore, chooseAction, IndividualAdder){
 			var individuals = _.chain(this.state.individuals)
 				.map(function(individual){
 					return _.extend({}, individual, {
-						shortName: capped(individual.displayName),
 						clickHandler: _.partial(chooseAction, individual.uri),
-						isChosen: (individual.uri == self.state.chosen)
+						deletionHandler: _.partial(removeAction, individual.uri),
+						isChosen: (individual.uri === self.state.chosen)
 					});
 				})
 				.sortBy("displayName")
@@ -36,10 +35,9 @@ module.exports = function(individualsStore, chooseAction, IndividualAdder){
 				{this.state.addingInstance ? <IndividualAdder cancelHandler={this.hideAdder}/> : null}
 
 				<ScreenHeightColumn>
-					<div className="btn-group-vertical" role="group">{
+					<div className="list-group">{
 						individuals.map(function(ind){
-							return <ChoiceButton key={ind.uri} chosen={ind.isChosen} tooltip={ind.displayName}
-								clickHandler={ind.clickHandler} style={{"text-align": "left"}}>{ind.shortName}</ChoiceButton>;
+							return <IndividualListItem key={ind.uri} individual={ind} />;
 						})
 					}</div>
 				</ScreenHeightColumn>

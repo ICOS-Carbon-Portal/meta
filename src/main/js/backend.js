@@ -74,10 +74,6 @@ module.exports = {
 		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
 		return getJson(url);
 	},
-	createIndividual: function(uri, rdfType){
-		var url = ['createIndividual?uri=', encodeURIComponent(uri), '&typeUri=', encodeURIComponent(rdfType)].join('');
-		return postJson(url, {}); //dummy payload
-	},
 	checkSuffix: function(baseClass, suffix){
 		var uri = stripSlash(baseClass) + '/' + encodeURI(suffix);
 		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
@@ -85,6 +81,14 @@ module.exports = {
 		return getJson(url).then(function(isAvailable){
 			return {candidateUri: uri, suffixAvailable: isAvailable};
 		});
+	},
+	createIndividual: function(uri, rdfType){
+		var url = ['createIndividual?uri=', encodeURIComponent(uri), '&typeUri=', encodeURIComponent(rdfType)].join('');
+		return postJson(url, {}); //dummy payload
+	},
+	deleteIndividual: function(uri){
+		var url = 'deleteIndividual?uri=' + encodeURIComponent(uri);
+		return postJson(url, {}); //dummy payload
 	},
 	applyUpdates: function(updates){
 		return postJson('applyupdates', updates);

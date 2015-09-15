@@ -78,6 +78,13 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 						complete(StatusCodes.OK)
 					} ~
 					complete((StatusCodes.BadRequest, "Please provide 'uri' and 'typeUri' URL parameters"))
+				} ~
+				pathSuffix("deleteIndividual"){
+					parameter('uri){ uriStr =>
+						instOnto.deleteIndividual(uriStr).get
+						complete(StatusCodes.OK)
+					} ~
+					complete((StatusCodes.BadRequest, "Please provide 'uri' and 'typeUri' URL parameters"))
 				}
 			}
 		}

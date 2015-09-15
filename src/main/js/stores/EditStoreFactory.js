@@ -2,7 +2,10 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 	return Reflux.createStore({
 
 		getInitialState: function(){
-			return {};
+			return {
+				individual: null,
+				status: {value: "ok", previous: null}
+			};
 		},
 
 		init: function(){
@@ -19,6 +22,10 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 			var self = this;
 
 			if(self.individUri !== individUri) return;
+			if(!individUri) {
+				this.trigger(this.getInitialState());
+				return;
+			}
 
 			Backend.getIndividual(individUri)
 				.then(

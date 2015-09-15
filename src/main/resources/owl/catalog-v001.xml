@@ -5,8 +5,8 @@
     <uri id="Imports Wizard Entry" name="http://www.opengis.net/ont/geosparql" uri="http://www.opengis.net/ont/geosparql#"/>
     <uri id="Imports Wizard Entry" name="http://meta.icos-cp.eu/ontologies/cpmeta/" uri="cpmeta.owl"/>
     <group id="Folder Repository, directory=, recursive=true, Auto-Update=true, version=2" prefer="public" xml:base="">
-        <uri id="Automatically generated entry, Timestamp=1441622517243" name="http://meta.icos-cp.eu/ontologies/cpmeta/instances/" uri="cpmetainstances.owl"/>
-        <uri id="Automatically generated entry, Timestamp=1441622517243" name="http://meta.icos-cp.eu/ontologies/cpmetaui/" uri="cpmetaui.owl"/>
-        <uri id="Automatically generated entry, Timestamp=1441622517243" name="http://meta.icos-cp.eu/ontologies/stationentryui/" uri="stationEntryUi.owl"/>
+        <uri id="Automatically generated entry, Timestamp=1442330240300" name="http://meta.icos-cp.eu/ontologies/cpmeta/instances/" uri="cpmetainstances.owl"/>
+        <uri id="Automatically generated entry, Timestamp=1442330240300" name="http://meta.icos-cp.eu/ontologies/cpmetaui/" uri="cpmetaui.owl"/>
+        <uri id="Automatically generated entry, Timestamp=1442330240300" name="http://meta.icos-cp.eu/ontologies/stationentryui/" uri="stationEntryUi.owl"/>
     </group>
 </catalog>

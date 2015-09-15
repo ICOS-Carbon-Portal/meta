@@ -41,7 +41,7 @@ object Labeler{
 		case _ => values.mkString("{", ",", "}")
 	}
 
-	def joinComponents(values: Iterable[String]): String = values.mkString(" ")
+	def joinComponents(values: Iterable[String]): String = values.mkString("")
 
 	def getLabel(entity: OWLEntity, onto: OWLOntology): String =
 		getRdfsLabel(entity, onto).getOrElse(getLastFragment(entity.getIRI))

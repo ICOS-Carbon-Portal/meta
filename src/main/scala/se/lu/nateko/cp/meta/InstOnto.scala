@@ -76,6 +76,13 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		}.flatten
 	}
 
+	def deleteIndividual(uriStr: String): Try[Unit] = Try{
+		val uri = instServer.factory.createURI(uriStr)
+		val asSubject = instServer.getStatements(uri)
+		val asObject = instServer.getStatements(None, None, Some(uri))
+		instServer.removeAll(asSubject ++ asObject)
+	}
+
 	def performReplacement(replacement: ReplaceDto): Try[Unit] = {
 		val updates = Try{
 			val assertion: RdfUpdate = updateDtoToRdfUpdate(replacement.assertion)

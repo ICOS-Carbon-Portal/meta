@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Station map</title>
+	<link rel="stylesheet" href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://static.icos-cp.eu/constant/ol/3.5.0/css/ol.css" type="text/css">
+
+	<style type="text/css">
+		html, body {
+			height: 100%;
+		}
+		#map{
+			width: 100%;
+			height: 100%;
+			min-height: 100%;
+			display: block;
+		}
+		.fill { 
+			min-height: 100%;
+			height: 100%;
+		}
+		#settings-main{
+			position: absolute;
+			top: 0px;
+			right: 0px;
+			height: 100%;
+			background-color: white;
+			padding: 10px 10px 0px 10px;
+		}
+		#bg-layers-control{
+			/*width: 100%;*/
+		}
+		#theme-layer-control{
+			margin-top: 50px;;
+		}
+		.checkbx > label{
+			display: block;
+		}
+		div.popover{
+			width:auto !important;
+			max-width: none;
+		}
+		.popover-title{
+			white-space: nowrap;
+		}
+		.popover-content{
+			min-width: 210px;
+			max-width: 400px;
+			padding: 10px 10px 10px 10px;
+		}
+	</style>
+
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/ol/3.5.0/js/ol.min.js"></script>
+
+	<script type="text/javascript" src="stations.js"></script>
+
+	<script type="text/javascript">
+		$(function () {
+			init();
+		});
+	</script>
+</head>
+<body>
+
+
+<div id="map"><div id="popover"></div></div>
+
+<div id="settings-main">
+
+	<div id="bg-layers-control">
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap0" name="bgMaps" value="worlMapBing">
+				Bing Map
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap1" name="bgMaps" value="worldAerialBing">
+				Bing Satellite
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap2" name="bgMaps" value="worldWaterColorStamen">
+				Watercolor
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap3" name="bgMaps" value="oceanESRI" checked>
+				ESRI Ocean
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap4" name="bgMaps" value="physicalMapESRI">
+				ESRI Physical + Bndry
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap5" name="bgMaps" value="shadedRelMapESRI">
+				ESRI Shaded Relief
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap6" name="bgMaps" value="grayMapESRI">
+				ESRI Simple Map
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+				<input type="radio" id="bgMap7" name="bgMaps" value="mapQuestMap">
+				Map Quest OSM
+			</label>
+		</div>
+	</div>
+
+	<div id="theme-layer-control">
+		<div class="checkbx">
+			<label>
+				<input type="checkbox" id="AS" checked>
+				Atmosphere <img src="icons/as.svg" alt="Atmosphere">
+			</label>
+			<label>
+				<input type="checkbox" id="ES" checked>
+				Ecosystem <img src="icons/es.svg" alt="Ecosystem">
+			</label>
+			<label>
+				<input type="checkbox" id="OS" checked>
+				Ocean <img src="icons/os.svg" alt="Ocean">
+			</label>
+		</div>
+	</div>
+
+	<div>
+		<button id="refreshBtn" class="btn btn-primary">Refresh stations</button>
+	</div>
+</div>
+
+
+
+</body>
+</html>

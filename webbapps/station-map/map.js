@@ -344,21 +344,23 @@ function fetchStations(){
 	var query = [
 		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'SELECT',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme)',
+		'(str(?lat) AS ?latstr)',
+		'(str(?lon) AS ?lonstr) ',
+		'(str(?pIName) AS ?PI_name)',
 		'(str(?sName) AS ?Short_name)',
 		'(str(?lName) AS ?Long_name)',
 		'(str(?country) AS ?Country)',
-		'(str(?lat) AS ?latstr)',
-		'(str(?lon) AS ?lonstr) ',
-		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme)',
 		//'FROM <http://meta.icos-cp.eu/ontologies/stationtest/>',
 		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
+		'?s cpst:hasLat ?lat .',
+		'?s cpst:hasLon ?lon .',
+		'?s cpst:hasPiName ?pIName .',
 		'?s cpst:hasShortName ?sName .',
 		'?s cpst:hasLongName ?lName .',
 		'?s cpst:hasCountry ?country .',
-		'?s cpst:hasLat ?lat .',
-		'?s cpst:hasLon ?lon .',
 		'}'
 	].join("\n");
 
@@ -405,7 +407,6 @@ function parseStationsJson(stationsJson){
 		}
 
 		tmp.pos = [lon, lat];
-		//console.log(tmp);
 
 		switch (theme){
 			case "AS":

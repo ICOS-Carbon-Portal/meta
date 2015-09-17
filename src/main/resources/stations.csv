@@ -88,7 +88,7 @@ SE-Lan	Lanna	eco	SE	58.341000	13.101000	55	3	1	cropland	eco	Leif Klemedtsson	lei
 SE-Deg	Degerö	eco	SE	64.182000	19.556000	270	3	1	boreal wetland	eco	Mats B. Nilsson	mats.b.nilsson@sek.slu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
 SE-Oes	Östergarnsholm	ocean	SE	57.430061	18.984339	0	30	1	Baltic sea	ocean	Anna Rutgersson	Anna.Rutgersson@met.uu.se	YES	01/03/2015		A	received for 2015, new decision expected in 2015
 DAV	Davos	eco	CH	46.815278	9.855917	1639	35	1	forest coniferous	eco	Nina Buchmann	nbuchmann@ethz.ch	YES	2013	1.1.15, partially (EC and meteo yes, soil chamber no)	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
-JFJ	Jungfraujoch	atm	CH	46.550000	7.980000	3571.5	10	1	mountain	ground	Markus Leuenberger, Lukas, Emmenegger	leuenberger@climate.unibe.ch; Lukas.Emmenegger@empa.ch	YES	2013	x, partially	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
+JFJ	Jungfraujoch	atm	CH	46.550000	7.980000	3571.5	10	1	mountain	ground	Markus Leuenberger;Lukas Emmenegger	leuenberger@climate.unibe.ch;Lukas.Emmenegger@empa.ch	YES	2013	x, partially	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
 IT-Cp2	Castelporziano2	eco	IT	41.704267	12.357293	19	20	1	Evergreen Broadleaf Forest	eco	Silvano Fares	silvano.fares@entecra.it	yes	01/2016	X	partially	partially
 IT-BCi	Borgo Cioffi	eco	IT	40.523750	14.957444	30	2	1	Cropland	eco	Enzo Magliulo	enzo.magliulo@cnr.it	yes	01/2016	X	partially	partially
 IT-Ren	Renon	eco	IT	46.586860	11.433690	1730	32	2	Coniferous forest	eco	Leonardo Montagnani	leonardo.montagnani@unibz.it	yes	01/2016	X	partially	partially

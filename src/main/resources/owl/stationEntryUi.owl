@@ -27,6 +27,26 @@
     <Import>http://meta.icos-cp.eu/ontologies/stationentry/</Import>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+        <AbbreviatedIRI>stations:PI</AbbreviatedIRI>
+        <AbbreviatedIRI>stations:hasFirstName</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
+        <AbbreviatedIRI>stations:PI</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string"> </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
+        <AbbreviatedIRI>stations:PI</AbbreviatedIRI>
+        <AbbreviatedIRI>stations:hasLastName</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>stations:PI</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>stations:Station</AbbreviatedIRI>
         <AbbreviatedIRI>stations:hasShortName</AbbreviatedIRI>
     </AnnotationAssertion>

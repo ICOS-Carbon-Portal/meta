@@ -14,6 +14,7 @@ import org.openrdf.model.Statement
 import org.openrdf.query.UpdateExecutionException
 import scala.util.Failure
 import scala.util.control.NoStackTrace
+import org.openrdf.model.vocabulary.RDF
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 
@@ -47,10 +48,10 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
-			case SesameStatement(_, pred, value: SesameURI) =>
+			case SesameStatement(_, pred, value: SesameURI)  if(pred != RDF.TYPE) =>
 				val prop = onto.factory.getOWLObjectProperty(IRI.create(pred.toJava))
 				ObjectValueDto(
-					value = labeler.getInfo(instUri, instServer),
+					value = labeler.getInfo(value, instServer),
 					property = onto.rdfsLabeling(prop)
 				)
 		}

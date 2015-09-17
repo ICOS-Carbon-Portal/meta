@@ -16,7 +16,8 @@ object Ingestion {
 	val allIngesters: Map[String, Ingester] = Map(
 		"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
 		"etcStations" -> Etc,
-		"stations" -> StationsIngestion
+		"stations" -> StationsIngestion,
+		"stationsWithPis" -> StationStructuringIngester(StationsIngestion)
 	)
 
 	def ingest(target: InstanceServer, ingester: Ingester): Unit = {

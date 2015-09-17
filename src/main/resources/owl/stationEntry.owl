@@ -1,352 +1,631 @@
-Prefix: : <http://meta.icos-cp.eu/ontologies/stationentry/>
-Prefix: dc: <http://purl.org/dc/elements/1.1/>
-Prefix: owl: <http://www.w3.org/2002/07/owl#>
-Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-Prefix: xml: <http://www.w3.org/XML/1998/namespace>
-Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+<?xml version="1.0"?>
+
+
+<!DOCTYPE Ontology [
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+
+
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://meta.icos-cp.eu/ontologies/stationentry/"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     ontologyIRI="http://meta.icos-cp.eu/ontologies/stationentry/">
+    <Prefix name="" IRI="http://meta.icos-cp.eu/ontologies/stationentry/"/>
+    <Prefix name="dc" IRI="http://purl.org/dc/elements/1.1/"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <Class abbreviatedIRI=":AS"/>
+    </Declaration>
+    <Declaration>
+        <Class abbreviatedIRI=":ES"/>
+    </Declaration>
+    <Declaration>
+        <Class abbreviatedIRI=":OS"/>
+    </Declaration>
+    <Declaration>
+        <Class abbreviatedIRI=":PI"/>
+    </Declaration>
+    <Declaration>
+        <Class abbreviatedIRI=":Station"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty abbreviatedIRI=":hasPi"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasAffiliation"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasCountry"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasElevationAboveGround"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasElevationAboveSea"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasEmail"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasFirstName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasFundingForConstruction"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasFundingForOperation"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasLastName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasLat"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasLocationDescription"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasLon"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasLongName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasOperationalDateEstimate"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasPreIcosMeasurements"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasShortName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasSiteType"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasStationClass"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":hasStationKind"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty abbreviatedIRI=":isAlreadyOperational"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="rdf:PlainLiteral"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="rdfs:Literal"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="xsd:boolean"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="xsd:double"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="xsd:float"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="xsd:integer"/>
+    </Declaration>
+    <Declaration>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </Declaration>
+    <SubClassOf>
+        <Class abbreviatedIRI=":AS"/>
+        <Class abbreviatedIRI=":Station"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":AS"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLat"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":AS"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLon"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":ES"/>
+        <Class abbreviatedIRI=":Station"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":ES"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLat"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":ES"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLon"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":OS"/>
+        <Class abbreviatedIRI=":Station"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":PI"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasEmail"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":PI"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasFirstName"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":PI"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLastName"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":Station"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty abbreviatedIRI=":hasPi"/>
+            <Class abbreviatedIRI="owl:Thing"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":Station"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasLongName"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":Station"/>
+        <DataSomeValuesFrom>
+            <DataProperty abbreviatedIRI=":hasShortName"/>
+            <Datatype abbreviatedIRI="rdfs:Literal"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <DisjointClasses>
+        <Class abbreviatedIRI=":PI"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DisjointClasses>
+    <ObjectPropertyDomain>
+        <ObjectProperty abbreviatedIRI=":hasPi"/>
+        <Class abbreviatedIRI=":Station"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyRange>
+        <ObjectProperty abbreviatedIRI=":hasPi"/>
+        <Class abbreviatedIRI=":PI"/>
+    </ObjectPropertyRange>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasAffiliation"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasCountry"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasElevationAboveGround"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasElevationAboveSea"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasEmail"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasFirstName"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasFundingForConstruction"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasFundingForOperation"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasLastName"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasLat"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasLocationDescription"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasLon"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasLongName"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasOperationalDateEstimate"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasPreIcosMeasurements"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasShortName"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasSiteType"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasStationClass"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":hasStationKind"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty abbreviatedIRI=":isAlreadyOperational"/>
+    </FunctionalDataProperty>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasAffiliation"/>
+        <Class abbreviatedIRI=":PI"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasCountry"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasElevationAboveGround"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasElevationAboveSea"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasEmail"/>
+        <Class abbreviatedIRI=":PI"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasFirstName"/>
+        <Class abbreviatedIRI=":PI"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasFundingForConstruction"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasFundingForOperation"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasLastName"/>
+        <Class abbreviatedIRI=":PI"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasLat"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasLocationDescription"/>
+        <Class abbreviatedIRI=":OS"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasLon"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasLongName"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasOperationalDateEstimate"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasPreIcosMeasurements"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasShortName"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasSiteType"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasStationClass"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":hasStationKind"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty abbreviatedIRI=":isAlreadyOperational"/>
+        <Class abbreviatedIRI=":Station"/>
+    </DataPropertyDomain>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasAffiliation"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasCountry"/>
+        <DataOneOf>
+            <Literal datatypeIRI="&xsd;string">BE</Literal>
+            <Literal datatypeIRI="&xsd;string">CH</Literal>
+            <Literal datatypeIRI="&xsd;string">CZ</Literal>
+            <Literal datatypeIRI="&xsd;string">DE</Literal>
+            <Literal datatypeIRI="&xsd;string">FI</Literal>
+            <Literal datatypeIRI="&xsd;string">FR</Literal>
+            <Literal datatypeIRI="&xsd;string">IE</Literal>
+            <Literal datatypeIRI="&xsd;string">IT</Literal>
+            <Literal datatypeIRI="&xsd;string">NL</Literal>
+            <Literal datatypeIRI="&xsd;string">NO</Literal>
+            <Literal datatypeIRI="&xsd;string">PL</Literal>
+            <Literal datatypeIRI="&xsd;string">SE</Literal>
+            <Literal datatypeIRI="&xsd;string">UK</Literal>
+        </DataOneOf>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasElevationAboveGround"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasElevationAboveSea"/>
+        <Datatype abbreviatedIRI="xsd:float"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasEmail"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasFirstName"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasFundingForConstruction"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasFundingForOperation"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasLastName"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasLat"/>
+        <DatatypeRestriction>
+            <Datatype abbreviatedIRI="xsd:double"/>
+            <FacetRestriction facet="&xsd;minInclusive">
+                <Literal datatypeIRI="&xsd;double">-90.0</Literal>
+            </FacetRestriction>
+            <FacetRestriction facet="&xsd;maxInclusive">
+                <Literal datatypeIRI="&xsd;double">90.0</Literal>
+            </FacetRestriction>
+        </DatatypeRestriction>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasLocationDescription"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasLon"/>
+        <DatatypeRestriction>
+            <Datatype abbreviatedIRI="xsd:double"/>
+            <FacetRestriction facet="&xsd;maxInclusive">
+                <Literal datatypeIRI="&xsd;double">180.0</Literal>
+            </FacetRestriction>
+            <FacetRestriction facet="&xsd;minInclusive">
+                <Literal datatypeIRI="&xsd;double">-180.0</Literal>
+            </FacetRestriction>
+        </DatatypeRestriction>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasLongName"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasOperationalDateEstimate"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasPreIcosMeasurements"/>
+        <Datatype abbreviatedIRI="xsd:boolean"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasShortName"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasSiteType"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasStationClass"/>
+        <DataOneOf>
+            <Literal datatypeIRI="&xsd;integer">1</Literal>
+            <Literal datatypeIRI="&xsd;integer">2</Literal>
+            <Literal datatypeIRI="&xsd;integer">3</Literal>
+        </DataOneOf>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":hasStationKind"/>
+        <DataOneOf>
+            <Literal datatypeIRI="&xsd;string">TT</Literal>
+            <Literal datatypeIRI="&xsd;string">aircraft</Literal>
+            <Literal datatypeIRI="&xsd;string">atm</Literal>
+            <Literal datatypeIRI="&xsd;string">eco</Literal>
+            <Literal datatypeIRI="&xsd;string">ground</Literal>
+            <Literal datatypeIRI="&xsd;string">ocean</Literal>
+        </DataOneOf>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":isAlreadyOperational"/>
+        <Datatype abbreviatedIRI="xsd:boolean"/>
+    </DataPropertyRange>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:AS</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">Atmospheric Station</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:ES</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">Ecosystem Station</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:OS</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">Ocean Station</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:PI</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">Principal Investigator</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasAffiliation</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">affiliation</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+        <AbbreviatedIRI>:hasCountry</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">BE, CH, CZ, DE, FI, FR, NO,  IE, NL, UK, PL, SE</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasCountry</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">country code (two-letter)</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasElevationAboveGround</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">elevation above ground, meters</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasElevationAboveSea</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">elevation above sea, meters</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasEmail</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">E-mail address</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasFirstName</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">first name</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasFundingForConstruction</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">funding for construction</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasFundingForOperation</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">funding for operation</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+        <AbbreviatedIRI>:hasLastName</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">everything except the (first) first name</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasLastName</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">last name</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasLat</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">decimal latitude</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasLocationDescription</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">location description</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasLon</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">decimal longitude</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasLongName</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">long name</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasOperationalDateEstimate</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">estimated date when operational</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasPi</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">principal investigator</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasPreIcosMeasurements</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">has pre-ICOS measurements (true/false)</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasShortName</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">short name</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasSiteType</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">site type</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+        <AbbreviatedIRI>:hasStationClass</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">1, 2 or 3</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasStationClass</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">ICOS station class</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:hasStationKind</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">kind of station (TT, aircraft, atm, ground, eco, ocean)</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>:isAlreadyOperational</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;string">already operational (true/false)</Literal>
+    </AnnotationAssertion>
+</Ontology>
 
 
 
-Ontology: <http://meta.icos-cp.eu/ontologies/stationentry/>
+<!-- Generated by the OWL API (version 3.5.1) http://owlapi.sourceforge.net -->
 
-
-AnnotationProperty: rdfs:label
-
-    
-AnnotationProperty: rdfs:comment
-
-    
-Datatype: xsd:double
-
-    
-Datatype: xsd:float
-
-    
-Datatype: rdfs:Literal
-
-    
-Datatype: xsd:integer
-
-    
-Datatype: xsd:string
-
-    
-Datatype: xsd:boolean
-
-    
-Datatype: rdf:PlainLiteral
-
-    
-DataProperty: hasPreIcosMeasurements
-
-    Annotations: 
-        rdfs:label "has pre-ICOS measurements (true/false)"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:boolean
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationKind
-
-    Annotations: 
-        rdfs:label "kind of station (TT, aircraft, atm, ground, eco, ocean)"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        {"TT"^^xsd:string , "aircraft"^^xsd:string , "atm"^^xsd:string , "eco"^^xsd:string , "ground"^^xsd:string , "ocean"^^xsd:string}
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasSiteType
-
-    Annotations: 
-        rdfs:label "site type"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasPiName
-
-    Annotations: 
-        rdfs:label "principal investigator name"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasPiEmail
-
-    Annotations: 
-        rdfs:label "principal investigator email"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasElevationAboveSea
-
-    Annotations: 
-        rdfs:label "elevation above sea, meters"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:float
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasFundingForOperation
-
-    Annotations: 
-        rdfs:label "funding for operation"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasOperationalDateEstimate
-
-    Annotations: 
-        rdfs:label "estimated date when operational"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasElevationAboveGround
-
-    Annotations: 
-        rdfs:label "elevation above ground, meters"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLongName
-
-    Annotations: 
-        rdfs:label "long name"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLocationDescription
-
-    Annotations: 
-        rdfs:label "location description"^^xsd:string
-    
-    Domain: 
-        OS
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasShortName
-
-    Annotations: 
-        rdfs:label "short name"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLon
-
-    Annotations: 
-        rdfs:label "decimal longitude"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:double[>= "-180.0"^^xsd:double , <= "180.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationClass
-
-    Annotations: 
-        rdfs:comment "1, 2 or 3"^^xsd:string,
-        rdfs:label "ICOS station class"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        {1 , 2 , 3}
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLat
-
-    Annotations: 
-        rdfs:label "decimal latitude"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasFundingForConstruction
-
-    Annotations: 
-        rdfs:label "funding for construction"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasCountry
-
-    Annotations: 
-        rdfs:comment "BE, CH, CZ, DE, FI, FR, NO,  IE, NL, UK, PL, SE"^^xsd:string,
-        rdfs:label "country code (two-letter)"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        {"BE"^^xsd:string , "CH"^^xsd:string , "CZ"^^xsd:string , "DE"^^xsd:string , "FI"^^xsd:string , "FR"^^xsd:string , "IE"^^xsd:string , "IT"^^xsd:string , "NL"^^xsd:string , "NO"^^xsd:string , "PL"^^xsd:string , "SE"^^xsd:string , "UK"^^xsd:string}
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: isAlreadyOperational
-
-    Annotations: 
-        rdfs:label "already operational (true/false)"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:boolean
-    
-    Characteristics: 
-        Functional
-    
-    
-Class: ES
-
-    Annotations: 
-        rdfs:label "Ecosystem Station"^^xsd:string
-    
-    SubClassOf: 
-        hasLon some rdfs:Literal,
-        hasLat some rdfs:Literal,
-        Station
-    
-    
-Class: Station
-
-    SubClassOf: 
-        hasPiEmail some rdfs:Literal,
-        hasLongName some rdfs:Literal,
-        hasPiName some rdfs:Literal,
-        hasShortName some rdfs:Literal
-    
-    
-Class: AS
-
-    Annotations: 
-        rdfs:label "Atmospheric Station"^^xsd:string
-    
-    SubClassOf: 
-        hasLat some rdfs:Literal,
-        Station,
-        hasLon some rdfs:Literal
-    
-    
-Class: OS
-
-    Annotations: 
-        rdfs:label "Ocean Station"^^xsd:string
-    
-    SubClassOf: 
-        Station
-    
-    

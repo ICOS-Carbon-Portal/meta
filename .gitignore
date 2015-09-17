@@ -27,7 +27,7 @@ nohup.out
 *.*~
 
 #Front end
-src/main/resources/www/bundle.js
+src/main/resources/www/*.js
 
 #Environment-specific config
 /application.conf

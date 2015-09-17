@@ -16,12 +16,16 @@ object StaticRoute {
 
 	def apply(config: CpmetaConfig): Route = get{
 		pathPrefix("edit" / Segment){ontId =>
-			if(config.onto.instOntoServers.contains(ontId)){
-				pathEndOrSingleSlash{
-					complete(fromResource("/www/index.html", MediaTypes.`text/html`))
-				}
-			} else
-				complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
+			path("metaentry.js"){
+				complete(fromResource("/www/metaentry.js", MediaTypes.`application/javascript`))
+			} ~ {
+				if(config.onto.instOntoServers.contains(ontId)){
+					pathSingleSlash{
+						complete(fromResource("/www/metaentry.html", MediaTypes.`text/html`))
+					}
+				} else
+					complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
+			}
 		} ~
 		path("ontologies" / Segment){ ontId =>
 			config.onto.instOntoServers.get(ontId) match{
@@ -37,9 +41,15 @@ object StaticRoute {
 					}
 			}
 		} ~
-		path("bundle.js"){
-			complete(fromResource("/www/bundle.js", MediaTypes.`application/javascript`))
+		pathPrefix("labeling"){
+			pathSingleSlash{
+				complete(fromResource("/www/labeling.html", MediaTypes.`text/html`))
+			} ~
+			path("labeling.js"){
+				complete(fromResource("/www/labeling.js", MediaTypes.`application/javascript`))
+			}
 		}
+		
 	}
 
 }

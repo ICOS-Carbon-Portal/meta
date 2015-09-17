@@ -10,7 +10,7 @@ Getting started with the front-end part
 - Clone this repository: `git clone git@github.com:ICOS-Carbon-Portal/meta.git`
 - `cd meta`
 - Install Node.js dependencies: `npm install`
-- Now you can run Gulp tasks: `npm run gulp <task>`
+- Now you can run Gulp tasks: `npm run <task>` (see `package.json` for the list of defined tasks)
 
 Getting started with the back-end part
 --------------------------------------

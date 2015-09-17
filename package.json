@@ -5,9 +5,8 @@
   "description": "Frontend to Carbon Portal Metadata Service",
   "main": "gulpfile.js",
   "scripts": {
-    "gulp": "gulp",
-    "js": "gulp js",
-    "test": "gulp test"
+    "labeling": "gulp labeling",
+    "metaentry": "gulp metaentry"
   },
   "repository": {
     "type": "git",

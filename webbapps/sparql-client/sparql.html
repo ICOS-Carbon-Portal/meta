@@ -33,6 +33,7 @@
 
 		$(function () {
 			$("#result").hide();
+			$("#messDiv").hide();
 
 			$("#queryBtn").click(function(){
 				var query = encodeURIComponent($("#query").val());
@@ -40,14 +41,17 @@
 				$.ajax({
 					type: "GET",
 					url: "https://meta.icos-cp.eu/sparql?query=" + query,
+//					url: "http://127.0.0.1:9094/sparql?query=" + query,
 					dataType: "json",
 					success: function(result){
 						$("#result").show();
-
+						$("#rowCountSpan").text(result.results.bindings.length + " rows returned. ");
+						$("#messSpan").text("Query executed successfully").show().delay(3000).fadeOut();
 						$("#result").html(syntaxHighlight(result));
 					},
 					error: function(req, textStatus, errorThrown) {
 						$("#result").show();
+						$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
 						console.log(req);
 						$("#result").html('<a href="https://meta.icos-cp.eu/sparql?query=' + query + '">Error</a>');
 					}
@@ -75,6 +79,8 @@
 			<div class="span12">
 				<textarea id="query" cols="150" rows="10"></textarea>
 				<button id="queryBtn" class="btn btn-primary">Submit query</button>
+				<span id="rowCountSpan"></span>
+				<span id="messSpan"></span>
 			</div>
 		</div>
 

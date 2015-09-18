@@ -6,7 +6,8 @@
   "main": "gulpfile.js",
   "scripts": {
     "labeling": "gulp labeling",
-    "metaentry": "gulp metaentry"
+    "metaentry": "gulp metaentry",
+    "gulp": "gulp"
   },
   "repository": {
     "type": "git",
@@ -25,10 +26,11 @@
   },
   "homepage": "https://github.com/ICOS-Carbon-Portal/meta#readme",
   "devDependencies": {
-    "browserify": "^10.1.3",
+    "babelify": "^6.3.0",
+    "browserify": "^11.1.0",
     "del": "^1.1.1",
-    "gulp": "^3.8.11",
-    "reactify": "^1.1.0",
+    "gulp": "^3.9.0",
+    "reactify": "^1.1.1",
     "vinyl-source-stream": "^1.1.0"
   }
 }

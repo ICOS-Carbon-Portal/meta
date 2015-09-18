@@ -1,48 +1,37 @@
 'use strict';
 
-function getJson(url){
-	return new Promise(function(resolve, reject){
-		var req = new XMLHttpRequest();
-		req.open('GET', url);
-		req.responseType = 'json';
-		req.setRequestHeader('Accept', 'application/json');
-		req.onreadystatechange = function(){
-			try {
-				if (req.readyState === 4) {
-					if (req.status < 400 && req.status >= 200) {
+var sparqlEndpoint = "/sparql";
+var ajax = require('../common/ajax.js');
+var sparql = require('../common/sparql.js')(ajax, sparqlEndpoint);
 
-						if (req.responseType === 'json')
-							resolve(req.response);
-							else resolve(JSON.parse(req.responseText || null));
+var baseUri = 'http://meta.icos-cp.eu/ontologies/stationentry/';
 
-					} else reject(makeErrorReport(req));
-				}
-			} catch (e) {
-				 reject(e);
-			}
-		};
+var stationPisQuery = `
+PREFIX cpst: <${baseUri}>
+SELECT ?stationUri ?stationClass ?longName ?email
+FROM <${baseUri}>
+WHERE{
+	?stationUri cpst:hasLongName ?longName .
+	?stationUri cpst:hasPi ?pi .
+	?pi cpst:hasEmail ?email .
+	?stationUri a ?stationClass .
+}`;
 
-		req.send();
-	});
-}
-
-function postJson(url, payload){
-	return new Promise(function(resolve, reject){
-		var req = new XMLHttpRequest();
-		req.open('POST', url);
-		req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-		req.onreadystatechange = function(){
-			if (req.readyState === 4){
-				if(req.status === 200) resolve();
-				else reject(makeErrorReport(req));
-			}
-		};
-
-		req.send(JSON.stringify(payload));
+function mapStationTheme(station){
+	function classToTheme(stationClass){
+		switch(stationClass.substring(stationClass.length - 2)){
+			case 'AS': return 'Atmosphere';
+			case 'ES': return 'Ecosystem';
+			case 'OS': return 'Ocean';
+			default: return 'Unknown';
+		}
+	}
+	return _.extend(_.omit(station, 'stationClass'), {
+		theme: classToTheme(station.stationClass)
 	});
 }
 
 module.exports = {
-	
+	getStationPis: () => sparql(stationPisQuery).then(stations => stations.map(mapStationTheme))
 };
 

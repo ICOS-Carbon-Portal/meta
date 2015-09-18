@@ -5,6 +5,7 @@ var browserify = require('browserify');
 var del = require('del');
 var reactify = require('reactify');
 var source = require('vinyl-source-stream');
+var babel = require('babelify');
 
 ['metaentry', 'labeling'].forEach(function(project){
 
@@ -12,6 +13,7 @@ var source = require('vinyl-source-stream');
 		main: 'src/main/js/' + project + '/main.js',
 		jsx: ['src/main/js/' + project + '/**/*.jsx'],
 		js: ['src/main/js/' + project + '/**/*.js'],
+		common: ['src/main/js/common/**/*.js'],
 		target: 'src/main/resources/www/',
 		bundleFile: project + '.js'
 	};
@@ -23,9 +25,9 @@ var source = require('vinyl-source-stream');
 	gulp.task('js' + project, ['clean' + project], function() {
 
 		return browserify({
-			entries: [paths.main],
-			debug: false,
-			transform: [reactify]
+				entries: [paths.main],
+				debug: false,
+				transform: [reactify, babel]
 			})
 			.bundle()
 			.on('error', function(err){
@@ -38,7 +40,7 @@ var source = require('vinyl-source-stream');
 	});
 
 	gulp.task('watch' + project, function() {
-		var sources = paths.js.concat(paths.jsx);
+		var sources = paths.js.concat(paths.jsx, paths.common);
 		gulp.watch(sources, ['js' + project]);
 	});
 

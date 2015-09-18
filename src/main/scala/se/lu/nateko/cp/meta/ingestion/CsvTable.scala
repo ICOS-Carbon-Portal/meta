@@ -53,5 +53,15 @@ class TsvDataTable(ioReader: Reader) extends ArrayTextTable {
 		}
 		else Stream.cons(row, arrays)
 	}
+}
 
+class TrimmedTextTableRow(inner: TextTableRow) extends TextTableRow{
+	override def length = inner.length
+	override def apply(i: Int) = inner(i).trim
+	override def apply(colName: String) = inner(colName).trim
+}
+
+class TrimmingTextTable(inner: TextTable) extends TextTable {
+	override def columnNames: Seq[String] = inner.columnNames
+	override def rows: Seq[TextTableRow] = inner.rows.map(new TrimmedTextTableRow(_))
 }

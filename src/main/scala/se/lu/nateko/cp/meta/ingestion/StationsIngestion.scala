@@ -52,7 +52,7 @@ object StationsIngestion extends Ingester{
 
 	def getStationsTable: TextTable = {
 		val stationsStream = getClass.getResourceAsStream("/stations.csv")
-		new TsvDataTable(stationsStream)
+		new TrimmingTextTable(new TsvDataTable(stationsStream))
 	}
 
 	def rowToStation(row: TextTableRow): Station = {

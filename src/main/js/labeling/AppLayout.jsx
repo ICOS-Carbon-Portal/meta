@@ -3,14 +3,16 @@ var actions = Reflux.createActions([
 ]);
 
 var Backend = require('./backend.js');
+var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend);
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, actions.chooseStation);
-var StationsList = require('./views/StationsListFactory.jsx')(StationsListStore, actions.chooseStation);
+var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationsListStore);
+var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, actions.chooseStation);
 
 module.exports = React.createClass({
 	render: () =>
-		<div className="container-fluid">
-			<div className="row">
-				<div className="col-md-2"><StationsList /></div>
+		<div>
+			<div>
+				<div><StationsList /></div>
 			</div>
 		</div>
 });

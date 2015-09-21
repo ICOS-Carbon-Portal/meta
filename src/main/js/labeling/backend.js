@@ -31,7 +31,13 @@ function mapStationTheme(station){
 	});
 }
 
+//return promise
 module.exports = {
-	getStationPis: () => sparql(stationPisQuery).then(stations => stations.map(mapStationTheme))
+	getStationPis: () => sparql(stationPisQuery).then(stations => stations.map(mapStationTheme)),
+	whoAmI: () => new Promise(function(resolve) { 
+		setTimeout(function() {
+			resolve({email: 'leena.jarvi@helsinki.fi'}); }, 
+		    500);	
+	})
 };
 

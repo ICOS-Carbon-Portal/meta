@@ -2,7 +2,7 @@ module.exports = function(Backend, chooseStationAction){
 	return Reflux.createStore({
 
 		publishState: function(){
-			this.trigger(this.state)
+			this.trigger(this.state);
 		},
 
 		getInitialState: _.constant({stations: []}),

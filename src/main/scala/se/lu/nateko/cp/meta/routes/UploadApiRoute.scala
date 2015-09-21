@@ -15,7 +15,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 	def apply(service: UploadService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("upload"){
 		post{
-			authRouting.user{uploader =>
+			authRouting.mustBeLoggedIn{uploader =>
 				pathEnd{
 					entity(as[UploadMetadataDto]){uploadMeta =>
 						service.registerUpload(uploadMeta, uploader) match{

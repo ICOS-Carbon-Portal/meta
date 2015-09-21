@@ -10,12 +10,15 @@ import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import scala.util.Success
 import scala.util.Failure
 import akka.http.scaladsl.model.StatusCodes
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.CpmetaJsonProtocol
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 
-class AuthenticationRouting(authConfig: PublicAuthConfig) {
+class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
 
 	private[this] val authenticator = Authenticator(authConfig).get
 
-	def user(inner: UserInfo => Route): Route = cookie(authConfig.authCookieName)(cookie => {
+	private def user(inner: UserInfo => Route): Route = cookie(authConfig.authCookieName)(cookie => {
 		val userTry = for(
 			token <- CookieToToken.recoverToken(cookie.value);
 			uinfo <- authenticator.unwrapUserInfo(token)
@@ -26,7 +29,10 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) {
 			case Failure(err) =>
 				forbid(toMessage(err))
 		}
-	}) ~ forbid(s"Authentication cookie ${authConfig.authCookieName} was not set")
+	})
+
+	def mustBeLoggedIn(inner: UserInfo => Route): Route = user(inner) ~
+		forbid(s"Authentication cookie ${authConfig.authCookieName} was not set")
 
 	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Unauthorized, msg))
 
@@ -37,11 +43,18 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) {
 	
 	def allowUsers(userIds: Seq[String])(inner: => Route): Route =
 		if(userIds.isEmpty) inner else {
-			user{ uinfo =>
+			mustBeLoggedIn{ uinfo =>
 				if(userIds.contains(uinfo.mail.toLowerCase))
 					inner
 				else
 					forbid(s"User ${uinfo.givenName} ${uinfo.surname} is not authorized to perform this operation")
 			}
 		}
+
+	def route(implicit mat: Materializer) = get{
+		path("whoami"){
+			user{uinfo => complete(uinfo)} ~
+			complete(UserInfo(givenName = "Guest", surname = "at Carbon Portal", mail = "guest@icos-cp.eu"))
+		}
+	}
 }

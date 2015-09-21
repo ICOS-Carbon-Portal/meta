@@ -36,7 +36,8 @@ object MainRoute {
 			sparqlRoute ~
 			metaEntryRoute ~
 			staticRoute ~
-			uploadRoute
+			uploadRoute ~
+			authRouting.route
 		}
 	}
 

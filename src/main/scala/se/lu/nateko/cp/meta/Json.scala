@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta
 import spray.json._
 import java.net.URI
 import java.net.URISyntaxException
+import se.lu.nateko.cp.cpauth.core.UserInfo
 
 
 object CpmetaJsonProtocol{
@@ -77,4 +78,6 @@ trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
 	
 	implicit val uploadMetadataDtoFormat = jsonFormat6(UploadMetadataDto)
+
+	implicit val userInfoFormat = jsonFormat3(UserInfo)
 }

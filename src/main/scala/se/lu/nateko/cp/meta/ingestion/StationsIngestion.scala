@@ -12,13 +12,13 @@ case class Station(
 	val longName: String,
 	val stationClass: Int,
 	val country: String,
-	val location: Either[String, (Double, Double)],
+	val location: Either[Option[String], (Double, Double)],
 	val elevationAG: Option[String],
 	val elevationAS: Option[Float],
 	val fundingForConstruction: String,
 	val fundingForOperation: String,
 	val siteType: String,
-	val operationalDateEstimate: String,
+	val operationalDateEstimate: Option[String],
 	val stationKind: String,
 	val isOperational: Boolean,
 	val hasPreIcosMeas: Boolean,
@@ -63,13 +63,13 @@ object StationsIngestion extends Ingester{
 			else Some(cell.trim)
 		}
 
-		def location: Either[String, (Double, Double)] =
+		def location: Either[Option[String], (Double, Double)] =
 			(dblOpt(4), dblOpt(5)) match{
 				case (Some(lat), Some(lon)) =>
 					Right((lat, lon))
 				case _ =>
-					val locDescr: String = Seq(opt(4), opt(5)).flatten.distinct.mkString(", ")
-					Left(if(locDescr.isEmpty) "Undefined" else locDescr)
+					val locDescr: String = Seq(opt(4), opt(5)).flatten.distinct.mkString(", ").trim
+					Left(if(locDescr.isEmpty) None else Some(locDescr))
 			}
 
 
@@ -95,7 +95,7 @@ object StationsIngestion extends Ingester{
 			piName = row(11),
 			piEmail = row(12),
 			hasPreIcosMeas = row(13).toUpperCase.trim == "YES",
-			operationalDateEstimate = row(14),
+			operationalDateEstimate = opt(14),
 			isOperational = row(15).toUpperCase.trim == "X",
 			fundingForConstruction = row(16),
 			fundingForOperation = row(17)
@@ -115,13 +115,17 @@ object StationsIngestion extends Ingester{
 			},
 			station.elevationAG.map{elevation =>
 				(uri("hasElevationAboveGround"), lit(elevation))
+			},
+			station.operationalDateEstimate.map{elevation =>
+				(uri("hasOperationalDateEstimate"), lit(elevation))
 			}
 		).flatten
 
 		val position = station.location match {
-			case Left(pos) => Seq(
+			case Left(Some(pos)) => Seq(
 				(uri("hasLocationDescription"), lit(pos))
 			)
+			case Left(None) => Nil
 			case Right((lat, lon)) => Seq(
 				(uri("hasLat"), lit(lat)),
 				(uri("hasLon"), lit(lon))
@@ -139,7 +143,6 @@ object StationsIngestion extends Ingester{
 			(uri("hasPiName"), lit(station.piName)),
 			(uri("hasPiEmail"), lit(station.piEmail)),
 			(uri("hasPreIcosMeasurements"), lit(station.hasPreIcosMeas)),
-			(uri("hasOperationalDateEstimate"), lit(station.operationalDateEstimate)),
 			(uri("isAlreadyOperational"), lit(station.isOperational)),
 			(uri("hasFundingForConstruction"), lit(station.fundingForConstruction)),
 			(uri("hasFundingForOperation"), lit(station.fundingForOperation))

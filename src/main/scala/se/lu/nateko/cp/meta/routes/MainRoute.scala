@@ -12,16 +12,16 @@ import se.lu.nateko.cp.meta.OntoConfig
 
 object MainRoute {
 
-	def apply(db: MetaDb, config: CpmetaConfig)(implicit mat: Materializer): Route = {
+	val exceptionHandler = ExceptionHandler{
+		case ex =>
+			val traceWriter = new java.io.StringWriter()
+			ex.printStackTrace(new java.io.PrintWriter(traceWriter))
+			val trace = traceWriter.toString
+			val msg = if(ex.getMessage == null) "" else ex.getMessage
+			complete((StatusCodes.InternalServerError, s"$msg\n$trace"))
+	}
 
-		val exceptionHandler = ExceptionHandler{
-			case ex =>
-				val traceWriter = new java.io.StringWriter()
-				ex.printStackTrace(new java.io.PrintWriter(traceWriter))
-				val trace = traceWriter.toString
-				val msg = if(ex.getMessage == null) "" else ex.getMessage
-				complete((StatusCodes.InternalServerError, s"$msg\n$trace"))
-		}
+	def apply(db: MetaDb, config: CpmetaConfig)(implicit mat: Materializer): Route = {
 
 		val sparqlRoute = SparqlRoute(db.sparql)
 		val staticRoute = StaticRoute(config)

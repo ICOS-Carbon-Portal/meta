@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
@@ -17,16 +18,25 @@ object SparqlRoute {
 
 	val allowAllOrigins = respondWithHeader(headers.`Access-Control-Allow-Origin`.*)
 
-	def apply(server: SparqlServer): Route = get{
-		pathPrefix("sparql"){
-			parameter('query){ query =>
+	private def sparqlResponse(server: SparqlServer, query: String): Route = {
+		allowAllOrigins {
+			handleExceptions(MainRoute.exceptionHandler){
 				val json = server.executeQuery(query)
-				allowAllOrigins {
-					encodeResponse{
-						complete(HttpResponse(entity = HttpEntity(sparqlResMediaType, json)))
-					}
+				encodeResponse {
+					complete(HttpResponse(entity = HttpEntity(sparqlResMediaType, json)))
 				}
 			}
+		}
+	}
+
+	def apply(server: SparqlServer)(implicit mat: Materializer): Route = pathPrefix("sparql"){
+		val makeResponse: String => Route = sparqlResponse(server, _)
+		get{
+			parameter('query)(makeResponse)
+		} ~
+		post{
+			formField("query")(makeResponse) ~
+			entity(as[String])(makeResponse)
 		}
 	}
 

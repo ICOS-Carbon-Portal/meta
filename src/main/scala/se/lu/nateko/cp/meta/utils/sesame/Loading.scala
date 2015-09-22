@@ -11,12 +11,14 @@ import scala.util.Try
 
 object Loading {
 
-	def fromResource(path: String, baseUri: String): Repository = {
+	def fromResource(path: String, baseUri: String): Repository = fromResource(path, baseUri, RDFFormat.RDFXML)
+
+	def fromResource(path: String, baseUri: String, format: RDFFormat): Repository = {
 		val instStream = getClass.getResourceAsStream(path)
 		val repo = empty
 		val ontUri = repo.getValueFactory.createURI(baseUri)
 		repo.transact(conn => {
-			conn.add(instStream, baseUri, RDFFormat.RDFXML, ontUri)
+			conn.add(instStream, baseUri, format, ontUri)
 		})
 		repo
 	}

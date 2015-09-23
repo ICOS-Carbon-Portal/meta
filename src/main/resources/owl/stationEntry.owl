@@ -5,7 +5,6 @@
     <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
     <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
     <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
-    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
     <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
 ]>
@@ -15,7 +14,6 @@
      xml:base="http://meta.icos-cp.eu/ontologies/stationentry/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
-     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -251,7 +249,7 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">elevation above sea, meters</rdfs:label>
+        <rdfs:label rdf:datatype="&xsd;string">elevation of ground above sea, meters</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range rdf:resource="&xsd;float"/>
     </owl:DatatypeProperty>
@@ -264,7 +262,16 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">E-mail address</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
     </owl:DatatypeProperty>
     
 
@@ -389,6 +396,27 @@
         <rdfs:label rdf:datatype="&xsd;string">estimated date when operational</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPhone -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPhone">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">phone number (international format)</rdfs:label>
+        <rdfs:comment rdf:datatype="&xsd;string">e.g. +46 46 22 29173</rdfs:comment>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^\+[\d\s]{8,}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
     </owl:DatatypeProperty>
     
 
@@ -540,13 +568,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -596,13 +624,13 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -616,14 +644,14 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/Station">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>

@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseObjectAction){
+module.exports = function(Backend, chooseStationAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -9,42 +9,41 @@ module.exports = function(Backend, chooseObjectAction){
 
 		init: function(){
 			this.state = this.getInitialState();
-			
-			this.listenTo(chooseObjectAction, this.doChooseObjectAction);
+			this.listenTo(chooseStationAction, this.chooseStationHandler);
+
 			var self = this;
 
 			Backend.getStationPis().then(
 				stations => {
-					self.state.stations = _.chain(stations)
-						.groupBy('stationUri')
-						.values()
-						.map(samePi => _.extend(
-								_.omit(samePi[0], 'email'), {
-									emails: _.pluck(samePi, 'email'),
-									chosen: false
-								}
-							)
-						)
-						.sortBy('longName')
-						.value();
-
+					self.state.stations = stations;
 					self.publishState();
 				},
 				err => console.log(err)
 			);
 		},
-                     
-		doChooseObjectAction: function(object) {
-			
-			this.state.stations = this.state.stations.map(function(stationInList) {
-				var station = _.clone(stationInList);
-				
-				station.chosen = (station.stationUri === object.stationUri);
-				
-				return station;
-			});
-			
-			this.publishState();
+
+		chooseStationHandler: function(chosenStation) {
+			var self = this;
+
+			this.state.chosen = chosenStation;
+			var chosenUri = chosenStation.stationUri;
+
+			Backend.getProvisionalStationInfo(chosenUri).then(
+				stationInfo => {
+					if(this.state.chosen.stationUri !== chosenUri) return;
+
+					self.state.stations = self.state.stations.map(stationInList => {
+						var copy = _.clone(stationInList);
+						copy.chosen = (stationInList.stationUri === chosenUri);
+						return copy;
+					});
+
+					self.state.chosen = stationInfo;
+					self.publishState();
+				},
+				err => console.log(err)
+			);
+
 		}
 
 	});

@@ -6,34 +6,25 @@ module.exports = function(stationListStore, chooseObjectAction){
 
 		render: function(){
 
+console.log(this.state.chosen);
+
 			return <ul>{
 				this.state.stations.map(function(station){
 
 					var chooseObjectHandler = () => chooseObjectAction(station);
-					var isUsers = station.isUsersStation ? 1 : 0;
+					var editStatus = station.isUsersStation ? 'editable' : 'not editable';
 
-					var styles = {};
-					if (station.chosen) {
-						styles.panel_type = 'primary';
-						styles.panel_body_show = 'block';
-				    
-					} else {
-						styles.panel_type = 'panel-default';
-						styles.panel_body_show = 'none';  
-					}					
-					
-					var panel_body_style = { display: styles.panel_body_show};
+					var panelClasses = 'panel ' + (station.chosen ? 'primary' : 'panel-default');
+					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
 
 					return <li key={station.uri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
-							
-						<div className={styles.panel_type + " panel"}>
-							<div className="panel-heading" onClick={chooseObjectHandler}> {[station.longName, ' (', station.theme, ')', isUsers].join('')} </div>
-							<div className="panel-body" style={panel_body_style}></div>
+
+						<div className={panelClasses}>
+							<div className="panel-heading" onClick={chooseObjectHandler}>{[station.longName, ' (', station.theme, ') ', editStatus].join('')}</div>
+							<div className="panel-body" style={panelBodyStyle}></div>
 						</div>
-						
-					</li>
-					
-					;
+
+					</li>;
 				})
 
 			}</ul>;

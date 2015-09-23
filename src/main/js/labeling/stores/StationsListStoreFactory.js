@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseStationAction){
+module.exports = function(Backend, chooseObjectAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -9,7 +9,8 @@ module.exports = function(Backend, chooseStationAction){
 
 		init: function(){
 			this.state = this.getInitialState();
-			this.listenTo(chooseStationAction, this.setChosenStation);
+			
+			this.listenTo(chooseObjectAction, this.doChooseObjectAction);
 			var self = this;
 
 			Backend.getStationPis().then(
@@ -32,15 +33,17 @@ module.exports = function(Backend, chooseStationAction){
 				err => console.log(err)
 			);
 		},
-
-		setChosenStation: function(chosenStation){
-
-			if(chosenStation.chosen) return;
-
-			this.state.stations = _.map(this.state.stations, theStation =>
-				_.extend({}, theStation, {chosen: (theStation.stationUri == chosenStation.stationUri)})
-			);
-
+                     
+		doChooseObjectAction: function(object) {
+			
+			this.state.stations = this.state.stations.map(function(stationInList) {
+				var station = _.clone(stationInList);
+				
+				station.chosen = (station.stationUri === object.stationUri);
+				
+				return station;
+			});
+			
 			this.publishState();
 		}
 

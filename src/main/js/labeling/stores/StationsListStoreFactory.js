@@ -28,7 +28,7 @@ module.exports = function(Backend, chooseStationAction){
 			this.state.chosen = chosenStation;
 			var chosenUri = chosenStation.stationUri;
 
-			Backend.getProvisionalStationInfo(chosenUri).then(
+			Backend.getStationInfo(chosenUri).then(
 				stationInfo => {
 					if(this.state.chosen.stationUri !== chosenUri) return;
 

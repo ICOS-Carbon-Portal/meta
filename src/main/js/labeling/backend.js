@@ -5,14 +5,14 @@ var ontUri = 'http://meta.icos-cp.eu/ontologies/stationsschema/';
 var stationPisQuery = `
 PREFIX cpst: <${baseUri}>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT (?s AS ?stationUri) ?theme ?provShortName ?provLongName ?shortName ?longName ?email
+SELECT *
 FROM NAMED <${baseUri}>
 FROM NAMED <${lblUri}>
 FROM <${ontUri}>
 WHERE{
 	?owlClass
 		rdfs:subClassOf cpst:Station ;
-		rdfs:label ?theme .
+		rdfs:label ?thematicName .
 	GRAPH <${baseUri}> {
 		?s a ?owlClass .
 		?s cpst:hasPi ?pi .
@@ -29,7 +29,7 @@ WHERE{
 
 function postProcessStationsList(stations){
 	return _.chain(stations)
-		.groupBy(station => station.g + '_' + station.stationUri)
+		.groupBy('s')
 		.values()
 		.map(samePi => _.extend(
 				_.omit(samePi[0], 'email'), {
@@ -44,6 +44,7 @@ function postProcessStationsList(stations){
 				}
 			)
 		)
+		.map(postProcessStationProps)
 		.sortBy('longName')
 		.value();
 }
@@ -52,7 +53,7 @@ function getStationQuery(stationUri, graphUri){
 	return `
 		PREFIX cpst: <${baseUri}>
 		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-		SELECT DISTINCT (?s AS ?stationUri) ?theme ?longName ?shortName ?lat ?lon ?aboveGround ?aboveSea ?stationClass ?plannedDateStarting
+		SELECT DISTINCT *
 		FROM NAMED <${lblUri}>
 		FROM NAMED <${baseUri}>
 		FROM <${ontUri}>
@@ -60,7 +61,7 @@ function getStationQuery(stationUri, graphUri){
 			BIND (<${stationUri}> AS ?s) .
 			?owlClass
 				rdfs:subClassOf cpst:Station ;
-				rdfs:label ?theme .
+				rdfs:label ?thematicName .
 			GRAPH <${baseUri}> {?s a ?owlClass}
 			GRAPH <${graphUri}> {
 				OPTIONAL{?s cpst:hasShortName ?shortName}
@@ -75,14 +76,48 @@ function getStationQuery(stationUri, graphUri){
 		}`;
 }
 
+function postProcessStationProps(station){
+
+	var copy = _.omit(station, 's', 'owlClass');
+
+	copy.stationUri = station.s;
+
+	if(station.owlClass === baseUri + 'AS')
+		copy.theme = 'Atmosphere';
+	else if (station.owlClass === baseUri + 'ES')
+		copy.theme = 'Ecosystem';
+	else if (station.owlClass === baseUri + 'OS')
+		copy.theme = 'Ocean';
+
+	return copy;
+}
+
 
 module.exports = function(ajax, sparql){
+
+	function getStationInfoFromGraph(stationUri, graphUri){
+		return sparql(getStationQuery(stationUri, graphUri))
+			.then(bindings => bindings.map(postProcessStationProps)[0]);
+	}
+
+	function getStationLabelingInfo(stationUri){
+
+		function hasBeenSavedBefore(labelingInfo){
+			var essentialProps = _.without(_.keys(labelingInfo), 'stationUri', 'thematicName', 'theme');
+			return !_.isEmpty(essentialProps);
+		}
+
+		return getStationInfoFromGraph(stationUri, lblUri).then(lblInfo =>
+			hasBeenSavedBefore(lblInfo)
+				? lblInfo
+				: getStationInfoFromGraph(stationUri, baseUri)
+		);
+	}
+
 	return {
 		getStationPis: () => sparql(stationPisQuery).then(postProcessStationsList),
 
-		getProvisionalStationInfo: stationUri => sparql(getStationQuery(stationUri, baseUri)).then(sols => sols[0]),
-
-		getStationLabelingInfo: stationUri => sparql(getStationQuery(stationUri, lblUri)).then(sols => sols[0]),
+		getStationInfo: getStationLabelingInfo,
 
 		whoAmI: () => ajax.getJson('/whoami')
 	};

@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
+import se.lu.nateko.cp.meta.services.SparqlServer
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model._

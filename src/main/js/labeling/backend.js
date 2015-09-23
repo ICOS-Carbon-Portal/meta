@@ -20,9 +20,11 @@ WHERE{
 		?s cpst:hasShortName ?provShortName .
 		?s cpst:hasLongName ?provLongName .
 	}
-	GRAPH <${lblUri}> {
-		OPTIONAL{?s cpst:hasShortName ?shortName }
-		OPTIONAL{?s cpst:hasLongName ?longName }
+	OPTIONAL{
+		GRAPH <${lblUri}> {
+			OPTIONAL{?s cpst:hasShortName ?shortName }
+			OPTIONAL{?s cpst:hasLongName ?longName }
+		}
 	}
 }`;
 
@@ -45,7 +47,7 @@ function postProcessStationsList(stations){
 			)
 		)
 		.map(postProcessStationProps)
-		.sortBy('longName')
+		.sortBy(station => `${station.theme}_${station.longName}`)
 		.value();
 }
 
@@ -118,6 +120,7 @@ module.exports = function(ajax, sparql){
 		getStationPis: () => sparql(stationPisQuery).then(postProcessStationsList),
 
 		getStationInfo: getStationLabelingInfo,
+		saveStationInfo: info => ajax.postJson('save', info),
 
 		whoAmI: () => ajax.getJson('/whoami')
 	};

@@ -38,3 +38,15 @@ case class UploadMetadataDto(
 	acquisitionStart: String,
 	acquisitionEnd: String
 )
+
+case class StationLabelingDto(
+	stationUri: URI,
+	shortName: Option[String],
+	longName: Option[String],
+	lat: Option[Float],
+	lon: Option[Float],
+	aboveGround: Option[String],
+	aboveSea: Option[Float],
+	stationClass: Option[Int],
+	plannedDateStarting: Option[String]
+)

@@ -32,11 +32,14 @@ object MainRoute {
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)
 
+		val labelingRoute = LabelingApiRoute(db.labelingService, authRouting)
+		
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~
 			metaEntryRoute ~
 			staticRoute ~
 			uploadRoute ~
+			labelingRoute ~
 			authRouting.route
 		}
 	}

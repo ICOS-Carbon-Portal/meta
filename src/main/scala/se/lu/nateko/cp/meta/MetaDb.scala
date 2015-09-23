@@ -16,14 +16,13 @@ import scala.concurrent.ExecutionContext
 import java.io.Closeable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
-import se.lu.nateko.cp.meta.sparqlserver.SesameSparqlServer
-import se.lu.nateko.cp.meta.datasets.UploadService
+import se.lu.nateko.cp.meta.services._
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
+	val labelingService: StationLabelingService,
 	repo: Repository) extends Closeable{
 
 	val sparql: SparqlServer = new SesameSparqlServer(repo)
@@ -147,7 +146,13 @@ object MetaDb {
 			val uploadInstServer = instanceServers(config.dataUploadService.instanceServerId)
 			val uploadService = new UploadService(uploadInstServer, config.dataUploadService)
 
-			new MetaDb(instanceServers, instOntos, uploadService, repo)
+			val labelingService = {
+				val conf = config.stationLabelingService
+				val provisional = instanceServers(conf.provisionalInfoInstanceServerId)
+				val main = instanceServers(conf.instanceServerId)
+				new StationLabelingService(main, provisional, conf)
+			}
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

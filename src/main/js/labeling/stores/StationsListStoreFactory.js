@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseStationAction){
+module.exports = function(Backend, chooseStationAction, saveStationAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -10,6 +10,7 @@ module.exports = function(Backend, chooseStationAction){
 		init: function(){
 			this.state = this.getInitialState();
 			this.listenTo(chooseStationAction, this.chooseStationHandler);
+			this.listenTo(saveStationAction, this.saveStationHandler);
 
 			var self = this;
 
@@ -43,7 +44,14 @@ module.exports = function(Backend, chooseStationAction){
 				},
 				err => console.log(err)
 			);
+		},
 
+		saveStationHandler: function(stationInfo){
+			var self = this;
+			Backend.saveStationInfo(stationInfo).then(
+				() => self.chooseStationHandler(stationInfo),
+				err => console.log(err)
+			);
 		}
 
 	});

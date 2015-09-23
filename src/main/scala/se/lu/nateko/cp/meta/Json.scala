@@ -80,4 +80,6 @@ trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	implicit val uploadMetadataDtoFormat = jsonFormat6(UploadMetadataDto)
 
 	implicit val userInfoFormat = jsonFormat3(UserInfo)
+
+	implicit val stationLabelingInfoFormat = jsonFormat9(StationLabelingDto)
 }

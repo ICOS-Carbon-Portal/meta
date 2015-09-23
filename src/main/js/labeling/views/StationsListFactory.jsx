@@ -1,9 +1,9 @@
-module.exports = function(stationListStore, chooseObjectAction){
+module.exports = function(stationListStore, chooseStationAction, saveStationAction){
 
-	var Station = require('./Station.jsx')();
-	
+	var Station = require('./StationFactory.jsx')(saveStationAction);
+
 	return React.createClass({
-		
+
 		mixins: [Reflux.connect(stationListStore)],
 
 		render: function(){
@@ -13,9 +13,7 @@ module.exports = function(stationListStore, chooseObjectAction){
 			return <ul>{
 				self.state.stations.map(function(station){
 
-					var chooseObjectHandler = () => chooseObjectAction(station);
-
-					var editStatus = station.isUsersStation ? 'editable' : 'not editable';
+					var chooseStationHandler = () => chooseStationAction(station);
 
 					var panelClasses = 'panel ' + (station.chosen ? 'panel-primary' : 'panel-default');
 					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
@@ -23,9 +21,9 @@ module.exports = function(stationListStore, chooseObjectAction){
 					return <li key={station.stationUri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
 
 						<div className={panelClasses}>
-							<div className="panel-heading" onClick={chooseObjectHandler}>{[station.longName, ' (', station.theme, ') '].join('')}</div>
+							<div className="panel-heading" onClick={chooseStationHandler}>{[station.longName, ' (', station.theme, ') '].join('')}</div>
 							<div className="panel-body" style={panelBodyStyle}>
-								{ (self.state.chosen && station.chosen) ? <Station station={self.state.chosen} theme={station.theme} edit={editStatus} /> : null }
+								{ (self.state.chosen && station.chosen) ? <Station station={self.state.chosen} theme={station.theme} /> : null }
 							</div>
 						</div>
 

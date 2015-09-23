@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.datasets
+package se.lu.nateko.cp.meta.services
 
 import scala.util.Try
 import scala.util.control.NoStackTrace
@@ -12,7 +12,6 @@ import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.ingestion.Vocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.sparqlserver.SparqlServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.utils.DateTimeUtils
 

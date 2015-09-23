@@ -1,8 +1,8 @@
-package se.lu.nateko.cp.meta.datasets.test
+package se.lu.nateko.cp.meta.services.test
 
 import org.scalatest.FunSpec
-import se.lu.nateko.cp.meta.datasets.UploadService
-import se.lu.nateko.cp.meta.datasets.UploadUserErrorException
+import se.lu.nateko.cp.meta.services.UploadService
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadServiceTests extends FunSpec{
 

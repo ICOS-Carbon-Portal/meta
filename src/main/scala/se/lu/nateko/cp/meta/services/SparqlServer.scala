@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.sparqlserver
+package se.lu.nateko.cp.meta.services
 
 import org.openrdf.repository.Repository
 import se.lu.nateko.cp.meta.utils.sesame._

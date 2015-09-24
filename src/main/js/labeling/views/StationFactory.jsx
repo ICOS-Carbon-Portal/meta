@@ -1,64 +1,107 @@
+
+function getValidatingMixin(validator){
+	return {
+		componentWillMount: function(){
+			this.validators = this.validators || [];
+			this.validators.push(validator);
+		}
+	};
+}
+
+var InputGroup = React.createClass({
+	render: function() {
+		return <div className="form-group">
+			<label style={{width: 150, paddingRight: 4}}>{this.props.title}</label>
+			{this.props.children}
+		</div>;
+	},
+});
+
+var InputBaseMixin = {
+	componentWillMount: function(){
+		this.validators = this.validators || [];
+		this.inputStyle = {width: '80%'};
+	},
+
+	changeHandler: function(event){
+		var newValue = this.extractUpdatedValue(event);
+		var valid = _.every(this.validators, validator => validator(newValue));
+		if(valid){
+			this.props.updater(newValue);
+		}
+	}
+};
+
+var TextInputMixin = _.extend({
+	render: function() {
+		return <input type="text" onChange={this.changeHandler} value={this.props.value} style={this.inputStyle} />;
+	}
+}, InputBaseMixin);
+
+var StringInputMixin = _.extend({
+		extractUpdatedValue: event => event.target.value
+	},
+	TextInputMixin
+);
+
+var NumberInputMixin = _.extend({
+		extractUpdatedValue: event => Number.parseFloat(event.target.value)
+	},
+	TextInputMixin
+);
+
+var IsNumberMixin = getValidatingMixin(value => !_.isNaN(value));
+
+
 module.exports = function(saveStationAction) { 
 
-	var Form = React.createClass({
-		render: function() {
-			return <form role="form" onSubmit={this.props.submissionHandler}>{this.props.children}</form>;
-		}
-	});
-
-	var Comp = React.createClass({
-		render: function() {
-			var labelStyle = {width: 100, paddingRight: 4};
-			var inputStyle = {width: '80%'};
-
-			return <div className="form-group">
-				<label style={labelStyle}>{this.props.title}</label>
-				<input type="text" id={this.props.infoProp} defaultValue={this.props.defaultValue} style={inputStyle} />
-			</div>;
-		}
-	});
+	var NumberInput = React.createClass({mixins: [NumberInputMixin, IsNumberMixin]});
+	var StringInput = React.createClass({mixins: [StringInputMixin]});
 
 	return React.createClass({
 
-		render: function() {
-			if (this.props.theme === 'Ecosystem')
-				return <div>Station labeling support for Ecosystem stations is coming soon. Try the Atmosphere stations in the meanwhile.</div>;
-			if (this.props.theme === 'Ocean')
-				return <div>Station labeling support for Ocean stations is pending. Try the Atmosphere stations in the meanwhile.</div>;
-
-			var station = this.props.station;
-
-			return <Form submissionHandler={this.getSubmissionHandler(station)}>
-				<Comp infoProp="shortName" title="Short name" defaultValue={station.shortName} />
-				<Comp infoProp="longName" title="Long name" defaultValue={station.longName} />
-				<Comp infoProp="lat" title="Latitude" defaultValue={station.lat} />
-				<Comp infoProp="lon" title="Longitude" defaultValue={station.lon} />
-				<Comp infoProp="aboveGround" title="Above ground" defaultValue={station.aboveGround} />
-				<Comp infoProp="aboveSea" title="Above sea" defaultValue={station.aboveSea} />
-				<Comp infoProp="stationClass" title="Station class" defaultValue={station.stationClass} />
-				<Comp infoProp="plannedDateStarting" title="Planned date starting" defaultValue={station.plannedDateStarting} />
-				<button type="submit" class="btn btn-default">Save</button>
-			</Form>;
+		componentWillReceiveProps: function(newProps){
+			this.setState(_.clone(newProps.station));
 		},
 
-		getSubmissionHandler: station => event => {
-			event.preventDefault();
+		getInitialState: function(){
+			return _.clone(this.props.station);
+		},
+
+		render: function() {
+			var station = this.state;
+
+			if (station.theme === 'Ecosystem')
+				return <div>Station labeling support for Ecosystem stations is coming soon. Try the Atmosphere stations in the meanwhile.</div>;
+			if (station.theme === 'Ocean')
+				return <div>Station labeling support for Ocean stations is pending. Try the Atmosphere stations in the meanwhile.</div>;
+
+			var isUnchanged = _.isEqual(station, this.props.station);
+
 			var self = this;
+			function updater(propName){
+				return function(newValue){
+					self.setState(_.object([propName], [newValue]));
+				}
+			}
 
-			var getVal = id => document.getElementById(id).value;
-			var getNumVal = id => Number.parseFloat(getVal(id));
+			return <form role="form" onSubmit={this.submissionHandler}>
+				<InputGroup title="Short name"><StringInput updater={updater("shortName")} value={station.shortName} /></InputGroup>
+				<InputGroup title="Long name"><StringInput updater={updater("longName")} value={station.longName} /></InputGroup>
+				<InputGroup title="Latitude"><NumberInput updater={updater("lat")} value={station.lat} /></InputGroup>
+				<InputGroup title="Longitude"><NumberInput updater={updater("lon")} value={station.lon} /></InputGroup>
+				<InputGroup title="Above ground"><StringInput updater={updater("aboveGround")} value={station.aboveGround} /></InputGroup>
+				<InputGroup title="Above sea"><NumberInput updater={updater("aboveSea")} value={station.aboveSea} /></InputGroup>
+				<InputGroup title="Station class"><NumberInput updater={updater("stationClass")} value={station.stationClass} /></InputGroup>
+				<InputGroup title="Planned date starting"><StringInput updater={updater("plannedDateStarting")} value={station.plannedDateStarting} /></InputGroup>
 
-			var stringProps = ['shortName', 'longName', 'aboveGround', 'plannedDateStarting'];
-			var stringInfo = _.object(stringProps, stringProps.map(getVal));
+				<button type="submit" className="btn btn-primary" disabled={isUnchanged}>Save</button>
+			</form>;
+		},
 
-			var numProps = ['lat', 'lon', 'aboveSea', 'stationClass'];
-			var numInfo = _.object(numProps, numProps.map(getNumVal));
-
-			var stationInfo = _.extend({stationUri: station.stationUri}, stringInfo, numInfo);
-
-console.log(stationInfo);
-
-			saveStationAction(stationInfo);
+		submissionHandler: function(event) {
+			event.preventDefault();
+			saveStationAction(this.state);
 		}
 
 	});

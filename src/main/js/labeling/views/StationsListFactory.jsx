@@ -1,3 +1,9 @@
+var themeGlyphs = {
+	"Atmosphere": 'cloud',
+	"Ecosystem": 'leaf',
+	"Ocean": 'tint'
+};
+
 module.exports = function(stationListStore, chooseStationAction, saveStationAction){
 
 	var Station = require('./StationFactory.jsx')(saveStationAction);
@@ -17,13 +23,17 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 
 					var panelClasses = 'panel ' + (station.chosen ? 'panel-primary' : 'panel-default');
 					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
+					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
 					return <li key={station.stationUri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
 
 						<div className={panelClasses}>
-							<div className="panel-heading" onClick={chooseStationHandler}>{[station.longName, ' (', station.theme, ') '].join('')}</div>
+							<div className="panel-heading" onClick={chooseStationHandler}>
+								<span className={icon}/><span> </span>
+								{station.longName}
+							</div>
 							<div className="panel-body" style={panelBodyStyle}>
-								{ (self.state.chosen && station.chosen) ? <Station station={self.state.chosen} theme={station.theme} /> : null }
+								{ (self.state.chosen && station.chosen) ? <Station station={self.state.chosen} /> : null }
 							</div>
 						</div>
 

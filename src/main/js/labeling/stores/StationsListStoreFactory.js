@@ -26,6 +26,8 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 		chooseStationHandler: function(chosenStation) {
 			var self = this;
 
+			if(chosenStation.chosen) return;
+
 			this.state.chosen = chosenStation;
 			var chosenUri = chosenStation.stationUri;
 

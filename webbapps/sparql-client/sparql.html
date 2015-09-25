@@ -36,24 +36,25 @@
 			$("#messDiv").hide();
 
 			$("#queryBtn").click(function(){
-				var query = encodeURIComponent($("#query").val());
 
 				$.ajax({
-					type: "GET",
-					url: "https://meta.icos-cp.eu/sparql?query=" + query,
-//					url: "http://127.0.0.1:9094/sparql?query=" + query,
+					type: "POST",
+					data: {query: $("#query").val()},
+					url: "https://meta.icos-cp.eu/sparql",
+//					url: "http://127.0.0.1:9094/sparql",
 					dataType: "json",
 					success: function(result){
 						$("#result").show();
-						$("#rowCountSpan").text(result.results.bindings.length + " rows returned. ");
+						$("#rowCountSpan").text(result.results.bindings.length + " bindings returned. ");
 						$("#messSpan").text("Query executed successfully").show().delay(3000).fadeOut();
 						$("#result").html(syntaxHighlight(result));
 					},
 					error: function(req, textStatus, errorThrown) {
 						$("#result").show();
+						$("#rowCountSpan").text("");
 						$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
 						console.log(req);
-						$("#result").html('<a href="https://meta.icos-cp.eu/sparql?query=' + query + '">Error</a>');
+						$("#result").html(req.responseText);
 					}
 				});
 			});

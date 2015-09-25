@@ -1,3 +1,7 @@
+$(function () {
+	init();
+});
+
 function init(){
 	var stationsPromise = fetchStations();
 
@@ -11,6 +15,8 @@ function init(){
 }
 
 function initMap(stations) {
+	countStations(stations);
+
 	//Layer 0
 	var worlMapBing = new ol.layer.Tile({
 		tag: "worlMapBing",
@@ -156,6 +162,12 @@ function addBtnEv(layer){
 	}
 }
 
+function countStations(stations){
+	$("#stationCountAS").text(stations.AS.data.length + " Atmosphere stations");
+	$("#stationCountES").text(stations.ES.data.length + " Ecosystem stations");
+	$("#stationCountOS").text(stations.OS.data.length + " Ocean stations");
+}
+
 function addRefreshEv(map){
 	$("#refreshBtn").click(function(){
 		var stationsPromise = fetchStations();
@@ -194,75 +206,17 @@ function addRefreshEv(map){
 					}
 				});
 
+				$("#refreshBtn").text("Refresh done");
+
+				setTimeout(function(){
+					$("#refreshBtn").text("Refresh stations");
+				}, 3000);
+
 			})
 			.fail(function(request){
 				console.log(request);
 			});
 	});
-}
-
-function getPointLayer(stations){
-
-
-	var vectorSource = new ol.source.Vector({
-		features: getVectorFeatures(stations)
-	});
-
-	return new ol.layer.Vector({
-		source: vectorSource
-	});
-}
-
-function getIcon(theme){
-	var icon = {
-		anchor: [3, 20],
-		anchorXUnits: 'pixels',
-		anchorYUnits: 'pixels',
-		opacity: 1
-	};
-
-	switch (theme){
-		case "AS":
-			icon.src = 'icons/as.svg';
-			break;
-
-		case "ES":
-			icon.src = 'icons/es.svg';
-			break;
-
-		case "OS":
-			icon.src = 'icons/os.svg';
-			break;
-	}
-
-	return new ol.style.Icon(icon);
-}
-
-function getVectorFeatures(stations){
-	var iconFeature;
-	var features = [];
-
-	var iconStyle = new ol.style.Style({
-		image: getIcon(stations.theme)
-	});
-
-	stations.data.forEach(function (station){
-		iconFeature = new ol.Feature({
-			geometry: new ol.geom.Point(ol.proj.transform(station.pos, 'EPSG:4326', 'EPSG:3857'))
-		});
-
-		//Add all other attributes
-		for (var name in station) {
-			if (name != "pos") {
-				iconFeature.set(name, station[name]);
-			}
-		}
-
-		iconFeature.setStyle(iconStyle);
-		features.push(iconFeature);
-	});
-
-	return features;
 }
 
 function popup(map){
@@ -312,7 +266,6 @@ function popup(map){
 		}
 		var pixel = map.getEventPixel(e.originalEvent);
 		var hit = map.hasFeatureAtPixel(pixel);
-		//map.getTarget().style.cursor = hit ? "pointer" : "";
 	});
 }
 
@@ -347,7 +300,7 @@ function fetchStations(){
 		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme)',
 		'(str(?lat) AS ?latstr)',
 		'(str(?lon) AS ?lonstr) ',
-		'(concat(?piFname, " ", ?piLname) AS ?PI_name)',
+		'(concat((IF(bound(?piFname), str(?piFname), "")), " ", ?piLname) AS ?PI_name)',
 		'(str(?sName) AS ?Short_name)',
 		'(str(?lName) AS ?Long_name)',
 		'(str(?country) AS ?Country)',
@@ -358,20 +311,20 @@ function fetchStations(){
 		'?s cpst:hasLat ?lat .',
 		'?s cpst:hasLon ?lon .',
 		'?s cpst:hasPi ?pi .',
-		'?pi cpst:hasFirstName ?piFname .',
+		'OPTIONAL{?pi cpst:hasFirstName ?piFname } .',
 		'?pi cpst:hasLastName ?piLname .',
 		'?s cpst:hasShortName ?sName .',
 		'?s cpst:hasLongName ?lName .',
 		'?s cpst:hasCountry ?country .',
-		'}'
+		'}',
+		'GROUP BY ?s ?lat ?lon ?sName ?class ?lName ?country ?piFname ?piLname'
 	].join("\n");
 
-	query = encodeURIComponent(query);
-
 	return $.ajax({
-		type: "GET",
-		url: "https://meta.icos-cp.eu/sparql?query=" + query,
-		//url: "http://127.0.0.1:9094/sparql?query=" + query,
+		type: "POST",
+		data: {query: query},
+		url: "https://meta.icos-cp.eu/sparql",
+		//url: "http://127.0.0.1:9094/sparql",
 		dataType: "json"
 	});
 }

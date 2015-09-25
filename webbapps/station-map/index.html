@@ -58,13 +58,9 @@
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/ol/3.5.0/js/ol.min.js"></script>
 
+	<script type="text/javascript" src="map-table-common.js"></script>
 	<script type="text/javascript" src="map.js"></script>
 
-	<script type="text/javascript">
-		$(function () {
-			init();
-		});
-	</script>
 </head>
 <body>
 
@@ -130,14 +126,17 @@
 		<h4>ICOS station types</h4>
 
 		<div class="checkbx">
+			<span id="stationCountAS"></span>
 			<label>
 				<input type="checkbox" id="AS" checked>
 				Atmosphere <img src="icons/as.svg" alt="Atmosphere">
 			</label>
+			<span id="stationCountES"></span>
 			<label>
 				<input type="checkbox" id="ES" checked>
 				Ecosystem <img src="icons/es.svg" alt="Ecosystem">
 			</label>
+			<span id="stationCountOS"></span>
 			<label>
 				<input type="checkbox" id="OS" checked>
 				Ocean <img src="icons/os.svg" alt="Ocean">

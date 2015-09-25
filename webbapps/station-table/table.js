@@ -1,27 +1,73 @@
 $(function () {
 	var stationsPromise = fetchStations();
 
+	$("body").prepend('<div id="map" title="Station map"></div>');
+	$( "#map" ).dialog({
+		autoOpen: false,
+		dialogClass: "no-close",
+		resizable: false,
+		height: "400",
+		width: "600"
+	});
+
+	var config = {
+		hiddenCols: [0, 1, 2, 3, 4],
+		themeShortInd: 4,
+		themeInd: 5,
+		latInd: 1,
+		lonInd: 2,
+		posDescInd: 3,
+		shortNameInd: 7
+	};
+
 	stationsPromise
 		.done(function(result){
-			init(parseStationsJson(result));
+			init(parseStationsJson(result), config);
 		})
 		.fail(function(request){
-			console.log(request);
+			console.log(request.responseText);
 		});
 });
 
-function init(stations){
-	var availableTags = ["ActionScript","AppleScript","Asp","BASIC","C","C++","Clojure","COBOL","ColdFusion","Erlang","Fortran","Groovy","Haskell","Java","JavaScript","Lisp","Perl","PHP","Python","Ruby","Scala","Scheme"	];
-
+function init(stations, config){
 	$('#stationsTable').DataTable( {
 		data: stations.rows,
 		columns: stations.columns,
 		columnDefs: [
 			{
-				//Hide the id column
-				targets: [0],
+				//Hide some columns
+				targets: config.hiddenCols,
 				visible: false,
 				searchable: false
+			},
+			{
+				targets: [config.themeInd],
+				render: function(data, type, row, meta){
+					if (row[config.latInd] == "?" || row[config.lonInd] == "?"){
+						if(row[config.posDescInd] == "?") {
+							return data;
+						} else {
+							var args = [
+								"this",
+								"'" + row[config.shortNameInd] + "'",
+								"'" + row[config.posDescInd] + "'"
+							].join(",");
+
+							return data + ' <span class="lnk glyphicon glyphicon-globe" onclick="showLocDesc(' + args + ')"></span>';
+						}
+
+					} else {
+						var args = [
+							"this",
+							"'" + row[config.shortNameInd] + "'",
+							"'" + row[config.themeShortInd] + "'",
+							row[config.latInd],
+							row[config.lonInd]
+						].join(",");
+
+						return data + ' <span class="blue-lnk glyphicon glyphicon-globe" onclick="showMap(' + args + ')"></span>';
+					}
+				}
 			}
 		],
 		//stateSave: true,
@@ -34,7 +80,7 @@ function init(stations){
 				var column = this;
 
 				var $headerControl = $('<div class="input-group">' +
-					'<input class="suggestInput form-control" type="search" title="" />' +
+					'<input class="suggestInput form-control" type="search" title="' + column.context[0].aoColumns[ind].title + '" />' +
 					'<span class="input-group-btn">' +
 					'<button type="button" class="btn btn-default">' +
 					'<span class="glyphicon glyphicon-remove"></span>' +
@@ -61,10 +107,16 @@ function init(stations){
 					.on( 'blur', function (event) {
 						if ($(this).val() == ""){
 							$(this).val(column.context[0].aoColumns[ind].title);
+							$(this).prop("title", column.context[0].aoColumns[ind].title);
 						}
 					})
 					.autocomplete({
-						source: extractSuggestions(column.data())
+						source: extractSuggestions(column.data()),
+						select: function(a, b){
+							var val = b.item.value;
+							$(this).prop("title", val);
+							column.search( val ? val : '', true, false).draw();
+						}
 					});
 
 				$suggestInput.val(column.context[0].aoColumns[ind].title);
@@ -89,6 +141,93 @@ function init(stations){
 
 }
 
+function showMap(sender, title, theme, lat, lon){
+	var $dialog = $("#map").dialog();
+	var $titlebar = $dialog.parents('.ui-dialog').find('.ui-dialog-titlebar');
+
+	$titlebar.text("Station map - " + title);
+
+	if($titlebar.find(".float-right").length == 0) {
+		$('<button class="float-right btn btn-default btn-xs"><span class="glyphicon glyphicon-remove"></span></button>')
+			.appendTo($titlebar).click(function () {
+				$dialog.dialog("close");
+			});
+	}
+
+	$dialog.dialog("open");
+	$dialog.dialog("option", "position", { my: "left top", at: "right+50px top", of: sender});
+
+	$("#map").find(".ol-viewport").show();
+	$("#map").find("#locationDescSpan").remove();
+
+
+	if ($('#map').find('canvas').length == 0) {
+		var mapQuestMap = new ol.layer.Tile({
+			tag: "mapQuestMap",
+			visible: true,
+			source: new ol.source.MapQuest({layer: 'osm'})
+		});
+
+		var station = getPointLayer({
+			theme: theme,
+			data: [{
+				pos: [lon, lat]
+			}]
+		});
+
+		var view = new ol.View({
+			center: ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'),
+			zoom: 5
+		});
+
+		var map = new ol.Map({
+			layers: [mapQuestMap, station],
+			target: 'map',
+			view: view
+		});
+		$('#map').data('map', map);
+
+	} else {
+		var map = $('#map').data('map');
+
+		var stationLayer = map.getLayers().item(1);
+
+		stationLayer.getSource().clear();
+		stationLayer.getSource().addFeatures(getVectorFeatures({
+				theme: theme,
+				data: [{
+					pos: [lon, lat]
+				}]
+			})
+		);
+
+		map.getView().setCenter(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'));
+		map.getView().setZoom(5);
+	}
+}
+
+function showLocDesc(sender, title, txt){
+	var $dialog = $("#map").dialog();
+	var $titlebar = $dialog.parents('.ui-dialog').find('.ui-dialog-titlebar');
+
+	$titlebar.text("Station map - " + title);
+
+	if($titlebar.find(".float-right").length == 0) {
+		$('<button class="float-right btn btn-default btn-xs"><span class="glyphicon glyphicon-remove"></span></button>')
+			.appendTo($titlebar).click(function () {
+				$dialog.dialog("close");
+			});
+	}
+
+	$dialog.dialog("open");
+	$dialog.dialog("option", "position", { my: "left top", at: "right+50px top", of: sender});
+
+	$("#map").find(".ol-viewport").hide();
+	$("#map").find("#locationDescSpan").remove();
+
+	$dialog.prepend('<span id="locationDescSpan"><b>Position is not defined. Location description is:</b> ' + txt + '</span>');
+}
+
 function extractSuggestions(data){
 	var aSuggestion = [];
 	data.unique().sort().each( function ( d, j ) {
@@ -102,58 +241,64 @@ function fetchStations(){
 	var query = [
 		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'SELECT',
-		'?id',
-		'?Theme',
-		'?Country',
-		'?Short_name',
-		'?Long_name',
-		'(GROUP_CONCAT(?PI_name; separator=";") AS ?PI_names)',
-		'(GROUP_CONCAT(?PI_mails; separator=";") AS ?PI_mails)',
-		'?Site_type',
-		'?Elevation_AS',
-		'?Elevation_AG',
-		'?Station_class',
+		'(str(?s) AS ?id)',
+		'(IF(bound(?lat), str(?lat), "?") AS ?latstr)',
+		'(IF(bound(?lon), str(?lon), "?") AS ?lonstr)',
+		'(IF(bound(?locationDesc), str(?locationDesc), "?") AS ?location)',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?Theme)',
+		'(str(?country) AS ?Country)',
+		'(str(?sName) AS ?Short_name)',
+		'(str(?lName) AS ?Long_name)',
+		'(GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)',
+		'(GROUP_CONCAT(?pIMail; separator=";") AS ?PI_mails)',
+		'(str(?siteType) AS ?Site_type)',
+		'(IF(bound(?elevationAboveSea), str(?elevationAboveSea), "?") AS ?Elevation_AS)',
+		'(IF(bound(?elevationAboveGround), str(?elevationAboveGround), "?") AS ?Elevation_AG)',
+		'(str(?stationClass) AS ?Station_class)',
+		'(str(?stationKind) AS ?Station_kind)',
+		'(str(?preIcosMeasurements) AS ?Pre_ICOS_meassurement)',
+		'(IF(bound(?operationalDateEstimate), str(?operationalDateEstimate), "?") AS ?Operational_date_estimate)',
+		'(str(?isOperational) AS ?Is_operational)',
+		'(str(?fundingForConstruction) AS ?Funding_for_construction)',
 		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'WHERE {',
-		'?s a ?class ',
-		'BIND (str(?s) AS ?id)',
-		'BIND (REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?Theme)',
-		'?s cpst:hasCountry ?country ',
-		'BIND (str(?country) AS ?Country)',
-		'?s cpst:hasShortName ?sName ',
-		'BIND (str(?sName) AS ?Short_name)',
-		'?s cpst:hasLongName ?lName ',
-		'BIND (str(?lName) AS ?Long_name)',
-		'?s cpst:hasPi ?pi ',
-		'OPTIONAL{?pi cpst:hasFirstName ?piFname }',
-		'?pi cpst:hasLastName ?piLname ',
-		'BIND (IF(bound(?piFname), concat(?piFname, " ", ?piLname), ?piLname) AS ?PI_name)',
-		'?pi cpst:hasEmail ?pIMail ',
-		'BIND (str(?pIMail) AS ?PI_mails)',
-		'?s cpst:hasSiteType ?siteType ',
-		'BIND (str(?siteType) AS ?Site_type)',
-		'OPTIONAL{?s cpst:hasElevationAboveSea ?elevationAboveSea }',
-		'BIND (IF(bound(?elevationAboveSea), str(?elevationAboveSea), "?") AS ?Elevation_AS)',
-		'OPTIONAL{?s cpst:hasElevationAboveGround ?elevationAboveGround }',
-		'BIND (IF(bound(?elevationAboveGround), str(?elevationAboveGround), "?") AS ?Elevation_AG)',
-		'?s cpst:hasStationClass ?stationClass ',
-		'BIND (str(?stationClass) AS ?Station_class)',
+		'?s a ?class .',
+		'OPTIONAL{?s cpst:hasLat ?lat } .',
+		'OPTIONAL{?s cpst:hasLon ?lon } .',
+		'OPTIONAL{?s cpst:hasLocationDescription ?locationDesc } .',
+		'?s cpst:hasCountry ?country .',
+		'?s cpst:hasShortName ?sName .',
+		'?s cpst:hasLongName ?lName .',
+		'?s cpst:hasPi ?pi .',
+		'OPTIONAL{?pi cpst:hasFirstName ?piFname } .',
+		'?pi cpst:hasLastName ?piLname .',
+		'?pi cpst:hasEmail ?pIMail .',
+		'?s cpst:hasSiteType ?siteType .',
+		'OPTIONAL{?s cpst:hasElevationAboveSea ?elevationAboveSea } .',
+		'OPTIONAL{?s cpst:hasElevationAboveGround ?elevationAboveGround } .',
+		'?s cpst:hasStationClass ?stationClass .',
+		'?s cpst:hasStationKind ?stationKind .',
+		'?s cpst:hasPreIcosMeasurements ?preIcosMeasurements .',
+		'OPTIONAL{?s cpst:hasOperationalDateEstimate ?operationalDateEstimate } .',
+		'?s cpst:isAlreadyOperational ?isOperational .',
+		'?s cpst:hasFundingForConstruction ?fundingForConstruction .',
 		'}',
-		'GROUP BY ?id ?Theme ?Country ?Short_name ?Long_name ?Site_type ?Elevation_AS ?Elevation_AG ?Station_class'
+		'GROUP BY ?s ?lat ?lon ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
+		' ?elevationAboveGround ?stationClass ?stationKind ?preIcosMeasurements ?operationalDateEstimate ?isOperational ?fundingForConstruction'
 	].join("\n");
 
-	var query = encodeURIComponent(query);
-
 	return $.ajax({
-		type: "GET",
-		url: "https://meta.icos-cp.eu/sparql?query=" + query,
-		//url: "http://127.0.0.1:9094/sparql?query=" + query,
+		type: "POST",
+		data: {query: query},
+		url: "https://meta.icos-cp.eu/sparql",
+		//url: "http://127.0.0.1:9094/sparql",
 		dataType: "json"
 	});
 }
 
 function parseStationsJson(stationsJson){
-	var themeName = {"AS": "Atmosphere", "ES": "Ecosystem", "OS": "OCEAN"};
+	var themeName = {"AS": "Atmosphere", "ES": "Ecosystem", "OS": "Ocean"};
 	var countries = {"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG":"Antigua and Barbuda","AI":"Anguilla","AL":"Albania","AM":"Armenia","AO":"Angola","AQ":"Antarctica","AR":"Argentina","AS":"American Samoa","AT":"Austria","AU":"Australia","AW":"Aruba","AX":"Åland Islands","AZ":"Azerbaijan","BA":"Bosnia and Herzegovina","BB":"Barbados","BD":"Bangladesh","BE":"Belgium","BF":"Burkina Faso","BG":"Bulgaria","BH":"Bahrain","BI":"Burundi","BJ":"Benin","BL":"Saint Barthélemy","BM":"Bermuda","BN":"Brunei Darussalam","BO":"Bolivia, Plurinational State of","BQ":"Bonaire, Sint Eustatius and Saba","BR":"Brazil","BS":"Bahamas","BT":"Bhutan","BV":"Bouvet Island","BW":"Botswana","BY":"Belarus","BZ":"Belize","CA":"Canada","CC":"Cocos (Keeling) Islands","CD":"Congo, the Democratic Republic of the","CF":"Central African Republic","CG":"Congo","CH":"Switzerland","CI":"Côte d'Ivoire","CK":"Cook Islands","CL":"Chile","CM":"Cameroon","CN":"China","CO":"Colombia","CR":"Costa Rica","CU":"Cuba","CV":"Cabo Verde","CW":"Curaçao","CX":"Christmas Island","CY":"Cyprus","CZ":"Czech Republic","DE":"Germany","DJ":"Djibouti","DK":"Denmark","DM":"Dominica","DO":"Dominican Republic","DZ":"Algeria","EC":"Ecuador","EE":"Estonia","EG":"Egypt","EH":"Western Sahara","ER":"Eritrea","ES":"Spain","ET":"Ethiopia","FI":"Finland","FJ":"Fiji","FK":"Falkland Islands (Malvinas)","FM":"Micronesia, Federated States of","FO":"Faroe Islands","FR":"France","GA":"Gabon","GB":"United Kingdom of Great Britain and Northern Ireland","GD":"Grenada","GE":"Georgia","GF":"French Guiana","GG":"Guernsey","GH":"Ghana","GI":"Gibraltar","GL":"Greenland","GM":"Gambia","GN":"Guinea","GP":"Guadeloupe","GQ":"Equatorial Guinea","GR":"Greece","GS":"South Georgia and the South Sandwich Islands","GT":"Guatemala","GU":"Guam","GW":"Guinea-Bissau","GY":"Guyana","HK":"Hong Kong","HM":"Heard Island and McDonald Islands","HN":"Honduras","HR":"Croatia","HT":"Haiti","HU":"Hungary","ID":"Indonesia","IE":"Ireland","IL":"Israel","IM":"Isle of Man","IN":"India","IO":"British Indian Ocean Territory","IQ":"Iraq","IR":"Iran, Islamic Republic of","IS":"Iceland","IT":"Italy","JE":"Jersey","JM":"Jamaica","JO":"Jordan","JP":"Japan","KE":"Kenya","KG":"Kyrgyzstan","KH":"Cambodia","KI":"Kiribati","KM":"Comoros","KN":"Saint Kitts and Nevis","KP":"Korea, Democratic People's Republic of","KR":"Korea, Republic of","KW":"Kuwait","KY":"Cayman Islands","KZ":"Kazakhstan","LA":"Lao People's Democratic Republic","LB":"Lebanon","LC":"Saint Lucia","LI":"Liechtenstein","LK":"Sri Lanka","LR":"Liberia","LS":"Lesotho","LT":"Lithuania","LU":"Luxembourg","LV":"Latvia","LY":"Libya","MA":"Morocco","MC":"Monaco","MD":"Moldova, Republic of","ME":"Montenegro","MF":"Saint Martin (French part)","MG":"Madagascar","MH":"Marshall Islands","MK":"Macedonia, the former Yugoslav Republic of","ML":"Mali","MM":"Myanmar","MN":"Mongolia","MO":"Macao","MP":"Northern Mariana Islands","MQ":"Martinique","MR":"Mauritania","MS":"Montserrat","MT":"Malta","MU":"Mauritius","MV":"Maldives","MW":"Malawi","MX":"Mexico","MY":"Malaysia","MZ":"Mozambique","NA":"Namibia","NC":"New Caledonia","NE":"Niger","NF":"Norfolk Island","NG":"Nigeria","NI":"Nicaragua","NL":"Netherlands","NO":"Norway","NP":"Nepal","NR":"Nauru","NU":"Niue","NZ":"New Zealand","OM":"Oman","PA":"Panama","PE":"Peru","PF":"French Polynesia","PG":"Papua New Guinea","PH":"Philippines","PK":"Pakistan","PL":"Poland","PM":"Saint Pierre and Miquelon","PN":"Pitcairn","PR":"Puerto Rico","PS":"Palestine, State of","PT":"Portugal","PW":"Palau","PY":"Paraguay","QA":"Qatar","RE":"Réunion","RO":"Romania","RS":"Serbia","RU":"Russian Federation","RW":"Rwanda","SA":"Saudi Arabia","SB":"Solomon Islands","SC":"Seychelles","SD":"Sudan","SE":"Sweden","SG":"Singapore","SH":"Saint Helena, Ascension and Tristan da Cunha","SI":"Slovenia","SJ":"Svalbard and Jan Mayen","SK":"Slovakia","SL":"Sierra Leone","SM":"San Marino","SN":"Senegal","SO":"Somalia","SR":"Suriname","SS":"South Sudan","ST":"Sao Tome and Principe","SV":"El Salvador","SX":"Sint Maarten (Dutch part)","SY":"Syrian Arab Republic","SZ":"Swaziland","TC":"Turks and Caicos Islands","TD":"Chad","TF":"French Southern Territories","TG":"Togo","TH":"Thailand","TJ":"Tajikistan","TK":"Tokelau","TL":"Timor-Leste","TM":"Turkmenistan","TN":"Tunisia","TO":"Tonga","TR":"Turkey","TT":"Trinidad and Tobago","TV":"Tuvalu","TW":"Taiwan, Province of China","TZ":"Tanzania, United Republic of","UA":"Ukraine","UG":"Uganda","UM":"United States Minor Outlying Islands","US":"United States of America","UY":"Uruguay","UZ":"Uzbekistan","VA":"Holy See","VC":"Saint Vincent and the Grenadines","VE":"Venezuela, Bolivarian Republic of","VG":"Virgin Islands, British","VI":"Virgin Islands, U.S.","VN":"Viet Nam","VU":"Vanuatu","WF":"Wallis and Futuna","WS":"Samoa","YE":"Yemen","YT":"Mayotte","ZA":"South Africa","ZM":"Zambia","ZW":"Zimbabwe"};
 
 	var columns = stationsJson.head.vars.map(function (currVal){
@@ -181,7 +326,7 @@ function parseStationsJson(stationsJson){
 	});
 
 	columns.forEach(function(colObj){
-		colObj.title = colObj.title.replace("_", " ");
+		colObj.title = colObj.title.replace(/_/g, " ");
 	});
 
 	var stations = {};

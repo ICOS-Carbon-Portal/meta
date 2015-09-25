@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.StationLabelingDto
 import scala.util.Success
 import scala.util.Failure
+import scala.concurrent.duration._
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
@@ -32,5 +33,16 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 //			authRouting.mustBeLoggedIn{uploader =>
 //			}
 		}
+	} ~
+	(post & path("labeling" / "fileupload")){
+
+		extractRequest{ req =>
+			val strictFut = req.entity.toStrict(10 second)
+
+			onSuccess(strictFut){strict =>
+				complete(s"You uploaded ${strict.contentLength} bytes")
+			}
+		}
+		
 	}
 }

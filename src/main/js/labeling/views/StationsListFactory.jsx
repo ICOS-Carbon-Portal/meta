@@ -4,9 +4,10 @@ var themeGlyphs = {
 	"Ocean": 'tint'
 };
 
-module.exports = function(stationListStore, chooseStationAction, saveStationAction){
+module.exports = function(stationListStore, chooseStationAction, saveStationAction, fileUploadAction){
 
 	var Station = require('./StationFactory.jsx')(saveStationAction);
+	var EcoSystem = require('./EcoSystemFactory.jsx')(fileUploadAction);
 
 	return React.createClass({
 
@@ -25,6 +26,16 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
 					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
+					var stationType;
+					
+					if (station.theme === 'Ecosystem') {
+						stationType = <EcoSystem station={self.state.chosen} />;
+					} else if (station.theme === 'Ocean') {
+						stationType = <Station station={self.state.chosen} />;
+					} else {
+						stationType = <Station station={self.state.chosen} />;
+					}
+
 					return <li key={station.stationUri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
 
 						<div className={panelClasses}>
@@ -33,7 +44,7 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 								{station.longName}
 							</div>
 							<div className="panel-body" style={panelBodyStyle}>
-								{ (self.state.chosen && station.chosen) ? <Station station={self.state.chosen} /> : null }
+								{ (self.state.chosen && station.chosen) ? stationType : null }
 							</div>
 						</div>
 

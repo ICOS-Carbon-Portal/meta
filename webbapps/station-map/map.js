@@ -297,27 +297,51 @@ function fetchStations(){
 	var query = [
 		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'SELECT',
-		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?theme)',
-		'(str(?lat) AS ?latstr)',
-		'(str(?lon) AS ?lonstr) ',
-		'(concat((IF(bound(?piFname), str(?piFname), "")), " ", ?piLname) AS ?PI_name)',
+		//'(str(?s) AS ?id)',
+		'(IF(bound(?lat), str(?lat), "?") AS ?latstr)',
+		'(IF(bound(?lon), str(?lon), "?") AS ?lonstr)',
+		//'(IF(bound(?locationDesc), str(?locationDesc), "?") AS ?location)',
+		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)',
+		//'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?Theme)',
+		'(str(?country) AS ?Country)',
 		'(str(?sName) AS ?Short_name)',
 		'(str(?lName) AS ?Long_name)',
-		'(str(?country) AS ?Country)',
-		//'FROM <http://meta.icos-cp.eu/ontologies/stationtest/>',
+		'(GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)',
+		//'(GROUP_CONCAT(?pIMail; separator=";") AS ?PI_mails)',
+		'(str(?siteType) AS ?Site_type)',
+		//'(IF(bound(?elevationAboveSea), str(?elevationAboveSea), "?") AS ?Elevation_AS)',
+		//'(IF(bound(?elevationAboveGround), str(?elevationAboveGround), "?") AS ?Elevation_AG)',
+		//'(str(?stationClass) AS ?Station_class)',
+		//'(str(?stationKind) AS ?Station_kind)',
+		//'(str(?preIcosMeasurements) AS ?Pre_ICOS_meassurement)',
+		//'(IF(bound(?operationalDateEstimate), str(?operationalDateEstimate), "?") AS ?Operational_date_estimate)',
+		//'(str(?isOperational) AS ?Is_operational)',
+		//'(str(?fundingForConstruction) AS ?Funding_for_construction)',
 		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
-		'?s cpst:hasLat ?lat .',
-		'?s cpst:hasLon ?lon .',
+		'OPTIONAL{?s cpst:hasLat ?lat } .',
+		'OPTIONAL{?s cpst:hasLon ?lon } .',
+		//'OPTIONAL{?s cpst:hasLocationDescription ?locationDesc } .',
+		'?s cpst:hasCountry ?country .',
+		'?s cpst:hasShortName ?sName .',
+		'?s cpst:hasLongName ?lName .',
 		'?s cpst:hasPi ?pi .',
 		'OPTIONAL{?pi cpst:hasFirstName ?piFname } .',
 		'?pi cpst:hasLastName ?piLname .',
-		'?s cpst:hasShortName ?sName .',
-		'?s cpst:hasLongName ?lName .',
-		'?s cpst:hasCountry ?country .',
+		//'?pi cpst:hasEmail ?pIMail .',
+		'?s cpst:hasSiteType ?siteType .',
+		//'OPTIONAL{?s cpst:hasElevationAboveSea ?elevationAboveSea } .',
+		//'OPTIONAL{?s cpst:hasElevationAboveGround ?elevationAboveGround } .',
+		//'?s cpst:hasStationClass ?stationClass .',
+		//'?s cpst:hasStationKind ?stationKind .',
+		//'?s cpst:hasPreIcosMeasurements ?preIcosMeasurements .',
+		//'OPTIONAL{?s cpst:hasOperationalDateEstimate ?operationalDateEstimate } .',
+		//'?s cpst:isAlreadyOperational ?isOperational .',
+		//'?s cpst:hasFundingForConstruction ?fundingForConstruction .',
 		'}',
-		'GROUP BY ?s ?lat ?lon ?sName ?class ?lName ?country ?piFname ?piLname'
+		'GROUP BY ?s ?lat ?lon ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
+		' ?elevationAboveGround ?stationClass ?stationKind ?preIcosMeasurements ?operationalDateEstimate ?isOperational ?fundingForConstruction'
 	].join("\n");
 
 	return $.ajax({
@@ -340,48 +364,50 @@ function parseStationsJson(stationsJson){
 	});
 
 	stationsJson.results.bindings.forEach(function(binding){
-		var tmp = {};
-		var lat = null;
-		var lon = null;
-		var theme = null;
+		if(isNumeric(binding["latstr"].value) && isNumeric(binding["lonstr"].value)) {
+			var tmp = {};
+			var lat = null;
+			var lon = null;
+			var theme = null;
 
-		columns.forEach(function (colName){
-			switch(colName){
-				case "theme":
-					theme = binding[colName].value;
+			columns.forEach(function (colName) {
+				switch (colName) {
+					case "themeShort":
+						theme = binding[colName].value;
+						break;
+
+					case "latstr":
+						lat = parseFloat(binding[colName].value);
+						break;
+
+					case "lonstr":
+						lon = parseFloat(binding[colName].value);
+						break;
+
+					default:
+						if (colName == "Country") {
+							tmp[colName] = countries[binding[colName].value] + " (" + binding[colName].value + ")";
+						} else {
+							tmp[colName] = binding[colName].value;
+						}
+				}
+			});
+
+			tmp.pos = [lon, lat];
+
+			switch (theme) {
+				case "AS":
+					stationsAS.push(tmp);
 					break;
 
-				case "latstr":
-					lat = parseFloat(binding[colName].value);
+				case "ES":
+					stationsES.push(tmp);
 					break;
 
-				case "lonstr":
-					lon = parseFloat(binding[colName].value);
+				case "OS":
+					stationsOS.push(tmp);
 					break;
-
-				default:
-					if (colName == "Country") {
-						tmp[colName] = countries[binding[colName].value] + " (" + binding[colName].value + ")";
-					} else {
-						tmp[colName] = binding[colName].value;
-					}
 			}
-		});
-
-		tmp.pos = [lon, lat];
-
-		switch (theme){
-			case "AS":
-				stationsAS.push(tmp);
-				break;
-
-			case "ES":
-				stationsES.push(tmp);
-				break;
-
-			case "OS":
-				stationsOS.push(tmp);
-				break;
 		}
 	});
 
@@ -391,4 +417,8 @@ function parseStationsJson(stationsJson){
 	stations.OS = { theme: "OS", data: stationsOS };
 
 	return stations;
+}
+
+function isNumeric(n) {
+	return !isNaN(parseFloat(n)) && isFinite(n);
 }

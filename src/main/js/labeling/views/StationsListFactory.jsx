@@ -6,8 +6,8 @@ var themeGlyphs = {
 
 module.exports = function(stationListStore, chooseStationAction, saveStationAction, fileUploadAction){
 
-	var Station = require('./StationFactory.jsx')(saveStationAction);
-	var EcoSystem = require('./EcoSystemFactory.jsx')(fileUploadAction);
+	var AtmStation = require('./AtmosphereStationFactory.jsx')(saveStationAction);
+	var EcoStation = require('./EcosystemStationFactory.jsx')(fileUploadAction);
 
 	return React.createClass({
 
@@ -26,15 +26,11 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
 					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
-					var stationType;
-					
-					if (station.theme === 'Ecosystem') {
-						stationType = <EcoSystem station={self.state.chosen} />;
-					} else if (station.theme === 'Ocean') {
-						stationType = <Station station={self.state.chosen} />;
-					} else {
-						stationType = <Station station={self.state.chosen} />;
-					}
+					var stationDom = (station.theme === 'Ecosystem')
+						? <EcoStation station={self.state.chosen} />
+						: station.theme === 'Atmosphere'
+							? <AtmStation station={self.state.chosen} />
+							: <div>Station labeling support for Ocean stations is pending. Try the Atmosphere stations in the meanwhile.</div>;
 
 					return <li key={station.stationUri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
 
@@ -44,7 +40,7 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 								{station.longName}
 							</div>
 							<div className="panel-body" style={panelBodyStyle}>
-								{ (self.state.chosen && station.chosen) ? stationType : null }
+								{ (self.state.chosen && station.chosen) ? stationDom : null }
 							</div>
 						</div>
 

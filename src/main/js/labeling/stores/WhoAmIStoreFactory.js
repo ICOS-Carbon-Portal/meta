@@ -1,17 +1,24 @@
+function defaultUser() {
+	return {
+		mail: "guest@icos-cp.eu",
+		givenName: "Guest",
+		surname: "at Carbon Portal"
+	};
+}
+
 module.exports = function(Backend){
 
 	return Reflux.createStore({
 
-		getInitialState: function(){
-			return {
-				mail: "",
-				givenName: "",
-				surname: ""
-			};
-		},
+		getInitialState: defaultUser,
 
 		init: function(){
-			Backend.whoAmI().then(_.bind(this.trigger, this));
+			Backend.whoAmI()
+				.catch(errRep => defaultUser())
+				.then(
+					_.bind(this.trigger, this),
+					err => console.log(err)
+				);
 		}
 
 	});

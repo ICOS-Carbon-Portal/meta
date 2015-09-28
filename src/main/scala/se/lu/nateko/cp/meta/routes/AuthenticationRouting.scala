@@ -34,7 +34,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 	def mustBeLoggedIn(inner: UserInfo => Route): Route = user(inner) ~
 		forbid(s"Authentication cookie ${authConfig.authCookieName} was not set")
 
-	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Unauthorized, msg))
+	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
 
 	private def toMessage(err: Throwable): String = {
 		val msg = err.getMessage
@@ -53,8 +53,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 
 	def route(implicit mat: Materializer) = get{
 		path("whoami"){
-			user{uinfo => complete(uinfo)} ~
-			complete(UserInfo(givenName = "Guest", surname = "at Carbon Portal", mail = "guest@icos-cp.eu"))
+			mustBeLoggedIn{uinfo => complete(uinfo)}
 		}
 	}
 }

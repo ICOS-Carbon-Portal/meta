@@ -43,8 +43,19 @@ function postJson(url, payload){
 	});
 }
 
+function safeCopy(src, props){
+	var target = {};
+	_.each(props, prop => {
+		try{
+			target[prop] = src[prop];
+		}catch(e){}
+	});
+	return target;
+}
+
 function makeErrorReport(request){
-	var rep = _.pick(request, 'responseText', 'statusText', 'status');
+
+	var rep = safeCopy(request, ['responseText', 'statusText', 'status']);
 
 	if(rep.status == 500 && rep.responseText){
 		var responseLines = rep.responseText.split('\n');

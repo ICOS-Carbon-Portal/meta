@@ -31,12 +31,14 @@ class StationLabelingService(server: InstanceServer, provisionalInfoServer: Inst
 			factory.createStatement(stationUri, pred, factory.createLiteral(value.toString, XMLSchema.INTEGER))
 		def fromFloat(pred: URI)(value: Float): Statement =
 			factory.createStatement(stationUri, pred, factory.createLiteral(value))
+		def fromDouble(pred: URI)(value: Double): Statement =
+			factory.createStatement(stationUri, pred, factory.createLiteral(value))
 		
 		val newInfo: Seq[Statement] = Seq(
 			info.shortName.map(fromString(uri("hasShortName"))),
 			info.longName.map(fromString(uri("hasLongName"))),
-			info.lat.map(fromFloat(uri("hasLat"))),
-			info.lon.map(fromFloat(uri("hasLon"))),
+			info.lat.map(fromDouble(uri("hasLat"))),
+			info.lon.map(fromDouble(uri("hasLon"))),
 			info.aboveGround.map(fromString(uri("hasElevationAboveGround"))),
 			info.aboveSea.map(fromFloat(uri("hasElevationAboveSea"))),
 			info.stationClass.map(fromInt(uri("hasStationClass"))),

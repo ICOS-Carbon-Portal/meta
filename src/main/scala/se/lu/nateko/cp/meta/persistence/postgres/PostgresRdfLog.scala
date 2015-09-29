@@ -12,14 +12,11 @@ import se.lu.nateko.cp.meta.RdflogConfig
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
 
-	private[this] val appendPs: PreparedStatement = {
-		val appenderConn = getConnection
-		appenderConn.prepareStatement(s"INSERT INTO $logName VALUES (?, ?, ?, ?, ?, ?, ?)")
-	}
-
 	if(!isInitialized) initLog()
 
 	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit = {
+		//TODO Use a pool of connections/prepared statements for better performance
+		val appendPs = getAppendingStatement
 		appendPs.clearBatch()
 
 		for(update <- updates){
@@ -46,6 +43,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 			appendPs.addBatch()
 		}
 		appendPs.executeBatch()
+		appendPs.getConnection.close()
 	}
 
 	def updates: Iterator[RdfUpdate] = {
@@ -63,7 +61,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		new RdfUpdateResultSetIterator(rs, factory, () => {ps.close(); conn.close()})
 	}
 
-	def close(): Unit = appendPs.getConnection.close()
+	def close(): Unit = {}
 
 	def dropLog(): Unit = execute(s"DROP TABLE IF EXISTS $logName")
 
@@ -94,7 +92,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	}
 
 	def isInitialized: Boolean = {
-		val meta = appendPs.getConnection.getMetaData
+		val meta = getConnection.getMetaData
 		val tblRes = meta.getTables(null, null, logName, null)
 		val tblPresent = tblRes.next()
 		tblRes.close()
@@ -110,6 +108,11 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	}
 
 	private def getConnection = Postgres.getConnection(serv, creds).get
+
+	private def getAppendingStatement: PreparedStatement = {
+		val appenderConn = getConnection
+		appenderConn.prepareStatement(s"INSERT INTO $logName VALUES (?, ?, ?, ?, ?, ?, ?)")
+	}
 
 	private def safeDatatype(lit: Literal): String =
 		if(lit.getDatatype == null) XMLSchema.STRING.stringValue

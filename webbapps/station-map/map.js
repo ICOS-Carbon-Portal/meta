@@ -5,6 +5,8 @@ $(function () {
 function init(){
 	var stationsPromise = fetchStations();
 
+	$('input:radio[name="bgMaps"][value="topoMapESRI"]').prop('checked', true);
+
 	stationsPromise
 		.done(function(result){
 			initMap(parseStationsJson(result));
@@ -18,13 +20,13 @@ function initMap(stations) {
 	countStations(stations);
 
 	//Layer 0
-	var worlMapBing = new ol.layer.Tile({
-		tag: "worlMapBing",
-		visible: false,
-		source: new ol.source.BingMaps({
-			key: 'AnVI2I3JgdBbAH42y_nepiei9Gx_mxk0pL9gaqs59-thEV66RVxdZF45YtEtX98Y',
-			imagerySet: 'Road'
-		})
+	var topoMapESRI = new ol.layer.Tile({
+		tag: "topoMapESRI",
+		visible: true,
+		source: new ol.source.XYZ({
+			url: 'http://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
+		}),
+		opacity: 0.8
 	});
 
 	//Layer 1
@@ -47,51 +49,16 @@ function initMap(stations) {
 	});
 
 	//Layer 3
-	var oceanESRI = new ol.layer.Tile({
-		tag: "oceanESRI",
-		visible: true,
+	var worldWaterColorStamenLbl = new ol.layer.Tile({
+		tag: "worldWaterColorStamen",
+		visible: false,
 		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}'
-		})
+			url: 'http://server.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places_Alternate/MapServer/tile/{z}/{y}/{x}'
+		}),
+		opacity: 0.6
 	});
 
 	//Layer 4
-	var physicalMapESRI = new ol.layer.Tile({
-		tag: "physicalMapESRI",
-		visible: false,
-		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}'
-		})
-	});
-
-	//Layer 5
-	var shadedRelMapESRI = new ol.layer.Tile({
-		tag: "shadedRelMapESRI",
-		visible: false,
-		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'
-		})
-	});
-
-	//Layer 6
-	var grayMapESRI = new ol.layer.Tile({
-		tag: "grayMapESRI",
-		visible: false,
-		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-		})
-	});
-
-	//Layer 7
-	var bndryMapESRI = new ol.layer.Tile({
-		tag: "physicalMapESRI",
-		visible: false,
-		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/arcgis/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{z}/{y}/{x}'
-		})
-	});
-
-	//Layer 8
 	var mapQuestMap = new ol.layer.Tile({
 		tag: "mapQuestMap",
 		visible: false,
@@ -116,14 +83,10 @@ function initMap(stations) {
 
 	var map = new ol.Map({
 		layers: [
-			worlMapBing,
+			topoMapESRI,
 			worldAerialBing,
 			worldWaterColorStamen,
-			oceanESRI,
-			physicalMapESRI,
-			shadedRelMapESRI,
-			grayMapESRI,
-			bndryMapESRI,
+			worldWaterColorStamenLbl,
 			mapQuestMap,
 			OsStations,
 			EsStations,
@@ -134,6 +97,17 @@ function initMap(stations) {
 		//renderer: 'canvas'
 		//renderer: 'webgl'
 	});
+
+	//var pos = ol.proj.fromLonLat([17.479455, 60.086441]);
+	//$("body").prepend('<div id="marker" style="width:5px;height:5px;border-radius:3px;border:1px solid red;" title="Marker"></div>');
+	//
+	//var marker = new ol.Overlay({
+	//	position: pos,
+	//	positioning: 'center-center',
+	//	element: document.getElementById('marker'),
+	//	stopEvent: true
+	//});
+	//map.addOverlay(marker);
 
 	addSwitchBgMap(map);
 

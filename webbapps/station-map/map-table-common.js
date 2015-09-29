@@ -10,7 +10,7 @@ function getPointLayer(stations){
 
 function getIcon(theme){
 	var icon = {
-		anchor: [3, 20],
+		anchor: [11, 28],
 		anchorXUnits: 'pixels',
 		anchorYUnits: 'pixels',
 		opacity: 1
@@ -27,6 +27,11 @@ function getIcon(theme){
 
 		case "OS":
 			icon.src = 'icons/os.svg';
+			break;
+
+		case "test":
+			icon.src = 'https://ac.gis.lu.se/images/silk/bullet_red.png';
+			icon.anchor = [0,0];
 			break;
 	}
 

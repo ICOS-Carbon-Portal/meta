@@ -13,8 +13,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.server.Rejection
+import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.model.Uri
 
 class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
+	import AuthenticationRouting._
 
 	private[this] val authenticator = Authenticator(authConfig).get
 
@@ -26,15 +30,11 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 
 		userTry match {
 			case Success(uinfo) => inner(uinfo)
-			case Failure(err) =>
-				forbid(toMessage(err))
+			case Failure(err) => reject(InvalidCpauthTokenRejection(toMessage(err)))
 		}
-	})
+	}) ~ reject(CpauthTokenMissingRejection)
 
-	def mustBeLoggedIn(inner: UserInfo => Route): Route = user(inner) ~
-		forbid(s"Authentication cookie ${authConfig.authCookieName} was not set")
-
-	private def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
+	def mustBeLoggedIn(inner: UserInfo => Route): Route = handleRejections(authRejectionHandler)(user(inner))
 
 	private def toMessage(err: Throwable): String = {
 		val msg = err.getMessage
@@ -56,4 +56,25 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 			mustBeLoggedIn{uinfo => complete(uinfo)}
 		}
 	}
+
+	//TODO Make the cpauth login url and the name of the query param configurable
+	def ensureLogin(inner: => Route): Route = user(uinfo => inner) ~
+		extract(_.request.uri){uri =>
+			redirect(Uri("https://cpauth.icos-cp.eu/login/").withQuery(("targetUrl", uri.toString)), StatusCodes.Found)
+		}
+}
+
+object AuthenticationRouting {
+
+	def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
+
+	case class InvalidCpauthTokenRejection(message: String) extends Rejection
+	case object CpauthTokenMissingRejection extends Rejection
+
+	val authRejectionHandler = RejectionHandler.newBuilder().handle{
+			case InvalidCpauthTokenRejection(message) =>
+				forbid(message)
+			case CpauthTokenMissingRejection =>
+				forbid("Carbon Portal authentication cookie was not set")
+		}.result
 }

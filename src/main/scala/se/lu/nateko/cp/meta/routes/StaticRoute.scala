@@ -41,13 +41,8 @@ object StaticRoute {
 					}
 			}
 		} ~
-		pathPrefix("labeling"){
-			pathSingleSlash{
-				complete(fromResource("/www/labeling.html", MediaTypes.`text/html`))
-			} ~
-			path("labeling.js"){
-				complete(fromResource("/www/labeling.js", MediaTypes.`application/javascript`))
-			}
+		path("labeling" / "labeling.js"){
+			complete(fromResource("/www/labeling.js", MediaTypes.`application/javascript`))
 		}
 		
 	}

@@ -15,8 +15,9 @@ import scala.concurrent.duration._
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
 
-	def apply(service: StationLabelingService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = path("labeling" / "save"){
+	def apply(service: StationLabelingService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("labeling"){
 		post{
+			path("save") {
 				entity(as[StationLabelingDto]){uploadMeta =>
 					service.saveStationInfo(uploadMeta, null) match{
 						case Success(datasetUrl) => complete(StatusCodes.OK)
@@ -32,17 +33,28 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
 //			authRouting.mustBeLoggedIn{uploader =>
 //			}
-		}
-	} ~
-	(post & path("labeling" / "fileupload")){
+			} ~
+			path("fileupload"){
+				extractRequest{ req =>
+					val strictFut = req.entity.toStrict(10 second)
+		
+					onSuccess(strictFut){strict =>
+						complete(s"You uploaded ${strict.contentLength} bytes")
+					}
+				}
+				
+			}
 
-		extractRequest{ req =>
-			val strictFut = req.entity.toStrict(10 second)
-
-			onSuccess(strictFut){strict =>
-				complete(s"You uploaded ${strict.contentLength} bytes")
+		} ~
+		get{
+			pathSingleSlash{
+				authRouting.ensureLogin{
+					complete(StaticRoute.fromResource("/www/labeling.html", MediaTypes.`text/html`))
+				}
+			} ~
+			pathEnd{
+				redirect(Uri("/labeling/"), StatusCodes.Found)
 			}
 		}
-		
 	}
 }

@@ -203,6 +203,8 @@ function popup(map){
 	});
 	map.addOverlay(popup);
 
+	var lastFeature;
+
 // display popup on click
 	map.on("pointermove", function(evt) {
 		var feature = map.forEachFeatureAtPixel(evt.pixel,
@@ -213,33 +215,34 @@ function popup(map){
 		if (feature) {
 			var content = "";
 
+			popup.setPosition(evt.coordinate);
+
+			if($element.next('div.popover:visible').length == 0 || feature !== lastFeature) {
+				$element.popover("destroy");
+			}
+
 			for (var name in feature.q) {
 				if (name != "geometry") {
-					content += "<div><b>" + name.replace("_", " ") + ":</b> " + feature.get(name) + "</div>";
+					content += "<div><b>" + name.replace(/_/g, " ") + ":</b> " + feature.get(name) + "</div>";
 				}
 			}
 
-			popup.setPosition(evt.coordinate);
 			$element.popover({
 				placement: "top",
 				html: true,
 				title: "Station information",
 				content: content
 			});
-			$element.popover("show");
-		} else {
-			$element.popover("destroy");
-		}
-	});
 
-// change mouse cursor when over marker
-	map.on("pointermove", function(e) {
-		if (e.dragging) {
+			if($element.next('div.popover:visible').length == 0 || feature !== lastFeature) {
+				$element.popover("show");
+			}
+
+			lastFeature = feature;
+
+		} else if($element.next('div.popover:visible').length == 1) {
 			$element.popover("destroy");
-			return;
 		}
-		var pixel = map.getEventPixel(e.originalEvent);
-		var hit = map.hasFeatureAtPixel(pixel);
 	});
 }
 

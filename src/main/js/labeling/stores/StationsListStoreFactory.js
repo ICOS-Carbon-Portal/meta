@@ -26,7 +26,14 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 		chooseStationHandler: function(chosenStation) {
 			var self = this;
 
-			if(chosenStation.chosen) return;
+			if(chosenStation.chosen) {
+				this.state.chosen = undefined;
+				this.state.stations = self.state.stations.map(station =>
+					station.chosen ? _.extend({}, station, {chosen: false}) : station
+				);
+				this.publishState();
+				return;
+			}
 
 			this.state.chosen = chosenStation;
 			var chosenUri = chosenStation.stationUri;
@@ -41,7 +48,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 						return copy;
 					});
 
-					self.state.chosen = stationInfo;
+					self.state.chosen = _.extend({emails: chosenStation.emails}, stationInfo);
 					self.publishState();
 				},
 				err => console.log(err)

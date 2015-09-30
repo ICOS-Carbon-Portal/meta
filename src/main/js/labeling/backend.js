@@ -34,7 +34,7 @@ function postProcessStationsList(stations){
 		.groupBy('s')
 		.values()
 		.map(samePi => _.extend(
-				_.omit(samePi[0], 'email'), {
+				_.omit(samePi[0], 'email', 'pi'), {
 					emails: _.pluck(samePi, 'email')
 				}
 			)
@@ -47,7 +47,6 @@ function postProcessStationsList(stations){
 			)
 		)
 		.map(postProcessStationProps)
-		.sortBy(station => `${station.theme}_${station.longName}`)
 		.value();
 }
 

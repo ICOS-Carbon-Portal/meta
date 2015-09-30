@@ -14,42 +14,49 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 		mixins: [Reflux.connect(stationListStore)],
 
 		render: function(){
-			
+
 			var self = this;
 
-			return <ul>{
+			return <ul className="list-group">{
 				self.state.stations.map(function(station){
 
 					var chooseStationHandler = () => chooseStationAction(station);
 
-					var panelClasses = 'panel ' + (station.chosen ? 'panel-primary' : 'panel-default');
-					var panelBodyStyle = {display: (station.chosen ? 'block' : 'none')};
+					var stationIsChosen = (self.state.chosen && station.chosen);
+
+					var panelClasses = 'panel panel-' + (station.chosen
+						? (station.isUsersStation ? 'primary' : 'warning')
+						: (station.isUsersStation ? 'info' : 'default')
+					);
 					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
-					var stationDom = (station.theme === 'Ecosystem')
+					var stationDom = () => (station.theme === 'Ecosystem')
 						? <EcoStation station={self.state.chosen} />
 						: station.theme === 'Atmosphere'
 							? <AtmStation station={self.state.chosen} />
 							: <div>Station labeling support for Ocean stations is pending. Try the Atmosphere stations in the meanwhile.</div>;
 
-					return <li key={station.stationUri} style={{"list-style-type": "none", "padding-bottom": "10px"}}>
+					return <li key={station.stationUri} ref={stationIsChosen ? "chosenStation" : null} className="list-group-item">
 
 						<div className={panelClasses}>
 							<div className="panel-heading" onClick={chooseStationHandler}>
 								<span className={icon}/><span> </span>
 								{station.longName}
 							</div>
-							<div className="panel-body" style={panelBodyStyle}>
-								{ (self.state.chosen && station.chosen) ? stationDom : null }
-							</div>
+							{ stationIsChosen ? <div className="panel-body">{stationDom()}</div> : null }
 						</div>
 
 					</li>;
 				})
 
 			}</ul>;
-		}
+		},
 
+		componentDidUpdate: function(){
+			if(!this.state.chosen) return;
+			var elem = React.findDOMNode(this.refs.chosenStation);
+			if(elem.getBoundingClientRect().top < 0) elem.scrollIntoView();
+		}
 	});
 }
 

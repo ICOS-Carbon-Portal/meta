@@ -48,8 +48,11 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 		} ~
 		get{
 			pathSingleSlash{
+				complete(StaticRoute.fromResource("/www/labeling.html", MediaTypes.`text/html`))
+			} ~
+			path("login"){
 				authRouting.ensureLogin{
-					complete(StaticRoute.fromResource("/www/labeling.html", MediaTypes.`text/html`))
+					redirect(Uri("/labeling/"), StatusCodes.Found)
 				}
 			} ~
 			pathEnd{

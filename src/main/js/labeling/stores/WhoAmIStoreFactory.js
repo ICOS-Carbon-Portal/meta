@@ -1,8 +1,8 @@
 function defaultUser() {
 	return {
-		mail: "guest@icos-cp.eu",
+		mail: "",
 		givenName: "Guest",
-		surname: "at Carbon Portal"
+		surname: ""
 	};
 }
 

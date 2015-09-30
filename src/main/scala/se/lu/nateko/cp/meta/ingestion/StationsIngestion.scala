@@ -2,12 +2,12 @@ package se.lu.nateko.cp.meta.ingestion
 
 import java.net.{URLEncoder, URI}
 import org.openrdf.model.vocabulary.{XMLSchema, RDF}
-import org.openrdf.model.{ValueFactory, Statement}
-import org.openrdf.model.Literal
+import org.openrdf.model.{ValueFactory, Statement, Literal, Value, URI => SesameURI}
+import se.lu.nateko.cp.meta.utils.sesame._
 
 
 case class Station(
-	val classUri: URI,
+	val owlClass: String,
 	val shortName: String,
 	val longName: String,
 	val stationClass: Int,
@@ -28,27 +28,12 @@ case class Station(
 
 object StationsIngestion extends Ingester{
 
-	val prefix = "http://meta.icos-cp.eu/ontologies/stationentry/"
-
-	def uri(fragment: String)(implicit valueFactory: ValueFactory) = valueFactory.createURI(prefix + fragment)
-	def lit(litVal: String, dtype: org.openrdf.model.URI)(implicit factory: ValueFactory) = factory.createLiteral(litVal, dtype)
-	def lit(litVal: String)(implicit factory: ValueFactory) = factory.createLiteral(litVal, XMLSchema.STRING)
-	//important! not INT but INTEGER datatype for integers
-	def lit(litVal: Int)(implicit factory: ValueFactory): Literal = lit(litVal.toString, XMLSchema.INTEGER)
-	def lit(litVal: Boolean)(implicit factory: ValueFactory) = factory.createLiteral(litVal)
-	def lit(litVal: Double)(implicit factory: ValueFactory) = factory.createLiteral(litVal)
-
-	val es = new URI(prefix + "ES")
-	val as = new URI(prefix + "AS")
-	val os = new URI(prefix + "OS")
-
-	val themeToUri = Map(
-		"eco" -> es,
-		"atm" -> as,
-		"ocean" -> os,
-		"oce" -> os
+	val themeToOwlClass = Map(
+		"eco" -> "ES",
+		"atm" -> "AS",
+		"ocean" -> "OS",
+		"oce" -> "OS"
 	)
-
 
 	def getStationsTable: TextTable = {
 		val stationsStream = getClass.getResourceAsStream("/stations.csv")
@@ -84,7 +69,7 @@ object StationsIngestion extends Ingester{
 		Station(
 			shortName = row(0),
 			longName = row(1),
-			classUri = themeToUri(row(2).toLowerCase.trim),
+			owlClass = themeToOwlClass(row(2).toLowerCase),
 			country = row(3),
 			location = location,
 			elevationAS = opt(6).map(_.toFloat),
@@ -104,48 +89,48 @@ object StationsIngestion extends Ingester{
 
 
 	def stationToStatements(station: Station, factory: ValueFactory): Seq[Statement] = {
-		implicit val f = factory
-		def netToSesame(uri: URI) = factory.createURI(uri.toString)
+		val vocab = new StationsVocab(factory)
+		val classUri = vocab.getRelative(station.owlClass)
 
-		val statUri = factory.createURI(station.classUri.toString + "/" + URLEncoder.encode(station.shortName, "UTF-8"))
+		val statUri = factory.createURI(classUri.toString + "/" + URLEncoder.encode(station.shortName, "UTF-8"))
 
-		val conditionals = Seq(
+		val conditionals: Seq[(SesameURI, Value)] = Seq(
 			station.elevationAS.map{elevation =>
-				(uri("hasElevationAboveSea"), lit(elevation.toString, XMLSchema.FLOAT))
+				(vocab.hasElevationAboveSea, vocab.lit(elevation))
 			},
 			station.elevationAG.map{elevation =>
-				(uri("hasElevationAboveGround"), lit(elevation))
+				(vocab.hasElevationAboveGround, vocab.lit(elevation))
 			},
 			station.operationalDateEstimate.map{elevation =>
-				(uri("hasOperationalDateEstimate"), lit(elevation))
+				(vocab.hasOperationalDateEstimate, vocab.lit(elevation))
 			}
 		).flatten
 
-		val position = station.location match {
+		val position: Seq[(SesameURI, Value)] = station.location match {
 			case Left(Some(pos)) => Seq(
-				(uri("hasLocationDescription"), lit(pos))
+				(vocab.hasLocationDescription, vocab.lit(pos))
 			)
 			case Left(None) => Nil
 			case Right((lat, lon)) => Seq(
-				(uri("hasLat"), lit(lat)),
-				(uri("hasLon"), lit(lon))
+				(vocab.hasLat, vocab.lit(lat)),
+				(vocab.hasLon, vocab.lit(lon))
 			)
 		}
 
 		(position ++ conditionals ++ Seq(
-			(RDF.TYPE, netToSesame(station.classUri)),
-			(uri("hasShortName"), lit(station.shortName)),
-			(uri("hasLongName"), lit(station.longName)),
-			(uri("hasCountry"), lit(station.country)),
-			(uri("hasStationClass"), lit(station.stationClass)),
-			(uri("hasSiteType"), lit(station.siteType)),
-			(uri("hasStationKind"), lit(station.stationKind)),
-			(uri("hasPiName"), lit(station.piName)),
-			(uri("hasPiEmail"), lit(station.piEmail)),
-			(uri("hasPreIcosMeasurements"), lit(station.hasPreIcosMeas)),
-			(uri("isAlreadyOperational"), lit(station.isOperational)),
-			(uri("hasFundingForConstruction"), lit(station.fundingForConstruction)),
-			(uri("hasFundingForOperation"), lit(station.fundingForOperation))
+			(RDF.TYPE, classUri),
+			(vocab.hasShortName, vocab.lit(station.shortName)),
+			(vocab.hasLongName, vocab.lit(station.longName)),
+			(vocab.hasCountry, vocab.lit(station.country)),
+			(vocab.hasStationClass, vocab.lit(station.stationClass)),
+			(vocab.hasSiteType, vocab.lit(station.siteType)),
+			(vocab.hasStationKind, vocab.lit(station.stationKind)),
+			(vocab.hasPiName, vocab.lit(station.piName)),
+			(vocab.hasPiEmail, vocab.lit(station.piEmail)),
+			(vocab.hasPreIcosMeasurements, vocab.lit(station.hasPreIcosMeas)),
+			(vocab.isAlreadyOperational, vocab.lit(station.isOperational)),
+			(vocab.hasFundingForConstruction, vocab.lit(station.fundingForConstruction)),
+			(vocab.hasFundingForOperation, vocab.lit(station.fundingForOperation))
 		)).map{
 			case (pred, obj) => factory.createStatement(statUri, pred, obj)
 		}
@@ -159,3 +144,25 @@ object StationsIngestion extends Ingester{
 			})
 }
 
+class StationsVocab(val factory: ValueFactory) extends CustomVocab{
+	val baseUri = "http://meta.icos-cp.eu/ontologies/stationentry/"
+
+	val hasShortName = getRelative("hasShortName")
+	val hasLongName = getRelative("hasLongName")
+	val hasCountry = getRelative("hasCountry")
+	val hasStationClass = getRelative("hasStationClass")
+	val hasSiteType = getRelative("hasSiteType")
+	val hasStationKind = getRelative("hasStationKind")
+	val hasPiName = getRelative("hasPiName")
+	val hasPiEmail = getRelative("hasPiEmail")
+	val hasPreIcosMeasurements = getRelative("hasPreIcosMeasurements")
+	val isAlreadyOperational = getRelative("isAlreadyOperational")
+	val hasFundingForConstruction = getRelative("hasFundingForConstruction")
+	val hasFundingForOperation = getRelative("hasFundingForOperation")
+	val hasElevationAboveSea = getRelative("hasElevationAboveSea")
+	val hasElevationAboveGround = getRelative("hasElevationAboveGround")
+	val hasOperationalDateEstimate = getRelative("hasOperationalDateEstimate")
+	val hasLocationDescription = getRelative("hasLocationDescription")
+	val hasLat = getRelative("hasLat")
+	val hasLon = getRelative("hasLon")
+}

@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services
 
 import scala.util.Try
-import scala.util.control.NoStackTrace
 import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.Value
@@ -14,13 +13,6 @@ import se.lu.nateko.cp.meta.ingestion.Vocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.utils.DateTimeUtils
-
-sealed abstract class UploadException(message: String) extends RuntimeException(
-		if(message == null) "" else message
-	) with NoStackTrace
-
-final class UploadUserErrorException(message: String) extends UploadException(message)
-final class UnauthorizedUploadException(message: String) extends UploadException(message)
 
 class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 

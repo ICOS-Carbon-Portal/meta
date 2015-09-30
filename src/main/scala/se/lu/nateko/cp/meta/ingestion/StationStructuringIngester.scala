@@ -28,24 +28,14 @@ class StationStructuring(plainStations: InstanceServer){
 	case class RawPi(name: String, email: String)
 	case class Pi(uri: URI, fname: Option[String], lname: String, email: String, affiliation: Option[String])
 
-	import StationsIngestion.{uri, lit}
-
-	implicit val factory = plainStations.factory
-
-	val piNameProp = uri("hasPiName")
-	val piEmailProp = uri("hasPiEmail")
-	val piProp = uri("hasPi")
-	val fnameProp = uri("hasFirstName")
-	val lnameProp = uri("hasLastName")
-	val mailProp = uri("hasEmail")
-	val affProp = uri("hasAffiliation")
-	val piClass = uri("PI")
+	val vocab = new StationStructuringVocab(plainStations.factory)
+	import vocab._
 
 	def getStatements: Iterator[Statement] = {
 		val piStats = stationsAndPis.iterator.flatMap{
 			case (station, pis) => stationPiStatements(station, pis.iterator)
 		}
-		val blackList = Seq(piNameProp, piEmailProp)
+		val blackList = Seq(hasPiName, hasPiEmail)
 
 		val originalStats = plainStations.getStatements(None, None, None)
 			.filterNot(st => blackList.contains(st.getPredicate))
@@ -55,16 +45,16 @@ class StationStructuring(plainStations: InstanceServer){
 
 	def stationPiStatements(station: URI, pis: Iterator[Pi]) = pis.flatMap{pi =>
 		Iterator(
-			factory.createStatement(station, piProp, pi.uri),
-			factory.createStatement(pi.uri, RDF.TYPE, piClass)
+			factory.createStatement(station, hasPi, pi.uri),
+			factory.createStatement(pi.uri, RDF.TYPE, PI)
 		) ++ piStatements(pi)
 	}
 
 	def piStatements(pi: Pi): Iterator[Statement] = Iterator(
-			(fnameProp, pi.fname),
-			(lnameProp, Some(pi.lname)),
-			(mailProp, Some(pi.email)),
-			(affProp, pi.affiliation)
+			(hasFirstName, pi.fname),
+			(hasLastName, Some(pi.lname)),
+			(hasEmail, Some(pi.email)),
+			(hasAffiliation, pi.affiliation)
 		).map{
 			case (pred, obj) => obj.map(lit).map(factory.createStatement(pi.uri, pred, _))
 		}.flatten
@@ -74,8 +64,8 @@ class StationStructuring(plainStations: InstanceServer){
 		.map(st => (st.getSubject.asInstanceOf[URI], st.getObject.stringValue))
 
 	def stationsAndPis: Map[URI, Seq[Pi]] = {
-		val rawNames: Seq[(URI, String)] = stationValuePairs(piNameProp).toSeq.distinct
-		val rawEmails: Map[URI, String] = stationValuePairs(piEmailProp).toSeq.distinct.toMap
+		val rawNames: Seq[(URI, String)] = stationValuePairs(hasPiName).toSeq.distinct
+		val rawEmails: Map[URI, String] = stationValuePairs(hasPiEmail).toSeq.distinct.toMap
 
 		rawNames.map{ case (station, rawName) =>
 			val rawEmail = rawEmails(station)
@@ -102,8 +92,17 @@ class StationStructuring(plainStations: InstanceServer){
 			case Seq(lname) => (None, lname.trim)
 		}
 
-		val piUri = uri("PI/" + URLEncoder.encode(email, "UTF-8"))
-
-		Pi(piUri, fname, lname, email, affiliation)
+		Pi(piUri(email), fname, lname, email, affiliation)
 	}
+}
+
+class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(factory){
+	val hasPi = getRelative("hasPi")
+	val hasFirstName = getRelative("hasFirstName")
+	val hasLastName = getRelative("hasLastName")
+	val hasEmail = getRelative("hasEmail")
+	val hasAffiliation = getRelative("hasAffiliation")
+	val PI = getRelative("PI")
+
+	def piUri(email: String) = getRelative("PI/" + URLEncoder.encode(email, "UTF-8"))
 }

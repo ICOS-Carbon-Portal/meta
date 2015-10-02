@@ -29,7 +29,7 @@ module.exports = function(saveStationAction) {
 
 			var updater = _.bind(this.getUpdater, this);
 
-			function props(propName){
+			function getProps(propName){
 				return {
 					updater: self.getUpdater(propName),
 					value: station[propName],
@@ -37,15 +37,24 @@ module.exports = function(saveStationAction) {
 				};
 			}
 
+			var stationClassOptions = _.extend({
+				options: {
+					"1": "1",
+					"2": "2",
+					"3": "3",
+					"Ass": "Ass"
+				}
+			}, getProps('stationClass'));
+
 			return <form role="form" onSubmit={this.submissionHandler}>
-				<Inputs.Group title="Short name"><Inputs.String {...props('shortName')} /></Inputs.Group>
-				<Inputs.Group title="Long name"><Inputs.String {...props('longName')} /></Inputs.Group>
-				<Inputs.Group title="Latitude"><Inputs.Number {...props('lat')} /></Inputs.Group>
-				<Inputs.Group title="Longitude"><Inputs.Number {...props('lon')} /></Inputs.Group>
-				<Inputs.Group title="Above ground"><Inputs.String {...props('aboveGround')} /></Inputs.Group>
-				<Inputs.Group title="Above sea"><Inputs.Number {...props('aboveSea')} /></Inputs.Group>
-				<Inputs.Group title="Station class"><Inputs.Number {...props('stationClass')} /></Inputs.Group>
-				<Inputs.Group title="Planned date starting"><Inputs.String {...props('plannedDateStarting')} /></Inputs.Group>
+				<Inputs.Group title="Short name"><Inputs.String {...getProps('shortName')} /></Inputs.Group>
+				<Inputs.Group title="Long name"><Inputs.String {...getProps('longName')} /></Inputs.Group>
+				<Inputs.Group title="Latitude"><Inputs.Latitude {...getProps('lat')} /></Inputs.Group>
+				<Inputs.Group title="Longitude"><Inputs.Longitude {...getProps('lon')} /></Inputs.Group>
+				<Inputs.Group title="Above ground"><Inputs.String {...getProps('aboveGround')} /></Inputs.Group>
+				<Inputs.Group title="Above sea"><Inputs.Number {...getProps('aboveSea')} /></Inputs.Group>
+				<Inputs.Group title="Station class"><Inputs.DropDownString {...stationClassOptions} /></Inputs.Group>
+				<Inputs.Group title="Planned date starting"><Inputs.String {...getProps('plannedDateStarting')} /></Inputs.Group>
 
 				<button type="submit" className="btn btn-primary" disabled={cannotSave}>Save</button>
 			</form>;

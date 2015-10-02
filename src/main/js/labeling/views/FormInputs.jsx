@@ -12,9 +12,7 @@ function getValidatingMixin(){
 }
 
 function fromMixins(){
-	var mixins = [];
-	_.each(arguments, argument => mixins.push(argument));
-	return React.createClass({mixins: mixins});
+	return React.createClass({mixins: arguments});
 }
 
 var InputBaseMixin = {
@@ -47,20 +45,49 @@ var TextInputMixin = _.extend({
 	}
 }, InputBaseMixin);
 
-var StringInputMixin = _.extend({extractUpdatedValue: _.identity}, TextInputMixin);
+var DropDownMixin = _.extend({
+	render: function() {
+		return <select value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
+			_.mapObject(this.props.options, (value, text) =>
+				<option value={value} key={value}>{text}</option>
+			)
+		}</select>;
+	}
+}, InputBaseMixin);
 
-var NumberInputMixin = _.extend({extractUpdatedValue: s => Number.parseFloat(s)}, TextInputMixin);
+var StringInputMixin = {extractUpdatedValue: _.identity};
+var NumberInputMixin = {extractUpdatedValue: s => Number.parseFloat(s)};
 
 var IsNumberMixin = getValidatingMixin(value => {
 	return (Number.parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
 });
 
+function hasMinValue(minValue){
+	return getValidatingMixin(value => {
+		var num = Number.parseFloat(value);
+		return num >= minValue ? [] : ["Value must not be less than " + minValue];
+	});
+}
+
+function hasMaxValue(maxValue){
+	return getValidatingMixin(value => {
+		var num = Number.parseFloat(value);
+		return num <= maxValue ? [] : ["Value must not exceed " + maxValue];
+	});
+}
+
 
 module.exports = {
 
-	Number: fromMixins(NumberInputMixin, IsNumberMixin),
+	Number: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin),
 
-	String: fromMixins(StringInputMixin),
+	Latitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-90), hasMaxValue(90)),
+
+	Longitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-180), hasMaxValue(180)),
+
+	String: fromMixins(TextInputMixin, StringInputMixin),
+
+	DropDownString: fromMixins(DropDownMixin, StringInputMixin),
 
 	Group: React.createClass({
 		render: function() {

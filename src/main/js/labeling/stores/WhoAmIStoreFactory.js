@@ -1,6 +1,6 @@
 function defaultUser() {
 	return {
-		mail: "",
+		mail: "dummy@dummy.com",
 		givenName: "Guest",
 		surname: ""
 	};

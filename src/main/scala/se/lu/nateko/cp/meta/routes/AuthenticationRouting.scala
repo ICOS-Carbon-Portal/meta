@@ -59,7 +59,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 
 	//TODO Make the cpauth login url and the name of the query param configurable
 	def ensureLogin(inner: => Route): Route = user(uinfo => inner) ~
-		extract(_.request.uri){uri =>
+		extractUri{uri =>
 			redirect(Uri("https://cpauth.icos-cp.eu/login/").withQuery(("targetUrl", uri.toString)), StatusCodes.Found)
 		}
 }

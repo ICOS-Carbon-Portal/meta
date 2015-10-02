@@ -5,20 +5,25 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
 import akka.http.scaladsl.server.Route
-
 import scala.util.Success
 import scala.util.Failure
 import scala.concurrent.duration._
-
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.StationLabelingDto
 import se.lu.nateko.cp.meta.services.StationLabelingService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import akka.stream.scaladsl.Sink
+import scala.concurrent.Future
+import akka.util.ByteString
+import java.net.URI
+import se.lu.nateko.cp.meta.services.UploadedFile
+
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
 
 	def apply(service: StationLabelingService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("labeling"){
+		implicit val ctxt = mat.executionContext
 		post {
 			authRouting.mustBeLoggedIn{ uploader =>
 				path("save") {
@@ -35,11 +40,21 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
 				} ~
 				path("fileupload"){
-					extractRequest{ req =>
-						val strictFut = req.entity.toStrict(10 second)
-			
-						onSuccess(strictFut){strict =>
-							complete(s"You uploaded ${strict.contentLength} bytes")
+					entity(as[Multipart.FormData]){ fdata =>
+
+						onSuccess(fdata.toStrict(1 hour)){strictFormData =>
+							val nameToParts = strictFormData.strictParts.map(part => (part.name, part)).toMap
+							val fileType = nameToParts("fileType").entity.data.decodeString("UTF-8")
+							val stationUri = nameToParts("stationUri").entity.data.decodeString("UTF-8")
+							val filePart = nameToParts("uploadedFile")
+							val fileName = filePart.filename.get
+							val fileContent = filePart.entity.data
+
+							val doneFut = service.processFile(UploadedFile(new URI(stationUri), fileName, fileType, fileContent))
+
+							onSuccess(doneFut){
+								complete((StatusCodes.OK))
+							}
 						}
 					}
 					
@@ -48,7 +63,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 		} ~
 		get{
 			pathSingleSlash{
-				complete(StaticRoute.fromResource("/www/labeling.html", MediaTypes.`text/html`))
+				getFromResource("www/labeling.html")
 			} ~
 			path("login"){
 				authRouting.ensureLogin{
@@ -60,4 +75,5 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 			}
 		}
 	}
+
 }

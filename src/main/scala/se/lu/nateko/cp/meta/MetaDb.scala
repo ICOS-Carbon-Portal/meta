@@ -99,6 +99,7 @@ object MetaDb {
 		val repo = Loading.empty
 		val valueFactory = repo.getValueFactory
 
+		val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 		def performIngestion(ingesterId: String, serverFut: Future[InstanceServer]): Future[InstanceServer] = {
 
@@ -150,7 +151,7 @@ object MetaDb {
 				val conf = config.stationLabelingService
 				val provisional = instanceServers(conf.provisionalInfoInstanceServerId)
 				val main = instanceServers(conf.instanceServerId)
-				new StationLabelingService(main, provisional, conf)
+				new StationLabelingService(main, provisional, fileService, conf)
 			}
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, repo)
 		}

@@ -1,3 +1,21 @@
+
+var FileUploadPanel = React.createClass({
+	render: function(){
+		return <div className="panel panel-default">
+			<div className="panel-heading">
+				<h3 className="panel-title">File upload</h3>
+			</div>
+			<div className="panel-body">
+				<div className="container-fluid">
+					<div className="row">
+						{this.props.children}
+					</div>
+				</div>
+			</div>
+		</div>;
+	}
+});
+
 module.exports = function(fileUploadAction) { 
 
 	var Form = React.createClass({
@@ -11,73 +29,79 @@ module.exports = function(fileUploadAction) {
 		}
 	});
 
-	var File = React.createClass({
-		
+	var FileUploader = React.createClass({
 		render: function() {
-			var style = {paddingBottom: '20px'};
-			var fileStyle = {border: '1px #333 dotted', width: '100%'};
-			var fileInputStyle = {height: '40px'};
-			
-			return (
-				<div  style={style}>
-					<div style={fileStyle}>
-						<input type="file" name="file" style={fileInputStyle} />
+			return <form onSubmit={this.uploadHandler} ref="theForm">
+				<FileUploadPanel>
+					<div className="col-md-4">
+						<div className="input-group">
+							<span className="input-group-addon">File type</span>
+							<select className="form-control" name="fileType">
+								<option value="basic">Basic information</option>
+								<option value="satellite">Satellite image</option>
+							</select>
+						</div>
 					</div>
-				</div>
-			);
+					<div className="col-md-8">
+						<div className="input-group">
+							<input type="file" name="uploadedFile" className="form-control" placeholder="Choose file ..." />
+							<span className="input-group-btn">
+								<button className="btn btn-default" type="submit">Upload</button>
+							</span>
+						</div>
+					</div>
+				</FileUploadPanel>
+			</form>;
+		},
+
+		uploadHandler: function(event){
+			event.preventDefault();
+			var formElem = React.findDOMNode(this.refs.theForm);
+			var formData = new FormData(formElem);
+			formData.append('stationUri', this.props.stationUri);
+			fileUploadAction(formData);
 		}
 	});
-	
 
 	return React.createClass({
 		
 		getInitialState: function() {
 			return {list: []};
 		},
-		
-		componentDidMount: function() {
-			this.state.list.push(<File />);
-			this.setState({list: this.state.list});
-		},
-  		
-  		handleClick: function(event) {
- 			this.state.list.push(<File />);
-			this.setState({list: this.state.list}); 		
-  		},
-  		
+
 		render: function() {
 			var addFileStyle = {float: 'right'};
 			var submitStyle = {marginTop: '20px', float: 'left'};
-			
-			return (
-				<div>
-			  		<div style={addFileStyle}><button type="button" name="add_file" className="btn btn-primary" onClick={this.handleClick}>Add document</button></div>
-					<br /><br />
-					<Form submissionHandler={this.submissionHandler} list={this.state.list}>
-						<div style={submitStyle}><button type="submit" name="submit" className="btn btn-primary">Save</button></div>
-					</Form>
-					
-				</div>
-			);
-		},		
+
+//					<div style={addFileStyle}><button type="button" name="add_file" className="btn btn-primary" onClick={this.handleClick}>Add document</button></div>
+
+			return <div>
+				<FileUploader stationUri={this.props.station.stationUri}/>
+
+				<Form submissionHandler={this.submissionHandler} list={this.state.list}>
+					<div style={submitStyle}><button type="submit" name="submit" className="btn btn-primary">Save</button></div>
+				</Form>
+
+			</div>;
+		},
 
 		submissionHandler: function(event) {
 			event.preventDefault();
-			
+
 			//document.forms[0].elements[0].files[0]
 			
 			var files = [];
 			files.theme = this.props.station.theme;
 			files.stationUri = this.props.station.stationUri;
-			
+
 			for (var i = 0; i < event.target.elements.length; i ++) {
 				if (event.target.elements[i].files) {
 					files.push( event.target.elements[i].files[0] );
 				}
 			}
-		
+
 			fileUploadAction(files);
-			
+
 		}
 	});
 

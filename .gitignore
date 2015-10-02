@@ -5,10 +5,10 @@ node_modules
 npm-debug.log
 
 # sbt specific
-target/
-lib/
-project/project/
-project/target/
+/target/
+/lib/
+/project/project/
+/project/target/
 
 # Scala-IDE specific
 .project
@@ -31,3 +31,6 @@ src/main/resources/www/*.js
 
 #Environment-specific config
 /application.conf
+
+#Local file storage
+/fileStorage/

@@ -7,21 +7,14 @@ import akka.http.scaladsl.model._
 
 object StaticRoute {
 
-	def fromResource(path: String, mediaType: MediaType): HttpResponse = {
-		val is = getClass.getResourceAsStream(path)
-		val bytes = org.apache.commons.io.IOUtils.toByteArray(is)
-		val contType = ContentType(mediaType, HttpCharsets.`UTF-8`)
-		HttpResponse(entity = HttpEntity(contType, bytes))
-	}
-
 	def apply(config: CpmetaConfig): Route = get{
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
-				complete(fromResource("/www/metaentry.js", MediaTypes.`application/javascript`))
+				getFromResource("www/metaentry.js")
 			} ~ {
 				if(config.onto.instOntoServers.contains(ontId)){
 					pathSingleSlash{
-						complete(fromResource("/www/metaentry.html", MediaTypes.`text/html`))
+						getFromResource("www/metaentry.html")
 					}
 				} else
 					complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
@@ -37,12 +30,12 @@ object StaticRoute {
 					ontRes match{
 						case None =>
 							complete(StatusCodes.NotFound)
-						case Some(owlResource) => complete(fromResource(owlResource, MediaTypes.`text/plain`))
+						case Some(owlResource) => getFromResource(owlResource.stripPrefix("/"))
 					}
 			}
 		} ~
 		path("labeling" / "labeling.js"){
-			complete(fromResource("/www/labeling.js", MediaTypes.`application/javascript`))
+			getFromResource("www/labeling.js")
 		}
 		
 	}

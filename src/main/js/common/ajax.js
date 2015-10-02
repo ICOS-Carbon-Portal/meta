@@ -69,8 +69,23 @@ function makeErrorReport(request){
 	return rep;
 }
 
+function uploadFormData(url, formData){
+	return new Promise(function(resolve, reject){
+		var req = new XMLHttpRequest();
+		req.open('POST', url);
+		req.onreadystatechange = function(){
+			if (req.readyState === 4){
+				if(req.status === 200) resolve();
+				else reject(makeErrorReport(req));
+			}
+		};
+		req.send(formData);
+	});
+}
+
 module.exports = {
 	getJson: getJson,
-	postJson: postJson
+	postJson: postJson,
+	uploadFormData: uploadFormData
 };
 

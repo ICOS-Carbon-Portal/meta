@@ -54,6 +54,7 @@ case class CpmetaConfig(
 	stationLabelingService: LabelingServiceConfig,
 	instanceServers: Map[String, InstanceServerConfig],
 	rdfLog: RdflogConfig,
+	fileStoragePath: String,
 	onto: OntoConfig,
 	auth: PublicAuthConfig
 )
@@ -72,7 +73,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat2(LabelingServiceConfig)
-	implicit val cpmetaConfigFormat = jsonFormat7(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
 
 	def getAppConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

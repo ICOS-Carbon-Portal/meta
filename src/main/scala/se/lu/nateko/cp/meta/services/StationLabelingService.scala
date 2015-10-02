@@ -14,9 +14,18 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.ingestion.StationStructuringVocab
 import org.openrdf.model.Literal
+import akka.stream.scaladsl.Sink
+import akka.http.scaladsl.model.Multipart
+import akka.util.ByteString
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 
-class StationLabelingService(server: InstanceServer, provisionalInfoServer: InstanceServer, conf: LabelingServiceConfig) {
+class StationLabelingService(
+	server: InstanceServer,
+	provisionalInfoServer: InstanceServer,
+	fileService: FileStorageService,
+	conf: LabelingServiceConfig) {
 
 	private val factory = server.factory
 	private val vocab = new StationStructuringVocab(factory)
@@ -36,7 +45,7 @@ class StationLabelingService(server: InstanceServer, provisionalInfoServer: Inst
 			factory.createStatement(stationUri, pred, vocab.lit(value))
 		def fromDouble(pred: URI)(value: Double): Statement =
 			factory.createStatement(stationUri, pred, vocab.lit(value))
-		
+
 		val newInfo: Seq[Statement] = Seq(
 			info.shortName.map(fromString(vocab.hasShortName)),
 			info.longName.map(fromString(vocab.hasLongName)),
@@ -54,6 +63,11 @@ class StationLabelingService(server: InstanceServer, provisionalInfoServer: Inst
 		val toAdd = newInfo.diff(currentInfo)
 
 		server.applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
+	}
+
+	def processFile(fileInfo: UploadedFile)(implicit ex: ExecutionContext): Future[Unit] = Future{
+		val hash = fileService.saveAsFile(fileInfo.content)
+		println(hash)
 	}
 
 	private def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserInfo): Unit = {
@@ -78,4 +92,5 @@ class StationLabelingService(server: InstanceServer, provisionalInfoServer: Inst
 		}
 }
 
+case class UploadedFile(station: java.net.URI, fileName: String, fileType: String, content: ByteString)
 

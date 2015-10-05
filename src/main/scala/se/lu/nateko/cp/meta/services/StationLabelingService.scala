@@ -85,6 +85,15 @@ class StationLabelingService(
 		updateInfo(currentInfo, newInfo)
 	}
 
+	def deleteFile(station: java.net.URI, file: java.net.URI, uploader: UserInfo): Try[Unit] = Try{
+		val stationUri: URI = vocab.factory.createURI(station)
+
+		assertThatWriteIsAuthorized(stationUri, uploader)
+
+		val fileUri = vocab.factory.createURI(file)
+		server.remove(vocab.factory.createStatement(stationUri, vocab.hasAssociatedFile, fileUri))
+	}
+
 	private def updateInfo(currentInfo: Seq[Statement], newInfo: Seq[Statement]): Unit = {
 		val toRemove = currentInfo.diff(newInfo)
 		val toAdd = newInfo.diff(currentInfo)

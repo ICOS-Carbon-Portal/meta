@@ -4,10 +4,13 @@ var themeGlyphs = {
 	"Ocean": 'tint'
 };
 
-module.exports = function(stationListStore, chooseStationAction, saveStationAction, fileUploadAction){
+module.exports = function(stationListStore, FileManager, chooseStationAction, saveStationAction){
 
-	var AtmStation = require('./AtmosphereStationFactory.jsx')(saveStationAction);
-	var EcoStation = require('./EcosystemStationFactory.jsx')(fileUploadAction);
+	var themeToStation = {
+		Atmosphere: require('./AtmosphereStationFactory.jsx')(saveStationAction),
+		Ecosystem: require('./EcosystemStationFactory.jsx')(FileManager),
+		Ocean: require('./OceanStationFactory.jsx')(FileManager)
+	};
 
 	return React.createClass({
 
@@ -18,7 +21,7 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 			var self = this;
 
 			return <ul className="list-group">{
-				self.state.stations.map(function(station){
+				_.map(self.state.stations, function(station){
 
 					var chooseStationHandler = () => chooseStationAction(station);
 
@@ -26,15 +29,11 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 
 					var panelClasses = 'panel panel-' + (station.chosen
 						? (station.isUsersStation ? 'primary' : 'warning')
-						: (station.isUsersStation ? 'info' : 'default')
-					);
+						: (station.isUsersStation ? 'info' : 'default'));
+
 					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
-					var stationDom = () => (station.theme === 'Ecosystem')
-						? <EcoStation station={self.state.chosen} />
-						: station.theme === 'Atmosphere'
-							? <AtmStation station={self.state.chosen} />
-							: <div>Station labeling support for Ocean stations is pending. Try the Atmosphere stations in the meanwhile.</div>;
+					var Station = themeToStation[station.theme];
 
 					return <li key={station.stationUri} ref={stationIsChosen ? "chosenStation" : null} className="list-group-item">
 
@@ -43,7 +42,7 @@ module.exports = function(stationListStore, chooseStationAction, saveStationActi
 								<span className={icon}/><span> </span>
 								{station.longName}
 							</div>
-							{ stationIsChosen ? <div className="panel-body">{stationDom()}</div> : null }
+							{ stationIsChosen ? <div className="panel-body"><Station station={self.state.chosen} /></div> : null }
 						</div>
 
 					</li>;

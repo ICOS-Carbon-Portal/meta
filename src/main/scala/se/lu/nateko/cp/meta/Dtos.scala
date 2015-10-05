@@ -50,3 +50,5 @@ case class StationLabelingDto(
 	stationClass: Option[Int],
 	plannedDateStarting: Option[String]
 )
+
+case class FileDeletionDto(stationUri: URI, file: URI)

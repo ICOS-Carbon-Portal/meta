@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseStationAction, saveStationAction){
+module.exports = function(Backend, FileUploadStore, chooseStationAction, saveStationAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -11,6 +11,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 			this.state = this.getInitialState();
 			this.listenTo(chooseStationAction, this.chooseStationHandler);
 			this.listenTo(saveStationAction, this.saveStationHandler);
+			this.listenTo(FileUploadStore, this.fileUpdateHandler);
 
 			var self = this;
 
@@ -27,6 +28,8 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 			var self = this;
 
 			if(chosenStation.chosen) {
+				//the original request comes from a mouse click on the station's panel heading,
+				//and the station is already chosen. This means the station needs to be 'unchosen'
 				this.state.chosen = undefined;
 				this.state.stations = self.state.stations.map(station =>
 					station.chosen ? _.extend({}, station, {chosen: false}) : station
@@ -61,6 +64,14 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 				() => self.chooseStationHandler(stationInfo),
 				err => console.log(err)
 			);
+		},
+
+		fileUpdateHandler: function(fileInfo){
+
+			if(!this.state || !this.state.chosen) return;
+			if(this.state.chosen.stationUri !== fileInfo.stationUri) return;
+
+			this.chooseStationHandler(this.state.chosen);
 		}
 
 	});

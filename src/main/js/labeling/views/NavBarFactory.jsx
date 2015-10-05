@@ -11,7 +11,7 @@ module.exports = function(WhoAmIStore) {
 
 			return <nav className="navbar navbar-default navbar-static-top">
 				<div className="container-fluid">
-					<div className="navbar-right" style={{"margin-top": '7px', "margin-right": '3px'}}>
+					<div className="navbar-right" style={{marginTop: 7, marginRight: 3}}>
 						<p>Logged in as: {user}</p>
 						{loggedIn ? null : <p>Log in <a href="./login">here</a></p>}
 					</div>

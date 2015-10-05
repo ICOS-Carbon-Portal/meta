@@ -17,6 +17,7 @@ import scala.concurrent.Future
 import akka.util.ByteString
 import java.net.URI
 import se.lu.nateko.cp.meta.services.UploadedFile
+import se.lu.nateko.cp.meta.FileDeletionDto
 
 
 
@@ -59,6 +60,12 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 						}
 					}
 					
+				} ~
+				path("filedeletion"){
+					entity(as[FileDeletionDto]){ fileInfo =>
+						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader).get
+						complete((StatusCodes.OK))
+					}
 				}
 			}
 		} ~

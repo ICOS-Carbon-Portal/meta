@@ -50,7 +50,8 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 							val fileName = filePart.filename.get
 							val fileContent = filePart.entity.data
 
-							val doneFut = service.processFile(UploadedFile(new URI(stationUri), fileName, fileType, fileContent))
+							val fileInfo = UploadedFile(new URI(stationUri), fileName, fileType, fileContent)
+							val doneFut = service.processFile(fileInfo, uploader)
 
 							onSuccess(doneFut){
 								complete((StatusCodes.OK))

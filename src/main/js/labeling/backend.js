@@ -1,6 +1,7 @@
 var baseUri = 'http://meta.icos-cp.eu/ontologies/stationentry/';
 var lblUri = 'http://meta.icos-cp.eu/ontologies/stationlabeling/';
 var ontUri = 'http://meta.icos-cp.eu/ontologies/stationsschema/';
+var filesUri = 'http://meta.icos-cp.eu/files/';
 
 var stationPisQuery = `
 PREFIX cpst: <${baseUri}>
@@ -77,6 +78,20 @@ function getStationQuery(stationUri, graphUri){
 		}`;
 }
 
+function getFilesQuery(stationUri){
+	return `
+		PREFIX cpst: <${baseUri}>
+		PREFIX cpfls: <${filesUri}>
+		SELECT DISTINCT ?file ?fileType ?fileName
+		FROM <${lblUri}>
+		WHERE{
+			<${stationUri}> cpst:hasAssociatedFile ?file .
+			?file cpfls:hasType ?fileType .
+			?file cpfls:hasName ?fileName .
+		}
+	`;
+}
+
 function postProcessStationProps(station){
 
 	var copy = _.omit(station, 's', 'owlClass');
@@ -108,11 +123,14 @@ module.exports = function(ajax, sparql){
 			return !_.isEmpty(essentialProps);
 		}
 
-		return getStationInfoFromGraph(stationUri, lblUri).then(lblInfo =>
+		var mainInfo = getStationInfoFromGraph(stationUri, lblUri);
+		var filesInfo = sparql(getFilesQuery(stationUri));
+
+		return mainInfo.then(lblInfo =>
 			hasBeenSavedBefore(lblInfo)
 				? lblInfo
 				: getStationInfoFromGraph(stationUri, baseUri)
-		);
+		).then(stationInfo => filesInfo.then(files => _.extend({files: files}, stationInfo)));
 	}
 
 	return {

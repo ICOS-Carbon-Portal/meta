@@ -19,6 +19,7 @@ import akka.http.scaladsl.model.Multipart
 import akka.util.ByteString
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import org.openrdf.model.Value
 
 
 class StationLabelingService(
@@ -58,16 +59,37 @@ class StationLabelingService(
 		).flatten
 
 		val currentInfo = server.getStatements(stationUri)
+		updateInfo(currentInfo, newInfo)
+	}
 
+	def processFile(fileInfo: UploadedFile, uploader: UserInfo)(implicit ex: ExecutionContext): Future[Unit] = Future{
+		val station = vocab.factory.createURI(fileInfo.station)
+
+		assertThatWriteIsAuthorized(station, uploader)
+
+		val hash = fileService.saveAsFile(fileInfo.content)
+		val file = vocab.files.getUri(hash)
+
+		val newInfo = Seq(
+			(station, vocab.hasAssociatedFile, file),
+			(file, vocab.files.hasName, vocab.lit(fileInfo.fileName)),
+			(file, vocab.files.hasType, vocab.lit(fileInfo.fileType))
+		).map{
+			case (subj, pred, obj) => vocab.factory.createStatement(subj, pred, obj)
+		}
+
+		val currentInfo = (server.getStatements(Some(station), Some(vocab.hasAssociatedFile), Some(file)) ++
+			server.getStatements(Some(file), Some(vocab.files.hasName), None) ++
+			server.getStatements(Some(file), Some(vocab.files.hasType), None)).toIndexedSeq
+
+		updateInfo(currentInfo, newInfo)
+	}
+
+	private def updateInfo(currentInfo: Seq[Statement], newInfo: Seq[Statement]): Unit = {
 		val toRemove = currentInfo.diff(newInfo)
 		val toAdd = newInfo.diff(currentInfo)
 
 		server.applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
-	}
-
-	def processFile(fileInfo: UploadedFile)(implicit ex: ExecutionContext): Future[Unit] = Future{
-		val hash = fileService.saveAsFile(fileInfo.content)
-		println(hash)
 	}
 
 	private def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserInfo): Unit = {

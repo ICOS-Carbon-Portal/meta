@@ -4,10 +4,8 @@ module.exports = function(FileManager) {
 
 		render: function() {
 
-			var fileManagerProps = _.pick(this.props.station, 'files', 'fileTypes', 'stationUri');
-
 			return <div>
-				<FileManager {...fileManagerProps} />
+				<FileManager station={this.props.station} />
 				<button type="submit" name="submit" className="btn btn-primary">Save</button>
 			</div>;
 		}

@@ -13,7 +13,7 @@ module.exports = function(Backend, fileUploadAction, fileDeleteAction){
 			_.each(_.keys(fileInfo), key => formData.append(key, fileInfo[key]));
 
 			Backend.uploadFile(formData).then(
-				() => self.trigger(_.pick(fileInfo, 'stationUri')),
+				() => self.trigger(fileInfo),
 				err => console.log(err)
 			);
 		},
@@ -22,7 +22,7 @@ module.exports = function(Backend, fileUploadAction, fileDeleteAction){
 			var self = this;
 
 			Backend.deleteFile(_.pick(fileInfo, 'stationUri', 'file')).then(
-				() => self.trigger(_.pick(fileInfo, 'stationUri')),
+				() => self.trigger(fileInfo),
 				err => console.log(err)
 			);
 		}

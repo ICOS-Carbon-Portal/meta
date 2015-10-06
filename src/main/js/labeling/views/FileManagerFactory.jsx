@@ -36,45 +36,47 @@ module.exports = function(fileUploadAction, fileDeleteAction) {
 	return React.createClass({
 
 		render: function(){
-
-			if(_.isEmpty(this.props.fileTypes) && _.isEmpty(this.props.files)) return null;
-
 			var self = this;
+			var station = this.props.station;
+
+			var uploaderNeeded = (!_.isEmpty(station.fileTypes) && station.isUsersStation);
+			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
 
 			return <div className="panel panel-default">
 					<div className="panel-heading"><h3 className="panel-title">Uploaded files</h3></div>
 					<table className="table">
 						<thead><tr><th>#</th><th>File type</th><th>File name</th><th>Action</th></tr></thead>
 						<tbody>{
-							this.props.files.map((file, i) =>
+							station.files.map((file, i) =>
 								<tr>
 									<th>{i + 1}</th>
 									<td>{file.fileType}</td>
 									<td><a href={file.file} target="_blank">{file.fileName}</a></td>
 									<td>
-										<button type="button" className="btn btn-warning" onClick={self.getFileDeleteHandler(file)}>
+										<button type="button" className="btn btn-warning" onClick={self.getFileDeleteHandler(file)} disabled={!station.isUsersStation}>
 											<span className="glyphicon glyphicon-remove"/> Delete
 										</button>
 									</td>
 								</tr>
-							).concat([
-								<FileUploader fileSaver={this.fileSaveHandler} fileTypes={this.props.fileTypes}/>
-							])
+							).concat(uploaderNeeded
+								? [<FileUploader fileSaver={self.fileSaveHandler} fileTypes={station.fileTypes}/>]
+								: []
+							)
 						}</tbody>
 					</table>
 			</div>;
 		},
 
 		fileSaveHandler: function(fileInfo){
-			var fullInfo = _.extend({stationUri: this.props.stationUri}, fileInfo);
+			var fullInfo = _.extend({stationUri: this.props.station.stationUri}, fileInfo);
 			fileUploadAction(fullInfo);
 		},
 
 		getFileDeleteHandler: function(fileInfo){
-			var self = this;
+			var station = this.props.station;
 
 			return function(){
-				var fullInfo = _.extend({stationUri: self.props.stationUri}, fileInfo);
+				var fullInfo = _.extend({stationUri: station.stationUri}, fileInfo);
 				fileDeleteAction(fullInfo);
 			};
 		}

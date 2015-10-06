@@ -5,14 +5,12 @@ module.exports = function(WhoAmIStore) {
 		mixins: [Reflux.connect(WhoAmIStore,"user")],
 
 		render: function() {
-			var loggedIn = (this.state.user.givenName !== 'Guest');
-			var user = loggedIn ? this.state.user.mail : 'Guest';
-
+			var loggedIn = (this.state.user.mail !== 'dummy@dummy.none');
 
 			return <nav className="navbar navbar-default navbar-static-top">
 				<div className="container-fluid">
 					<div className="navbar-right" style={{marginTop: 7, marginRight: 3}}>
-						<p>Logged in as: {user}</p>
+						{loggedIn ? <p>Logged in as {this.state.user.mail}</p> : <p>Not logged in</p>}
 						{loggedIn ? null : <p>Log in <a href="./login">here</a></p>}
 					</div>
 					<div className="navbar-header">

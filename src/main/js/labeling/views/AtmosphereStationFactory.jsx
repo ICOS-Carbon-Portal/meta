@@ -47,14 +47,30 @@ module.exports = function(saveStationAction) {
 			}, getProps('stationClass'));
 
 			return <form role="form" onSubmit={this.submissionHandler}>
+				<Inputs.Header title="Identification"></Inputs.Header>
 				<Inputs.Group title="Short name"><Inputs.String {...getProps('shortName')} /></Inputs.Group>
 				<Inputs.Group title="Long name"><Inputs.String {...getProps('longName')} /></Inputs.Group>
+				<Inputs.Group title="Postal address"><Inputs.TextArea {...getProps('POSTAL_ADDRESS')} /></Inputs.Group>
+				<Inputs.Group title="Web site"><Inputs.URL {...getProps('WEB_SITE')} /></Inputs.Group>
+				<Inputs.Group title="Station class"><Inputs.DropDownString {...stationClassOptions} /></Inputs.Group>
+
+				<Inputs.Header title="Station Localisation"></Inputs.Header>
 				<Inputs.Group title="Latitude"><Inputs.Latitude {...getProps('lat')} /></Inputs.Group>
 				<Inputs.Group title="Longitude"><Inputs.Longitude {...getProps('lon')} /></Inputs.Group>
 				<Inputs.Group title="Above ground"><Inputs.String {...getProps('aboveGround')} /></Inputs.Group>
 				<Inputs.Group title="Above sea"><Inputs.Number {...getProps('aboveSea')} /></Inputs.Group>
-				<Inputs.Group title="Station class"><Inputs.DropDownString {...stationClassOptions} /></Inputs.Group>
-				<Inputs.Group title="Planned date starting"><Inputs.String {...getProps('plannedDateStarting')} /></Inputs.Group>
+				<Inputs.Group title="Accessibility description"><Inputs.TextArea {...getProps('ACCESSIBILITY_DESCRIPTION')} /></Inputs.Group>
+
+				<Inputs.Header title="Station Geographical Description"></Inputs.Header>
+				<Inputs.Group title="Surrounding vegetation description"><Inputs.TextArea {...getProps('SURROUNDING_VEG_DESC')} /></Inputs.Group>
+				<Inputs.Group title="Anthropogenic density (population, closest cities, roads …)"><Inputs.TextArea {...getProps('ANTHROPOGENIC_DENSITY')} /></Inputs.Group>
+
+				<Inputs.Header title="Construction/Equipment"></Inputs.Header>
+				<Inputs.Group title="Planned date starting construction/equipment"><Inputs.String {...getProps('plannedDateStarting')} /></Inputs.Group>
+				<Inputs.Group title="Planned date ending construction/equipment"><Inputs.StringRequired {...getProps('PLANNED_DATE_ENDING_CONSTR')} /></Inputs.Group>
+				<Inputs.Group title="Planned date starting measurements"><Inputs.String {...getProps('PLANNED_DATE_STARTING_MEASUREMENT')} /></Inputs.Group>
+				<Inputs.Group title="Available telecommunication means and reliability"><Inputs.TextAreaRequired {...getProps('AVAIL_TELECOM')} /></Inputs.Group>
+				<Inputs.Group title="Existing infrastructure"><Inputs.String {...getProps('EXISTING_INFRASTRUCTURE')} /></Inputs.Group>
 
 				<button type="submit" className="btn btn-primary" disabled={cannotSave}>Save</button>
 			</form>;

@@ -19,7 +19,10 @@ var InputBaseMixin = {
 
 	componentWillMount: function(){
 		this.validators = this.validators || [];
-		this.inputStyle = {width: '80%'};
+	},
+
+	componentDidMount: function(){
+		this.pushUpdate(this.props.value);
 	},
 
 	getErrors: function(value){
@@ -29,6 +32,10 @@ var InputBaseMixin = {
 
 	changeHandler: function(event){
 		var newValue = event.target.value;
+		this.pushUpdate(newValue);
+	},
+
+	pushUpdate: function(newValue){
 		var errors = this.getErrors(newValue);
 		var finalValue = _.isEmpty(errors) ? this.extractUpdatedValue(newValue) : newValue;
 		this.props.updater(errors, finalValue);
@@ -39,15 +46,27 @@ var TextInputMixin = _.extend({
 	render: function() {
 		var errors = this.getErrors(this.props.value);
 
+		var style = _.isEmpty(errors) ? {} : {backgroundColor: "pink"};
+
+		return <input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
+					  value={this.props.value} disabled={this.props.disabled} />;
+	}
+}, InputBaseMixin);
+
+var TextAreaMixin = _.extend({
+	render: function() {
+		var errors = this.getErrors(this.props.value);
+
 		var style = _.extend(_.isEmpty(errors) ? {} : {backgroundColor: "pink"}, this.inputStyle);
 
-		return <input type="text" onChange={this.changeHandler} title={errors.join('\n')} value={this.props.value} disabled={this.props.disabled} style={style} />;
+		return <textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
+					  value={this.props.value} disabled={this.props.disabled} />;
 	}
 }, InputBaseMixin);
 
 var DropDownMixin = _.extend({
 	render: function() {
-		return <select value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
+		return <select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
 			_.mapObject(this.props.options, (value, text) =>
 				<option value={value} key={value}>{text}</option>
 			)
@@ -60,6 +79,18 @@ var NumberInputMixin = {extractUpdatedValue: s => Number.parseFloat(s)};
 
 var IsNumberMixin = getValidatingMixin(value => {
 	return (Number.parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
+});
+
+var IsUrlMixin = getValidatingMixin(value => {
+	if (value == undefined || value.length == 0){
+		return [];
+	} else {
+		return /^(https?):\/\//i.test(value) ? [] : ["The URL must begin with http:// or https://"];
+	}
+});
+
+var IsNotEmpty = getValidatingMixin(value => {
+	return (value !== undefined && value.length > 0) ? [] : ["Required field. It must be filled in."];
 });
 
 function hasMinValue(minValue){
@@ -85,15 +116,38 @@ module.exports = {
 
 	Longitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-180), hasMaxValue(180)),
 
+	URL: fromMixins(TextInputMixin, StringInputMixin, IsUrlMixin),
+
 	String: fromMixins(TextInputMixin, StringInputMixin),
+
+	StringRequired: fromMixins(TextInputMixin, StringInputMixin, IsNotEmpty),
+
+	TextArea: fromMixins(TextAreaMixin, StringInputMixin),
+
+	TextAreaRequired: fromMixins(TextAreaMixin, StringInputMixin, IsNotEmpty),
 
 	DropDownString: fromMixins(DropDownMixin, StringInputMixin),
 
+	Header: React.createClass({
+		render: function() {
+			return <div className="row">
+				<div className="col-md-2">&nbsp;</div>
+				<div className="col-md-10">
+					<h4>{this.props.title}</h4>
+				</div>
+			</div>;
+		}
+	}),
+
 	Group: React.createClass({
 		render: function() {
-			return <div className="form-group">
-				<label style={{width: 150, paddingRight: 4}}>{this.props.title}</label>
-				{this.props.children}
+			return <div className="row">
+				<div className="form-group col-md-2">
+					<label>{this.props.title}</label>
+				</div>
+				<div className="form-group col-md-10">
+					{this.props.children}
+				</div>
 			</div>;
 		}
 	})

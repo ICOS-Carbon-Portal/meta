@@ -22,7 +22,7 @@ module.exports = function(typesStore, chooseTypeAction){
 							var fullName = theType.displayName;
 
 							return <li
-								className={"list-group-item list-group-item-" + (isChosen ? "info" : "default")}
+								className={"cp-lnk list-group-item list-group-item-" + (isChosen ? "info" : "default")}
 								key={theType.uri} title={fullName} onClick={clickHandler}>
 								{capped(fullName)}
 							</li>;

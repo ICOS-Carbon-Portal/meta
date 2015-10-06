@@ -18,7 +18,7 @@ Getting started with the back-end part
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure/tree/master/rdflogdb))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run sbt
-- In the sbt console, run `~re-start` for continuous local rebuilds and server restarts
+- In the sbt console, run `~re-start` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster. 
 
 Using the webapp
 ----------------

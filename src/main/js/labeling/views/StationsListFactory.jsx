@@ -38,7 +38,7 @@ module.exports = function(stationListStore, FileManager, chooseStationAction, sa
 					return <li key={station.stationUri} ref={stationIsChosen ? "chosenStation" : null} className="list-group-item">
 
 						<div className={panelClasses}>
-							<div className="panel-heading" onClick={chooseStationHandler}>
+							<div className="cp-lnk panel-heading" onClick={chooseStationHandler}>
 								<span className={icon}/><span> </span>
 								{station.longName}
 							</div>

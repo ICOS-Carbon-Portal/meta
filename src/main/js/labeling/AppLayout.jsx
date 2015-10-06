@@ -2,7 +2,8 @@ var actions = Reflux.createActions([
 	'chooseStation',
 	'saveStation',
 	'fileUpload',
-	'fileDelete'
+	'fileDelete',
+	'labelingStart'
 ]);
 
 var ajax = require('../common/ajax.js');
@@ -18,7 +19,14 @@ var StationFileAwareStore = require('./stores/StationFileAwareStoreFactory.js')(
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
 
 var FileManager = require('./views/FileManagerFactory.jsx')(actions.fileUpload, actions.fileDelete);
-var StationsList = require('./views/StationsListFactory.jsx')(StationFileAwareStore, FileManager, actions.chooseStation, actions.saveStation);
+
+var StationsList = require('./views/StationsListFactory.jsx')(
+	StationFileAwareStore,
+	FileManager,
+	actions.chooseStation,
+	actions.saveStation,
+	actions.labelingStart
+);
 
 module.exports = React.createClass({
 	render: () =>

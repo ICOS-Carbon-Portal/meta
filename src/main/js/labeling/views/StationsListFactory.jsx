@@ -4,17 +4,19 @@ var themeGlyphs = {
 	"Ocean": 'tint'
 };
 
-module.exports = function(stationListStore, FileManager, chooseStationAction, saveStationAction){
+module.exports = function(StationListStore, FileManager, chooseStationAction, saveStationAction, labelingStartAction){
+
+	var StationMixin = require('./StationMixinFactory.jsx')(FileManager, saveStationAction, labelingStartAction);
 
 	var themeToStation = {
-		Atmosphere: require('./AtmosphereStationFactory.jsx')(saveStationAction),
-		Ecosystem: require('./EcosystemStationFactory.jsx')(FileManager),
+		Atmosphere: require('./AtmosphereStationFactory.jsx')(StationMixin),
+		Ecosystem: require('./EcosystemStationFactory.jsx')(StationMixin),
 		Ocean: require('./OceanStationFactory.jsx')(FileManager)
 	};
 
 	return React.createClass({
 
-		mixins: [Reflux.connect(stationListStore)],
+		mixins: [Reflux.connect(StationListStore)],
 
 		render: function(){
 

@@ -1,3 +1,4 @@
+var StationContentPanel = require('./StationContentPanel.jsx');
 
 function getValidatingMixin(){
 	var validators = arguments;
@@ -38,7 +39,7 @@ var InputBaseMixin = {
 	pushUpdate: function(newValue){
 		var errors = this.getErrors(newValue);
 		var finalValue = _.isEmpty(errors) ? this.extractUpdatedValue(newValue) : newValue;
-		this.props.updater(errors, finalValue);
+		if(!_.isUndefined(newValue)) this.props.updater(errors, finalValue);
 	}
 };
 
@@ -68,7 +69,7 @@ var DropDownMixin = _.extend({
 	render: function() {
 		return <select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
 			_.mapObject(this.props.options, (value, text) =>
-				<option value={value} key={value}>{text}</option>
+				<option value={value} key={'option_' + value}>{text}</option>
 			)
 		}</select>;
 	}
@@ -150,7 +151,19 @@ module.exports = {
 				</div>
 			</div>;
 		}
-	})
+	}),
 
+	FormForm: React.createClass({
+		render: function(){
+			if(_.isEmpty(this.props.children)) return null;
+
+			return <StationContentPanel panelTitle="Station properties">
+				<form role="form" onSubmit={this.props.submissionHandler}>
+					{this.props.children}
+					<button type="submit" className="btn btn-primary" disabled={!this.props.canSave}>Save</button>
+				</form>
+			</StationContentPanel>;
+		}
+	})
 };
 

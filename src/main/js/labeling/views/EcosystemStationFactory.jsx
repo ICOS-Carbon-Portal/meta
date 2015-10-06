@@ -1,13 +1,11 @@
-module.exports = function(FileManager) {
+module.exports = function(StationMixin) {
 
 	return React.createClass({
 
-		render: function() {
+		mixins: [StationMixin],
 
-			return <div>
-				<FileManager station={this.props.station} />
-				<button type="submit" name="submit" className="btn btn-primary">Save</button>
-			</div>;
+		getForm: function() {
+			return null;
 		}
 
 	});

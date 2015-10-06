@@ -10,7 +10,7 @@ module.exports = React.createClass({
 			<td>
 				<select className="form-control" ref="fileType" onChange={this.updateFileInfo}>{
 					this.props.fileTypes.map(fileType =>
-						<option value={fileType.type} title={fileType.tip}>{fileType.type}</option>
+						<option key={fileType.type} value={fileType.type} title={fileType.tip}>{fileType.type}</option>
 					)
 				}</select>
 			</td>

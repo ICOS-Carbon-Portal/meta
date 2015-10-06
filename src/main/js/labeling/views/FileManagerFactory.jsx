@@ -1,35 +1,4 @@
-
-var FileUploader = React.createClass({
-	render: function() {
-
-		if(_.isEmpty(this.props.fileTypes)) return null;
-
-		return <tr>
-			<th><span className="glyphicon glyphicon-upload"/></th>
-			<td>
-				<select className="form-control" ref="fileType">{
-					this.props.fileTypes.map(fileType =>
-						<option value={fileType}>{fileType}</option>
-					)
-				}</select>
-			</td>
-			<td>
-				<input type="file" ref="uploadedFile" className="form-control" placeholder="Choose file" />
-			</td>
-			<td>
-				<button type="button" className="btn btn-info" onClick={this.uploadHandler}><span className="glyphicon glyphicon-upload"/> Upload</button>
-			</td>
-		</tr>;
-	},
-
-	uploadHandler: function(event){
-		this.props.fileSaver({
-			fileType: React.findDOMNode(this.refs.fileType).value,
-			uploadedFile: React.findDOMNode(this.refs.uploadedFile).files[0]
-		});
-	}
-});
-
+var FileUploader = require('./FileUploader.jsx');
 
 module.exports = function(fileUploadAction, fileDeleteAction) {
 

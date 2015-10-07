@@ -43,12 +43,21 @@ case class StationLabelingDto(
 	stationUri: URI,
 	shortName: Option[String],
 	longName: Option[String],
+	address: Option[String],
+	website: Option[String],
+	stationClass: Option[String],
 	lat: Option[Double],
 	lon: Option[Double],
 	aboveGround: Option[String],
 	aboveSea: Option[Float],
-	stationClass: Option[Int],
-	plannedDateStarting: Option[String]
+	accessibility: Option[String],
+	vegetation: Option[String],
+	anthropogenics: Option[String],
+	constructionStartDate: Option[String],
+	constructionEndDate: Option[String],
+	plannedDateOperational: Option[String],
+	telecom: Option[String],
+	infrastructure: Option[String]
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

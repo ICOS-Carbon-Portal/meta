@@ -29,17 +29,17 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 	return Reflux.createStore({
 
 		getInitialState: function(){
-			return {
+			return this.state;
+		},
+
+		init: function(){
+			this.state = {
 				chosen: {
 					files: [],
 					fileTypes: [],
 					isUsersStation: false
 				}
 			};
-		},
-
-		init: function(){
-			this.state = this.getInitialState();
 
 			this.listenTo(ChosenStationStore, this.chosenStationHandler);  
 			this.listenTo(fileUploadAction, this.fileUploadHandler);  

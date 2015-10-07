@@ -27,12 +27,15 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 			);
 		},
 
-		saveStationHandler: function(stationInfo){
+		saveStationHandler: function(station){
 			var self = this;
+
+			var stationInfo = _.omit(station, 'files', 'fileExpectations', 'fileTypes', 'emails', 'chosen', 'isUsersStation');
+
 			Backend.saveStationInfo(stationInfo).then(
 				() => {
 					if(self.chosen.stationUri === stationInfo.stationUri){
-						self.chooseStationHandler(stationInfo, true);
+						self.chooseStationHandler(station, true);
 					}
 				},
 				err => console.log(err)

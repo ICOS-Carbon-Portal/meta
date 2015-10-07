@@ -53,29 +53,38 @@ function postProcessStationsList(stations){
 
 function getStationQuery(stationUri, graphUri){
 	return `
-		PREFIX cpst: <${baseUri}>
-		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-		SELECT DISTINCT *
-		FROM NAMED <${lblUri}>
-		FROM NAMED <${baseUri}>
-		FROM <${ontUri}>
-		WHERE{
-			BIND (<${stationUri}> AS ?s) .
-			?owlClass
-				rdfs:subClassOf cpst:Station ;
-				rdfs:label ?thematicName .
-			GRAPH <${baseUri}> {?s a ?owlClass}
-			GRAPH <${graphUri}> {
-				OPTIONAL{?s cpst:hasShortName ?shortName}
-				OPTIONAL{?s cpst:hasLongName ?longName}
-				OPTIONAL{?s cpst:hasLat ?lat}
-				OPTIONAL{?s cpst:hasLon ?lon}
-				OPTIONAL{?s cpst:hasElevationAboveGround ?aboveGround}
-				OPTIONAL{?s cpst:hasElevationAboveSea ?aboveSea}
-				OPTIONAL{?s cpst:hasStationClass ?stationClass}
-				OPTIONAL{?s cpst:hasOperationalDateEstimate ?plannedDateStarting}
-			}
-		}`;
+PREFIX cpst: <${baseUri}>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT *
+FROM NAMED <${lblUri}>
+FROM NAMED <${baseUri}>
+FROM <${ontUri}>
+WHERE{
+	BIND (<${stationUri}> AS ?s) .
+	?owlClass
+		rdfs:subClassOf cpst:Station ;
+		rdfs:label ?thematicName .
+	GRAPH <${baseUri}> {?s a ?owlClass}
+	GRAPH <${graphUri}> {
+		OPTIONAL{?s cpst:hasShortName ?shortName}
+		OPTIONAL{?s cpst:hasLongName ?longName}
+		OPTIONAL{?s cpst:hasAddress ?address}
+		OPTIONAL{?s cpst:hasWebsite ?website}
+		OPTIONAL{?s cpst:hasStationClass ?stationClass}
+		OPTIONAL{?s cpst:hasLat ?lat}
+		OPTIONAL{?s cpst:hasLon ?lon}
+		OPTIONAL{?s cpst:hasElevationAboveGround ?aboveGround}
+		OPTIONAL{?s cpst:hasElevationAboveSea ?aboveSea}
+		OPTIONAL{?s cpst:hasAccessibility ?accessibility}
+		OPTIONAL{?s cpst:hasVegetation ?vegetation}
+		OPTIONAL{?s cpst:hasAnthropogenics ?anthropogenics}
+		OPTIONAL{?s cpst:hasConstructionStartDate ?constructionStartDate}
+		OPTIONAL{?s cpst:hasConstructionEndDate ?constructionEndDate}
+		OPTIONAL{?s cpst:hasOperationalDateEstimate ?plannedDateOperational}
+		OPTIONAL{?s cpst:hasTelecom ?telecom}
+		OPTIONAL{?s cpst:hasExistingInfrastructure ?infrastructure}
+	}
+}`;
 }
 
 function getFilesQuery(stationUri){

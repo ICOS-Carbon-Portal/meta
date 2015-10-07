@@ -39,6 +39,7 @@ module.exports = React.createClass({
 
 	uploadHandler: function(){
 		this.props.fileSaver(this.state);
+		React.findDOMNode(this.refs.uploadedFile).value = null;
 	}
 });
 

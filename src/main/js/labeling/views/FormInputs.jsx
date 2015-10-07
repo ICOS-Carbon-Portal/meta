@@ -83,7 +83,7 @@ var StringInputMixin = {extractUpdatedValue: _.identity};
 var NumberInputMixin = {extractUpdatedValue: s => Number.parseFloat(s)};
 
 var IsNumberMixin = getValidatingMixin(value => {
-	return (Number.parseFloat(value).toString() === (value || "").toString()) ? [] : ["Not a valid number!"];
+	return (Number.parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
 });
 
 var IsUrlMixin = getValidatingMixin(value => {

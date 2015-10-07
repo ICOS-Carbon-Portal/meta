@@ -50,15 +50,27 @@ class StationLabelingService(
 		val newInfo: Seq[Statement] = Seq(
 			info.shortName.map(fromString(vocab.hasShortName)),
 			info.longName.map(fromString(vocab.hasLongName)),
+			info.address.map(fromString(vocab.hasAddress)),
+			info.website.map(fromString(vocab.hasWebsite)),
+			info.stationClass.map(fromString(vocab.hasStationClass)),
 			info.lat.map(fromDouble(vocab.hasLat)),
 			info.lon.map(fromDouble(vocab.hasLon)),
 			info.aboveGround.map(fromString(vocab.hasElevationAboveGround)),
 			info.aboveSea.map(fromFloat(vocab.hasElevationAboveSea)),
-			info.stationClass.map(fromInt(vocab.hasStationClass)),
-			info.plannedDateStarting.map(fromString(vocab.hasOperationalDateEstimate))
+			info.accessibility.map(fromString(vocab.hasAccessibility)),
+			info.vegetation.map(fromString(vocab.hasVegetation)),
+			info.anthropogenics.map(fromString(vocab.hasAnthropogenics)),
+			info.constructionStartDate.map(fromString(vocab.hasConstructionStartDate)),
+			info.constructionEndDate.map(fromString(vocab.hasConstructionEndDate)),
+			info.plannedDateOperational.map(fromString(vocab.hasOperationalDateEstimate)),
+			info.telecom.map(fromString(vocab.hasTelecom)),
+			info.infrastructure.map(fromString(vocab.hasExistingInfrastructure))
 		).flatten
 
-		val currentInfo = server.getStatements(stationUri)
+		val currentInfo = server.getStatements(stationUri).filter{
+			case SesameStatement(_, pred: URI, _) if pred == vocab.hasAssociatedFile => false
+			case _ => true
+		}
 		updateInfo(currentInfo, newInfo)
 	}
 

@@ -105,6 +105,16 @@ class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(facto
 	val hasAssociatedFile = getRelative("hasAssociatedFile")
 	val PI = getRelative("PI")
 
+	val hasAddress= getRelative("hasAddress")
+	val hasWebsite= getRelative("hasWebsite")
+	val hasAccessibility= getRelative("hasAccessibility")
+	val hasVegetation= getRelative("hasVegetation")
+	val hasAnthropogenics= getRelative("hasAnthropogenics")
+	val hasConstructionStartDate= getRelative("hasConstructionStartDate")
+	val hasConstructionEndDate= getRelative("hasConstructionEndDate")
+	val hasTelecom= getRelative("hasTelecom")
+	val hasExistingInfrastructure= getRelative("hasExistingInfrastructure")
+
 	val files = new FilesVocab(factory)
 
 	def piUri(email: String) = getRelative("PI/" + URLEncoder.encode(email, "UTF-8"))

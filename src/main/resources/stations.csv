@@ -2,8 +2,8 @@ Station Short Name/acronym (if available)	Station long Name	"Station Type
 eco or atm"	Country	Decimal Lat,	Decimal Lon,	Meters a.s.l.	Meters above ground	Site ICOS type Level 1 or Level 2	Site type	Class: eco, TT, ground, aircraft; ocean	Principal Investigator Name	Principal Investigator email	already existing pre-ICOS GHG measurements?	Estimated date of which the site will be ICOS operational (mm/yyyy)	If already operational, indicate by an X	"Funding for construction
 *"	"Funding for operation
 *"
-BE-Bra	De Inslag, Brasschaat	eco	BE	51,307617	4,519844	20	25	1	Forest coniferous	eco	Ivan Janssens	Ivan.Janssens@uantwerpen.be	YES	mid-2015	X	received for 2015	received for 2015
-BE-Lcr	POPFULL site, Lochristi	eco	BE	51,112184	3,850433	6	5	1	Short Rotation Coppice Culture	eco	Reinhart Ceulemans	Reinhart.Ceulemans@uantwerpen.be	YES	mid-2014	X	received for 2015	received for 2015
+BE-Bra	Brasschaat De Inslag	eco	BE	51,307617	4,519844	20	25	1	Forest coniferous	eco	Ivan Janssens	Ivan.Janssens@uantwerpen.be	YES	mid-2015	X	received for 2015	received for 2015
+BE-Lcr	Lochristi	eco	BE	51,112184	3,850433	6	5	1	Short Rotation Coppice Culture	eco	Reinhart Ceulemans	Reinhart.Ceulemans@uantwerpen.be	YES	mid-2014	X	received for 2015	received for 2015
 BE-Maa	Nationaal Park Hoge Kempen, Maasmechelen	eco	BE	50,980183	5,631478	80	5	2	Heathland	eco	Marilyn Roland	Marilyn.Roland@uantwerpen.be	NO	mid-2015		received for 2015	received for 2015
 BE-Vie	Vielsalm	eco	BE	50,305068	5,998052	490	52	2	Mixed Forest	eco	Caroline Vincke	Caroline.Vincke@uclouvain.be	YES	2015	X	received for 2013 - 2020	received for 2013 - 2020
 BE-Lon	Lonzée	eco	BE	50,551586	4,7461305	166	3	2	Agricultural	eco	Christine Moureaux	Christine.Moureaux@ulg.ac.be	YES	2015	X	received for 2013 - 2020	received for 2013 - 2020
@@ -12,37 +12,37 @@ Simon Stevin	Research Vessel Simon Stevin	ocean	BE	Belgian EEZ, North Sea	Belgia
 Lotto buoy	North Sea Data and Monitoring time series station	ocean	BE	51,579167	2,993167	0	0	1	Buoy	ocean	Thanos Gkritzalis	thanosg@vliz.be	NO	2015		received for 2015	received for 2015
 SOO Chile	Ship of Opportunity in Chile	ocean	BE	Chilean coast	Chilean coast	0	0	1	SOO	ocean	Thanos Gkritzalis	thanosg@vliz.be	NO	2015		received for 2015	received for 2015
 ATM-HYY	SMEAR II-ICOS Hyytiälä	atm	FI	61.84741	24.29477	181	127	1	Tall tower	TT	Janne Levula	janne.levula@helsinki.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
-ATM-PAL	Pallas ICOS node of Pallas-Sodankylä GAW station	atm	FI	67.97330	24.11570	565	5	1	Mountain	ground	Juha Hatakka	juha.hatakka@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
+ATM-PAL	Pallas ICOS node of Pallas-Sodankylä GAW station	atm	FI	67.9733	24.1157	565	5	1	Mountain	ground	Juha Hatakka	juha.hatakka@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ATM-PUI	Puijo-Koli ICOS Eastern Finland	atm	FI	62.90944	27.65528	230	176	2	Tall tower	TT	Ari Leskinen	ari.leskinen@fmi.fi	NO		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ATM-Utö	ICOS Utö - Baltic sea	atm	FI	59.78056	21.37306	8	60	2	non-forested island on sea	ground	Lauri Laakso	lauri.laakso@fmi.fi	NO		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
-ECO-HYY	SMEAR II-ICOS Hyytiälä	eco	FI	61.84741	24.29477	181	33	1	boreal pine forest (Scots pine)	eco	Ivan Mammarella	ivan.mammarella@helsinki.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
-ECO-SOD	ICOS-Sodankylä	eco	FI	67.36180	26.63817	179	23	1	Northern boreal pine forest	eco	Mika Aurela	mika.aurela@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
+ECO-HYY	SMEAR II-ICOS Hyytiälä	eco	FI	61.84741	24.29477	181	33	1	boreal pine forest (Scots pine)	eco	Ivan Mammarella	ivan.mammarella@helsinki.fi	YES		x	Received  for 2014-2018	Received  for 2014-2018
+ECO-SOD	ICOS-Sodankylä	eco	FI	67.3618	26.63817	179	23	1	Northern boreal pine forest	eco	Mika Aurela	mika.aurela@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-Sii	SMEAR II-ICOS Siikaneva	eco	FI	61.83269	24.19277	162	2	2	Southern boreal fen	eco	Eeva-Stiina Tuittila	eeva-stiina.tuittila@uef.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-SMEAR I	SMEAR I-ICOS Värriö	eco	FI	67.75489	29.60996	400	15	3	Subarctic pine forest	eco	Pasi Kolari	pasi.kolari@helsinki.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-SMEAR III	SMEAR III-ICOS Kumpula, Helsinki	eco	FI	60.20289	24.96106	26	31	3	Urban environment	eco	Leena Järvi	leena.jarvi@helsinki.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-Let	ICOS Lettosuo	eco	FI	60.64183	23.95972	111	26	3	Forestry-drained peatland	eco	Maiju Linkosalmi	maiju.linkosalmi@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
-ECO-Lom	ICOS Lompolojänkkä	eco	FI	69.99725	24.20910	269	3	2	Northern boreal fen	eco	Annalea Lohila	annalea.lohila@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
+ECO-Lom	ICOS Lompolojänkkä	eco	FI	69.99725	24.2091	269	3	2	Northern boreal fen	eco	Annalea Lohila	annalea.lohila@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-Kaa	ICOS Kaamanen	eco	FI	69.14058	27.26982	155	5	3	Subarctic fen	eco	Mika Aurela	mika.aurela@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-Ken	ICOS Kenttärova	eco	FI	67.98728	24.24298	347	23	3	Northern spruce forest	eco	Tuomas Laurila	tuomas.laurila@fmi.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
 ECO-Kui	ICOS Kuivajärvi	eco	FI	61.84667	24.28028	141		3	Boreal lake ecosystem	eco	Anne Ojala	anne.ojala@helsinki.fi	YES		x	Received  for 2010-2013	Provisional financial plan in discussion with funding ministries and science funding agency; feedback expected during spring 2013
-FR-GRI	Grignon	eco	FR	48.844150	1.952200	125	3	3	cropland	eco	Loubet	benjamin.loubet@grignon.inra.fr	YES	2015	x	x	x
-FR-AUR	Auradé	eco	FR	43.549650	1.106150	245	2.8	2	cropland	eco	Ceschia	eric.ceschia@cesbio.cnes.fr	YES	2015	x	x	x
-FR-LAM	Lamasquère	eco	FR	43.496480	1.237850	180	3.5	1	cropland	eco	Ceschia	eric.ceschia@cesbio.cnes.fr	YES	2014	x	x	x
-FR-HES	Hesse 1	eco	FR	48.674160	7.064617	300	23	1	dbf	eco	Longdoz	bernard.longdoz@nancy.inra.fr	YES	2014	x	x	x
+FR-GRI	Grignon	eco	FR	48.84415	1.9522	125	3	3	cropland	eco	Loubet	benjamin.loubet@grignon.inra.fr	YES	2015	x	x	x
+FR-AUR	Auradé	eco	FR	43.54965	1.10615	245	2.8	2	cropland	eco	Ceschia	eric.ceschia@cesbio.cnes.fr	YES	2015	x	x	x
+FR-LAM	Lamasquère	eco	FR	43.49648	1.23785	180	3.5	1	cropland	eco	Ceschia	eric.ceschia@cesbio.cnes.fr	YES	2014	x	x	x
+FR-HES	Hesse 1	eco	FR	48.67416	7.064617	300	23	1	dbf	eco	Longdoz	bernard.longdoz@nancy.inra.fr	YES	2014	x	x	x
 FR-FON	Barbeau	eco	FR	48.476339	2.780136	92	37	1	dbf	eco	Dufrêne	eric.dufrene@ese.u-psud.fr	YES	2014	x	x	x
-FR-PUE	Puéchabon	eco	FR	43.741390	3.595833	270	10	2	evergreen oak	eco	Joffre	Richard.joffre@cefe.cnrs.fr	YES	2014	x	x	x
-FR-BLA	Fontblanche	eco	FR	43.240300	5.678600	420	16	3	coniferous+evergreen oak	eco	Simioni	guillaume.simioni@avignon.inra.fr	YES	2014	x	x	x
+FR-PUE	Puéchabon	eco	FR	43.74139	3.595833	270	10	2	evergreen oak	eco	Joffre	Richard.joffre@cefe.cnrs.fr	YES	2014	x	x	x
+FR-BLA	Fontblanche	eco	FR	43.2403	5.6786	420	16	3	coniferous+evergreen oak	eco	Simioni	guillaume.simioni@avignon.inra.fr	YES	2014	x	x	x
 FR-LUS	Lusignan	eco	FR	46.414167	0.120556	152	5	2	grassland	eco	Chabbi	Abad.chabbi@lusignan.inra.fr	YES	2014	x	x	x
 FR-LQ1	Laqueuille	eco	FR	45.643716	2.734865	1040	2	1	grassland	eco	Klumpp	Katja.klumpp@clermont.inra.fr	YES	2014	x	x	x
-FR-MON	Mons	eco	FR	49.873600	3.031800	83	5	3	cropland	eco	Mary	Bruno.mary@laon.inra.fr	NO	2013	x	x	x
+FR-MON	Mons	eco	FR	49.8736	3.0318	83	5	3	cropland	eco	Mary	Bruno.mary@laon.inra.fr	NO	2013	x	x	x
 FR-GUY	Guyaflux	eco	FR	5.281667	-52.912222	40	55	3	rainforest	eco	Bonal	Damien.bonal@nancy.inra.fr	YES	2015	x	x	x
-FR-BIL	Salles	eco	FR	44.493650	-0.955920	38.50	15.6	2	coniferous	eco	Loustau	denis.loustau@bordeaux.inra.fr	YES	2015	x	x	x
+FR-BIL	Salles	eco	FR	44.49365	-0.95592	38.5	15.6	2	coniferous	eco	Loustau	denis.loustau@bordeaux.inra.fr	YES	2015	x	x	x
 FR-OSN	Osnes	eco	FR	48.508333	5.213333	355	5	3	Grassland	eco	Conil	Sebastien.Conil@andra.fr	NO	2015	x	x	x
 FR-MRS	Montiers	eco	FR	48.537325	5.311844	384	25	3	dbf	eco	Conil	Sebastien.Conil@andra.fr	NO	2014	x	x	x
 SAC	Saclay	atm	FR	48.722722	2.142333	160	15/60/100	1	tall tower	atm	Michel Ramonet	Michel.Ramonet@lsce.ipsl.fr	NO		x	received	received partly
 TRN	Trainou	atm	FR	47.9647	2.1125	131	50/100/180	2	tall tower	atm	Michel Ramonet	Michel.Ramonet@lsce.ipsl.fr	YES		x	received	received partly
 PUY	Puy de Dome	atm	FR	45.7719	2.9658	1465	10	2	mountain	atm	Michel Ramonet	Michel.Ramonet@lsce.ipsl.fr	YES		x	received	received partly
-OXK	Ochsenkopf	atm	DE	50.030000	11.810000	1005	190	1	tall tower	TT	Jošt Lavrič, MPI-BGC, Jena	jlavric@bgc-jena.mpg.de	YES	04/2015	(05.12.2014)	Received for 2 years (2014-2015)	Received
+OXK	Ochsenkopf	atm	DE	50.03	11.81	1005	190	1	tall tower	TT	Jošt Lavrič, MPI-BGC, Jena	jlavric@bgc-jena.mpg.de	YES	04/2015	(05.12.2014)	Received for 2 years (2014-2015)	Received
 HPB	Hohenpeißenberg	atm	DE	47.801236	11.009931	934	131	1	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	YES	1.1.2015	X (23.01.2014)	Received for 2 years (2014-2015)	Received
 LIN	Lindenberg	atm	DE	52.208869	14.121553	93	99	1	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	08/2015		Received for 2 years (2014-2015)	Received
 GAT	Gartow	atm	DE	53.065514	11.442733	66	344	1	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2016		Received for 2 years (2014-2015)	Received
@@ -50,62 +50,62 @@ N1	NN1	atm	DE					1	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg
 N2	NN2	atm	DE					1	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2017		Received for purchase of equipment	Received
 N3	NN3	atm	DE					2	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2017		Received for purchase of equipment	Received
 N4	NN4	atm	DE					2	tall tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2017		Received for purchase of equipment	Received
-HEL	Helgoland	atm	DE	54.182500	7.885278	4	10	2	(tall) tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2016		Received for purchase of equipment	Received
+HEL	Helgoland	atm	DE	54.1825	7.885278	4	10	2	(tall) tower	TT	Christian Plaß-Dülmer, DWD, Hohenpeißenberg	christian.plass-duelmer@dwd.de	NO	01/2016		Received for purchase of equipment	Received
 DE-Geb	Gebesee	eco	DE	51.099714	10.914629	158	4	1	cropland	eco	Mathias Herbst, TI-AK, Braunschweig	mathias.herbst@ti.bund.de	YES	01/2016		Received for 2 years (2014-2015)	Received
 DE-Tha	Tharandt	eco	DE	50.963603	13.567013	385	42	1	forest coniferous	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received partly
-DE-Fen	Fendt	eco	DE	47.832870	11.060680	599	3	1	grassland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
+DE-Fen	Fendt	eco	DE	47.83287	11.06068	599	3	1	grassland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
 DE-HoH	Hohes Holz	eco	DE	52.085306	11.222233	239	49	1	forest deciduous	eco	Corinna Rebmann, UFZ Leipzig	corinna.rebmann@ufz.de	NO	1.1.2015	X	Received for 2 years (2014-2015)	Received
 DE-RuS	Selhausen	eco	DE	50.865961	6.450158	103	5	1	cropland	eco	Marius Schmidt, FZ Jülich	ma.schmidt@fz-juelich.de	YES	01/2016		Received for 2 years (2014-2015)	Received
 DE-Hai	Hainich	eco	DE	51.007941	10.452089	438	45	3	forest deciduous	eco	Alexander Knohl, University of Göttingen	aknohl@uni-goettingen.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received partly
-DE-Msr	Mooseurach	eco	DE	47.809270	11.457910	598	45	3	forest coniferous (wetland)	eco	Matthias Drösler, HSWT, Freising	matthias.droesler@hswt.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received partly
+DE-Msr	Mooseurach	eco	DE	47.80927	11.45791	598	45	3	forest coniferous (wetland)	eco	Matthias Drösler, HSWT, Freising	matthias.droesler@hswt.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received partly
 DE-RuW	Wüstebach	eco	DE	50.504365	6.331657	621	36	3	forest coniferous	eco	Clemens Drüe, University of Trier	druee@uni-trier.de	YES	01/2016		applied for additional funds; feedback from funding agency expected for mid 2015	Received
 DE-RuR	Rollesbroich	eco	DE	50.621514	6.307931	516	6	3	grassland	eco	Marius Schmidt, FZ Jülich	ma.schmidt@fz-juelich.de	YES	01/2016		applied for additional funds; feedback from funding agency expected for mid 2015	Received
 DE-GsB	Großes Bruch	eco	DE	52.030067	11.103386	78	6	3	grassland	eco	Corinna Rebmann, UFZ Leipzig	corinna.rebmann@ufz.de	NO	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received
 DE-Kli	Klingenberg	eco	DE	50.918042	13.512912	478	3.5	3	cropland	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received partly
-DE-Gri	Grillenburg	eco	DE	50.949234	13.512460	385	3	3	grassland	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received partly
-DE-Spw	Spreewald	eco	DE	51.892028	14.033750	51	39	3	forest deciduous (wetland)	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received partly
-DE-SfN	Schechenfilz	eco	DE	47.806390	11.327500	590	6	3	wetland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
-DE-Gwg	Graswang	eco	DE	47.570850	11.032630	864	3	3	grassland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
+DE-Gri	Grillenburg	eco	DE	50.949234	13.51246	385	3	3	grassland	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received partly
+DE-Spw	Spreewald	eco	DE	51.892028	14.03375	51	39	3	forest deciduous (wetland)	eco	Christian Bernhofer,TU Dresden	christian.bernhofer@tu-dresden.de	YES	1.1.2015	X	applied for additional funds; feedback from funding agency expected for mid 2015	Received partly
+DE-SfN	Schechenfilz	eco	DE	47.80639	11.3275	590	6	3	wetland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
+DE-Gwg	Graswang	eco	DE	47.57085	11.03263	864	3	3	grassland	eco	HaPe Schmid,KIT-IFU, Garmisch	hape.schmid@kit.edu	YES	01/2016		Received for 2 years (2014-2015)	Received
 PS-VOS	Polarstern Voluntary Observing Ship	ocean	DE	Atlantic Ocean, Arctic, Antarctic	Atlantic Ocean, Arctic, Antarctic	0	0	1	VOS line	ocean	Mario Hoppema, AWI, Bremerhaven	Mario.Hoppema@awi.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received
 NA-VOS	North Altantic Voluntary Observing Ship	ocean	DE	approx. 46 to 55	approx. -55 to -10	0	0	1	VOS line	ocean	Arne Körtzinger, GEOMAR, Kiel	akoertzinger@geomar.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received
 BALTIC-VOS	Finnmaid Voluntary Observing Ship	ocean	DE	54.0-60.5 N	11.0-25.5 E	0	0	1	VOS line	ocean	Gregor Rehder, IOW, Rostock	gregor.rehder@io-warnemuende.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received
-CVOO	Cape Verde Ocean Observatory	ocean	DE	17.600000	-24.500000	0	0	1	Profiling station	ocean	Arne Körtzinger, GEOMAR, Kiel	akoertzinger@geomar.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received
+CVOO	Cape Verde Ocean Observatory	ocean	DE	17.6	-24.5	0	0	1	Profiling station	ocean	Arne Körtzinger, GEOMAR, Kiel	akoertzinger@geomar.de	YES	1.1.2015	X	Received for 2 years (2014-2015)	Received
 HG	Hausgarten	ocean	DE	79.006833	4.334167	0	0	1	Profiling station	ocean	Thomas Soltwedel, AWI, Bremerhaven	Thomas.Soltwedel@awi.de	NO	12/2015		Received for 2 years (2014-2015)	Received
-BIR	Birkenes Observatory	atm	NO	58.383333	8.252000	190	?	1	ground	ground	Cathrine Lund Myhre	clm@nilu.no	YES	partly operational, ICOS membership decision tentatively autumn 2013	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015.	Yes
-ZEP	Zeppelin Observatory	atm	NO	78.900000	11.883333	474	?	1	Remote Arctic	ground	Cathrine Lund Myhre	clm@nilu.no	YES	partly operational, ICOS membership decision tentatively autumn 2013	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
-St. MIKE	Polar Buoy	Ocean	NO	66.000000	2.000000	0	2	1	Fixed Station	ocean	Ingunn Skjelvan	ingunn.skjelvan@uni.no	YES	menbership decision	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
+BIR	Birkenes Observatory	atm	NO	58.383333	8.252	190	?	1	ground	ground	Cathrine Lund Myhre	clm@nilu.no	YES	partly operational, ICOS membership decision tentatively autumn 2013	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015.	Yes
+ZEP	Zeppelin Observatory	atm	NO	78.9	11.883333	474	?	1	Remote Arctic	ground	Cathrine Lund Myhre	clm@nilu.no	YES	partly operational, ICOS membership decision tentatively autumn 2013	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
+St. MIKE	Polar Buoy	Ocean	NO	66	2	0	2	1	Fixed Station	ocean	Ingunn Skjelvan	ingunn.skjelvan@uni.no	YES	menbership decision	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
 Nuka	Nuka Arctica	Ocean	NO	Aalborg Denmark to NUK Greenland		0	10 to -4 meter	1	VOS	ocean	Abdirahman Omar	Abdir.Omar@uni.no	YES	menbership decision	(X)	Partly funded by CARBOCHANGE (EU) and SNACS (RCN) and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
 GSARS	G.O. Sars	Ocean	NO	Nordic Seas		0	10 to -4 meter	1	VOS	ocean	Siv Kari Lauvset	Siv.Lauvset@gfi.uib.no	YES	menbership decision	(X)	Partly funded by Norwegian Environment Agency and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
 Lance	Lance	Ocean	NO	Arctic Ocean around Svalbard		0	10 to -4 meter	1	VOS	ocean	Are Olsen	are.olsen@gfi.uib.no	NO	menbership decision	(X)	Partly funded by the Monaco fundation and a part of ICOS Norway proposal to RCN. Decision is due June 2015	Yes
-SE-Hyl	Hyltemossa	eco	SE	56.097630	13.418970	104	27	1	forest coniferous	eco	Michal Heliasz	Michal.Heliasz@cec.lu.se	NO	01/01/2015		A	until 2015, new decision expected in 2015
-SE-Hyl	Hyltemossa	atm	SE	56.097630	13.418970	104	150	1	tall tower	TT	Michal Heliasz	Michal.Heliasz@cec.lu.se	NO	01/03/2015		A	until 2015, new decision expected in 2015
-SE-Nor	Norunda	eco	SE	60.086441	17.479455	46	36	1	forest coniferous	eco	Meelis Mölder	Meelis.Molder@nateko.lu.se	YES	operational	X, partially	A	until 2015, new decision expected in 2015
+SE-Hyl	Hyltemossa	eco	SE	56.09763	13.41897	104	27	1	forest coniferous	eco	Michal Heliasz	Michal.Heliasz@cec.lu.se	NO	01/01/2015		A	until 2015, new decision expected in 2015
+SE-Hyl	Hyltemossa	atm	SE	56.09763	13.41897	104	150	1	tall tower	TT	Michal Heliasz	Michal.Heliasz@cec.lu.se	NO	01/03/2015		A	until 2015, new decision expected in 2015
+SE-Nor	Norunda	eco	SE	60.086441	17.479455	46	36	1	forest coniferous	eco	Meelis Mölder	Meelis.Molder@nateko.lu.se	YES	operational	x, partially	A	until 2015, new decision expected in 2015
 SE-Nor	Norunda	atm	SE	60.086441	17.479455	46	102	1	tall tower	TT	Meelis Mölder	Meelis.Molder@nateko.lu.se	YES	01/03/2015		A	until 2015, new decision expected in 2015
-SE-Sva	Svartberget	eco	SE	64.256000	19.775000	235	35	1	forest coniferous	eco	Mikaell Ottosson-Löfvenius	mikaell.ottosson.lofvenius@slu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
-SE-Sva	Svartberget	atm	SE	64.256000	19.775000	235	150	1	tall tower	TT	Mikaell Ottosson-Löfvenius	mikaell.ottosson.lofvenius@slu.se	YES	01/05/2015		A	until 2015, new decision expected in 2015
-SE-Sto	Stordalen	eco	SE	68.355000	19.048000	410	3	1	arctic wetland	eco	Tomas Friborg	tfj@geo.ku.dk	YES	01/01/2015		A	until 2015, new decision expected in 2015
-SE-Lan	Lanna	eco	SE	58.341000	13.101000	55	3	1	cropland	eco	Leif Klemedtsson	leif.klemedtsson@dpes.gu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
-SE-Deg	Degerö	eco	SE	64.182000	19.556000	270	3	1	boreal wetland	eco	Mats B. Nilsson	mats.b.nilsson@sek.slu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
+SE-Sva	Svartberget	eco	SE	64.256	19.775	235	35	1	forest coniferous	eco	Mikaell Ottosson-Löfvenius	mikaell.ottosson.lofvenius@slu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
+SE-Sva	Svartberget	atm	SE	64.256	19.775	235	150	1	tall tower	TT	Mikaell Ottosson-Löfvenius	mikaell.ottosson.lofvenius@slu.se	YES	01/05/2015		A	until 2015, new decision expected in 2015
+SE-Sto	Stordalen	eco	SE	68.355	19.048	410	3	1	arctic wetland	eco	Tomas Friborg	tfj@geo.ku.dk	YES	01/01/2015		A	until 2015, new decision expected in 2015
+SE-Lan	Lanna	eco	SE	58.341	13.101	55	3	1	cropland	eco	Leif Klemedtsson	leif.klemedtsson@dpes.gu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
+SE-Deg	Degerö	eco	SE	64.182	19.556	270	3	1	boreal wetland	eco	Mats B. Nilsson	mats.b.nilsson@sek.slu.se	YES	01/01/2015		A	until 2015, new decision expected in 2015
 SE-Oes	Östergarnsholm	ocean	SE	57.430061	18.984339	0	30	1	Baltic sea	ocean	Anna Rutgersson	Anna.Rutgersson@met.uu.se	YES	01/03/2015		A	received for 2015, new decision expected in 2015
 DAV	Davos	eco	CH	46.815278	9.855917	1639	35	1	forest coniferous	eco	Nina Buchmann	nbuchmann@ethz.ch	YES	2013	1.1.15, partially (EC and meteo yes, soil chamber no)	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
-JFJ	Jungfraujoch	atm	CH	46.550000	7.980000	3571.5	10	1	mountain	ground	Markus Leuenberger;Lukas Emmenegger	leuenberger@climate.unibe.ch; Lukas.Emmenegger@empa.ch	YES	2013	x, partially	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
+JFJ	Jungfraujoch	atm	CH	46.55	7.98	3571.5	10	1	mountain	ground	Markus Leuenberger;Lukas Emmenegger	leuenberger@climate.unibe.ch; Lukas.Emmenegger@empa.ch	YES	2013	x, partially	Funding secured for 2013-2016, working on 2017-2020	Funding secured for 2013-2016, working on 2017-2020
 IT-Cp2	Castelporziano2	eco	IT	41.704267	12.357293	19	20	1	Evergreen Broadleaf Forest	eco	Silvano Fares	silvano.fares@entecra.it	yes	01/2016	X	partially	partially
-IT-BCi	Borgo Cioffi	eco	IT	40.523750	14.957444	30	2	1	Cropland	eco	Enzo Magliulo	enzo.magliulo@cnr.it	yes	01/2016	X	partially	partially
-IT-Ren	Renon	eco	IT	46.586860	11.433690	1730	32	2	Coniferous forest	eco	Leonardo Montagnani	leonardo.montagnani@unibz.it	yes	01/2016	X	partially	partially
-IT-Neg	Negrisia	eco	IT	45.74756	12.446730	9	4	2	Closed Shrubland (Perennial cropland: Vineyard)	eco	Andrea Pitacco	andrea.pitacco@unipd.it	no	01/2016		partially	partially
+IT-BCi	Borgo Cioffi	eco	IT	40.52375	14.957444	30	2	1	Cropland	eco	Enzo Magliulo	enzo.magliulo@cnr.it	yes	01/2016	X	partially	partially
+IT-Ren	Renon	eco	IT	46.58686	11.43369	1730	32	2	Coniferous forest	eco	Leonardo Montagnani	leonardo.montagnani@unibz.it	yes	01/2016	X	partially	partially
+IT-Neg	Negrisia	eco	IT	45.74756	12.44673	9	4	2	Closed Shrubland (Perennial cropland: Vineyard)	eco	Andrea Pitacco	andrea.pitacco@unipd.it	no	01/2016		partially	partially
 IT-MBo	Monte Bondone	eco	IT	46.014678	11.045831	1550	2.5	2	Grassland	eco	Damiano Giannelle	damiano.gianelle@fmach.it	yes	01/2016	X	partially	partially
-IT-PCm	Capodimonte	eco	IT	40.874100	14.250400	148	26	3	Evergreen Broadleaf Forest	eco	Carlo Calfapietra	carlo.calfapietra@ibaf.cnr.it	yes	01/2016	X	partially	partially
-IT-Noe	Arca di Noè	eco	IT	40.606130	8.151460	28	3.5	3	Shrubland	eco	Donatella Spano	spano@uniss.it	yes	01/2016	X	partially	partially
-IT-BFt	Bosco Fontana	eco	IT	45.202225	10.742714	37	41	3	Deciduous forest	eco	Giacomo Gerosa	giacomo.gerosa@unicatt.it	yes	01/2016	X	partially	partially
-IT-Tor	Torgnon	eco	IT	45.844444	7.578056	2168	2.5	3	Grassland	eco	Edoardo Cremonese	e.cremonese@arpa.vda.it	yes	01/2016	X	partially	partially
+IT-PCm	Capodimonte	eco	IT	40.8741	14.2504	148	26	Ass	Evergreen Broadleaf Forest	eco	Carlo Calfapietra	carlo.calfapietra@ibaf.cnr.it	yes	01/2016	X	partially	partially
+IT-Noe	Arca di Noè	eco	IT	40.60613	8.15146	28	3.5	Ass	Shrubland	eco	Donatella Spano	spano@uniss.it	yes	01/2016	X	partially	partially
+IT-BFt	Bosco Fontana	eco	IT	45.202225	10.742714	37	41	Ass	Deciduous forest	eco	Giacomo Gerosa	giacomo.gerosa@unicatt.it	yes	01/2016	X	partially	partially
+IT-Tor	Torgnon	eco	IT	45.844444	7.578056	2168	2.5	Ass	Grassland	eco	Edoardo Cremonese	e.cremonese@arpa.vda.it	yes	01/2016	X	partially	partially
 IT-CMN	Monte Cimone	atm	IT	44.193611	10.699999	2165	12.7	1	Mountain	ground	Paolo Cristofanelli	p.cristofanelli@isac.cnr.it	yes	01/2016	X	partially	partially
-Lmp	Lampedusa	atm	IT	35.518000	12.630500	45		1	marine remote	ground	Giorgio di Sarra	alcide.disarra@enea.it	yes	01/2016	X	partially	partially
-P-Rosa	Plateau Rosa	atm	IT	45.930000	7.700000	3480		2	Mountain	ground	Francesco Apadula	Francesco.Apadula@rse-web.it	yes	01/2017	X	partially	partially
-IT_Pot	Potenza	atm	IT	40.601000	15.724000	760		1	ground	ground	Lucia Mona	lucia.mona@imaa.cnr.it	yes	01/2018	X	partially	partially
+Lmp	Lampedusa	atm	IT	35.518	12.6305	45		1	marine remote	ground	Giorgio di Sarra	alcide.disarra@enea.it	yes	01/2016	X	partially	partially
+P-Rosa	Plateau Rosa	atm	IT	45.93	7.7	3480		2	Mountain	ground	Francesco Apadula	Francesco.Apadula@rse-web.it	yes	01/2017	X	partially	partially
+IT_Pot	Potenza	atm	IT	40.601	15.724	760		1	ground	ground	Lucia Mona	lucia.mona@imaa.cnr.it	yes	01/2018	X	partially	partially
 IT-Mambo1	Miramare	oce	IT	45.698	13.708	0	0	1	Fixed Station	ocean	Michele Giani	mgiani@ogs.trieste.it	yes	01/2016	X	partially	partially
-PALOMA	Paloma	oce	IT	45.620400	13.565800	0	0	1	Fixed Station	ocean	Anna Luchetta	anna.luchetta@ts.ismar.cnr.it	yes	01/2016	X	partially	partially
-E2M3A	E2M3A	oce	IT	41.570500	18.774600	0	0	1	Fixed Station	ocean	Vanessa Cardin	vcardin@inogs.it	yes	01/2016	X	partially	partially
+PALOMA	Paloma	oce	IT	45.6204	13.5658	0	0	1	Fixed Station	ocean	Anna Luchetta	anna.luchetta@ts.ismar.cnr.it	yes	01/2016	X	partially	partially
+E2M3A	E2M3A	oce	IT	41.5705	18.7746	0	0	1	Fixed Station	ocean	Vanessa Cardin	vcardin@inogs.it	yes	01/2016	X	partially	partially
 W1M3A	Western 1 Mediterranean Moored Multi-sensor Array	oce	IT	43.834516	9.118163	0	0	1	Fixed Station	ocean	Roberto Bozzano	roberto.bozzano@cnr.it	yes	01/2016	X	partially	partially
-NL-Loo	Loobos	eco	NL	52.166480	5.743550	26	25	2	Forest coniferous	eco	Eddy Moors	Eddy.moors@wur.nl	yes	06/2016	X	minor upgrades needed, partially financed	fees 2015-2020 secured, operations secured for 2015 and 2016
-NL-Lut	Lujewad	atm	NL	53.403600	6.352800	1	60	2	coastal/continental	TT	Huilin Chen  	Huilin.Chen@rug.nl	YES	mid-2016	X	Secured 2015-2020	Fees secured for 2015 and 2016, operations secured 2015-2020
+NL-Loo	Loobos	eco	NL	52.16648	5.74355	26	25	2	Forest coniferous	eco	Eddy Moors	Eddy.moors@wur.nl	yes	06/2016	X	minor upgrades needed, partially financed	fees 2015-2020 secured, operations secured for 2015 and 2016
+NL-Lut	Lujewad	atm	NL	53.4036	6.3528	1	60	2	coastal/continental	TT	Huilin Chen	Huilin.Chen@rug.nl	YES	mid-2016	X	Secured 2015-2020	Fees secured for 2015 and 2016, operations secured 2015-2020
 NL-Cab	Cabauw	atm	NL	51.970258	4.926161	0	200	2	Agricultural	TT	Arjan Hensen	hensen@ecn.nl	yes		x	not relevant	fees 2015-2020 secured, operations secured for 2015

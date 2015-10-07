@@ -27,11 +27,13 @@ module.exports = function(FileAwareStationStore, FileManager, saveStationAction,
 
 	var StationBaseMixin = {
 		render: function() {
-//console.log(this.state);
+
+			if(!this.state.station || !this.state.station.stationUri) return null;
+
 			return <div>
 				{this.getForm()}
 
-				<FileManager station={this.state.station} />
+				<FileManager />
 
 				<LabelingStartWidget formIsValid={this.state.valid} station={this.state.station} isSaved={this.isUnchanged()} />
 
@@ -44,8 +46,7 @@ module.exports = function(FileAwareStationStore, FileManager, saveStationAction,
 			return (errors, newValue) => {
 				var newState = _.clone(self.state);
 				newState.errors = _.clone(self.state.errors);
-//console.log('got update for ' + propName);
-//console.log({errors: errors, newValue: newValue});
+
 				newState.errors[propName] = errors;
 				newState.valid = _.isEmpty(_.flatten(_.values(newState.errors)));
 

@@ -256,6 +256,7 @@ function addSwitchBgMap(map){
 			var selectedValue = $bgMaps.filter(':checked').val();
 
 			map.getLayers().forEach(function(item, ind){
+				//TODO: This must be handled differently in later version of OL
 				var tag = item.rc.q.tag;
 
 				if (tag != undefined){

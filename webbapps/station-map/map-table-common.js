@@ -18,20 +18,15 @@ function getIcon(theme){
 
 	switch (theme){
 		case "AS":
-			icon.src = 'icons/as.svg';
+			icon.src = 'icons/as.png';
 			break;
 
 		case "ES":
-			icon.src = 'icons/es.svg';
+			icon.src = 'icons/es.png';
 			break;
 
 		case "OS":
-			icon.src = 'icons/os.svg';
-			break;
-
-		case "test":
-			icon.src = 'https://ac.gis.lu.se/images/silk/bullet_red.png';
-			icon.anchor = [0,0];
+			icon.src = 'icons/os.png';
 			break;
 	}
 

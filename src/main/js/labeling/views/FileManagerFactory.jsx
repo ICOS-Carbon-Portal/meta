@@ -1,13 +1,15 @@
 var FileUploader = require('./FileUploader.jsx');
 var StationContentPanel = require('./StationContentPanel.jsx');
 
-module.exports = function(fileUploadAction, fileDeleteAction) {
+module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction) {
 
 	return React.createClass({
 
+		mixins: [Reflux.connect(FileAwareStationStore)],
+
 		render: function(){
 			var self = this;
-			var station = this.props.station;
+			var station = this.state.chosen;
 
 			var uploaderNeeded = (!_.isEmpty(station.fileTypes) && station.isUsersStation);
 			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
@@ -35,12 +37,13 @@ module.exports = function(fileUploadAction, fileDeleteAction) {
 		},
 
 		fileSaveHandler: function(fileInfo){
-			var fullInfo = _.extend({stationUri: this.props.station.stationUri}, fileInfo);
+			var station = this.state.chosen;
+			var fullInfo = _.extend({stationUri: station.stationUri}, fileInfo);
 			fileUploadAction(fullInfo);
 		},
 
 		getFileDeleteHandler: function(fileInfo){
-			var station = this.props.station;
+			var station = this.state.chosen;
 
 			return function(){
 				var fullInfo = _.extend({stationUri: station.stationUri}, fileInfo);

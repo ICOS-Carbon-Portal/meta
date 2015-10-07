@@ -11,22 +11,26 @@ var sparql = require('../common/sparql.js')(ajax, '/sparql');
 var Backend = require('./backend.js')(ajax, sparql);
 
 var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend);
-var FileStore = require('./stores/FileStoreFactory.js')(Backend, actions.fileUpload, actions.fileDelete);
-var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, FileStore, actions.chooseStation, actions.saveStation);
+var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation);
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationsListStore);
-var StationFileAwareStore = require('./stores/StationFileAwareStoreFactory.js')(StationAuthStore);
+
+var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation);
+var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(Backend, ChosenStationStore, actions.fileUpload, actions.fileDelete);
+
+var FileManager = require('./views/FileManagerFactory.jsx')(FileAwareStationStore, actions.fileUpload, actions.fileDelete);
 
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
 
-var FileManager = require('./views/FileManagerFactory.jsx')(actions.fileUpload, actions.fileDelete);
 
-var StationsList = require('./views/StationsListFactory.jsx')(
-	StationFileAwareStore,
-	FileManager,
-	actions.chooseStation,
-	actions.saveStation,
-	actions.labelingStart
-);
+var StationMixins = require('./views/StationMixinsFactory.jsx')(FileAwareStationStore, FileManager, actions.saveStation, actions.labelingStart);
+
+var themeToStation = {
+	Atmosphere: require('./views/AtmosphereStationFactory.jsx')(StationMixins),
+	Ecosystem: require('./views/EcosystemStationFactory.jsx')(StationMixins),
+	Ocean: require('./views/OceanStationFactory.jsx')(StationMixins)
+};
+
+var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, themeToStation, actions.chooseStation);
 
 module.exports = React.createClass({
 	render: () =>

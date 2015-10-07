@@ -1,4 +1,4 @@
-module.exports = function(FileManager) {
+module.exports = function(StationMixins) {
 
 	return React.createClass({
 

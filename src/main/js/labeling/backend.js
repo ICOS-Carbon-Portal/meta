@@ -116,6 +116,10 @@ module.exports = function(ajax, sparql){
 			.then(bindings => bindings.map(postProcessStationProps)[0]);
 	}
 
+	function getStationFiles(stationUri){
+		return sparql(getFilesQuery(stationUri));
+	}
+
 	function getStationLabelingInfo(stationUri){
 
 		function hasBeenSavedBefore(labelingInfo){
@@ -124,7 +128,7 @@ module.exports = function(ajax, sparql){
 		}
 
 		var mainInfo = getStationInfoFromGraph(stationUri, lblUri);
-		var filesInfo = sparql(getFilesQuery(stationUri));
+		var filesInfo = getStationFiles(stationUri);
 
 		return mainInfo.then(lblInfo =>
 			hasBeenSavedBefore(lblInfo)
@@ -137,6 +141,7 @@ module.exports = function(ajax, sparql){
 		getStationPis: () => sparql(stationPisQuery).then(postProcessStationsList),
 
 		getStationInfo: getStationLabelingInfo,
+		getStationFiles: getStationFiles,
 		saveStationInfo: info => ajax.postJson('save', info),
 		uploadFile: formData => ajax.uploadFormData('fileupload', formData),
 		deleteFile: fileInfo => ajax.postJson('filedeletion', fileInfo),

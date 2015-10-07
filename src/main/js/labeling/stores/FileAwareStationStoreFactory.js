@@ -25,22 +25,76 @@ function getFileExpectations(fileType, actualCount){
 	return [['Must supply ', howMany, ' document(s) of type "', fileType.type, '"'].join('')];
 }
 
-module.exports = function(StationAuthStore){
-
+module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDeleteAction){
 	return Reflux.createStore({
 
 		getInitialState: function(){
-			return StationAuthStore.getInitialState();
+			return {
+				chosen: {
+					files: [],
+					fileTypes: [],
+					isUsersStation: false
+				}
+			};
 		},
 
 		init: function(){
-			this.listenTo(StationAuthStore, this.stationListHandler);
+			this.state = this.getInitialState();
+
+			this.listenTo(ChosenStationStore, this.chosenStationHandler);  
+			this.listenTo(fileUploadAction, this.fileUploadHandler);  
+			this.listenTo(fileDeleteAction, this.fileDeleteHandler);  
 		},
 
-		stationListHandler: function(state) {
-			var newState = _.clone(state);
-			newState.chosen = this.addFileTypes(state.chosen);
-			this.trigger(newState);
+		chosenStationHandler: function(state){
+			this.state = {chosen: this.addFileTypes(state.chosen)};
+			this.trigger(this.state);
+		},
+
+		fileUploadHandler: function(fileInfo){
+			var self = this;
+
+			var formData = new FormData();
+			_.each(_.keys(fileInfo), key => formData.append(key, fileInfo[key]));
+
+			Backend.uploadFile(formData).then(() =>
+				(fileInfo.stationUri === self.state.chosen.stationUri)
+					? Backend.getStationFiles(fileInfo.stationUri)
+					: Promise.resolve([])
+			).then(
+				files => {
+					if (fileInfo.stationUri !== self.state.chosen.stationUri) return;
+
+					self.updateFiles(files);
+				},
+				err => console.log(err)
+			);
+		},
+
+		fileDeleteHandler: function(fileInfo){
+			var self = this;
+
+			Backend.deleteFile(_.pick(fileInfo, 'stationUri', 'file')).then(
+				() => {
+					if(fileInfo.stationUri !== self.state.chosen.stationUri) return;
+
+					var newFiles = _.filter( //removing the deleted file
+						self.state.chosen.files,
+						file => (file.file !== fileInfo.file)
+					);
+
+					self.updateFiles(newFiles);
+				},
+				err => console.log(err)
+			);
+		},
+
+		updateFiles: function(newFiles){
+			var newChosen = _.extend({}, this.state.chosen, {files: newFiles});
+
+			this.state = {chosen: this.addFileTypes(newChosen)};
+
+			this.trigger(this.state);
 		},
 
 		addFileTypes: function(station){
@@ -66,14 +120,11 @@ module.exports = function(StationAuthStore){
 				allFileTypes.map(type => getFileExpectations(type, actualCount(type.type)))
 			);
 
-			return _.extend({
+			return _.extend({}, station, {
 				fileTypes: availableFileTypes,
 				fileExpectations: fileExpectations
-			}, station);
+			});
 		}
 
 	});
-	
-	
 }
-

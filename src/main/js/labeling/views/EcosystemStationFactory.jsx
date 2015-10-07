@@ -1,8 +1,8 @@
-module.exports = function(StationMixin) {
+module.exports = function(StationMixins) {
 
 	return React.createClass({
 
-		mixins: [StationMixin],
+		mixins: StationMixins,
 
 		getForm: function() {
 			return null;

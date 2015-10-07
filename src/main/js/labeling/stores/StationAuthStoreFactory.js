@@ -30,8 +30,7 @@ module.exports = function(WhoAmIStore, StationsListStore){
 				stations: _.chain(this.state.stations)
 								.map(station => self.decorateStation(station))
 								.sortBy(station => `${!station.isUsersStation}_${station.theme}_${station.longName}`)
-								.value(),
-				chosen: self.decorateStation(this.state.chosen)
+								.value()
 			};
 
 			this.trigger(this.state);

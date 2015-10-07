@@ -22,8 +22,12 @@ var InputBaseMixin = {
 		this.validators = this.validators || [];
 	},
 
-	componentDidMount: function(){
+/*	componentDidMount: function(){
 		this.pushUpdate(this.props.value);
+	},
+*/
+	componentWillReceiveProps: function(newProps){
+		this.pushUpdate(newProps.value);
 	},
 
 	getErrors: function(value){
@@ -39,7 +43,7 @@ var InputBaseMixin = {
 	pushUpdate: function(newValue){
 		var errors = this.getErrors(newValue);
 		var finalValue = _.isEmpty(errors) ? this.extractUpdatedValue(newValue) : newValue;
-		if(!_.isUndefined(newValue)) this.props.updater(errors, finalValue);
+		this.props.updater(errors, finalValue);
 	}
 };
 
@@ -79,7 +83,7 @@ var StringInputMixin = {extractUpdatedValue: _.identity};
 var NumberInputMixin = {extractUpdatedValue: s => Number.parseFloat(s)};
 
 var IsNumberMixin = getValidatingMixin(value => {
-	return (Number.parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
+	return (Number.parseFloat(value).toString() === (value || "").toString()) ? [] : ["Not a valid number!"];
 });
 
 var IsUrlMixin = getValidatingMixin(value => {

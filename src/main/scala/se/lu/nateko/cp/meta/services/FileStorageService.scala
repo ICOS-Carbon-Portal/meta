@@ -20,7 +20,7 @@ class FileStorageService(folder: File) {
 	 */
 	def saveAsFile(bs: ByteString): String = {
 		val fname = getSha256(bs)
-		val path = Paths.get(folder.getAbsolutePath, fname)
+		val path = getPath(fname)
 		
 		if(!path.toFile.exists){
 			try{
@@ -41,4 +41,6 @@ class FileStorageService(folder: File) {
 		bs.asByteBuffers.foreach(md.update)
 		md.digest.map("%02x" format _).mkString
 	}
+
+	def getPath(hash: String) = Paths.get(folder.getAbsolutePath, hash)
 }

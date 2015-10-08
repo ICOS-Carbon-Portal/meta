@@ -25,7 +25,7 @@ import org.openrdf.model.Value
 class StationLabelingService(
 	server: InstanceServer,
 	provisionalInfoServer: InstanceServer,
-	fileService: FileStorageService,
+	val fileService: FileStorageService,
 	conf: LabelingServiceConfig) {
 
 	private val factory = server.factory

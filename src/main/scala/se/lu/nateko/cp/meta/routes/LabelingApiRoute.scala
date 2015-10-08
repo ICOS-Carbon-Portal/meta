@@ -18,6 +18,7 @@ import akka.util.ByteString
 import java.net.URI
 import se.lu.nateko.cp.meta.services.UploadedFile
 import se.lu.nateko.cp.meta.FileDeletionDto
+import akka.http.scaladsl.server.directives.ContentTypeResolver
 
 
 
@@ -82,6 +83,12 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				redirect(Uri("/labeling/"), StatusCodes.Found)
 			}
 		}
+	} ~
+	path("files" / Segment / Segment){ (hash, fileName) =>
+		val contentResolver = implicitly[ContentTypeResolver]
+		val contentType = contentResolver(fileName)
+		val file = service.fileService.getPath(hash).toFile
+		getFromFile(file, contentType)
 	}
 
 }

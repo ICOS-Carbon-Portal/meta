@@ -5,6 +5,7 @@ import se.lu.nateko.cp.meta.services.SparqlServer
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 
 object SparqlRoute {
 
@@ -16,10 +17,13 @@ object SparqlRoute {
 		fileExtensions = ".srj" :: Nil
 	)
 
-	val allowAllOrigins = respondWithHeader(headers.`Access-Control-Allow-Origin`.*)
+	val setSparqlHeaders = respondWithHeaders(
+		`Access-Control-Allow-Origin`.*,
+		`Cache-Control`(CacheDirectives.`no-cache`, CacheDirectives.`no-store`, CacheDirectives.`must-revalidate`)
+	)
 
 	private def sparqlResponse(server: SparqlServer, query: String): Route = {
-		allowAllOrigins {
+		setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
 				val json = server.executeQuery(query)
 				encodeResponse {

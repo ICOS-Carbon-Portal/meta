@@ -2,9 +2,9 @@
 
 function sparqlBindingValueToPlainJs(lit){
 	switch(lit.datatype){
-		case "http://www.w3.org/2001/XMLSchema#integer": return Number.parseInt(lit.value);
-		case "http://www.w3.org/2001/XMLSchema#float": return Number.parseFloat(lit.value);
-		case "http://www.w3.org/2001/XMLSchema#double": return Number.parseFloat(lit.value);
+		case "http://www.w3.org/2001/XMLSchema#integer": return parseInt(lit.value);
+		case "http://www.w3.org/2001/XMLSchema#float": return parseFloat(lit.value);
+		case "http://www.w3.org/2001/XMLSchema#double": return parseFloat(lit.value);
 		default: return lit.value;
 	}
 }

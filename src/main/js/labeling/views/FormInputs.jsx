@@ -80,10 +80,10 @@ var DropDownMixin = _.extend({
 }, InputBaseMixin);
 
 var StringInputMixin = {extractUpdatedValue: _.identity};
-var NumberInputMixin = {extractUpdatedValue: s => Number.parseFloat(s)};
+var NumberInputMixin = {extractUpdatedValue: s => parseFloat(s)};
 
 var IsNumberMixin = getValidatingMixin(value => {
-	return (Number.parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
+	return (parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
 });
 
 var IsUrlMixin = getValidatingMixin(value => {
@@ -100,14 +100,14 @@ var IsNotEmpty = getValidatingMixin(value => {
 
 function hasMinValue(minValue){
 	return getValidatingMixin(value => {
-		var num = Number.parseFloat(value);
+		var num = parseFloat(value);
 		return num >= minValue ? [] : ["Value must not be less than " + minValue];
 	});
 }
 
 function hasMaxValue(maxValue){
 	return getValidatingMixin(value => {
-		var num = Number.parseFloat(value);
+		var num = parseFloat(value);
 		return num <= maxValue ? [] : ["Value must not exceed " + maxValue];
 	});
 }

@@ -1,7 +1,8 @@
 var Inputs = require('./FormInputs.jsx');
 
-module.exports = function(FileAwareStationStore, FileManager, saveStationAction, labelingStartAction) {
+module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction, labelingStartAction) {
 
+	var FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);
 	var LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(labelingStartAction);
 
 	function stateFromStore(storeState){
@@ -27,8 +28,8 @@ module.exports = function(FileAwareStationStore, FileManager, saveStationAction,
 
 	var StationBaseMixin = {
 		render: function() {
-
-			if(!this.state.station || !this.state.station.stationUri) return null;
+			var station = this.state.station;
+			if(!station || !station.stationUri || (station.stationUri !== this.props.stationUri)) return null;
 
 			return <div>
 				{this.getForm()}

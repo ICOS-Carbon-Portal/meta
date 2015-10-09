@@ -32,7 +32,7 @@ module.exports = function(StationAuthStore, themeToStation, chooseStationAction)
 								<span className={icon}/><span> </span>
 								{station.longName}
 							</div>
-							{ station.chosen ? <div className="panel-body"><Station /></div> : null }
+							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>
 
 					</li>;

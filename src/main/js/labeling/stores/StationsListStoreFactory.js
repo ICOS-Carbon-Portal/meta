@@ -20,8 +20,12 @@ module.exports = function(Backend, chooseStationAction){
 			var stationUpdater = (chosenStation.chosen)
 				//the original request comes from a mouse click on the station's panel heading,
 				//and the station is already chosen. This means all stations need to be 'unchosen'
-				? (station => station.chosen ? _.extend({}, station, {chosen: false}) : station)
-				: (station => _.extend({}, station, {chosen: (station.stationUri === chosenStation.stationUri)}));
+				? station => station.chosen
+									? _.extend({}, station, {chosen: false})
+									: station
+				: station => !station.chosen === !(station.stationUri === chosenStation.stationUri)
+									? station
+									: _.extend({}, station, {chosen: !station.chosen});
 
 			this.publishStations(this.stations.map(stationUpdater));
 		}

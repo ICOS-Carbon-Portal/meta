@@ -7,7 +7,11 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 		},
 
 		chooseStationHandler: function(chosenStation, evenIfChosen) {
-			if(chosenStation.chosen && !evenIfChosen) return;
+			if(chosenStation.chosen && !evenIfChosen) {
+				this.chosen = null;
+				this.trigger({chosen: null});
+				return;
+			};
 
 			this.chosen = chosenStation;
 			var self = this;
@@ -20,7 +24,6 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 						_.pick(chosenStation, 'emails', 'isUsersStation'),
 						stationInfo
 					);
-
 					self.trigger({chosen: newChosenStation});
 				},
 				err => console.log(err)

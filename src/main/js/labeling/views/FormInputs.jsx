@@ -22,12 +22,8 @@ var InputBaseMixin = {
 		this.validators = this.validators || [];
 	},
 
-/*	componentDidMount: function(){
-		this.pushUpdate(this.props.value);
-	},
-*/
 	componentWillReceiveProps: function(newProps){
-		this.pushUpdate(newProps.value);
+		if(this.props.value !== newProps.value) this.pushUpdate(newProps.value);
 	},
 
 	getErrors: function(value){

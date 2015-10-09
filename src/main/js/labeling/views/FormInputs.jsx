@@ -72,8 +72,8 @@ var TextAreaMixin = _.extend({
 var DropDownMixin = _.extend({
 	render: function() {
 		return <select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
-			_.mapObject(this.props.options, (value, text) =>
-				<option value={value} key={'option_' + value}>{text}</option>
+			_.map(this.props.options, (text, value) =>
+				<option value={value} key={value}>{text}</option>
 			)
 		}</select>;
 	}

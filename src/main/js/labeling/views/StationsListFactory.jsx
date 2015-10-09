@@ -1,7 +1,7 @@
 var themeGlyphs = {
-	"Atmosphere": 'cloud',
-	"Ecosystem": 'leaf',
-	"Ocean": 'tint'
+	Atmosphere: 'cloud',
+	Ecosystem: 'leaf',
+	Ocean: 'tint'
 };
 
 module.exports = function(StationAuthStore, themeToStation, chooseStationAction){

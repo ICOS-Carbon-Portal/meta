@@ -1,5 +1,5 @@
 var FileUploader = require('./FileUploader.jsx');
-var StationContentPanel = require('./StationContentPanel.jsx');
+var ContentPanel = require('./ContentPanel.jsx');
 
 module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction) {
 
@@ -14,7 +14,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 			var uploaderNeeded = (!_.isEmpty(station.fileTypes) && station.isUsersStation);
 			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
 
-			return <StationContentPanel panelTitle="Uploaded files">
+			return <ContentPanel panelTitle="Uploaded files">
 				<table className="table">
 					<thead><tr><th>#</th><th>File type</th><th>File name</th><th>Action</th></tr></thead>
 					<tbody>
@@ -33,7 +33,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 						{uploaderNeeded ? <FileUploader fileSaver={self.fileSaveHandler} fileTypes={station.fileTypes}/> : null}
 					</tbody>
 				</table>
-			</StationContentPanel>;
+			</ContentPanel>;
 		},
 
 		fileSaveHandler: function(fileInfo){

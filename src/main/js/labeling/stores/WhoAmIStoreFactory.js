@@ -1,22 +1,27 @@
-function defaultUser() {
-	return {
-		mail: "dummy@dummy.none",
-		givenName: "",
-		surname: ""
-	};
-}
-
 module.exports = function(Backend){
 
 	return Reflux.createStore({
 
-		getInitialState: defaultUser,
+		getInitialState: function(){
+			return this.user;
+		},
+
+		publish: function(userInfo){
+			this.user = userInfo;
+			this.trigger(this.user);
+		},
 
 		init: function(){
+			this.user = {
+				mail: "dummy@dummy.none",
+				isPi: false,
+				firstName: "",
+				lastName: ""
+			};
 			Backend.whoAmI()
 				.catch(errRep => defaultUser())
 				.then(
-					_.bind(this.trigger, this),
+					_.bind(this.publish, this),
 					err => console.log(err)
 				);
 		}

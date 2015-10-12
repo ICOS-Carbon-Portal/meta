@@ -1,4 +1,4 @@
-var StationContentPanel = require('./StationContentPanel.jsx');
+var ContentPanel = require('./ContentPanel.jsx');
 
 function getValidatingMixin(){
 	var validators = arguments;
@@ -157,12 +157,12 @@ module.exports = {
 		render: function(){
 			if(_.isEmpty(this.props.children)) return null;
 
-			return <StationContentPanel panelTitle="Station properties">
+			return <ContentPanel panelTitle="Station properties">
 				<form role="form" onSubmit={this.props.submissionHandler}>
 					{this.props.children}
 					<button type="submit" className="btn btn-primary" disabled={!this.props.canSave}>Save</button>
 				</form>
-			</StationContentPanel>;
+			</ContentPanel>;
 		}
 	})
 };

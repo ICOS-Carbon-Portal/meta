@@ -56,7 +56,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 							val doneFut = service.processFile(fileInfo, uploader)
 
 							onSuccess(doneFut){
-								complete((StatusCodes.OK))
+								complete(StatusCodes.OK)
 							}
 						}
 					}
@@ -65,7 +65,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				path("filedeletion"){
 					entity(as[FileDeletionDto]){ fileInfo =>
 						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader).get
-						complete((StatusCodes.OK))
+						complete(StatusCodes.OK)
 					}
 				}
 			}
@@ -81,6 +81,11 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 			} ~
 			pathEnd{
 				redirect(Uri("/labeling/"), StatusCodes.Found)
+			} ~
+			path("userinfo"){
+				authRouting.mustBeLoggedIn{ user =>
+					complete(service.getLabelingUserInfo(user))
+				}
 			}
 		}
 	} ~

@@ -1,4 +1,4 @@
-var StationContentPanel = require('./StationContentPanel.jsx');
+var ContentPanel = require('./ContentPanel.jsx');
 
 var FileExpectations = React.createClass({
 	render: function(){
@@ -43,7 +43,7 @@ module.exports = function(startLabelingAction) {
 
 			var canStart = _.isEmpty(station.fileExpectations) && this.props.formIsValid && this.props.isSaved && this.state.compliance && this.state.funding;
 
-			return <StationContentPanel panelTitle="Submission">
+			return <ContentPanel panelTitle="Submission">
 
 				{this.props.formIsValid ? null : <p>Please correct form errors</p>}
 				{this.props.isSaved ? null : <p>Please save the station info before applying</p>}
@@ -58,7 +58,7 @@ module.exports = function(startLabelingAction) {
 					Apply for labeling
 				</button>
 
-			</StationContentPanel>;
+			</ContentPanel>;
 		},
 
 		getChangeHandler(propName){

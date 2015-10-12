@@ -3,10 +3,11 @@ module.exports = function(WhoAmIStore, StationsListStore){
 	return Reflux.createStore({
 
 		getInitialState: function(){
-			return {stations: []};
+			return this.state;
 		},
 
 		init: function(){
+			this.state = {stations: []};
 			this.listenTo(WhoAmIStore, this.whoAmIHandler);
 			this.listenTo(StationsListStore, this.stationListHandler);
 		},

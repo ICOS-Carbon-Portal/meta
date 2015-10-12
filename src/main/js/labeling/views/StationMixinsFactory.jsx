@@ -1,5 +1,3 @@
-var Inputs = require('./FormInputs.jsx');
-
 module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction, labelingStartAction) {
 
 	var FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);

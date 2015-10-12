@@ -21,6 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import org.openrdf.model.Value
 import java.nio.charset.StandardCharsets
+import se.lu.nateko.cp.meta.LabelingUserDto
 
 
 class StationLabelingService(
@@ -32,6 +33,32 @@ class StationLabelingService(
 	private val factory = server.factory
 	private val vocab = new StationStructuringVocab(factory)
 
+	def getLabelingUserInfo(uinfo: UserInfo): LabelingUserDto = {
+		val piUriOpt = provisionalInfoServer
+			.getStatements(None, Some(vocab.hasEmail), Some(vocab.lit(uinfo.mail)))
+			.collect{case SesameStatement(uri: URI, _, _) => uri}
+			.toIndexedSeq.headOption
+
+		piUriOpt match{
+			case None =>
+				LabelingUserDto(uinfo.mail, false, Some(uinfo.givenName), Some(uinfo.surname))
+			case Some(piUri) =>
+				val props = provisionalInfoServer
+					.getStatements(piUri)
+					.groupBy(_.getPredicate)
+					.map{case (pred, statements) => (pred, statements.head)} //ignoring multiprops
+					.collect{case (pred, SesameStatement(_, _, v: Literal)) => (pred, v.getLabel)} //keeping only data props
+					.toMap
+				LabelingUserDto(
+					mail = uinfo.mail,
+					isPi = true,
+					firstName = props.get(vocab.hasFirstName).orElse(Some(uinfo.givenName)),
+					lastName = props.get(vocab.hasLastName).orElse(Some(uinfo.surname)),
+					affiliation = props.get(vocab.hasAffiliation),
+					phone = props.get(vocab.hasPhone)
+				)
+		}
+	}
 
 	def saveStationInfo(info: StationLabelingDto, uploader: UserInfo): Try[Unit] = Try{
 

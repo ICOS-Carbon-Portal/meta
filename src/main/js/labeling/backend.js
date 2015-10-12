@@ -155,7 +155,7 @@ module.exports = function(ajax, sparql){
 		uploadFile: formData => ajax.uploadFormData('fileupload', formData),
 		deleteFile: fileInfo => ajax.postJson('filedeletion', fileInfo),
 
-		whoAmI: () => ajax.getJson('/whoami')
+		whoAmI: () => ajax.getJson('userinfo')
 	};
 };
 

@@ -61,3 +61,11 @@ case class StationLabelingDto(
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)
+case class LabelingUserDto(
+	mail: String,
+	isPi: Boolean,
+	firstName: Option[String],
+	lastName: Option[String],
+	affiliation: Option[String] = None,
+	phone: Option[String] = None
+)

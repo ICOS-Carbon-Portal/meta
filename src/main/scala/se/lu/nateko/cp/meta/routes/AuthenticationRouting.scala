@@ -32,7 +32,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 			case Success(uinfo) => inner(uinfo)
 			case Failure(err) => reject(InvalidCpauthTokenRejection(toMessage(err)))
 		}
-	}) ~ reject(CpauthTokenMissingRejection)
+	})
 
 	def mustBeLoggedIn(inner: UserInfo => Route): Route = handleRejections(authRejectionHandler)(user(inner))
 
@@ -69,12 +69,9 @@ object AuthenticationRouting {
 	def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
 
 	case class InvalidCpauthTokenRejection(message: String) extends Rejection
-	case object CpauthTokenMissingRejection extends Rejection
 
 	val authRejectionHandler = RejectionHandler.newBuilder().handle{
 			case InvalidCpauthTokenRejection(message) =>
 				forbid(message)
-			case CpauthTokenMissingRejection =>
-				forbid("Carbon Portal authentication cookie was not set")
 		}.result
 }

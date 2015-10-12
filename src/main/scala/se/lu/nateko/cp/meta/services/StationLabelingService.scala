@@ -20,6 +20,7 @@ import akka.util.ByteString
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import org.openrdf.model.Value
+import java.nio.charset.StandardCharsets
 
 
 class StationLabelingService(
@@ -79,7 +80,8 @@ class StationLabelingService(
 
 		assertThatWriteIsAuthorized(station, uploader)
 
-		val hash = fileService.saveAsFile(fileInfo.content)
+		val stationUriBytes = fileInfo.station.toString.getBytes(StandardCharsets.UTF_8)
+		val hash = fileService.saveAsFile(fileInfo.content, Some(stationUriBytes))
 		val file = vocab.files.getUri(hash)
 
 		val newInfo = Seq(

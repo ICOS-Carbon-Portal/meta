@@ -18,8 +18,8 @@ class FileStorageService(folder: File) {
 	/**
 	 * returns SHA256 hash sum of file's contents
 	 */
-	def saveAsFile(bs: ByteString): String = {
-		val fname = getSha256(bs)
+	def saveAsFile(bs: ByteString, hashSalt: Option[Array[Byte]]): String = {
+		val fname = getSha256(bs, hashSalt)
 		val path = getPath(fname)
 		
 		if(!path.toFile.exists){
@@ -36,8 +36,9 @@ class FileStorageService(folder: File) {
 		fname
 	}
 
-	def getSha256(bs: ByteString): String = {
+	def getSha256(bs: ByteString, salt: Option[Array[Byte]]): String = {
 		val md = MessageDigest.getInstance("SHA-256")
+		salt.foreach(md.update)
 		bs.asByteBuffers.foreach(md.update)
 		md.digest.map("%02x" format _).mkString
 	}

@@ -150,12 +150,14 @@ module.exports = function(ajax, sparql){
 		getStationPis: () => sparql(stationPisQuery).then(postProcessStationsList),
 
 		getStationInfo: getStationLabelingInfo,
-		getStationFiles: getStationFiles,
 		saveStationInfo: info => ajax.postJson('save', info),
+
+		getStationFiles: getStationFiles,
 		uploadFile: formData => ajax.uploadFormData('fileupload', formData),
 		deleteFile: fileInfo => ajax.postJson('filedeletion', fileInfo),
 
-		whoAmI: () => ajax.getJson('userinfo')
+		whoAmI: () => ajax.getJson('userinfo'),
+		saveUserInfo: userInfo => ajax.postJson('saveuserinfo', userInfo)
 	};
 };
 

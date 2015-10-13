@@ -90,6 +90,11 @@ var IsUrlMixin = getValidatingMixin(value => {
 	}
 });
 
+var IsPhoneMixin = getValidatingMixin(value => {
+	if(_.isEmpty(value)) return [];
+	return /\+[\d\s]{8,}/.test(value) ? [] : ["Must be a phone number in the international format +XXXXXXXX (spaces allowed)"];
+});
+
 var IsNotEmpty = getValidatingMixin(value => {
 	return (value !== undefined && value.length > 0) ? [] : ["Required field. It must be filled in."];
 });
@@ -118,6 +123,7 @@ module.exports = {
 	Longitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-180), hasMaxValue(180)),
 
 	URL: fromMixins(TextInputMixin, StringInputMixin, IsUrlMixin),
+	Phone: fromMixins(TextInputMixin, StringInputMixin, IsPhoneMixin),
 
 	String: fromMixins(TextInputMixin, StringInputMixin),
 

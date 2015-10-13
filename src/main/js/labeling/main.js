@@ -5,14 +5,15 @@ var actions = Reflux.createActions([
 	'saveStation',
 	'fileUpload',
 	'fileDelete',
-	'labelingStart'
+	'labelingStart',
+	'savePi'
 ]);
 
 var ajax = require('../common/ajax.js');
 var sparql = require('../common/sparql.js')(ajax, '/sparql');
 var Backend = require('./backend.js')(ajax, sparql);
 
-var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend);
+var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, actions.savePi);
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, actions.chooseStation);
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationsListStore);
 
@@ -35,7 +36,7 @@ var themeToStation = {
 
 var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, themeToStation, actions.chooseStation);
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
-var PiInfo = require('./views/PiInfoFactory.jsx')(WhoAmIStore);
+var PiInfo = require('./views/PiInfoFactory.jsx')(WhoAmIStore, actions.savePi);
 
 var AppLayout = require('./views/AppLayoutFactory.jsx')(NavBar, StationsList, PiInfo);
 

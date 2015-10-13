@@ -19,6 +19,8 @@ import java.net.URI
 import se.lu.nateko.cp.meta.services.UploadedFile
 import se.lu.nateko.cp.meta.FileDeletionDto
 import akka.http.scaladsl.server.directives.ContentTypeResolver
+import se.lu.nateko.cp.meta.LabelingUserDto
+import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
 
 
 
@@ -34,6 +36,19 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 							case Success(datasetUrl) => complete(StatusCodes.OK)
 							case Failure(err) => err match{
 								case authErr: UnauthorizedStationUpdateException =>
+									complete((StatusCodes.Unauthorized, authErr.getMessage))
+								case _ => throw err
+							}
+						}
+					} ~
+					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+				} ~
+				path("saveuserinfo") {
+					entity(as[LabelingUserDto]){userInfo =>
+						service.saveUserInfo(userInfo, uploader) match{
+							case Success(_) => complete(StatusCodes.OK)
+							case Failure(err) => err match{
+								case authErr: UnauthorizedUserInfoUpdateException =>
 									complete((StatusCodes.Unauthorized, authErr.getMessage))
 								case _ => throw err
 							}

@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext
 import org.openrdf.model.Value
 import java.nio.charset.StandardCharsets
 import se.lu.nateko.cp.meta.LabelingUserDto
+import org.openrdf.model.vocabulary.RDF
 
 
 class StationLabelingService(
@@ -41,7 +42,7 @@ class StationLabelingService(
 
 		piUriOpt match{
 			case None =>
-				LabelingUserDto(uinfo.mail, false, Some(uinfo.givenName), Some(uinfo.surname))
+				LabelingUserDto(None, uinfo.mail, false, Some(uinfo.givenName), Some(uinfo.surname))
 			case Some(piUri) =>
 				val props = provisionalInfoServer
 					.getStatements(piUri)
@@ -50,6 +51,7 @@ class StationLabelingService(
 					.collect{case (pred, SesameStatement(_, _, v: Literal)) => (pred, v.getLabel)} //keeping only data props
 					.toMap
 				LabelingUserDto(
+					uri = Some(piUri.toJava),
 					mail = uinfo.mail,
 					isPi = true,
 					firstName = props.get(vocab.hasFirstName).orElse(Some(uinfo.givenName)),
@@ -95,11 +97,41 @@ class StationLabelingService(
 			info.infrastructure.map(fromString(vocab.hasExistingInfrastructure))
 		).flatten
 
+		val hasAssociatedFile = vocab.hasAssociatedFile
+
 		val currentInfo = server.getStatements(stationUri).filter{
-			case SesameStatement(_, pred: URI, _) if pred == vocab.hasAssociatedFile => false
+			case SesameStatement(_, `hasAssociatedFile`, _) => false
 			case _ => true
 		}
-		updateInfo(currentInfo, newInfo)
+		updateInfo(currentInfo, newInfo, server)
+	}
+
+	def saveUserInfo(info: LabelingUserDto, uploader: UserInfo): Try[Unit] = Try{
+		if(info.uri.isEmpty) throw new UnauthorizedUserInfoUpdateException("User must be identified by a URI")
+		val userUri = factory.createURI(info.uri.get)
+		val userEmail = getPiEmails(userUri).toIndexedSeq.headOption.getOrElse(
+			throw new UnauthorizedUserInfoUpdateException("User had no email in the database")
+		)
+		if(!userEmail.equalsIgnoreCase(uploader.mail))
+			throw new UnauthorizedUserInfoUpdateException("User is allowed to update only his/her own information")
+
+		def fromString(pred: URI)(str: String) = factory.createStatement(userUri, pred, vocab.lit(str))
+		
+		val newInfo = Seq(
+			info.firstName.map(fromString(vocab.hasFirstName)),
+			info.lastName.map(fromString(vocab.hasLastName)),
+			info.affiliation.map(fromString(vocab.hasAffiliation)),
+			info.phone.map(fromString(vocab.hasPhone))
+		).flatten
+
+		val protectedPredicates = Set(vocab.hasEmail, RDF.TYPE)
+
+		val currentInfo = provisionalInfoServer.getStatements(userUri).filter{
+			case SesameStatement(_, pred, _) if protectedPredicates.contains(pred) => false
+			case _ => true
+		}
+
+		updateInfo(currentInfo, newInfo, provisionalInfoServer)
 	}
 
 	def processFile(fileInfo: UploadedFile, uploader: UserInfo)(implicit ex: ExecutionContext): Future[Unit] = Future{
@@ -123,7 +155,7 @@ class StationLabelingService(
 			server.getStatements(Some(file), Some(vocab.files.hasName), None) ++
 			server.getStatements(Some(file), Some(vocab.files.hasType), None)).toIndexedSeq
 
-		updateInfo(currentInfo, newInfo)
+		updateInfo(currentInfo, newInfo, server)
 	}
 
 	def deleteFile(station: java.net.URI, file: java.net.URI, uploader: UserInfo): Try[Unit] = Try{
@@ -135,7 +167,7 @@ class StationLabelingService(
 		server.remove(vocab.factory.createStatement(stationUri, vocab.hasAssociatedFile, fileUri))
 	}
 
-	private def updateInfo(currentInfo: Seq[Statement], newInfo: Seq[Statement]): Unit = {
+	private def updateInfo(currentInfo: Seq[Statement], newInfo: Seq[Statement], server: InstanceServer): Unit = {
 		val toRemove = currentInfo.diff(newInfo)
 		val toAdd = newInfo.diff(currentInfo)
 

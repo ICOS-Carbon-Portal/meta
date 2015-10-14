@@ -3,26 +3,14 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 	var FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);
 	var LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(labelingStartAction);
 
-	function stateFromStore(storeState){
+	var StoreListeningMixin = Reflux.connectFilter(FileAwareStationStore, function(storeState){
 		return {
 			station: _.clone(storeState.chosen),
 			originalStation: _.clone(storeState.chosen),
 			errors: {},
 			valid: true
 		};
-	}
-
-	var InnerStore = Reflux.createStore({
-		getInitialState: function(){
-			return stateFromStore(FileAwareStationStore.getInitialState());
-		},
-		init: function(){
-			this.listenTo(FileAwareStationStore, this.mapAndForward);
-		},
-		mapAndForward: function(fileAwareStoreState){
-			this.trigger(stateFromStore(fileAwareStoreState));
-		}
-	});
+	})
 
 	var StationBaseMixin = {
 		render: function() {
@@ -82,7 +70,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 
 	};
 
-	return [StationBaseMixin, Reflux.connect(InnerStore)];
+	return [StationBaseMixin, StoreListeningMixin];
 
 }
 

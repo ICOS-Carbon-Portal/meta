@@ -4,7 +4,13 @@ var Inputs = require('./FormInputs.jsx');
 module.exports = function(WhoAmIStore, savePiAction){
 	return React.createClass({
 
-		mixins: [Reflux.connect(WhoAmIStore, "user")],
+		mixins: [Reflux.connectFilter(WhoAmIStore, function(storeState){
+			return {
+				user: storeState,
+				userOriginal: storeState,
+				errors: {}
+			};
+		})],
 
 		render: function() {
 
@@ -34,7 +40,7 @@ module.exports = function(WhoAmIStore, savePiAction){
 
 			return (errors, newValue) => {
 				var newState = _.clone(self.state);
-				newState.errors = _.clone(self.state.errors || {});
+				newState.errors = _.clone(self.state.errors);
 
 				newState.errors[propName] = errors;
 				newState.valid = _.isEmpty(_.flatten(_.values(newState.errors)));
@@ -44,7 +50,7 @@ module.exports = function(WhoAmIStore, savePiAction){
 					newState.user[propName] = newValue;
 				}
 
-				if(!_.isEqual(newState, self.state)) self.setState(newState);
+				if(!_.isEqual(newState.user, self.state.user)) self.setState(newState);
 			};
 		},
 
@@ -58,7 +64,7 @@ module.exports = function(WhoAmIStore, savePiAction){
 		},
 
 		canSave: function(){
-			return _.isEmpty(_.flatten(_.values(this.state.errors)));
+			return _.isEmpty(_.flatten(_.values(this.state.errors))) && !_.isEqual(this.state.user, this.state.userOriginal);
 		}
 
 	});

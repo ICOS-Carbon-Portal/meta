@@ -20,9 +20,10 @@ var themeToFiles = {
 };
 
 function getFileExpectations(fileType, actualCount){
-	if(fileType.min <= actualCount) return [];
-	var howMany = ((fileType.min === fileType.max) ? 'exactly ' : 'at least ') + fileType.min;
-	return [['Must supply ', howMany, ' document(s) of type "', fileType.type, '"'].join('')];
+	var missing = fileType.min - actualCount;
+	return (missing > 0)
+		? [['Must supply ', missing, ' more document(s) of type "', fileType.type, '"'].join('')]
+		: [];
 }
 
 module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDeleteAction){
@@ -54,21 +55,37 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 		fileUploadHandler: function(fileInfo){
 			var self = this;
 
-			var formData = new FormData();
-			_.each(_.keys(fileInfo), key => formData.append(key, fileInfo[key]));
+			function theStationIsStillChosen(){
+				return (fileInfo.stationUri === self.state.chosen.stationUri);
+			}
 
-			Backend.uploadFile(formData).then(() =>
-				(fileInfo.stationUri === self.state.chosen.stationUri)
-					? Backend.getStationFiles(fileInfo.stationUri)
-					: Promise.resolve([])
-			).then(
-				files => {
-					if (fileInfo.stationUri !== self.state.chosen.stationUri) return;
+			function makeFormData(file){
+				var formData = new FormData();
+				formData.append('fileType', fileInfo.fileType.type);
+				formData.append('stationUri', fileInfo.stationUri);
+				formData.append('uploadedFile', file);
+				return formData;
+			}
 
-					self.updateFiles(files);
-				},
-				err => console.log(err)
-			);
+			function uploadFiles(files){
+				if(_.isEmpty(files)) return;
+
+				Backend.uploadFile(makeFormData(_.first(files)))
+					.then(() =>
+						theStationIsStillChosen()
+							? Backend.getStationFiles(fileInfo.stationUri)
+							: Promise.resolve([])
+					)
+					.then(latestFileList => {
+						if(theStationIsStillChosen()) self.updateFiles(latestFileList);
+					})
+					.then(
+						() => uploadFiles(_.rest(files)),
+						err => console.log(err)
+					);
+			}
+
+			uploadFiles(fileInfo.files);
 		},
 
 		fileDeleteHandler: function(fileInfo){
@@ -115,7 +132,12 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 				return typeCounts[typeName] || 0;
 			}
 
-			var availableFileTypes = _.filter(allFileTypes, type => (type.max > actualCount(type.type)));
+			var availableFileTypes = allFileTypes
+				.filter(type => (type.max > actualCount(type.type)))
+				.map(type => {
+					var newMax = type.max - actualCount(type.type);
+					return _.extend({}, type, {max: newMax});
+				});
 			var fileExpectations = _.flatten(
 				allFileTypes.map(type => getFileExpectations(type, actualCount(type.type)))
 			);

@@ -28,7 +28,7 @@ var themeToFiles = {
 function getFileExpectations(fileType, actualCount){
 	var missing = fileType.min - actualCount;
 	return (missing > 0)
-		? [['Must supply ', missing, ' more document(s) of type "', fileType.type, '"'].join('')]
+		? [['Must supply ', missing, ' more file(s) of type "', fileType.type, '"'].join('')]
 		: [];
 }
 

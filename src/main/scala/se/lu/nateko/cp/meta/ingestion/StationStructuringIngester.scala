@@ -115,6 +115,7 @@ class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(facto
 	val hasConstructionEndDate= getRelative("hasConstructionEndDate")
 	val hasTelecom= getRelative("hasTelecom")
 	val hasExistingInfrastructure= getRelative("hasExistingInfrastructure")
+	val hasAnemometerDirection = getRelative("hasAnemometerDirection")
 
 	val files = new FilesVocab(factory)
 

@@ -83,6 +83,7 @@ WHERE{
 		OPTIONAL{?s cpst:hasOperationalDateEstimate ?plannedDateOperational}
 		OPTIONAL{?s cpst:hasTelecom ?telecom}
 		OPTIONAL{?s cpst:hasExistingInfrastructure ?infrastructure}
+		OPTIONAL{?s cpst:hasAnemometerDirection ?anemometerDir}
 	}
 }`;
 }

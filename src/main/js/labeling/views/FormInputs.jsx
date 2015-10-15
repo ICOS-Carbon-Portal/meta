@@ -16,10 +16,14 @@ function fromMixins(){
 	return React.createClass({mixins: arguments});
 }
 
-var InputBaseMixin = {
+var InputBase = {
 
 	componentWillMount: function(){
 		this.validators = this.validators || [];
+	},
+
+	componentDidMount: function(){
+		this.pushUpdate(this.props.value);
 	},
 
 	componentWillReceiveProps: function(newProps){
@@ -43,18 +47,18 @@ var InputBaseMixin = {
 	}
 };
 
-var TextInputMixin = _.extend({
+var TextInput = _.extend({
 	render: function() {
 		var errors = this.getErrors(this.props.value);
 
 		var style = _.isEmpty(errors) ? {} : {backgroundColor: "pink"};
 
 		return <input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
-					  value={this.props.value} disabled={this.props.disabled} />;
+					value={this.props.value} disabled={this.props.disabled} />;
 	}
-}, InputBaseMixin);
+}, InputBase);
 
-var TextAreaMixin = _.extend({
+var TextArea = _.extend({
 	render: function() {
 		var errors = this.getErrors(this.props.value);
 
@@ -63,9 +67,9 @@ var TextAreaMixin = _.extend({
 		return <textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
 					  value={this.props.value} disabled={this.props.disabled} />;
 	}
-}, InputBaseMixin);
+}, InputBase);
 
-var DropDownMixin = _.extend({
+var DropDown = _.extend({
 	render: function() {
 		return <select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
 			_.map(this.props.options, (text, value) =>
@@ -73,34 +77,31 @@ var DropDownMixin = _.extend({
 			)
 		}</select>;
 	}
-}, InputBaseMixin);
+}, InputBase);
 
-var StringInputMixin = {extractUpdatedValue: _.identity};
-var NumberInputMixin = {extractUpdatedValue: s => parseFloat(s)};
+var StringInput = {extractUpdatedValue: _.identity};
+var NumberInput = {extractUpdatedValue: s => parseFloat(s)};
 
-var IsNumberMixin = getValidatingMixin(value => {
-	return (parseFloat(value).toString() === value.toString()) ? [] : ["Not a valid number!"];
-});
+var IsNumber = getValidatingMixin(value =>
+	_.isUndefined(value) || _.isNull(value) || _.isNumber(value) ||
+	(parseFloat(value).toString() === value.toString())
+		? []
+		: ["Not a valid number!"]
+);
 
-var IsUrlMixin = getValidatingMixin(value => {
-	if (value == undefined || value.length == 0){
-		return [];
-	} else {
-		return /^(https?):\/\//i.test(value) ? [] : ["The URL must begin with http:// or https://"];
-	}
-});
+var IsInt = getValidatingMixin(value =>
+	_.isUndefined(value) || _.isNull(value) || (parseInt(value).toString() === value.toString())
+		? []
+		: ["Not a valid integer!"]
+);
 
-var IsPhoneMixin = getValidatingMixin(value => {
-	if(_.isEmpty(value)) return [];
-	return /\+[\d\s]{8,}/.test(value) ? [] : ["Must be a phone number in the international format +XXXXXXXX (spaces allowed)"];
-});
-
-var IsNotEmpty = getValidatingMixin(value => {
-	return (value !== undefined && value.length > 0) ? [] : ["Required field. It must be filled in."];
+var IsRequired = getValidatingMixin(value => {
+	return (_.isEmpty(value) && !_.isNumber(value)) ? ["Required field. It must be filled in."] : [];
 });
 
 function hasMinValue(minValue){
 	return getValidatingMixin(value => {
+		if(_.isNull(value) || _.isUndefined(value)) return [];
 		var num = parseFloat(value);
 		return num >= minValue ? [] : ["Value must not be less than " + minValue];
 	});
@@ -108,32 +109,48 @@ function hasMinValue(minValue){
 
 function hasMaxValue(maxValue){
 	return getValidatingMixin(value => {
+		if(_.isNull(value) || _.isUndefined(value)) return [];
 		var num = parseFloat(value);
 		return num <= maxValue ? [] : ["Value must not exceed " + maxValue];
 	});
 }
 
+function matchesRegex(regex, errorMessage){
+	return getValidatingMixin(value => {
+		if(_.isEmpty(value)) return [];
+		return regex.test(value) ? [] : [errorMessage];
+	});
+}
+
+var IsPhone = matchesRegex(/^\+[\d\s]{8,}$/, "Must be a phone number in the international format +XXXXXXXX (spaces allowed)");
+var IsUrl = matchesRegex(/^(https?):\/\//i, "The URL must begin with http:// or https://");
+var IsLat5Dec = matchesRegex(/^\-?\d{2}\.\d{5}$/, "Must have format [-]XX.xxxxx");
+var IsLon5Dec = matchesRegex(/^\-?\d{2,3}\.\d{5}$/, "Must have format [-][X]XX.xxxxx");
 
 module.exports = {
 
-	Number: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin),
+	Number: fromMixins(TextInput, NumberInput, IsNumber),
 
-	Latitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-90), hasMaxValue(90)),
+	Latitude: fromMixins(TextInput, NumberInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
+	Lat5Dec: fromMixins(TextInput, NumberInput, IsLat5Dec, hasMinValue(-90), hasMaxValue(90)),
 
-	Longitude: fromMixins(TextInputMixin, NumberInputMixin, IsNumberMixin, hasMinValue(-180), hasMaxValue(180)),
+	Longitude: fromMixins(TextInput, NumberInput, IsNumber, hasMinValue(-180), hasMaxValue(180)),
+	Lon5Dec: fromMixins(TextInput, NumberInput, IsLon5Dec, hasMinValue(-180), hasMaxValue(180)),
 
-	URL: fromMixins(TextInputMixin, StringInputMixin, IsUrlMixin),
-	Phone: fromMixins(TextInputMixin, StringInputMixin, IsPhoneMixin),
+	Direction: fromMixins(TextInput, NumberInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
 
-	String: fromMixins(TextInputMixin, StringInputMixin),
+	URL: fromMixins(TextInput, StringInput, IsUrl),
+	Phone: fromMixins(TextInput, StringInput, IsPhone),
 
-	StringRequired: fromMixins(TextInputMixin, StringInputMixin, IsNotEmpty),
+	String: fromMixins(TextInput, StringInput),
 
-	TextArea: fromMixins(TextAreaMixin, StringInputMixin),
+	StringRequired: fromMixins(TextInput, StringInput, IsRequired),
 
-	TextAreaRequired: fromMixins(TextAreaMixin, StringInputMixin, IsNotEmpty),
+	TextArea: fromMixins(TextArea, StringInput),
 
-	DropDownString: fromMixins(DropDownMixin, StringInputMixin),
+	TextAreaRequired: fromMixins(TextArea, StringInput, IsRequired),
+
+	DropDownString: fromMixins(DropDown, StringInput),
 
 	Header: React.createClass({
 		render: function() {

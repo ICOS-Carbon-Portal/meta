@@ -94,7 +94,8 @@ class StationLabelingService(
 			info.constructionEndDate.map(fromString(vocab.hasConstructionEndDate)),
 			info.plannedDateOperational.map(fromString(vocab.hasOperationalDateEstimate)),
 			info.telecom.map(fromString(vocab.hasTelecom)),
-			info.infrastructure.map(fromString(vocab.hasExistingInfrastructure))
+			info.infrastructure.map(fromString(vocab.hasExistingInfrastructure)),
+			info.anemometerDir.map(fromInt(vocab.hasAnemometerDirection))
 		).flatten
 
 		val hasAssociatedFile = vocab.hasAssociatedFile

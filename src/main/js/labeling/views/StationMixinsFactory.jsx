@@ -31,18 +31,22 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 			var self = this;
 
 			return (errors, newValue) => {
-				var newState = _.clone(self.state);
-				newState.errors = _.clone(self.state.errors);
+				var newState;
 
-				newState.errors[propName] = errors;
-				newState.valid = _.isEmpty(_.flatten(_.values(newState.errors)));
+				if(!_.isEqual(errors, self.state.errors[propName] || [])){
+					newState = newState || _.clone(self.state);
+					newState.errors = _.clone(self.state.errors);
+					newState.errors[propName] = errors;
+					newState.valid = _.isEmpty(_.flatten(_.values(newState.errors)));
+				}
 
-				if(!_.isUndefined(newValue)){
+				if(newValue !== self.state.station[propName]){
+					newState = newState || _.clone(self.state);
 					newState.station = _.clone(self.state.station);
 					newState.station[propName] = newValue;
 				}
 
-				if(!_.isEqual(newState, self.state)) self.setState(newState);
+				if(newState) self.setState(newState);
 			};
 		},
 

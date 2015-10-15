@@ -5,16 +5,22 @@ var themeToFiles = {
 		{min: 1, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ecosystem: [
-		{min: 1, max: 1, type: "Station information"},
-		{min: 1, max: 1, type: "DEM", tip: "Digital elevation model of an area 3x3 km around the tower"},
-		{min: 1, max: 1, type: "High resolution image", tip: "High resolution aerial or satellite color image of an area 3x3 km around the tower"},
-		{min: 1, max: 1, type: "Vegetation map", tip: "Vegetation map of the 3x3 km around the tower"},
-		{min: 12, max: 12, type: "30-degrees photo", tip: "12 photos (every 30 degrees starting from North) taken from the tower position"},
-		{min: 0, max: 4, type: "Looking-down photo", tip: "4 photos from the top of the tower looking down, on the 4 sides, outside the tower"},
+		{min: 1, max: 1, type: "Basic site information", tip: "Ecosystem type, management, recent disturbances, site description, etc."},
+		{min: 1, max: 1, type: "Power availability", tip: "Source and kW available in total"},
+		{min: 1, max: 1, type: "Internet connection", tip: "Internet connection, system and capacity (speed, robustness)"},
+		{min: 1, max: 1, type: "Other projects", tip: "Sharing of the facility with other initiatives, networks, and projects"},
+		{min: 0, max: 1, type: "Wind direction (sectors/months)", tip: "Wind sectors in rows (max 30 degrees width) and months on columns"},
+		{min: 0, max: 1, type: "Wind direction (time series)", tip: "Maximum hourly time resolution, one full year, time vs degrees w.r.t. North"},
+		{min: 1, max: 3, type: "DEM", tip: "Digital elevation model of an area 3x3 km around the tower"},
+		{min: 1, max: 3, type: "High resolution image", tip: "High resolution aerial or satellite color image of an area 3x3 km around the tower"},
+		{min: 1, max: 3, type: "Vegetation map", tip: "Vegetation map of the 3x3 km around the tower"},
+
+		{min: 12, max: 12, type: "30-degrees photo outside canopy", tip: "12 photos (every 30 degrees starting from North) taken from the tower position"},
+		{min: 0, max: 12, type: "30-degrees photo below canopy", tip: "For forest sites"},
+		{min: 0, max: 4, type: "4-direction photo", tip: "Forest sites: from the tower top looking down; non-forest: 4 photos of the tower"},
 		{min: 1, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ocean: [
-		{min: 0, max: 20, type: "Any file"},
 		{min: 1, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	]
 };

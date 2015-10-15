@@ -57,7 +57,8 @@ case class StationLabelingDto(
 	constructionEndDate: Option[String],
 	plannedDateOperational: Option[String],
 	telecom: Option[String],
-	infrastructure: Option[String]
+	infrastructure: Option[String],
+	anemometerDir: Option[Int]
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

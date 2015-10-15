@@ -11,13 +11,14 @@ $(function () {
 	});
 
 	var config = {
-		hiddenCols: [0, 1, 2, 3, 4],
-		themeShortInd: 4,
-		themeInd: 5,
+		hiddenCols: [0, 1, 2, 3, 4, 5],
 		latInd: 1,
 		lonInd: 2,
-		posDescInd: 3,
-		shortNameInd: 7
+		geoJson: 3,
+		posDescInd: 4,
+		themeShortInd: 5,
+		themeInd: 6,
+		shortNameInd: 8
 	};
 
 	stationsPromise
@@ -42,30 +43,40 @@ function init(stations, config){
 			},
 			{
 				targets: [config.themeInd],
-				render: function(data, type, row, meta){
-					if (row[config.latInd] == "?" || row[config.lonInd] == "?"){
-						if(row[config.posDescInd] == "?") {
-							return data;
-						} else {
-							var args = [
-								"this",
-								"'" + row[config.shortNameInd] + "'",
-								"'" + row[config.posDescInd] + "'"
-							].join(",");
+				fnCreatedCell: function (nTd, sData, oData, iRow, iCol) {
+					if (oData[config.latInd] == "?" || oData[config.lonInd] == "?"){
+						if (oData[config.geoJson] != "?"){
 
-							return data + ' <span class="lnk glyphicon glyphicon-globe" onclick="showLocDesc(' + args + ')"></span>';
+							var $icon = $('<span class="blue-lnk glyphicon glyphicon-globe"></span>');
+
+							$icon.click(function(){
+								showMap(this, oData[config.shortNameInd], oData[config.themeShortInd], null, null, JSON.parse(oData[config.geoJson]));
+							});
+
+							$(nTd).append("&nbsp;").append($icon);
+
+						} else if(oData[config.posDescInd] != "?") {
+
+							var $icon = $('<span class="lnk glyphicon glyphicon-globe"></span>');
+
+							$icon.click(function(){
+								showLocDesc(this, oData[config.shortNameInd], oData[config.posDescInd]);
+							});
+
+							$(nTd).append("&nbsp;").append($icon);
+
 						}
-
 					} else {
-						var args = [
-							"this",
-							"'" + row[config.shortNameInd] + "'",
-							"'" + row[config.themeShortInd] + "'",
-							row[config.latInd],
-							row[config.lonInd]
-						].join(",");
 
-						return data + ' <span class="blue-lnk glyphicon glyphicon-globe" onclick="showMap(' + args + ')"></span>';
+						var $icon = $('<span class="blue-lnk glyphicon glyphicon-globe"></span>');
+
+						$icon.click(function(){
+							showMap(this, oData[config.shortNameInd], oData[config.themeShortInd],
+								parseFloat(oData[config.latInd]), parseFloat(oData[config.lonInd]), null);
+						});
+
+						$(nTd).append("&nbsp;").append($icon);
+
 					}
 				}
 			}
@@ -141,25 +152,11 @@ function init(stations, config){
 
 }
 
-function showMap(sender, title, theme, lat, lon){
+function showMap(sender, title, theme, lat, lon, geoJson){
 	var $dialog = $("#map").dialog();
-	var $titlebar = $dialog.parents('.ui-dialog').find('.ui-dialog-titlebar');
-
-	$titlebar.text("Station map - " + title);
-
-	if($titlebar.find(".float-right").length == 0) {
-		$('<button class="float-right btn btn-default btn-xs"><span class="glyphicon glyphicon-remove"></span></button>')
-			.appendTo($titlebar).click(function () {
-				$dialog.dialog("close");
-			});
-	}
-
-	$dialog.dialog("open");
-	$dialog.dialog("option", "position", { my: "left top", at: "right+50px top", of: sender});
+	prepareDialog($dialog, sender, title);
 
 	$("#map").find(".ol-viewport").show();
-	$("#map").find("#locationDescSpan").remove();
-
 
 	if ($('#map').find('canvas').length == 0) {
 		var mapQuestMap = new ol.layer.Tile({
@@ -168,23 +165,39 @@ function showMap(sender, title, theme, lat, lon){
 			source: new ol.source.MapQuest({layer: 'osm'})
 		});
 
-		var station = getPointLayer({
+		var station = getVectorLayer({
 			theme: theme,
 			data: [{
-				pos: [lon, lat]
+				pos: [lon, lat],
+				geoJson: geoJson
 			}]
 		});
 
 		var view = new ol.View({
-			center: ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'),
+			center: ol.proj.transform([0, 0], 'EPSG:4326', 'EPSG:3857'),
 			zoom: 5
 		});
+
+		if (isNumeric(lat) && isNumeric(lon)) {
+			view = new ol.View({
+				center: ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'),
+				zoom: 5
+			});
+		}
 
 		var map = new ol.Map({
 			layers: [mapQuestMap, station],
 			target: 'map',
 			view: view
 		});
+
+		if(geoJson != null){
+			var extent = station.getSource().getExtent();
+			view.fit(extent, map.getSize(), {
+				padding: [10, 10, 10, 10]
+			});
+		}
+
 		$('#map').data('map', map);
 
 	} else {
@@ -196,18 +209,35 @@ function showMap(sender, title, theme, lat, lon){
 		stationLayer.getSource().addFeatures(getVectorFeatures({
 				theme: theme,
 				data: [{
-					pos: [lon, lat]
+					pos: [lon, lat],
+					geoJson: geoJson
 				}]
 			})
 		);
 
-		map.getView().setCenter(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'));
-		map.getView().setZoom(5);
+		if (geoJson == null) {
+			map.getView().setCenter(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'));
+			map.getView().setZoom(5);
+		} else {
+			var view = map.getView();
+			var extent = stationLayer.getSource().getExtent();
+			view.fit(extent, map.getSize(), {
+				padding: [5, 5, 5, 5]
+			});
+		}
 	}
 }
 
 function showLocDesc(sender, title, txt){
 	var $dialog = $("#map").dialog();
+	prepareDialog($dialog, sender, title);
+
+	$("#map").find(".ol-viewport").hide();
+
+	$dialog.prepend('<span id="locationDescSpan"><b>Position is not defined. Location description is:</b> ' + txt + '</span>');
+}
+
+function prepareDialog($dialog, sender, title){
 	var $titlebar = $dialog.parents('.ui-dialog').find('.ui-dialog-titlebar');
 
 	$titlebar.text("Station map - " + title);
@@ -222,10 +252,7 @@ function showLocDesc(sender, title, txt){
 	$dialog.dialog("open");
 	$dialog.dialog("option", "position", { my: "left top", at: "right+50px top", of: sender});
 
-	$("#map").find(".ol-viewport").hide();
 	$("#map").find("#locationDescSpan").remove();
-
-	$dialog.prepend('<span id="locationDescSpan"><b>Position is not defined. Location description is:</b> ' + txt + '</span>');
 }
 
 function extractSuggestions(data){
@@ -244,6 +271,7 @@ function fetchStations(){
 		'(str(?s) AS ?id)',
 		'(IF(bound(?lat), str(?lat), "?") AS ?latstr)',
 		'(IF(bound(?lon), str(?lon), "?") AS ?lonstr)',
+		'(IF(bound(?spatRef), str(?spatRef), "?") AS ?geoJson)',
 		'(IF(bound(?locationDesc), str(?locationDesc), "?") AS ?location)',
 		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)',
 		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?Theme)',
@@ -266,6 +294,7 @@ function fetchStations(){
 		'?s a ?class .',
 		'OPTIONAL{?s cpst:hasLat ?lat } .',
 		'OPTIONAL{?s cpst:hasLon ?lon } .',
+		'OPTIONAL{?s cpst:hasSpatialReference ?spatRef } .',
 		'OPTIONAL{?s cpst:hasLocationDescription ?locationDesc } .',
 		'?s cpst:hasCountry ?country .',
 		'?s cpst:hasShortName ?sName .',
@@ -284,15 +313,14 @@ function fetchStations(){
 		'?s cpst:isAlreadyOperational ?isOperational .',
 		'?s cpst:hasFundingForConstruction ?fundingForConstruction .',
 		'}',
-		'GROUP BY ?s ?lat ?lon ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
+		'GROUP BY ?s ?lat ?lon ?spatRef ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
 		' ?elevationAboveGround ?stationClass ?stationKind ?preIcosMeasurements ?operationalDateEstimate ?isOperational ?fundingForConstruction'
 	].join("\n");
 
 	return $.ajax({
 		type: "POST",
 		data: {query: query},
-		url: "https://meta.icos-cp.eu/sparql",
-		//url: "http://127.0.0.1:9094/sparql",
+		url: getSparqlUrl(),
 		dataType: "json"
 	});
 }

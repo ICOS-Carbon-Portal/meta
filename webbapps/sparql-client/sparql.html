@@ -31,6 +31,14 @@
 			});
 		}
 
+		function getSparqlUrl(){
+			if (location.hostname == "static.icos-cp.eu") {
+				return "https://meta.icos-cp.eu/sparql";
+			} else {
+				return "http://127.0.0.1:9094/sparql"
+			}
+		}
+
 		$(function () {
 			$("#result").hide();
 			$("#messDiv").hide();
@@ -40,8 +48,7 @@
 				$.ajax({
 					type: "POST",
 					data: {query: $("#query").val()},
-					url: "https://meta.icos-cp.eu/sparql",
-//					url: "http://127.0.0.1:9094/sparql",
+					url: getSparqlUrl(),
 					dataType: "json",
 					success: function(result){
 						$("#result").show();

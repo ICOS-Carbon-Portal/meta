@@ -66,13 +66,13 @@ function initMap(stations) {
 	});
 
 	//Station layers
-	var OsStations = getPointLayer(stations.OS);
+	var OsStations = getVectorLayer(stations.OS);
 	OsStations.theme = "OS";
 	
-	var EsStations = getPointLayer(stations.ES);
+	var EsStations = getVectorLayer(stations.ES);
 	EsStations.theme = "ES";
 	
-	var AsStations = getPointLayer(stations.AS);
+	var AsStations = getVectorLayer(stations.AS);
 	AsStations.theme = "AS";
 	
 
@@ -150,13 +150,13 @@ function addRefreshEv(map){
 			.done(function(result){
 				var stations = parseStationsJson(result);
 
-				var OsStations = getPointLayer(stations.OS);
+				var OsStations = getVectorLayer(stations.OS);
 				OsStations.theme = "OS";
 
-				var EsStations = getPointLayer(stations.ES);
+				var EsStations = getVectorLayer(stations.ES);
 				EsStations.theme = "ES";
 
-				var AsStations = getPointLayer(stations.AS);
+				var AsStations = getVectorLayer(stations.AS);
 				AsStations.theme = "AS";
 
 				map.getLayers().forEach(function (layer){
@@ -279,55 +279,35 @@ function fetchStations(){
 		'(str(?s) AS ?id)',
 		'(IF(bound(?lat), str(?lat), "?") AS ?latstr)',
 		'(IF(bound(?lon), str(?lon), "?") AS ?lonstr)',
-		//'(IF(bound(?locationDesc), str(?locationDesc), "?") AS ?location)',
+		'(IF(bound(?spatRef), str(?spatRef), "?") AS ?geoJson)',
 		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)',
-		//'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?Theme)',
 		'(str(?country) AS ?Country)',
 		'(str(?sName) AS ?Short_name)',
 		'(str(?lName) AS ?Long_name)',
 		'(GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)',
-		//'(GROUP_CONCAT(?pIMail; separator=";") AS ?PI_mails)',
 		'(str(?siteType) AS ?Site_type)',
-		//'(IF(bound(?elevationAboveSea), str(?elevationAboveSea), "?") AS ?Elevation_AS)',
-		//'(IF(bound(?elevationAboveGround), str(?elevationAboveGround), "?") AS ?Elevation_AG)',
-		//'(str(?stationClass) AS ?Station_class)',
-		//'(str(?stationKind) AS ?Station_kind)',
-		//'(str(?preIcosMeasurements) AS ?Pre_ICOS_meassurement)',
-		//'(IF(bound(?operationalDateEstimate), str(?operationalDateEstimate), "?") AS ?Operational_date_estimate)',
-		//'(str(?isOperational) AS ?Is_operational)',
-		//'(str(?fundingForConstruction) AS ?Funding_for_construction)',
 		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
 		'OPTIONAL{?s cpst:hasLat ?lat } .',
 		'OPTIONAL{?s cpst:hasLon ?lon } .',
-		//'OPTIONAL{?s cpst:hasLocationDescription ?locationDesc } .',
+		'OPTIONAL{?s cpst:hasSpatialReference ?spatRef } .',
 		'?s cpst:hasCountry ?country .',
 		'?s cpst:hasShortName ?sName .',
 		'?s cpst:hasLongName ?lName .',
 		'?s cpst:hasPi ?pi .',
 		'OPTIONAL{?pi cpst:hasFirstName ?piFname } .',
 		'?pi cpst:hasLastName ?piLname .',
-		//'?pi cpst:hasEmail ?pIMail .',
 		'?s cpst:hasSiteType ?siteType .',
-		//'OPTIONAL{?s cpst:hasElevationAboveSea ?elevationAboveSea } .',
-		//'OPTIONAL{?s cpst:hasElevationAboveGround ?elevationAboveGround } .',
-		//'?s cpst:hasStationClass ?stationClass .',
-		//'?s cpst:hasStationKind ?stationKind .',
-		//'?s cpst:hasPreIcosMeasurements ?preIcosMeasurements .',
-		//'OPTIONAL{?s cpst:hasOperationalDateEstimate ?operationalDateEstimate } .',
-		//'?s cpst:isAlreadyOperational ?isOperational .',
-		//'?s cpst:hasFundingForConstruction ?fundingForConstruction .',
 		'}',
-		'GROUP BY ?s ?lat ?lon ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
+		'GROUP BY ?s ?lat ?lon ?spatRef ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
 		' ?elevationAboveGround ?stationClass ?stationKind ?preIcosMeasurements ?operationalDateEstimate ?isOperational ?fundingForConstruction'
 	].join("\n");
 
 	return $.ajax({
 		type: "POST",
 		data: {query: query},
-		url: "https://meta.icos-cp.eu/sparql",
-		//url: "http://127.0.0.1:9094/sparql",
+		url: getSparqlUrl(),
 		dataType: "json"
 	});
 }
@@ -344,12 +324,14 @@ function parseStationsJson(stationsJson){
 	});
 
 	stationsJson.results.bindings.forEach(function(binding){
-		if(isNumeric(binding["latstr"].value) && isNumeric(binding["lonstr"].value)) {
+		//Only include stations that have a lat-lon position or a spatial reference (geoJson)
+		if((isNumeric(binding["latstr"].value) && isNumeric(binding["lonstr"].value)) || binding["geoJson"].value != "?") {
 			var tmp = {};
 			var lookupStation = {};
 			lookupStation.attr = {};
 			var lat = null;
 			var lon = null;
+			var geoJson = null;
 			var theme = null;
 
 			columns.forEach(function (colName) {
@@ -371,6 +353,10 @@ function parseStationsJson(stationsJson){
 						lon = parseFloat(binding[colName].value);
 						break;
 
+					case "geoJson":
+						geoJson = binding[colName].value;
+						break;
+
 					default:
 						if (colName == "Country") {
 							tmp[colName] = countries[binding[colName].value] + " (" + binding[colName].value + ")";
@@ -382,7 +368,13 @@ function parseStationsJson(stationsJson){
 				}
 			});
 
-			tmp.pos = [lon, lat];
+			if (isNumeric(lon) && isNumeric(lat)) {
+				tmp.pos = [lon, lat];
+				tmp.geoJson = null;
+			} else {
+				tmp.pos = [];
+				tmp.geoJson = geoJson;
+			}
 
 			switch (theme) {
 				case "AS":
@@ -409,8 +401,4 @@ function parseStationsJson(stationsJson){
 	stations.lookupTable = lookupTable;
 
 	return stations;
-}
-
-function isNumeric(n) {
-	return !isNaN(parseFloat(n)) && isFinite(n);
 }

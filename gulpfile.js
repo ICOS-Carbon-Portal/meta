@@ -27,7 +27,7 @@ var babel = require('babelify');
 		return browserify({
 				entries: [paths.main],
 				debug: false,
-				transform: [reactify, babel]
+				transform: [babel, reactify]
 			})
 			.bundle()
 			.on('error', function(err){

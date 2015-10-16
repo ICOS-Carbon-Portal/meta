@@ -1,26 +1,25 @@
-var PropertyValues = require('./PropertyValues.js');
-var LiteralValue = require('./LiteralValue.js');
-var Validation = require('./Validation.js');
+import PropertyValues from './PropertyValues.js';
+import LiteralValue from './LiteralValue.js';
+import Validation from './Validation.js';
 
-function LiteralPropertyValues(property, valueDtos){
-	this._propertyDto = property;
-	this._values = this.makeValues(valueDtos);
+export default class LiteralPropertyValues extends PropertyValues{
+	constructor(property, valueDtos){
+		super();
+		this._propertyDto = property;
+		this._values = this.makeValues(valueDtos);
+	}
+
+	makeValues(valueDtos){
+
+		var validator = Validation.getValidator(this._propertyDto.range);
+
+		return _.map(valueDtos, valueDto => {
+
+			if(valueDto.type != "literal") throw new Error("Must have been a literal value: " + JSON.stringify(valueDto));
+
+			return new LiteralValue(valueDto.value, validator);
+		});
+	};
+
 }
 
-LiteralPropertyValues.prototype = new PropertyValues();
-LiteralPropertyValues.prototype.constructor = LiteralPropertyValues;
-
-
-LiteralPropertyValues.prototype.makeValues = function(valueDtos){
-
-	var validator = Validation.getValidator(this._propertyDto.range);
-
-	return _.map(valueDtos, function(valueDto){
-
-		if(valueDto.type != "literal") throw new Error("Must have been a literal value: " + JSON.stringify(valueDto));
-
-		return new LiteralValue(valueDto.value, validator);
-	});
-};
-
-module.exports = LiteralPropertyValues;

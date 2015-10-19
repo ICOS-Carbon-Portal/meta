@@ -1,6 +1,44 @@
 $(function () {
-	var stationsPromise = fetchStations();
+	var config = {
+		sparqlUrl: "https://meta.icos-cp.eu/sparql",
+		hiddenCols: [0, 1, 2, 3, 4, 5],
+		latInd: 1,
+		lonInd: 2,
+		geoJson: 3,
+		posDescInd: 4,
+		themeShortInd: 5,
+		themeInd: 6,
+		shortNameInd: 8,
+		maxSegmentLengthDeg: 1
+	};
 
+	var configPromise = queryConfig();
+
+	configPromise
+		.done(function (result) {
+			if (result.localSparqlUrl != undefined) {
+				config.sparqlUrl = result.localSparqlUrl;
+				querySparql(config);
+			}
+		})
+		.fail(function (request) {
+			querySparql(config);
+		});
+});
+
+function querySparql(config){
+	var stationsPromise = fetchStations(config.sparqlUrl);
+
+	stationsPromise
+		.done(function(result){
+			init(parseStationsJson(result), config);
+		})
+		.fail(function(request){
+			console.log(request.responseText);
+		});
+}
+
+function init(stations, config){
 	$("body").prepend('<div id="map" title="Station map"></div>');
 	$( "#map" ).dialog({
 		autoOpen: false,
@@ -10,27 +48,6 @@ $(function () {
 		width: "600"
 	});
 
-	var config = {
-		hiddenCols: [0, 1, 2, 3, 4, 5],
-		latInd: 1,
-		lonInd: 2,
-		geoJson: 3,
-		posDescInd: 4,
-		themeShortInd: 5,
-		themeInd: 6,
-		shortNameInd: 8
-	};
-
-	stationsPromise
-		.done(function(result){
-			init(parseStationsJson(result), config);
-		})
-		.fail(function(request){
-			console.log(request.responseText);
-		});
-});
-
-function init(stations, config){
 	$('#stationsTable').DataTable( {
 		data: stations.rows,
 		columns: stations.columns,
@@ -50,7 +67,8 @@ function init(stations, config){
 							var $icon = $('<span class="blue-lnk glyphicon glyphicon-globe"></span>');
 
 							$icon.click(function(){
-								showMap(this, oData[config.shortNameInd], oData[config.themeShortInd], null, null, JSON.parse(oData[config.geoJson]));
+								showMap(this, oData[config.shortNameInd], oData[config.themeShortInd],
+									null, null, oData[config.geoJson], config);
 							});
 
 							$(nTd).append("&nbsp;").append($icon);
@@ -72,7 +90,7 @@ function init(stations, config){
 
 						$icon.click(function(){
 							showMap(this, oData[config.shortNameInd], oData[config.themeShortInd],
-								parseFloat(oData[config.latInd]), parseFloat(oData[config.lonInd]), null);
+								parseFloat(oData[config.latInd]), parseFloat(oData[config.lonInd]), null, config);
 						});
 
 						$(nTd).append("&nbsp;").append($icon);
@@ -152,7 +170,7 @@ function init(stations, config){
 
 }
 
-function showMap(sender, title, theme, lat, lon, geoJson){
+function showMap(sender, title, theme, lat, lon, geoJson, config){
 	var $dialog = $("#map").dialog();
 	prepareDialog($dialog, sender, title);
 
@@ -171,7 +189,7 @@ function showMap(sender, title, theme, lat, lon, geoJson){
 				pos: [lon, lat],
 				geoJson: geoJson
 			}]
-		});
+		}, config);
 
 		var view = new ol.View({
 			center: ol.proj.transform([0, 0], 'EPSG:4326', 'EPSG:3857'),
@@ -212,7 +230,7 @@ function showMap(sender, title, theme, lat, lon, geoJson){
 					pos: [lon, lat],
 					geoJson: geoJson
 				}]
-			})
+			}, config)
 		);
 
 		if (geoJson == null) {
@@ -264,7 +282,7 @@ function extractSuggestions(data){
 	return aSuggestion;
 }
 
-function fetchStations(){
+function fetchStations(sparqlUrl){
 	var query = [
 		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'SELECT',
@@ -320,7 +338,7 @@ function fetchStations(){
 	return $.ajax({
 		type: "POST",
 		data: {query: query},
-		url: getSparqlUrl(),
+		url: sparqlUrl,
 		dataType: "json"
 	});
 }

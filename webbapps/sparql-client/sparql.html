@@ -39,7 +39,7 @@
 			}
 		}
 
-		$(function () {
+		function init(config){
 			$("#result").hide();
 			$("#messDiv").hide();
 
@@ -48,7 +48,7 @@
 				$.ajax({
 					type: "POST",
 					data: {query: $("#query").val()},
-					url: getSparqlUrl(),
+					url: config.sparqlUrl,
 					dataType: "json",
 					success: function(result){
 						$("#result").show();
@@ -65,6 +65,33 @@
 					}
 				});
 			});
+		}
+
+		function queryConfig(){
+			return $.ajax({
+				type: "GET",
+				url: "local-config.json",
+				dataType: "json"
+			});
+		}
+
+		$(function () {
+			var config = {
+				sparqlUrl: "https://meta.icos-cp.eu/sparql"
+			};
+
+			var configPromise = queryConfig();
+
+			configPromise
+				.done(function (result) {
+					if (result.localSparqlUrl != undefined) {
+						config.sparqlUrl = result.localSparqlUrl;
+						init(config);
+					}
+				})
+				.fail(function (request) {
+					init(config);
+				});
 		});
 
 	</script>

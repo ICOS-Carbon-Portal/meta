@@ -1,22 +1,38 @@
 $(function () {
-	init();
+	var config = {
+		sparqlUrl: "https://meta.icos-cp.eu/sparql",
+		maxSegmentLengthDeg: 1
+	};
+
+	var configPromise = queryConfig();
+
+	configPromise
+		.done(function (result) {
+			if (result.localSparqlUrl != undefined) {
+				config.sparqlUrl = result.localSparqlUrl;
+				init(config);
+			}
+		})
+		.fail(function (request) {
+			init(config);
+		});
 });
 
-function init(){
-	var stationsPromise = fetchStations();
+function init(config){
+	var stationsPromise = fetchStations(config.sparqlUrl);
 
 	$('input:radio[name="bgMaps"][value="topoMapESRI"]').prop('checked', true);
 
 	stationsPromise
 		.done(function(result){
-			initMap(parseStationsJson(result));
+			initMap(parseStationsJson(result), config);
 		})
 		.fail(function(request){
 			console.log(request);
 		});
 }
 
-function initMap(stations) {
+function initMap(stations, config) {
 	countStations(stations);
 
 	//Layer 0
@@ -66,13 +82,13 @@ function initMap(stations) {
 	});
 
 	//Station layers
-	var OsStations = getVectorLayer(stations.OS);
+	var OsStations = getVectorLayer(stations.OS, config);
 	OsStations.theme = "OS";
 	
-	var EsStations = getVectorLayer(stations.ES);
+	var EsStations = getVectorLayer(stations.ES, config);
 	EsStations.theme = "ES";
 	
-	var AsStations = getVectorLayer(stations.AS);
+	var AsStations = getVectorLayer(stations.AS, config);
 	AsStations.theme = "AS";
 	
 
@@ -272,7 +288,7 @@ function addSwitchBgMap(map){
 	}
 }
 
-function fetchStations(){
+function fetchStations(sparqlUrl){
 	var query = [
 		'PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'SELECT',
@@ -307,7 +323,7 @@ function fetchStations(){
 	return $.ajax({
 		type: "POST",
 		data: {query: query},
-		url: getSparqlUrl(),
+		url: sparqlUrl,
 		dataType: "json"
 	});
 }

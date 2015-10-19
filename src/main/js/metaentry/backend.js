@@ -1,25 +1,28 @@
 'use strict';
 
-var ajax = require('../common/ajax.js');
+import ajax from '../common/ajax.js';
 
 function stripSlash(s){
 	if(s.endsWith('/')) return stripSlash(s.substr(0, s.length - 1));
 	else return s;
 }
 
-module.exports = {
-	listClasses: function(){
+export default {
+	listClasses(){
 		return ajax.getJson('getExposedClasses');
 	},
-	listIndividuals: function(classUri){
+
+	listIndividuals(classUri){
 		var url = 'listIndividuals?classUri=' + encodeURIComponent(classUri);
 		return ajax.getJson(url);
 	},
-	getIndividual: function(uri){
+
+	getIndividual(uri){
 		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
 		return ajax.getJson(url);
 	},
-	checkSuffix: function(baseClass, suffix){
+
+	checkSuffix(baseClass, suffix){
 		var uri = stripSlash(baseClass) + '/' + encodeURI(suffix);
 		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
 
@@ -27,19 +30,30 @@ module.exports = {
 			return {candidateUri: uri, suffixAvailable: isAvailable};
 		});
 	},
-	createIndividual: function(uri, rdfType){
+
+	createIndividual(uri, rdfType){
 		var url = ['createIndividual?uri=', encodeURIComponent(uri), '&typeUri=', encodeURIComponent(rdfType)].join('');
 		return ajax.postJson(url, {}); //dummy payload
 	},
-	deleteIndividual: function(uri){
+
+	deleteIndividual(uri){
 		var url = 'deleteIndividual?uri=' + encodeURIComponent(uri);
 		return ajax.postJson(url, {}); //dummy payload
 	},
-	applyUpdates: function(updates){
+
+	applyUpdates(updates){
 		return ajax.postJson('applyupdates', updates);
 	},
-	performReplacement: function(replacement){
+
+	performReplacement(replacement){
 		return ajax.postJson('performreplacement', replacement);
+	},
+
+	fetchRangeValues(individUri, propUri){
+		return Promise.resolve([
+			{uri: 'http://meta.icos-cp.eu/ontologies/bebe', displayName: 'bebe'},
+			{uri: 'http://meta.icos-cp.eu/ontologies/meme', displayName: 'meme'}
+		]);
 	}
 };
 

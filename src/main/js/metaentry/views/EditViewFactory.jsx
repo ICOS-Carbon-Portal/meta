@@ -1,4 +1,3 @@
-var Individual = require('../models/Individual.js');
 var StaticWidget = require('./widgets/StaticWidget.jsx');
 var PropertyWidget = require('./widgets/PropertyWidget.jsx');
 var Widget = require('./widgets/Widget.jsx');
@@ -14,9 +13,9 @@ module.exports = function(editStore, updateRequestAction){
 
 			if(!this.state.individual) return null;
 
-			var individ = new Individual(this.state.individual);
+			var individ = this.state.individual;
 			var indKey = individ.getKey() + '_';
-
+console.log(individ);
 			function requestUpdate(updateRequest){
 				var fullRequest = _.extend({}, updateRequest, {subject: individ.getInfo().uri});
 				updateRequestAction(fullRequest);

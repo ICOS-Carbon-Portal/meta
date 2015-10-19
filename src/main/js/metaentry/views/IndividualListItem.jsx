@@ -32,7 +32,7 @@ module.exports = React.createClass({
 			<div className="input-group">
 
 				<input type="text" value={ind.displayName} className="cp-lnk form-control"
-					style={{textOverflow: 'ellipsis', backgroundColor: 'transparent'}} readonly />
+					style={{textOverflow: 'ellipsis', backgroundColor: 'transparent'}} readOnly />
 
 				<div className={buttonClasses}>
 

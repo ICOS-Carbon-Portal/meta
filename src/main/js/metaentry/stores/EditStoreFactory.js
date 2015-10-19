@@ -1,3 +1,5 @@
+var Individual = require('../models/Individual.js');
+
 module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 	return Reflux.createStore({
 
@@ -6,6 +8,15 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 				individual: null,
 				status: {value: "ok", previous: null}
 			};
+		},
+
+		publish: function(state){
+			var individ = state.individual;
+
+			this.trigger({
+				individual: individ ? new Individual(individ) : individ,
+				status: state.status
+			});
 		},
 
 		init: function(){
@@ -23,7 +34,7 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 
 			if(self.individUri !== individUri) return;
 			if(!individUri) {
-				this.trigger(this.getInitialState());
+				this.publish(this.getInitialState());
 				return;
 			}
 
@@ -34,7 +45,7 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 
 							self.individualInfo = individualInfo;
 
-							self.trigger({
+							self.publish({
 								individual: individualInfo,
 								status: {value: "ok", previous: status}
 							});
@@ -42,7 +53,7 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 					},
 					function(err){
 						if(self.individUri == individUri){
-							self.trigger({
+							self.publish({
 								status: _.extend({value: "error", previous: status}, err)
 							})
 						} else console.log(err);
@@ -86,28 +97,54 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 			});
 
 			if(!theProperty) throw new Error("Unknown property " + update.predicate);
-			var valueType = theProperty.type === 'dataProperty' ? 'literal' : 'object';
+
+			if(theProperty.type !== 'dataProperty') {
+				this.initiateObjectValueCreation(theProperty.resource.uri);
+				return;
+			}
+
 			var oldValues = this.individualInfo.values;
 
 			var newValues = update.isAssertion
 				? oldValues.concat([{
-					type: valueType,
+					type: 'literal',
 					property: theProperty.resource
 				}])
-				: _.filter(oldValues, function(value){
-					return !(value.type === valueType && value.property.uri === update.predicate &&
+				: _.reject(oldValues, value =>
+						value.property.uri === update.predicate &&
 						(_.isNull(value.value) || _.isUndefined(value.value))
-					);
-				});
+				);
 
 			var newIndividual = _.extend({}, this.individualInfo, {values: newValues});
 
 			this.individualInfo = newIndividual;
 
-			this.trigger({
+			this.publish({
 				individual: newIndividual,
 				status: {value: "ok", previous: undefined}
 			});
+		},
+
+		initiateObjectValueCreation: function(propertyUri){
+			const self = this;
+			const individUri = this.individUri;
+
+			Backend.fetchRangeValues(individUri, propertyUri).then(
+				rangeValues => {
+					if(individUri !== self.individUri) return;
+					let propertyDto = _.find(self.individualInfo.owlClass.properties, prop => prop.resource.uri === propertyUri);
+					if(!propertyDto) return;
+
+//TODO Make and publish a copy instead of modifying the cached state in place.
+
+					propertyDto.rangeValues = rangeValues;
+
+					self.publish({
+						individual: self.individualInfo,
+						status: {value: "ok", previous: undefined}
+					});
+				}
+			);
 		}
 
 	});

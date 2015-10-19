@@ -1,5 +1,10 @@
 export default class PropertyValues{
 
+	constructor(propertyDto, values){
+		this._propertyDto = propertyDto;
+		this._values = values;
+	}
+
 	getPropertyDto(){
 		return this._propertyDto;
 	}

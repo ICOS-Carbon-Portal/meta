@@ -1,34 +1,48 @@
-var DataPropertyWidget = require('./DataPropertyWidget.jsx');
-var ObjectPropertyWidget = require('./ObjectPropertyWidget.jsx');
+import DataPropertyWidget from './DataPropertyWidget.jsx';
+import ObjectPropertyWidget from './ObjectPropertyWidget.jsx';
 
 module.exports = React.createClass({
 
 	render: function(){
-		var givenProps = this.props;
-		var propValues = givenProps.propertyValues;
+		var self = this;
+		var propValues = this.props.propertyValues;
 		var validity = propValues.getValidity();
 		var propInfo = propValues.getPropertyInfo();
 
-		var props = _.extend(_.omit(givenProps, "key"), {
+		var props = _.extend(_.omit(this.props, "key"), {
 
 			widgetType: validity.valid
 				? (propValues.isRequired() ? "warning" : "info")
 				: "danger",
 
 			widgetTitle: propInfo.displayName,
-
 			headerTitle: propInfo.comment,
 
-			requestUpdate: function(updateRequest){
-				var fullRequest = _.extend({}, updateRequest, {predicate: propInfo.uri});
-				givenProps.requestUpdate(fullRequest);
-			}
+			requestUpdate: _.bind(self.requestUpdate, self),
+
+			buttons: [{
+				glyphicon: 'plus',
+				isDisabled: !propValues.canHaveMoreValues(),
+				clickHandler: _.bind(self.addNewValue, self)
+			}]
 
 		});
 
-		return propValues.getValuesType() == "dataProperty"
+		return propValues.getValuesType() === "dataProperty"
 			? <DataPropertyWidget {...props} />
 			: <ObjectPropertyWidget {...props} />;
+	},
+
+	requestUpdate: function(updateRequest){
+		var predicate = this.props.propertyValues.getPropertyInfo().uri;
+		var fullRequest = _.extend({}, updateRequest, {predicate: predicate});
+		this.props.requestUpdate(fullRequest);
+	},
+
+	addNewValue: function(){
+		this.requestUpdate({
+			updates: [{isAssertion: true, obj: null}]
+		});
 	}
 
 });

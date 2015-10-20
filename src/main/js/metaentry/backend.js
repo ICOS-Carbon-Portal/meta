@@ -49,11 +49,9 @@ export default {
 		return ajax.postJson('performreplacement', replacement);
 	},
 
-	fetchRangeValues(individUri, propUri){
-		return Promise.resolve([
-			{uri: 'http://meta.icos-cp.eu/ontologies/bebe', displayName: 'bebe'},
-			{uri: 'http://meta.icos-cp.eu/ontologies/meme', displayName: 'meme'}
-		]);
+	getRangeValues(individClassUri, propUri){
+		var url = ['getRangeValues?classUri=', encodeURIComponent(individClassUri), '&propUri=', encodeURIComponent(propUri)].join('');
+		return ajax.getJson(url);
 	}
 };
 

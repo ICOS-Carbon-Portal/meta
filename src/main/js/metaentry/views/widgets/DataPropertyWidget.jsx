@@ -1,22 +1,23 @@
-var Widget = require('./Widget.jsx');
-var DataValueWidget = require('./DataValueWidget.jsx');
+import Widget from './Widget.jsx';
+import PropertyWidget from './PropertyWidget.jsx';
+import DataValueWidget from './DataValueWidget.jsx';
 
-module.exports = React.createClass({
+export default React.createClass({
+
+	mixins: [PropertyWidget],
+
 	render: function(){
 		var self = this;
 
-		return <Widget {...self.props}>{
-			_.map(self.props.propertyValues.getValues(), function(value, i){
-
-				var props = _.extend({}, self.props, {
-					key: "val_" + i,
-					dataValue: value
-				});
-
-				return <DataValueWidget {...props}/>;
-			})
+		return <Widget {...this.getWidgetProps()}>{
+			_.map(this.props.propertyValues.getValues(), (value, i) =>
+				<DataValueWidget key={'val_' + i} dataValue={value} requestUpdate={self.requestUpdate}/>
+			)
 		}</Widget>;
 
-	}
+	},
+
+	newValueCanBeAdded: _.constant(true)
+
 });
 

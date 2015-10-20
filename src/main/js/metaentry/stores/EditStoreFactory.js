@@ -86,8 +86,13 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 		},
 
 		handleEmptyUpdates: function(updates){
-			if(updates.length === 0) return;
+			if(updates.length === 0) {
+				this.refresh();
+				return;
+			}
+
 			if(updates.length !== 1) throw new Error("Expecting one empty update");
+
 			var update = updates[0];
 			if(this.individUri !== update.subject) return;
 
@@ -127,26 +132,36 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 
 		initiateObjectValueCreation: function(propertyUri){
 			const self = this;
+			const individClassUri = this.individualInfo.owlClass.resource.uri;
 			const individUri = this.individUri;
 
-			Backend.fetchRangeValues(individUri, propertyUri).then(
+			Backend.getRangeValues(individClassUri, propertyUri).then(
 				rangeValues => {
 					if(individUri !== self.individUri) return;
-					let propertyDto = _.find(self.individualInfo.owlClass.properties, prop => prop.resource.uri === propertyUri);
-					if(!propertyDto) return;
 
-//TODO Make and publish a copy instead of modifying the cached state in place.
-
-					propertyDto.rangeValues = rangeValues;
+					let owlClass = self.individualInfo.owlClass;
+					let newOwlClassProps = owlClass.properties.map(prop =>
+						prop.resource.uri === propertyUri
+							? _.extend({}, prop, {rangeValues: _.sortBy(rangeValues, 'displayName')})
+							: prop
+					);
+					let newOwlClass = _.extend({}, owlClass, {properties: newOwlClassProps});
+					let newIndividInfo = _.extend({}, self.individualInfo, {owlClass: newOwlClass});
 
 					self.publish({
-						individual: self.individualInfo,
+						individual: newIndividInfo,
 						status: {value: "ok", previous: undefined}
 					});
 				}
 			);
-		}
+		},
 
+		refresh: function(){
+			this.publish({
+				individual: this.individualInfo,
+				status: {value: "ok", previous: undefined}
+			});
+		}
 	});
 };
 

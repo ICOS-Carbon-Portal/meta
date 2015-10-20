@@ -55,6 +55,11 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 				parameter("uri"){ uriStr =>
 					complete(JsBoolean(!instOnto.hasIndividual(uriStr)))
 				}
+			} ~
+			pathSuffix("getRangeValues"){
+				parameters('classUri, 'propUri){ (classUri, propUri) =>
+					complete(instOnto.getRangeValues(new URI(classUri), new URI(propUri)))
+				}
 			}
 		} ~
 		post{

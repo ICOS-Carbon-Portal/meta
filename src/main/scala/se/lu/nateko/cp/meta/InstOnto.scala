@@ -33,6 +33,13 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		(ownIndividuals ++ subclassIndividuals).distinct
 	}
 
+	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
+		val propInfo = onto.getPropInfo(propUri, individClassUri).asInstanceOf[ObjectPropertyDto]
+		val rangeClassUri = propInfo.range.uri
+		val rangeClassUris = rangeClassUri +: onto.getSubClasses(rangeClassUri, false).map(_.getIRI.toURI.toURL.toURI)
+		return rangeClassUris.flatMap(getIndividuals)
+	}
+
 	def getIndividual(uri: URI): IndividualDto = {
 		val labeler = onto.getUniversalLabeler
 		val individual = onto.factory.getOWLNamedIndividual(IRI.create(uri))

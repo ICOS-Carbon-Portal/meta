@@ -1,15 +1,11 @@
-import DataPropertyWidget from './DataPropertyWidget.jsx';
-import ObjectPropertyWidget from './ObjectPropertyWidget.jsx';
+export default {
 
-module.exports = React.createClass({
-
-	render: function(){
-		var self = this;
+	getWidgetProps: function(){
 		var propValues = this.props.propertyValues;
 		var validity = propValues.getValidity();
 		var propInfo = propValues.getPropertyInfo();
 
-		var props = _.extend(_.omit(this.props, "key"), {
+		return {
 
 			widgetType: validity.valid
 				? (propValues.isRequired() ? "warning" : "info")
@@ -18,19 +14,13 @@ module.exports = React.createClass({
 			widgetTitle: propInfo.displayName,
 			headerTitle: propInfo.comment,
 
-			requestUpdate: _.bind(self.requestUpdate, self),
-
 			buttons: [{
 				glyphicon: 'plus',
-				isDisabled: !propValues.canHaveMoreValues(),
-				clickHandler: _.bind(self.addNewValue, self)
+				isDisabled: !propValues.canHaveMoreValues() || !this.newValueCanBeAdded(),
+				clickHandler: _.bind(this.addNewValue, this)
 			}]
 
-		});
-
-		return propValues.getValuesType() === "dataProperty"
-			? <DataPropertyWidget {...props} />
-			: <ObjectPropertyWidget {...props} />;
+		};
 	},
 
 	requestUpdate: function(updateRequest){
@@ -44,6 +34,5 @@ module.exports = React.createClass({
 			updates: [{isAssertion: true, obj: null}]
 		});
 	}
-
-});
+};
 

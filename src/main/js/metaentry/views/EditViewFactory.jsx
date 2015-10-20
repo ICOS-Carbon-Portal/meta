@@ -1,9 +1,10 @@
-var StaticWidget = require('./widgets/StaticWidget.jsx');
-var PropertyWidget = require('./widgets/PropertyWidget.jsx');
-var Widget = require('./widgets/Widget.jsx');
-var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
+import StaticWidget from './widgets/StaticWidget.jsx';
+import DataPropertyWidget from './widgets/DataPropertyWidget.jsx';
+import ObjectPropertyWidget from './widgets/ObjectPropertyWidget.jsx';
+import Widget from './widgets/Widget.jsx';
+import ScreenHeightColumn from './ScreenHeightColumn.jsx';
 
-module.exports = function(editStore, updateRequestAction){
+export default function(editStore, updateRequestAction){
 
 	return React.createClass({
 
@@ -15,7 +16,7 @@ module.exports = function(editStore, updateRequestAction){
 
 			var individ = this.state.individual;
 			var indKey = individ.getKey() + '_';
-console.log(individ);
+
 			function requestUpdate(updateRequest){
 				var fullRequest = _.extend({}, updateRequest, {subject: individ.getInfo().uri});
 				updateRequestAction(fullRequest);
@@ -27,6 +28,10 @@ console.log(individ);
 					<StaticWidget widgetTitle="Entry type">{individ.getClassInfo().displayName}</StaticWidget>{
 
 						_.map(individ.getPropertyValues(), function(propValues, i){
+
+							let PropertyWidget = propValues.getValuesType() === "dataProperty"
+								? DataPropertyWidget
+								: ObjectPropertyWidget;
 
 							return <PropertyWidget key={indKey + propValues.getKey()} propertyValues={propValues} requestUpdate={requestUpdate}/>;
 

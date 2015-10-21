@@ -4,7 +4,10 @@ import ObjectValueDropdown from './ObjectValueDropdown.jsx';
 
 const ObjectValueWidget = React.createClass({
 	render: function(){
-		return <div className="input-group">
+		let style = this.props.orderNumber > 0 ? {marginTop: 3} : {};
+
+		return <div className="input-group" style={style}>
+			<span className="input-group-addon"><span className="glyphicon glyphicon-link"></span></span>
 			<input type="text" className="form-control" readOnly value={this.props.label} />
 			<span className="input-group-btn">
 				<button className="btn btn-default" type="button" onClick={this.props.deleteSelf}>
@@ -35,6 +38,7 @@ export default React.createClass({
 						key={keyBase + '_val_' + i}
 						label={value.displayName}
 						deleteSelf={this.getSelfDeleter(value.uri)}
+						orderNumber={i}
 					/>
 				)
 			}

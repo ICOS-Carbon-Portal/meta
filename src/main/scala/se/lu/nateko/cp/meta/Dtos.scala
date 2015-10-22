@@ -39,7 +39,7 @@ case class UploadMetadataDto(
 	acquisitionEnd: String
 )
 
-case class StationLabelingDto(
+/*case class StationLabelingDto(
 	stationUri: URI,
 	shortName: Option[String],
 	longName: Option[String],
@@ -59,7 +59,7 @@ case class StationLabelingDto(
 	telecom: Option[String],
 	infrastructure: Option[String],
 	anemometerDir: Option[Int]
-)
+)*/
 
 case class FileDeletionDto(stationUri: URI, file: URI)
 case class LabelingUserDto(

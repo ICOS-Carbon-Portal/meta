@@ -40,6 +40,7 @@ scalacOptions ++= Seq(
   "-deprecation",
   "-Xlint",
   "-Ywarn-dead-code",
+  "-Ywarn-unused",
   "-language:_",
   "-target:jvm-1.8",
   "-encoding", "UTF-8"

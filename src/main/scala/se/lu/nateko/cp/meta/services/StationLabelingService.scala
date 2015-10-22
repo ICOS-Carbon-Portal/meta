@@ -5,7 +5,6 @@ import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.LabelingServiceConfig
 import se.lu.nateko.cp.meta.ingestion.Vocab
-import se.lu.nateko.cp.meta.StationLabelingDto
 import org.openrdf.model.URI
 import org.openrdf.model.Statement
 import org.openrdf.model.vocabulary.XMLSchema
@@ -23,6 +22,10 @@ import org.openrdf.model.Value
 import java.nio.charset.StandardCharsets
 import se.lu.nateko.cp.meta.LabelingUserDto
 import org.openrdf.model.vocabulary.RDF
+import spray.json.JsObject
+import spray.json.JsString
+import spray.json.JsValue
+import spray.json.JsNumber
 
 
 class StationLabelingService(
@@ -62,40 +65,61 @@ class StationLabelingService(
 		}
 	}
 
-	def saveStationInfo(info: StationLabelingDto, uploader: UserInfo): Try[Unit] = Try{
+	def saveStationInfo(info: JsObject, uploader: UserInfo): Try[Unit] = Try{
 
-		val stationUri = factory.createURI(info.stationUri)
+		def extract[T](fieldName: String)(pf: PartialFunction[JsValue, T]): Option[T] =
+			info.fields.get(fieldName).collect(pf)
+
+		def getString(fieldName: String) = extract(fieldName){case JsString(str) => str}
+		def getDouble(fieldName: String) = extract(fieldName){
+			case JsNumber(bigDec) => bigDec.doubleValue
+		}
+		def getFloat(fieldName: String) = extract(fieldName){
+			case JsNumber(bigDec) => bigDec.floatValue
+		}
+		def getInt(fieldName: String) = extract(fieldName){
+			case JsNumber(bigDec) => bigDec.intValue
+		}
+
+		val stationUri = getString("stationUri").map(factory.createURI).get
 
 		assertThatWriteIsAuthorized(stationUri, uploader)
 
-		def fromString(pred: URI)(value: String): Statement =
-			factory.createStatement(stationUri, pred, vocab.lit(value))
-		def fromInt(pred: URI)(value: Int): Statement =
-			factory.createStatement(stationUri, pred, vocab.lit(value))
-		def fromFloat(pred: URI)(value: Float): Statement =
-			factory.createStatement(stationUri, pred, vocab.lit(value))
-		def fromDouble(pred: URI)(value: Double): Statement =
-			factory.createStatement(stationUri, pred, vocab.lit(value))
+		def makeStatement(fieldName: String, lit: Literal) =
+			factory.createStatement(stationUri, vocab.getRelative(fieldName), lit)
+
+		def fromString(fieldName: String) = getString(fieldName).map{value => 
+			makeStatement(fieldName, vocab.lit(value))
+		}
+		def fromInt(fieldName: String) =  getInt(fieldName).map{value => 
+			makeStatement(fieldName, vocab.lit(value))
+		}
+		def fromFloat(fieldName: String) =  getFloat(fieldName).map{value => 
+			makeStatement(fieldName, vocab.lit(value))
+		}
+		def fromDouble(fieldName: String) =  getDouble(fieldName).map{value => 
+			makeStatement(fieldName, vocab.lit(value))
+		}
 
 		val newInfo: Seq[Statement] = Seq(
-			info.shortName.map(fromString(vocab.hasShortName)),
-			info.longName.map(fromString(vocab.hasLongName)),
-			info.address.map(fromString(vocab.hasAddress)),
-			info.website.map(fromString(vocab.hasWebsite)),
-			info.stationClass.map(fromString(vocab.hasStationClass)),
-			info.lat.map(fromDouble(vocab.hasLat)),
-			info.lon.map(fromDouble(vocab.hasLon)),
-			info.aboveGround.map(fromString(vocab.hasElevationAboveGround)),
-			info.aboveSea.map(fromFloat(vocab.hasElevationAboveSea)),
-			info.accessibility.map(fromString(vocab.hasAccessibility)),
-			info.vegetation.map(fromString(vocab.hasVegetation)),
-			info.anthropogenics.map(fromString(vocab.hasAnthropogenics)),
-			info.constructionStartDate.map(fromString(vocab.hasConstructionStartDate)),
-			info.constructionEndDate.map(fromString(vocab.hasConstructionEndDate)),
-			info.plannedDateOperational.map(fromString(vocab.hasOperationalDateEstimate)),
-			info.telecom.map(fromString(vocab.hasTelecom)),
-			info.infrastructure.map(fromString(vocab.hasExistingInfrastructure)),
-			info.anemometerDir.map(fromInt(vocab.hasAnemometerDirection))
+			fromString("hasShortName"),
+			fromString("hasLongName"),
+			fromString("hasAddress"),
+			fromString("hasWebsite"),
+			fromString("hasStationClass"),
+			fromDouble("hasLat"),
+			fromDouble("hasLon"),
+			fromString("hasElevationAboveGround"),
+			fromFloat("hasElevationAboveSea"),
+			fromString("hasAccessibility"),
+			fromString("hasVegetation"),
+			fromString("hasAnthropogenics"),
+			fromString("hasConstructionStartDate"),
+			fromString("hasConstructionEndDate"),
+			fromString("hasOperationalDateEstimate"),
+			fromString("hasTelecom"),
+			fromString("hasExistingInfrastructure"),
+			fromInt("hasAnemometerDirection")
 		).flatten
 
 		val hasAssociatedFile = vocab.hasAssociatedFile

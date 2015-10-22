@@ -9,7 +9,6 @@ import scala.util.Success
 import scala.util.Failure
 import scala.concurrent.duration._
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.StationLabelingDto
 import se.lu.nateko.cp.meta.services.StationLabelingService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import akka.stream.scaladsl.Sink
@@ -21,6 +20,7 @@ import se.lu.nateko.cp.meta.FileDeletionDto
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
+import spray.json.JsObject
 
 
 
@@ -31,7 +31,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 		post {
 			authRouting.mustBeLoggedIn{ uploader =>
 				path("save") {
-					entity(as[StationLabelingDto]){uploadMeta =>
+					entity(as[JsObject]){uploadMeta =>
 						service.saveStationInfo(uploadMeta, uploader) match{
 							case Success(datasetUrl) => complete(StatusCodes.OK)
 							case Failure(err) => err match{

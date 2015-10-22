@@ -42,8 +42,7 @@ var InputBase = {
 
 	pushUpdate: function(newValue){
 		var errors = this.getErrors(newValue);
-		var finalValue = _.isEmpty(errors) ? this.extractUpdatedValue(newValue) : newValue;
-		this.props.updater(errors, finalValue);
+		this.props.updater(errors, newValue);
 	}
 };
 
@@ -79,12 +78,8 @@ var DropDown = _.extend({
 	}
 }, InputBase);
 
-var StringInput = {extractUpdatedValue: _.identity};
-var NumberInput = {extractUpdatedValue: s => parseFloat(s)};
-
 var IsNumber = getValidatingMixin(value =>
-	_.isUndefined(value) || _.isNull(value) || _.isNumber(value) ||
-	(parseFloat(value).toString() === value.toString())
+	_.isUndefined(value) || _.isNull(value) || !_.isNaN(parseFloat(value))
 		? []
 		: ["Not a valid number!"]
 );
@@ -96,7 +91,7 @@ var IsInt = getValidatingMixin(value =>
 );
 
 var IsRequired = getValidatingMixin(value => {
-	return (_.isEmpty(value) && !_.isNumber(value)) ? ["Required field. It must be filled in."] : [];
+	return _.isEmpty(value) ? ["Required field. It must be filled in."] : [];
 });
 
 function hasMinValue(minValue){
@@ -129,28 +124,28 @@ var IsLon5Dec = matchesRegex(/^\-?\d{2,3}\.\d{5}$/, "Must have format [-][X]XX.x
 
 module.exports = {
 
-	Number: fromMixins(TextInput, NumberInput, IsNumber),
+	Number: fromMixins(TextInput, IsNumber),
 
-	Latitude: fromMixins(TextInput, NumberInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
-	Lat5Dec: fromMixins(TextInput, NumberInput, IsLat5Dec, hasMinValue(-90), hasMaxValue(90)),
+	Latitude: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
+	Lat5Dec: fromMixins(TextInput, IsLat5Dec, hasMinValue(-90), hasMaxValue(90)),
 
-	Longitude: fromMixins(TextInput, NumberInput, IsNumber, hasMinValue(-180), hasMaxValue(180)),
-	Lon5Dec: fromMixins(TextInput, NumberInput, IsLon5Dec, hasMinValue(-180), hasMaxValue(180)),
+	Longitude: fromMixins(TextInput, IsNumber, hasMinValue(-180), hasMaxValue(180)),
+	Lon5Dec: fromMixins(TextInput, IsLon5Dec, hasMinValue(-180), hasMaxValue(180)),
 
-	Direction: fromMixins(TextInput, NumberInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
+	Direction: fromMixins(TextInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
 
-	URL: fromMixins(TextInput, StringInput, IsUrl),
-	Phone: fromMixins(TextInput, StringInput, IsPhone),
+	URL: fromMixins(TextInput, IsUrl),
+	Phone: fromMixins(TextInput, IsPhone),
 
-	String: fromMixins(TextInput, StringInput),
+	String: fromMixins(TextInput),
 
-	StringRequired: fromMixins(TextInput, StringInput, IsRequired),
+	StringRequired: fromMixins(TextInput, IsRequired),
 
-	TextArea: fromMixins(TextArea, StringInput),
+	TextArea: fromMixins(TextArea),
 
-	TextAreaRequired: fromMixins(TextArea, StringInput, IsRequired),
+	TextAreaRequired: fromMixins(TextArea, IsRequired),
 
-	DropDownString: fromMixins(DropDown, StringInput),
+	DropDownString: fromMixins(DropDown),
 
 	Header: React.createClass({
 		render: function() {

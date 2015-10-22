@@ -23,8 +23,8 @@ WHERE{
 	}
 	OPTIONAL{
 		GRAPH <${lblUri}> {
-			OPTIONAL{?s cpst:hasShortName ?shortName }
-			OPTIONAL{?s cpst:hasLongName ?longName }
+			OPTIONAL{?s cpst:hasShortName ?hasShortName }
+			OPTIONAL{?s cpst:hasLongName ?hasLongName }
 		}
 	}
 }`;
@@ -42,8 +42,8 @@ function postProcessStationsList(stations){
 		)
 		.map(station => _.extend(
 				_.omit(station, 'provShortName', 'provLongName'), {
-					shortName: station.shortName || station.provShortName,
-					longName: station.longName || station.provLongName
+					hasShortName: station.hasShortName || station.provShortName,
+					hasLongName: station.hasLongName || station.provLongName
 				}
 			)
 		)
@@ -52,6 +52,13 @@ function postProcessStationsList(stations){
 }
 
 function getStationQuery(stationUri, graphUri){
+	let optionals = ["hasShortName", "hasLongName", "hasAddress", "hasWebsite",
+		"hasStationClass", "hasLat", "hasLon", "hasElevationAboveGround", "hasElevationAboveSea",
+		"hasAccessibility", "hasVegetation", "hasAnthropogenics", "hasConstructionStartDate",
+		"hasConstructionEndDate", "hasOperationalDateEstimate",
+		"hasTelecom", "hasExistingInfrastructure", "hasAnemometerDirection"
+	].map(propName => `OPTIONAL{?s cpst:${propName} ?${propName}}`).join('\n');
+
 	return `
 PREFIX cpst: <${baseUri}>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -66,24 +73,7 @@ WHERE{
 		rdfs:label ?thematicName .
 	GRAPH <${baseUri}> {?s a ?owlClass}
 	GRAPH <${graphUri}> {
-		OPTIONAL{?s cpst:hasShortName ?shortName}
-		OPTIONAL{?s cpst:hasLongName ?longName}
-		OPTIONAL{?s cpst:hasAddress ?address}
-		OPTIONAL{?s cpst:hasWebsite ?website}
-		OPTIONAL{?s cpst:hasStationClass ?stationClass}
-		OPTIONAL{?s cpst:hasLat ?lat}
-		OPTIONAL{?s cpst:hasLon ?lon}
-		OPTIONAL{?s cpst:hasElevationAboveGround ?aboveGround}
-		OPTIONAL{?s cpst:hasElevationAboveSea ?aboveSea}
-		OPTIONAL{?s cpst:hasAccessibility ?accessibility}
-		OPTIONAL{?s cpst:hasVegetation ?vegetation}
-		OPTIONAL{?s cpst:hasAnthropogenics ?anthropogenics}
-		OPTIONAL{?s cpst:hasConstructionStartDate ?constructionStartDate}
-		OPTIONAL{?s cpst:hasConstructionEndDate ?constructionEndDate}
-		OPTIONAL{?s cpst:hasOperationalDateEstimate ?plannedDateOperational}
-		OPTIONAL{?s cpst:hasTelecom ?telecom}
-		OPTIONAL{?s cpst:hasExistingInfrastructure ?infrastructure}
-		OPTIONAL{?s cpst:hasAnemometerDirection ?anemometerDir}
+		${optionals}
 	}
 }`;
 }

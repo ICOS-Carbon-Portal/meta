@@ -147,6 +147,8 @@ object StationsIngestion extends Ingester{
 class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val baseUri = "http://meta.icos-cp.eu/ontologies/stationentry/"
 
+	val station = getRelative("Station")
+
 	val hasShortName = getRelative("hasShortName")
 	val hasLongName = getRelative("hasLongName")
 	val hasCountry = getRelative("hasCountry")

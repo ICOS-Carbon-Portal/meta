@@ -60,22 +60,22 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		reasoner.getSubClasses(owlClass, direct)
 	}
 
-	private def getBottomSubClasses(owlClass: OWLClass): Seq[OWLClass] = {
+	def getBottomSubClasses(owlClass: OWLClass): Seq[OWLClass] = {
 		val directSubs = reasoner.getSubClasses(owlClass, false)
 		if(directSubs.isEmpty) Seq(owlClass)
 		else directSubs.flatMap(getBottomSubClasses)
 	}
 
-	def getClassInfo(classUri: URI): ClassDto = {
-		val owlClass = factory.getOWLClass(IRI.create(classUri))
-		ClassDto(
-			resource = rdfsLabeling(owlClass),
-			properties = reasoner.getPropertiesWhoseDomainIncludes(owlClass).collect{
-				case op: OWLObjectProperty => getPropInfo(op, owlClass)
-				case dp: OWLDataProperty => getPropInfo(dp, owlClass)
-			}
-		)
-	}
+	def getClassInfo(classUri: URI): ClassDto =
+		getClassInfo(factory.getOWLClass(IRI.create(classUri)))
+
+	def getClassInfo(owlClass: OWLClass)= ClassDto(
+		resource = rdfsLabeling(owlClass),
+		properties = reasoner.getPropertiesWhoseDomainIncludes(owlClass).collect{
+			case op: OWLObjectProperty => getPropInfo(op, owlClass)
+			case dp: OWLDataProperty => getPropInfo(dp, owlClass)
+		}
+	)
 
 	def getPropInfo(propUri: URI, classUri: URI): PropertyDto = {
 		val iri = IRI.create(propUri)

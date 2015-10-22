@@ -30,7 +30,7 @@ module.exports = function(WhoAmIStore, StationsListStore){
 			this.state = {
 				stations: _.chain(this.state.stations)
 								.map(station => self.decorateStation(station))
-								.sortBy(station => `${!station.isUsersStation}_${station.theme}_${station.longName}`)
+								.sortBy(station => `${!station.isUsersStation}_${station.theme}_${station.hasLongName}`)
 								.value()
 			};
 

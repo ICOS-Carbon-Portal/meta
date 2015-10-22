@@ -30,7 +30,7 @@ module.exports = function(StationAuthStore, themeToStation, chooseStationAction)
 						<div className={panelClasses}>
 							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
 								<span className={icon}/><span> </span>
-								{station.longName}
+								{station.hasLongName}
 							</div>
 							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>

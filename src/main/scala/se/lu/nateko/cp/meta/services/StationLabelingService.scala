@@ -26,16 +26,33 @@ import spray.json.JsObject
 import spray.json.JsString
 import spray.json.JsValue
 import spray.json.JsNumber
+import se.lu.nateko.cp.meta.Onto
 
 
 class StationLabelingService(
 	server: InstanceServer,
 	provisionalInfoServer: InstanceServer,
-	val fileService: FileStorageService,
-	conf: LabelingServiceConfig) {
+	onto: Onto,
+	val fileService: FileStorageService) {
 
 	private val factory = server.factory
 	private val vocab = new StationStructuringVocab(factory)
+	private val dataTypeInfos = {
+		import org.semanticweb.owlapi.model.IRI
+		import se.lu.nateko.cp.meta.ClassDto
+		import se.lu.nateko.cp.meta.DataPropertyDto
+
+		def toDatatypeLookup(classInfo: ClassDto) =
+			classInfo.properties.collect{
+				case DataPropertyDto(prop, _, range) => (prop.uri, range.dataType)
+			}.toMap
+
+		val stationClass = onto.factory.getOWLClass(IRI.create(vocab.station.toJava))
+		onto.getBottomSubClasses(stationClass)
+			.map(onto.getClassInfo)
+			.map(classInfo => (classInfo.resource.uri, toDatatypeLookup(classInfo)))
+			.toMap
+	}
 
 	def getLabelingUserInfo(uinfo: UserInfo): LabelingUserDto = {
 		val piUriOpt = provisionalInfoServer
@@ -67,60 +84,21 @@ class StationLabelingService(
 
 	def saveStationInfo(info: JsObject, uploader: UserInfo): Try[Unit] = Try{
 
-		def extract[T](fieldName: String)(pf: PartialFunction[JsValue, T]): Option[T] =
-			info.fields.get(fieldName).collect(pf)
-
-		def getString(fieldName: String) = extract(fieldName){case JsString(str) => str}
-		def getDouble(fieldName: String) = extract(fieldName){
-			case JsNumber(bigDec) => bigDec.doubleValue
-		}
-		def getFloat(fieldName: String) = extract(fieldName){
-			case JsNumber(bigDec) => bigDec.floatValue
-		}
-		def getInt(fieldName: String) = extract(fieldName){
-			case JsNumber(bigDec) => bigDec.intValue
-		}
-
-		val stationUri = getString("stationUri").map(factory.createURI).get
+		val stationUri = info.fields.get("stationUri")
+			.collect{case JsString(str) => str}
+			.map(factory.createURI).get
 
 		assertThatWriteIsAuthorized(stationUri, uploader)
 
-		def makeStatement(fieldName: String, lit: Literal) =
-			factory.createStatement(stationUri, vocab.getRelative(fieldName), lit)
-
-		def fromString(fieldName: String) = getString(fieldName).map{value => 
-			makeStatement(fieldName, vocab.lit(value))
+		val newInfo: Seq[Statement] = for(
+			classUri <- lookupStationClass(stationUri).toSeq;
+			(fieldName, fieldValue) <- info.fields.collect{case (name, JsString(value)) => (name, value)};
+			propUri = vocab.getRelative(fieldName);
+			dataType <- lookupDatatype(classUri.toJava, propUri.toJava).toSeq
+		) yield {
+			val lit = factory.createLiteral(fieldValue, dataType)
+			factory.createStatement(stationUri, propUri, lit)
 		}
-		def fromInt(fieldName: String) =  getInt(fieldName).map{value => 
-			makeStatement(fieldName, vocab.lit(value))
-		}
-		def fromFloat(fieldName: String) =  getFloat(fieldName).map{value => 
-			makeStatement(fieldName, vocab.lit(value))
-		}
-		def fromDouble(fieldName: String) =  getDouble(fieldName).map{value => 
-			makeStatement(fieldName, vocab.lit(value))
-		}
-
-		val newInfo: Seq[Statement] = Seq(
-			fromString("hasShortName"),
-			fromString("hasLongName"),
-			fromString("hasAddress"),
-			fromString("hasWebsite"),
-			fromString("hasStationClass"),
-			fromDouble("hasLat"),
-			fromDouble("hasLon"),
-			fromString("hasElevationAboveGround"),
-			fromFloat("hasElevationAboveSea"),
-			fromString("hasAccessibility"),
-			fromString("hasVegetation"),
-			fromString("hasAnthropogenics"),
-			fromString("hasConstructionStartDate"),
-			fromString("hasConstructionEndDate"),
-			fromString("hasOperationalDateEstimate"),
-			fromString("hasTelecom"),
-			fromString("hasExistingInfrastructure"),
-			fromInt("hasAnemometerDirection")
-		).flatten
 
 		val hasAssociatedFile = vocab.hasAssociatedFile
 
@@ -219,6 +197,13 @@ class StationLabelingService(
 		.collect{
 			case SesameStatement(_, _, mail: Literal) => mail.getLabel.toLowerCase
 		}
+
+	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[URI] =
+		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createURI(uri))
+
+	private def lookupStationClass(stationUri: URI): Option[URI] =
+		provisionalInfoServer.getStatements(Some(stationUri), Some(RDF.TYPE), None)
+			.map(_.getObject).collect{case uri: URI => uri}.toIndexedSeq.headOption
 }
 
 case class UploadedFile(station: java.net.URI, fileName: String, fileType: String, content: ByteString)

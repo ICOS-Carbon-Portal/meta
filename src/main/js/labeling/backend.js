@@ -3,6 +3,12 @@ var lblUri = 'http://meta.icos-cp.eu/ontologies/stationlabeling/';
 var ontUri = 'http://meta.icos-cp.eu/ontologies/stationsschema/';
 var filesUri = 'http://meta.icos-cp.eu/files/';
 
+function getOptionals(propNames){
+	return propNames
+		.map(propName => `OPTIONAL{?s cpst:${propName} ?${propName}}`)
+		.join('\n');
+}
+
 var stationPisQuery = `
 PREFIX cpst: <${baseUri}>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -11,9 +17,7 @@ FROM NAMED <${baseUri}>
 FROM NAMED <${lblUri}>
 FROM <${ontUri}>
 WHERE{
-	?owlClass
-		rdfs:subClassOf cpst:Station ;
-		rdfs:label ?thematicName .
+	?owlClass rdfs:subClassOf cpst:Station .
 	GRAPH <${baseUri}> {
 		?s a ?owlClass .
 		?s cpst:hasPi ?pi .
@@ -52,12 +56,22 @@ function postProcessStationsList(stations){
 }
 
 function getStationQuery(stationUri, graphUri){
-	let optionals = ["hasShortName", "hasLongName", "hasAddress", "hasWebsite",
-		"hasStationClass", "hasLat", "hasLon", "hasElevationAboveGround", "hasElevationAboveSea",
-		"hasAccessibility", "hasVegetation", "hasAnthropogenics", "hasConstructionStartDate",
-		"hasConstructionEndDate", "hasOperationalDateEstimate",
-		"hasTelecom", "hasExistingInfrastructure", "hasAnemometerDirection"
-	].map(propName => `OPTIONAL{?s cpst:${propName} ?${propName}}`).join('\n');
+	let propNames = {
+		AS: ["hasShortName", "hasLongName", "hasAddress", "hasWebsite",
+			"hasStationClass", "hasLat", "hasLon", "hasElevationAboveGround", "hasElevationAboveSea",
+			"hasAccessibility", "hasVegetation", "hasAnthropogenics", "hasConstructionStartDate",
+			"hasConstructionEndDate", "hasOperationalDateEstimate",
+			"hasTelecom", "hasExistingInfrastructure"],
+		ES: ["hasLat", "hasLon", "hasAnemometerDirection", "hasEddyHeight"],
+		OS: ["hasShortName", "hasLat", "hasLon"]
+	};
+	let union = _.map(propNames, (classProps, uriEnd) => `{
+		${getOptionals(classProps)}
+		GRAPH <${baseUri}> {
+			?s a ?owlClass .
+			FILTER STRENDS(STR(?owlClass), "${uriEnd}")
+		}
+	}`).join('\nUNION\n');
 
 	return `
 PREFIX cpst: <${baseUri}>
@@ -68,12 +82,11 @@ FROM NAMED <${baseUri}>
 FROM <${ontUri}>
 WHERE{
 	BIND (<${stationUri}> AS ?s) .
-	?owlClass
-		rdfs:subClassOf cpst:Station ;
-		rdfs:label ?thematicName .
-	GRAPH <${baseUri}> {?s a ?owlClass}
+	?owlClass rdfs:subClassOf cpst:Station .
 	GRAPH <${graphUri}> {
-		${optionals}
+		{
+			${union}
+		}
 	}
 }`;
 }
@@ -123,7 +136,7 @@ module.exports = function(ajax, sparql){
 	function getStationLabelingInfo(stationUri){
 
 		function hasBeenSavedBefore(labelingInfo){
-			var essentialProps = _.without(_.keys(labelingInfo), 'stationUri', 'thematicName', 'theme');
+			var essentialProps = _.without(_.keys(labelingInfo), 'stationUri', 'theme');
 			return !_.isEmpty(essentialProps);
 		}
 

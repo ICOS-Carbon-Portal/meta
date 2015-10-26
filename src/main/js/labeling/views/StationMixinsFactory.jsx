@@ -1,12 +1,18 @@
-module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction, labelingStartAction) {
+import ApplicationStatus from '../models/ApplicationStatus.js';
+import ContentPanel from './ContentPanel.jsx';
 
-	var FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);
-	var LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(labelingStartAction);
+export default function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction) {
+
+	let FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);
+	let LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(saveStationAction);
+	let AppStatusWidget = require('./AppStatusWidgetFactory.jsx')(saveStationAction);
 
 	var StoreListeningMixin = Reflux.connectFilter(FileAwareStationStore, function(storeState){
+		var station = _.clone(storeState.chosen);
 		return {
-			station: _.clone(storeState.chosen),
-			originalStation: _.clone(storeState.chosen),
+			station: station,
+			originalStation: _.clone(station),
+			status: new ApplicationStatus(station),
 			errors: {},
 			valid: true
 		};
@@ -18,11 +24,16 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 			if(!station || !station.stationUri || (station.stationUri !== this.props.stationUri)) return null;
 
 			return <div>
-				{this.getForm()}
+				<ContentPanel panelTitle="Station properties">
+					{this.getForm()}
+
+					{this.maySave() ? <button type="button" className="btn btn-primary" disabled={!this.canSave()} onClick={this.save}>Save</button> : null}
+				</ContentPanel>
 
 				<FileManager />
 
-				<LabelingStartWidget formIsValid={this.state.valid} station={this.state.station} isSaved={this.isUnchanged()} />
+				<LabelingStartWidget formIsValid={this.state.valid} station={this.state.station} status={this.state.status} isSaved={this.isUnchanged()} />
+				<AppStatusWidget status={this.state.status} />
 
 			</div>;
 		},
@@ -51,11 +62,10 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 		},
 
 		getProps: function(propName){
-			var station = this.state.station;
 			return {
 				updater: this.getUpdater(propName),
-				value: station[propName],
-				disabled: !station.isUsersStation
+				value: this.state.station[propName],
+				disabled: !this.state.status.mayBeSubmitted
 			};
 		},
 
@@ -64,10 +74,14 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 		},
 
 		canSave: function(){
-			return !this.isUnchanged() && this.state.valid && this.state.station.isUsersStation;
+			return this.maySave() && !this.isUnchanged() && this.state.valid;
 		},
 
-		submissionHandler: function(event) {
+		maySave: function(){
+			return this.state.status.mayBeSubmitted;
+		},
+
+		save: function(event) {
 			event.preventDefault();
 			saveStationAction(this.state.station);
 		}

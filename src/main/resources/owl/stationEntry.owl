@@ -183,6 +183,51 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label>application status</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&rdf;List"/>
+                        <rdf:first rdf:datatype="&xsd;string">ACKNOWLEDGED</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&rdf;List"/>
+                                <rdf:first rdf:datatype="&xsd;string">APPROVED</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="&rdf;List"/>
+                                        <rdf:first rdf:datatype="&xsd;string">NOT SUBMITTED</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="&rdf;List"/>
+                                                <rdf:first rdf:datatype="&xsd;string">REJECTED</rdf:first>
+                                                <rdf:rest>
+                                                    <rdf:Description>
+                                                        <rdf:type rdf:resource="&rdf;List"/>
+                                                        <rdf:first rdf:datatype="&xsd;string">SUBMITTED</rdf:first>
+                                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                                    </rdf:Description>
+                                                </rdf:rest>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate">
@@ -420,10 +465,10 @@
                 <owl:onDatatype rdf:resource="&xsd;double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -707,13 +752,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -728,13 +773,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -783,8 +828,8 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/Station">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -795,8 +840,8 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>

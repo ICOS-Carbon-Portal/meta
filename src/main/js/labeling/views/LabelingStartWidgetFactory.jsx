@@ -1,4 +1,4 @@
-var ContentPanel = require('./ContentPanel.jsx');
+import ContentPanel from './ContentPanel.jsx';
 
 var FileExpectations = React.createClass({
 	render: function(){
@@ -28,7 +28,7 @@ var CertifyingClaim = React.createClass({
 	}
 });
 
-module.exports = function(startLabelingAction) {
+module.exports = function(saveStationAction) {
 
 	return React.createClass({
 
@@ -37,9 +37,9 @@ module.exports = function(startLabelingAction) {
 		},
 
 		render: function() {
-			var station = this.props.station;
+			let station = this.props.station;
 
-			if(!station.isUsersStation) return null;
+			if(!this.props.status.mayBeSubmitted) return null;
 
 			var canStart = _.isEmpty(station.fileExpectations) && this.props.formIsValid && this.props.isSaved && this.state.compliance && this.state.funding;
 
@@ -54,21 +54,27 @@ module.exports = function(startLabelingAction) {
 				<CertifyingClaim changeHandler={this.getChangeHandler('funding')}
 					claim="I certify that this station is granted sufficient long term financial resources for its construction and operation" />
 
-				<button type="button" className="btn btn-success" disabled={!canStart} style={{marginTop: 10}}>
+				<button type="button" className="btn btn-success" disabled={!canStart} style={{marginTop: 10}} onClick={this.submitHandler}>
 					Apply for labeling
 				</button>
 
 			</ContentPanel>;
 		},
 
-		getChangeHandler(propName){
+		getChangeHandler: function(propName){
 			var self = this;
 			return function(flag){
 				var update = {};
 				update[propName] = flag;
 				self.setState(update);
 			};
+		},
+
+		submitHandler: function(){
+			let submittedStation = this.props.status.getSubmitted();
+			saveStationAction(submittedStation);
 		}
+
 	});
 
 };

@@ -1,5 +1,6 @@
-var FileUploader = require('./FileUploader.jsx');
-var ContentPanel = require('./ContentPanel.jsx');
+import FileUploader from './FileUploader.jsx';
+import ContentPanel from './ContentPanel.jsx';
+import ApplicationStatus from '../models/ApplicationStatus.js';
 
 module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAction) {
 
@@ -8,10 +9,11 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 		mixins: [Reflux.connect(FileAwareStationStore)],
 
 		render: function(){
-			var self = this;
-			var station = this.state.chosen;
+			let self = this;
+			let station = this.state.chosen;
+			let status = new ApplicationStatus(station);
 
-			var uploaderNeeded = (!_.isEmpty(station.fileTypes) && station.isUsersStation);
+			var uploaderNeeded = !_.isEmpty(station.fileTypes) && status.mayBeSubmitted;
 			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
 
 			return <ContentPanel panelTitle="Uploaded files">

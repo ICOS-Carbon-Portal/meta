@@ -1,7 +1,4 @@
-var baseUri = 'http://meta.icos-cp.eu/ontologies/stationentry/';
-var lblUri = 'http://meta.icos-cp.eu/ontologies/stationlabeling/';
-var ontUri = 'http://meta.icos-cp.eu/ontologies/stationsschema/';
-var filesUri = 'http://meta.icos-cp.eu/files/';
+import {baseUri, lblUri, ontUri, filesUri, stationOwlClassToTheme} from './configs.js';
 
 function getOptionals(propNames){
 	return propNames
@@ -9,30 +6,29 @@ function getOptionals(propNames){
 		.join('\n');
 }
 
-var stationPisQuery = `
-PREFIX cpst: <${baseUri}>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT *
-FROM NAMED <${baseUri}>
-FROM NAMED <${lblUri}>
-FROM <${ontUri}>
-WHERE{
-	?owlClass rdfs:subClassOf cpst:Station .
-	GRAPH <${baseUri}> {
-		?s a ?owlClass .
-		?s cpst:hasPi ?pi .
-		?pi cpst:hasEmail ?email .
-		?s cpst:hasShortName ?provShortName .
-		?s cpst:hasLongName ?provLongName .
-	}
-	OPTIONAL{
-		GRAPH <${lblUri}> {
-			OPTIONAL{?s cpst:hasShortName ?hasShortName }
-			OPTIONAL{?s cpst:hasLongName ?hasLongName }
+const stationPisQuery = `
+	PREFIX cpst: <${baseUri}>
+	PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+	SELECT *
+	FROM NAMED <${baseUri}>
+	FROM NAMED <${lblUri}>
+	FROM <${ontUri}>
+	WHERE{
+		?owlClass rdfs:subClassOf cpst:Station .
+		GRAPH <${baseUri}> {
+			?s a ?owlClass .
+			?s cpst:hasPi ?pi .
+			?pi cpst:hasEmail ?email .
+			?s cpst:hasShortName ?provShortName .
+			?s cpst:hasLongName ?provLongName .
 		}
-	}
-}`;
-
+		OPTIONAL{
+			GRAPH <${lblUri}> {
+				OPTIONAL{?s cpst:hasShortName ?hasShortName }
+				OPTIONAL{?s cpst:hasLongName ?hasLongName }
+			}
+		}
+	}`;
 
 function postProcessStationsList(stations){
 	return _.chain(stations)
@@ -56,17 +52,18 @@ function postProcessStationsList(stations){
 }
 
 function getStationQuery(stationUri, graphUri){
+	let commonPropNames = ["hasLat", "hasLon", "hasApplicationStatus"];
 	let propNames = {
 		AS: ["hasShortName", "hasLongName", "hasAddress", "hasWebsite",
-			"hasStationClass", "hasLat", "hasLon", "hasElevationAboveGround", "hasElevationAboveSea",
+			"hasStationClass", "hasElevationAboveGround", "hasElevationAboveSea",
 			"hasAccessibility", "hasVegetation", "hasAnthropogenics", "hasConstructionStartDate",
 			"hasConstructionEndDate", "hasOperationalDateEstimate",
 			"hasTelecom", "hasExistingInfrastructure"],
-		ES: ["hasLat", "hasLon", "hasAnemometerDirection", "hasEddyHeight"],
-		OS: ["hasShortName", "hasLat", "hasLon"]
+		ES: ["hasAnemometerDirection", "hasEddyHeight"],
+		OS: ["hasShortName"]
 	};
 	let union = _.map(propNames, (classProps, uriEnd) => `{
-		${getOptionals(classProps)}
+		${getOptionals(commonPropNames.concat(classProps))}
 		GRAPH <${baseUri}> {
 			?s a ?owlClass .
 			FILTER STRENDS(STR(?owlClass), "${uriEnd}")
@@ -106,19 +103,12 @@ function getFilesQuery(stationUri){
 }
 
 function postProcessStationProps(station){
-
-	var copy = _.omit(station, 's', 'owlClass');
-
-	copy.stationUri = station.s;
-
-	if(station.owlClass === baseUri + 'AS')
-		copy.theme = 'Atmosphere';
-	else if (station.owlClass === baseUri + 'ES')
-		copy.theme = 'Ecosystem';
-	else if (station.owlClass === baseUri + 'OS')
-		copy.theme = 'Ocean';
-
-	return copy;
+	return _.extend(
+		_.omit(station, 's', 'owlClass'), {
+			stationUri: station.s,
+			theme: stationOwlClassToTheme(station.owlClass)
+		}
+	);
 }
 
 

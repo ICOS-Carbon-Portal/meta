@@ -16,7 +16,7 @@ module.exports = function(StationMixins) {
 				}
 			}, this.getProps('hasStationClass'));
 
-			return <Inputs.FormForm submissionHandler={_.bind(this.submissionHandler, this)} canSave={this.canSave()}>
+			return <Inputs.FormForm>
 				<Inputs.Header title="Identification"></Inputs.Header>
 				<Inputs.Group title="Short name"><Inputs.String {...this.getProps('hasShortName')} /></Inputs.Group>
 				<Inputs.Group title="Long name"><Inputs.String {...this.getProps('hasLongName')} /></Inputs.Group>

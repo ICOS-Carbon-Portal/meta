@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.reasoner
+package se.lu.nateko.cp.meta.onto.reasoner
 
 import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLProperty

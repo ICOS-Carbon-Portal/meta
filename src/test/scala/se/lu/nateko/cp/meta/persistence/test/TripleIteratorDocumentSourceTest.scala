@@ -12,7 +12,7 @@ import org.semanticweb.owlapi.rio.RioMemoryTripleSource
 import org.semanticweb.owlapi.rio.RioNTriplesParserFactory
 import scala.collection.JavaConverters._
 import org.semanticweb.owlapi.io.OWLParserFactory
-import se.lu.nateko.cp.meta.Onto
+import se.lu.nateko.cp.meta.onto.Onto
 
 class TripleIteratorDocumentSourceTest extends FunSpec{
 

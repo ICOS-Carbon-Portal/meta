@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
-import se.lu.nateko.cp.meta.InstOnto
+import se.lu.nateko.cp.meta.onto.InstOnto
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._

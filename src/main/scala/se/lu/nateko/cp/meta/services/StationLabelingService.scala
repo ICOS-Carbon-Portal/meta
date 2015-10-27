@@ -26,7 +26,7 @@ import spray.json.JsObject
 import spray.json.JsString
 import spray.json.JsValue
 import spray.json.JsNumber
-import se.lu.nateko.cp.meta.Onto
+import se.lu.nateko.cp.meta.onto.Onto
 
 
 class StationLabelingService(

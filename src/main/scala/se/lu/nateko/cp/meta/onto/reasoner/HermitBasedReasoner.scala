@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.reasoner
+package se.lu.nateko.cp.meta.onto.reasoner
 
 import scala.collection.JavaConversions._
 import se.lu.nateko.cp.meta.utils.owlapi._
@@ -6,10 +6,8 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLProperty
 import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
-import org.semanticweb.owlapi.search.EntitySearcher
 
 
 class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){

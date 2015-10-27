@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.reasoner
+package se.lu.nateko.cp.meta.onto.reasoner
 
 import scala.collection.JavaConversions._
 import org.semanticweb.owlapi.search.EntitySearcher

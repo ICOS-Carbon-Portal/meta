@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
 import org.scalatest.FunSpec
-import se.lu.nateko.cp.meta.Vocab
+import se.lu.nateko.cp.meta.onto.Vocab
 import org.semanticweb.owlapi.model.parameters.Imports
 
 

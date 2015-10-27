@@ -1,13 +1,11 @@
-package se.lu.nateko.cp.meta.labeler
+package se.lu.nateko.cp.meta.onto.labeler
 
-import scala.collection.mutable.Map
-
-import org.openrdf.model.URI
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLOntology
-
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.onto.labeler._
+import org.openrdf.model.URI
 
 class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 

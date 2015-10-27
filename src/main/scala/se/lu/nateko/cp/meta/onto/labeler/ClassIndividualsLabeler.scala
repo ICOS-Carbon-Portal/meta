@@ -1,11 +1,11 @@
-package se.lu.nateko.cp.meta.labeler
+package se.lu.nateko.cp.meta.onto.labeler
 
 import se.lu.nateko.cp.meta._
-import utils.owlapi._
-
 import scala.collection.JavaConversions._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.search.EntitySearcher
+import se.lu.nateko.cp.meta.onto.labeler._
+import se.lu.nateko.cp.meta.onto.Vocab
 
 
 object ClassIndividualsLabeler{

@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.test
 
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.onto.Onto
 
 class OntoTests extends FunSpec{
 

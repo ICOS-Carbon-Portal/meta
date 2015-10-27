@@ -1,20 +1,26 @@
-package se.lu.nateko.cp.meta
+package se.lu.nateko.cp.meta.onto
 
 import java.net.URI
+
+import scala.util.Failure
+import scala.util.Try
+import scala.util.control.NoStackTrace
+
 import org.openrdf.model.Literal
+import org.openrdf.model.Statement
 import org.openrdf.model.{ URI => SesameURI }
 import org.openrdf.model.Value
-import org.semanticweb.owlapi.model.IRI
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.labeler.LabelerHelpers
-import se.lu.nateko.cp.meta.utils.sesame._
-import scala.util.Try
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import org.openrdf.model.Statement
-import org.openrdf.query.UpdateExecutionException
-import scala.util.Failure
-import scala.util.control.NoStackTrace
 import org.openrdf.model.vocabulary.RDF
+import org.openrdf.query.UpdateExecutionException
+import org.semanticweb.owlapi.model.IRI
+
+import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.onto.labeler.LabelerHelpers
+import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.sesame.SesameStatement
+import se.lu.nateko.cp.meta.utils.sesame.ToJavaUriConverter
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 

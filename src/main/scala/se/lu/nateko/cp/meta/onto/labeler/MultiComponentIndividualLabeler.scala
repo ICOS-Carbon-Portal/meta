@@ -1,11 +1,11 @@
-package se.lu.nateko.cp.meta.labeler
+package se.lu.nateko.cp.meta.onto.labeler
 
 import scala.collection.JavaConversions._
-import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.model._
 import org.openrdf.model.URI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.openrdf.model.Literal
+import se.lu.nateko.cp.meta.onto.labeler._
 
 class MultiComponentIndividualLabeler(
 	components: Seq[DisplayComponent],

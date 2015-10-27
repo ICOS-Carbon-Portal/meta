@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.InstOnto
+import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.OntoConfig
 
 object MainRoute {

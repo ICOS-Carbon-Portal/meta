@@ -1,18 +1,19 @@
-package se.lu.nateko.cp.meta
+package se.lu.nateko.cp.meta.onto
 
 import java.net.URI
-import scala.collection.JavaConversions._
-import se.lu.nateko.cp.meta.reasoner.Reasoner
-import se.lu.nateko.cp.meta.reasoner.HermitBasedReasoner
-import se.lu.nateko.cp.meta.utils.owlapi._
+
+import scala.collection.JavaConversions.asScalaSet
+import scala.collection.JavaConversions.collectionAsScalaIterable
+
+import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.vocab.OWLFacet
-import org.semanticweb.owlapi.model._
-import se.lu.nateko.cp.meta.labeler.Labeler
-import se.lu.nateko.cp.meta.labeler.ClassIndividualsLabeler
-import se.lu.nateko.cp.meta.labeler.UniversalLabeler
-import se.lu.nateko.cp.meta.labeler.InstanceLabeler
-import org.semanticweb.owlapi.model.parameters.Imports
+
+import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.onto.labeler._
+import se.lu.nateko.cp.meta.onto.reasoner._
+import se.lu.nateko.cp.meta.utils.owlapi._
 
 
 class Onto (owlOntology: OWLOntology) extends java.io.Closeable{

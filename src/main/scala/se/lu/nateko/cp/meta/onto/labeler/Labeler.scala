@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.labeler
+package se.lu.nateko.cp.meta.onto.labeler
 
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDFS

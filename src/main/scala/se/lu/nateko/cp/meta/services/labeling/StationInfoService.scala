@@ -4,7 +4,6 @@ import scala.util.Try
 
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDF
 
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.utils.sesame._
@@ -61,9 +60,5 @@ trait StationInfoService { self: StationLabelingService =>
 
 	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[URI] =
 		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createURI(uri))
-
-	private def lookupStationClass(stationUri: URI): Option[URI] =
-		provisionalInfoServer.getStatements(Some(stationUri), Some(RDF.TYPE), None)
-			.map(_.getObject).collect{case uri: URI => uri}.toIndexedSeq.headOption
 
 }

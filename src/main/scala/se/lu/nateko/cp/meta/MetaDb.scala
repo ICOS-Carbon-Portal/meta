@@ -156,7 +156,7 @@ object MetaDb {
 				val provisional = instanceServers(conf.provisionalInfoInstanceServerId)
 				val main = instanceServers(conf.instanceServerId)
 				val onto = ontos(conf.ontoId)
-				new StationLabelingService(main, provisional, onto, fileService)
+				new StationLabelingService(main, provisional, onto, fileService, conf)
 			}
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
 		}

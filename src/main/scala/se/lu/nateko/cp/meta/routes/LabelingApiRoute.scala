@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.concurrent.duration.DurationInt
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Multipart
 import akka.http.scaladsl.model.StatusCodes
@@ -12,20 +11,29 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.FileDeletionDto
+import se.lu.nateko.cp.meta.LabelingStatusUpdate
 import se.lu.nateko.cp.meta.LabelingUserDto
+import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
+import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
-import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import spray.json.JsObject
+import java.net.URI
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
 
 	private val exceptionHandler = ExceptionHandler{
+
 		case authErr: UnauthorizedStationUpdateException =>
 			complete((StatusCodes.Unauthorized, authErr.getMessage))
+
 		case authErr: UnauthorizedUserInfoUpdateException =>
 			complete((StatusCodes.Unauthorized, authErr.getMessage))
+
+		case authErr: IllegalLabelingStatusException =>
+			complete((StatusCodes.BadRequest, authErr.getMessage))
+
 		case err => throw err
 	}
 
@@ -41,6 +49,12 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				path("save") {
 					entity(as[JsObject]){uploadMeta =>
 						service.saveStationInfo(uploadMeta, uploader)
+						complete(StatusCodes.OK)
+					}
+				} ~
+				path("updatestatus"){
+					entity(as[LabelingStatusUpdate]){update =>
+						service.updateStatus(update.stationUri, update.newStatus, uploader)
 						complete(StatusCodes.OK)
 					}
 				} ~

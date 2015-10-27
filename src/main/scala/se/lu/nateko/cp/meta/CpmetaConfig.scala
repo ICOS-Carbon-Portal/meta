@@ -49,6 +49,7 @@ case class UploadServiceConfig(instanceServerId: String, submitters: Map[URI, Da
 case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
+	tcUserIds: Map[URI, Seq[String]],
 	ontoId: String
 )
 
@@ -76,7 +77,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
-	implicit val labelingServiceConfigFormat = jsonFormat3(LabelingServiceConfig)
+	implicit val labelingServiceConfigFormat = jsonFormat4(LabelingServiceConfig)
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
 
 	def getAppConfig: Config = {

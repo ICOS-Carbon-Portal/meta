@@ -82,5 +82,6 @@ trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	implicit val userInfoFormat = jsonFormat3(UserInfo)
 
 	implicit val fileDeletionFormat = jsonFormat2(FileDeletionDto)
-	implicit val labelingUserFormat = jsonFormat7(LabelingUserDto)
+	implicit val labelingUserFormat = jsonFormat8(LabelingUserDto)
+	implicit val labelingStatusUpdateFormat = jsonFormat2(LabelingStatusUpdate)
 }

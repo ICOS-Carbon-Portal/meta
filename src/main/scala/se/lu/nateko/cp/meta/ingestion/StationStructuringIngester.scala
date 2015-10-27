@@ -104,6 +104,7 @@ class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(facto
 	val hasAffiliation = getRelative("hasAffiliation")
 	val hasPhone = getRelative("hasPhone")
 	val hasAssociatedFile = getRelative("hasAssociatedFile")
+	val hasApplicationStatus = getRelative("hasApplicationStatus")
 	val PI = getRelative("PI")
 
 	val files = new FilesVocab(factory)

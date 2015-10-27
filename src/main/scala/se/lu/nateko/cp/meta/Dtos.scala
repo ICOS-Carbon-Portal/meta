@@ -39,35 +39,16 @@ case class UploadMetadataDto(
 	acquisitionEnd: String
 )
 
-/*case class StationLabelingDto(
-	stationUri: URI,
-	shortName: Option[String],
-	longName: Option[String],
-	address: Option[String],
-	website: Option[String],
-	stationClass: Option[String],
-	lat: Option[Double],
-	lon: Option[Double],
-	aboveGround: Option[String],
-	aboveSea: Option[Float],
-	accessibility: Option[String],
-	vegetation: Option[String],
-	anthropogenics: Option[String],
-	constructionStartDate: Option[String],
-	constructionEndDate: Option[String],
-	plannedDateOperational: Option[String],
-	telecom: Option[String],
-	infrastructure: Option[String],
-	anemometerDir: Option[Int]
-)*/
-
 case class FileDeletionDto(stationUri: URI, file: URI)
 case class LabelingUserDto(
 	uri: Option[URI],
 	mail: String,
 	isPi: Boolean,
+	tcs: Seq[URI],
 	firstName: Option[String],
 	lastName: Option[String],
 	affiliation: Option[String] = None,
 	phone: Option[String] = None
 )
+
+case class LabelingStatusUpdate(stationUri: URI, newStatus: String)

@@ -2,6 +2,8 @@ package se.lu.nateko.cp.meta.services.labeling
 
 import scala.util.Try
 
+import java.net.{URI => JavaURI}
+
 import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
@@ -15,15 +17,27 @@ trait UserInfoService { self: StationLabelingService =>
 
 	private val (factory, vocab) = getFactoryAndVocab(provisionalInfoServer)
 
+	private val userToTcsLookup: Map[String, Seq[JavaURI]] = {
+		println(config.tcUserIds)
+		val userTcPairs = for(
+			(tcUri, userMails) <- config.tcUserIds.toSeq;
+			userMail <- userMails
+		) yield (userMail, tcUri)
+
+		userTcPairs.groupBy(_._1).mapValues(pairs => pairs.map(_._2))
+	}
+
 	def getLabelingUserInfo(uinfo: UserInfo): LabelingUserDto = {
 		val piUriOpt = provisionalInfoServer
 			.getStatements(None, Some(vocab.hasEmail), Some(vocab.lit(uinfo.mail)))
 			.collect{case SesameStatement(uri: URI, _, _) => uri}
 			.toIndexedSeq.headOption
 
+		val tcs = userToTcsLookup.get(uinfo.mail).toSeq.flatten
+
 		piUriOpt match{
 			case None =>
-				LabelingUserDto(None, uinfo.mail, false, Some(uinfo.givenName), Some(uinfo.surname))
+				LabelingUserDto(None, uinfo.mail, false, tcs, Some(uinfo.givenName), Some(uinfo.surname))
 			case Some(piUri) =>
 				val props = provisionalInfoServer
 					.getStatements(piUri)
@@ -35,6 +49,7 @@ trait UserInfoService { self: StationLabelingService =>
 					uri = Some(piUri.toJava),
 					mail = uinfo.mail,
 					isPi = true,
+					tcs = tcs,
 					firstName = props.get(vocab.hasFirstName).orElse(Some(uinfo.givenName)),
 					lastName = props.get(vocab.hasLastName).orElse(Some(uinfo.surname)),
 					affiliation = props.get(vocab.hasAffiliation),

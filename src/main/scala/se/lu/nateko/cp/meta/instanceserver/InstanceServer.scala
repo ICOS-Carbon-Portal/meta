@@ -55,4 +55,11 @@ trait InstanceServer {
 
 	def removePropertyValue(instUri: URI, propUri: URI, value: Value): Try[Unit] =
 		remove(factory.createStatement(instUri, propUri, value))
+
+	def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit = {
+		val toRemove = from.diff(to)
+		val toAdd = to.diff(from)
+
+		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
+	}
 }

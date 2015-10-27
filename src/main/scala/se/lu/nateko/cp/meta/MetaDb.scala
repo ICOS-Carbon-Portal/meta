@@ -1,17 +1,14 @@
 package se.lu.nateko.cp.meta
 
 import java.io.Closeable
-
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-
 import org.openrdf.model.Statement
 import org.openrdf.model.ValueFactory
 import org.openrdf.repository.Repository
 import org.semanticweb.owlapi.apibinding.OWLManager
-
 import se.lu.nateko.cp.meta.ingestion.Ingestion
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
@@ -21,6 +18,7 @@ import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services._
+import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.utils.sesame._
 
 class MetaDb private (

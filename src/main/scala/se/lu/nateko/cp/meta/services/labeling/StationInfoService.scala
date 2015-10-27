@@ -32,7 +32,7 @@ trait StationInfoService { self: StationLabelingService =>
 			.toMap
 	}
 
-	def saveStationInfo(info: JsObject, uploader: UserInfo): Try[Unit] = Try{
+	def saveStationInfo(info: JsObject, uploader: UserInfo): Unit = {
 
 		val stationUri = info.fields.get("stationUri")
 			.collect{case JsString(str) => str}

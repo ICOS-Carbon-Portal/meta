@@ -1,85 +1,67 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.stream.Materializer
-import akka.http.scaladsl.server.Route
-import scala.util.Success
-import scala.util.Failure
-import scala.concurrent.duration._
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
-import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
-import akka.stream.scaladsl.Sink
-import scala.concurrent.Future
-import akka.util.ByteString
-import java.net.URI
-import se.lu.nateko.cp.meta.services.labeling.UploadedFile
-import se.lu.nateko.cp.meta.FileDeletionDto
-import akka.http.scaladsl.server.directives.ContentTypeResolver
-import se.lu.nateko.cp.meta.LabelingUserDto
-import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
-import spray.json.JsObject
+import scala.concurrent.duration.DurationInt
 
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.Multipart
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.ExceptionHandler
+import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.CpmetaJsonProtocol
+import se.lu.nateko.cp.meta.FileDeletionDto
+import se.lu.nateko.cp.meta.LabelingUserDto
+import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
+import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
+import spray.json.JsObject
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
 
-	def apply(service: StationLabelingService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("labeling"){
+	private val exceptionHandler = ExceptionHandler{
+		case authErr: UnauthorizedStationUpdateException =>
+			complete((StatusCodes.Unauthorized, authErr.getMessage))
+		case authErr: UnauthorizedUserInfoUpdateException =>
+			complete((StatusCodes.Unauthorized, authErr.getMessage))
+		case err => throw err
+	}
+
+	def apply(
+		service: StationLabelingService,
+		authRouting: AuthenticationRouting
+	)(implicit mat: Materializer): Route = (handleExceptions(exceptionHandler) & pathPrefix("labeling")){
+
 		implicit val ctxt = mat.executionContext
+
 		post {
 			authRouting.mustBeLoggedIn{ uploader =>
 				path("save") {
 					entity(as[JsObject]){uploadMeta =>
-						service.saveStationInfo(uploadMeta, uploader) match{
-							case Success(datasetUrl) => complete(StatusCodes.OK)
-							case Failure(err) => err match{
-								case authErr: UnauthorizedStationUpdateException =>
-									complete((StatusCodes.Unauthorized, authErr.getMessage))
-								case _ => throw err
-							}
-						}
-					} ~
-					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+						service.saveStationInfo(uploadMeta, uploader)
+						complete(StatusCodes.OK)
+					}
 				} ~
 				path("saveuserinfo") {
 					entity(as[LabelingUserDto]){userInfo =>
-						service.saveUserInfo(userInfo, uploader) match{
-							case Success(_) => complete(StatusCodes.OK)
-							case Failure(err) => err match{
-								case authErr: UnauthorizedUserInfoUpdateException =>
-									complete((StatusCodes.Unauthorized, authErr.getMessage))
-								case _ => throw err
-							}
-						}
-					} ~
-					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+						service.saveUserInfo(userInfo, uploader)
+						complete(StatusCodes.OK)
+					}
 				} ~
 				path("fileupload"){
 					entity(as[Multipart.FormData]){ fdata =>
-
 						onSuccess(fdata.toStrict(1 hour)){strictFormData =>
-							val nameToParts = strictFormData.strictParts.map(part => (part.name, part)).toMap
-							val fileType = nameToParts("fileType").entity.data.decodeString("UTF-8")
-							val stationUri = nameToParts("stationUri").entity.data.decodeString("UTF-8")
-							val filePart = nameToParts("uploadedFile")
-							val fileName = filePart.filename.get
-							val fileContent = filePart.entity.data
-
-							val fileInfo = UploadedFile(new URI(stationUri), fileName, fileType, fileContent)
-							val doneFut = service.processFile(fileInfo, uploader)
-
-							onSuccess(doneFut){
+							onSuccess(service.processFile(strictFormData, uploader)){
 								complete(StatusCodes.OK)
 							}
 						}
 					}
-					
 				} ~
 				path("filedeletion"){
 					entity(as[FileDeletionDto]){ fileInfo =>
-						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader).get
+						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader)
 						complete(StatusCodes.OK)
 					}
 				}
@@ -103,12 +85,6 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		}
-	} ~
-	path("files" / Segment / Segment){ (hash, fileName) =>
-		val contentResolver = implicitly[ContentTypeResolver]
-		val contentType = contentResolver(fileName)
-		val file = service.fileService.getPath(hash).toFile
-		getFromFile(file, contentType)
 	}
 
 }

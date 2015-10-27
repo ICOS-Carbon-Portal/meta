@@ -16,7 +16,7 @@ class StationLabelingService(
 	protected val server: InstanceServer,
 	protected val provisionalInfoServer: InstanceServer,
 	protected val onto: Onto,
-	val fileService: FileStorageService
+	protected val fileService: FileStorageService
 ) extends UserInfoService with StationInfoService with FileService {
 
 	private val (_, vocab) = getFactoryAndVocab(provisionalInfoServer)

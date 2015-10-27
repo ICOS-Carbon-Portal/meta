@@ -26,6 +26,7 @@ class MetaDb private (
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
 	val labelingService: StationLabelingService,
+	val fileService: FileStorageService,
 	repo: Repository) extends Closeable{
 
 	val sparql: SparqlServer = new SesameSparqlServer(repo)
@@ -157,7 +158,7 @@ object MetaDb {
 				val onto = ontos(conf.ontoId)
 				new StationLabelingService(main, provisional, onto, fileService)
 			}
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, repo)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
 		}
 
 		Await.result(dbFuture, Duration.Inf)

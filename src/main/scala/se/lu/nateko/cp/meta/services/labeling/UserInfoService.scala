@@ -43,7 +43,7 @@ trait UserInfoService { self: StationLabelingService =>
 		}
 	}
 
-	def saveUserInfo(info: LabelingUserDto, uploader: UserInfo): Try[Unit] = Try{
+	def saveUserInfo(info: LabelingUserDto, uploader: UserInfo): Unit = {
 		if(info.uri.isEmpty) throw new UnauthorizedUserInfoUpdateException("User must be identified by a URI")
 		val userUri = factory.createURI(info.uri.get)
 		val userEmail = getPiEmails(userUri).toIndexedSeq.headOption.getOrElse(

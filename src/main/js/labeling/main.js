@@ -5,7 +5,7 @@ var actions = Reflux.createActions([
 	'saveStation',
 	'fileUpload',
 	'fileDelete',
-	'labelingStart',
+	'statusUpdate',
 	'savePi'
 ]);
 
@@ -17,7 +17,7 @@ var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, actions.sav
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, actions.chooseStation);
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationsListStore);
 
-var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation);
+var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation, actions.statusUpdate);
 var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(Backend, ChosenStationStore, actions.fileUpload, actions.fileDelete);
 
 var StationMixins = require('./views/StationMixinsFactory.jsx')(
@@ -25,7 +25,7 @@ var StationMixins = require('./views/StationMixinsFactory.jsx')(
 	actions.fileUpload,
 	actions.fileDelete,
 	actions.saveStation,
-	actions.labelingStart
+	actions.statusUpdate
 );
 
 var themeToStation = {

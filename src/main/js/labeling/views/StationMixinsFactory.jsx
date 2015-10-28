@@ -1,11 +1,11 @@
 import ApplicationStatus from '../models/ApplicationStatus.js';
 import ContentPanel from './ContentPanel.jsx';
 
-export default function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction) {
+export default function(FileAwareStationStore, fileUploadAction, fileDeleteAction, saveStationAction, updateStatusAction) {
 
 	let FileManager = require('./FileManagerFactory.jsx')(FileAwareStationStore, fileUploadAction, fileDeleteAction);
-	let LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(saveStationAction);
-	let AppStatusWidget = require('./AppStatusWidgetFactory.jsx')(saveStationAction);
+	let LabelingStartWidget = require('./LabelingStartWidgetFactory.jsx')(updateStatusAction);
+	let AppStatusWidget = require('./AppStatusWidgetFactory.jsx')(updateStatusAction);
 
 	var StoreListeningMixin = Reflux.connectFilter(FileAwareStationStore, function(storeState){
 		var station = _.clone(storeState.chosen);

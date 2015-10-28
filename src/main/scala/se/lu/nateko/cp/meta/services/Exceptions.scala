@@ -12,4 +12,4 @@ final class UnauthorizedUploadException(message: String) extends ServiceExceptio
 final class UnauthorizedStationUpdateException(message: String) extends ServiceException(message)
 final class UnauthorizedUserInfoUpdateException(message: String) extends ServiceException(message)
 
-final class IllegalLabelingStatusException(status: String) extends ServiceException(s"Illegal labeling application status '$status'")
+final class IllegalLabelingStatusException(message: String) extends ServiceException(message)

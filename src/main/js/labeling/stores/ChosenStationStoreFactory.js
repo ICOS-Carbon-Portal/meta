@@ -1,9 +1,10 @@
-module.exports = function(Backend, chooseStationAction, saveStationAction){
+module.exports = function(Backend, chooseStationAction, saveStationAction, updateStatusAction){
 	return Reflux.createStore({
 
 		init: function(){
 			this.listenTo(chooseStationAction, this.chooseStationHandler);
 			this.listenTo(saveStationAction, this.saveStationHandler);
+			this.listenTo(updateStatusAction, this.updateStatusHandler);
 		},
 
 		chooseStationHandler: function(chosenStation, evenIfChosen) {
@@ -30,16 +31,29 @@ module.exports = function(Backend, chooseStationAction, saveStationAction){
 			);
 		},
 
+		refreshIfStillRelevant: function(station){
+			if(this.isStillRelevant(station)) this.chooseStationHandler(station, true);
+		},
+
+		isStillRelevant: function(station){
+			return this.chosen.stationUri === station.stationUri;
+		},
+
 		saveStationHandler: function(station){
 			var self = this;
-
 			var stationInfo = _.omit(station, 'files', 'fileExpectations', 'fileTypes', 'emails', 'chosen', 'isUsersStation');
 
 			Backend.saveStationInfo(stationInfo).then(
+				() => self.refreshIfStillRelevant(station),
+				err => console.log(err)
+			);
+		},
+
+		updateStatusHandler: function(station){
+			var self = this;
+			Backend.updateStatus(station.stationUri, station.hasApplicationStatus).then(
 				() => {
-					if(self.chosen.stationUri === stationInfo.stationUri){
-						self.chooseStationHandler(station, true);
-					}
+					if(self.isStillRelevant(station)) self.trigger({chosen: station});
 				},
 				err => console.log(err)
 			);

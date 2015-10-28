@@ -18,7 +18,6 @@ trait UserInfoService { self: StationLabelingService =>
 	private val (factory, vocab) = getFactoryAndVocab(provisionalInfoServer)
 
 	private val userToTcsLookup: Map[String, Seq[JavaURI]] = {
-		println(config.tcUserIds)
 		val userTcPairs = for(
 			(tcUri, userMails) <- config.tcUserIds.toSeq;
 			userMail <- userMails
@@ -33,7 +32,7 @@ trait UserInfoService { self: StationLabelingService =>
 			.collect{case SesameStatement(uri: URI, _, _) => uri}
 			.toIndexedSeq.headOption
 
-		val tcs = userToTcsLookup.get(uinfo.mail).toSeq.flatten
+		val tcs = userToTcsLookup.get(uinfo.mail).getOrElse(Nil)
 
 		piUriOpt match{
 			case None =>

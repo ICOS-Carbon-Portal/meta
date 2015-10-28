@@ -8,35 +8,25 @@ import org.openrdf.model.{URI => SesameUri}
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
-private object ApplicationStatus{
-	val notSubmitted: String = "NOT SUBMITTED"
-	val submitted: String = "SUBMITTED"
-	val acknowledged: String = "ACKNOWLEDGED"
-	val approved: String = "APPROVED"
-	val rejected: String = "REJECTED"
-
-	val allStatuses = Set(notSubmitted, submitted, acknowledged, approved, rejected)
-}
-
 trait LifecycleService { self: StationLabelingService =>
 
-	import ApplicationStatus._
+	import LifecycleService._
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
 
-	def updateStatus(station: URI, newStatus: String, uploader: UserInfo): Unit = {
+	def updateStatus(station: URI, newStatus: String, user: UserInfo): Unit = {
 
-		if(!allStatuses.contains(newStatus))
-			throw new IllegalLabelingStatusException(newStatus)
+		ensureStatusIsLegal(newStatus)
 
 		val stationUri = factory.createURI(station)
 
 		val currentStatus = server.getValues(stationUri, vocab.hasApplicationStatus)
 			.collect{case status: Literal => status.getLabel}.headOption
 
-		if(currentStatus.isEmpty || currentStatus.get == notSubmitted)
-			assertThatWriteIsAuthorized(stationUri, uploader)
-		else assertUserRepresentsTc(stationUri, uploader)
+		ensureStatusChangeIsLegal(currentStatus, newStatus)
+
+		if(needsPiPermissions(newStatus)) assertThatWriteIsAuthorized(stationUri, user)
+		if(needsTcPermissions(newStatus)) assertUserRepresentsTc(stationUri, user)
 
 		def toStatement(status: String) = factory
 			.createStatement(stationUri, vocab.hasApplicationStatus, vocab.lit(status))
@@ -47,21 +37,69 @@ trait LifecycleService { self: StationLabelingService =>
 		server.applyDiff(currentInfo, newInfo)
 	}
 
-	private def assertUserRepresentsTc(station: SesameUri, uploader: UserInfo): Unit = {
+	private def assertUserRepresentsTc(station: SesameUri, user: UserInfo): Unit = {
 		val tcUsersListOpt = for(
 			stationClass <- lookupStationClass(station);
 			list <- config.tcUserIds.get(stationClass.toJava)
 		) yield list
 
+		ensureUserRepresentsTc(tcUsersListOpt, user, station)
+	}
+}
+
+object LifecycleService{
+	val notSubmitted: String = "NOT SUBMITTED"
+	val submitted: String = "SUBMITTED"
+	val acknowledged: String = "ACKNOWLEDGED"
+	val approved: String = "APPROVED"
+	val rejected: String = "REJECTED"
+
+	private val allStatuses = Set(notSubmitted, submitted, acknowledged, approved, rejected)
+	private val wereSubmitted = Set(submitted, acknowledged, approved, rejected)
+
+	private def afterSubmission(statuses: String*) = statuses.forall(wereSubmitted.contains)
+
+	def userRepresentsTc(authorizedUserIds: Seq[String], user: UserInfo): Boolean =
+		// If no user is authorised, then everyone is authorised
+		authorizedUserIds.isEmpty ||
+		authorizedUserIds.map(_.toLowerCase).contains(user.mail.toLowerCase)
+
+	private def statusChangeIsLegal(currentStatus: Option[String], newStatus: String): Boolean =
+		(currentStatus, newStatus) match {
+			case (None, `submitted`) => true
+			case (Some(`notSubmitted`), `submitted`) => true
+			case (Some(from), `submitted`) if afterSubmission(from) => false
+			case (Some(from), to) if afterSubmission(from, to) => true
+			case (Some(from), `notSubmitted`) if afterSubmission(from) => true
+			case _ => false
+		}
+
+	def needsPiPermissions(newStatus: String): Boolean = newStatus == submitted
+	def needsTcPermissions(newStatus: String): Boolean = newStatus != submitted
+
+	def ensureStatusChangeIsLegal(currentStatus: Option[String], newStatus: String): Unit =
+		if(!statusChangeIsLegal(currentStatus, newStatus)) {
+			val status = currentStatus.getOrElse("(Nothing)")
+			val message = s"Changing application status from $status to $newStatus is illegal"
+			throw new IllegalLabelingStatusException(message)
+		}
+
+	def ensureStatusIsLegal(newStatus: String): Unit =
+		if(!allStatuses.contains(newStatus)){
+			val msg = s"Unsupported labeling application status '$newStatus'"
+			throw new IllegalLabelingStatusException(msg)
+		}
+
+	def ensureUserRepresentsTc(tcUsersListOpt: Option[Seq[String]], user: UserInfo, station: SesameUri): Unit = {
 		if(tcUsersListOpt.isEmpty){
-			val message = s"No authorization config found for station (${station.toString}) TC"
+			val message = s"No authorization config found for station (${station}) TC"
 			throw new UnauthorizedStationUpdateException(message)
 		}
 
-		val authorizedUserIds = tcUsersListOpt.toSeq.flatten.map(_.toLowerCase)
+		val authorizedUserIds = tcUsersListOpt.getOrElse(Nil)
 
-		if(!authorizedUserIds.isEmpty && !authorizedUserIds.contains(uploader.mail.toLowerCase)){
-			val message = s"User ${uploader.mail} does not represent station's Thematic Center!"
+		if(!userRepresentsTc(authorizedUserIds, user)){
+			val message = s"User ${user.mail} does not represent station's Thematic Center!"
 			throw new UnauthorizedStationUpdateException(message)
 		}
 	}

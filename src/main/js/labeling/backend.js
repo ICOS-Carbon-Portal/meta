@@ -145,6 +145,7 @@ module.exports = function(ajax, sparql){
 
 		getStationInfo: getStationLabelingInfo,
 		saveStationInfo: info => ajax.postJson('save', info),
+		updateStatus: (stationUri, newStatus) => ajax.postJson('updatestatus', {stationUri, newStatus}),
 
 		getStationFiles: getStationFiles,
 		uploadFile: formData => ajax.uploadFormData('fileupload', formData),

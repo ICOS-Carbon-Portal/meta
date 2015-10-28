@@ -4,9 +4,25 @@ function getValidatingMixin(){
 
 	return {
 		componentWillMount: function(){
-			var self = this;
-			self.validators = self.validators || [];
-			_.each(validators, validator => self.validators.push(validator));
+			if(this.props.required) {
+				var self = this;
+				self.validators = self.validators || [];
+				_.each(validators, validator => self.validators.push(validator));
+			}
+		}
+	};
+}
+
+function getValidatingMixinIfRequired(){
+	var validators = arguments;
+
+	return {
+		componentWillMount: function(){
+			if(this.props.required) {
+				var self = this;
+				self.validators = self.validators || [];
+				_.each(validators, validator => self.validators.push(validator));
+			}
 		}
 	};
 }
@@ -89,7 +105,7 @@ var IsInt = getValidatingMixin(value =>
 		: ["Not a valid integer!"]
 );
 
-var IsRequired = getValidatingMixin(value => {
+var IsRequired = getValidatingMixinIfRequired(value => {
 	return _.isEmpty(value) ? ["Required field. It must be filled in."] : [];
 });
 

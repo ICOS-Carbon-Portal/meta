@@ -19,11 +19,11 @@ module.exports = function(WhoAmIStore, savePiAction){
 			return <ContentPanel panelTitle="Your information">
 				<form role="form" onSubmit={this.submissionHandler}>
 
-					<Inputs.Group title="Email"><Inputs.String {...this.getProps('mail', true)} /></Inputs.Group>
-					<Inputs.Group title="First name"><Inputs.StringRequired {...this.getProps('firstName')} /></Inputs.Group>
-					<Inputs.Group title="Last name"><Inputs.StringRequired {...this.getProps('lastName')} /></Inputs.Group>
-					<Inputs.Group title="Affiliation"><Inputs.String {...this.getProps('affiliation')} /></Inputs.Group>
-					<Inputs.Group title="Phone"><Inputs.Phone {...this.getProps('phone')} /></Inputs.Group>
+					<Inputs.Group title="Email"><Inputs.String {...this.getProps('mail', false, true)} /></Inputs.Group>
+					<Inputs.Group title="First name"><Inputs.String {...this.getProps('firstName')} /></Inputs.Group>
+					<Inputs.Group title="Last name"><Inputs.String {...this.getProps('lastName')} /></Inputs.Group>
+					<Inputs.Group title="Affiliation"><Inputs.String {...this.getProps('affiliation', true)} /></Inputs.Group>
+					<Inputs.Group title="Phone"><Inputs.Phone {...this.getProps('phone', true)} /></Inputs.Group>
 
 					<button type="submit" className="btn btn-primary" disabled={!this.canSave()}>Save</button>
 				</form>
@@ -54,11 +54,12 @@ module.exports = function(WhoAmIStore, savePiAction){
 			};
 		},
 
-		getProps: function(propName, disabled){
+		getProps: function(propName, optional, disabled){
 			var user = this.state.user;
 			return {
 				updater: this.getUpdater(propName),
 				value: user[propName],
+				required: !optional,
 				disabled: !!disabled
 			};
 		},

@@ -3,7 +3,6 @@
 var gulp = require('gulp');
 var browserify = require('browserify');
 var del = require('del');
-var reactify = require('reactify');
 var source = require('vinyl-source-stream');
 var babel = require('babelify');
 
@@ -27,7 +26,7 @@ var babel = require('babelify');
 		return browserify({
 				entries: [paths.main],
 				debug: false,
-				transform: [babel, reactify]
+				transform: [babel]
 			})
 			.bundle()
 			.on('error', function(err){

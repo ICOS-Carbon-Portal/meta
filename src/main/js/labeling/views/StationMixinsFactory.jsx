@@ -61,11 +61,12 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 			};
 		},
 
-		getProps: function(propName){
+		getProps: function(propName, optional){
 			return {
 				updater: this.getUpdater(propName),
 				value: this.state.station[propName],
-				disabled: !this.state.status.mayBeSubmitted
+				disabled: !this.state.status.mayBeSubmitted,
+				required: !optional
 			};
 		},
 

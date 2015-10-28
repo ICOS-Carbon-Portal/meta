@@ -23,9 +23,9 @@ module.exports = function(StationMixins) {
 					<Inputs.String {...this.getProps('hasShortName')} />
 				</Inputs.Group>
 				<Inputs.Group title="List of the names of the main personnel involved in station operation">
-					<Inputs.TextArea {...this.getProps('HASMAINPERSONEL')} />
+					<Inputs.TextArea {...this.getProps('XXXXXXXXXXXXXXXXXXXXX')} />
 				</Inputs.Group>
-				<Inputs.Group title="Institution name responsible for the station"><Inputs.String {...this.getProps('HASRESPONSIBLEINSTITUTION')}/></Inputs.Group>
+				<Inputs.Group title="Institution name responsible for the station"><Inputs.String {...this.getProps('XXXXXXXXXXXXXXXXXXXXX')}/></Inputs.Group>
 				<Inputs.Group title="Postal address"><Inputs.TextArea {...this.getProps('hasAddress')} /></Inputs.Group>
 				<Inputs.Group title="Web site"><Inputs.URL {...this.getProps('hasWebsite')} /></Inputs.Group>
 				<Inputs.Group title="Station class"><Inputs.DropDownString {...stationClassOptions} /></Inputs.Group>
@@ -33,13 +33,19 @@ module.exports = function(StationMixins) {
 				<Inputs.Header title="Station Localisation"></Inputs.Header>
 				<Inputs.Group title="Latitude [WGS84, decimal degrees]"><Inputs.Latitude {...this.getProps('hasLat')} /></Inputs.Group>
 				<Inputs.Group title="Longitude [WGS84, decimal degrees]"><Inputs.Longitude {...this.getProps('hasLon')} /></Inputs.Group>
-				<Inputs.Group title="Height(s) above ground level [m]"><Inputs.String {...this.getProps('hasElevationAboveGround')} /></Inputs.Group>
-				<Inputs.Group title="Height of ground above sea level [m]"><Inputs.Number {...this.getProps('hasElevationAboveSea')} /></Inputs.Group>
+				<Inputs.Group title="Station altitude above sea level [m]"><Inputs.Number {...this.getProps('hasElevationAboveSea')} /></Inputs.Group>
+				<Inputs.Group title="Inlet height(s) above ground (slash separated) [m]">
+					<Inputs.SlashSeparatedInts {...this.getProps('hasElevationAboveGround')} />
+				</Inputs.Group>
 				<Inputs.Group title="Describe accessibility (relevant for mobile lab for ex)"><Inputs.TextArea {...this.getProps('hasAccessibility')} /></Inputs.Group>
 
 				<Inputs.Header title="Station Geographical Description"></Inputs.Header>
-				<Inputs.Group title="Surrounding vegetation description (100 km radius)"><Inputs.TextArea {...this.getProps('hasVegetation')} /></Inputs.Group>
-				<Inputs.Group title="Anthropogenic density (100 km radius, population, closest cities, roads …)"><Inputs.TextArea {...this.getProps('hasAnthropogenics')} /></Inputs.Group>
+				<Inputs.Group title="Description of surrounding (e.g. vegetation, structures impeding air flow in a 100 km radius)">
+					<Inputs.TextArea {...this.getProps('hasVegetation')} />
+				</Inputs.Group>
+				<Inputs.Group title="Nearby anthropogenic activity (population density, closest cities, roads, etc in a 100 km radius)">
+					<Inputs.TextArea {...this.getProps('hasAnthropogenics')} />
+				</Inputs.Group>
 
 				<Inputs.Header title="Construction/Equipment"></Inputs.Header>
 				<Inputs.Group title="Planned date starting construction/equipment"><Inputs.String {...this.getProps('hasConstructionStartDate')} /></Inputs.Group>
@@ -48,7 +54,7 @@ module.exports = function(StationMixins) {
 				<Inputs.Group title="Available telecommunication means and its reliability"><Inputs.TextArea {...this.getProps('hasTelecom')} /></Inputs.Group>
 				<Inputs.Group title="Existing infrastructure (tall tower, collocated station, …)"><Inputs.String {...this.getProps('hasExistingInfrastructure')} /></Inputs.Group>
 				<Inputs.Group title="Is the station already belonging to an environmental measuring network? If so, please list the names of the networks.">
-					<Inputs.TextArea {...this.getProps('HASNETWORKS', true)} />
+					<Inputs.TextArea {...this.getProps('XXXXXXXXXXXXXXXXXXXXX', true)} />
 				</Inputs.Group>
 
 			</Inputs.FormForm>;

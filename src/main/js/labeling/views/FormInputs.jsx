@@ -66,6 +66,7 @@ var TextInput = _.extend({
 		var errors = this.getErrors(this.props.value);
 
 		var style = _.isEmpty(errors) ? {} : {backgroundColor: "pink"};
+		if (this.props.required) { style["border-color"] = "#B94A48"; }
 
 		return <input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
 					value={this.props.value} disabled={this.props.disabled} />;
@@ -77,6 +78,7 @@ var TextArea = _.extend({
 		var errors = this.getErrors(this.props.value);
 
 		var style = _.extend(_.isEmpty(errors) ? {} : {backgroundColor: "pink"}, this.inputStyle);
+		if (this.props.required) { style["border-color"] = "#B94A48"; }
 
 		return <textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
 					  value={this.props.value} disabled={this.props.disabled} />;
@@ -135,6 +137,7 @@ function matchesRegex(regex, errorMessage){
 var IsPhone = matchesRegex(/^\+[\d\s]{8,}$/, "Must be a phone number in the international format +XXXXXXXX (spaces allowed)");
 var IsUrl = matchesRegex(/^(https?):\/\//i, "The URL must begin with http:// or https://");
 var Is5Dec = matchesRegex(/\.\d{5}$/, "Must have 5 decimals");
+var IsSlashSeparated = matchesRegex(/^(\d+)((\/\d+)*)$/, "Must be slash separated integers");
 
 module.exports = {
 
@@ -144,6 +147,8 @@ module.exports = {
 
 	Longitude: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180)),
 	Lon5Dec: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180), Is5Dec),
+
+	SlashSeparatedInts: fromMixins(TextInput, IsRequired, IsSlashSeparated),
 
 	Direction: fromMixins(TextInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
 

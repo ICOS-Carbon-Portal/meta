@@ -78,7 +78,7 @@ var DropDown = _.extend({
 }, InputBase);
 
 var IsNumber = getValidatingMixin(value =>
-	_.isUndefined(value) || _.isNull(value) || !_.isNaN(parseFloat(value))
+	_.isUndefined(value) || _.isNull(value) || (!_.isNaN(parseFloat(value)) && isFinite(value))
 		? []
 		: ["Not a valid number!"]
 );
@@ -118,31 +118,25 @@ function matchesRegex(regex, errorMessage){
 
 var IsPhone = matchesRegex(/^\+[\d\s]{8,}$/, "Must be a phone number in the international format +XXXXXXXX (spaces allowed)");
 var IsUrl = matchesRegex(/^(https?):\/\//i, "The URL must begin with http:// or https://");
-var IsLat5Dec = matchesRegex(/^\-?\d{2}\.\d{5}$/, "Must have format [-]XX.xxxxx");
-var IsLon5Dec = matchesRegex(/^\-?\d{2,3}\.\d{5}$/, "Must have format [-][X]XX.xxxxx");
+var Is5Dec = matchesRegex(/\.\d{5}$/, "Must have 5 decimals");
 
 module.exports = {
 
-	Number: fromMixins(TextInput, IsNumber),
+	Number: fromMixins(TextInput, IsRequired, IsNumber),
+	Latitude: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-90), hasMaxValue(90)),
+	Lat5Dec: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-90), hasMaxValue(90), Is5Dec),
 
-	Latitude: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
-	Lat5Dec: fromMixins(TextInput, IsLat5Dec, hasMinValue(-90), hasMaxValue(90)),
-
-	Longitude: fromMixins(TextInput, IsNumber, hasMinValue(-180), hasMaxValue(180)),
-	Lon5Dec: fromMixins(TextInput, IsLon5Dec, hasMinValue(-180), hasMaxValue(180)),
+	Longitude: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180)),
+	Lon5Dec: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180), Is5Dec),
 
 	Direction: fromMixins(TextInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
 
-	URL: fromMixins(TextInput, IsUrl),
-	Phone: fromMixins(TextInput, IsPhone),
+	URL: fromMixins(TextInput, IsRequired, IsUrl),
+	Phone: fromMixins(TextInput, IsRequired, IsPhone),
 
-	String: fromMixins(TextInput),
+	String: fromMixins(TextInput, IsRequired),
 
-	StringRequired: fromMixins(TextInput, IsRequired),
-
-	TextArea: fromMixins(TextArea),
-
-	TextAreaRequired: fromMixins(TextArea, IsRequired),
+	TextArea: fromMixins(TextArea, IsRequired),
 
 	DropDownString: fromMixins(DropDown),
 

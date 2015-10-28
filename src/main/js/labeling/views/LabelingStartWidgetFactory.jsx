@@ -46,7 +46,7 @@ module.exports = function(saveStationAction) {
 			return <ContentPanel panelTitle="Submission">
 
 				{this.props.formIsValid ? null : <p>Please correct form errors</p>}
-				{this.props.isSaved ? null : <p>Please save the station info before applying</p>}
+				{this.props.isSaved ? null : <p>Please save the station properties before applying</p>}
 				<FileExpectations fileExpectations={station.fileExpectations} />
 
 				<CertifyingClaim changeHandler={this.getChangeHandler('compliance')}

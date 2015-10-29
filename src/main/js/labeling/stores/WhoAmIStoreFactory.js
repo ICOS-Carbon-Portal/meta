@@ -1,13 +1,22 @@
+import {stationOwlClassToTheme} from '../configs.js';
+
 function defaultUser(){
 	return {
 		mail: "dummy@dummy.none",
 		isPi: false,
+		tcs: [],
 		firstName: "",
 		lastName: ""
 	};
 }
 
-module.exports = function(Backend, savePiAction){
+function tcsToThemes(userInfo){
+	return _.extend({}, userInfo, {
+		tcs: _.map(userInfo.tcs || [], stationOwlClassToTheme)
+	});
+}
+
+export default function(Backend, savePiAction){
 
 	return Reflux.createStore({
 
@@ -28,13 +37,15 @@ module.exports = function(Backend, savePiAction){
 			Backend.whoAmI()
 				.catch(errRep => defaultUser())
 				.then(
-					_.bind(this.publish, this),
+					_.compose(_.bind(this.publish, this), tcsToThemes),
 					err => console.log(err)
 				);
 		},
 
 		savePiHandler: function(pi){
-			Backend.saveUserInfo(pi).then(
+			let piInfo = _.omit(pi, 'isPi', 'tcs');
+
+			Backend.saveUserInfo(piInfo).then(
 				_.bind(this.publish, this, pi),
 				err => console.log(err)
 			);

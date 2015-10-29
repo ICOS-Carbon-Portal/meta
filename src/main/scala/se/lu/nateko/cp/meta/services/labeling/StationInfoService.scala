@@ -13,6 +13,7 @@ import spray.json.JsString
 trait StationInfoService { self: StationLabelingService =>
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
+	private val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
 
 	private val dataTypeInfos = {
 		import org.semanticweb.owlapi.model.IRI
@@ -49,16 +50,16 @@ trait StationInfoService { self: StationLabelingService =>
 			factory.createStatement(stationUri, propUri, lit)
 		}
 
-		val hasAssociatedFile = vocab.hasAssociatedFile
+		val currentInfo = server.getStatements(stationUri)
 
-		val currentInfo = server.getStatements(stationUri).filter{
-			case SesameStatement(_, `hasAssociatedFile`, _) => false
-			case _ => true
-		}
-		server.applyDiff(currentInfo, newInfo)
+		server.applyDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
 	}
 
 	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[URI] =
 		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createURI(uri))
 
+	private def notProtected(statement: Statement): Boolean = statement match{
+		case SesameStatement(_, pred, _) if protectedPredicates.contains(pred) => false
+		case _ => true
+	}
 }

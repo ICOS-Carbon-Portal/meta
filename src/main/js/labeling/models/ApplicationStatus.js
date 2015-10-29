@@ -37,8 +37,7 @@ export default class ApplicationStatus{
 	}
 
 	get canControlLifecycle(){
-		return true;
-		//return this.station.isUsersTcStation;
+		return this.station.isUsersTcStation;
 	}
 
 	getSubmitted(){

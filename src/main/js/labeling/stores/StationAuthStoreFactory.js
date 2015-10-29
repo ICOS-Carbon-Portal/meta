@@ -39,7 +39,8 @@ module.exports = function(WhoAmIStore, StationsListStore){
 
 		decorateStation: function(station){
 			if(station) return _.extend({}, station, {
-				isUsersStation: _.contains(station.emails, this.whoami.mail)
+				isUsersStation: _.contains(station.emails, this.whoami.mail),
+				isUsersTcStation: _.contains(this.whoami.tcs, station.theme)
 			});
 		}
 

@@ -21,8 +21,8 @@ module.exports = function(StationMixins) {
 				<Inputs.String {...this.getProps('hasLongName')} header="Station full name" />
 				<Inputs.String {...this.getProps('hasShortName')}
 					header="Station short name (short name trigram should be obtained form the GAWSIS system at http://gaw.empa.ch/gawsis/)" />
-				<Inputs.TextArea {...this.getProps('XXXXXXXXXXXXXXXXXXXX')} header="List of the names of the main personnel involved in station operation" />
-				<Inputs.String {...this.getProps('XXXXXXXXXXXXXXXXXXX')} header="Institution name responsible for the station"/>
+				<Inputs.TextArea {...this.getProps('hasMainPersonnelNamesList')} header="List of the names of the main personnel involved in station operation" />
+				<Inputs.String {...this.getProps('hasResponsibleInstitutionName')} header="Institution name responsible for the station"/>
 				<Inputs.TextArea {...this.getProps('hasAddress')} header="Postal address" />
 				<Inputs.URL {...this.getProps('hasWebsite')} header="Web site" />
 				<Inputs.DropDownString {...stationClassOptions} header="Station class" />
@@ -46,7 +46,7 @@ module.exports = function(StationMixins) {
 				<Inputs.String {...this.getProps('hasOperationalDateEstimate')} header="Planned date starting measurements" />
 				<Inputs.TextArea {...this.getProps('hasTelecom')} header="Available telecommunication means and its reliability" />
 				<Inputs.String {...this.getProps('hasExistingInfrastructure')} header="Existing infrastructure (tall tower, collocated station, …)" />
-				<Inputs.TextArea {...this.getProps('XXXXXXXXXXXXXXXXXXXXX')} optional="true"
+				<Inputs.TextArea {...this.getProps('hasNameListOfNetworksItBelongsTo')} optional="true"
 					header="Is the station already belonging to an environmental measuring network? If so, please list the names of the networks." />
 			</Inputs.FormForm>;
 		}

@@ -52,15 +52,15 @@ function postProcessStationsList(stations){
 }
 
 function getStationQuery(stationUri, graphUri){
-	let commonPropNames = ["hasLat", "hasLon", "hasApplicationStatus"];
+	let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus'];
 	let propNames = {
-		AS: ["hasShortName", "hasLongName", "hasAddress", "hasWebsite",
-			"hasStationClass", "hasElevationAboveGround", "hasElevationAboveSea",
-			"hasAccessibility", "hasVegetation", "hasAnthropogenics", "hasConstructionStartDate",
-			"hasConstructionEndDate", "hasOperationalDateEstimate",
-			"hasTelecom", "hasExistingInfrastructure"],
-		ES: ["hasAnemometerDirection", "hasEddyHeight"],
-		OS: ["hasShortName"]
+		AS: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
+			'hasAddress', 'hasWebsite', 'hasStationClass', 'hasElevationAboveGround',
+			'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
+			'hasConstructionStartDate', 'hasConstructionEndDate', 'hasOperationalDateEstimate',
+			'hasTelecom', 'hasExistingInfrastructure', 'hasNameListOfNetworksItBelongsTo'],
+		ES: ['hasAnemometerDirection', 'hasEddyHeight'],
+		OS: ['hasShortName']
 	};
 	let union = _.map(propNames, (classProps, uriEnd) => `{
 		${getOptionals(commonPropNames.concat(classProps))}

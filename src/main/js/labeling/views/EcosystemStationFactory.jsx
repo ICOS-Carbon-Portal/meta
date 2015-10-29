@@ -8,9 +8,9 @@ module.exports = function(StationMixins) {
 
 		getForm: function() {
 			return <Inputs.FormForm>
-				<Inputs.Group title="Latitude, WGS84, 5 decimal degrees"><Inputs.Lat5Dec {...this.getProps('hasLat')} /></Inputs.Group>
-				<Inputs.Group title="Longitude, WGS84, 5 decimal degrees"><Inputs.Lon5Dec {...this.getProps('hasLon')} /></Inputs.Group>
-				<Inputs.Group title="Anemometer arm direction, degrees from north"><Inputs.Direction {...this.getProps('hasAnemometerDirection')} /></Inputs.Group>
+				<Inputs.Lat5Dec {...this.getProps('hasLat')} header="Latitude [WGS84, decimal degrees with 5 decimals]" />
+				<Inputs.Lon5Dec {...this.getProps('hasLon')} header="Longitude [WGS84, decimal degrees with 5 decimals]" />
+				<Inputs.Direction {...this.getProps('hasAnemometerDirection')} header="Anemometer arm direction, degrees from north" />
 			</Inputs.FormForm>;
 		}
 

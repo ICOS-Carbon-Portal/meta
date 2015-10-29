@@ -4,31 +4,26 @@ function getValidatingMixin(){
 
 	return {
 		componentWillMount: function(){
-			if(this.props.required) {
-				var self = this;
-				self.validators = self.validators || [];
-				_.each(validators, validator => self.validators.push(validator));
-			}
+			var self = this;
+			self.validators = self.validators || [];
+			_.each(validators, validator => self.validators.push(validator));
 		}
 	};
 }
 
-function getValidatingMixinIfRequired(){
-	var validators = arguments;
+var	OptionalyRequiringValidatorMixin = {
+	componentWillMount: function(){
+		this.validators = this.validators || [];
+		this.validators.push(value => (_.isEmpty(value) && !this.props.optional)
+			? ["Required field. It must be filled in."]
+			: []
+		);
+	}
+};
 
-	return {
-		componentWillMount: function(){
-			if(this.props.required) {
-				var self = this;
-				self.validators = self.validators || [];
-				_.each(validators, validator => self.validators.push(validator));
-			}
-		}
-	};
-}
-
-function fromMixins(){
-	return React.createClass({mixins: arguments});
+function fromMixins(...mixins){
+	var allMixins = mixins.concat([OptionalyRequiringValidatorMixin]);
+	return React.createClass({mixins: allMixins});
 }
 
 var InputBase = {
@@ -61,15 +56,31 @@ var InputBase = {
 	}
 };
 
-var TextInput = _.extend({
+var GroupRow = React.createClass({
 	render: function() {
+		var className = this.props.required ? "cp-required-header" : "cp-not-required-header";
+
+		return <div className="row">
+			<div className="form-group col-md-2">
+				<label className={className}>{this.props.header}</label>
+			</div>
+			<div className="form-group col-md-10">
+				{this.props.children}
+			</div>
+		</div>;
+	}
+});
+
+var TextInput = _.extend({
+	render: function () {
 		var errors = this.getErrors(this.props.value);
 
 		var style = _.isEmpty(errors) ? {} : {backgroundColor: "pink"};
-		if (this.props.required) { style["border-color"] = "#B94A48"; }
 
-		return <input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
-					value={this.props.value} disabled={this.props.disabled} />;
+		return <GroupRow header={this.props.header} required={!this.props.optional}>
+			<input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
+				   value={this.props.value} disabled={this.props.disabled}/>
+			</GroupRow>;
 	}
 }, InputBase);
 
@@ -78,20 +89,23 @@ var TextArea = _.extend({
 		var errors = this.getErrors(this.props.value);
 
 		var style = _.extend(_.isEmpty(errors) ? {} : {backgroundColor: "pink"}, this.inputStyle);
-		if (this.props.required) { style["border-color"] = "#B94A48"; }
 
-		return <textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
-					  value={this.props.value} disabled={this.props.disabled} />;
+		return <GroupRow header={this.props.header} required={!this.props.optional}>
+			<textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
+					  value={this.props.value} disabled={this.props.disabled} />
+		</GroupRow>;
 	}
 }, InputBase);
 
 var DropDown = _.extend({
 	render: function() {
-		return <select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
-			_.map(this.props.options, (text, value) =>
-				<option value={value} key={value}>{text}</option>
-			)
-		}</select>;
+		return <GroupRow header={this.props.header} required={!this.props.optional}>
+			<select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
+				_.map(this.props.options, (text, value) =>
+					<option value={value} key={value}>{text}</option>
+				)
+			}</select>
+		</GroupRow>;
 	}
 }, InputBase);
 
@@ -106,10 +120,6 @@ var IsInt = getValidatingMixin(value =>
 		? []
 		: ["Not a valid integer!"]
 );
-
-var IsRequired = getValidatingMixinIfRequired(value => {
-	return _.isEmpty(value) ? ["Required field. It must be filled in."] : [];
-});
 
 function hasMinValue(minValue){
 	return getValidatingMixin(value => {
@@ -141,23 +151,23 @@ var IsSlashSeparated = matchesRegex(/^(\d+)((\/\d+)*)$/, "Must be slash separate
 
 module.exports = {
 
-	Number: fromMixins(TextInput, IsRequired, IsNumber),
-	Latitude: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-90), hasMaxValue(90)),
-	Lat5Dec: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-90), hasMaxValue(90), Is5Dec),
+	Number: fromMixins(TextInput, IsNumber),
+	Latitude: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
+	Lat5Dec: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90), Is5Dec),
 
-	Longitude: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180)),
-	Lon5Dec: fromMixins(TextInput, IsRequired, IsNumber, hasMinValue(-180), hasMaxValue(180), Is5Dec),
+	Longitude: fromMixins(TextInput, IsNumber, hasMinValue(-180), hasMaxValue(180)),
+	Lon5Dec: fromMixins(TextInput, IsNumber, hasMinValue(-180), hasMaxValue(180), Is5Dec),
 
-	SlashSeparatedInts: fromMixins(TextInput, IsRequired, IsSlashSeparated),
+	SlashSeparatedInts: fromMixins(TextInput, IsSlashSeparated),
 
-	Direction: fromMixins(TextInput, IsRequired, IsInt, hasMinValue(0), hasMaxValue(360)),
+	Direction: fromMixins(TextInput, IsInt, hasMinValue(0), hasMaxValue(360)),
 
-	URL: fromMixins(TextInput, IsRequired, IsUrl),
-	Phone: fromMixins(TextInput, IsRequired, IsPhone),
+	URL: fromMixins(TextInput, IsUrl),
+	Phone: fromMixins(TextInput, IsPhone),
 
-	String: fromMixins(TextInput, IsRequired),
+	String: fromMixins(TextInput),
 
-	TextArea: fromMixins(TextArea, IsRequired),
+	TextArea: fromMixins(TextArea),
 
 	DropDownString: fromMixins(DropDown),
 
@@ -166,20 +176,7 @@ module.exports = {
 			return <div className="row">
 				<div className="col-md-2">&nbsp;</div>
 				<div className="col-md-10">
-					<h4>{this.props.title}</h4>
-				</div>
-			</div>;
-		}
-	}),
-
-	Group: React.createClass({
-		render: function() {
-			return <div className="row">
-				<div className="form-group col-md-2">
-					<label>{this.props.title}</label>
-				</div>
-				<div className="form-group col-md-10">
-					{this.props.children}
+					<h4>{this.props.txt}</h4>
 				</div>
 			</div>;
 		}

@@ -8,7 +8,9 @@ $(function () {
 
 	configPromise
 		.done(function (result) {
-			if (result.localSparqlUrl != undefined) {
+			if (result.localSparqlUrl === undefined) {
+				init(config);
+			} else {
 				config.sparqlUrl = result.localSparqlUrl;
 				init(config);
 			}
@@ -33,8 +35,6 @@ function init(config){
 }
 
 function initMap(stations, config) {
-	countStations(stations);
-
 	//Layer 0
 	var topoMapESRI = new ol.layer.Tile({
 		tag: "topoMapESRI",
@@ -133,7 +133,8 @@ function initMap(stations, config) {
 
 	popup(map, stations.lookupTable);
 
-	addRefreshEv(map);
+	countStations(map);
+	addRefreshEv(map, config);
 }
 
 function addBtnEv(layer){
@@ -152,15 +153,30 @@ function addBtnEv(layer){
 	}
 }
 
-function countStations(stations){
-	$("#stationCountAS").text(stations.AS.data.length + " Atmosphere stations");
-	$("#stationCountES").text(stations.ES.data.length + " Ecosystem stations");
-	$("#stationCountOS").text(stations.OS.data.length + " Ocean stations");
+function countStations(map){
+	map.getLayers().forEach(function (layer){
+		if(layer.theme !== undefined) {
+
+			switch (layer.theme){
+				case "AS":
+					$("#stationCountAS").text(layer.getSource().getFeatures().length + " Atmosphere stations");
+					break;
+
+				case "ES":
+					$("#stationCountES").text(layer.getSource().getFeatures().length + " Ecosystem stations");
+					break;
+
+				case "OS":
+					$("#stationCountOS").text(layer.getSource().getFeatures().length + " Ocean stations");
+					break;
+			}
+		}
+	});
 }
 
-function addRefreshEv(map){
+function addRefreshEv(map, config){
 	$("#refreshBtn").click(function(){
-		var stationsPromise = fetchStations();
+		var stationsPromise = fetchStations(config.sparqlUrl);
 
 		stationsPromise
 			.done(function(result){
@@ -196,6 +212,7 @@ function addRefreshEv(map){
 					}
 				});
 
+				countStations(map);
 				$("#refreshBtn").text("Refresh done");
 
 				setTimeout(function(){
@@ -297,24 +314,23 @@ function fetchStations(sparqlUrl){
 		'(IF(bound(?lon), str(?lon), "?") AS ?lonstr)',
 		'(IF(bound(?spatRef), str(?spatRef), "?") AS ?geoJson)',
 		'(REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)',
-		'(str(?country) AS ?Country)',
+		'(IF(bound(?country), str(?country), "?") AS ?Country)',
 		'(str(?sName) AS ?Short_name)',
 		'(str(?lName) AS ?Long_name)',
 		'(GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)',
-		'(str(?siteType) AS ?Site_type)',
+		'(IF(bound(?siteType), str(?siteType), "?") AS ?Site_type)',
 		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
-		'OPTIONAL{?s cpst:hasLat ?lat } .',
-		'OPTIONAL{?s cpst:hasLon ?lon } .',
+		'OPTIONAL{?s cpst:hasLat ?lat . ?s cpst:hasLon ?lon } .',
 		'OPTIONAL{?s cpst:hasSpatialReference ?spatRef } .',
-		'?s cpst:hasCountry ?country .',
+		'OPTIONAL{?s cpst:hasCountry ?country } .',
 		'?s cpst:hasShortName ?sName .',
 		'?s cpst:hasLongName ?lName .',
 		'?s cpst:hasPi ?pi .',
 		'OPTIONAL{?pi cpst:hasFirstName ?piFname } .',
 		'?pi cpst:hasLastName ?piLname .',
-		'?s cpst:hasSiteType ?siteType .',
+		'OPTIONAL{?s cpst:hasSiteType ?siteType } .',
 		'}',
 		'GROUP BY ?s ?lat ?lon ?spatRef ?locationDesc ?class ?country ?sName ?lName ?siteType ?elevationAboveSea',
 		' ?elevationAboveGround ?stationClass ?stationKind ?preIcosMeasurements ?operationalDateEstimate ?isOperational ?fundingForConstruction'

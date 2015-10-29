@@ -20,8 +20,7 @@ function boolValidator(s){
 }
 
 function doubleValidator(s){
-	var number = parseFloat(s);
-	return _.isNaN(number) ? error("Not a number!") : ok;
+	return (_.isNaN(parseFloat(s)) || !isFinite(s)) ? error("Not a number!") : ok;
 }
 
 function minValueValidator(min){

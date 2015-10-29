@@ -1,23 +1,19 @@
 
-function getValidatingMixin(){
-	var validators = arguments;
-
+function getValidatingMixin(...validators){
 	return {
 		componentWillMount: function(){
-			var self = this;
-			self.validators = self.validators || [];
-			_.each(validators, validator => self.validators.push(validator));
+			this.validators = (this.validators || []).concat(validators);
 		}
 	};
 }
 
-var	OptionalyRequiringValidatorMixin = {
+var OptionalyRequiringValidatorMixin = {
 	componentWillMount: function(){
-		this.validators = this.validators || [];
-		this.validators.push(value => (_.isEmpty(value) && !this.props.optional)
-			? ["Required field. It must be filled in."]
-			: []
-		);
+		this.validators = (this.validators || []).concat([value =>
+			(_.isEmpty(value) && !this.props.optional)
+				? ["Required field. It must be filled in."]
+				: []
+		]);
 	}
 };
 

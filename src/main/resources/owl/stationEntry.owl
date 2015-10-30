@@ -135,6 +135,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">accessibility</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -146,6 +147,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">address</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -167,6 +169,7 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;integer"/>
     </owl:DatatypeProperty>
     
@@ -178,6 +181,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">anthropogenic density</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -228,12 +232,19 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">construction end date</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -245,6 +256,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">construction start date</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -351,6 +363,7 @@
         <rdfs:label rdf:datatype="&xsd;string">eddy covariance system height</rdfs:label>
         <rdfs:comment rdf:datatype="&xsd;string">height of the eddy covariance system, meters above ground</rdfs:comment>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;float"/>
     </owl:DatatypeProperty>
     
@@ -398,12 +411,19 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">existing infrastructure</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -483,6 +503,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">location description</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -528,6 +549,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">main personnel names list</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -539,6 +561,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">name list of the networks station belongs to</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -552,6 +575,12 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
     
 
 
@@ -593,6 +622,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">responsible institution name</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -627,6 +657,7 @@
         <rdfs:label rdf:datatype="&xsd;string">spatial reference</rdfs:label>
         <rdfs:comment rdf:datatype="&xsd;string">spatial reference in GeoJSON (any feature except points; encoded as plain string)</rdfs:comment>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -729,6 +760,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">telecommunication means</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -740,6 +772,7 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">vegetation</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:DatatypeProperty>
     
@@ -751,7 +784,20 @@
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">website</rdfs:label>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
         <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">submitted wind data to the European Database</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
     </owl:DatatypeProperty>
     
 
@@ -785,13 +831,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -841,13 +887,13 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -861,12 +907,6 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/Station">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
@@ -875,6 +915,12 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>

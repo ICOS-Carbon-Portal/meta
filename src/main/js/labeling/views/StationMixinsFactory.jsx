@@ -47,18 +47,18 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 
 			return (errors, newValue) => {
 				var newState;
-				self.fastState = self.fastState || _.clone(self.state);
+				self.fastState = self.fastState || _.pick(self.state, 'station', 'errors', 'formIsValid');
 				var fastState = self.fastState;
 
 				if(!_.isEqual(errors, fastState.errors[propName] || [])){
-					newState = newState || _.clone(fastState);
+					newState = newState || {};
 					newState.errors = _.clone(fastState.errors);
 					newState.errors[propName] = errors;
 					newState.formIsValid = _.isEmpty(_.flatten(_.values(newState.errors)));
 				}
 
 				if(newValue !== fastState.station[propName]){
-					newState = newState || _.clone(fastState);
+					newState = newState || {};
 					newState.station = _.clone(fastState.station);
 					newState.station[propName] = newValue;
 				}

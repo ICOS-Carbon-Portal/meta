@@ -46,7 +46,7 @@ module.exports = function(StationMixins) {
 				<Inputs.String {...this.getProps('hasOperationalDateEstimate')} header="Planned date starting measurements" />
 				<Inputs.TextArea {...this.getProps('hasTelecom')} header="Available telecommunication means and its reliability" />
 				<Inputs.String {...this.getProps('hasExistingInfrastructure')} header="Existing infrastructure (tall tower, collocated station, …)" />
-				<Inputs.TextArea {...this.getProps('hasNameListOfNetworksItBelongsTo')} optional="true"
+				<Inputs.TextArea {...this.getProps('hasNameListOfNetworksItBelongsTo')}
 					header="Is the station already belonging to an environmental measuring network? If so, please list the names of the networks." />
 			</Inputs.FormForm>;
 		}

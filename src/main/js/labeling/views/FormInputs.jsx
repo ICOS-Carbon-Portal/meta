@@ -75,7 +75,7 @@ var TextInput = _.extend({
 
 		return <GroupRow header={this.props.header} required={!this.props.optional}>
 			<input type="text" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
-				   value={this.props.value} disabled={this.props.disabled}/>
+				value={this.props.value} disabled={this.props.disabled}/>
 			</GroupRow>;
 	}
 }, InputBase);
@@ -88,7 +88,7 @@ var TextArea = _.extend({
 
 		return <GroupRow header={this.props.header} required={!this.props.optional}>
 			<textarea rows="3" className="form-control" style={style} onChange={this.changeHandler} title={errors.join('\n')}
-					  value={this.props.value} disabled={this.props.disabled} />
+				value={this.props.value} disabled={this.props.disabled} />
 		</GroupRow>;
 	}
 }, InputBase);
@@ -104,6 +104,19 @@ var DropDown = _.extend({
 		</GroupRow>;
 	}
 }, InputBase);
+
+var CheckBox = _.extend({}, InputBase, {
+	render: function() {
+		return <GroupRow header={this.props.header} required={!this.props.optional}>
+			<input type="checkbox" checked={this.props.value === 'true'} disabled={this.props.disabled} onChange={this.changeHandler} />
+		</GroupRow>;
+	},
+
+	changeHandler: function(event){
+		var newValue = event.target.checked.toString();
+		this.pushUpdate(newValue);
+	}
+});
 
 var IsNumber = getValidatingMixin(value =>
 	_.isUndefined(value) || _.isNull(value) || (!_.isNaN(parseFloat(value)) && isFinite(value))
@@ -148,6 +161,8 @@ var IsSlashSeparated = matchesRegex(/^(\d+)((\/\d+)*)$/, "Must be slash separate
 module.exports = {
 
 	Number: fromMixins(TextInput, IsNumber),
+	NonNegative: fromMixins(TextInput, IsNumber, hasMinValue(0)),
+
 	Latitude: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90)),
 	Lat5Dec: fromMixins(TextInput, IsNumber, hasMinValue(-90), hasMaxValue(90), Is5Dec),
 
@@ -166,6 +181,8 @@ module.exports = {
 	TextArea: fromMixins(TextArea),
 
 	DropDownString: fromMixins(DropDown),
+
+	CheckBox: fromMixins(CheckBox),
 
 	Header: React.createClass({
 		render: function() {

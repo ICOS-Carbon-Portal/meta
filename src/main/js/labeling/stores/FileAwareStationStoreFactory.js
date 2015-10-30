@@ -4,6 +4,7 @@ var themeToFiles = {
 		{min: 1, max: 1, type: "Station map", tip: "Map centered on the station (at the 1km/3000ft scale)"},
 		{min: 1, max: 1, type: "Prevailing wind directions", tip: "Prevailing wind directions or better seasonal wind roses (include reference to the meteo data used)"},
 		{min: 1, max: 1, type: "Distribution system diagram", tip: "Distribution system diagram: plumbing and Instrumentation Diagram (if available)"},
+		{min: 0, max: 1, type: "Further comments", tip: "Further comments (voluntary)"},
 		{min: 1, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ecosystem: [

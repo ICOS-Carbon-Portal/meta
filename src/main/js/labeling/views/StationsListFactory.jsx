@@ -1,10 +1,20 @@
-var themeGlyphs = {
-	Atmosphere: 'cloud',
-	Ecosystem: 'leaf',
-	Ocean: 'tint'
-};
+import {themeGlyphs} from '../configs.js';
 
-module.exports = function(StationAuthStore, themeToStation, chooseStationAction){
+function panelClass(station){
+	var statusString = `${!!station.chosen} ${!!station.isUsersStation} ${!!station.isUsersNeedingActionStation}`;
+	switch (statusString){
+		case 'false false false': return 'default';
+		case 'false false true': return 'warning';
+		case 'false true false': return 'info';
+		case 'false true true': return 'warning';
+		case 'true false false': return 'warning';
+		case 'true false true': return 'danger';
+		case 'true true false': return 'primary';
+		case 'true true true': return 'danger';
+	}
+}
+
+export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 	return React.createClass({
 
@@ -17,9 +27,7 @@ module.exports = function(StationAuthStore, themeToStation, chooseStationAction)
 			return <ul className="list-group">{
 				_.map(self.state.stations, function(station){
 
-					var panelClasses = 'panel panel-' + (station.chosen
-						? (station.isUsersStation ? 'primary' : 'warning')
-						: (station.isUsersStation ? 'info' : 'default'));
+					var panelClasses = 'panel panel-' + panelClass(station);
 
 					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 

@@ -12,3 +12,8 @@ export function stationOwlClassToTheme(owlClass){
 		return 'Ocean';
 };
 
+export const themeGlyphs = {
+	Atmosphere: 'cloud',
+	Ecosystem: 'leaf',
+	Ocean: 'tint'
+};

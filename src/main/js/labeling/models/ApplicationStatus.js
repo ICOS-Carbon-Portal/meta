@@ -1,4 +1,4 @@
-const status = {
+export const status = {
 	notSubmitted: 'NOT SUBMITTED',
 	submitted: 'SUBMITTED',
 	acknowledged: 'ACKNOWLEDGED',

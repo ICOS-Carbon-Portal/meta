@@ -24,8 +24,7 @@ const stationPisQuery = `
 		}
 		OPTIONAL{
 			GRAPH <${lblUri}> {
-				OPTIONAL{?s cpst:hasShortName ?hasShortName }
-				OPTIONAL{?s cpst:hasLongName ?hasLongName }
+				${getOptionals(['hasShortName', 'hasLongName', 'hasApplicationStatus'])}
 			}
 		}
 	}`;

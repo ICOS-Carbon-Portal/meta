@@ -14,7 +14,7 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 			originalStation: _.clone(station),
 			status: new ApplicationStatus(station),
 			errors: {},
-			valid: true
+			formIsValid: true
 		};
 	})
 
@@ -22,6 +22,8 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 		render: function() {
 			var station = this.state.station;
 			if(!station || !station.stationUri || (station.stationUri !== this.props.stationUri)) return null;
+
+			var complexErrors = this.getComplexValidationErrors ? this.getComplexValidationErrors() : [];
 
 			return <div>
 				<ContentPanel panelTitle="Station properties">
@@ -32,7 +34,9 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 
 				<FileManager />
 
-				<LabelingStartWidget formIsValid={this.state.valid} station={this.state.station} status={this.state.status} isSaved={this.isUnchanged()} />
+				<LabelingStartWidget formIsValid={this.state.formIsValid} station={this.state.station}
+					status={this.state.status} isSaved={this.isUnchanged()} complexErrors={complexErrors} />
+
 				<AppStatusWidget status={this.state.status} />
 
 			</div>;
@@ -50,7 +54,7 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 					newState = newState || _.clone(fastState);
 					newState.errors = _.clone(fastState.errors);
 					newState.errors[propName] = errors;
-					newState.valid = _.isEmpty(_.flatten(_.values(newState.errors)));
+					newState.formIsValid = _.isEmpty(_.flatten(_.values(newState.errors)));
 				}
 
 				if(newValue !== fastState.station[propName]){
@@ -79,7 +83,7 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 		},
 
 		canSave: function(){
-			return this.maySave() && !this.isUnchanged() && this.state.valid;
+			return this.maySave() && !this.isUnchanged() && this.state.formIsValid;
 		},
 
 		maySave: function(){

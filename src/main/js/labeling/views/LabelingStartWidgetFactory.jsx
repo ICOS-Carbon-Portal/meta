@@ -41,13 +41,17 @@ module.exports = function(saveStationAction) {
 
 			if(!this.props.status.mayBeSubmitted) return null;
 
-			var canStart = _.isEmpty(station.fileExpectations) && this.props.formIsValid && this.props.isSaved && this.state.compliance && this.state.funding;
+			var canStart = _.isEmpty(station.fileExpectations) && _.isEmpty(this.props.complexErrors) && this.props.formIsValid &&
+				this.props.isSaved && this.state.compliance && this.state.funding;
 
 			return <ContentPanel panelTitle="Submission">
 
 				{this.props.formIsValid ? null : <p>Please correct form errors</p>}
 				{this.props.isSaved ? null : <p>Please save the station properties before applying</p>}
+
 				<FileExpectations fileExpectations={station.fileExpectations} />
+
+				{_.map(this.props.complexErrors, (errMsg, i) => <p key={'err_' + i}>{errMsg}</p>)}
 
 				<CertifyingClaim changeHandler={this.getChangeHandler('compliance')}
 					claim={`I certify that the construction/equipments of the station will comply with the "ICOS ${station.theme} Station specifications" document`} />

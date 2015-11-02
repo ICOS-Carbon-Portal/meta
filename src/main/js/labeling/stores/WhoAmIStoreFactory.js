@@ -43,9 +43,7 @@ export default function(Backend, savePiAction){
 		},
 
 		savePiHandler: function(pi){
-			let piInfo = _.omit(pi, 'isPi', 'tcs');
-
-			Backend.saveUserInfo(piInfo).then(
+			Backend.saveUserInfo(pi).then(
 				_.bind(this.publish, this, pi),
 				err => console.log(err)
 			);

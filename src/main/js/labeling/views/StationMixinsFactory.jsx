@@ -26,6 +26,9 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 			var complexErrors = this.getComplexValidationErrors ? this.getComplexValidationErrors() : [];
 
 			return <div>
+
+				{this.getPrologue ? this.getPrologue() : null}
+
 				<ContentPanel panelTitle="Station properties">
 					{this.getForm()}
 

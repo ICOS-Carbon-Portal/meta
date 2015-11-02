@@ -1,5 +1,6 @@
 import Inputs from './FormInputs.jsx';
 import {etc} from '../configs.js';
+import ContentPanel from './ContentPanel.jsx';
 
 export default function(StationMixins) {
 
@@ -16,6 +17,17 @@ export default function(StationMixins) {
 				<Inputs.NonNegative {...this.getProps('hasEddyHeight')} header="Height of the eddy covariance system, meters above ground" />
 				<Inputs.CheckBox {...this.getProps('hasWindDataInEuropeanDatabase')} optional={true} header="Submitted sufficient wind data to the European Database" />
 			</Inputs.FormForm>;
+		},
+
+		getPrologue: function(){
+			return this.state.station.isUsersStation
+				? <ContentPanel panelTitle="Labeling how-to">
+					<p>Please see the Ecosystem stations labeling process <a target="_blank" href={etc.step1Doc}>document</a>.
+					Some of the file type descriptions in the &quot;Uploaded files&quot; panel below refer to the paragraphs (§) of the document.
+					When uploading files, please follow the file naming conventions specified there.
+					</p>
+				</ContentPanel>
+				: null;
 		},
 
 		getComplexValidationErrors: function(){

@@ -41,9 +41,9 @@ module.exports = function(StationMixins) {
 					header="Nearby anthropogenic activity (population density, closest cities, roads, etc in a 100 km radius)" />
 
 				<Inputs.Header txt="Construction/Equipment" />
-				<Inputs.String {...this.getProps('hasConstructionStartDate')} header="Planned date starting construction/equipment" />
-				<Inputs.String {...this.getProps('hasConstructionEndDate')} header="Planned date ending construction/equipment" />
-				<Inputs.String {...this.getProps('hasOperationalDateEstimate')} header="Planned date starting measurements" />
+				<Inputs.Date {...this.getProps('hasConstructionStartDate')} header="Planned date starting construction/equipment" />
+				<Inputs.Date {...this.getProps('hasConstructionEndDate')} header="Planned date ending construction/equipment" />
+				<Inputs.Date {...this.getProps('hasOperationalDateEstimate')} header="Planned date starting measurements" />
 				<Inputs.TextArea {...this.getProps('hasTelecom')} header="Available telecommunication means and its reliability" />
 				<Inputs.String {...this.getProps('hasExistingInfrastructure')} header="Existing infrastructure (tall tower, collocated station, …)" />
 				<Inputs.TextArea {...this.getProps('hasNameListOfNetworksItBelongsTo')}

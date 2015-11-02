@@ -130,6 +130,24 @@ var IsInt = getValidatingMixin(value =>
 		: ["Not a valid integer!"]
 );
 
+var IsValidDate = getValidatingMixin(value =>
+	_.isUndefined(value) || _.isNull(value) || value === toIsoStr(value)
+		? []
+		: [value + " is not a valid ISO 8601 date (YYYY-MM-DD)"]
+);
+
+function toIsoStr(dateStr){
+	function pad(number) {
+		if (number < 10) {
+			return '0' + number;
+		}
+		return number;
+	}
+
+	var date = new Date(dateStr);
+	return date.getUTCFullYear() + '-' + pad(date.getUTCMonth() + 1) + '-' + pad(date.getUTCDate());
+}
+
 function hasMinValue(minValue){
 	return getValidatingMixin(value => {
 		if(_.isNull(value) || _.isUndefined(value)) return [];
@@ -157,6 +175,7 @@ var IsPhone = matchesRegex(/^\+[\d\s]{8,}$/, "Must be a phone number in the inte
 var IsUrl = matchesRegex(/^(https?):\/\//i, "The URL must begin with http:// or https://");
 var Is5Dec = matchesRegex(/\.\d{5}$/, "Must have 5 decimals");
 var IsSlashSeparated = matchesRegex(/^(\d+)((\/\d+)*)$/, "Must be slash separated integers");
+var IsIsoDateFormat = matchesRegex(/^\d{4}-\d{2}-\d{2}$/, "Must be in ISO 8601 format (YYYY-MM-DD)");
 
 module.exports = {
 
@@ -175,6 +194,7 @@ module.exports = {
 
 	URL: fromMixins(TextInput, IsUrl),
 	Phone: fromMixins(TextInput, IsPhone),
+	Date: fromMixins(TextInput, IsIsoDateFormat, IsValidDate),
 
 	String: fromMixins(TextInput),
 

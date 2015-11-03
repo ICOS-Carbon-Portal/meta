@@ -25,11 +25,11 @@ const stationPisQuery = `
 
 function postProcessStationsList(stations){
 	return _.values(_.groupBy(stations, 's'))
-		.map(samePi => {
-			var station = samePi[0];
+		.map(piSpecificCopies => {
+			var station = piSpecificCopies[0];
 			return _.extend(
 				_.omit(station, 'email', 'pi', 'provShortName', 'provLongName', 's', 'owlClass'), {
-					emails: _.pluck(samePi, 'email'),
+					emails: _.pluck(piSpecificCopies, 'email'),
 					hasShortName: station.hasShortName || station.provShortName,
 					hasLongName: station.hasLongName || station.provLongName,
 					stationUri: station.s,
@@ -40,15 +40,11 @@ function postProcessStationsList(stations){
 }
 
 function getStationQuery(stationUri){
-	return `
-		PREFIX cpst: <${baseUri}>
-		SELECT *
+	return `SELECT *
 		FROM NAMED <${lblUri}>
 		FROM NAMED <${baseUri}>
 		WHERE{
-			GRAPH ?g {
-				<${stationUri}> ?p ?o .
-			}
+			GRAPH ?g {<${stationUri}> ?p ?o }
 		}`;
 }
 

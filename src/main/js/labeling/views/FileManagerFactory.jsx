@@ -26,7 +26,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 								<td>{file.fileType}</td>
 								<td><a href={file.file + '/' + file.fileName} target="_blank">{file.fileName}</a></td>
 								<td>
-									<button type="button" className="btn btn-warning" onClick={self.getFileDeleteHandler(file)} disabled={!station.isUsersStation}>
+									<button type="button" className="btn btn-warning" onClick={self.getFileDeleteHandler(file)} disabled={!status.mayBeSubmitted}>
 										<span className="glyphicon glyphicon-remove"/> Delete
 									</button>
 								</td>

@@ -31,19 +31,13 @@
 			});
 		}
 
-		function getSparqlUrl(){
-			if (location.hostname == "static.icos-cp.eu") {
-				return "https://meta.icos-cp.eu/sparql";
-			} else {
-				return "http://127.0.0.1:9094/sparql"
-			}
-		}
-
 		function init(config){
 			$("#result").hide();
 			$("#messDiv").hide();
 
 			$("#queryBtn").click(function(){
+
+				var start = new Date().getTime();
 
 				$.ajax({
 					type: "POST",
@@ -51,14 +45,28 @@
 					url: config.sparqlUrl,
 					dataType: "json",
 					success: function(result){
+						var requestTime = new Date().getTime() - start;
+
 						$("#result").show();
-						$("#rowCountSpan").text(result.results.bindings.length + " bindings returned. ");
-						$("#messSpan").text("Query executed successfully").show().delay(3000).fadeOut();
+
+						var highlightStart = new Date().getTime();
 						$("#result").html(syntaxHighlight(result));
+						var highlightTime = new Date().getTime() - highlightStart;
+
+						$("#statusSpan").text(
+								result.results.bindings.length + " bindings returned (" +
+								requestTime + " ms request, " + highlightTime + " ms styling).");
+
+						$("#queryBtn").prop("class", "btn btn-success")
+
+						setTimeout(function(){
+							$("#queryBtn").prop("class", "btn btn-primary")
+						}, 3000);
 					},
 					error: function(req, textStatus, errorThrown) {
 						$("#result").show();
-						$("#rowCountSpan").text("");
+						$("#statusSpan").text("");
+						$("#queryBtn").prop("class", "btn btn-danger")
 						$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
 						console.log(req);
 						$("#result").html(req.responseText);
@@ -84,8 +92,10 @@
 
 			configPromise
 				.done(function (result) {
-					if (result.localSparqlUrl != undefined) {
+					if (result.localSparqlUrl !== undefined) {
 						config.sparqlUrl = result.localSparqlUrl;
+						init(config);
+					} else {
 						init(config);
 					}
 				})
@@ -97,6 +107,7 @@
 	</script>
 
 	<style type="text/css">
+		.container-fluid{margin-top: 5px;}
 		button{position: relative;top:-11px;}
 		.string { color: green; }
 		.number { color: darkorange; }
@@ -107,14 +118,13 @@
 </head>
 
 <body>
-
 	<div class="container-fluid">
 
 		<div class="row-fluid">
 			<div class="span12">
 				<textarea id="query" cols="150" rows="10"></textarea>
 				<button id="queryBtn" class="btn btn-primary">Submit query</button>
-				<span id="rowCountSpan"></span>
+				<span id="statusSpan"></span>
 				<span id="messSpan"></span>
 			</div>
 		</div>

@@ -1,79 +1,76 @@
-import {baseUri, lblUri, ontUri, filesUri, stationOwlClassToTheme} from './configs.js';
-
-function getOptionals(propNames){
-	return propNames
-		.map(propName => `OPTIONAL{?s cpst:${propName} ?${propName}}`)
-		.join('\n');
-}
+import {baseUri, lblUri, ontUri, filesUri, stationOwlClassToTheme, themeToProperties} from './configs.js';
 
 const stationPisQuery = `
 	PREFIX cpst: <${baseUri}>
 	PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 	SELECT *
-	FROM NAMED <${baseUri}>
-	FROM NAMED <${lblUri}>
 	FROM <${ontUri}>
+	FROM <${baseUri}>
+	FROM NAMED <${lblUri}>
 	WHERE{
 		?owlClass rdfs:subClassOf cpst:Station .
-		GRAPH <${baseUri}> {
-			?s a ?owlClass .
-			?s cpst:hasPi ?pi .
-			?pi cpst:hasEmail ?email .
-			?s cpst:hasShortName ?provShortName .
-			?s cpst:hasLongName ?provLongName .
-		}
+		?s a ?owlClass .
+		?s cpst:hasPi ?pi .
+		?pi cpst:hasEmail ?email .
+		?s cpst:hasShortName ?provShortName .
+		?s cpst:hasLongName ?provLongName .
 		OPTIONAL{
 			GRAPH <${lblUri}> {
-				${getOptionals(['hasShortName', 'hasLongName', 'hasApplicationStatus'])}
+				OPTIONAL {?s cpst:hasShortName ?hasShortName }
+				OPTIONAL {?s cpst:hasLongName ?hasLongName }
+				OPTIONAL {?s cpst:hasApplicationStatus ?hasApplicationStatus }
 			}
 		}
 	}`;
 
 function postProcessStationsList(stations){
-	return _.chain(stations)
-		.groupBy('s')
-		.values()
-		.map(samePi => _.extend(
-				_.omit(samePi[0], 'email', 'pi'), {
-					emails: _.pluck(samePi, 'email')
-				}
-			)
-		)
-		.map(station => _.extend(
-				_.omit(station, 'provShortName', 'provLongName'), {
+	return _.values(_.groupBy(stations, 's'))
+		.map(samePi => {
+			var station = samePi[0];
+			return _.extend(
+				_.omit(station, 'email', 'pi', 'provShortName', 'provLongName', 's', 'owlClass'), {
+					emails: _.pluck(samePi, 'email'),
 					hasShortName: station.hasShortName || station.provShortName,
-					hasLongName: station.hasLongName || station.provLongName
+					hasLongName: station.hasLongName || station.provLongName,
+					stationUri: station.s,
+					theme: stationOwlClassToTheme(station.owlClass)
 				}
-			)
-		)
-		.map(postProcessStationProps)
-		.value();
+			);
+		});
 }
 
-function getStationQuery(stationUri, theme, graphUri){
-	let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus', 'hasStationClass'];
-	let propNames = {
-		Atmosphere: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
-			'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
-			'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
-			'hasConstructionStartDate', 'hasConstructionEndDate', 'hasOperationalDateEstimate',
-			'hasTelecom', 'hasExistingInfrastructure', 'hasNameListOfNetworksItBelongsTo'],
-		Ecosystem: ['hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
-		Ocean: ['hasShortName', 'hasLongName']
-	};
-
+function getStationQuery(stationUri){
 	return `
 		PREFIX cpst: <${baseUri}>
-		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-		SELECT DISTINCT *
+		SELECT *
 		FROM NAMED <${lblUri}>
 		FROM NAMED <${baseUri}>
 		WHERE{
-			GRAPH <${graphUri}> {
-				BIND (<${stationUri}> AS ?s) .
-				${getOptionals(commonPropNames.concat(propNames[theme]))}
+			GRAPH ?g {
+				<${stationUri}> ?p ?o .
 			}
 		}`;
+}
+
+function compileStationInfo(bindings, theme){
+
+	let props = themeToProperties(theme);
+	let propUris = _.map(props, prop => baseUri + prop);
+	let propLookup = _.object(propUris, props);
+
+	function toInfo(bindings){
+		let relevant = bindings.filter(binding => propLookup.hasOwnProperty(binding.p));
+		let propValuePairs = _.map(
+			_.groupBy(relevant, 'p'),
+			(bindings, propUri) => [propLookup[propUri], bindings[0].o]
+		);
+		return _.object(propValuePairs);
+	}
+
+	let provisionalInfo = toInfo(bindings.filter(b => b.g === baseUri));
+	let labelingInfo = toInfo(bindings.filter(b => b.g === lblUri));
+
+	return _.extend(provisionalInfo, labelingInfo);
 }
 
 function getFilesQuery(stationUri){
@@ -90,23 +87,7 @@ function getFilesQuery(stationUri){
 	`;
 }
 
-function postProcessStationProps(station){
-	return _.extend(
-		_.omit(station, 's', 'owlClass'), {
-			stationUri: station.s,
-			theme: stationOwlClassToTheme(station.owlClass)
-		}
-	);
-}
-
-
-module.exports = function(ajax, sparql){
-
-	function getStationInfoFromGraph(stationUri, theme, graphUri){
-		return sparql(getStationQuery(stationUri, theme, graphUri))
-			.then(bindings => bindings.map(postProcessStationProps)[0])
-			.then(stationInfo => _.extend(stationInfo, {theme}));
-	}
+export default function(ajax, sparql){
 
 	function getStationFiles(stationUri){
 		return sparql(getFilesQuery(stationUri));
@@ -114,20 +95,16 @@ module.exports = function(ajax, sparql){
 
 	function getStationLabelingInfo(stationUri, theme){
 
-		function hasBeenSavedBefore(labelingInfo){
-			let nonEssential = ['stationUri', 'theme', 'hasApplicationStatus'];
-			let essentialProps = _.without(_.keys(labelingInfo), ...nonEssential);
-			return !_.isEmpty(essentialProps);
-		}
+		let mainInfo = sparql(getStationQuery(stationUri))
+			.then(bindings => compileStationInfo(bindings, theme));
 
-		var mainInfo = getStationInfoFromGraph(stationUri, theme, lblUri);
-		var filesInfo = getStationFiles(stationUri);
+		let filesInfo = getStationFiles(stationUri);
 
-		return mainInfo.then(lblInfo =>
-			hasBeenSavedBefore(lblInfo)
-				? lblInfo
-				: _.extend(getStationInfoFromGraph(stationUri, theme, baseUri), lblInfo)
-		).then(stationInfo => filesInfo.then(files => _.extend({files}, stationInfo)));
+		return Promise.all([mainInfo, filesInfo])
+			.then(all => {
+				let [main, files] = all;
+				return _.extend({files, stationUri, theme}, main);
+			});
 	}
 
 	return {

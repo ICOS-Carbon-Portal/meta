@@ -54,3 +54,20 @@ export const themeToFiles = {
 		{min: 0, max: 1, type: "Further comments", tip: "Further comments (voluntary)"}
 	]
 };
+
+let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus', 'hasStationClass'];
+
+let propNames = {
+	Atmosphere: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
+		'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
+		'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
+		'hasConstructionStartDate', 'hasConstructionEndDate', 'hasOperationalDateEstimate',
+		'hasTelecom', 'hasExistingInfrastructure', 'hasNameListOfNetworksItBelongsTo'],
+	Ecosystem: ['hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
+	Ocean: ['hasShortName', 'hasLongName']
+};
+
+export function themeToProperties(theme){
+	return commonPropNames.concat(propNames[theme]);
+};
+

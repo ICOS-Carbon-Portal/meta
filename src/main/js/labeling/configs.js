@@ -50,6 +50,7 @@ export const themeToFiles = {
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ocean: [
-		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
+		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"},
+		{min: 0, max: 1, type: "Further comments", tip: "Further comments (voluntary)"}
 	]
 };

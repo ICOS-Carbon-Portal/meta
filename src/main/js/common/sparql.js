@@ -25,8 +25,9 @@ function sparqlJsonToArray(sparqlJson){
 export default function(ajax, endpoint){
 
 	return function(query){
+		let compact = query.replace(/\n\t+/gm, '\n');
 
-		return ajax.getJson(endpoint + "?query=" + encodeURIComponent(query))
+		return ajax.getJson(endpoint + "?query=" + encodeURIComponent(compact))
 			.then(function(sparqlJson){
 				try{
 					return sparqlJsonToArray(sparqlJson);

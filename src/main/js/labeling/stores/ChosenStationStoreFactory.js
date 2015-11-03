@@ -17,7 +17,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction, updat
 			this.chosen = chosenStation;
 			var self = this;
 
-			Backend.getStationInfo(chosenStation.stationUri).then(
+			Backend.getStationInfo(chosenStation.stationUri, chosenStation.theme).then(
 				stationInfo => {
 					if(self.chosen.stationUri !== stationInfo.stationUri) return;
 

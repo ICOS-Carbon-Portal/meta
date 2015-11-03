@@ -50,41 +50,30 @@ function postProcessStationsList(stations){
 		.value();
 }
 
-function getStationQuery(stationUri, graphUri){
+function getStationQuery(stationUri, theme, graphUri){
 	let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus', 'hasStationClass'];
 	let propNames = {
-		AS: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
+		Atmosphere: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
 			'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
 			'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
 			'hasConstructionStartDate', 'hasConstructionEndDate', 'hasOperationalDateEstimate',
 			'hasTelecom', 'hasExistingInfrastructure', 'hasNameListOfNetworksItBelongsTo'],
-		ES: ['hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
-		OS: ['hasShortName']
+		Ecosystem: ['hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
+		Ocean: ['hasShortName', 'hasLongName']
 	};
-	let union = _.map(propNames, (classProps, uriEnd) => `{
-		${getOptionals(commonPropNames.concat(classProps))}
-		GRAPH <${baseUri}> {
-			?s a ?owlClass .
-			FILTER STRENDS(STR(?owlClass), "${uriEnd}")
-		}
-	}`).join('\nUNION\n');
 
 	return `
-PREFIX cpst: <${baseUri}>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT *
-FROM NAMED <${lblUri}>
-FROM NAMED <${baseUri}>
-FROM <${ontUri}>
-WHERE{
-	BIND (<${stationUri}> AS ?s) .
-	?owlClass rdfs:subClassOf cpst:Station .
-	GRAPH <${graphUri}> {
-		{
-			${union}
-		}
-	}
-}`;
+		PREFIX cpst: <${baseUri}>
+		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		SELECT DISTINCT *
+		FROM NAMED <${lblUri}>
+		FROM NAMED <${baseUri}>
+		WHERE{
+			GRAPH <${graphUri}> {
+				BIND (<${stationUri}> AS ?s) .
+				${getOptionals(commonPropNames.concat(propNames[theme]))}
+			}
+		}`;
 }
 
 function getFilesQuery(stationUri){
@@ -113,30 +102,32 @@ function postProcessStationProps(station){
 
 module.exports = function(ajax, sparql){
 
-	function getStationInfoFromGraph(stationUri, graphUri){
-		return sparql(getStationQuery(stationUri, graphUri))
-			.then(bindings => bindings.map(postProcessStationProps)[0]);
+	function getStationInfoFromGraph(stationUri, theme, graphUri){
+		return sparql(getStationQuery(stationUri, theme, graphUri))
+			.then(bindings => bindings.map(postProcessStationProps)[0])
+			.then(stationInfo => _.extend(stationInfo, {theme}));
 	}
 
 	function getStationFiles(stationUri){
 		return sparql(getFilesQuery(stationUri));
 	}
 
-	function getStationLabelingInfo(stationUri){
+	function getStationLabelingInfo(stationUri, theme){
 
 		function hasBeenSavedBefore(labelingInfo){
-			var essentialProps = _.without(_.keys(labelingInfo), 'stationUri', 'theme');
+			let nonEssential = ['stationUri', 'theme', 'hasApplicationStatus'];
+			let essentialProps = _.without(_.keys(labelingInfo), ...nonEssential);
 			return !_.isEmpty(essentialProps);
 		}
 
-		var mainInfo = getStationInfoFromGraph(stationUri, lblUri);
+		var mainInfo = getStationInfoFromGraph(stationUri, theme, lblUri);
 		var filesInfo = getStationFiles(stationUri);
 
 		return mainInfo.then(lblInfo =>
 			hasBeenSavedBefore(lblInfo)
 				? lblInfo
-				: getStationInfoFromGraph(stationUri, baseUri)
-		).then(stationInfo => filesInfo.then(files => _.extend({files: files}, stationInfo)));
+				: _.extend(getStationInfoFromGraph(stationUri, theme, baseUri), lblInfo)
+		).then(stationInfo => filesInfo.then(files => _.extend({files}, stationInfo)));
 	}
 
 	return {

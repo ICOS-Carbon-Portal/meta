@@ -24,7 +24,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 			var self = this;
 
-			return <ul className="list-group">{
+			return <ul className="list-unstyled">{
 				_.map(self.state.stations, function(station){
 
 					var panelClasses = 'panel panel-' + panelClass(station);
@@ -33,9 +33,9 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 					var Station = themeToStation[station.theme];
 
-					return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null} className="list-group-item">
+					return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
 
-						<div className={panelClasses}>
+						<div className={panelClasses} style={{marginLeft: 5, marginRight: 5}}>
 							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
 								<span className={icon}/><span> </span>
 								{station.hasLongName}

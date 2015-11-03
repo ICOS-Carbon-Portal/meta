@@ -1,14 +1,22 @@
 import ContentPanel from './ContentPanel.jsx';
 
+var Warning = React.createClass({
+	render: function(){
+		return <p className="text-danger"><strong>{this.props.children}</strong></p>;
+	}
+});
+
 var FileExpectations = React.createClass({
 	render: function(){
 		if(_.isEmpty(this.props.fileExpectations)) return null;
 
 		return <div>
-			<p>Please complement your submission with files:</p>
-			<ul>{
-				this.props.fileExpectations.map(expectation => <li key={expectation}>{expectation}</li>)
-			}</ul>
+			<Warning>Please complement your submission with files:</Warning>
+			<p>
+				<ul>{
+					this.props.fileExpectations.map(expectation => <li className="text-danger" key={expectation}>{expectation}</li>)
+				}</ul>
+			</p>
 		</div>;
 	}
 });
@@ -46,12 +54,12 @@ module.exports = function(saveStationAction) {
 
 			return <ContentPanel panelTitle="Submission">
 
-				{this.props.formIsValid ? null : <p>Please correct form errors</p>}
-				{this.props.isSaved ? null : <p>Please save the station properties before applying</p>}
+				{this.props.formIsValid ? null : <Warning>Please correct form errors</Warning>}
+				{this.props.isSaved ? null : <Warning>Please save the station properties before applying</Warning>}
 
 				<FileExpectations fileExpectations={station.fileExpectations} />
 
-				{_.map(this.props.complexErrors, (errMsg, i) => <p key={'err_' + i}>{errMsg}</p>)}
+				{_.map(this.props.complexErrors, (errMsg, i) => <Warning key={'err_' + i}>{errMsg}</Warning>)}
 
 				<CertifyingClaim changeHandler={this.getChangeHandler('compliance')}
 					claim={`I certify that the construction/equipments of the station will comply with the "ICOS ${station.theme} Station specifications" document`} />

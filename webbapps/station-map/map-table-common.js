@@ -31,7 +31,7 @@ function getVectorFeatures(stations, config){
 		})
 	];
 
-	stations.data.forEach(function (station, config){
+	stations.data.forEach(function (station){
 		if (isNumeric(station.pos[0]) && isNumeric(station.pos[1])) {
 			mapFeature = new ol.Feature({
 				geometry: new ol.geom.Point(ol.proj.fromLonLat(station.pos))

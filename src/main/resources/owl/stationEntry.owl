@@ -267,7 +267,7 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasCountry">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">country code (two-letter)</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">BE, CH, CZ, DE, FI, FR, NO,  IE, NL, UK, PL, SE</rdfs:comment>
+        <rdfs:comment rdf:datatype="&xsd;string">BE, CH, CZ, DE, FI, FR, GF, NO,  IE, NL, UK, PL, SE</rdfs:comment>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
@@ -298,32 +298,38 @@
                                                                 <rdf:rest>
                                                                     <rdf:Description>
                                                                         <rdf:type rdf:resource="&rdf;List"/>
-                                                                        <rdf:first rdf:datatype="&xsd;string">IE</rdf:first>
+                                                                        <rdf:first rdf:datatype="&xsd;string">GF</rdf:first>
                                                                         <rdf:rest>
                                                                             <rdf:Description>
                                                                                 <rdf:type rdf:resource="&rdf;List"/>
-                                                                                <rdf:first rdf:datatype="&xsd;string">IT</rdf:first>
+                                                                                <rdf:first rdf:datatype="&xsd;string">IE</rdf:first>
                                                                                 <rdf:rest>
                                                                                     <rdf:Description>
                                                                                         <rdf:type rdf:resource="&rdf;List"/>
-                                                                                        <rdf:first rdf:datatype="&xsd;string">NL</rdf:first>
+                                                                                        <rdf:first rdf:datatype="&xsd;string">IT</rdf:first>
                                                                                         <rdf:rest>
                                                                                             <rdf:Description>
                                                                                                 <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                <rdf:first rdf:datatype="&xsd;string">NO</rdf:first>
+                                                                                                <rdf:first rdf:datatype="&xsd;string">NL</rdf:first>
                                                                                                 <rdf:rest>
                                                                                                     <rdf:Description>
                                                                                                         <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                        <rdf:first rdf:datatype="&xsd;string">PL</rdf:first>
+                                                                                                        <rdf:first rdf:datatype="&xsd;string">NO</rdf:first>
                                                                                                         <rdf:rest>
                                                                                                             <rdf:Description>
                                                                                                                 <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                                <rdf:first rdf:datatype="&xsd;string">SE</rdf:first>
+                                                                                                                <rdf:first rdf:datatype="&xsd;string">PL</rdf:first>
                                                                                                                 <rdf:rest>
                                                                                                                     <rdf:Description>
                                                                                                                         <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                                        <rdf:first rdf:datatype="&xsd;string">UK</rdf:first>
-                                                                                                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                                                                                                        <rdf:first rdf:datatype="&xsd;string">SE</rdf:first>
+                                                                                                                        <rdf:rest>
+                                                                                                                            <rdf:Description>
+                                                                                                                                <rdf:type rdf:resource="&rdf;List"/>
+                                                                                                                                <rdf:first rdf:datatype="&xsd;string">UK</rdf:first>
+                                                                                                                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                                                                                                            </rdf:Description>
+                                                                                                                        </rdf:rest>
                                                                                                                     </rdf:Description>
                                                                                                                 </rdf:rest>
                                                                                                             </rdf:Description>
@@ -831,13 +837,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -852,13 +858,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -881,6 +887,12 @@
         <rdfs:label rdf:datatype="&xsd;string">Principal Investigator</rdfs:label>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEmail"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
@@ -888,12 +900,6 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -907,12 +913,6 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/Station">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
@@ -921,6 +921,12 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>

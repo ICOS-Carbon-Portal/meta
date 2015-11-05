@@ -5,17 +5,38 @@ import org.apache.commons.mail.*;
 
 public class SendMail {
 
-	public static void sendTxt(String from, String[] to, String subject, String body){
+	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml, String[] cc, String[] bcc){
+		if (isHtml){
+			sendHtml(from, to, subject, body, cc, bcc);
+		} else {
+			sendTxt(from, to, subject, body, cc, bcc);
+		}
+	}
+
+	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml, String[] cc){
+		if (isHtml){
+			sendHtml(from, to, subject, body, cc, new String[0]);
+		} else {
+			sendTxt(from, to, subject, body, cc, new String[0]);
+		}
+	}
+
+	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml){
+		if (isHtml){
+			sendHtml(from, to, subject, body, new String[0], new String[0]);
+		} else {
+			sendTxt(from, to, subject, body, new String[0], new String[0]);
+		}
+	}
+
+	public static void sendMail(String from, String[] to, String subject, String body){
 		sendTxt(from, to, subject, body, new String[0], new String[0]);
 	}
 
-	public static void sendTxt(String from, String[] to, String subject, String body, String[] cc){
-		sendTxt(from, to, subject, body, cc, new String[0]);
-	}
-
-	public static void sendTxt(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
+	private static void sendTxt(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
 		Email email = new SimpleEmail();
 		email.setHostName("mail.lu.se");
+		email.setBounceAddress("carbon.admin@nateko.lu.se");
 
 		try {
 			email.setFrom(from);
@@ -24,6 +45,33 @@ public class SendMail {
 			}
 			email.setSubject(subject);
 			email.setMsg(body);
+
+			for (String ccStr : cc) {
+				email.addCc(ccStr);
+			}
+
+			for (String bccStr : bcc) {
+				email.addBcc(bccStr);
+			}
+
+			email.send();
+		} catch (EmailException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void sendHtml(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
+		HtmlEmail email = new HtmlEmail();
+		email.setHostName("mail.lu.se");
+		email.setBounceAddress("carbon.admin@nateko.lu.se");
+
+		try {
+			email.setFrom(from);
+			for (String toStr : to) {
+				email.addTo(toStr);
+			}
+			email.setSubject(subject);
+			email.setHtmlMsg(body);
 
 			for (String ccStr : cc) {
 				email.addCc(ccStr);

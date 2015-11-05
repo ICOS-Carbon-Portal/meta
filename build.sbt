@@ -5,6 +5,7 @@ version := "0.2"
 scalaVersion := "2.11.7"
 
 val sesameVersion = "2.7.12"
+val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
 libraryDependencies ++= Seq(
 	"com.typesafe.akka"  %% "akka-http-core-experimental"        % "1.0",
@@ -16,10 +17,8 @@ libraryDependencies ++= Seq(
 	"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson" % sesameVersion,
 	"org.postgresql"         % "postgresql"              % "9.4-1201-jdbc41",
 	"dk.brics.automaton"          % "automaton"   % "1.11-8", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-api"   % "1.2.14", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-dom"   % "1.2.14", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-impl"  % "1.2.14",  //Hermit
+	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14" excludeAll(noGeronimo), //Hermit
+	"org.apache.ws.commons.axiom" % "axiom-dom"   % "1.2.14" excludeAll(noGeronimo), //Hermit
 	"se.lu.nateko.cp"    %% "cpauth-core"       % "0.2",
 	"net.sf.opencsv" % "opencsv" % "2.3",
 	"org.apache.commons" % "commons-email" % "1.4",
@@ -31,9 +30,9 @@ assemblyMergeStrategy in assembly := {
 	case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
 	case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
 	case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
-	//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 	case "application.conf" => MergeStrategy.concat
 	case x => ((assemblyMergeStrategy in assembly).value)(x)
+	//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 }
 
 scalacOptions ++= Seq(

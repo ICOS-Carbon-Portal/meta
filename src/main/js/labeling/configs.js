@@ -50,24 +50,30 @@ export const themeToFiles = {
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ocean: [
-		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"},
-		{min: 0, max: 1, type: "Further comments", tip: "Further comments (voluntary)"}
+		{min: 0, max: 1, type: "Geographical coverage", tip: "Format to be defined by Benjamin Pfeil"},
+		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	]
 };
 
-let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus', 'hasStationClass'];
+let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus'];
 
 let propNames = {
 	Atmosphere: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
-		'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
+		'hasStationClass', 'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
 		'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
 		'hasConstructionStartDate', 'hasConstructionEndDate', 'hasOperationalDateEstimate',
 		'hasTelecom', 'hasExistingInfrastructure', 'hasNameListOfNetworksItBelongsTo'],
-	Ecosystem: ['hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
-	Ocean: ['hasShortName', 'hasLongName']
+
+	Ecosystem: ['hasStationClass', 'hasAnemometerDirection', 'hasEddyHeight', 'hasWindDataInEuropeanDatabase'],
+
+	Ocean: ['hasMainPersonnelNamesList', 'hasPlatformType', 'hasTypeOfSampling', 'hasShortName', 'hasLongName',
+		'hasCountry', 'hasVesselOwner', 'hasLocationDescription',
+		'hasWesternmostLon', 'hasEasternmostLon', 'hasNothernmostLat', 'hasSouthernmostLat']
 };
 
 export function themeToProperties(theme){
 	return commonPropNames.concat(propNames[theme]);
 };
+
+export const countryCodes = ["BE", "CH", "CZ", "DE", "FI", "FR", "GF", "IE", "IT", "NL", "NO", "PL", "SE", "UK"];
 

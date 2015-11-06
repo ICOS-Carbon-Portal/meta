@@ -43,7 +43,7 @@ public class SendMail {
 	private static void sendTxt(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
 		Email email = new SimpleEmail();
 		email.setHostName(smtpServer);
-		email.setBounceAddress(adminMailAddress);
+//		email.setBounceAddress(adminMailAddress);
 
 		try {
 			email.setFrom(from);

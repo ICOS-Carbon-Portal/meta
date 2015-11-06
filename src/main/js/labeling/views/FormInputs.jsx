@@ -95,8 +95,13 @@ var TextArea = _.extend({
 
 var DropDown = _.extend({
 	render: function() {
+		var errors = this.getErrors(this.props.value);
+
+		var style = _.isEmpty(errors) ? {} : {backgroundColor: "pink"};
+
 		return <GroupRow header={this.props.header} required={!this.props.optional}>
-			<select className="form-control" value={this.props.value} disabled={this.props.disabled} onChange={this.changeHandler}>{
+			<select className="form-control" value={this.props.value}  style={style} title={errors.join('\n')}
+				disabled={this.props.disabled} onChange={this.changeHandler}>{
 				_.map(this.props.options, (text, value) =>
 					<option value={value} key={value}>{text}</option>
 				)

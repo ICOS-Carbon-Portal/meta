@@ -68,7 +68,14 @@ let propNames = {
 
 	Ocean: ['hasMainPersonnelNamesList', 'hasPlatformType', 'hasTypeOfSampling', 'hasShortName', 'hasLongName',
 		'hasCountry', 'hasVesselOwner', 'hasLocationDescription',
-		'hasWesternmostLon', 'hasEasternmostLon', 'hasNothernmostLat', 'hasSouthernmostLat']
+		'hasWesternmostLon', 'hasEasternmostLon', 'hasNothernmostLat', 'hasSouthernmostLat',
+		'hasUnderwayEquilibratorType', 'hasUnderwayCo2SensorManufacturer', 'hasUnderwayCo2SensorModel',
+		'hasUnderwayOtherSensorManufacturer', 'hasUnderwayOtherSensorModel', 'hasUnderwayMethodReferences',
+		'hasUnderwayAdditionalInfo', 'hasDiscreteTco2AnalysisMethod', 'hasDiscreteTco2StandardizationTechnique',
+		'hasDiscreteTco2TechniqueDescription', 'hasDiscreteTco2MethodReferences', 'hasDiscreteAlkalinityCurveFitting',
+		'hasDiscreteAlkalinityTitrationType', 'hasDiscreteAlkalinityOtherTitration', 'hasDiscreteAlkalinityMethodReferences',
+		'hasDiscretePco2Analysis', 'hasDiscretePco2AnalysisMethod', 'hasDiscretePco2MethodReferences', 'hasDiscretePhScale',
+		'hasDiscretePhAnalysisMethod', 'hasDiscretePhMethodReferences', 'hasDiscreteAdditionalInfo']
 };
 
 export function themeToProperties(theme){

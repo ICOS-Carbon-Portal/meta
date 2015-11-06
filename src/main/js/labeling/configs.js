@@ -75,5 +75,20 @@ export function themeToProperties(theme){
 	return commonPropNames.concat(propNames[theme]);
 };
 
-export const countryCodes = ["BE", "CH", "CZ", "DE", "FI", "FR", "GF", "IE", "IT", "NL", "NO", "PL", "SE", "UK"];
+export const countryCodes = {
+	BE:"Belgium",
+	CH:"Switzerland",
+	CZ:"Czech Republic",
+	DE:"Germany",
+	FI:"Finland",
+	FR:"France",
+	GF:"French Guiana",
+	IE:"Ireland",
+	IT:"Italy",
+	NL:"Netherlands",
+	NO:"Norway",
+	PL:"Poland",
+	SE:"Sweden",
+	GB:"United Kingdom of Great Britain and Northern Ireland"
+};
 

@@ -182,13 +182,13 @@ function addRefreshEv(map, config){
 			.done(function(result){
 				var stations = parseStationsJson(result);
 
-				var OsStations = getVectorLayer(stations.OS);
+				var OsStations = getVectorLayer(stations.OS, config);
 				OsStations.theme = "OS";
 
-				var EsStations = getVectorLayer(stations.ES);
+				var EsStations = getVectorLayer(stations.ES, config);
 				EsStations.theme = "ES";
 
-				var AsStations = getVectorLayer(stations.AS);
+				var AsStations = getVectorLayer(stations.AS, config);
 				AsStations.theme = "AS";
 
 				map.getLayers().forEach(function (layer){
@@ -198,15 +198,15 @@ function addRefreshEv(map, config){
 
 						switch (layer.theme){
 							case "AS":
-								layer.getSource().addFeatures(getVectorFeatures(stations.AS));
+								layer.getSource().addFeatures(getVectorFeatures(stations.AS, config));
 								break;
 
 							case "ES":
-								layer.getSource().addFeatures(getVectorFeatures(stations.ES));
+								layer.getSource().addFeatures(getVectorFeatures(stations.ES, config));
 								break;
 
 							case "OS":
-								layer.getSource().addFeatures(getVectorFeatures(stations.OS));
+								layer.getSource().addFeatures(getVectorFeatures(stations.OS, config));
 								break;
 						}
 					}

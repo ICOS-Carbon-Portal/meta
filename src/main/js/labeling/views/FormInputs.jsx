@@ -33,7 +33,7 @@ var InputBase = {
 	},
 
 	componentWillReceiveProps: function(newProps){
-		if(this.props.value !== newProps.value) this.pushUpdate(newProps.value);
+		this.pushUpdate(newProps.value);
 	},
 
 	getErrors: function(value){

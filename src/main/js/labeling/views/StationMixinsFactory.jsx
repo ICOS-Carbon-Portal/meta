@@ -45,6 +45,10 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 			</div>;
 		},
 
+		componentWillUpdate: function(){
+			this.fastState = undefined;
+		},
+
 		getUpdater: function(propName){
 			var self = this;
 

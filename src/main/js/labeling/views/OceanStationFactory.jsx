@@ -1,6 +1,6 @@
 import Inputs from './FormInputs.jsx';
 import ContentPanel from './ContentPanel.jsx';
-import {countryCodes} from '../configs.js';
+import {countryCodes, otc} from '../configs.js';
 
 export default function(StationMixins) {
 
@@ -85,6 +85,22 @@ export default function(StationMixins) {
 
 		otcProps: function(propName){
 			return _.extend(this.getProps(propName), {optional: true});
+		},
+
+		getComplexValidationErrors: function(){
+			var station = this.state.station;
+
+			var coverageFile = _.findWhere(station.files, {fileType: otc.geoCoverageFileType});
+
+			function hasAllProps(propNames){
+				return _.all(propNames, prop => !_.isEmpty(station[prop]));
+			}
+
+			let [hasBBox, hasLatLon] = [otc.bboxPropNames, otc.latAndLonPropNames].map(hasAllProps);
+
+			return (coverageFile || hasBBox || hasLatLon)
+				? [] : ['Must supply at least one of the following: fixed coordinates, coordinate bounding box, ' +
+							`or the '${otc.geoCoverageFileType}' file`];
 		}
 
 	});

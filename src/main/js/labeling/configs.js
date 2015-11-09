@@ -24,6 +24,12 @@ export const etc = {
 	windDirectionFileType2: 'Wind direction (time series)'
 };
 
+export const otc = {
+	geoCoverageFileType: 'Geographical coverage',
+	bboxPropNames: ['hasWesternmostLon', 'hasEasternmostLon', 'hasNothernmostLat', 'hasSouthernmostLat'],
+	latAndLonPropNames: ['hasLat', 'hasLon']
+};
+
 export const themeToFiles = {
 	Atmosphere: [
 		{min: 1, max: 20, type: "Photo(s) of the site"},
@@ -50,14 +56,14 @@ export const themeToFiles = {
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ocean: [
-		{min: 0, max: 1, type: "Geographical coverage", tip: "Format to be defined by Benjamin Pfeil"},
+		{min: 0, max: 1, type: otc.geoCoverageFileType, tip: "Format to be defined by Benjamin Pfeil"},
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	]
 };
 
-let commonPropNames = ['hasLat', 'hasLon', 'hasApplicationStatus'];
+let commonPropNames = otc.latAndLonPropNames.concat(['hasApplicationStatus']);
 
-let propNames = {
+let propNamesLookup = {
 	Atmosphere: ['hasShortName', 'hasLongName', 'hasMainPersonnelNamesList', 'hasResponsibleInstitutionName',
 		'hasStationClass', 'hasAddress', 'hasWebsite', 'hasElevationAboveGround',
 		'hasElevationAboveSea', 'hasAccessibility', 'hasVegetation', 'hasAnthropogenics',
@@ -68,18 +74,17 @@ let propNames = {
 
 	Ocean: ['hasMainPersonnelNamesList', 'hasPlatformType', 'hasTypeOfSampling', 'hasShortName', 'hasLongName',
 		'hasCountry', 'hasVesselOwner', 'hasLocationDescription',
-		'hasWesternmostLon', 'hasEasternmostLon', 'hasNothernmostLat', 'hasSouthernmostLat',
 		'hasUnderwayEquilibratorType', 'hasUnderwayCo2SensorManufacturer', 'hasUnderwayCo2SensorModel',
 		'hasUnderwayOtherSensorManufacturer', 'hasUnderwayOtherSensorModel', 'hasUnderwayMethodReferences',
 		'hasUnderwayAdditionalInfo', 'hasDiscreteTco2AnalysisMethod', 'hasDiscreteTco2StandardizationTechnique',
 		'hasDiscreteTco2TechniqueDescription', 'hasDiscreteTco2MethodReferences', 'hasDiscreteAlkalinityCurveFitting',
 		'hasDiscreteAlkalinityTitrationType', 'hasDiscreteAlkalinityOtherTitration', 'hasDiscreteAlkalinityMethodReferences',
 		'hasDiscretePco2Analysis', 'hasDiscretePco2AnalysisMethod', 'hasDiscretePco2MethodReferences', 'hasDiscretePhScale',
-		'hasDiscretePhAnalysisMethod', 'hasDiscretePhMethodReferences', 'hasDiscreteAdditionalInfo']
+		'hasDiscretePhAnalysisMethod', 'hasDiscretePhMethodReferences', 'hasDiscreteAdditionalInfo'].concat(etc.bboxPropNames)
 };
 
 export function themeToProperties(theme){
-	return commonPropNames.concat(propNames[theme]);
+	return commonPropNames.concat(propNamesLookup[theme]);
 };
 
 export const countryCodes = {

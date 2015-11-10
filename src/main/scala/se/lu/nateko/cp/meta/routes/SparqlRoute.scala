@@ -19,7 +19,7 @@ object SparqlRoute {
 
 		def makeResponse(query: String): Route = setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
-				complete(SparqlSelect(query))
+				encodeResponse(complete(SparqlSelect(query)))
 			}
 		}
 

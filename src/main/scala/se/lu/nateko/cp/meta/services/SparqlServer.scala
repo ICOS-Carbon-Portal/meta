@@ -21,13 +21,14 @@ import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.model.HttpResponse
+import java.io.InputStream
 
 case class SparqlSelect(query: String)
 
 trait SparqlServer {
 	/**
 	 * Executes a SPARQL SELECT query
-	 * @return Query results in SPARQL-JSON format
+	 * Serializes the query results to one of the standard formats, depending on HTTP content negotiation
 	 */
 	def marshaller: ToResponseMarshaller[SparqlSelect]
 }
@@ -63,25 +64,28 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	private def getEntity(query: String, resType: SparqlResultType)
 			(implicit executor: ExecutionContext): HttpResponse = {
 
-		val conn = repo.getConnection
+		val source = InputStreamSource(() => {
+			val conn = repo.getConnection
+	
+			val outStream = new java.io.PipedOutputStream
+			val inStream = new java.io.PipedInputStream(outStream, InputStreamSource.DefaultChunkSize)
+	
+			val resultWriter = resType.writerFactory.getWriter(outStream)
+			val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
+	
+			val evaluation = Future(tupleQuery.evaluate(resultWriter))
+			val crashable = new CrashableInputStream(inStream, evaluation)
 
-		val outStream = new java.io.PipedOutputStream
-		val inStream = new java.io.PipedInputStream(outStream)
-
-		val resultWriter = resType.writerFactory.getWriter(outStream)
-		val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-
-		Future{
-			tupleQuery.evaluate(resultWriter)
-		}.onComplete(_ => {
-			conn.close()
-			outStream.close()
+			evaluation.onComplete(_ => {
+				conn.close()
+				outStream.flush()
+				outStream.close()
+				crashable.close()
+			})
+			crashable
 		})
 
-		val source = InputStreamSource(() => inStream)
-		val contType = ContentType(resType.exactType, utf8)
-		val entity = HttpEntity(contType, source)
-		HttpResponse(entity = entity)
+		HttpResponse(entity = HttpEntity(ContentType(resType.exactType, utf8), source))
 	}
 }
 
@@ -95,4 +99,25 @@ object SparqlServer{
 		fileExtensions = fileExtension :: Nil
 	)
 
+}
+
+private class CrashableInputStream(inner: InputStream, computation: Future[Unit]) extends InputStream{
+	def read(): Int = {
+		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read()
+		else throw computation.value.get.failed.get
+	}
+
+	override def read(b: Array[Byte]): Int = {
+		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read(b)
+		else throw computation.value.get.failed.get
+	}
+
+	override def read(b: Array[Byte], off: Int, len: Int): Int = {
+		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read(b, off, len)
+		else throw computation.value.get.failed.get
+	}
+
+	override def close() = inner.close()
+	override def available() = inner.available()
+	override def skip(n: Long) = inner.skip(n)
 }

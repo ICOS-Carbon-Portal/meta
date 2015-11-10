@@ -16,6 +16,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Rejection
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.Uri.Query
 
 class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
@@ -60,7 +61,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 	//TODO Make the cpauth login url and the name of the query param configurable
 	def ensureLogin(inner: => Route): Route = user(uinfo => inner) ~
 		extractUri{uri =>
-			redirect(Uri("https://cpauth.icos-cp.eu/login/").withQuery(("targetUrl", uri.toString)), StatusCodes.Found)
+			redirect(Uri("https://cpauth.icos-cp.eu/login/").withQuery(Query("targetUrl" -> uri.toString)), StatusCodes.Found)
 		}
 }
 

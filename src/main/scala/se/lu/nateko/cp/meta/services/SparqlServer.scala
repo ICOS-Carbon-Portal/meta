@@ -4,6 +4,8 @@ import org.openrdf.repository.Repository
 import se.lu.nateko.cp.meta.utils.sesame._
 import java.io.ByteArrayOutputStream
 import org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
+import org.openrdf.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
+import org.openrdf.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
 import org.openrdf.query.QueryLanguage
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -52,8 +54,18 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	private val resTypes: List[SparqlResultType] = List(
 		SparqlResultType(
 			popularType = MediaTypes.`application/json`,
-			exactType = getSparqlResMediaType("json", ".srj"),
+			exactType = getSparqlResMediaType("application", "sparql-results+json", ".srj"),
 			writerFactory = new SPARQLResultsJSONWriterFactory()
+		),
+		SparqlResultType(
+			popularType = MediaTypes.`text/csv`,
+			exactType = getSparqlResMediaType("text", "csv", ".csv"),
+			writerFactory = new SPARQLResultsCSVWriterFactory()
+		),
+		SparqlResultType(
+			popularType = MediaTypes.`text/plain`,
+			exactType = getSparqlResMediaType("text", "tab-separated-values", ".tsv"),
+			writerFactory = new SPARQLResultsTSVWriterFactory()
 		)
 	)
 
@@ -72,7 +84,7 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	
 			val resultWriter = resType.writerFactory.getWriter(outStream)
 			val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-	
+
 			val evaluation = Future(tupleQuery.evaluate(resultWriter))
 			val crashable = new CrashableInputStream(inStream, evaluation)
 
@@ -91,9 +103,9 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 
 object SparqlServer{
 	
-	def getSparqlResMediaType(subtype: String, fileExtension: String): MediaType = MediaType.custom(
-		mainType = "application",
-		subType = "sparql-results+" + subtype,
+	def getSparqlResMediaType(mainType: String, subtype: String, fileExtension: String): MediaType = MediaType.custom(
+		mainType = mainType,
+		subType = subtype,
 		encoding = MediaType.Encoding.Fixed(HttpCharsets.`UTF-8`),
 		compressible = true,
 		fileExtensions = fileExtension :: Nil

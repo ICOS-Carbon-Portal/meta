@@ -1,10 +1,11 @@
 package se.lu.nateko.cp.meta.routes
 
-import se.lu.nateko.cp.meta.services.SparqlServer
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.Directives._
+
 import se.lu.nateko.cp.meta.services.SparqlSelect
 
 object SparqlRoute {
@@ -14,8 +15,7 @@ object SparqlRoute {
 		`Cache-Control`(CacheDirectives.`no-cache`, CacheDirectives.`no-store`, CacheDirectives.`must-revalidate`)
 	)
 
-	def apply(server: SparqlServer): Route = {
-		implicit val marsh = server.marshaller
+	def apply(implicit marsh: ToResponseMarshaller[SparqlSelect]): Route = {
 
 		def makeResponse(query: String): Route = setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){

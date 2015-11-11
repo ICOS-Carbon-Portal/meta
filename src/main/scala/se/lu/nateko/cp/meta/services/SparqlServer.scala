@@ -1,29 +1,28 @@
 package se.lu.nateko.cp.meta.services
 
-import org.openrdf.repository.Repository
-import se.lu.nateko.cp.meta.utils.sesame._
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.openrdf.query.QueryLanguage
+import org.openrdf.query.resultio.TupleQueryResultWriterFactory
 import org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
 import org.openrdf.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
 import org.openrdf.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
-import org.openrdf.query.QueryLanguage
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import org.openrdf.query.resultio.TupleQueryResultWriterFactory
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import akka.stream.io.InputStreamSource
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.marshalling.Marshalling
-import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
+import org.openrdf.repository.Repository
+
 import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.http.scaladsl.model.ContentType
+import akka.http.scaladsl.model.HttpCharsets
+import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
-import java.io.InputStream
+import akka.http.scaladsl.model.MediaType
+import akka.http.scaladsl.model.MediaTypes
+import se.lu.nateko.cp.meta.utils.sesame.SesameRepoWithAccessAndTransactions
 
 case class SparqlSelect(query: String)
 
@@ -40,14 +39,6 @@ private case class SparqlResultType(popularType: MediaType, exactType: MediaType
 
 class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	import SparqlServer._
-
-	def executeQuery(query: String): String = repo.accessEagerly{ conn =>
-		val stream = new ByteArrayOutputStream
-		val resultWriter = new SPARQLResultsJSONWriterFactory().getWriter(stream)
-		val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-		tupleQuery.evaluate(resultWriter)
-		stream.toString("UTF-8")
-	}
 
 	private val utf8 = HttpCharsets.`UTF-8`
 
@@ -69,35 +60,29 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 		)
 	)
 
-	def marshaller: ToResponseMarshaller[SparqlSelect] = Marshaller(implicit exeCtxt => query => Future{
-		resTypes.map(resType => WithFixedCharset(resType.popularType, utf8, () => getEntity(query.query, resType)))
-	})
+	def marshaller: ToResponseMarshaller[SparqlSelect] = Marshaller(
+		implicit exeCtxt => query => Future.successful(
+			resTypes.map(resType =>
+				WithFixedCharset(resType.popularType, utf8, () => getResponse(query.query, resType))
+			)
+		)
+	)
 
-	private def getEntity(query: String, resType: SparqlResultType)
+	private def getResponse(query: String, resType: SparqlResultType)
 			(implicit executor: ExecutionContext): HttpResponse = {
 
-		val source = InputStreamSource(() => {
-			val conn = repo.getConnection
-	
-			val outStream = new java.io.PipedOutputStream
-			val inStream = new java.io.PipedInputStream(outStream, InputStreamSource.DefaultChunkSize)
+		val bytes = repo.accessEagerly(conn => {
+			val outStream = new ByteArrayOutputStream
 	
 			val resultWriter = resType.writerFactory.getWriter(outStream)
 			val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-
-			val evaluation = Future(tupleQuery.evaluate(resultWriter))
-			val crashable = new CrashableInputStream(inStream, evaluation)
-
-			evaluation.onComplete(_ => {
-				conn.close()
-				outStream.flush()
-				outStream.close()
-				crashable.close()
-			})
-			crashable
+	
+			tupleQuery.evaluate(resultWriter)
+			outStream.close()
+			outStream.toByteArray
 		})
 
-		HttpResponse(entity = HttpEntity(ContentType(resType.exactType, utf8), source))
+		HttpResponse(entity = HttpEntity(ContentType(resType.exactType, utf8), bytes))
 	}
 }
 
@@ -113,23 +98,3 @@ object SparqlServer{
 
 }
 
-private class CrashableInputStream(inner: InputStream, computation: Future[Unit]) extends InputStream{
-	def read(): Int = {
-		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read()
-		else throw computation.value.get.failed.get
-	}
-
-	override def read(b: Array[Byte]): Int = {
-		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read(b)
-		else throw computation.value.get.failed.get
-	}
-
-	override def read(b: Array[Byte], off: Int, len: Int): Int = {
-		if(!computation.isCompleted || computation.value.get.isSuccess) inner.read(b, off, len)
-		else throw computation.value.get.failed.get
-	}
-
-	override def close() = inner.close()
-	override def available() = inner.available()
-	override def skip(n: Long) = inner.skip(n)
-}

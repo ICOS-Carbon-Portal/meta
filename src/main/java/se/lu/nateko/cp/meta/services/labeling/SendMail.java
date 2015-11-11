@@ -5,92 +5,104 @@ import org.apache.commons.mail.*;
 
 public class SendMail {
 
-	private static final String smtpServer = "mail.lu.se";
-	private static final String adminMailAddress = "carbon.admin@nateko.lu.se";
+	private final String smtpServer;
+	private final String fromAddress;
+	private final String[] logBccAddress;
 
-	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml, String[] cc, String[] bcc){
+
+	public SendMail(String smtpServer, String fromAddress){
+		this.smtpServer = smtpServer;
+		this.fromAddress = fromAddress;
+		this.logBccAddress = new String[]{};
+	}
+
+	public SendMail(String smtpServer, String fromAddress, String logBccAddress){
+		this.smtpServer = smtpServer;
+		this.fromAddress = fromAddress;
+		this.logBccAddress = new String[]{logBccAddress};
+	}
+
+	public void sendMail(String[] to, String subject, String body, boolean isHtml, String[] cc, String[] bcc) throws EmailException {
 		if (isHtml){
-			sendHtml(from, to, subject, body, cc, bcc);
+			sendHtml(to, subject, body, cc, bcc);
 		} else {
-			sendTxt(from, to, subject, body, cc, bcc);
+			sendTxt(to, subject, body, cc, bcc);
 		}
 	}
 
-	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml, String[] cc){
+	public void sendMail(String[] to, String subject, String body, boolean isHtml, String[] cc) throws EmailException {
 		if (isHtml){
-			sendHtml(from, to, subject, body, cc, new String[0]);
+			sendHtml(to, subject, body, cc, new String[0]);
 		} else {
-			sendTxt(from, to, subject, body, cc, new String[0]);
+			sendTxt(to, subject, body, cc, new String[0]);
 		}
 	}
 
-	public static void sendMail(String from, String[] to, String subject, String body, boolean isHtml){
+	public void sendMail(String[] to, String subject, String body, boolean isHtml) throws EmailException {
 		if (isHtml){
-			sendHtml(from, to, subject, body, new String[0], new String[0]);
+			sendHtml(to, subject, body, new String[0], new String[0]);
 		} else {
-			sendTxt(from, to, subject, body, new String[0], new String[0]);
+			sendTxt(to, subject, body, new String[0], new String[0]);
 		}
 	}
 
-	public static void sendMail(String from, String[] to, String subject, String body){
-		sendTxt(from, to, subject, body, new String[0], new String[0]);
+	public void sendMail(String[] to, String subject, String body) throws EmailException {
+		sendTxt(to, subject, body, new String[0], new String[0]);
 	}
 
-	public static void sendSystemMail(String subject, String body){
-		sendTxt(adminMailAddress, new String[]{adminMailAddress}, subject, body, new String[0], new String[0]);
+	public void sendSystemMail(String subject, String body) throws EmailException {
+		sendTxt(new String[]{fromAddress}, subject, body, new String[0], new String[0]);
 	}
 
-	private static void sendTxt(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
+	private void sendTxt(String[] to, String subject, String body, String[] cc, String[] bcc) throws EmailException {
 		Email email = new SimpleEmail();
 		email.setHostName(smtpServer);
-//		email.setBounceAddress(adminMailAddress);
 
-		try {
-			email.setFrom(from);
-			for (String toStr : to) {
-				email.addTo(toStr);
-			}
-			email.setSubject(subject);
-			email.setMsg(body);
-
-			for (String ccStr : cc) {
-				email.addCc(ccStr);
-			}
-
-			for (String bccStr : bcc) {
-				email.addBcc(bccStr);
-			}
-
-			email.send();
-		} catch (EmailException e) {
-			e.printStackTrace();
+		email.setFrom(fromAddress);
+		for (String toStr : to) {
+			email.addTo(toStr);
 		}
+		email.setSubject(subject);
+		email.setMsg(body);
+
+		for (String ccStr : cc) {
+			email.addCc(ccStr);
+		}
+
+		for (String bccStr : logBccAddress) {
+			email.addBcc(bccStr);
+		}
+
+		for (String bccStr : bcc) {
+			email.addBcc(bccStr);
+		}
+
+		email.send();
 	}
 
-	private static void sendHtml(String from, String[] to, String subject, String body, String[] cc, String[] bcc){
+	private void sendHtml(String[] to, String subject, String body, String[] cc, String[] bcc) throws EmailException {
 		HtmlEmail email = new HtmlEmail();
 		email.setHostName(smtpServer);
-		email.setBounceAddress(adminMailAddress);
 
-		try {
-			email.setFrom(from);
-			for (String toStr : to) {
-				email.addTo(toStr);
-			}
-			email.setSubject(subject);
-			email.setHtmlMsg(body);
-
-			for (String ccStr : cc) {
-				email.addCc(ccStr);
-			}
-
-			for (String bccStr : bcc) {
-				email.addBcc(bccStr);
-			}
-
-			email.send();
-		} catch (EmailException e) {
-			e.printStackTrace();
+		email.setFrom(fromAddress);
+		for (String toStr : to) {
+			email.addTo(toStr);
 		}
+		email.setSubject(subject);
+		email.setHtmlMsg(body);
+
+		for (String ccStr : cc) {
+			email.addCc(ccStr);
+		}
+
+		for (String bccStr : logBccAddress) {
+			email.addBcc(bccStr);
+		}
+
+		for (String bccStr : bcc) {
+			email.addBcc(bccStr);
+		}
+
+		email.send();
 	}
 }

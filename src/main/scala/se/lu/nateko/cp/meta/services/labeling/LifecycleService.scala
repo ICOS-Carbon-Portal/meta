@@ -8,13 +8,19 @@ import org.openrdf.model.{URI => SesameUri}
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
+import scala.concurrent.{Future, ExecutionContext}
+
 trait LifecycleService { self: StationLabelingService =>
 
 	import LifecycleService._
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
+	private val mailer = config.mailing.logBccAddress match{
+		case Some(bcc) => new SendMail(config.mailing.smtpServer, config.mailing.fromAddress, bcc)
+		case None => new SendMail(config.mailing.smtpServer, config.mailing.fromAddress)
+	}
 
-	def updateStatus(station: URI, newStatus: String, user: UserInfo): Unit = {
+	def updateStatus(station: URI, newStatus: String, user: UserInfo)(implicit ctxt: ExecutionContext): Unit = {
 
 		ensureStatusIsLegal(newStatus)
 
@@ -35,6 +41,20 @@ trait LifecycleService { self: StationLabelingService =>
 		val newInfo = Seq(toStatement(newStatus))
 
 		server.applyDiff(currentInfo, newInfo)
+
+		if(newStatus == submitted) Future{
+			val recepients: Seq[String] = lookupStationClass(factory.createURI(station))
+					.flatMap(cls => config.tcUserIds.get(cls.toJava))
+					.toSeq
+					.flatten
+
+			if(recepients.nonEmpty){
+				val subject = "Application for labeling received"
+				val body = "Dear TC representative(s)!\n\n" +
+					s"Carbon Portal's labeling service has received an application from ${user.givenName} ${user.surname}."
+				mailer.sendMail(recepients.toArray, subject, body)
+			}
+		}
 	}
 
 	private def assertUserRepresentsTc(station: SesameUri, user: UserInfo): Unit = {

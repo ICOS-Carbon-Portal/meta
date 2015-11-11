@@ -23,7 +23,8 @@ object MainRoute {
 
 	def apply(db: MetaDb, config: CpmetaConfig)(implicit mat: Materializer): Route = {
 
-		val sparqlRoute = SparqlRoute(db.sparql)
+		implicit val sparqlMarsh = db.sparql.marshaller
+		val sparqlRoute = SparqlRoute()
 		val staticRoute = StaticRoute(config)
 
 		val authRouting = new AuthenticationRouting(config.auth)

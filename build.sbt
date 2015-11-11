@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
 	"org.openrdf.sesame"     % "sesame-repository-sail"          % sesameVersion,
 	"org.openrdf.sesame"     % "sesame-sail-memory"              % sesameVersion,
 	"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson" % sesameVersion,
+	"org.openrdf.sesame"     % "sesame-queryresultio-text" % sesameVersion,
 	"org.postgresql"         % "postgresql"              % "9.4-1201-jdbc41",
 	"dk.brics.automaton"          % "automaton"   % "1.11-8", //Hermit
 	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14" excludeAll(noGeronimo), //Hermit

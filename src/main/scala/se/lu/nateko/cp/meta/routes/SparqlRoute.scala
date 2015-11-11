@@ -5,8 +5,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-
 import se.lu.nateko.cp.meta.services.SparqlSelect
+import akka.stream.Materializer
 
 object SparqlRoute {
 
@@ -15,9 +15,9 @@ object SparqlRoute {
 		`Cache-Control`(CacheDirectives.`no-cache`, CacheDirectives.`no-store`, CacheDirectives.`must-revalidate`)
 	)
 
-	def apply(implicit marsh: ToResponseMarshaller[SparqlSelect]): Route = {
+	def apply()(implicit marsh: ToResponseMarshaller[SparqlSelect], mat: Materializer): Route = {
 
-		def makeResponse(query: String): Route = setSparqlHeaders {
+		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
 				encodeResponse(complete(SparqlSelect(query)))
 			}
@@ -28,7 +28,7 @@ object SparqlRoute {
 				parameter('query)(makeResponse)
 			} ~
 			post{
-				formField("query")(makeResponse) ~
+				formField('query)(makeResponse) ~
 				entity(as[String])(makeResponse)
 			}
 		}

@@ -9,57 +9,60 @@ import org.openrdf.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
-import se.lu.nateko.cp.meta.ingestion.Vocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.utils.DateTimeUtils
 
 class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
 	private val factory = server.factory
-	private val vocab = Vocab(factory)
+	private val vocab = new CpmetaVocab(factory)
 
 	implicit def javaUriToSesame(uri: java.net.URI): URI = factory.createURI(uri)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
-		val submitter = meta.submitter
-		val submitterConf = conf.submitters.get(submitter).getOrElse(
-			throw new UploadUserErrorException(s"Unknown submitter: $submitter")
+		import meta._
+
+		val submitterConf = conf.submitters.get(submitterId).getOrElse(
+			throw new UploadUserErrorException(s"Unknown submitter: $submitterId")
 		)
 
 		val userId = uploader.mail
 		if(!submitterConf.authorizedUserIds.contains(userId))
-			throw new UnauthorizedUploadException(s"User $userId is not authorized to upload on behalf of submitter $submitter")
+			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val datasetUri = factory.createURI(submitterConf.datasetClass, "/" + meta.hashSum)
+		val dataStrClass = InstanceServerUtils.getSingleType(dataStructure, server).toJava
+		val datasetClass = submitterConf.structureToDatasetClassLookup.get(dataStrClass).getOrElse(
+			throw new UploadUserErrorException(s"Submitter '$submitterId' cannot upload data structures of class $dataStrClass")
+		)
+
+		val datasetUri = factory.createURI(datasetClass, "/" + meta.hashSum)
 		if(!server.getStatements(datasetUri).isEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
 
-		if(server.getStatements(Some(meta.station), Some(RDF.TYPE), Some(submitterConf.stationClass)).isEmpty)
-			throw new UploadUserErrorException(s"Unknown station: ${meta.station}")
+		if(server.getStatements(Some(producingOrganization), Some(RDF.TYPE), Some(submitterConf.producingOrganizationClass)).isEmpty)
+			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
-		if(server.getStatements(Some(meta.dataStructure), Some(RDF.TYPE), Some(submitterConf.dataStructureClass)).isEmpty)
-			throw new UploadUserErrorException(s"Unknown data structure: ${meta.dataStructure}")
-
-		val submissionUri = factory.createURI(vocab.submissionClass, "/" + meta.hashSum)
-		val acquisitionUri = factory.createURI(vocab.acquisitionClass, "/" + meta.hashSum)
+		val submissionUri = factory.createURI(vocab.submissionClass, "/" + hashSum)
+		val acquisitionUri = factory.createURI(vocab.acquisitionClass, "/" + hashSum)
 
 		server.addAll(Seq[(URI, URI, Value)](
 
-			(datasetUri, RDF.TYPE, submitterConf.datasetClass),
-			(datasetUri, vocab.hasSha256sum, makeSha256Literal(meta.hashSum)),
-			(datasetUri, vocab.qb.structure, meta.dataStructure),
+			(datasetUri, RDF.TYPE, datasetClass),
+			(datasetUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
+			(datasetUri, vocab.qb.structure, dataStructure),
 			(datasetUri, vocab.wasAcquiredBy, acquisitionUri),
 			(datasetUri, vocab.wasSubmittedBy, submissionUri),
 
 			(acquisitionUri, RDF.TYPE, vocab.acquisitionClass),
 			(acquisitionUri, vocab.prov.startedAtTime, makeDateTimeLiteral(meta.acquisitionStart)),
 			(acquisitionUri, vocab.prov.endedAtTime, makeDateTimeLiteral(meta.acquisitionEnd)),
-			(acquisitionUri, vocab.prov.wasAssociatedWith, meta.station),
+			(acquisitionUri, vocab.prov.wasAssociatedWith, producingOrganization),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
 			(submissionUri, vocab.prov.startedAtTime, factory.getDateTimeNow),
-			(submissionUri, vocab.prov.wasAssociatedWith, submitter)
+			(submissionUri, vocab.prov.wasAssociatedWith, submitterConf.submittingOrganization)
 
 		).map(factory.tripleToStatement))
 

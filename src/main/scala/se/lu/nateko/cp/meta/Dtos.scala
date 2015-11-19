@@ -31,8 +31,8 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 }
 
 case class UploadMetadataDto(
-	submitter: URI,
-	station: URI,
+	submitterId: String,
+	producingOrganization: URI,
 	dataStructure: URI,
 	hashSum: String,
 	acquisitionStart: String,

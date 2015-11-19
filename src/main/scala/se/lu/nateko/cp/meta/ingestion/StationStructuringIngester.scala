@@ -96,28 +96,4 @@ class StationStructuring(plainStations: InstanceServer){
 	}
 }
 
-class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(factory){
-	val hasPi = getRelative("hasPi")
-	val hasFirstName = getRelative("hasFirstName")
-	val hasLastName = getRelative("hasLastName")
-	val hasEmail = getRelative("hasEmail")
-	val hasAffiliation = getRelative("hasAffiliation")
-	val hasPhone = getRelative("hasPhone")
-	val hasAssociatedFile = getRelative("hasAssociatedFile")
-	val hasApplicationStatus = getRelative("hasApplicationStatus")
-	val PI = getRelative("PI")
 
-	val files = new FilesVocab(factory)
-
-	def piUri(email: String) = getRelative("PI/" + URLEncoder.encode(email, "UTF-8"))
-}
-
-
-class FilesVocab(val factory: ValueFactory) extends CustomVocab{
-	val baseUri = "http://meta.icos-cp.eu/files/"
-
-	val hasType = getRelative("hasType")
-	val hasName = getRelative("hasName")
-
-	def getUri(hashsum: String) = getRelative(hashsum)
-}

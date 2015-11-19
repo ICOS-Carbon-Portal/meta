@@ -27,4 +27,4 @@ To get the authentication cookie from Cpauth:
 The resulting `cookies.txt` file must be edited if you want to use it for tests against localhost via HTTP.
 
 To test the metadata upload (`upload.json` and `cookies.txt` must be in the current directory):
-`curl --cookie cookies.txt -H "Content-Type: application/json" -X POST -d @upload.json 127.0.0.1:9094/upload`
+`curl --cookie cookies.txt -H "Content-Type: application/json" -X POST -d @upload.json localhost:9094/upload`

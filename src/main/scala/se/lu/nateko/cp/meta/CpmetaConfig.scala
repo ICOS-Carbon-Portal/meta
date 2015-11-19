@@ -39,12 +39,12 @@ case class OntoConfig(
 
 case class DataSubmitterConfig(
 	authorizedUserIds: Seq[String],
-	datasetClass: URI,
-	stationClass: URI,
-	dataStructureClass: URI
+	producingOrganizationClass: URI,
+	submittingOrganization: URI,
+	structureToDatasetClassLookup: Map[URI, URI]
 )
 
-case class UploadServiceConfig(instanceServerId: String, submitters: Map[URI, DataSubmitterConfig])
+case class UploadServiceConfig(instanceServerId: String, submitters: Map[String, DataSubmitterConfig])
 
 case class EmailConfig(smtpServer: String, fromAddress: String, logBccAddress: Option[String])
 

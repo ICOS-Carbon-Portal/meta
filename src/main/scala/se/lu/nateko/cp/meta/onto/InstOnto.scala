@@ -16,8 +16,8 @@ import org.semanticweb.owlapi.model.IRI
 
 import se.lu.nateko.cp.meta._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.onto.labeler.LabelerHelpers
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import se.lu.nateko.cp.meta.utils.sesame.SesameStatement
 import se.lu.nateko.cp.meta.utils.sesame.ToJavaUriConverter
@@ -50,7 +50,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		val labeler = onto.getUniversalLabeler
 		val instUri = instServer.factory.createURI(uri)
 
-		val theType: URI = LabelerHelpers.getSingleType(uri, instServer).toJava
+		val theType: URI = InstanceServerUtils.getSingleType(uri, instServer).toJava
 		val classInfo = onto.getClassInfo(theType)
 
 		val values: Seq[ValueDto] = instServer.getStatements(instUri).collect{
@@ -132,7 +132,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		val subj = factory.createURI(update.subject)
 		val pred = factory.createURI(update.predicate)
 		
-		val classUri = LabelerHelpers.getSingleType(update.subject, instServer).toJava
+		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer).toJava
 
 		val obj: Value = onto.getPropInfo(update.predicate, classUri) match{
 			case dp: DataPropertyDto =>

@@ -4,6 +4,7 @@ import java.net.{URLEncoder, URI}
 import org.openrdf.model.vocabulary.{XMLSchema, RDF}
 import org.openrdf.model.{ValueFactory, Statement, Literal, Value, URI => SesameURI}
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.api.CustomVocab
 
 
 case class Station(
@@ -144,27 +145,3 @@ object StationsIngestion extends Ingester{
 			})
 }
 
-class StationsVocab(val factory: ValueFactory) extends CustomVocab{
-	val baseUri = "http://meta.icos-cp.eu/ontologies/stationentry/"
-
-	val station = getRelative("Station")
-
-	val hasShortName = getRelative("hasShortName")
-	val hasLongName = getRelative("hasLongName")
-	val hasCountry = getRelative("hasCountry")
-	val hasStationClass = getRelative("hasStationClass")
-	val hasSiteType = getRelative("hasSiteType")
-	val hasStationKind = getRelative("hasStationKind")
-	val hasPiName = getRelative("hasPiName")
-	val hasPiEmail = getRelative("hasPiEmail")
-	val hasPreIcosMeasurements = getRelative("hasPreIcosMeasurements")
-	val isAlreadyOperational = getRelative("isAlreadyOperational")
-	val hasFundingForConstruction = getRelative("hasFundingForConstruction")
-	val hasFundingForOperation = getRelative("hasFundingForOperation")
-	val hasElevationAboveSea = getRelative("hasElevationAboveSea")
-	val hasElevationAboveGround = getRelative("hasElevationAboveGround")
-	val hasOperationalDateEstimate = getRelative("hasOperationalDateEstimate")
-	val hasLocationDescription = getRelative("hasLocationDescription")
-	val hasLat = getRelative("hasLat")
-	val hasLon = getRelative("hasLon")
-}

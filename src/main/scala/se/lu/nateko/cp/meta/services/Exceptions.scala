@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services
 
 import scala.util.control.NoStackTrace
 
-sealed abstract class ServiceException(val message: String) extends RuntimeException(
+sealed class ServiceException(val message: String) extends RuntimeException(
 		if(message == null) "" else message
 	) with NoStackTrace
 

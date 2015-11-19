@@ -1,11 +1,10 @@
-package se.lu.nateko.cp.meta.onto.labeler
+package se.lu.nateko.cp.meta.instanceserver
 
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.openrdf.model.vocabulary.OWL
 
-object LabelerHelpers {
+object InstanceServerUtils {
 
 	def getSingleType(uri: java.net.URI, instServer: InstanceServer): URI = {
 

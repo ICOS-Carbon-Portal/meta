@@ -40,11 +40,11 @@ object MainRoute {
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~
 			metaEntryRoute ~
-			staticRoute ~
 			uploadRoute ~
 			labelingRoute ~
 			filesRoute ~
-			authRouting.route
+			authRouting.route ~
+			staticRoute
 		}
 	}
 

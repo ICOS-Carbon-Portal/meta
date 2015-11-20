@@ -7,6 +7,8 @@ import akka.http.scaladsl.model._
 
 object StaticRoute {
 
+	private val staticPrefixes = Seq("labeling", "sparqlclient").map(x => (x, x)).toMap
+
 	def apply(config: CpmetaConfig): Route = get{
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
@@ -34,10 +36,12 @@ object StaticRoute {
 					}
 			}
 		} ~
-		path("labeling" / "labeling.js"){
-			getFromResource("www/labeling.js")
+		pathPrefix(staticPrefixes){ prefix =>
+			pathEnd{ redirect(s"/$prefix/", StatusCodes.MovedPermanently) } ~
+			pathSingleSlash{ getFromResource(s"www/$prefix.html") } ~
+			getFromResourceDirectory("www")
 		}
-		
+
 	}
 
 }

@@ -6,7 +6,7 @@ var del = require('del');
 var source = require('vinyl-source-stream');
 var babel = require('babelify');
 
-['metaentry', 'labeling'].forEach(function(project){
+['metaentry', 'labeling', 'sparqlclient'].forEach(function(project){
 
 	var paths = {
 		main: 'src/main/js/' + project + '/main.js',

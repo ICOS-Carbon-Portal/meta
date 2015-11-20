@@ -7,6 +7,7 @@
   "scripts": {
     "labeling": "gulp labeling",
     "metaentry": "gulp metaentry",
+    "sparqlclient": "gulp sparqlclient",
     "gulp": "gulp"
   },
   "repository": {

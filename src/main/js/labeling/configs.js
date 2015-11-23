@@ -19,7 +19,7 @@ export const themeGlyphs = {
 };
 
 export const etc = {
-	step1Doc: 'https://static.icos-cp.eu/share/stations/docs/labeling/etcLabeling20151030.pdf',
+	step1Doc: 'https://static.icos-cp.eu/share/stations/docs/labelling/etcLabelling20151123.pdf',
 	windDirectionFileType1: 'Wind direction (sectors/months)',
 	windDirectionFileType2: 'Wind direction (time series)'
 };

@@ -27,10 +27,13 @@ trait UserInfoService { self: StationLabelingService =>
 	}
 
 	def getLabelingUserInfo(uinfo: UserInfo): LabelingUserDto = {
-		val piUriOpt = provisionalInfoServer
-			.getStatements(None, Some(vocab.hasEmail), Some(vocab.lit(uinfo.mail)))
-			.collect{case SesameStatement(uri: URI, _, _) => uri}
-			.toIndexedSeq.headOption
+		val allEmails = provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
+
+		val piUriOpt = allEmails.collectFirst{
+			case SesameStatement(uri: URI, _, mail)
+				if(mail.stringValue.equalsIgnoreCase(uinfo.mail)) => uri
+		}
+		allEmails.close()
 
 		val tcs = userToTcsLookup.get(uinfo.mail).getOrElse(Nil)
 

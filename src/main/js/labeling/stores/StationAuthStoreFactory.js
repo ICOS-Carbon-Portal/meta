@@ -47,9 +47,13 @@ export default function(WhoAmIStore, StationsListStore){
 		decorateStation: function(station){
 			if(station) {
 				let isUsersTcStation = _.contains(this.whoami.tcs, station.theme);
+				let userIsPi = _.some(
+					station.emails,
+					piMail => piMail.toUpperCase() === this.whoami.mail.toUpperCase()
+				);
 
 				return _.extend({}, station, {
-					isUsersStation: _.contains(station.emails, this.whoami.mail),
+					isUsersStation: userIsPi,
 					isUsersTcStation,
 					isUsersNeedingActionStation: isUsersTcStation && (
 						station.hasApplicationStatus === status.submitted ||

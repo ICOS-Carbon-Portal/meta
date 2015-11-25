@@ -17,9 +17,8 @@ libraryDependencies ++= Seq(
 	"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson" % sesameVersion,
 	"org.openrdf.sesame"     % "sesame-queryresultio-text" % sesameVersion,
 	"org.postgresql"         % "postgresql"              % "9.4-1201-jdbc41",
-	"dk.brics.automaton"          % "automaton"   % "1.11-8", //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-c14n"  % "1.2.14" excludeAll(noGeronimo), //Hermit
-	"org.apache.ws.commons.axiom" % "axiom-dom"   % "1.2.14" excludeAll(noGeronimo), //Hermit
+	 //non-standard Hermit, hosted on repo.icos-cp.eu 3rd-parties repo
+	"com.hermit-reasoner"    % "org.semanticweb.hermit"  % "1.3.8.5" excludeAll(noGeronimo),
 	"se.lu.nateko.cp"    %% "cpauth-core"       % "0.2",
 	"net.sf.opencsv" % "opencsv" % "2.3",
 	"org.apache.commons" % "commons-email" % "1.4",

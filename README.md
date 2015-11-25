@@ -14,7 +14,6 @@ Getting started with the front-end part
 
 Getting started with the back-end part
 --------------------------------------
-- Add the jar from [here](https://github.com/ignazio1977/hermit-reasoner/tree/releases/1.3.8.5-SNAPSHOT) to lib folder in the project's root
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure/tree/master/rdflogdb))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run sbt

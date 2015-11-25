@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.labeling
 
 import java.net.URI
 import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.sesame._
 import org.openrdf.model.Literal
 import org.openrdf.model.{URI => SesameUri}
@@ -15,10 +16,7 @@ trait LifecycleService { self: StationLabelingService =>
 	import LifecycleService._
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
-	private val mailer = config.mailing.logBccAddress match{
-		case Some(bcc) => new SendMail(config.mailing.smtpServer, config.mailing.fromAddress, bcc)
-		case None => new SendMail(config.mailing.smtpServer, config.mailing.fromAddress)
-	}
+	private val mailer = SendMail(config.mailing)
 
 	def updateStatus(station: URI, newStatus: String, user: UserInfo)(implicit ctxt: ExecutionContext): Unit = {
 
@@ -43,16 +41,17 @@ trait LifecycleService { self: StationLabelingService =>
 		server.applyDiff(currentInfo, newInfo)
 
 		if(newStatus == submitted) Future{
-			val recepients: Seq[String] = lookupStationClass(factory.createURI(station))
+			val recipients: Seq[String] = lookupStationClass(factory.createURI(station))
 					.flatMap(cls => config.tcUserIds.get(cls.toJava))
 					.toSeq
 					.flatten
 
-			if(recepients.nonEmpty){
+			if(recipients.nonEmpty){
 				val subject = "Application for labeling received"
-				val body = "Dear TC representative(s)!\n\n" +
-					s"Carbon Portal's labeling service has received an application from ${user.givenName} ${user.surname}."
-				mailer.sendMail(recepients.toArray, subject, body)
+				val templatePath = config.mailing.templatePaths.submitted
+				val body = SendMail.getBody(templatePath, Map("givenName" -> user.givenName, "surname" -> user.surname))
+
+				mailer.send(recipients, subject, body, true, Seq(user.mail))
 			}
 		}
 	}

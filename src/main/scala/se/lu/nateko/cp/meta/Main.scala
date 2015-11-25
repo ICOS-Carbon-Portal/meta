@@ -18,7 +18,7 @@ object Main extends App with CpmetaJsonProtocol{
 	implicit val dispatcher = system.dispatcher
 	implicit val scheduler = system.scheduler
 
-	val config: CpmetaConfig = ConfigLoader.getDefault
+	val config: CpmetaConfig = ConfigLoader.default
 	val db: MetaDb = MetaDb(config)
 
 	val route = MainRoute(db, config)

@@ -18,7 +18,7 @@ object Manual {
 	val factory = new ValueFactoryImpl
 
 	def getLog: PostgresRdfLog = {
-		val config = ConfigLoader.getDefault
+		val config = ConfigLoader.default
 		PostgresRdfLog("rdflog", config.rdfLog, factory)
 	}
 

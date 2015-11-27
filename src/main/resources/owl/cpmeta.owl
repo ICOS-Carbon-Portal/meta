@@ -8,6 +8,7 @@ Prefix: xml: <http://www.w3.org/XML/1998/namespace>
 Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
 Prefix: prov: <http://www.w3.org/ns/prov#>
 Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+Prefix: dcterms: <http://purl.org/dc/terms/>
 
 
 
@@ -53,7 +54,7 @@ Datatype: rdf:PlainLiteral
 ObjectProperty: wasAcquiredBy
 
     Domain: 
-        DataSet
+        DataPackage
     
     Range: 
         DataAcquisition
@@ -92,13 +93,22 @@ ObjectProperty: hasRole
         Functional
     
     
-ObjectProperty: hasMembership
+ObjectProperty: dcterms:format
+
+    
+ObjectProperty: hasFormat
 
     Domain: 
-        Person
+        DataPackage
     
     Range: 
-        Membership
+        Format
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        dcterms:format
     
     
 ObjectProperty: atOrganization
@@ -134,7 +144,7 @@ ObjectProperty: belongsToTheNetworkOf
 ObjectProperty: wasSubmittedBy
 
     Domain: 
-        DataSet
+        DataPackage
     
     Range: 
         DataSubmission
@@ -144,6 +154,30 @@ ObjectProperty: wasSubmittedBy
     
     SubPropertyOf: 
         prov:wasGeneratedBy
+    
+    
+ObjectProperty: hasMembership
+
+    Domain: 
+        Person
+    
+    Range: 
+        Membership
+    
+    
+ObjectProperty: hasEncoding
+
+    Domain: 
+        DataPackage
+    
+    Range: 
+        Encoding
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        dcterms:format
     
     
 ObjectProperty: qb:structure
@@ -176,43 +210,17 @@ ObjectProperty: prov:wasAssociatedWith
         prov:Agent
     
     
-DataProperty: hasElevation
+DataProperty: prov:endedAtTime
 
-    Annotations: 
-        rdfs:comment "Elevation above sea level in meters",
-        rdfs:label "Elevation"^^xsd:string
-    
     Domain: 
-        Site or Station
+        prov:Activity
     
     Range: 
-        xsd:float
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:alt
+        xsd:dateTime
     
     
-DataProperty: hasLatitude
+DataProperty: geo:lat
 
-    Annotations: 
-        rdfs:comment "Decimal degrees in WGS84/GRS80",
-        rdfs:label "Latitude"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:lat
-    
     
 DataProperty: hasEndTime
 
@@ -224,15 +232,6 @@ DataProperty: hasEndTime
     
     Characteristics: 
         Functional
-    
-    
-DataProperty: prov:endedAtTime
-
-    Domain: 
-        prov:Activity
-    
-    Range: 
-        xsd:dateTime
     
     
 DataProperty: hasStationId
@@ -323,27 +322,6 @@ DataProperty: hasStartTime
         Functional
     
     
-DataProperty: geo:long
-
-    
-DataProperty: hasSha256sum
-
-    Domain: 
-        DataSet
-    
-    Range: 
-        xsd:hexBinary[length "64"^^xsd:nonNegativeInteger]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: geo:alt
-
-    
-DataProperty: geo:lat
-
-    
 DataProperty: hasLastName
 
     Annotations: 
@@ -357,6 +335,59 @@ DataProperty: hasLastName
     
     Characteristics: 
         Functional
+    
+    
+DataProperty: hasSha256sum
+
+    Domain: 
+        DataPackage
+    
+    Range: 
+        xsd:hexBinary[length "64"^^xsd:nonNegativeInteger]
+    
+    Characteristics: 
+        Functional
+    
+    
+DataProperty: hasElevation
+
+    Annotations: 
+        rdfs:comment "Elevation above sea level in meters",
+        rdfs:label "Elevation"^^xsd:string
+    
+    Domain: 
+        Site or Station
+    
+    Range: 
+        xsd:float
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        geo:alt
+    
+    
+DataProperty: geo:alt
+
+    
+DataProperty: hasLatitude
+
+    Annotations: 
+        rdfs:comment "Decimal degrees in WGS84/GRS80",
+        rdfs:label "Latitude"^^xsd:string
+    
+    Domain: 
+        Site or Station
+    
+    Range: 
+        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
+    
+    Characteristics: 
+        Functional
+    
+    SubPropertyOf: 
+        geo:lat
     
     
 DataProperty: prov:startedAtTime
@@ -430,17 +461,11 @@ DataProperty: hasFirstName
         Functional
     
     
-Class: AtcDataSet
+DataProperty: geo:long
 
-    SubClassOf: 
-        DataSet
     
-    
-Class: EtcDataStructure
+Class: prov:Agent
 
-    SubClassOf: 
-        qb:DataStructureDefinition
-    
     
 Class: prov:Entity
 
@@ -451,24 +476,10 @@ Class: OtcDataStructure
         qb:DataStructureDefinition
     
     
-Class: OtcDataSet
+Class: AtcPackage
 
     SubClassOf: 
-        DataSet
-    
-    
-Class: DataSet
-
-    SubClassOf: 
-        prov:Entity,
-        qb:DataSet
-    
-    
-Class: Organization
-
-    SubClassOf: 
-        hasName some rdfs:Literal,
-        prov:Agent
+        DataPackage
     
     
 Class: ETC
@@ -500,11 +511,8 @@ Class: AtcDataStructure
         qb:DataStructureDefinition
     
     
-Class: EtcDataSet
+Class: dcterms:FileFormat
 
-    SubClassOf: 
-        DataSet
-    
     
 Class: Person
 
@@ -521,12 +529,6 @@ Class: DataAcquisition
         prov:wasAssociatedWith some owl:Thing,
         prov:wasAssociatedWith only Station,
         prov:Activity
-    
-    
-Class: ATC
-
-    SubClassOf: 
-        ThematicCenter
     
     
 Class: CAL
@@ -551,6 +553,18 @@ Class: CentralFacility
         CAL, ThematicCenter
     
     
+Class: Encoding
+
+    SubClassOf: 
+        dcterms:FileFormat
+    
+    
+Class: EtcPackage
+
+    SubClassOf: 
+        DataPackage
+    
+    
 Class: ThematicCenter
 
     Annotations: 
@@ -563,15 +577,14 @@ Class: ThematicCenter
         ATC, ETC, OTC
     
     
-Class: ES
+Class: Format
 
-    Annotations: 
-        rdfs:label "Ecosystem station"^^xsd:string
-    
     SubClassOf: 
-        belongsToTheNetworkOf some ETC,
-        Station
+        dcterms:FileFormat
     
+    
+Class: qb:DataStructureDefinition
+
     
 Class: owl:Thing
 
@@ -585,14 +598,39 @@ Class: Site
         countryCode some rdfs:Literal
     
     
+Class: OS
+
+    Annotations: 
+        rdfs:label "Oceanic station"^^xsd:string
+    
+    SubClassOf: 
+        belongsToTheNetworkOf some OTC,
+        Station
+    
+    
+Class: Role
+
+    
 Class: OTC
 
     SubClassOf: 
         ThematicCenter
     
     
-Class: qb:DataStructureDefinition
+Class: OtcPackage
 
+    SubClassOf: 
+        DataPackage
+    
+    
+Class: DataPackage
+
+    SubClassOf: 
+        hasEncoding some Encoding,
+        prov:Entity,
+        qb:DataSet,
+        hasFormat some Format
+    
     
 Class: prov:Activity
 
@@ -615,19 +653,32 @@ Class: Station
         AS, ES, OS
     
     
-Class: Role
-
-    
-Class: OS
+Class: ES
 
     Annotations: 
-        rdfs:label "Oceanic station"^^xsd:string
+        rdfs:label "Ecosystem station"^^xsd:string
     
     SubClassOf: 
-        belongsToTheNetworkOf some OTC,
-        Station
+        Station,
+        belongsToTheNetworkOf some ETC
     
     
-Class: prov:Agent
+Class: Organization
 
+    SubClassOf: 
+        hasName some rdfs:Literal,
+        prov:Agent
+    
+    
+Class: ATC
+
+    SubClassOf: 
+        ThematicCenter
+    
+    
+Class: EtcDataStructure
+
+    SubClassOf: 
+        qb:DataStructureDefinition
+    
     

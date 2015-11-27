@@ -58,7 +58,7 @@ class InstanceServerTests extends FunSpec{
 			it("SesameUtils RepositoryResult to Iterator conversion"){
 				val conn = sesameRepo.getConnection
 				def repRes = conn.getStatements(null, null, null, false, ctxt)
-				val viaScala = repRes.asScalaIterator.toArray
+				repRes.asScalaIterator.toArray
 			}
 		}
 
@@ -68,6 +68,7 @@ class InstanceServerTests extends FunSpec{
 		describe("makeNewInstance"){
 
 			val repo = new SailRepository(new MemoryStore)
+			repo.initialize()
 			val server = new SesameInstanceServer(repo, ctxt)
 
 			it("makes a correct URI if prefix ends with '/'"){

@@ -4,7 +4,7 @@ version := "0.2"
 
 scalaVersion := "2.11.7"
 
-val sesameVersion = "2.7.12"
+val sesameVersion = "2.8.7"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
 libraryDependencies ++= Seq(

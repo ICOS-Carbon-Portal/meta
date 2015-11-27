@@ -14,13 +14,9 @@ const stationPisQuery = `
 		?pi cpst:hasEmail ?email .
 		?s cpst:hasShortName ?provShortName .
 		?s cpst:hasLongName ?provLongName .
-		OPTIONAL{
-			GRAPH <${lblUri}> {
-				OPTIONAL {?s cpst:hasShortName ?hasShortName }
-				OPTIONAL {?s cpst:hasLongName ?hasLongName }
-				OPTIONAL {?s cpst:hasApplicationStatus ?hasApplicationStatus }
-			}
-		}
+		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasShortName ?hasShortName}}
+		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasLongName ?hasLongName}}
+		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasApplicationStatus ?hasApplicationStatus}}
 	}`;
 
 function postProcessStationsList(stations){

@@ -16,33 +16,35 @@ class SendMail(config: EmailConfig) {
 				cc: Seq[String] = Nil,
 				bcc: Seq[String] = Nil): Unit ={
 
-		val message: Message = {
-			val properties = new Properties()
-			properties.put("mail.smtp.host", config.smtpServer)
-			val session = Session.getDefaultInstance(properties, null)
-			new MimeMessage(session)
+		if (config.mailSendingActive) {
+			val message: Message = {
+				val properties = new Properties()
+				properties.put("mail.smtp.host", config.smtpServer)
+				val session = Session.getDefaultInstance(properties, null)
+				new MimeMessage(session)
+			}
+
+			message.setFrom(new InternetAddress(config.fromAddress))
+			to.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
+			cc.foreach(r => message.addRecipient(Message.RecipientType.CC, new InternetAddress(r)))
+			bcc.foreach(r => message.addRecipient(Message.RecipientType.BCC, new InternetAddress(r)))
+
+			message.setSentDate(new Date())
+			message.setSubject(subject)
+
+			// Set log address
+			config.logBccAddress.foreach(
+				recipient => message.addRecipient(Message.RecipientType.BCC, new InternetAddress(recipient))
+			)
+
+			if (isHtml) {
+				message.setContent(body, "text/html; charset=utf-8")
+			} else {
+				message.setText(body)
+			}
+
+			Transport.send(message)
 		}
-
-		message.setFrom(new InternetAddress(config.fromAddress))
-		to.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
-		cc.foreach(r => message.addRecipient(Message.RecipientType.CC, new InternetAddress(r)))
-		bcc.foreach(r => message.addRecipient(Message.RecipientType.BCC, new InternetAddress(r)))
-
-		message.setSentDate(new Date())
-		message.setSubject(subject)
-
-		// Set log address
-		config.logBccAddress.foreach(
-			recipient => message.addRecipient(Message.RecipientType.BCC, new InternetAddress(recipient))
-		)
-
-		if (isHtml) {
-			message.setContent(body, "text/html; charset=utf-8")
-		} else {
-			message.setText(body)
-		}
-
-		Transport.send(message)
 	}
 }
 

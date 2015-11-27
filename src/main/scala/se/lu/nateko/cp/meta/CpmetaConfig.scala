@@ -47,7 +47,7 @@ case class DataSubmitterConfig(
 case class UploadServiceConfig(instanceServerId: String, submitters: Map[String, DataSubmitterConfig])
 
 case class MailTemplatesConfig(submitted: String)
-case class EmailConfig(smtpServer: String, fromAddress: String, templatePaths: MailTemplatesConfig, logBccAddress: Option[String])
+case class EmailConfig(mailSendingActive: Boolean, smtpServer: String, fromAddress: String, templatePaths: MailTemplatesConfig, logBccAddress: Option[String])
 
 case class LabelingServiceConfig(
 	instanceServerId: String,
@@ -82,7 +82,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
 	implicit val templatesConfigFormat = jsonFormat1(MailTemplatesConfig)
-	implicit val emailConfigFormat = jsonFormat4(EmailConfig)
+	implicit val emailConfigFormat = jsonFormat5(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat5(LabelingServiceConfig)
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
 

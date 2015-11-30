@@ -33,10 +33,8 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 case class UploadMetadataDto(
 	submitterId: String,
 	producingOrganization: URI,
-	dataStructure: URI,
-	hashSum: String,
-	acquisitionStart: String,
-	acquisitionEnd: String
+	packageSpec: URI,
+	hashSum: String
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

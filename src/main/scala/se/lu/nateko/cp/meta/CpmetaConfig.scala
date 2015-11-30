@@ -40,8 +40,7 @@ case class OntoConfig(
 case class DataSubmitterConfig(
 	authorizedUserIds: Seq[String],
 	producingOrganizationClass: URI,
-	submittingOrganization: URI,
-	structureToDatasetClassLookup: Map[URI, URI]
+	submittingOrganization: URI
 )
 
 case class UploadServiceConfig(instanceServerId: String, submitters: Map[String, DataSubmitterConfig])
@@ -79,7 +78,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
 	implicit val instOntoServerConfigFormat = jsonFormat3(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
-	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
+	implicit val dataSubmitterConfigFormat = jsonFormat3(DataSubmitterConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat2(UploadServiceConfig)
 	implicit val templatesConfigFormat = jsonFormat1(MailTemplatesConfig)
 	implicit val emailConfigFormat = jsonFormat5(EmailConfig)

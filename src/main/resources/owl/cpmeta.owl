@@ -42,6 +42,9 @@ Datatype: xsd:nonNegativeInteger
 Datatype: xsd:hexBinary
 
     
+Datatype: xsd:integer
+
+    
 Datatype: xsd:string
 
     
@@ -99,7 +102,7 @@ ObjectProperty: dcterms:format
 ObjectProperty: hasFormat
 
     Domain: 
-        DataPackage
+        DataPackageSpec
     
     Range: 
         Format
@@ -124,6 +127,18 @@ ObjectProperty: atOrganization
     
     Characteristics: 
         Functional
+    
+    
+ObjectProperty: hasSubPackage
+
+    Domain: 
+        CompositePackage
+    
+    Range: 
+        DataPackage
+    
+    Characteristics: 
+        InverseFunctional
     
     
 ObjectProperty: belongsToTheNetworkOf
@@ -168,7 +183,7 @@ ObjectProperty: hasMembership
 ObjectProperty: hasEncoding
 
     Domain: 
-        DataPackage
+        DataPackageSpec
     
     Range: 
         Encoding
@@ -337,6 +352,21 @@ DataProperty: hasLastName
         Functional
     
     
+DataProperty: hasDataLevel
+
+    Annotations: 
+        rdfs:label "ICOS data level"^^xsd:string
+    
+    Domain: 
+        DataPackageSpec
+    
+    Range: 
+        {0 , 2 , 3}
+    
+    Characteristics: 
+        Functional
+    
+    
 DataProperty: hasSha256sum
 
     Domain: 
@@ -470,18 +500,6 @@ Class: prov:Agent
 Class: prov:Entity
 
     
-Class: OtcDataStructure
-
-    SubClassOf: 
-        qb:DataStructureDefinition
-    
-    
-Class: AtcPackage
-
-    SubClassOf: 
-        DataPackage
-    
-    
 Class: ETC
 
     SubClassOf: 
@@ -505,14 +523,19 @@ Class: Membership
         hasRole some owl:Thing
     
     
-Class: AtcDataStructure
-
-    SubClassOf: 
-        qb:DataStructureDefinition
-    
-    
 Class: dcterms:FileFormat
 
+    
+Class: DataPackageSpec
+
+    Annotations: 
+        rdfs:label "Data Package Specification"^^xsd:string
+    
+    SubClassOf: 
+        hasEncoding some owl:Thing,
+        hasFormat some owl:Thing,
+        hasDataLevel some rdfs:Literal
+    
     
 Class: Person
 
@@ -531,14 +554,13 @@ Class: DataAcquisition
         prov:Activity
     
     
-Class: CAL
+Class: DataPackage
 
-    Annotations: 
-        rdfs:label "Central Analytical Laboratory"^^xsd:string,
-        rdfs:comment "A Central Analytical Laboratory for calibration, and air samples analyses including radiocarbon for the entire network"^^xsd:string
-    
     SubClassOf: 
-        CentralFacility
+        prov:Entity
+    
+    DisjointUnionOf: 
+        CompositePackage, SimplePackage
     
     
 Class: qb:DataSet
@@ -559,10 +581,11 @@ Class: Encoding
         dcterms:FileFormat
     
     
-Class: EtcPackage
+Class: SimplePackageSpec
 
     SubClassOf: 
-        DataPackage
+        DataPackageSpec,
+        qb:DataStructureDefinition
     
     
 Class: ThematicCenter
@@ -617,19 +640,19 @@ Class: OTC
         ThematicCenter
     
     
-Class: OtcPackage
+Class: SimplePackage
 
     SubClassOf: 
+        qb:DataSet,
+        qb:structure exactly 1 SimplePackageSpec,
         DataPackage
     
     
-Class: DataPackage
+Class: CompositePackage
 
     SubClassOf: 
-        hasEncoding some Encoding,
-        prov:Entity,
-        qb:DataSet,
-        hasFormat some Format
+        DataPackage,
+        hasSubPackage some owl:Thing
     
     
 Class: prov:Activity
@@ -659,8 +682,18 @@ Class: ES
         rdfs:label "Ecosystem station"^^xsd:string
     
     SubClassOf: 
-        Station,
-        belongsToTheNetworkOf some ETC
+        belongsToTheNetworkOf some ETC,
+        Station
+    
+    
+Class: CAL
+
+    Annotations: 
+        rdfs:label "Central Analytical Laboratory"^^xsd:string,
+        rdfs:comment "A Central Analytical Laboratory for calibration, and air samples analyses including radiocarbon for the entire network"^^xsd:string
+    
+    SubClassOf: 
+        CentralFacility
     
     
 Class: Organization
@@ -676,9 +709,48 @@ Class: ATC
         ThematicCenter
     
     
-Class: EtcDataStructure
+Individual: zipEncoding
 
-    SubClassOf: 
-        qb:DataStructureDefinition
+    Annotations: 
+        rdfs:label "zip"^^xsd:string
+    
+    Types: 
+        Encoding
+    
+    
+Individual: gzipEncoding
+
+    Annotations: 
+        rdfs:label "gzip"^^xsd:string
+    
+    Types: 
+        Encoding
+    
+    
+Individual: asciiTsv
+
+    Annotations: 
+        rdfs:label "ASCII TSV"^^xsd:string
+    
+    Types: 
+        Format
+    
+    
+Individual: asciiCsv
+
+    Annotations: 
+        rdfs:label "ASCII CSV"^^xsd:string
+    
+    Types: 
+        Format
+    
+    
+Individual: plainFileEncoding
+
+    Annotations: 
+        rdfs:label "plain file"^^xsd:string
+    
+    Types: 
+        Encoding
     
     

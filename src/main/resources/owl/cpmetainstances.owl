@@ -28,29 +28,6 @@
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
-    // Annotation properties
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/belongsToSite -->
-
-    <owl:AnnotationProperty rdf:about="&cpmeta;belongsToSite"/>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasTitle -->
-
-    <owl:AnnotationProperty rdf:about="&cpmeta;hasTitle"/>
-    
-
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
     // Individuals
     //
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +60,6 @@
         <rdf:type rdf:resource="&cpmeta;AS"/>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa atmospheric station</cpmeta:hasName>
         <cpmeta:hasStationClass rdf:datatype="&xsd;string">Station Class II</cpmeta:hasStationClass>
-        <cpmeta:belongsToSite rdf:resource="&cpmeta;instances/Hyltemossa_site"/>
     </owl:NamedIndividual>
     
 
@@ -96,7 +72,6 @@
         <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
         <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa ecosystem station</cpmeta:hasName>
-        <cpmeta:belongsToSite rdf:resource="&cpmeta;instances/Hyltemossa_site"/>
     </owl:NamedIndividual>
     
 
@@ -169,7 +144,6 @@
     <owl:NamedIndividual rdf:about="&cpmeta;instances/directorRole">
         <rdf:type rdf:resource="&cpmeta;Role"/>
         <rdfs:label rdf:datatype="&xsd;string">Director</rdfs:label>
-        <cpmeta:hasTitle rdf:datatype="&xsd;string">Director</cpmeta:hasTitle>
     </owl:NamedIndividual>
 </rdf:RDF>
 

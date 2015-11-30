@@ -13,6 +13,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val acquisitionClass = getRelative("DataAcquisition")
 	val submissionClass = getRelative("DataSubmission")
+	val simplePackageClass = getRelative("SimplePackage")
 
 	val hasLatitude = getRelative("hasLatitude")
 	val hasLongitude = getRelative("hasLongitude")
@@ -22,6 +23,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasSha256sum = getRelative("hasSha256sum")
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
 	val wasAcquiredBy = getRelative("wasAcquiredBy")
+	val hasDataLevel = getRelative("hasDataLevel")
 
 	object qb extends CustomVocab {
 		val factory = CpmetaVocab.this.factory

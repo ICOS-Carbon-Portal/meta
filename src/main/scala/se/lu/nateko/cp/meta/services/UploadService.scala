@@ -32,13 +32,15 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!submitterConf.authorizedUserIds.contains(userId))
 			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val dataStrClass = InstanceServerUtils.getSingleType(dataStructure, server).toJava
-		val datasetClass = submitterConf.structureToDatasetClassLookup.get(dataStrClass).getOrElse(
-			throw new UploadUserErrorException(s"Submitter '$submitterId' cannot upload data structures of class $dataStrClass")
-		)
+		val packageSpecClass = InstanceServerUtils.getSingleType(packageSpec, server)
+		val dataLevel = server.getValues(packageSpec, vocab.hasDataLevel)
+			.collect{case lit: Literal => lit.intValue}
+			.head
 
-		val datasetUri = factory.createURI(datasetClass, "/" + meta.hashSum)
-		if(!server.getStatements(datasetUri).isEmpty)
+		val packageClass = getPackageClass(packageSpecClass, dataLevel)
+
+		val packageUri = factory.createURI(packageClass, "/" + meta.hashSum)
+		if(!server.getStatements(packageUri).isEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
 
 		if(server.getStatements(Some(producingOrganization), Some(RDF.TYPE), Some(submitterConf.producingOrganizationClass)).isEmpty)
@@ -49,15 +51,13 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
 		server.addAll(Seq[(URI, URI, Value)](
 
-			(datasetUri, RDF.TYPE, datasetClass),
-			(datasetUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
-			(datasetUri, vocab.qb.structure, dataStructure),
-			(datasetUri, vocab.wasAcquiredBy, acquisitionUri),
-			(datasetUri, vocab.wasSubmittedBy, submissionUri),
+			(packageUri, RDF.TYPE, packageClass),
+			(packageUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
+			(packageUri, vocab.qb.structure, packageSpec),
+			(packageUri, vocab.wasAcquiredBy, acquisitionUri),
+			(packageUri, vocab.wasSubmittedBy, submissionUri),
 
 			(acquisitionUri, RDF.TYPE, vocab.acquisitionClass),
-			(acquisitionUri, vocab.prov.startedAtTime, makeDateTimeLiteral(meta.acquisitionStart)),
-			(acquisitionUri, vocab.prov.endedAtTime, makeDateTimeLiteral(meta.acquisitionEnd)),
 			(acquisitionUri, vocab.prov.wasAssociatedWith, producingOrganization),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
@@ -66,16 +66,20 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
 		).map(factory.tripleToStatement))
 
-		datasetUri.stringValue
+		packageUri.stringValue
 	}
 
 	import UploadService._
 
-	private def makeDateTimeLiteral(dt: String): Literal =
-		factory.createLiteral(dateTimeToUtc(dt), XMLSchema.DATETIME)
+//	private def makeDateTimeLiteral(dt: String): Literal =
+//		factory.createLiteral(dateTimeToUtc(dt), XMLSchema.DATETIME)
 
 	private def makeSha256Literal(sum: String): Literal =
 		factory.createLiteral(ensureSha256(sum), XMLSchema.HEXBINARY)
+
+	private def getPackageClass(packageSpecClass: URI, dataLevel: Int): URI = {
+		vocab.simplePackageClass
+	}
 }
 
 object UploadService{

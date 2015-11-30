@@ -33,12 +33,39 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 					var Station = themeToStation[station.theme];
 
+					var applicationStatus = "";
+					var applicationStatusCSS = "";
+
+					if (station.hasApplicationStatus !== undefined){
+
+						applicationStatus = "Status: " + station.hasApplicationStatus;
+
+						switch (station.hasApplicationStatus){
+							case "ACKNOWLEDGED":
+								applicationStatusCSS = "label label-warning";
+								break;
+
+							case "REJECTED":
+								applicationStatusCSS = applicationStatusCSS = "label label-danger";
+								break;
+
+							case "APPROVED":
+								applicationStatusCSS = applicationStatusCSS = "label label-success";
+								break;
+
+							case "SUBMITTED":
+								applicationStatusCSS = applicationStatusCSS = "label label-default";
+								break;
+						}
+					}
+
 					return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
 
 						<div className={panelClasses} style={{marginLeft: 5, marginRight: 5}}>
 							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
-								<span className={icon}/><span> </span>
-								{station.hasLongName}
+								<span className={icon}/>
+								&nbsp;{station.hasLongName}
+								&nbsp;<span className={applicationStatusCSS}>{applicationStatus}</span>
 							</div>
 							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>

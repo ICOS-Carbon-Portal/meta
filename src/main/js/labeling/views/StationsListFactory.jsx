@@ -1,4 +1,5 @@
 import {themeGlyphs} from '../configs.js';
+import {status} from '../models/ApplicationStatus.js';
 
 function panelClass(station){
 	var statusString = `${!!station.chosen} ${!!station.isUsersStation} ${!!station.isUsersNeedingActionStation}`;
@@ -23,6 +24,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 		render: function(){
 
 			var self = this;
+			var statusLabelStyle= { float: 'right' };
 
 			return <ul className="list-unstyled">{
 				_.map(self.state.stations, function(station){
@@ -41,20 +43,24 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 						applicationStatus = "Status: " + station.hasApplicationStatus;
 
 						switch (station.hasApplicationStatus){
-							case "ACKNOWLEDGED":
+							case status.acknowledged:
 								applicationStatusCSS = "label label-warning";
 								break;
 
-							case "REJECTED":
-								applicationStatusCSS = applicationStatusCSS = "label label-danger";
+							case status.rejected:
+								applicationStatusCSS = "label label-danger";
 								break;
 
-							case "APPROVED":
-								applicationStatusCSS = applicationStatusCSS = "label label-success";
+							case status.approved:
+								applicationStatusCSS = "label label-success";
 								break;
 
-							case "SUBMITTED":
-								applicationStatusCSS = applicationStatusCSS = "label label-default";
+							case status.submitted:
+								applicationStatusCSS = "label label-primary";
+								break;
+
+							case status.notSubmitted:
+								applicationStatusCSS = "label label-default";
 								break;
 						}
 					}
@@ -65,7 +71,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
 								<span className={icon}/>
 								&nbsp;{station.hasLongName}
-								&nbsp;<span className={applicationStatusCSS}>{applicationStatus}</span>
+								&nbsp;<span style={statusLabelStyle} className={applicationStatusCSS}>{applicationStatus}</span>
 							</div>
 							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>

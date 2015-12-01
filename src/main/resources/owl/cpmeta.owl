@@ -1,756 +1,1259 @@
-Prefix: : <http://meta.icos-cp.eu/ontologies/cpmeta/>
-Prefix: dc: <http://purl.org/dc/elements/1.1/>
-Prefix: qb: <http://purl.org/linked-data/cube#>
-Prefix: geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
-Prefix: owl: <http://www.w3.org/2002/07/owl#>
-Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-Prefix: xml: <http://www.w3.org/XML/1998/namespace>
-Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-Prefix: prov: <http://www.w3.org/ns/prov#>
-Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-Prefix: dcterms: <http://purl.org/dc/terms/>
+<?xml version="1.0"?>
 
 
+<!DOCTYPE rdf:RDF [
+    <!ENTITY dcterms "http://purl.org/dc/terms/" >
+    <!ENTITY prov "http://www.w3.org/ns/prov#" >
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY geo "http://www.w3.org/2003/01/geo/wgs84_pos#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
 
-Ontology: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 
+<rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"
+     xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/"
+     xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:dcterms="http://purl.org/dc/terms/"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:prov="http://www.w3.org/ns/prov#"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
+    
 
-AnnotationProperty: rdfs:seeAlso
 
-    
-AnnotationProperty: rdfs:label
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
 
     
-AnnotationProperty: rdfs:comment
 
-    
-Datatype: xsd:double
 
-    
-Datatype: xsd:dateTime
+    <!-- http://www.w3.org/2000/01/rdf-schema#comment -->
 
+    <owl:AnnotationProperty rdf:about="&rdfs;comment"/>
     
-Datatype: xsd:float
 
-    
-Datatype: rdfs:Literal
 
-    
-Datatype: xsd:nonNegativeInteger
+    <!-- http://www.w3.org/2000/01/rdf-schema#label -->
 
+    <owl:AnnotationProperty rdf:about="&rdfs;label"/>
     
-Datatype: xsd:hexBinary
 
-    
-Datatype: xsd:integer
 
-    
-Datatype: xsd:string
+    <!-- http://www.w3.org/2000/01/rdf-schema#seeAlso -->
 
+    <owl:AnnotationProperty rdf:about="&rdfs;seeAlso"/>
     
-Datatype: xsd:boolean
 
-    
-Datatype: rdf:PlainLiteral
 
-    
-ObjectProperty: wasAcquiredBy
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatypes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
 
-    Domain: 
-        DataPackage
-    
-    Range: 
-        DataAcquisition
     
-    SubPropertyOf: 
-        prov:wasGeneratedBy
-    
-    
-ObjectProperty: locatedAt
 
-    Annotations: 
-        rdfs:label "located at"^^xsd:string
-    
-    Domain: 
-        Organization
-    
-    Range: 
-        Site
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: hasRole
 
-    Annotations: 
-        rdfs:label "has role"^^xsd:string
-    
-    Domain: 
-        Membership
-    
-    Range: 
-        Role
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: dcterms:format
+    <!-- http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral -->
 
+    <rdfs:Datatype rdf:about="&rdf;PlainLiteral"/>
     
-ObjectProperty: hasFormat
 
-    Domain: 
-        DataPackageSpec
-    
-    Range: 
-        Format
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        dcterms:format
-    
-    
-ObjectProperty: atOrganization
 
-    Annotations: 
-        rdfs:label "at organization"^^xsd:string
-    
-    Domain: 
-        Membership
-    
-    Range: 
-        Organization
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: hasSubPackage
+    <!-- http://www.w3.org/2000/01/rdf-schema#Literal -->
 
-    Domain: 
-        CompositePackage
-    
-    Range: 
-        DataPackage
+    <rdfs:Datatype rdf:about="&rdfs;Literal"/>
     
-    Characteristics: 
-        InverseFunctional
-    
-    
-ObjectProperty: belongsToTheNetworkOf
 
-    Annotations: 
-        rdfs:label "Central Facility"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        ThematicCenter
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: wasSubmittedBy
 
-    Domain: 
-        DataPackage
-    
-    Range: 
-        DataSubmission
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        prov:wasGeneratedBy
-    
-    
-ObjectProperty: hasMembership
+    <!-- http://www.w3.org/2001/XMLSchema#boolean -->
 
-    Domain: 
-        Person
+    <rdfs:Datatype rdf:about="&xsd;boolean"/>
     
-    Range: 
-        Membership
-    
-    
-ObjectProperty: hasEncoding
 
-    Domain: 
-        DataPackageSpec
-    
-    Range: 
-        Encoding
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        dcterms:format
-    
-    
-ObjectProperty: qb:structure
 
-    Domain: 
-        qb:DataSet
-    
-    Range: 
-        qb:DataStructureDefinition
-    
-    Characteristics: 
-        Functional
-    
-    
-ObjectProperty: prov:wasGeneratedBy
+    <!-- http://www.w3.org/2001/XMLSchema#dateTime -->
 
-    Domain: 
-        prov:Entity
+    <rdfs:Datatype rdf:about="&xsd;dateTime"/>
     
-    Range: 
-        prov:Activity
-    
-    
-ObjectProperty: prov:wasAssociatedWith
 
-    Domain: 
-        prov:Activity
-    
-    Range: 
-        prov:Agent
-    
-    
-DataProperty: prov:endedAtTime
 
-    Domain: 
-        prov:Activity
-    
-    Range: 
-        xsd:dateTime
-    
-    
-DataProperty: geo:lat
+    <!-- http://www.w3.org/2001/XMLSchema#double -->
 
+    <rdfs:Datatype rdf:about="&xsd;double"/>
     
-DataProperty: hasEndTime
 
-    Domain: 
-        Membership
-    
-    Range: 
-        xsd:dateTime
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationId
 
-    Annotations: 
-        rdfs:label "Station ID"^^xsd:string
-    
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasShortName
+    <!-- http://www.w3.org/2001/XMLSchema#float -->
 
-    Annotations: 
-        rdfs:label "Short name"^^xsd:string
+    <rdfs:Datatype rdf:about="&xsd;float"/>
     
-    Domain: 
-        Station
-    
-    Range: 
-        xsd:string
-    
-    
-DataProperty: hasName
 
-    Annotations: 
-        rdfs:label "Name"^^xsd:string
-    
-    Domain: 
-        Organization
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLongitude
 
-    Annotations: 
-        rdfs:comment "Decimal degrees in WGS84/GRS80",
-        rdfs:label "Longitude"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:double[>= "-180.0"^^xsd:double , <= "180.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:long
-    
-    
-DataProperty: hasOrcidId
+    <!-- http://www.w3.org/2001/XMLSchema#hexBinary -->
 
-    Annotations: 
-        rdfs:label "Orcid ID"^^xsd:string
-    
-    Domain: 
-        Person
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
+    <rdfs:Datatype rdf:about="&xsd;hexBinary"/>
     
-DataProperty: hasStartTime
 
-    Domain: 
-        Membership
-    
-    Range: 
-        xsd:dateTime
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasLastName
 
-    Annotations: 
-        rdfs:label "Last name"^^xsd:string
-    
-    Domain: 
-        Person
-    
-    Range: 
-        xsd:string
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasDataLevel
+    <!-- http://www.w3.org/2001/XMLSchema#integer -->
 
-    Annotations: 
-        rdfs:label "ICOS data level"^^xsd:string
-    
-    Domain: 
-        DataPackageSpec
-    
-    Range: 
-        {0 , 2 , 3}
+    <rdfs:Datatype rdf:about="&xsd;integer"/>
     
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasSha256sum
 
-    Domain: 
-        DataPackage
-    
-    Range: 
-        xsd:hexBinary[length "64"^^xsd:nonNegativeInteger]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasElevation
 
-    Annotations: 
-        rdfs:comment "Elevation above sea level in meters",
-        rdfs:label "Elevation"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:float
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:alt
-    
-    
-DataProperty: geo:alt
+    <!-- http://www.w3.org/2001/XMLSchema#nonNegativeInteger -->
 
+    <rdfs:Datatype rdf:about="&xsd;nonNegativeInteger"/>
     
-DataProperty: hasLatitude
 
-    Annotations: 
-        rdfs:comment "Decimal degrees in WGS84/GRS80",
-        rdfs:label "Latitude"^^xsd:string
-    
-    Domain: 
-        Site or Station
-    
-    Range: 
-        xsd:double[>= "-90.0"^^xsd:double , <= "90.0"^^xsd:double]
-    
-    Characteristics: 
-        Functional
-    
-    SubPropertyOf: 
-        geo:lat
-    
-    
-DataProperty: prov:startedAtTime
 
-    Domain: 
-        prov:Activity
-    
-    Range: 
-        xsd:dateTime
-    
-    
-DataProperty: countryCode
+    <!-- http://www.w3.org/2001/XMLSchema#string -->
 
-    Annotations: 
-        rdfs:comment "ISO 3166-1 alpha-2 country code"^^xsd:string,
-        rdfs:label "country code"^^xsd:string,
-        rdfs:seeAlso <https://en.wikipedia.org/wiki/ISO_3166-1>
-    
-    Domain: 
-        Site
-    
-    Range: 
-        xsd:string
+    <rdfs:Datatype rdf:about="&xsd;string"/>
     
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasEmail
 
-    Annotations: 
-        rdfs:label "E-mail"^^xsd:string
-    
-    Domain: 
-        Person or Role
-    
-    Range: 
-        xsd:string[pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$"]
-    
-    Characteristics: 
-        Functional
-    
-    
-DataProperty: hasStationClass
 
-    Annotations: 
-        rdfs:label "Station Class"^^xsd:string
-    
-    Domain: 
-        Station
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
     
-    Range: 
-        {"Station Class I"^^xsd:string , "Station Class II"^^xsd:string}
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">at organization</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+    </owl:ObjectProperty>
     
-    Characteristics: 
-        Functional
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Central Facility</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+    </owl:ObjectProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec"/>
+    </owl:ObjectProperty>
     
-DataProperty: hasFirstName
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn -->
 
-    Annotations: 
-        rdfs:label "First name"^^xsd:string
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn">
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+    </owl:ObjectProperty>
     
-    Domain: 
-        Person
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding"/>
+        <rdfs:subPropertyOf rdf:resource="&dcterms;format"/>
+    </owl:ObjectProperty>
     
-    Range: 
-        xsd:string
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageFormat"/>
+        <rdfs:subPropertyOf rdf:resource="&dcterms;format"/>
+    </owl:ObjectProperty>
     
-    Characteristics: 
-        Functional
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership">
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+    </owl:ObjectProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasPackageSpec -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasPackageSpec">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+    </owl:ObjectProperty>
     
-DataProperty: geo:long
 
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/NumericValueType"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind"/>
+    </owl:ObjectProperty>
     
-Class: prov:Agent
+
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasRole -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasRole">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">has role</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+    </owl:ObjectProperty>
     
-Class: prov:Entity
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat -->
 
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:ObjectProperty>
     
-Class: ETC
 
-    SubClassOf: 
-        ThematicCenter
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+    </owl:ObjectProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">located at</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+    </owl:ObjectProperty>
     
-Class: AS
+
 
-    Annotations: 
-        rdfs:label "Atmospheric station"^^xsd:string
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy">
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage"/>
+        <rdfs:subPropertyOf rdf:resource="&prov;wasGeneratedBy"/>
+    </owl:ObjectProperty>
     
-    SubClassOf: 
-        Station,
-        belongsToTheNetworkOf some ATC
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission"/>
+        <rdfs:subPropertyOf rdf:resource="&prov;wasGeneratedBy"/>
+    </owl:ObjectProperty>
     
+
+
+    <!-- http://purl.org/dc/terms/format -->
+
+    <owl:ObjectProperty rdf:about="&dcterms;format"/>
     
-Class: Membership
+
+
+    <!-- http://www.w3.org/ns/prov#wasAssociatedWith -->
 
-    SubClassOf: 
-        atOrganization some owl:Thing,
-        hasRole some owl:Thing
+    <owl:ObjectProperty rdf:about="&prov;wasAssociatedWith">
+        <rdfs:domain rdf:resource="&prov;Activity"/>
+        <rdfs:range rdf:resource="&prov;Agent"/>
+    </owl:ObjectProperty>
     
+
+
+    <!-- http://www.w3.org/ns/prov#wasGeneratedBy -->
+
+    <owl:ObjectProperty rdf:about="&prov;wasGeneratedBy">
+        <rdfs:range rdf:resource="&prov;Activity"/>
+        <rdfs:domain rdf:resource="&prov;Entity"/>
+    </owl:ObjectProperty>
     
-Class: dcterms:FileFormat
 
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
     
-Class: DataPackageSpec
+
 
-    Annotations: 
-        rdfs:label "Data Package Specification"^^xsd:string
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/containsString -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/containsString">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/StringVocabulary"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-    SubClassOf: 
-        hasEncoding some owl:Thing,
-        hasFormat some owl:Thing,
-        hasDataLevel some rdfs:Literal
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/countryCode -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/countryCode">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">country code</rdfs:label>
+        <rdfs:comment rdf:datatype="&xsd;string">ISO 3166-1 alpha-2 country code</rdfs:comment>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:seeAlso rdf:resource="https://en.wikipedia.org/wiki/ISO_3166-1"/>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">ICOS data level</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&rdf;List"/>
+                        <rdf:first rdf:datatype="&xsd;integer">0</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&rdf;List"/>
+                                <rdf:first rdf:datatype="&xsd;integer">2</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="&rdf;List"/>
+                                        <rdf:first rdf:datatype="&xsd;integer">3</rdf:first>
+                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
     
-Class: Person
+
 
-    SubClassOf: 
-        hasFirstName some rdfs:Literal,
-        hasEmail some rdfs:Literal,
-        prov:Agent,
-        hasLastName some rdfs:Literal
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Elevation</rdfs:label>
+        <rdfs:comment>Elevation above sea level in meters</rdfs:comment>
+        <rdfs:range rdf:resource="&xsd;float"/>
+        <rdfs:subPropertyOf rdf:resource="&geo;alt"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">E-mail</rdfs:label>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:DatatypeProperty>
     
-Class: DataAcquisition
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime -->
 
-    SubClassOf: 
-        prov:wasAssociatedWith some owl:Thing,
-        prov:wasAssociatedWith only Station,
-        prov:Activity
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:range rdf:resource="&xsd;dateTime"/>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">First name</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-Class: DataPackage
 
-    SubClassOf: 
-        prov:Entity
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Last name</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-    DisjointUnionOf: 
-        CompositePackage, SimplePackage
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Latitude</rdfs:label>
+        <rdfs:comment>Decimal degrees in WGS84/GRS80</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&geo;lat"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                    </rdf:Description>
+                    <rdf:Description>
+                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Longitude</rdfs:label>
+        <rdfs:comment>Decimal degrees in WGS84/GRS80</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&geo;long"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
+                    </rdf:Description>
+                    <rdf:Description>
+                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:DatatypeProperty>
     
-Class: qb:DataSet
 
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasName">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Name</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&dcterms;title"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:DatatypeProperty>
     
-Class: CentralFacility
+
 
-    SubClassOf: 
-        Organization
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Orcid ID</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-    DisjointUnionOf: 
-        CAL, ThematicCenter
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;hexBinary"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:length rdf:datatype="&xsd;nonNegativeInteger">64</xsd:length>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasShortName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasShortName">
+        <rdfs:label rdf:datatype="&xsd;string">Short name</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-Class: Encoding
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime -->
 
-    SubClassOf: 
-        dcterms:FileFormat
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:range rdf:resource="&xsd;dateTime"/>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Station Class</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&rdf;List"/>
+                        <rdf:first rdf:datatype="&xsd;string">Station Class I</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&rdf;List"/>
+                                <rdf:first rdf:datatype="&xsd;string">Station Class II</rdf:first>
+                                <rdf:rest rdf:resource="&rdf;nil"/>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
     
-Class: SimplePackageSpec
 
-    SubClassOf: 
-        DataPackageSpec,
-        qb:DataStructureDefinition
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">Station ID</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/NumericValueType"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
     
-Class: ThematicCenter
+
 
-    Annotations: 
-        rdfs:label "Thematic Center"^^xsd:string
+    <!-- http://purl.org/dc/terms/title -->
+
+    <owl:DatatypeProperty rdf:about="&dcterms;title">
+        <rdfs:range rdf:resource="&rdfs;Literal"/>
+    </owl:DatatypeProperty>
     
-    SubClassOf: 
-        CentralFacility
+
+
+    <!-- http://www.w3.org/2003/01/geo/wgs84_pos#alt -->
+
+    <owl:DatatypeProperty rdf:about="&geo;alt"/>
     
-    DisjointUnionOf: 
-        ATC, ETC, OTC
+
+
+    <!-- http://www.w3.org/2003/01/geo/wgs84_pos#lat -->
+
+    <owl:DatatypeProperty rdf:about="&geo;lat"/>
     
+
+
+    <!-- http://www.w3.org/2003/01/geo/wgs84_pos#long -->
+
+    <owl:DatatypeProperty rdf:about="&geo;long"/>
     
-Class: Format
+
 
-    SubClassOf: 
-        dcterms:FileFormat
+    <!-- http://www.w3.org/ns/prov#endedAtTime -->
+
+    <owl:DatatypeProperty rdf:about="&prov;endedAtTime">
+        <rdfs:range rdf:resource="&xsd;dateTime"/>
+        <rdfs:domain rdf:resource="&prov;Activity"/>
+    </owl:DatatypeProperty>
     
+
+
+    <!-- http://www.w3.org/ns/prov#startedAtTime -->
+
+    <owl:DatatypeProperty rdf:about="&prov;startedAtTime">
+        <rdfs:range rdf:resource="&xsd;dateTime"/>
+        <rdfs:domain rdf:resource="&prov;Activity"/>
+    </owl:DatatypeProperty>
     
-Class: qb:DataStructureDefinition
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
 
     
-Class: owl:Thing
 
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AS -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AS">
+        <rdfs:label rdf:datatype="&xsd;string">Atmospheric station</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:someValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: Site
+
 
-    Annotations: 
-        rdfs:comment "The physical location of an organization"^^xsd:string
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ATC -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ATC">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+    </owl:Class>
     
-    SubClassOf: 
-        countryCode some rdfs:Literal
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/CAL -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CAL">
+        <rdfs:label rdf:datatype="&xsd;string">Central Analytical Laboratory</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility"/>
+        <rdfs:comment rdf:datatype="&xsd;string">A Central Analytical Laboratory for calibration, and air samples analyses including radiocarbon for the entire network</rdfs:comment>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CAL"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+        </owl:disjointUnionOf>
+    </owl:Class>
     
-Class: OS
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition -->
 
-    Annotations: 
-        rdfs:label "Oceanic station"^^xsd:string
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition">
+        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&prov;wasAssociatedWith"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&prov;wasAssociatedWith"/>
+                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-    SubClassOf: 
-        belongsToTheNetworkOf some OTC,
-        Station
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackage">
+        <rdfs:subClassOf rdf:resource="&prov;Entity"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasPackageSpec"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec">
+        <rdfs:label rdf:datatype="&xsd;string">Data Package Specification</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: Role
 
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
     
-Class: OTC
+
 
-    SubClassOf: 
-        ThematicCenter
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission">
+        <rdfs:subClassOf rdf:resource="&prov;Activity"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&prov;wasAssociatedWith"/>
+                <owl:onClass rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+                <owl:qualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">1</owl:qualifiedCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: SimplePackage
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec -->
 
-    SubClassOf: 
-        qb:DataSet,
-        qb:structure exactly 1 SimplePackageSpec,
-        DataPackage
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec">
+        <rdfs:label rdf:datatype="&xsd;string">Dataset Specification</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ES -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ES">
+        <rdfs:label rdf:datatype="&xsd;string">Ecosystem station</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:someValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: CompositePackage
 
-    SubClassOf: 
-        DataPackage,
-        hasSubPackage some owl:Thing
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ETC -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ETC">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Membership -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Membership">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasRole"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: prov:Activity
 
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/NumericValueType -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/NumericValueType">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: DataSubmission
+
 
-    SubClassOf: 
-        prov:Activity,
-        prov:wasAssociatedWith exactly 1 ThematicCenter
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/OS -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OS">
+        <rdfs:label rdf:datatype="&xsd;string">Oceanic station</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:someValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/OTC"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/OTC -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OTC">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+    </owl:Class>
     
-Class: Station
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Organization -->
 
-    SubClassOf: 
-        belongsToTheNetworkOf some owl:Thing,
-        hasStationId some rdfs:Literal,
-        Organization
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Organization">
+        <rdfs:subClassOf rdf:resource="&prov;Agent"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-    DisjointUnionOf: 
-        AS, ES, OS
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding">
+        <rdfs:subClassOf rdf:resource="&dcterms;FileFormat"/>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/PackageFormat -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/PackageFormat">
+        <rdfs:subClassOf rdf:resource="&dcterms;FileFormat"/>
+    </owl:Class>
     
-Class: ES
 
-    Annotations: 
-        rdfs:label "Ecosystem station"^^xsd:string
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Person -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Person">
+        <rdfs:subClassOf rdf:resource="&prov;Agent"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-    SubClassOf: 
-        belongsToTheNetworkOf some ETC,
-        Station
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Role -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
     
-Class: CAL
 
-    Annotations: 
-        rdfs:label "Central Analytical Laboratory"^^xsd:string,
-        rdfs:comment "A Central Analytical Laboratory for calibration, and air samples analyses including radiocarbon for the entire network"^^xsd:string
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/SimplePackageSpec -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SimplePackageSpec">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
+                <owl:onClass rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+                <owl:qualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">1</owl:qualifiedCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-    SubClassOf: 
-        CentralFacility
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Site -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Site">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/countryCode"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment rdf:datatype="&xsd;string">The physical location of an organization</rdfs:comment>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Station -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OS"/>
+        </owl:disjointUnionOf>
+    </owl:Class>
     
-Class: Organization
+
 
-    SubClassOf: 
-        hasName some rdfs:Literal,
-        prov:Agent
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/StringVocabulary -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/StringVocabulary">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsString"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
     
-Class: ATC
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter -->
 
-    SubClassOf: 
-        ThematicCenter
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter">
+        <rdfs:label rdf:datatype="&xsd;string">Thematic Center</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility"/>
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OTC"/>
+        </owl:disjointUnionOf>
+    </owl:Class>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+    </owl:Class>
     
-Individual: zipEncoding
 
-    Annotations: 
-        rdfs:label "zip"^^xsd:string
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ValueType -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType">
+        <rdfs:label rdf:datatype="&xsd;string">Value Type</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasName"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment rdf:datatype="&xsd;string">Domain-specific meaning of the values</rdfs:comment>
+    </owl:Class>
     
-    Types: 
-        Encoding
+
+
+    <!-- http://purl.org/dc/terms/FileFormat -->
+
+    <owl:Class rdf:about="&dcterms;FileFormat"/>
     
+
+
+    <!-- http://www.w3.org/2002/07/owl#Thing -->
+
+    <owl:Class rdf:about="&owl;Thing"/>
     
-Individual: gzipEncoding
 
-    Annotations: 
-        rdfs:label "gzip"^^xsd:string
+
+    <!-- http://www.w3.org/ns/prov#Activity -->
+
+    <owl:Class rdf:about="&prov;Activity"/>
     
-    Types: 
-        Encoding
+
+
+    <!-- http://www.w3.org/ns/prov#Agent -->
+
+    <owl:Class rdf:about="&prov;Agent"/>
     
+
+
+    <!-- http://www.w3.org/ns/prov#Entity -->
+
+    <owl:Class rdf:about="&prov;Entity"/>
     
-Individual: asciiTsv
+
 
-    Annotations: 
-        rdfs:label "ASCII TSV"^^xsd:string
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
     
-    Types: 
-        Format
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiCsv -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiCsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageFormat"/>
+        <rdfs:label rdf:datatype="&xsd;string">ASCII CSV</rdfs:label>
+    </owl:NamedIndividual>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageFormat"/>
+        <rdfs:label rdf:datatype="&xsd;string">ASCII TSV</rdfs:label>
+    </owl:NamedIndividual>
     
-Individual: asciiCsv
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/float32 -->
 
-    Annotations: 
-        rdfs:label "ASCII CSV"^^xsd:string
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/float32">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:NamedIndividual>
     
-    Types: 
-        Format
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/gzipEncoding -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/gzipEncoding">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding"/>
+        <rdfs:label rdf:datatype="&xsd;string">gzip</rdfs:label>
+    </owl:NamedIndividual>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/int32 -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/int32">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:NamedIndividual>
     
-Individual: plainFileEncoding
 
-    Annotations: 
-        rdfs:label "plain file"^^xsd:string
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/iso8601date -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601date">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:NamedIndividual>
     
-    Types: 
-        Encoding
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:NamedIndividual>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding"/>
+        <rdfs:label rdf:datatype="&xsd;string">plain file</rdfs:label>
+    </owl:NamedIndividual>
     
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/zipEncoding -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/zipEncoding">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PackageEncoding"/>
+        <rdfs:label rdf:datatype="&xsd;string">zip</rdfs:label>
+    </owl:NamedIndividual>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.5.1) http://owlapi.sourceforge.net -->
+

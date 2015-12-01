@@ -40,6 +40,11 @@
         <Datatype abbreviatedIRI="xsd:boolean"/>
     </Declaration>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
+        <AbbreviatedIRI>cpmeta:DataPackageSpecifyingThing</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasRole</AbbreviatedIRI>
@@ -72,16 +77,41 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Person</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">false</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:QuantityKind</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:SimplePackageSpec</AbbreviatedIRI>
         <Literal datatypeIRI="&xsd;boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Station</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">false</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:StringVocabulary</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:TabularDatasetSpec</AbbreviatedIRI>
         <Literal datatypeIRI="&xsd;boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:ThematicCenter</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">false</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:ValueType</AbbreviatedIRI>
         <Literal datatypeIRI="&xsd;boolean">true</Literal>
     </AnnotationAssertion>
 </Ontology>

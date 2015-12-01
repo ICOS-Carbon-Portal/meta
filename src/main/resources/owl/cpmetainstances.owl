@@ -130,15 +130,6 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/atcFileExample -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/atcFileExample">
-        <rdf:type rdf:resource="&cpmeta;AtcDataStructure"/>
-        <rdfs:label rdf:datatype="&xsd;string">ATC example1</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/directorRole -->
 
     <owl:NamedIndividual rdf:about="&cpmeta;instances/directorRole">

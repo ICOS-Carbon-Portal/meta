@@ -13,7 +13,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val acquisitionClass = getRelative("DataAcquisition")
 	val submissionClass = getRelative("DataSubmission")
-	val simplePackageClass = getRelative("SimplePackage")
+	val dataPackageClass = getRelative("DataPackage")
 
 	val hasLatitude = getRelative("hasLatitude")
 	val hasLongitude = getRelative("hasLongitude")
@@ -24,12 +24,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
 	val wasAcquiredBy = getRelative("wasAcquiredBy")
 	val hasDataLevel = getRelative("hasDataLevel")
-
-	object qb extends CustomVocab {
-		val factory = CpmetaVocab.this.factory
-		val baseUri = "http://purl.org/linked-data/cube#"
-		val structure = getRelative("structure")
-	}
+	val hasPackageSpec = getRelative("hasPackageSpec")
 
 	object prov extends CustomVocab {
 		val factory = CpmetaVocab.this.factory

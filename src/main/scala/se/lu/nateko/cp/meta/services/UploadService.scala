@@ -37,9 +37,7 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 			.collect{case lit: Literal => lit.intValue}
 			.head
 
-		val packageClass = getPackageClass(packageSpecClass, dataLevel)
-
-		val packageUri = factory.createURI(packageClass, "/" + meta.hashSum)
+		val packageUri = factory.createURI(vocab.dataPackageClass, "/" + meta.hashSum)
 		if(!server.getStatements(packageUri).isEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
 
@@ -47,18 +45,19 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
 		val submissionUri = factory.createURI(vocab.submissionClass, "/" + hashSum)
-		val acquisitionUri = factory.createURI(vocab.acquisitionClass, "/" + hashSum)
+		val provActivityClass = getProvActivityClass(packageSpecClass, dataLevel)
+		val provActivityUri = factory.createURI(provActivityClass, "/" + hashSum)
 
 		server.addAll(Seq[(URI, URI, Value)](
 
-			(packageUri, RDF.TYPE, packageClass),
+			(packageUri, RDF.TYPE, vocab.dataPackageClass),
 			(packageUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
-			(packageUri, vocab.qb.structure, packageSpec),
-			(packageUri, vocab.wasAcquiredBy, acquisitionUri),
+			(packageUri, vocab.hasPackageSpec, packageSpec),
+			(packageUri, vocab.wasAcquiredBy, provActivityUri), //TODO Generalize! This is only valid for L0 packages.
 			(packageUri, vocab.wasSubmittedBy, submissionUri),
 
-			(acquisitionUri, RDF.TYPE, vocab.acquisitionClass),
-			(acquisitionUri, vocab.prov.wasAssociatedWith, producingOrganization),
+			(provActivityUri, RDF.TYPE, provActivityClass),
+			(provActivityUri, vocab.prov.wasAssociatedWith, producingOrganization),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
 			(submissionUri, vocab.prov.startedAtTime, factory.getDateTimeNow),
@@ -77,8 +76,8 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 	private def makeSha256Literal(sum: String): Literal =
 		factory.createLiteral(ensureSha256(sum), XMLSchema.HEXBINARY)
 
-	private def getPackageClass(packageSpecClass: URI, dataLevel: Int): URI = {
-		vocab.simplePackageClass
+	private def getProvActivityClass(packageSpecClass: URI, dataLevel: Int): URI = {
+		vocab.acquisitionClass
 	}
 }
 

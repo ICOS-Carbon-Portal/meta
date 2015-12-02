@@ -54,13 +54,9 @@ WHERE{
 	?s cpst:hasPi ?pi .
 	?s cpst:hasShortName ?provShortName .
 	?s cpst:hasLongName ?provLongName .
-	OPTIONAL{
-		GRAPH <http://meta.icos-cp.eu/ontologies/stationlabeling/> {
-			OPTIONAL {?s cpst:hasShortName ?hasShortName }
-			OPTIONAL {?s cpst:hasLongName ?hasLongName }
-			OPTIONAL {?s cpst:hasApplicationStatus ?hasApplicationStatus }
-		}
-	}
+	OPTIONAL{GRAPH <http://meta.icos-cp.eu/ontologies/stationlabeling/> {?s cpst:hasShortName ?hasShortName}}
+	OPTIONAL{GRAPH <http://meta.icos-cp.eu/ontologies/stationlabeling/> {?s cpst:hasLongName ?hasLongName}}
+	OPTIONAL{GRAPH <http://meta.icos-cp.eu/ontologies/stationlabeling/> {?s cpst:hasApplicationStatus ?hasApplicationStatus}}
 }`
 		}
 	];

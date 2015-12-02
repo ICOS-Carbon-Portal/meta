@@ -15,6 +15,16 @@ function panelClass(station){
 	}
 }
 
+function statusClass(appStatus){
+	switch(appStatus){
+		case status.acknowledged: return "label label-warning";
+		case status.rejected: return "label label-danger";
+		case status.approved: return "label label-success";
+		case status.submitted: return "label label-primary";
+		case status.notSubmitted: return "label label-default";
+	}
+}
+
 export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 	return React.createClass({
@@ -24,7 +34,6 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 		render: function(){
 
 			var self = this;
-			var statusLabelStyle= { float: 'right' };
 
 			return <ul className="list-unstyled">{
 				_.map(self.state.stations, function(station){
@@ -39,30 +48,8 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 					var applicationStatusCSS = "";
 
 					if (station.hasApplicationStatus !== undefined){
-
 						applicationStatus = "Status: " + station.hasApplicationStatus;
-
-						switch (station.hasApplicationStatus){
-							case status.acknowledged:
-								applicationStatusCSS = "label label-warning";
-								break;
-
-							case status.rejected:
-								applicationStatusCSS = "label label-danger";
-								break;
-
-							case status.approved:
-								applicationStatusCSS = "label label-success";
-								break;
-
-							case status.submitted:
-								applicationStatusCSS = "label label-primary";
-								break;
-
-							case status.notSubmitted:
-								applicationStatusCSS = "label label-default";
-								break;
-						}
+						applicationStatusCSS = statusClass(station.hasApplicationStatus);
 					}
 
 					return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
@@ -71,7 +58,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
 								<span className={icon}/>
 								&nbsp;{station.hasLongName}
-								&nbsp;<span style={statusLabelStyle} className={applicationStatusCSS}>{applicationStatus}</span>
+								&nbsp;<span style={{ float: 'right' }} className={applicationStatusCSS}>{applicationStatus}</span>
 							</div>
 							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>

@@ -1,4 +1,5 @@
 import {baseUri, lblUri, ontUri, filesUri, stationOwlClassToTheme, themeToProperties} from './configs.js';
+import {status} from './models/ApplicationStatus.js';
 
 const stationPisQuery = `
 	PREFIX cpst: <${baseUri}>
@@ -24,10 +25,14 @@ function postProcessStationsList(stations){
 		.map(piSpecificCopies => {
 			var station = piSpecificCopies[0];
 			return _.extend(
-				_.omit(station, 'email', 'pi', 'provShortName', 'provLongName', 's', 'owlClass'), {
+				{
+					hasShortName: station.provShortName,
+					hasLongName: station.provLongName,
+					hasApplicationStatus: status.notSubmitted,
+				},
+				_.omit(station, 'email', 'pi', 'provShortName', 'provLongName', 's', 'owlClass'),
+				{
 					emails: _.pluck(piSpecificCopies, 'email'),
-					hasShortName: station.hasShortName || station.provShortName,
-					hasLongName: station.hasLongName || station.provLongName,
 					stationUri: station.s,
 					theme: stationOwlClassToTheme(station.owlClass)
 				}

@@ -45,6 +45,11 @@
         <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
+        <Literal datatypeIRI="&xsd;boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasRole</AbbreviatedIRI>

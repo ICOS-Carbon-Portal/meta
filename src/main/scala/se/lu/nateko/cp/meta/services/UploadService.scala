@@ -16,10 +16,8 @@ import se.lu.nateko.cp.meta.utils.DateTimeUtils
 
 class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
-	private val factory = server.factory
+	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
-
-	implicit def javaUriToSesame(uri: java.net.URI): URI = factory.createURI(uri)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
 		import meta._
@@ -32,32 +30,29 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!submitterConf.authorizedUserIds.contains(userId))
 			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val packageSpecClass = InstanceServerUtils.getSingleType(packageSpec, server)
-		val dataLevel = server.getValues(packageSpec, vocab.hasDataLevel)
-			.collect{case lit: Literal => lit.intValue}
-			.head
-
 		val packageUri = factory.createURI(vocab.dataPackageClass, "/" + meta.hashSum)
-		if(!server.getStatements(packageUri).isEmpty)
+		if(server.getStatements(packageUri).nonEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
 
-		if(server.getStatements(Some(producingOrganization), Some(RDF.TYPE), Some(submitterConf.producingOrganizationClass)).isEmpty)
+		if(server.getStatements(packageSpec).isEmpty)
+			throw new UploadUserErrorException(s"Unknown package specification: $packageSpec")
+
+		if(!server.hasStatement(producingOrganization, RDF.TYPE, submitterConf.producingOrganizationClass))
 			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
 		val submissionUri = factory.createURI(vocab.submissionClass, "/" + hashSum)
-		val provActivityClass = getProvActivityClass(packageSpecClass, dataLevel)
-		val provActivityUri = factory.createURI(provActivityClass, "/" + hashSum)
+		val productionUri = factory.createURI(vocab.productionClass, "/" + hashSum)
 
 		server.addAll(Seq[(URI, URI, Value)](
 
 			(packageUri, RDF.TYPE, vocab.dataPackageClass),
 			(packageUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
 			(packageUri, vocab.hasPackageSpec, packageSpec),
-			(packageUri, vocab.wasAcquiredBy, provActivityUri), //TODO Generalize! This is only valid for L0 packages.
+			(packageUri, vocab.wasProducedBy, productionUri),
 			(packageUri, vocab.wasSubmittedBy, submissionUri),
 
-			(provActivityUri, RDF.TYPE, provActivityClass),
-			(provActivityUri, vocab.prov.wasAssociatedWith, producingOrganization),
+			(productionUri, RDF.TYPE, vocab.productionClass),
+			(productionUri, vocab.prov.wasAssociatedWith, producingOrganization),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
 			(submissionUri, vocab.prov.startedAtTime, factory.getDateTimeNow),
@@ -70,27 +65,12 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
 	import UploadService._
 
-//	private def makeDateTimeLiteral(dt: String): Literal =
-//		factory.createLiteral(dateTimeToUtc(dt), XMLSchema.DATETIME)
-
 	private def makeSha256Literal(sum: String): Literal =
 		factory.createLiteral(ensureSha256(sum), XMLSchema.HEXBINARY)
 
-	private def getProvActivityClass(packageSpecClass: URI, dataLevel: Int): URI = {
-		vocab.acquisitionClass
-	}
 }
 
 object UploadService{
-
-	def dateTimeToUtc(dt: String): String = 
-		try{
-			val parsed = DateTimeUtils.defaultFormatter.parseDateTime(dt)
-			DateTimeUtils.defaultFormatter.print(parsed)
-		}catch{
-			case err: IllegalArgumentException =>
-				throw new UploadUserErrorException(err.getMessage)
-		}
 
 	private[this] val shaPattern = """[0-9a-fA-F]{64}""".r.pattern
 

@@ -18,20 +18,18 @@ import se.lu.nateko.cp.meta._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
-import se.lu.nateko.cp.meta.utils.sesame.SesameStatement
-import se.lu.nateko.cp.meta.utils.sesame.ToJavaUriConverter
+import se.lu.nateko.cp.meta.utils.sesame._
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
+
+	private implicit val factory = instServer.factory
 
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
 
 		val labeler = onto.getLabelerForClassIndividuals(classUri)
 
-		def getForClass(owlClass: URI): Seq[ResourceDto] = {
-			val classSesameUri = instServer.factory.createURI(owlClass)
-			instServer.getInstances(classSesameUri).map(labeler.getInfo(_, instServer))
-		}
+		def getForClass(owlClass: URI): Seq[ResourceDto] =
+			instServer.getInstances(owlClass).map(labeler.getInfo(_, instServer))
 
 		val ownIndividuals = getForClass(classUri)
 		val subclassIndividuals = onto.getSubClasses(classUri, false).map(_.getIRI.toURI).flatMap(getForClass)
@@ -48,20 +46,19 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 	def getIndividual(uri: URI): IndividualDto = {
 		val labeler = onto.getUniversalLabeler
-		val instUri = instServer.factory.createURI(uri)
 
-		val theType: URI = InstanceServerUtils.getSingleType(uri, instServer).toJava
+		val theType = InstanceServerUtils.getSingleType(uri, instServer)
 		val classInfo = onto.getClassInfo(theType)
 
-		val values: Seq[ValueDto] = instServer.getStatements(instUri).collect{
+		val values: Seq[ValueDto] = instServer.getStatements(uri).collect{
 			case SesameStatement(_, pred, value: Literal) =>
-				val prop = onto.factory.getOWLDataProperty(IRI.create(pred.toJava))
+				val prop = onto.factory.getOWLDataProperty(IRI.create(pred))
 				LiteralValueDto(
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
 			case SesameStatement(_, pred, value: SesameURI)  if(pred != RDF.TYPE) =>
-				val prop = onto.factory.getOWLObjectProperty(IRI.create(pred.toJava))
+				val prop = onto.factory.getOWLObjectProperty(IRI.create(pred))
 				ObjectValueDto(
 					value = labeler.getInfo(value, instServer),
 					property = onto.rdfsLabeling(prop)
@@ -69,7 +66,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		}
 
 		IndividualDto(
-			resource = labeler.getInfo(instUri, instServer),
+			resource = labeler.getInfo(uri, instServer),
 			owlClass = classInfo,
 			values = values
 		)
@@ -128,11 +125,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	}
 
 	private def updateDtoToStatement(update: UpdateDto): Statement = {
-		val factory = instServer.factory
-		val subj = factory.createURI(update.subject)
-		val pred = factory.createURI(update.predicate)
-		
-		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer).toJava
+		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer)
 
 		val obj: Value = onto.getPropInfo(update.predicate, classUri) match{
 			case dp: DataPropertyDto =>
@@ -142,7 +135,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case op: ObjectPropertyDto => factory.createURI(update.obj)
 		}
 
-		factory.createStatement(subj, pred, obj)
+		factory.createStatement(update.subject, update.predicate, obj)
 	}
 
 	private def updateDtoToRdfUpdate(update: UpdateDto) =

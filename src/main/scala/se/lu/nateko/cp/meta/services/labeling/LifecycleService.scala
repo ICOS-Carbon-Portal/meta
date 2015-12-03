@@ -42,7 +42,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 		if(newStatus == submitted) Future{
 			val recipients: Seq[String] = lookupStationClass(factory.createURI(station))
-					.flatMap(cls => config.tcUserIds.get(cls.toJava))
+					.flatMap(cls => config.tcUserIds.get(cls))
 					.toSeq
 					.flatten
 
@@ -59,7 +59,7 @@ trait LifecycleService { self: StationLabelingService =>
 	private def assertUserRepresentsTc(station: SesameUri, user: UserInfo): Unit = {
 		val tcUsersListOpt = for(
 			stationClass <- lookupStationClass(station);
-			list <- config.tcUserIds.get(stationClass.toJava)
+			list <- config.tcUserIds.get(stationClass)
 		) yield list
 
 		ensureUserRepresentsTc(tcUsersListOpt, user, station)

@@ -25,15 +25,12 @@ package object sesame {
 		def tripleToStatement(triple: (URI, URI, Value)): Statement =
 			factory.createStatement(triple._1, triple._2, triple._3)
 
-		def getDateTimeNow: Literal = {
-			val dt = DateTimeUtils.defaultFormatter.print(new org.joda.time.DateTime())
-			factory.createLiteral(dt, XMLSchema.DATETIME)
-		}
+		def getDateTimeNow: Literal =
+			factory.createLiteral(DateTimeUtils.defaultNowString, XMLSchema.DATETIME)
 	}
 
-	implicit class ToJavaUriConverter(val uri: URI) extends AnyVal{
-		def toJava = java.net.URI.create(uri.toString)
-	}
+	implicit def javaUriToSesame(uri: java.net.URI)(implicit factory: ValueFactory): URI = factory.createURI(uri)
+	implicit def sesameUriToJava(uri: URI) = java.net.URI.create(uri.stringValue)
 
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
 		def asScalaIterator: CloseableIterator[T] = new RepositoryResultIterator(res, () => ())

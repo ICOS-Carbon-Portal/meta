@@ -1,0 +1,7 @@
+﻿DELETE FROM public.instances
+where ctid in (
+	select ctid
+	from public.instances
+	offset 42
+	limit 32
+);

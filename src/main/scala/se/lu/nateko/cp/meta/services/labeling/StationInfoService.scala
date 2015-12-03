@@ -25,7 +25,7 @@ trait StationInfoService { self: StationLabelingService =>
 				case DataPropertyDto(prop, _, range) => (prop.uri, range.dataType)
 			}.toMap
 
-		val stationClass = onto.factory.getOWLClass(IRI.create(vocab.station.toJava))
+		val stationClass = onto.factory.getOWLClass(IRI.create(vocab.station))
 		onto.getBottomSubClasses(stationClass)
 			.map(onto.getClassInfo)
 			.map(classInfo => (classInfo.resource.uri, toDatatypeLookup(classInfo)))
@@ -44,7 +44,7 @@ trait StationInfoService { self: StationLabelingService =>
 			classUri <- lookupStationClass(stationUri).toSeq;
 			(fieldName, fieldValue) <- info.fields.collect{case (name, JsString(value)) => (name, value)};
 			propUri = vocab.getRelative(fieldName);
-			dataType <- lookupDatatype(classUri.toJava, propUri.toJava).toSeq
+			dataType <- lookupDatatype(classUri, propUri).toSeq
 		) yield {
 			val lit = factory.createLiteral(fieldValue, dataType)
 			factory.createStatement(stationUri, propUri, lit)

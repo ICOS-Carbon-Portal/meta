@@ -48,7 +48,7 @@ trait UserInfoService { self: StationLabelingService =>
 					.collect{case (pred, SesameStatement(_, _, v: Literal)) => (pred, v.getLabel)} //keeping only data props
 					.toMap
 				LabelingUserDto(
-					uri = Some(piUri.toJava),
+					uri = Some(piUri),
 					mail = uinfo.mail,
 					isPi = true,
 					tcs = tcs,

@@ -41,6 +41,8 @@ trait InstanceServer {
 			.map(_.getObject)
 			.toIndexedSeq
 
+	def hasStatement(subject: URI, predicate: URI, obj: Value): Boolean =
+		getStatements(Some(subject), Some(predicate), Some(obj)).toIndexedSeq.nonEmpty
 
 	def add(statements: Statement*): Try[Unit] = addAll(statements)
 	def remove(statements: Statement*): Try[Unit] = removeAll(statements)

@@ -9,4 +9,5 @@ object DateTimeUtils {
 	val defaultFormatter: DateTimeFormatter =
 		ISODateTimeFormat.dateTimeNoMillis.withZone(DateTimeZone.UTC)
 
+	def defaultNowString: String = defaultFormatter.print(new org.joda.time.DateTime())
 }

@@ -7,6 +7,7 @@ import org.openrdf.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.ingestion.StationStructuringVocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.LabelingServiceConfig
 import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.services.FileStorageService
@@ -41,10 +42,8 @@ class StationLabelingService(
 	protected def getPiEmails(piUri: URI) = provisionalInfoServer.getValues(piUri, vocab.hasEmail)
 		.collect{ case mail: Literal => mail.getLabel.toLowerCase }
 
-	protected def lookupStationClass(stationUri: URI): Option[URI] = provisionalInfoServer
-		.getValues(stationUri, RDF.TYPE)
-		.headOption
-		.collect{case uri: URI => uri}
+	protected def lookupStationClass(stationUri: URI): Option[URI] =
+		InstanceServerUtils.getSingleTypeIfAny(stationUri, provisionalInfoServer)
 
 	private def getPis(stationUri: URI) = provisionalInfoServer.getValues(stationUri, vocab.hasPi)
 		.collect{ case pi: URI => pi }

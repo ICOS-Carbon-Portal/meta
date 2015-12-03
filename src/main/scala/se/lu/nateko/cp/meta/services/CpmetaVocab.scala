@@ -11,7 +11,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val ecoStationClass = getRelative("ES")
 	val oceStationClass = getRelative("OS")
 
-	val acquisitionClass = getRelative("DataAcquisition")
+	val productionClass = getRelative("DataProduction")
 	val submissionClass = getRelative("DataSubmission")
 	val dataPackageClass = getRelative("DataPackage")
 
@@ -22,7 +22,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val hasSha256sum = getRelative("hasSha256sum")
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
-	val wasAcquiredBy = getRelative("wasAcquiredBy")
+	val wasProducedBy = getRelative("wasProducedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
 	val hasPackageSpec = getRelative("hasPackageSpec")
 

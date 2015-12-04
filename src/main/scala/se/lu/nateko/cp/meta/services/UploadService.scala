@@ -30,9 +30,9 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!submitterConf.authorizedUserIds.contains(userId))
 			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val packageUri = factory.createURI(vocab.dataPackageClass, "/" + meta.hashSum)
+		val packageUri = vocab.getFile(hashSum)
 		if(server.getStatements(packageUri).nonEmpty)
-			throw new UploadUserErrorException(s"Upload with hash sum ${meta.hashSum} has already been registered. Amendments are not supported yet!")
+			throw new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!")
 
 		if(server.getStatements(packageSpec).isEmpty)
 			throw new UploadUserErrorException(s"Unknown package specification: $packageSpec")
@@ -40,8 +40,9 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!server.hasStatement(producingOrganization, RDF.TYPE, submitterConf.producingOrganizationClass))
 			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
-		val submissionUri = factory.createURI(vocab.submissionClass, "/" + hashSum)
-		val productionUri = factory.createURI(vocab.productionClass, "/" + hashSum)
+		val provId = java.util.UUID.randomUUID.toString
+		val submissionUri = factory.createURI(vocab.submissionClass, "/" + provId)
+		val productionUri = factory.createURI(vocab.productionClass, "/" + provId)
 
 		server.addAll(Seq[(URI, URI, Value)](
 

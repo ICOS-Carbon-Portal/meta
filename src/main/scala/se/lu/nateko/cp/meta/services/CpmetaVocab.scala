@@ -27,10 +27,12 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasPackageSpec = getRelative("hasPackageSpec")
 
 	object prov extends CustomVocab {
-		val factory = CpmetaVocab.this.factory
+		val factory = top.factory
 		val baseUri = "http://www.w3.org/ns/prov#"
 		val wasAssociatedWith = getRelative("wasAssociatedWith")
 		val startedAtTime = getRelative("startedAtTime")
 		val endedAtTime = getRelative("endedAtTime")
 	}
+
+	def getFile(hashSum: String) = factory.createURI("https://data.icos-cp.eu/files/", hashSum)
 }

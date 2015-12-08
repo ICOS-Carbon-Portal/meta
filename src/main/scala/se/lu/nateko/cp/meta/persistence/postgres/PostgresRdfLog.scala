@@ -49,13 +49,13 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	def updates: Iterator[RdfUpdate] = {
 		val conn = getConnection
 		val st = conn.createStatement
-		val rs = st.executeQuery(s"SELECT * FROM $logName")
+		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY tstamp")
 		new RdfUpdateResultSetIterator(rs, factory, () => {st.close; conn.close()})
 	}
 
 	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
 		val conn = getConnection
-		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE TIMESTAMP < ?")
+		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY tstamp")
 		ps.setTimestamp(1, time)
 		val rs = ps.executeQuery()
 		new RdfUpdateResultSetIterator(rs, factory, () => {ps.close(); conn.close()})

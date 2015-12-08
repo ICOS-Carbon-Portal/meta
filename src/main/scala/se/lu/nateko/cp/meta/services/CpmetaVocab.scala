@@ -34,5 +34,5 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val endedAtTime = getRelative("endedAtTime")
 	}
 
-	def getFile(hashSum: String) = factory.createURI("https://data.icos-cp.eu/files/", hashSum)
+	def getFile(id: String) = factory.createURI("https://data.icos-cp.eu/files/", id)
 }

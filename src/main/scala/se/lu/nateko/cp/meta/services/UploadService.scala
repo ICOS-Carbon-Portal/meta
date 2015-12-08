@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.utils.DateTimeUtils
+import scala.util.Failure
 
 class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 
@@ -30,7 +31,8 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!submitterConf.authorizedUserIds.contains(userId))
 			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val packageUri = vocab.getFile(hashSum)
+		val packageId = UploadService.getPackageId(hashSum)
+		val packageUri = vocab.getFile(packageId)
 		if(server.getStatements(packageUri).nonEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!")
 
@@ -40,14 +42,13 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!server.hasStatement(producingOrganization, RDF.TYPE, submitterConf.producingOrganizationClass))
 			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
-		val provId = java.util.UUID.randomUUID.toString
-		val submissionUri = factory.createURI(vocab.submissionClass, "/" + provId)
-		val productionUri = factory.createURI(vocab.productionClass, "/" + provId)
+		val submissionUri = factory.createURI(vocab.submissionClass, "/" + packageId)
+		val productionUri = factory.createURI(vocab.productionClass, "/" + packageId)
 
 		server.addAll(Seq[(URI, URI, Value)](
 
 			(packageUri, RDF.TYPE, vocab.dataPackageClass),
-			(packageUri, vocab.hasSha256sum, makeSha256Literal(hashSum)),
+			(packageUri, vocab.hasSha256sum, vocab.lit(hashSum, XMLSchema.HEXBINARY)),
 			(packageUri, vocab.hasPackageSpec, packageSpec),
 			(packageUri, vocab.wasProducedBy, productionUri),
 			(packageUri, vocab.wasSubmittedBy, submissionUri),
@@ -64,19 +65,15 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		packageUri.stringValue
 	}
 
-	import UploadService._
-
-	private def makeSha256Literal(sum: String): Literal =
-		factory.createLiteral(ensureSha256(sum), XMLSchema.HEXBINARY)
-
 }
 
 object UploadService{
+	import se.lu.nateko.cp.meta.utils.HashSumUtils._
 
-	private[this] val shaPattern = """[0-9a-fA-F]{64}""".r.pattern
+	private def getOrBlameUser(maybe: Try[String]): String = maybe.recoverWith{
+		case err => Failure(new UploadUserErrorException(err.getMessage))
+	}.get
 
-	def ensureSha256(sum: String): String = {
-		if(shaPattern.matcher(sum).matches) sum.toLowerCase
-		else throw new UploadUserErrorException("Invalid SHA-256 sum, expecting a 32-byte hexadecimal string")
-	}
+	def getPackageId(hex: String): String = getOrBlameUser(toUrlSafeSha256Base64(hex))
+
 }

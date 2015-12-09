@@ -12,14 +12,14 @@ export default function(saveStationAction) {
 				<button type="button" className="btn btn-primary" disabled={!status.canBeAcknowledged}
 					onClick={this.getHandler(s => s.getAcknowledged())} title="Acknowledge the application">Acknowledge</button>
 
-				<button type="button" className="btn btn-warning" disabled={!status.canBeReturned} style={{marginLeft: 5}}
+				<button type="button" className="btn cp-btn-gray" disabled={!status.canBeReturned} style={{marginLeft: 5}}
 					onClick={this.getHandler(s => s.getReturned())} title="Return for correction and resubmission">Return</button>
 
 				<button type="button" className="btn btn-success" disabled={!status.canBeApproved} style={{marginLeft: 5}}
-					onClick={this.getHandler(s => s.getApproved())} title="Approve the application and label the station">APPROVE</button>
+					onClick={this.getHandler(s => s.getApproved())} title="Approve the application and label the station">Approve</button>
 
 				<button type="button" className="btn btn-danger" disabled={!status.canBeRejected} style={{marginLeft: 5}}
-					onClick={this.getHandler(s => s.getRejected())} title="Reject the application">REJECT</button>
+					onClick={this.getHandler(s => s.getRejected())} title="Reject the application">Reject</button>
 			</div>;
 		},
 

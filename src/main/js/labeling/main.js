@@ -6,7 +6,10 @@ var actions = Reflux.createActions([
 	'fileUpload',
 	'fileDelete',
 	'statusUpdate',
-	'savePi'
+	'savePi',
+	'filterStationType',
+	'filterAppStatus',
+	'filterStationName'
 ]);
 
 var ajax = require('../common/ajax.js');
@@ -14,10 +17,20 @@ var sparql = require('../common/sparql.js')(ajax, '/sparql');
 var Backend = require('./backend.js')(ajax, sparql);
 
 var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, actions.savePi);
-var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, actions.chooseStation);
-var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationsListStore);
 
 var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation, actions.statusUpdate);
+
+var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
+
+var StationFilteringStore = require('./stores/StationFilteringStoreFactory.js')(
+	StationsListStore,
+	actions.filterStationType,
+	actions.filterAppStatus,
+	actions.filterStationName
+);
+
+var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationFilteringStore);
+
 var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(Backend, ChosenStationStore, actions.fileUpload, actions.fileDelete);
 
 var StationMixins = require('./views/StationMixinsFactory.jsx')(
@@ -34,11 +47,17 @@ var themeToStation = {
 	Ocean: require('./views/OceanStationFactory.jsx')(StationMixins)
 };
 
+var StationFilter = require('./views/StationFilterFactory.jsx')(
+	actions.filterStationType,
+	actions.filterAppStatus,
+	actions.filterStationName
+);
+
 var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, themeToStation, actions.chooseStation);
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
 var PiInfo = require('./views/PiInfoFactory.jsx')(WhoAmIStore, actions.savePi);
 
-var AppLayout = require('./views/AppLayoutFactory.jsx')(NavBar, StationsList, PiInfo);
+var AppLayout = require('./views/AppLayoutFactory.jsx')(NavBar, StationsList, PiInfo, StationFilter);
 
 React.render(
 	React.createElement(AppLayout, null),

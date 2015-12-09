@@ -17,10 +17,10 @@ function panelClass(station){
 
 function statusClass(appStatus){
 	switch(appStatus){
-		case status.acknowledged: return "label label-warning";
+		case status.acknowledged: return "label label-primary";
 		case status.rejected: return "label label-danger";
 		case status.approved: return "label label-success";
-		case status.submitted: return "label label-primary";
+		case status.submitted: return "label label-warning";
 		case status.notSubmitted: return "label label-default";
 	}
 }
@@ -35,38 +35,51 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 			var self = this;
 
-			return <ul className="list-unstyled">{
-				_.map(self.state.stations, function(station){
-
-					var panelClasses = 'panel panel-' + panelClass(station);
-
-					var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
-
-					var Station = themeToStation[station.theme];
-
-					var applicationStatus = "";
-					var applicationStatusCSS = "";
-
-					if (station.hasApplicationStatus !== undefined){
-						applicationStatus = "Status: " + station.hasApplicationStatus;
-						applicationStatusCSS = statusClass(station.hasApplicationStatus);
-					}
-
-					return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
-
-						<div className={panelClasses} style={{marginLeft: 5, marginRight: 5}}>
-							<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
-								<span className={icon}/>
-								&nbsp;{station.hasLongName}
-								&nbsp;<span style={{ float: 'right' }} className={applicationStatusCSS}>{applicationStatus}</span>
+			if (self.state.stations.length == 0){
+				return (
+					<div className="container-fluid">
+						<div className="row">
+							<div className="col-md-2">
+								<h4>
+									<span className="label label-danger">No stations match your search criteria</span>
+								</h4>
 							</div>
-							{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
 						</div>
+					</div>
+				);
+			} else {
+				return (
+					<ul className="list-unstyled">{
+						_.map(self.state.stations, function(station){
 
-					</li>;
-				})
+							var panelClasses = 'panel panel-' + panelClass(station);
 
-			}</ul>;
+							var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
+
+							var Station = themeToStation[station.theme];
+
+							var applicationStatus = station.hasApplicationStatus;
+							var applicationStatusCSS = statusClass(station.hasApplicationStatus);
+
+							return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
+
+								<div className={panelClasses} style={{marginLeft: 5, marginRight: 5}}>
+									<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
+										<span className={icon}/>
+										&nbsp;{station.hasLongName}
+										&nbsp;<label style={{ float: 'right', height: 20, padding: '2 4' }} className={applicationStatusCSS}>
+											<span style={{fontWeight: 600, fontSize: 12, position: 'relative', top: 2}}>{applicationStatus}</span>
+										</label>
+									</div>
+									{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
+								</div>
+
+							</li>;
+							})
+
+					}</ul>
+				);
+			}
 		},
 
 		componentDidUpdate: function(){

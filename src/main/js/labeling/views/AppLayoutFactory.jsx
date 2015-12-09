@@ -2,7 +2,7 @@ function getRoute(){
 	return {route: window.location.hash.substr(1)};
 }
 
-module.exports = function(NavBar, StationsList, PiInfo){
+module.exports = function(NavBar, StationsList, PiInfo, StationFilter){
 	return React.createClass({
 
 		getInitialState: getRoute,
@@ -22,6 +22,7 @@ module.exports = function(NavBar, StationsList, PiInfo){
 				</div>
 				: <div>
 					<NavBar piMode={false} />
+					<StationFilter />
 					<StationsList />
 				</div>;
 		}

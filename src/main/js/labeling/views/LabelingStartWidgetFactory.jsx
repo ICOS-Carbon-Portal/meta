@@ -36,7 +36,7 @@ var CertifyingClaim = React.createClass({
 	}
 });
 
-module.exports = function(saveStationAction) {
+module.exports = function(statusUpdateAction) {
 
 	return React.createClass({
 
@@ -84,7 +84,7 @@ module.exports = function(saveStationAction) {
 
 		submitHandler: function(){
 			let submittedStation = this.props.status.getSubmitted();
-			saveStationAction(submittedStation);
+			statusUpdateAction(submittedStation);
 		}
 
 	});

@@ -1,4 +1,10 @@
-module.exports = function(Backend, chooseStationAction){
+function unchoose(station){
+	return station.chosen
+			? _.extend({}, station, {chosen: false})
+			: station;
+}
+
+export default function(Backend, chosenStationStore){
 	return Reflux.createStore({
 
 		publishStations: function(stations){
@@ -7,7 +13,7 @@ module.exports = function(Backend, chooseStationAction){
 		},
 
 		init: function(){
-			this.listenTo(chooseStationAction, this.chooseStationHandler);
+			this.listenTo(chosenStationStore, this.chosenStationHandler);
 
 			Backend.getStationPis().then(
 				_.bind(this.publishStations, this),
@@ -15,19 +21,23 @@ module.exports = function(Backend, chooseStationAction){
 			);
 		},
 
-		chooseStationHandler: function(chosenStation) {
+		chosenStationHandler: function(choice) {
+			var chosen = choice.chosen;
 
-			var stationUpdater = (chosenStation.chosen)
-				//the original request comes from a mouse click on the station's panel heading,
-				//and the station is already chosen. This means all stations need to be 'unchosen'
-				? station => station.chosen
-									? _.extend({}, station, {chosen: false})
-									: station
-				: station => !station.chosen === !(station.stationUri === chosenStation.stationUri)
-									? station
-									: _.extend({}, station, {chosen: !station.chosen});
+			function updater(station){
+				return station.stationUri === chosen.stationUri
+					? _.extend({},
+							station,
+							{chosen: true},
+							_.pick(chosen, 'hasApplicationStatus', 'hasLongName')
+						)
+					: unchoose(station);
+			}
 
-			this.publishStations(this.stations.map(stationUpdater));
+			if(chosen)
+				this.publishStations(this.stations.map(updater));
+			else
+				this.publishStations(this.stations.map(unchoose));
 		}
 
 	});

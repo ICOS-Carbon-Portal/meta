@@ -7,9 +7,7 @@ var actions = Reflux.createActions([
 	'fileDelete',
 	'statusUpdate',
 	'savePi',
-	'filterStationType',
-	'filterAppStatus',
-	'filterStationName'
+	'stationFilters'
 ]);
 
 var ajax = require('../common/ajax.js');
@@ -22,12 +20,8 @@ var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backen
 
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
 
-var StationFilteringStore = require('./stores/StationFilteringStoreFactory.js')(
-	StationsListStore,
-	actions.filterStationType,
-	actions.filterAppStatus,
-	actions.filterStationName
-);
+var StationFilterStore = require('./stores/StationFilterStoreFactory.js')(Backend, actions.stationFilters);
+var StationFilteringStore = require('./stores/StationFilteringStoreFactory.js')(StationsListStore, StationFilterStore);
 
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationFilteringStore);
 
@@ -47,11 +41,7 @@ var themeToStation = {
 	Ocean: require('./views/OceanStationFactory.jsx')(StationMixins)
 };
 
-var StationFilter = require('./views/StationFilterFactory.jsx')(
-	actions.filterStationType,
-	actions.filterAppStatus,
-	actions.filterStationName
-);
+var StationFilter = require('./views/StationFilterFactory.jsx')(StationFilterStore, actions.stationFilters);
 
 var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, themeToStation, actions.chooseStation);
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);

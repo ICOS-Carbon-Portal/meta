@@ -10,28 +10,10 @@ function statusClass(appStatus){
 	}
 }
 
-export default function(stationTypeFiltersAction, appStatusFiltersAction, stationNameFilterAction) {
+export default function(StationFilterStore, stationFiltersAction) {
 
 	return React.createClass({
-
-		getInitialState: function() {
-			return {
-				stationTypeFilters: localStorage.stationTypeFilters
-					? JSON.parse(localStorage.stationTypeFilters)
-					: {
-						Atmosphere: true,
-						Ecosystem: true,
-						Ocean: true
-				},
-				appStatusFilters: localStorage.appStatusFilters
-					? JSON.parse(localStorage.appStatusFilters)
-					: _.map(status, function(txt, key){
-						return {name: key, txt: txt, selected: true};
-					}
-				),
-				stationNameFilter: localStorage.stationNameFilter ? localStorage.stationNameFilter : ""
-			};
-		},
+		mixins: [Reflux.connect(StationFilterStore)],
 
 		render: function() {
 			var self = this;
@@ -50,7 +32,7 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 							<label style={labelStyle} className="label label-info">
 								<input type="checkbox"
 									   style={inputStyle}
-									   checked={self.state.stationTypeFilters.Atmosphere}
+									   checked={self.state.stationType.Atmosphere}
 									   onChange={() => self.toggleTypeChkBx('Atmosphere')}>
 									<span className="glyphicon glyphicon-cloud" style={glyphStyle} aria-hidden="true">
 										<span style={spanStyle}>Atmosphere</span>
@@ -60,7 +42,7 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 							<label style={labelStyle} className="label label-info">
 								<input type="checkbox"
 									   style={inputStyle}
-									   checked={self.state.stationTypeFilters.Ecosystem}
+									   checked={self.state.stationType.Ecosystem}
 									   onChange={() => self.toggleTypeChkBx('Ecosystem')}>
 									<span className="glyphicon glyphicon-leaf" style={glyphStyle} aria-hidden="true">
 										<span style={spanStyle}>Ecosystem</span>
@@ -70,7 +52,7 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 							<label style={labelStyle} className="label label-info">
 								<input type="checkbox"
 									   style={inputStyle}
-									   checked={self.state.stationTypeFilters.Ocean}
+									   checked={self.state.stationType.Ocean}
 									   onChange={() => self.toggleTypeChkBx('Ocean')}>
 									<span className="glyphicon glyphicon-tint" style={glyphStyle} aria-hidden="true">
 										<span style={spanStyle}>Ocean</span>
@@ -82,7 +64,7 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 
 					<div className="row" style={rowStyle}>
 						<div className="col-md-12">{
-							_.map(self.state.appStatusFilters, function(item, index){
+							_.map(self.state.appStatus, function(item, index){
 
 									var css = "label " + statusClass(item.txt);
 
@@ -109,11 +91,15 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 								<input type="text" className="form-control"
 									   onChange={self.stationNameSearch}
 									   placeholder="Station name text search"
-										value={self.state.stationNameFilter}></input>
+										value={self.state.stationName}></input>
 								<span className="input-group-btn">
-									<button className="btn btn-primary" onClick={self.clearStationName} type="button">Clear</button>
+									<button className="btn btn-primary" onClick={self.clearStationName} type="button">Clear text</button>
 								</span>
 							</div>
+						</div>
+
+						<div className="col-md-1" style={rowStyle}>
+							<button className="btn btn-primary" onClick={self.clearAllFilters} type="button">Clear all filters</button>
 						</div>
 					</div>
 
@@ -122,32 +108,32 @@ export default function(stationTypeFiltersAction, appStatusFiltersAction, statio
 		},
 
 		toggleTypeChkBx: function(stationType){
-			var copy = _.clone(this.state.stationTypeFilters);
+			var copy = _.clone(this.state.stationType);
 			copy[stationType] = !copy[stationType];
 
-			stationTypeFiltersAction({stationTypeFilters: copy});
-			this.setState({stationTypeFilters: copy});
+			stationFiltersAction({stationType: copy});
 		},
 
 		toggleStatusChkBx: function(index){
-			var old = this.state.appStatusFilters[index];
+			var old = this.state.appStatus[index];
 			var clicked = _.extend({}, old, {selected: !old.selected});
-			var copy = _.clone(this.state.appStatusFilters);
+			var copy = _.clone(this.state.appStatus);
 			copy[index] = clicked;
 
-			appStatusFiltersAction({appStatusFilters: copy});
-			this.setState({appStatusFilters: copy});
+			stationFiltersAction({appStatus: copy});
 		},
 
 		stationNameSearch: function(event){
-			var value = event.target.value;
-			stationNameFilterAction({stationNameFilter: value});
-			this.setState({stationNameFilter: value});
+			var value = event.target.value.toLowerCase();
+			stationFiltersAction({stationName: value});
 		},
 
 		clearStationName: function(){
-			stationNameFilterAction({stationNameFilter: ""});
-			this.setState({stationNameFilter: ""});
+			stationFiltersAction({stationName: ""});
+		},
+
+		clearAllFilters: function(){
+			stationFiltersAction({clearAllFilters: true});
 		}
 	});
 };

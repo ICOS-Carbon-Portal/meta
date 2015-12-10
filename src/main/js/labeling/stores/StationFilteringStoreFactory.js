@@ -29,23 +29,16 @@ function filterByStationName(stationName, station){
 	}
 }
 
-export default function(StationsListStore, StationTypeFiltersAction, AppStatusFilterAction, StationNameFiltersAction){
+export default function(StationsListStore, StationFilterStore){
 
 	return Reflux.createStore({
 
 		init: function(){
 			this.listenTo(StationsListStore, this.stationsUpdateHandler);
-			this.listenTo(StationTypeFiltersAction, this.filterByStationTypeHandler);
-			this.listenTo(AppStatusFilterAction, this.filterByAppStatusHandler);
-			this.listenTo(StationNameFiltersAction, this.filterByStationNameHandler);
+			this.listenTo(StationFilterStore, this.filterStateHandler);
 
-			this.filterState = {
-				stationType: localStorage.stationTypeFilters ? JSON.parse(localStorage.stationTypeFilters) : {},
-				appStatus: localStorage.appStatusFilters ? JSON.parse(localStorage.appStatusFilters) : [],
-				stationName: localStorage.stationNameFilter ? localStorage.stationNameFilter : ""
-			};
+			this.filterState = StationFilterStore.getInitialState();
 			this.stations = [];
-			//console.log(this.filterState.stationType);
 		},
 
 		filtersAreSatisfied: function(station) {
@@ -54,29 +47,13 @@ export default function(StationsListStore, StationTypeFiltersAction, AppStatusFi
 					&& filterByStationName(this.filterState.stationName, station);
 		},
 
+		filterStateHandler: function(filterState){
+			this.filterState = filterState;
+			this.filterStationsAndTrigger();
+		},
+
 		stationsUpdateHandler: function(stationsList){
 			this.stations = stationsList.stations;
-			this.filterStationsAndTrigger();
-		},
-
-		filterByStationTypeHandler: function(stationTypeAction){
-			localStorage.setItem('stationTypeFilters', JSON.stringify(stationTypeAction.stationTypeFilters));
-
-			this.filterState.stationType = stationTypeAction.stationTypeFilters;
-			this.filterStationsAndTrigger();
-		},
-
-		filterByAppStatusHandler: function(appStatusAction){
-			localStorage.setItem('appStatusFilters', JSON.stringify(appStatusAction.appStatusFilters));
-
-			this.filterState.appStatus = appStatusAction.appStatusFilters;
-			this.filterStationsAndTrigger();
-		},
-
-		filterByStationNameHandler: function(stationNameAction){
-			localStorage.setItem('stationNameFilter', stationNameAction.stationNameFilter);
-
-			this.filterState.stationName = stationNameAction.stationNameFilter.toLowerCase();
 			this.filterStationsAndTrigger();
 		},
 

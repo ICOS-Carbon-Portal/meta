@@ -8,7 +8,7 @@ function panelClass(station){
 		case 'false false true': return 'warning';
 		case 'false true false': return 'info';
 		case 'false true true': return 'warning';
-		case 'true false false': return 'warning';
+		case 'true false false': return 'default';
 		case 'true false true': return 'danger';
 		case 'true true false': return 'primary';
 		case 'true true true': return 'danger';
@@ -25,6 +25,31 @@ function statusClass(appStatus){
 	}
 }
 
+const ShowLazily = React.createClass({
+
+	getInitialState: function(){
+		return {show: false};
+	},
+
+	componentDidMount: function(){
+		var self = this;
+		self.timeout = setTimeout(
+			() => self.setState({show: true}),
+			self.props.delay
+		);
+	},
+
+	componentWillUnmount: function(){
+		clearTimeout(this.timeout);
+	},
+
+	render: function(){
+		return this.state.show
+			? <div>{this.props.children}</div>
+			: null;
+	}
+});
+
 export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 	return React.createClass({
@@ -36,7 +61,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 			var self = this;
 
 			if (self.state.stations.length == 0){
-				return (
+				return <ShowLazily delay={100}>
 					<div className="container-fluid">
 						<div className="row">
 							<div className="col-md-2">
@@ -46,7 +71,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 							</div>
 						</div>
 					</div>
-				);
+				</ShowLazily>;
 			} else {
 				return (
 					<ul className="list-unstyled">{

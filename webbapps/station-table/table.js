@@ -144,7 +144,7 @@ function init(stations, config){
 					.autocomplete({
 						source: extractSuggestions(column.data()),
 						select: function(a, b){
-							var val = b.item.value;
+							var val = $.fn.dataTable.util.escapeRegex(b.item.value);
 							$(this).prop("title", val);
 							column.search( val ? val : '', true, false).draw();
 						}

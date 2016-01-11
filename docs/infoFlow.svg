@@ -9,26 +9,27 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="744.09448819"
-   height="1052.3622047"
+   width="738.57141"
+   height="582.85712"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="Oleg_infoFlow_MH.svg">
+   sodipodi:docname="infoFlow.svg">
   <defs
      id="defs4">
     <marker
        inkscape:stockid="Arrow2Lend"
        orient="auto"
-       refY="0.0"
-       refX="0.0"
+       refY="0"
+       refX="0"
        id="Arrow2Lend"
-       style="overflow:visible;">
+       style="overflow:visible">
       <path
          id="path3831"
-         style="fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;"
-         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
-         transform="scale(1.1) rotate(180) translate(1,0)" />
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)"
+         inkscape:connector-curvature="0" />
     </marker>
     <marker
        inkscape:stockid="Arrow2Lend"
@@ -166,15 +167,19 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
      inkscape:cx="221.02674"
-     inkscape:cy="652.04453"
+     inkscape:cy="183.47308"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="506"
-     inkscape:window-height="439"
-     inkscape:window-x="687"
-     inkscape:window-y="118"
-     inkscape:window-maximized="0" />
+     inkscape:window-width="1920"
+     inkscape:window-height="1161"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -183,16 +188,17 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-2.8571429,-0.93361121)">
     <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#ffffff;fill-opacity:1;stroke:none"
        id="rect4213"
        width="738.57141"
        height="582.85712"
@@ -203,7 +209,7 @@
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203" />
     <rect
-       style="fill:none;fill-opacity:1;stroke:#ff952e;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ff952e;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect4207"
        width="138.57143"
        height="540"
@@ -224,17 +230,6 @@
        inkscape:export-ydpi="300.02203" />
     <rect
        style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:0.47499999;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-       id="rect2995-0"
-       width="76.791229"
-       height="51.307411"
-       x="647.35583"
-       y="103.40874"
-       rx="4.7569785"
-       ry="4.7569785"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203" />
-    <rect
-       style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:0.47499999;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
        id="rect2995-04"
        width="76.791229"
        height="51.307411"
@@ -242,17 +237,6 @@
        y="466.0535"
        rx="4.7569785"
        ry="4.7569785"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203" />
-    <rect
-       style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:0.58842874;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="rect2995-6"
-       width="118.10637"
-       height="51.193981"
-       x="612.1167"
-       y="413.65408"
-       rx="7.3163233"
-       ry="4.7464619"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203" />
     <rect
@@ -321,35 +305,73 @@
          id="tspan4252-0-3"
          x="21.518562"
          y="298.66797">Uploader</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:22.32963181px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="659.00604"
-       y="136.0334"
-       id="text4250-0-0"
-       sodipodi:linespacing="125%"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203"><tspan
-         sodipodi:role="line"
-         id="tspan4252-0-6"
-         x="659.00604"
-         y="136.0334">EPIC</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:20.97037315px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
-       x="614.67102"
-       y="447.77682"
-       id="text4250-0-1"
-       sodipodi:linespacing="125%"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203"><tspan
-         sodipodi:role="line"
-         id="tspan4252-0-0"
-         x="614.67102"
-         y="447.77682">Repository</tspan></text>
+    <g
+       id="g3122"
+       transform="translate(-12,0)">
+      <rect
+         inkscape:export-ydpi="300.02203"
+         inkscape:export-xdpi="300.02203"
+         ry="6.876184"
+         rx="6.2614036"
+         y="81.408737"
+         x="633.35583"
+         height="74.164558"
+         width="101.07695"
+         id="rect2995-0"
+         style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:0.47499999;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+      <text
+         inkscape:export-ydpi="300.02203"
+         inkscape:export-xdpi="300.02203"
+         sodipodi:linespacing="125%"
+         id="text4250-0-0"
+         y="114.0334"
+         x="682.6546"
+         style="font-size:22.32963181px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="114.0334"
+           x="682.6546"
+           id="tspan4252-0-6"
+           sodipodi:role="line">EPIC</tspan><tspan
+           id="tspan3120"
+           y="141.94543"
+           x="682.6546"
+           sodipodi:role="line">PID API</tspan></text>
+    </g>
+    <g
+       id="g3090"
+       transform="translate(-2,-18)">
+      <rect
+         inkscape:export-ydpi="300.02203"
+         inkscape:export-xdpi="300.02203"
+         ry="6.7332168"
+         rx="7.3163233"
+         y="413.65408"
+         x="612.1167"
+         height="72.622551"
+         width="118.10637"
+         id="rect2995-6"
+         style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:0.58842874;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+      <text
+         inkscape:export-ydpi="300.02203"
+         inkscape:export-xdpi="300.02203"
+         sodipodi:linespacing="125%"
+         id="text4250-0-1"
+         y="445.77682"
+         x="628.67102"
+         style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="445.77682"
+           x="628.67102"
+           id="tspan4252-0-0"
+           sodipodi:role="line">B2SAFE</tspan><tspan
+           id="tspan3074"
+           y="471.98978"
+           x="628.67102"
+           sodipodi:role="line">(iRODS)</tspan></text>
+    </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.85616302px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
-       d="M 378.91413,479.33739 594.84677,430.56532"
+       d="m 378.91413,479.33739 223.0755,-48.77207"
        id="path3804-1-4"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc"
@@ -373,7 +395,7 @@
        inkscape:export-ydpi="300.02203" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
-       d="M 386.03217,47.469944 638.57031,117.17048"
+       d="M 386.03217,47.469944 614.28459,111.4562"
        id="path3804-29"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc"
@@ -381,7 +403,7 @@
        inkscape:export-ydpi="300.02203" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
-       d="M 638.65733,136.13887 386.11919,66.43833"
+       d="M 611.51448,130.42458 386.11919,66.43833"
        id="path3804-29-6"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc"
@@ -556,7 +578,7 @@
          y="192.93535">10. PID</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
        x="271.42859"
        y="569.50507"
        id="text4209"
@@ -567,6 +589,29 @@
          id="tspan4211"
          x="271.42859"
          y="569.50507"
-         style="font-size:20px;fill:#fa8300;fill-opacity:1;stroke:none;stroke-opacity:1;">Carbon Portal</tspan></text>
+         style="font-size:20px;fill:#fa8300;fill-opacity:1;stroke:none">Carbon Portal</tspan></text>
+    <rect
+       style="fill:none;stroke:#ff952e;stroke-width:1.99999976;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect4207-2"
+       width="138.57143"
+       height="530"
+       x="599.28571"
+       y="18.076469"
+       inkscape:export-xdpi="300.02203"
+       inkscape:export-ydpi="300.02203" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+       x="632.38281"
+       y="571.24683"
+       id="text4209-2"
+       sodipodi:linespacing="125%"
+       inkscape:export-xdpi="300.02203"
+       inkscape:export-ydpi="300.02203"><tspan
+         sodipodi:role="line"
+         id="tspan4211-6"
+         x="632.38281"
+         y="571.24683"
+         style="font-size:20px;fill:#fa8300;fill-opacity:1;stroke:none">EUDAT</tspan></text>
   </g>
 </svg>

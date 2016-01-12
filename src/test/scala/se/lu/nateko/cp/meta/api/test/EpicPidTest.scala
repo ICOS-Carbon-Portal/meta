@@ -45,7 +45,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 		}
 	}
 
-	def isSucess(value: Option[Try[Unit]]): Boolean = {
+	def isSuccess(value: Option[Try[Unit]]): Boolean = {
 		value match {
 			case Some(Success(s: Unit)) => true
 			case Some(Failure(t)) => false
@@ -62,7 +62,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 			val result = Await.ready(r, waitTime second)
 
-			assert(isSucess(result.value) === true)
+			assert(isSuccess(result.value) === true)
 
 		}
 
@@ -108,7 +108,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 			val result = Await.ready(r, waitTime second)
 
-			assert(isSucess(result.value) === true)
+			assert(isSuccess(result.value) === true)
 
 			val p = ep.get(suffix)
 
@@ -126,7 +126,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 			val result = Await.ready(r, waitTime second)
 
-			assert(isSucess(result.value) === true)
+			assert(isSuccess(result.value) === true)
 
 		}
 
@@ -137,7 +137,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 			val result = Await.ready(r, waitTime second)
 
-			assert(isSucess(result.value) === true)
+			assert(isSuccess(result.value) === true)
 
 		}
 	}

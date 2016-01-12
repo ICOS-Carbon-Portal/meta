@@ -4,15 +4,17 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.{Marshaller, Marshal}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import spray.json._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.Location
 import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.{ConfigLoader, EpicPidConfig}
 import scala.concurrent.Future
+import spray.json._
 
-case class PidExisting(
+
+case class PidEntry(
 	idx: Int,
 	`type`: String,
 	parsed_data: JsValue,
@@ -24,22 +26,28 @@ case class PidExisting(
 	privs: String
 )
 
-case class PidUpdate(
-	`type`: String,
-	parsed_data: JsValue
-)
+case class PidUpdate(`type`: String, parsed_data: JsValue)
+
+object EpicPid{
+
+	def default(implicit system: ActorSystem) = new EpicPid(ConfigLoader.default.dataUploadService.epicPid)
+
+	def apply(config: EpicPidConfig)(implicit system: ActorSystem) = new EpicPid(config)
+
+	def toUpdate(entry: PidEntry) = PidUpdate(entry.`type`, entry.parsed_data)
+}
 
 class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends DefaultJsonProtocol {
 
 	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
 
-	implicit val pidExistingFormat = jsonFormat9(PidExisting)
+	implicit val pidExistingFormat = jsonFormat9(PidEntry)
 	implicit val pidUpdateFormat = jsonFormat2(PidUpdate)
 
 	private def getHeaders(extraHeaders: List[HttpHeader] = Nil): List[HttpHeader] = {
 		val authorization = headers.Authorization(
-			BasicHttpCredentials(config.userName, config.password)
+			BasicHttpCredentials(config.prefix, config.password)
 		)
 
 		val accept = headers.Accept(MediaTypes.`application/json`)
@@ -47,16 +55,21 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 		authorization :: accept :: extraHeaders
 	}
 
-	private def getResponse(uri: String, headers: List[HttpHeader]): Future[HttpResponse] = {
+	private def httpGet(uri: String): Future[HttpResponse] = {
 		Http().singleRequest(
 			HttpRequest(
 				uri = uri,
-				headers = headers
+				headers = getHeaders()
 			)
 		)
 	}
 
-	private def send[T](uri: String, method: HttpMethod, extraHeaders: List[HttpHeader] = Nil, payload: T)(implicit m: Marshaller[T, RequestEntity]): Future[HttpResponse] =
+	private def httpSend[T](
+		uri: String,
+		method: HttpMethod,
+		extraHeaders: List[HttpHeader] = Nil,
+		payload: T
+	) (implicit m: Marshaller[T, RequestEntity]): Future[HttpResponse] =
 		Marshal(payload).to[RequestEntity].flatMap(entity =>
 			Http().singleRequest(
 				HttpRequest(
@@ -68,85 +81,81 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 			)
 		)
 
-	private def delete(uri: String): Future[Unit] = {
+	private def httpDelete(uri: String): Future[HttpResponse] = {
 		Http().singleRequest(
 			HttpRequest(
 				method = HttpMethods.DELETE,
 				uri = uri,
 				headers = getHeaders()
 			)
-		).map(resp => if(resp.status != StatusCodes.NoContent)
-			throw new Exception(s"Got ${resp.status} from the server")
 		)
 	}
 
-	def listPids(): Future[Seq[String]] = {
-		getResponse(config.url + config.userName, getHeaders()).flatMap(
+	def list: Future[Seq[String]] = {
+		httpGet(config.url + config.prefix).flatMap(
 			resp => resp.status match {
-				case StatusCodes.OK => Unmarshal (resp.entity).to[Seq[String]]
+				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[String]]
 				case _ => Future.failed(new Exception(s"Got ${resp.status} from the server"))
 			}
 		)
 	}
 
-	def getPid(pidName: String): Future[Seq[PidExisting]] = {
-		getResponse(config.url + config.userName + "/" + pidName, getHeaders()).flatMap(
+	def get(suffix: String): Future[Seq[PidEntry]] = {
+		httpGet(config.url + config.prefix + "/" + suffix).flatMap(
 			resp => resp.status match {
-				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[PidExisting]]
+				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[PidEntry]]
 				case _ => Future.failed(new Exception(s"Got ${resp.status} from the server"))
 			}
 		)
 	}
 
-	def editPid(pidName: String, newPid: Seq[PidUpdate]): Future[Unit] = {
-		send(
-			uri = config.url + config.userName + "/" + pidName,
+	def update(suffix: String, updates: Seq[PidUpdate]): Future[Unit] = {
+		httpSend(
+			uri = config.url + config.prefix + "/" + suffix,
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-Match`.*),
-			payload = newPid
+			payload = updates
 		).map(resp => if (resp.status != StatusCodes.NoContent) {
 			throw new Exception(s"Got ${resp.status} from the server")
 		})
 	}
 
-	def createPidWithName(pidName: String, newPid: Seq[PidUpdate]): Future[Unit] = {
+	def create(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] = {
 
-		send(
-			uri = config.url + config.userName + "/" + pidName,
+		httpSend(
+			uri = config.url + config.prefix + "/" + suffix,
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-None-Match`.*),
-			payload = newPid
-		).map(resp => if (resp.status != StatusCodes.Created) {
+			payload = newEntries
+		).map(resp => if (resp.status != StatusCodes.Created)
 			throw new Exception(s"Got ${resp.status} from the server")
-		})
-
+		)
 	}
 
-	def createPid(newPid: Seq[PidUpdate]): Future[String] = {
+	def create(newEntries: Seq[PidUpdate]): Future[String] = {
 
-		send(
-			uri = config.url + config.userName + "/",
+		httpSend(
+			uri = config.url + config.prefix + "/",
 			method = HttpMethods.POST,
-			payload = newPid
-		).map(resp => if (resp.status != StatusCodes.Created) {
-			throw new Exception(s"Got ${resp.status} from the server")
-		} else {
-			resp.getHeader("Location").getOrElse(
-				throw new Exception("'Location' was not found in the response header")
-			).value
-		})
-
+			payload = newEntries
+		).map(resp =>
+			if (resp.status != StatusCodes.Created) {
+				throw new Exception(s"Got ${resp.status} from the server")
+			} else {
+				resp.header[Location].getOrElse(
+					throw new Exception("'Location' was not found in the response header")
+				).value.split("/").last
+			}
+		)
 	}
 
-	def deletePid(pidName: String): Future[Unit] = {
-		delete(config.url + config.userName + "/" + pidName)
+	def delete(suffix: String): Future[Unit] = {
+
+		httpDelete(config.url + config.prefix + "/" + suffix)
+			.map(resp =>
+				if(resp.status != StatusCodes.NoContent)
+					throw new Exception(s"Got ${resp.status} from the server")
+			)
 	}
-
-}
-
-object EpicPid{
-
-	def default(implicit system: ActorSystem): EpicPid = new EpicPid(ConfigLoader.default.dataUploadService.epicPid)
-	def apply(config: EpicPidConfig)(implicit system: ActorSystem) = new EpicPid(config)
 
 }

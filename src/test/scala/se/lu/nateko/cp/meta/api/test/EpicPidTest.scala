@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.api.test
 import akka.actor.ActorSystem
 import scala.util.{Success, Failure}
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
-import se.lu.nateko.cp.meta.api.{PidExisting, PidUpdate, EpicPid}
+import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPid}
 import spray.json.{JsValue, JsString}
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -38,7 +38,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 		)
 	}
 
-	def jsValueToString(jsVal: PidExisting): String = {
+	def jsValueToString(jsVal: PidEntry): String = {
 		jsVal.parsed_data match{
 			case JsString(s) => s
 			case _ => "WRONG"
@@ -99,7 +99,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 		it("allows us to delete specific PID"){
 
 			val ep = EpicPid.default
-			val r = ep.deletePid("sdfg")
+			val r = ep.delete("sdfg")
 
 			val result = Await.result(r, waitTime second)
 

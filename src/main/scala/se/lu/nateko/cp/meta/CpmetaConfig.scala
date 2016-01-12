@@ -56,7 +56,7 @@ case class LabelingServiceConfig(
 	ontoId: String
 )
 
-case class EpicPidConfig(url: String, userName: String, password: String)
+case class EpicPidConfig(url: String, prefix: String, password: String)
 
 case class CpmetaConfig(
 	port: Int,

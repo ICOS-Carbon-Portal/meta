@@ -115,9 +115,11 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-Match`.*),
 			payload = updates
-		).map(resp => if (resp.status != StatusCodes.NoContent) {
-			throw new Exception(s"Got ${resp.status} from the server")
-		})
+		).map(resp =>
+			if (resp.status != StatusCodes.NoContent) {
+				throw new Exception(s"Got ${resp.status} from the server")
+			}
+		)
 	}
 
 	def create(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] = {
@@ -127,8 +129,10 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-None-Match`.*),
 			payload = newEntries
-		).map(resp => if (resp.status != StatusCodes.Created)
-			throw new Exception(s"Got ${resp.status} from the server")
+		).map(resp =>
+			if (resp.status != StatusCodes.Created) {
+				throw new Exception(s"Got ${resp.status} from the server")
+			}
 		)
 	}
 
@@ -153,8 +157,9 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 
 		httpDelete(config.url + config.prefix + "/" + suffix)
 			.map(resp =>
-				if(resp.status != StatusCodes.NoContent)
+				if(resp.status != StatusCodes.NoContent) {
 					throw new Exception(s"Got ${resp.status} from the server")
+				}
 			)
 	}
 

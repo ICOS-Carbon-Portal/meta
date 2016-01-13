@@ -48,12 +48,11 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 	def isSuccess(value: Option[Try[Unit]]): Boolean = {
 		value match {
 			case Some(Success(s: Unit)) => true
-			case Some(Failure(t)) => false
 			case _ => false
 		}
 	}
 
-	describe("EpicPid operations"){
+	ignore("EpicPid operations"){
 
 		it("creates a new PID with specified name"){
 

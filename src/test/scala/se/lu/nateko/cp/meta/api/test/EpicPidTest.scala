@@ -11,7 +11,11 @@ import scala.concurrent.duration._
 
 class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
-	implicit val system = ActorSystem("EpicPidTestSystem")
+	implicit var system: ActorSystem = _
+
+	override def beforeAll(){
+		system = ActorSystem("EpicPidTestSystem")
+	}
 
 	override def afterAll(){
 		system.shutdown()

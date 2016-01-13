@@ -33,9 +33,8 @@ object Playground {
 		) yield res
 	}
 
-	def delete(postfix: String): Unit = {
-		val fut = client.delete(postfix)
-		Await.result(fut, Duration.Inf)
+	def delete(postfix: String): Unit = wait{
+		client.delete(postfix)
 	}
 
 	def list(): Unit = wait(client.list) foreach println

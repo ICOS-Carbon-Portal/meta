@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services
 
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -14,15 +13,16 @@ import org.openrdf.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
 import org.openrdf.repository.Repository
 
 import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.Marshalling.WithFixedCharset
+import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.ContentType
+import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
-import se.lu.nateko.cp.meta.utils.sesame.SesameRepoWithAccessAndTransactions
+import se.lu.nateko.cp.meta.utils.sesame._
 
 case class SparqlSelect(query: String)
 
@@ -34,37 +34,39 @@ trait SparqlServer {
 	def marshaller: ToResponseMarshaller[SparqlSelect]
 }
 
-private case class SparqlResultType(popularType: MediaType, exactType: MediaType, writerFactory: TupleQueryResultWriterFactory)
+private case class SparqlResultType(
+	popularType: ContentType,
+	contentType: ContentType,
+	writerFactory: TupleQueryResultWriterFactory
+)
 
 
 class SesameSparqlServer(repo: Repository) extends SparqlServer{
-	import SparqlServer._
-
-	private val utf8 = HttpCharsets.`UTF-8`
+	import SesameSparqlServer._
 
 	private val resTypes: List[SparqlResultType] = List(
 		SparqlResultType(
-			popularType = MediaTypes.`application/json`,
-			exactType = getSparqlResMediaType("application", "sparql-results+json", ".srj"),
+			popularType = ContentTypes.`application/json`,
+			contentType = getSparqlContentType("application/sparql-results+json", ".srj"),
 			writerFactory = new SPARQLResultsJSONWriterFactory()
 		),
 		SparqlResultType(
-			popularType = MediaTypes.`text/csv`,
-			exactType = getSparqlResMediaType("text", "csv", ".csv"),
+			popularType = ContentTypes.`text/csv(UTF-8)`,
+			contentType = getSparqlContentType("text/csv", ".csv"),
 			writerFactory = new SPARQLResultsCSVWriterFactory()
 		),
 		SparqlResultType(
-			popularType = MediaTypes.`text/plain`,
-			exactType = getSparqlResMediaType("text", "tab-separated-values", ".tsv"),
+			popularType = ContentTypes.`text/plain(UTF-8)`,
+			contentType = getSparqlContentType("text/tab-separated-values", ".tsv"),
 			writerFactory = new SPARQLResultsTSVWriterFactory()
 		)
 	)
 
 	def marshaller: ToResponseMarshaller[SparqlSelect] = Marshaller(
 		implicit exeCtxt => query => Future.successful(
-			resTypes.map(resType =>
-				WithFixedCharset(resType.popularType, utf8, () => getResponse(query.query, resType))
-			)
+			resTypes.map(resType => {
+				Marshalling.WithFixedContentType(resType.popularType, () => getResponse(query.query, resType))
+			})
 		)
 	)
 
@@ -82,19 +84,18 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 			outStream.toByteArray
 		})
 
-		HttpResponse(entity = HttpEntity(ContentType(resType.exactType, utf8), bytes))
+		HttpResponse(entity = HttpEntity(resType.contentType, bytes))
 	}
 }
 
-object SparqlServer{
-	
-	def getSparqlResMediaType(mainType: String, subtype: String, fileExtension: String): MediaType = MediaType.custom(
-		mainType = mainType,
-		subType = subtype,
-		encoding = MediaType.Encoding.Fixed(HttpCharsets.`UTF-8`),
-		compressible = true,
-		fileExtensions = fileExtension :: Nil
-	)
+object SesameSparqlServer{
+
+	private val utf8 = HttpCharsets.`UTF-8`
+
+	def getSparqlContentType(mimeType: String, fileExtension: String): ContentType = {
+		val mediaType = MediaType.custom(mimeType, false, fileExtensions = List(fileExtension))
+		ContentType(mediaType, () => utf8)
+	}
 
 }
 

@@ -8,8 +8,9 @@ val sesameVersion = "2.8.7"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
 libraryDependencies ++= Seq(
-	"com.typesafe.akka"  %% "akka-http-core-experimental"        % "1.0",
-	"com.typesafe.akka"  %% "akka-http-spray-json-experimental"  % "1.0",
+	"com.typesafe.akka"  %% "akka-http-experimental"        % "2.0.1",
+	"com.typesafe.akka"  %% "akka-http-spray-json-experimental"  % "2.0.1",
+	"com.typesafe.akka"  %% "akka-slf4j"       % "2.3.14",
 	"ch.qos.logback"     %  "logback-classic"  % "1.1.2",
 	"net.sourceforge.owlapi" % "owlapi-distribution"     % "4.0.2",
 	"org.openrdf.sesame"     % "sesame-repository-sail"          % sesameVersion,

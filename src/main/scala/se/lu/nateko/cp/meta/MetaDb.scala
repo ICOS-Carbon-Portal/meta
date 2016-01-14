@@ -45,7 +45,7 @@ object MetaDb {
 		val factory = initRepo.getValueFactory
 
 		val writeContexts = conf.writeContexts.map(ctxt => factory.createURI(ctxt))
-		val readContexts = conf.readContexts.getOrElse(Nil).map(ctxt => factory.createURI(ctxt))
+		val readContexts = conf.readContexts.getOrElse(conf.writeContexts).map(ctxt => factory.createURI(ctxt))
 
 		conf.logName match{
 			case Some(logName) =>

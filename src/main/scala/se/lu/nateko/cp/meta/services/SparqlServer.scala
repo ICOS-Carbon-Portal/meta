@@ -34,9 +34,9 @@ trait SparqlServer {
 	def marshaller: ToResponseMarshaller[SparqlSelect]
 }
 
-private case class SparqlResultType(
-	popularType: ContentType,
-	contentType: ContentType,
+private case class SparqlNegotiationOption(
+	requestedType: ContentType,
+	returnedType: ContentType,
 	writerFactory: TupleQueryResultWriterFactory
 )
 
@@ -44,39 +44,42 @@ private case class SparqlResultType(
 class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	import SesameSparqlServer._
 
-	private val resTypes: List[SparqlResultType] = List(
-		SparqlResultType(
-			popularType = ContentTypes.`application/json`,
-			contentType = getSparqlContentType("application/sparql-results+json", ".srj"),
-			writerFactory = new SPARQLResultsJSONWriterFactory()
+	private val sparqlType = getSparqlContentType("application/sparql-results+json", ".srj")
+	private val jsonWriterFactory = new SPARQLResultsJSONWriterFactory()
+
+	private val negotiationOptions = List(
+		SparqlNegotiationOption(sparqlType, sparqlType, jsonWriterFactory),
+		SparqlNegotiationOption(ContentTypes.`application/json`, sparqlType, jsonWriterFactory),
+		SparqlNegotiationOption(
+			ContentTypes.`text/csv(UTF-8)`,
+			getSparqlContentType("text/csv", ".csv"),
+			new SPARQLResultsCSVWriterFactory()
 		),
-		SparqlResultType(
-			popularType = ContentTypes.`text/csv(UTF-8)`,
-			contentType = getSparqlContentType("text/csv", ".csv"),
-			writerFactory = new SPARQLResultsCSVWriterFactory()
-		),
-		SparqlResultType(
-			popularType = ContentTypes.`text/plain(UTF-8)`,
-			contentType = getSparqlContentType("text/tab-separated-values", ".tsv"),
-			writerFactory = new SPARQLResultsTSVWriterFactory()
+		SparqlNegotiationOption(
+			ContentTypes.`text/plain(UTF-8)`,
+			getSparqlContentType("text/tab-separated-values", ".tsv"),
+			new SPARQLResultsTSVWriterFactory()
 		)
 	)
 
 	def marshaller: ToResponseMarshaller[SparqlSelect] = Marshaller(
 		implicit exeCtxt => query => Future.successful(
-			resTypes.map(resType => {
-				Marshalling.WithFixedContentType(resType.popularType, () => getResponse(query.query, resType))
-			})
+			negotiationOptions.map(negOption =>
+				Marshalling.WithFixedContentType(
+					negOption.requestedType,
+					() => getResponse(query.query, negOption)
+				)
+			)
 		)
 	)
 
-	private def getResponse(query: String, resType: SparqlResultType)
+	private def getResponse(query: String, netOpt: SparqlNegotiationOption)
 			(implicit executor: ExecutionContext): HttpResponse = {
 
 		val bytes = repo.accessEagerly(conn => {
 			val outStream = new ByteArrayOutputStream
 	
-			val resultWriter = resType.writerFactory.getWriter(outStream)
+			val resultWriter = netOpt.writerFactory.getWriter(outStream)
 			val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
 	
 			tupleQuery.evaluate(resultWriter)
@@ -84,7 +87,7 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 			outStream.toByteArray
 		})
 
-		HttpResponse(entity = HttpEntity(resType.contentType, bytes))
+		HttpResponse(entity = HttpEntity(netOpt.returnedType, bytes))
 	}
 }
 

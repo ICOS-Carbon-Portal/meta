@@ -6,17 +6,20 @@ import java.util.Date
 import java.util.Properties
 import org.apache.commons.io.IOUtils
 import se.lu.nateko.cp.meta.{ConfigLoader, EmailConfig}
+import org.slf4j.LoggerFactory
 
 class SendMail(config: EmailConfig) {
+
+	private val log = LoggerFactory.getLogger(getClass)
 
 	def send(	to: Seq[String],
 				subject: String,
 				body: String,
 				isHtml: Boolean = true,
 				cc: Seq[String] = Nil,
-				bcc: Seq[String] = Nil): Unit ={
+				bcc: Seq[String] = Nil): Unit = {
 
-		if (config.mailSendingActive) {
+		if (config.mailSendingActive) try{
 			val message: Message = {
 				val properties = new Properties()
 				properties.put("mail.smtp.host", config.smtpServer)
@@ -44,6 +47,10 @@ class SendMail(config: EmailConfig) {
 			}
 
 			Transport.send(message)
+		}catch{
+			case err: Throwable =>
+				log.error("Mail sending failed", err)
+				throw err
 		}
 	}
 }

@@ -43,10 +43,20 @@ case class DataSubmitterConfig(
 	submittingOrganization: URI
 )
 
-case class UploadServiceConfig(instanceServerId: String, submitters: Map[String, DataSubmitterConfig], epicPid: EpicPidConfig)
+case class UploadServiceConfig(
+	instanceServerId: String,
+	submitters: Map[String, DataSubmitterConfig],
+	epicPid: EpicPidConfig
+)
 
 case class MailTemplatesConfig(submitted: String)
-case class EmailConfig(mailSendingActive: Boolean, smtpServer: String, fromAddress: String, templatePaths: MailTemplatesConfig, logBccAddress: Option[String])
+case class EmailConfig(
+	mailSendingActive: Boolean,
+	smtpServer: String,
+	fromAddress: String,
+	templatePaths: MailTemplatesConfig,
+	logBccAddress: Option[String]
+)
 
 case class LabelingServiceConfig(
 	instanceServerId: String,
@@ -92,8 +102,9 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	private def getAppConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
 		val default = ConfigFactory.load
-		if(!confFile.exists) default
-		ConfigFactory.parseFile(confFile).withFallback(default)
+		if(confFile.exists)
+			ConfigFactory.parseFile(confFile).withFallback(default)
+		else default
 	}
 
 	val default: CpmetaConfig = {

@@ -21,7 +21,7 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 	private val vocab = new CpmetaVocab(factory)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
-		import meta._
+		import meta.{hashSum, submitterId, packageSpec, producingOrganization}
 
 		val submitterConf = conf.submitters.get(submitterId).getOrElse(
 			throw new UploadUserErrorException(s"Unknown submitter: $submitterId")

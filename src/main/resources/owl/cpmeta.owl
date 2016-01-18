@@ -418,14 +418,6 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">E-mail</rdfs:label>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:onDatatype rdf:resource="&xsd;string"/>
@@ -436,6 +428,14 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
     </owl:DatatypeProperty>
     
 
@@ -484,10 +484,10 @@
                 <owl:onDatatype rdf:resource="&xsd;double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -511,19 +511,6 @@
         <rdfs:label rdf:datatype="&xsd;string">Longitude</rdfs:label>
         <rdfs:comment>Decimal degrees in WGS84/GRS80</rdfs:comment>
         <rdfs:subPropertyOf rdf:resource="&geo;long"/>
-        <rdfs:range>
-            <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
-                <owl:withRestrictions rdf:parseType="Collection">
-                    <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
-                    </rdf:Description>
-                    <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
-                    </rdf:Description>
-                </owl:withRestrictions>
-            </rdfs:Datatype>
-        </rdfs:range>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -532,6 +519,19 @@
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
+                    </rdf:Description>
+                    <rdf:Description>
+                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
     </owl:DatatypeProperty>
     
 
@@ -541,16 +541,9 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasName">
         <rdf:type rdf:resource="&owl;FunctionalProperty"/>
         <rdfs:label rdf:datatype="&xsd;string">Name</rdfs:label>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:subPropertyOf rdf:resource="&dcterms;title"/>
         <rdfs:range rdf:resource="&xsd;string"/>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
     </owl:DatatypeProperty>
     
 
@@ -769,6 +762,12 @@
         <rdfs:subClassOf rdf:resource="&prov;Entity"/>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasPackageSpec"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
@@ -776,12 +775,6 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -796,13 +789,13 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -907,13 +900,13 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Membership">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasRole"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasRole"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization"/>
                 <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -986,13 +979,13 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName"/>
                 <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -1024,15 +1017,15 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpec"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
-                <owl:onClass rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
-                <owl:qualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">1</owl:qualifiedCardinality>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
+                <owl:onClass rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+                <owl:qualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">1</owl:qualifiedCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>
@@ -1059,14 +1052,14 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId"/>
+                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <owl:disjointUnionOf rdf:parseType="Collection">
@@ -1134,12 +1127,6 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType">
         <rdfs:label rdf:datatype="&xsd;string">Value Type</rdfs:label>
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataPackageSpecifyingThing"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:comment rdf:datatype="&xsd;string">Domain-specific meaning of the values</rdfs:comment>
     </owl:Class>
     
@@ -1248,6 +1235,14 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/iso8601timeOfDay -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601timeOfDay">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
     </owl:NamedIndividual>
     

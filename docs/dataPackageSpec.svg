@@ -334,13 +334,13 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="440.82325"
+     inkscape:cx="442.84356"
      inkscape:cy="350.48215"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1920"
-     inkscape:window-height="1107"
+     inkscape:window-height="1099"
      inkscape:window-x="0"
      inkscape:window-y="28"
      inkscape:window-maximized="1" />
@@ -391,7 +391,7 @@
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.85616302px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
-       d="M 850.61543,665.82907 838.2536,888.78799"
+       d="M 850.61543,665.82907 738.2485,883.73723"
        id="path3804-1-4"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc"
@@ -405,21 +405,6 @@
        sodipodi:nodetypes="cc"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203" />
-    <text
-       xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="-253.39212"
-       y="1035.298"
-       id="text4549-7-0-4"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.53843277,-0.84266847,0.84266847,0.53843277,0,0)"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203"><tspan
-         sodipodi:role="line"
-         id="tspan4551-2-4-2"
-         x="-253.39212"
-         y="1035.298"
-         style="font-size:20px">hasName</tspan></text>
     <g
        id="g5127"
        transform="translate(-29.711191,-167.52131)">
@@ -586,7 +571,7 @@
     </g>
     <g
        id="g5352"
-       transform="translate(-26.263963,39.192896)">
+       transform="translate(-129.29952,33.131981)">
       <rect
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
@@ -693,34 +678,6 @@
          y="435.06329"
          style="font-size:20px">hasColumnTitle</tspan></text>
     <g
-       transform="translate(223.58612,22.348023)"
-       id="g5247-8-1">
-      <rect
-         inkscape:export-ydpi="300.02203"
-         inkscape:export-xdpi="300.02203"
-         ry="6.3979831"
-         rx="5.1235929"
-         y="808.23071"
-         x="447.21671"
-         height="41.120079"
-         width="82.709427"
-         id="rect2995-6-3-3-9-2-5"
-         style="fill:#e3e3e3;fill-opacity:1;stroke:#000000;stroke-width:1.49999988;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
-      <text
-         inkscape:export-ydpi="300.02203"
-         inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
-         id="text4250-0-1-6-8-46-9-2"
-         y="836.60229"
-         x="456.87692"
-         style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         xml:space="preserve"><tspan
-           y="836.60229"
-           x="456.87692"
-           id="tspan4252-0-0-8-5-8-0-9"
-           sodipodi:role="line">Literal</tspan></text>
-    </g>
-    <g
        id="g5433"
        transform="translate(0,20)">
       <rect
@@ -808,14 +765,6 @@
        style="fill:none;stroke:#000000;stroke-width:0.88865054px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
        d="m 107.94464,956.57052 0,-255.43153"
        id="path3804-1-4-9-5-8-0"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc"
-       inkscape:export-xdpi="300.02203"
-       inkscape:export-ydpi="300.02203" />
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.8886506px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
-       d="M 812.48902,666.16312 724.6542,819.72215"
-       id="path3804-1-4-9-8"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc"
        inkscape:export-xdpi="300.02203"

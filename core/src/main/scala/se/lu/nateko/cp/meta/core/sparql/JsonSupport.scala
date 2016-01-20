@@ -1,17 +1,9 @@
 package se.lu.nateko.cp.meta.core.sparql
 
+import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import spray.json._
-import java.net.URI
 
-object JsonSupport extends DefaultJsonProtocol{
-
-	implicit object uriFormat extends RootJsonFormat[URI] {
-		def write(uri: URI) = JsString(uri.toString)
-		def read(value: JsValue): URI = value match{
-			case JsString(s) => new URI(s)
-			case _ => deserializationError("String expected")
-		}
-	}
+object JsonSupport extends CommonJsonSupport{
 
 	implicit val boundLitFormat = jsonFormat2(BoundLiteral)
 	implicit val boundUriFormat = jsonFormat1(BoundUri)

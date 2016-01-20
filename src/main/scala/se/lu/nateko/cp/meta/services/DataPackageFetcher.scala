@@ -1,11 +1,12 @@
 package se.lu.nateko.cp.meta.services
 
-import java.util.Date
+import java.time.Instant
 
 import org.openrdf.model.{URI, Literal}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.utils.sesame._
 
 import java.net.{URI => JavaURI}
 
@@ -32,13 +33,13 @@ class DataPackageFetcher(server: InstanceServer) {
 					uri = new JavaURI("submittingOrgURI"),
 					label = Option("Label")
 				),
-				start = new Date(),
-				stop = Option(new Date())
+				start = Instant.now,
+				stop = Some(Instant.now)
 			),
 			production = PackageProduction(
 				producer = UriResource(
-					uri = new JavaURI(producer.stringValue),
-					label = Option(producerName)
+					uri = producer,
+					label = Some(producerName)
 				)
 			),
 			hash = hash

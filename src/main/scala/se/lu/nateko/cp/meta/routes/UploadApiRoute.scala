@@ -23,6 +23,8 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		case err => throw err
 	}
 
+	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
+
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting
@@ -47,8 +49,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		} ~
-		(get & path("object" / Segment)){ hashStr =>
-			val hash = Sha256Sum.fromBase64Url(hashStr).get
+		(get & path("object" / Sha256Segment)){ hash =>
 			val dataPackage = service.packageFetcher.getPackage(hash)
 			val pageHtml = LandingPageBuilder.getPage(dataPackage)
 			complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, pageHtml))

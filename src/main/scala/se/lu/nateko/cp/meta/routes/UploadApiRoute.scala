@@ -10,37 +10,44 @@ import akka.stream.Materializer
 import scala.util.Success
 import scala.util.Failure
 import se.lu.nateko.cp.meta.services._
+import akka.http.scaladsl.server.ExceptionHandler
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
-	def apply(service: UploadService, authRouting: AuthenticationRouting)(implicit mat: Materializer): Route = pathPrefix("upload"){
-		post{
-			authRouting.mustBeLoggedIn{uploader =>
-				pathEnd{
-					entity(as[UploadMetadataDto]){uploadMeta =>
-						service.registerUpload(uploadMeta, uploader) match{
-							case Success(datasetUrl) => complete(datasetUrl)
-							case Failure(err) => err match{
-								case authErr: UnauthorizedUploadException =>
-									complete((StatusCodes.Unauthorized, authErr.getMessage))
-								case userErr: UploadUserErrorException =>
-									complete((StatusCodes.BadRequest, userErr.getMessage))
-								case _ => throw err
-							}
-						}
-					} ~
-					complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+	private val errHandler = ExceptionHandler{
+		case authErr: UnauthorizedUploadException =>
+			complete((StatusCodes.Unauthorized, authErr.getMessage))
+		case userErr: UploadUserErrorException =>
+			complete((StatusCodes.BadRequest, userErr.getMessage))
+		case err => throw err
+	}
+
+	def apply(
+		service: UploadService,
+		authRouting: AuthenticationRouting
+	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
+		pathPrefix("upload"){
+			post{
+				authRouting.mustBeLoggedIn{uploader =>
+					pathEnd{
+						entity(as[UploadMetadataDto]){uploadMeta =>
+							complete(service.registerUpload(uploadMeta, uploader))
+						} ~
+						complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+					}
+				}
+			} ~
+			get{
+				path("permissions"){
+					parameters('submitter, 'userId)((submitter, userId) => {
+						val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
+						complete(spray.json.JsBoolean(isAllowed))
+					})
 				}
 			}
 		} ~
-		get{
-			path("permissions"){
-				parameters('submitter, 'userId)((submitter, userId) => {
-					val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
-					complete(spray.json.JsBoolean(isAllowed))
-				})
-			}
-			complete("OK")
+		pathPrefix("object"){
+			complete("Under construction!")
 		}
 	}
 }

@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.util.Success
 import scala.util.Failure
 import se.lu.nateko.cp.meta.services._
@@ -46,8 +47,11 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		} ~
-		pathPrefix("object"){
-			complete("Under construction!")
+		(get & path("object" / Segment)){ hashStr =>
+			val hash = Sha256Sum.fromBase64Url(hashStr).get
+			val dataPackage = service.packageFetcher.getPackage(hash)
+			val pageHtml = LandingPageBuilder.getPage(dataPackage)
+			complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, pageHtml))
 		}
 	}
 }

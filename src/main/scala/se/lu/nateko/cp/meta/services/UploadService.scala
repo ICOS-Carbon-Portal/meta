@@ -20,6 +20,8 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
 
+	val packageFetcher = new DataPackageFetcher(server)
+
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
 		import meta.{hashSum, submitterId, packageSpec, producingOrganization}
 

@@ -17,6 +17,7 @@ object CpmetaJsonProtocol{
 
 trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	import CpmetaJsonProtocol._
+	import se.lu.nateko.cp.meta.core.crypto.Sha256Sum._
 
 	implicit object UriJsonFormat extends RootJsonFormat[URI]{
 

@@ -3,12 +3,14 @@
 /webbapps/station-map/sparql.html
 /webbapps/station-map/table.js
 /webbapps/station-map/table.html
+
 #Node specific
 node_modules
 npm-debug.log
 
 # sbt specific
 /target/
+/core/target/
 /lib/
 /project/project/
 /project/target/

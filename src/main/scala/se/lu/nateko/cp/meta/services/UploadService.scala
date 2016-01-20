@@ -31,8 +31,7 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!submitterConf.authorizedUserIds.contains(userId))
 			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
 
-		val packageId = UploadService.getPackageId(hashSum)
-		val packageUri = vocab.getFile(packageId)
+		val packageUri = vocab.getFile(hashSum)
 		if(server.getStatements(packageUri).nonEmpty)
 			throw new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!")
 
@@ -42,13 +41,13 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		if(!server.hasStatement(producingOrganization, RDF.TYPE, submitterConf.producingOrganizationClass))
 			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
 
-		val submissionUri = factory.createURI(vocab.submissionClass, "/" + packageId)
-		val productionUri = factory.createURI(vocab.productionClass, "/" + packageId)
+		val submissionUri = vocab.getSubmission(hashSum)
+		val productionUri = vocab.getProduction(hashSum)
 
 		server.addAll(Seq[(URI, URI, Value)](
 
 			(packageUri, RDF.TYPE, vocab.dataPackageClass),
-			(packageUri, vocab.hasSha256sum, vocab.lit(hashSum, XMLSchema.HEXBINARY)),
+			(packageUri, vocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
 			(packageUri, vocab.hasPackageSpec, packageSpec),
 			(packageUri, vocab.wasProducedBy, productionUri),
 			(packageUri, vocab.wasSubmittedBy, submissionUri),
@@ -65,15 +64,9 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 		packageUri.stringValue
 	}
 
-}
-
-object UploadService{
-	import se.lu.nateko.cp.meta.utils.HashSumUtils._
-
-	private def getOrBlameUser(maybe: Try[String]): String = maybe.recoverWith{
-		case err => Failure(new UploadUserErrorException(err.getMessage))
-	}.get
-
-	def getPackageId(hex: String): String = getOrBlameUser(toUrlSafeSha256Base64(hex))
+	def checkPermissions(submitter: java.net.URI, userId: String): Boolean =
+		conf.submitters.values
+			.filter(_.submittingOrganization == submitter)
+			.exists(_.authorizedUserIds.contains(userId))
 
 }

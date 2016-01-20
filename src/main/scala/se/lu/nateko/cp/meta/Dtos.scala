@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta
 
 import java.net.URI
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 case class ResourceDto(displayName: String, uri: URI, comment: Option[String])
 
@@ -34,7 +35,7 @@ case class UploadMetadataDto(
 	submitterId: String,
 	producingOrganization: URI,
 	packageSpec: URI,
-	hashSum: String
+	hashSum: Sha256Sum
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services
 
 import org.openrdf.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
@@ -34,5 +35,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val endedAtTime = getRelative("endedAtTime")
 	}
 
-	def getFile(id: String) = factory.createURI("https://data.icos-cp.eu/files/", id)
+	def getFile(hash: Sha256Sum) = factory.createURI("https://data.icos-cp.eu/files/", hash.base64Url)
+	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.base64Url)
+	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.base64Url)
 }

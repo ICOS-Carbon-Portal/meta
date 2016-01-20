@@ -36,8 +36,8 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		get{
 			path("permissions"){
 				parameters('submitter, 'userId)((submitter, userId) => {
-					val response: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
-					complete(Array(response))
+					val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
+					complete(spray.json.JsBoolean(isAllowed))
 				})
 			}
 			complete("OK")

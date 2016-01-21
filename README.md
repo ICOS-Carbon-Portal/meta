@@ -21,9 +21,13 @@ Getting started with the back-end part
 
 Using the webapp
 ----------------
-To get the authentication cookie from Cpauth:
+To get the authentication cookie from CPuth:
 `curl --cookie-jar cookies.txt --data "mail=<user email>&password=<password>" https://cpauth.icos-cp.eu/password/login`
 The resulting `cookies.txt` file must be edited if you want to use it for tests against localhost via HTTP.
 
 To test the metadata upload (`upload.json` and `cookies.txt` must be in the current directory):
 `curl --cookie cookies.txt -H "Content-Type: application/json" -X POST -d @upload.json localhost:9094/upload`
+
+Alternatively, the CPauth cookie can be supplied manually:
+`curl -H "Cookie: <cookie-assignment>" -H "Content-Type: application/json" -X POST -d @upload.json localhost:9094/upload`
+

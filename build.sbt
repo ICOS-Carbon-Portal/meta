@@ -42,22 +42,22 @@ lazy val meta = (project in file("."))
 		version := "0.2",
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"  %% "akka-http-experimental"        % "2.0.2",
-			"com.typesafe.akka"  %% "akka-http-spray-json-experimental"  % "2.0.2",
-			"com.typesafe.akka"  %% "akka-slf4j"       % "2.3.14",
-			"ch.qos.logback"     %  "logback-classic"  % "1.1.2",
-			"net.sourceforge.owlapi" % "owlapi-distribution"     % "4.0.2",
-			"org.openrdf.sesame"     % "sesame-repository-sail"          % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-sail-memory"              % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson" % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-queryresultio-text" % sesameVersion,
-			"org.postgresql"         % "postgresql"              % "9.4-1201-jdbc41",
+			"com.typesafe.akka"     %% "akka-http-experimental"             % "2.0.2",
+			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.0.2",
+			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.3.14",
+			"ch.qos.logback"         % "logback-classic"                    % "1.1.2",
+			"net.sourceforge.owlapi" % "owlapi-distribution"                % "4.0.2",
+			"org.openrdf.sesame"     % "sesame-repository-sail"             % sesameVersion,
+			"org.openrdf.sesame"     % "sesame-sail-memory"                 % sesameVersion,
+			"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson"    % sesameVersion,
+			"org.openrdf.sesame"     % "sesame-queryresultio-text"          % sesameVersion,
+			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			 //non-standard Hermit, hosted on repo.icos-cp.eu 3rd-parties repo
-			"com.hermit-reasoner"    % "org.semanticweb.hermit"  % "1.3.8.5" excludeAll(noGeronimo),
-			"se.lu.nateko.cp"    %% "cpauth-core"       % "0.2",
-			"net.sf.opencsv" % "opencsv" % "2.3",
-			"org.apache.commons" % "commons-email" % "1.4",
-			"org.scalatest"      %  "scalatest_2.11"   % "2.2.1" % "test"
+			"com.hermit-reasoner"    % "org.semanticweb.hermit"             % "1.3.8.5" excludeAll(noGeronimo),
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.2",
+			"net.sf.opencsv"         % "opencsv"                            % "2.3",
+			"org.apache.commons"     % "commons-email"                      % "1.4",
+			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"
 		),
 
 		assemblyMergeStrategy in assembly := {
@@ -74,6 +74,4 @@ lazy val meta = (project in file("."))
 			import se.lu.nateko.cp.meta.Playground._
 		"""
 	)
-
-Revolver.settings
 

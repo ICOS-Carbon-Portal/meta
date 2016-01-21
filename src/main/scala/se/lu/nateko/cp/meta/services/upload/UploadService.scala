@@ -1,7 +1,6 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.upload
 
 import scala.util.Try
-import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.vocabulary.RDF
@@ -10,10 +9,11 @@ import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.utils.sesame._
-import se.lu.nateko.cp.meta.utils.DateTimeUtils
-import scala.util.Failure
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.DataPackageFetcher
+import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 

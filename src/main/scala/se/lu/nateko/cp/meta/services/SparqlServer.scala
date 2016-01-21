@@ -15,13 +15,7 @@ import org.openrdf.repository.Repository
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.utils.sesame._
 
 case class SparqlSelect(query: String)

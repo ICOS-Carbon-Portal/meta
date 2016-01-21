@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
+import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.sesame._
 
 class MetaDb private (

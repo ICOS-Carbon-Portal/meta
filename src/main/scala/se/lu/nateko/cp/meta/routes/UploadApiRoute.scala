@@ -3,15 +3,18 @@ package se.lu.nateko.cp.meta.routes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model._
-import se.lu.nateko.cp.meta.UploadMetadataDto
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import akka.http.scaladsl.server.ExceptionHandler
+
 import scala.util.Success
 import scala.util.Failure
+
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.services._
-import akka.http.scaladsl.server.ExceptionHandler
+import se.lu.nateko.cp.meta.services.upload._
+import se.lu.nateko.cp.meta.UploadMetadataDto
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -24,6 +27,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	}
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
+	implicit val dataObjectMarshaller = LandingPageMarshalling.marshaller
 
 	def apply(
 		service: UploadService,
@@ -49,10 +53,8 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		} ~
-		(get & path("object" / Sha256Segment)){ hash =>
-			val dataPackage = service.packageFetcher.getPackage(hash)
-			val pageHtml = LandingPageBuilder.getPage(dataPackage)
-			complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, pageHtml))
+		(get & path("objects" / Sha256Segment)){ hash =>
+			complete(service.packageFetcher.getPackage(hash))
 		}
 	}
 }

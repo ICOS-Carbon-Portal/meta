@@ -54,7 +54,10 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		(get & path("objects" / Sha256Segment)){ hash =>
-			complete(service.packageFetcher.getPackage(hash))
+			service.packageFetcher.fetch(hash) match{
+				case None => complete(StatusCodes.NotFound)
+				case Some(dataObj) => complete(dataObj)
+			}
 		}
 	}
 }

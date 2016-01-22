@@ -29,9 +29,11 @@
 	<nav class="navbar navbar-default navbar-static-top">
 		<div class="container-fluid">
 			<div class="navbar-header">
-				<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
+				<a href="https://www.icos-ri.eu">
+					<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
+				</a>
 			</div>
-			<h1>Landing Page</h1>
+			<h1>ICOS RI Data Object Landing Page</h1>
 		</div>
 	</nav>
 
@@ -44,13 +46,31 @@
 		</div>
 		<div class="row">
 			<div class="col-md-12">
-				<label>Has SHA-256 hashsum (base64url-encoded)</label>
+				<label>Data level</label>
+				$dataLevel
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<label>Upload started (UTC)</label>
+				$start
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<label>Upload ended (UTC)</label>
+				$stop
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<label>SHA-256 hashsum (base64url-encoded)</label>
 				$base64UrlPackageId
 			</div>
 		</div>
 		<div class="row">
 			<div class="col-md-12">
-				<label>Has SHA-256 hashsum (hex-encoded)</label>
+				<label>SHA-256 hashsum (hex-encoded)</label>
 				$hexHash
 			</div>
 		</div>
@@ -58,7 +78,7 @@
 		<div class="row">
 			<div class="col-md-12">
 				<label>Debug</label>
-				$debug
+				<pre>$debug</pre>
 			</div>
 		</div>
 	</div>

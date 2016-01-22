@@ -26,6 +26,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wasProducedBy = getRelative("wasProducedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
 	val hasPackageSpec = getRelative("hasPackageSpec")
+	val hasFormat = getRelative("hasFormat")
+	val hasEncoding = getRelative("hasEncoding")
 
 	object prov extends CustomVocab {
 		val factory = top.factory

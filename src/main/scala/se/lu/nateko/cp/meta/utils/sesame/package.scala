@@ -24,9 +24,6 @@ package object sesame {
 		
 		def tripleToStatement(triple: (URI, URI, Value)): Statement =
 			factory.createStatement(triple._1, triple._2, triple._3)
-
-		def getDateTimeNow: Literal =
-			factory.createLiteral(DateTimeUtils.defaultNowString, XMLSchema.DATETIME)
 	}
 
 	implicit def javaUriToSesame(uri: java.net.URI)(implicit factory: ValueFactory): URI = factory.createURI(uri)

@@ -10,20 +10,10 @@ object JsonSupport extends CommonJsonSupport{
 	import Sha256Sum.sha256sumFormat
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
-	implicit val dataPackageSpecFormat = jsonFormat3(DataPackageSpec)
-	implicit val packageProductionFormat = jsonFormat1(PackageProduction)
+	implicit val dataPackageSpecFormat = jsonFormat3(DataObjectSpec)
+	implicit val packageProductionFormat = jsonFormat3(DataProduction)
 
-	implicit object javaDateFormat extends RootJsonFormat[Instant] {
-
-		def write(instant: Instant) = JsString(instant.toString)
-
-		def read(value: JsValue): Instant = value match{
-			case JsString(s) => Instant.parse(s)
-			case _ => deserializationError("String representation of a time instant is expected")
-		}
-	}
-
-	implicit val packageSubmissionFormat = jsonFormat3(PackageSubmission)
-	implicit val dataPackageFormat = jsonFormat4(DataPackage)
+	implicit val packageSubmissionFormat = jsonFormat3(DataSubmission)
+	implicit val dataPackageFormat = jsonFormat6(DataObject)
 
 }

@@ -22,6 +22,8 @@ npm-debug.log
 .cache-tests
 .cache-main
 /.idea
+/bin/
+/core/bin/
 
 #Sublime
 *.sublime-project

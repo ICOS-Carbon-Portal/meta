@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta
 
 import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import java.time.Instant
 
 case class ResourceDto(displayName: String, uri: URI, comment: Option[String])
 
@@ -32,10 +33,13 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 }
 
 case class UploadMetadataDto(
+	hashSum: Sha256Sum,
 	submitterId: String,
 	producingOrganization: URI,
+	productionStart: Instant,
+	productionEnd: Instant,
 	packageSpec: URI,
-	hashSum: Sha256Sum
+	fileName: Option[String]
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

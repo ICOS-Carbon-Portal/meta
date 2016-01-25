@@ -1,61 +1,70 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.upload
 
 import java.time.Instant
-
 import org.openrdf.model.{URI, Literal}
 import org.openrdf.model.vocabulary.RDF
-
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
-class DataPackageFetcher(server: InstanceServer) {
+class DataObjectFetcher(server: InstanceServer) {
 
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
 
-	def fetch(hash: Sha256Sum): Option[DataPackage] = {
-		val dataObjUri = vocab.getFile(hash)
-		if(server.hasStatement(dataObjUri, RDF.TYPE, vocab.dataPackageClass))
+	def fetch(hash: Sha256Sum): Option[DataObject] = {
+		val dataObjUri = vocab.getDataObject(hash)
+		if(server.hasStatement(dataObjUri, RDF.TYPE, vocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
 		else None
 	}
 
-	private def getExistingDataObject(hash: Sha256Sum): DataPackage = {
-		val dataObjUri = vocab.getFile(hash)
+	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
+		val dataObjUri = vocab.getDataObject(hash)
+		val fileName: Option[String] = getSingleString(dataObjUri, vocab.hasName)
 
 		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
 		val producer: URI = getSingleUri(production, vocab.prov.wasAssociatedWith)
-		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
-		val submittingOrg: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
-		val submitterName: String = getSingleString(submittingOrg, vocab.hasName)
-		val spec = getSingleUri(dataObjUri, vocab.hasPackageSpec)
+		val producerName: String = getSingleString(producer, vocab.hasName).get
 
-		val producerName: String = getSingleString(producer, vocab.hasName)
-		val start = getSingleInstant(submission, vocab.prov.startedAtTime).get
-		val stop = getSingleInstant(submission, vocab.prov.endedAtTime)
+		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime).get
+		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime).get
+
+		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
+		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
+		val submitterName: String = getSingleString(submitter, vocab.hasName).get
+
+		val submStart = getSingleInstant(submission, vocab.prov.startedAtTime).get
+		val submStop = getSingleInstant(submission, vocab.prov.endedAtTime)
+
+		val spec = getSingleUri(dataObjUri, vocab.hasPackageSpec)
 		val specFormat = getSingleUri(spec, vocab.hasFormat)
 		val encoding = getSingleUri(spec, vocab.hasEncoding)
 		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
 
-		DataPackage(
+		DataObject(
 			hash = hash,
-			production = PackageProduction(
+			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
+			fileName = fileName,
+			production = DataProduction(
 				producer = UriResource(
 					uri = producer,
 					label = Some(producerName)
-				)
+				),
+				start = prodStart,
+				stop = prodStop
 			),
-			submission = PackageSubmission(
-				submittingOrg = UriResource(
-					uri = submittingOrg,
+			submission = DataSubmission(
+				submitter = UriResource(
+					uri = submitter,
 					label = Some(submitterName)
 				),
-				start = start,
-				stop = stop
+				start = submStart,
+				stop = submStop
 			),
-			spec = DataPackageSpec(
+			specification = DataObjectSpec(
 				format = specFormat,
 				encoding = encoding,
 				dataLevel = dataLevel
@@ -71,12 +80,12 @@ class DataPackageFetcher(server: InstanceServer) {
 		vals.head
 	}
 
-	private def getSingleString(subj: URI, pred: URI): String = {
+	private def getSingleString(subj: URI, pred: URI): Option[String] = {
 		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal => lit
+			case lit: Literal => lit.stringValue
 		}
-		assert(vals.size == 1, s"Expected a single value, got ${vals.size}!")
-		vals.head.stringValue
+		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
+		vals.headOption
 	}
 
 	private def getSingleInt(subj: URI, pred: URI): Int = {
@@ -92,7 +101,7 @@ class DataPackageFetcher(server: InstanceServer) {
 			case lit: Literal => lit.stringValue
 		}
 
-		assert(vals.size <= 1, "Expected no more than one value!")
+		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
 		vals.headOption.map(Instant.parse)
 
 	}

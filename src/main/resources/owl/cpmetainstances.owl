@@ -205,7 +205,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/monthlyCO2noaaPackage -->
 
     <owl:NamedIndividual rdf:about="&cpmeta;instances/monthlyCO2noaaPackage">
-        <rdf:type rdf:resource="&cpmeta;SimplePackageSpec"/>
+        <rdf:type rdf:resource="&cpmeta;SimpleObjectSpec"/>
         <cpmeta:hasDataLevel rdf:datatype="&xsd;integer">2</cpmeta:hasDataLevel>
         <cpmeta:hasFormat rdf:resource="&cpmeta;asciiNooaTimeSer"/>
         <cpmeta:hasEncoding rdf:resource="&cpmeta;plainFileEncoding"/>

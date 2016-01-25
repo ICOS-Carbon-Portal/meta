@@ -1,18 +1,18 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.upload
 
 import org.apache.commons.io.IOUtils
-import se.lu.nateko.cp.meta.core.data.DataPackage
+import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
 
 object LandingPageBuilder {
 
-	def getPage(dataPackage: DataPackage): String = {
+	def getPage(dataPackage: DataObject): String = {
 
 		val producer = dataPackage.production.producer
 
 		IOUtils.toString(getClass.getResourceAsStream("/htmltemplates/landing_page.html"), "UTF-8")
-			.replaceAllLiterally("$dataLevel", dataPackage.spec.dataLevel.toString)
+			.replaceAllLiterally("$dataLevel", dataPackage.specification.dataLevel.toString)
 			.replaceAllLiterally("$start", dataPackage.submission.start.toString)
 			.replaceAllLiterally("$stop",
 				dataPackage.submission.stop match {

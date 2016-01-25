@@ -4,6 +4,7 @@ import spray.json._
 import java.net.URI
 import java.net.URISyntaxException
 import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.meta.core.CommonJsonSupport
 
 
 object CpmetaJsonProtocol{
@@ -15,23 +16,9 @@ object CpmetaJsonProtocol{
 	}
 }
 
-trait CpmetaJsonProtocol extends DefaultJsonProtocol{
+trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import CpmetaJsonProtocol._
 	import se.lu.nateko.cp.meta.core.crypto.Sha256Sum._
-
-	implicit object UriJsonFormat extends RootJsonFormat[URI]{
-
-		def read(value: JsValue) = value match{
-			case JsString(uri) => try{
-					new URI(uri)
-				}catch{
-					case err: Throwable => deserializationError(s"Could not parse URI from $uri", err)
-				}
-			case _ => deserializationError("URI string expected")
-		}
-
-		def write(uri: URI) = JsString(uri.toString)
-	}
 
 	implicit val resourceDtoFormat = jsonFormat3(ResourceDto)
 	implicit val literalValueDtoFormat = jsonFormat2(LiteralValueDto)
@@ -78,7 +65,7 @@ trait CpmetaJsonProtocol extends DefaultJsonProtocol{
 	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
 	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
 	
-	implicit val uploadMetadataDtoFormat = jsonFormat4(UploadMetadataDto)
+	implicit val uploadMetadataDtoFormat = jsonFormat7(UploadMetadataDto)
 
 	implicit val userInfoFormat = jsonFormat3(UserInfo)
 

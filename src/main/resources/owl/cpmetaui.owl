@@ -41,7 +41,7 @@
     </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
-        <AbbreviatedIRI>cpmeta:DataPackageSpecifyingThing</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:DataObjectSpecifyingThing</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
@@ -91,7 +91,7 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:SimplePackageSpec</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:SimpleObjectSpec</AbbreviatedIRI>
         <Literal datatypeIRI="&xsd;boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>

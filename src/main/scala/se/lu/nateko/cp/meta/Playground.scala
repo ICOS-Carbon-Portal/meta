@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta
 
 import akka.actor.ActorSystem
-import se.lu.nateko.cp.meta.api.EpicPid
+import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.PidUpdate
 import spray.json.JsString
 import scala.concurrent.Await
@@ -13,7 +13,7 @@ object Playground {
 	implicit val system = ActorSystem("playground")
 	import system.dispatcher
 
-	val client = EpicPid.default
+	val client = EpicPidClient.default
 
 	def stop(): Unit = system.shutdown()
 
@@ -28,7 +28,7 @@ object Playground {
 	def addHash(postfix: String, hash: String): Unit = wait{
 		for(
 			entries <- client.get(postfix);
-			oldEntries = entries.reverse.tail.map(EpicPid.toUpdate);
+			oldEntries = entries.reverse.tail.map(EpicPidClient.toUpdate);
 			res <- client.update(postfix, PidUpdate("SHA256", JsString(hash)) +: oldEntries)
 		) yield res
 	}

@@ -6,6 +6,7 @@ import se.lu.nateko.cp.cpauth.core.CookieToToken
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directive0
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import scala.util.Success
 import scala.util.Failure
@@ -15,8 +16,10 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Rejection
 import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.model.headers.`X-Forwarded-For`
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.server.util.ClassMagnet
 
 class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
@@ -75,4 +78,9 @@ object AuthenticationRouting {
 			case InvalidCpauthTokenRejection(message) =>
 				forbid(message)
 		}.result
+
+	val ensureLocalRequest: Directive0 =
+		optionalHeaderValueByType[`X-Forwarded-For`](ClassMagnet.apply)
+			.require(_.isEmpty)
+			.recover(_ => complete(StatusCodes.Forbidden))
 }

@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta
 
+import akka.actor.ActorSystem
 import java.io.Closeable
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import org.openrdf.model.Statement
@@ -95,9 +95,10 @@ object MetaDb {
 		}
 	}
 
-	def apply(config: CpmetaConfig)(implicit ex: ExecutionContext): MetaDb = {
+	def apply(config: CpmetaConfig)(implicit system: ActorSystem): MetaDb = {
 
 		validateConfig(config)
+		import system.dispatcher
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 

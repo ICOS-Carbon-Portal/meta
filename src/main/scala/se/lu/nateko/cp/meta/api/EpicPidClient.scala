@@ -28,16 +28,16 @@ case class PidEntry(
 
 case class PidUpdate(`type`: String, parsed_data: JsValue)
 
-object EpicPid{
+object EpicPidClient{
 
-	def default(implicit system: ActorSystem) = new EpicPid(ConfigLoader.default.dataUploadService.epicPid)
+	def default(implicit system: ActorSystem) = new EpicPidClient(ConfigLoader.default.dataUploadService.epicPid)
 
-	def apply(config: EpicPidConfig)(implicit system: ActorSystem) = new EpicPid(config)
+	def apply(config: EpicPidConfig)(implicit system: ActorSystem) = new EpicPidClient(config)
 
 	def toUpdate(entry: PidEntry) = PidUpdate(entry.`type`, entry.parsed_data)
 }
 
-class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends DefaultJsonProtocol {
+class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends DefaultJsonProtocol {
 
 	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
@@ -91,6 +91,8 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 		)
 	}
 
+	def getPid(suffix: String): String = config.prefix + "/" + suffix
+
 	def list: Future[Seq[String]] = {
 		httpGet(config.url + config.prefix).flatMap(
 			resp => resp.status match {
@@ -101,7 +103,7 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 	}
 
 	def get(suffix: String): Future[Seq[PidEntry]] = {
-		httpGet(config.url + config.prefix + "/" + suffix).flatMap(
+		httpGet(config.url + getPid(suffix)).flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[PidEntry]]
 				case _ => Future.failed(new Exception(s"Got ${resp.status} from the server"))
@@ -111,7 +113,7 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 
 	def update(suffix: String, updates: Seq[PidUpdate]): Future[Unit] = {
 		httpSend(
-			uri = config.url + config.prefix + "/" + suffix,
+			uri = config.url + getPid(suffix),
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-Match`.*),
 			payload = updates
@@ -123,17 +125,20 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 	}
 
 	def create(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] = {
-
+		val pid = getPid(suffix)
 		httpSend(
-			uri = config.url + config.prefix + "/" + suffix,
+			uri = config.url + pid,
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-None-Match`.*),
 			payload = newEntries
-		).map(resp =>
-			if (resp.status != StatusCodes.Created) {
-				throw new Exception(s"Got ${resp.status} from the server")
-			}
-		)
+		).map(resp => resp.status match {
+			case StatusCodes.Created =>
+				()
+			case StatusCodes.PreconditionFailed =>
+				throw new Exception(s"Failed to mint pid '$pid'. Make sure it does not exist already.")
+			case _ =>
+				throw new Exception(s"Unexpectedly got '${resp.status}' from the EPIC PID server while minting '$pid'")
+		})
 	}
 
 	def create(newEntries: Seq[PidUpdate]): Future[String] = {
@@ -155,7 +160,7 @@ class EpicPid(config: EpicPidConfig)(implicit system: ActorSystem) extends Defau
 
 	def delete(suffix: String): Future[Unit] = {
 
-		httpDelete(config.url + config.prefix + "/" + suffix)
+		httpDelete(config.url + getPid(suffix))
 			.map(resp =>
 				if(resp.status != StatusCodes.NoContent) {
 					throw new Exception(s"Got ${resp.status} from the server")

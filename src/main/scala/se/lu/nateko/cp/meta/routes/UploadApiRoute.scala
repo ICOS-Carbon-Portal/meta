@@ -28,6 +28,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
 	implicit val dataObjectMarshaller = LandingPageMarshalling.marshaller
+	import AuthenticationRouting.ensureLocalRequest
 
 	def apply(
 		service: UploadService,
@@ -35,8 +36,13 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
 		pathPrefix("upload"){
 			post{
-				authRouting.mustBeLoggedIn{uploader =>
-					pathEnd{
+				path(Sha256Segment){hash =>
+					ensureLocalRequest{
+						onSuccess(service.completeUpload(hash)){complete(_)}
+					}
+				} ~
+				pathEnd{
+					authRouting.mustBeLoggedIn{uploader =>
 						entity(as[UploadMetadataDto]){uploadMeta =>
 							complete(service.registerUpload(uploadMeta, uploader))
 						} ~

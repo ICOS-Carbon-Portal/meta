@@ -3,13 +3,13 @@ package se.lu.nateko.cp.meta.api.test
 import akka.actor.ActorSystem
 import scala.util.{Try, Success, Failure}
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
-import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPid}
+import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPidClient}
 import spray.json.{JsString}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
-class EpicPidTest extends FunSpec with BeforeAndAfterAll{
+class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 	implicit var system: ActorSystem = _
 
@@ -60,7 +60,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("creates a new PID with specified name"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val r = ep.create(suffix, testPid(originalUrl, originalEmail))
 
 			val result = Await.ready(r, waitTime second)
@@ -71,7 +71,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("creates a PID with random name") {
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val r = ep.create(testPid(originalUrl, originalEmail))
 
 			randomSuffix = Await.result(r, waitTime second)
@@ -82,7 +82,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("lists existing pids"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val l = ep.list
 
 			val pids = Await.result(l, waitTime second)
@@ -94,7 +94,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("lists data for specific PID"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val p = ep.get(randomSuffix)
 
 			val pid = Await.result(p, waitTime second)
@@ -106,7 +106,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("allows us to edit existing PID"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val r = ep.update(suffix, testPid(editedUrl, editedEmail))
 
 			val result = Await.ready(r, waitTime second)
@@ -124,7 +124,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("allows us to delete specific PID (fixed suffix)"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val r = ep.delete(suffix)
 
 			val result = Await.ready(r, waitTime second)
@@ -135,7 +135,7 @@ class EpicPidTest extends FunSpec with BeforeAndAfterAll{
 
 		it("allows us to delete specific PID (random suffix)"){
 
-			val ep = EpicPid.default
+			val ep = EpicPidClient.default
 			val r = ep.delete(randomSuffix)
 
 			val result = Await.ready(r, waitTime second)

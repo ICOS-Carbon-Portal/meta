@@ -1,24 +1,38 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.time.Instant
+
+import scala.concurrent.Future
 import scala.util.Try
+
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.XMLSchema
+
+import akka.actor.ActorSystem
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.api.EpicPidClient
+import se.lu.nateko.cp.meta.api.PidUpdate
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import java.time.Instant
+import se.lu.nateko.cp.meta.utils.sesame._
+import spray.json.JsString
 
-class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
+class UploadService(
+	server: InstanceServer,
+	conf: UploadServiceConfig
+)(implicit system: ActorSystem) {
+	import system.dispatcher
 
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
+	private val epic = EpicPidClient(conf.epicPid)
 
 	val packageFetcher = new DataObjectFetcher(server)
 
@@ -50,7 +64,7 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 			(packageUri, vocab.hasName, meta.fileName.map(vocab.lit))
 		).map{case (s, p, oOpt) => oOpt.map((s, p, _))}.flatten
 		
-		server.addAll(Seq[(URI, URI, Value)](
+		val triplesToAdd = Seq[(URI, URI, Value)](
 
 			(packageUri, RDF.TYPE, vocab.dataObjectClass),
 			(packageUri, vocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
@@ -66,14 +80,23 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig) {
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
 			(submissionUri, vocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			(submissionUri, vocab.prov.wasAssociatedWith, submitterConf.submittingOrganization)
-		).++(optionals).map(factory.tripleToStatement))
+		) ++ optionals
 
-		packageUri.stringValue
+		server.addAll(triplesToAdd.map(factory.tripleToStatement))
+			.map(_ => packageUri.stringValue)
+			.get
 	}
 
 	def checkPermissions(submitter: java.net.URI, userId: String): Boolean =
 		conf.submitters.values
 			.filter(_.submittingOrganization == submitter)
 			.exists(_.authorizedUserIds.contains(userId))
+
+	def completeUpload(hash: Sha256Sum): Future[String] = {
+		val suffix = hash.base64Url
+		val targetUri = vocab.getDataObject(hash)
+		val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
+		epic.create(suffix, Seq(pidEntry)).map(_ => epic.getPid(suffix))
+	}
 
 }

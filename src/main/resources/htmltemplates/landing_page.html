@@ -38,40 +38,108 @@
 	</nav>
 
 	<div class="container-fluid">
+
 		<div class="row">
-			<div class="col-md-12">
-				<label>Produced by</label>
-				$producerName
+			<div class="col-md-3">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">Producer</h3>
+					</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-12">
+								<label>Produced by</label>
+								$producerName
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Data level</label>
+								$dataLevel
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Production started (UTC)</label>
+								$prodStart
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Production ended (UTC)</label>
+								$prodStop
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<label>Data level</label>
-				$dataLevel
+
+			<div class="col-md-3">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">Submitter</h3>
+					</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-12">
+								<label>Submitted by</label>
+								$submitterName
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Submit started (UTC)</label>
+								$start
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Submit ended (UTC)</label>
+								$stop
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<label>Upload started (UTC)</label>
-				$start
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<label>Upload ended (UTC)</label>
-				$stop
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<label>SHA-256 hashsum (base64url-encoded)</label>
-				$base64UrlPackageId
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<label>SHA-256 hashsum (hex-encoded)</label>
-				$hexHash
+
+			<div class="col-md-6">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">File data</h3>
+					</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-12">
+								<label>Download file</label>
+								$downloadLnk
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Data content</label>
+								$specFormat
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>Data encoding</label>
+								$specEncoding
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>SHA-256 hashsum (base64url-encoded)</label>
+								$base64UrlPackageId
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<label>SHA-256 hashsum (hex-encoded)</label>
+								$hexHash
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 

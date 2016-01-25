@@ -28,8 +28,8 @@ object LandingPageMarshalling {
 
 	def marshaller: ToResponseMarshaller[DataObject] = Marshaller(
 		implicit exeCtxt => dataObj => Future.successful(
-			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObj)) ::
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObj, _)) :: Nil
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObj, _)) ::
+			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObj)) :: Nil
 		)
 	)
 

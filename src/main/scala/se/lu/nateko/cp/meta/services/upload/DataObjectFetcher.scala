@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.openrdf.model.vocabulary.RDFS
 
 class DataObjectFetcher(server: InstanceServer) {
 
@@ -40,8 +41,8 @@ class DataObjectFetcher(server: InstanceServer) {
 		val submStop = getSingleInstant(submission, vocab.prov.endedAtTime)
 
 		val spec = getSingleUri(dataObjUri, vocab.hasPackageSpec)
-		val specFormat = getSingleUri(spec, vocab.hasFormat)
-		val encoding = getSingleUri(spec, vocab.hasEncoding)
+		val specFormat = getLabeledResource(spec, vocab.hasFormat)
+		val encoding = getLabeledResource(spec, vocab.hasEncoding)
 		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
 
 		DataObject(
@@ -78,6 +79,15 @@ class DataObjectFetcher(server: InstanceServer) {
 		}
 		assert(vals.size == 1, "Expected a single value!")
 		vals.head
+	}
+
+	private def getLabeledResource(subj: URI, pred: URI): UriResource = {
+		val vals = server.getValues(subj, pred).collect{
+			case uri: URI => uri
+		}
+		assert(vals.size == 1, "Expected a single value!")
+		val label = getSingleString(vals.head, RDFS.LABEL)
+		UriResource(vals.head, label)
 	}
 
 	private def getSingleString(subj: URI, pred: URI): Option[String] = {

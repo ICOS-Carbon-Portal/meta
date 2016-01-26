@@ -3,20 +3,35 @@ package se.lu.nateko.cp.meta.services.upload
 import java.net.URI
 import java.time.{ZoneId, Instant}
 import java.time.format.DateTimeFormatter
+import _root_.views.html.LandingPage
 import org.apache.commons.io.IOUtils
 import se.lu.nateko.cp.meta.core.data.{UriResource, DataObject}
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
 
-import se.lu.nateko.cp.meta.services.upload.html.LandingPage
+case class RowEntry(label: String, value: String)
+case class PanelEntry(header: String, content: List[RowEntry])
+case class DataViewPackage(pkg: List[PanelEntry])
 
 object LandingPageBuilder {
 
-	def getNewPage(dataPackage: DataObject): String = {
+	def getPage(dataPackage: DataObject): String = {
+		val producer = dataPackage.production.producer
+		val submitter = dataPackage.submission.submitter
+
+		val dataViewPackage = List(
+			PanelEntry("Producer", List(
+				RowEntry("Produced by", producer.getLabel),
+				RowEntry("Data level", dataPackage.specification.dataLevel.toString),
+				RowEntry("Production started (UTC)", formatDate(dataPackage.production.start)),
+				RowEntry("Production ended (UTC)", formatDate(dataPackage.production.stop))
+			)
+		))
+
 		LandingPage(dataPackage).body
 	}
 
-	def getPage(dataPackage: DataObject): String = {
+	def getOldPage(dataPackage: DataObject): String = {
 
 		val producer = dataPackage.production.producer
 		val submitter = dataPackage.submission.submitter

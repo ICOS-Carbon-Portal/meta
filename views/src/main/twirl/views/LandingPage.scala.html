@@ -1,6 +1,29 @@
 @import se.lu.nateko.cp.meta.core.data.DataObject
 
 @(dobj: DataObject)
+
+@panel(title: String)(body: Html) = {
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">@title</h3>
+			</div>
+			<div class="panel-body">
+			@body
+			</div>
+		</div>
+	</div>
+}
+
+@panelRow(label: String, value: String) = {
+	<div class="row">
+		<div class="col-md-12">
+			<label>@label</label>
+			@value
+		</div>
+	</div>
+}
+
 <DOCTYPE html>
 <html>
 <head>
@@ -42,33 +65,11 @@
 
 		<div class="row">
 
-			@panel("blabla"){
-				<p>Inner blabla</p>
+			@panel("Hello"){
+				@panelRow("Something", dobj.accessUrl.toString)
 			}
 
 		</div>
 	</div>
 </body>
 </html>
-
-@panel(title: String)(body: Html) = {
-	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">@title</h3>
-			</div>
-			<div class="panel-body">
-				@body
-			</div>
-		</div>
-	</div>
-}
-
-@panelRow(label: String, value: String) = {
-	<div class="row">
-		<div class="col-md-12">
-			<label>@label</label>
-			@value
-		</div>
-	</div>
-}

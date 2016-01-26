@@ -15,6 +15,7 @@ npm-debug.log
 /project/project/
 /project/target/
 
+/views/target
 # Scala-IDE specific
 .project
 .settings/

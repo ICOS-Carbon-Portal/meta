@@ -34,7 +34,7 @@ class UploadService(
 	private val vocab = new CpmetaVocab(factory)
 	private val epic = EpicPidClient(conf.epicPid)
 
-	val packageFetcher = new DataObjectFetcher(server)
+	val packageFetcher = new DataObjectFetcher(server, getPid)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
 		import meta.{hashSum, submitterId, packageSpec, producingOrganization}
@@ -93,10 +93,21 @@ class UploadService(
 			.exists(_.authorizedUserIds.contains(userId))
 
 	def completeUpload(hash: Sha256Sum): Future[String] = {
-		val suffix = hash.base64Url
-		val targetUri = vocab.getDataObject(hash)
-		val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
-		epic.create(suffix, Seq(pidEntry)).map(_ => epic.getPid(suffix))
+		val submissionUri = vocab.getSubmission(hash)
+
+		if(server.getValues(submissionUri, vocab.prov.endedAtTime).isEmpty){
+			val targetUri = vocab.getDataObject(hash)
+			val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
+
+			epic.create(getPidSuffix(hash), Seq(pidEntry)).map(_ => {
+				server.add(factory.createStatement(submissionUri, vocab.prov.endedAtTime, vocab.lit(Instant.now)))
+				getPid(hash)
+			})
+		} else
+			Future.failed(new Exception(s"Upload of $hash is already complete"))
 	}
+
+	def getPidSuffix(hash: Sha256Sum) = hash.base64Url
+	def getPid(hash: Sha256Sum) = epic.getPid(getPidSuffix(hash))
 
 }

@@ -14,6 +14,6 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val packageProductionFormat = jsonFormat3(DataProduction)
 
 	implicit val packageSubmissionFormat = jsonFormat3(DataSubmission)
-	implicit val dataPackageFormat = jsonFormat6(DataObject)
+	implicit val dataPackageFormat = jsonFormat7(DataObject)
 
 }

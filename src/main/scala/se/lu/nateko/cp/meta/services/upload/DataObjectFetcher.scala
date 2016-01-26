@@ -9,8 +9,9 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.openrdf.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.EpicPidClient
 
-class DataObjectFetcher(server: InstanceServer) {
+class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String) {
 
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
@@ -49,6 +50,7 @@ class DataObjectFetcher(server: InstanceServer) {
 			hash = hash,
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
+			pid = submStop.map(_ => pidFactory(hash)),
 			production = DataProduction(
 				producer = UriResource(
 					uri = producer,

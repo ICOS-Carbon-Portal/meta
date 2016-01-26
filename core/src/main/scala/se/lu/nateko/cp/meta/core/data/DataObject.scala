@@ -14,6 +14,7 @@ case class DataProduction(producer: UriResource, start: Instant, stop: Instant)
 case class DataObject(
 	hash: Sha256Sum,
 	accessUrl: URI,
+	pid: Option[String],
 	fileName: Option[String],
 	production: DataProduction,
 	submission: DataSubmission,

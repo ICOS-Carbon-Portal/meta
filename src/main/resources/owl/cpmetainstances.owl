@@ -206,7 +206,7 @@
 
     <owl:NamedIndividual rdf:about="&cpmeta;instances/monthlyCO2noaaPackage">
         <rdf:type rdf:resource="&cpmeta;SimpleObjectSpec"/>
-        <cpmeta:hasDataLevel rdf:datatype="&xsd;integer">2</cpmeta:hasDataLevel>
+        <cpmeta:hasDataLevel rdf:datatype="&xsd;integer">0</cpmeta:hasDataLevel>
         <cpmeta:hasFormat rdf:resource="&cpmeta;asciiNooaTimeSer"/>
         <cpmeta:hasEncoding rdf:resource="&cpmeta;plainFileEncoding"/>
         <cpmeta:containsDataset rdf:resource="&cpmeta;instances/monthlyCO2noaaDataset"/>

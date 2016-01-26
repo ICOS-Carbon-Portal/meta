@@ -6,7 +6,6 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 
 import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.services.upload.LandingPageBuilder.getPage
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
 import scala.concurrent.ExecutionContext
@@ -18,7 +17,7 @@ object LandingPageMarshalling {
 	private def getHtml(dataObj: DataObject, charset: HttpCharset) = HttpResponse(
 		entity = HttpEntity(
 			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			getPage(dataObj)
+			views.html.LandingPage(dataObj).body
 		)
 	)
 

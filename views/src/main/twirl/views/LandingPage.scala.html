@@ -1,29 +1,7 @@
-@import se.lu.nateko.cp.meta.core.data.DataObject
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.services.upload.LandingPageHelpers._
 
 @(dobj: DataObject)
-
-@panel(title: String)(body: Html) = {
-	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">@title</h3>
-			</div>
-			<div class="panel-body">
-			@body
-			</div>
-		</div>
-	</div>
-}
-
-@panelRow(label: String, value: String) = {
-	<div class="row">
-		<div class="col-md-12">
-			<label>@label</label>
-			@value
-		</div>
-	</div>
-}
-
 <DOCTYPE html>
 <html>
 <head>
@@ -65,11 +43,69 @@
 
 		<div class="row">
 
-			@panel("Hello"){
-				@panelRow("Something", dobj.accessUrl.toString)
+			@panel("Production"){
+				@panelRow("Produced by", dobj.production.producer.getLabel)
+				@panelRow("Data level", dobj.specification.dataLevel.toString)
+				@panelRow("Production started (UTC)", dobj.production.start.getDateTimeStr)
+				@panelRow("Production ended (UTC)", dobj.production.stop.getDateTimeStr)
 			}
 
+			@panel("Submission"){
+				@panelRow("Submitted by", dobj.submission.submitter.getLabel)
+				@panelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
+				@panelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+			}
+
+			@panel("Content", 6){
+				@panelRow("Format", dobj.specification.format.getLabel)
+				@panelRow("Encoding", dobj.specification.encoding.getLabel)
+				@panelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+				@panelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+				@panelRowHtml("Access URL", accessLink)
+			}
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<label>Debug</label>
+				<pre>@printToJson(dobj)</pre>
+			</div>
 		</div>
 	</div>
 </body>
 </html>
+
+
+@panel(title: String, width: Int = 3)(body: Html) = {
+	<div class="col-md-@width">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">@title</h3>
+			</div>
+			<div class="panel-body">
+			@body
+			</div>
+		</div>
+	</div>
+}
+
+@panelRow(label: String, value: String) = {
+	<div class="row">
+		<div class="col-md-12">
+			<label>@label</label>
+			@value
+		</div>
+	</div>
+}
+
+@panelRowHtml(label: String, value: Html) = {
+	<div class="row">
+		<div class="col-md-12">
+			<label>@label</label>
+			@value
+		</div>
+	</div>
+}
+
+@accessLink = {
+	<a href="@dobj.accessUrl">@{dobj.fileName.getOrElse(dobj.accessUrl.toString)}</a>
+}

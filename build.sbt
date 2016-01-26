@@ -41,12 +41,12 @@ lazy val views = (project in file("views"))
 	.settings(
 		name := "meta-views",
 		version := "0.1.0-SNAPSHOT"
-		//sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
 	)
 
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
+	.dependsOn(views)
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
@@ -66,7 +66,6 @@ lazy val meta = (project in file("."))
 			 //non-standard Hermit, hosted on repo.icos-cp.eu 3rd-parties repo
 			"com.hermit-reasoner"    % "org.semanticweb.hermit"             % "1.3.8.5" excludeAll(noGeronimo),
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.2",
-			"se.lu.nateko.cp"       %% "meta-views"                        % "0.1.0-SNAPSHOT",
 			"net.sf.opencsv"         % "opencsv"                            % "2.3",
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"

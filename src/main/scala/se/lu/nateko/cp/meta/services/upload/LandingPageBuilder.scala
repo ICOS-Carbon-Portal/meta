@@ -8,7 +8,13 @@ import se.lu.nateko.cp.meta.core.data.{UriResource, DataObject}
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
 
+import se.lu.nateko.cp.meta.services.upload.html.LandingPage
+
 object LandingPageBuilder {
+
+	def getNewPage(dataPackage: DataObject): String = {
+		LandingPage(dataPackage).body
+	}
 
 	def getPage(dataPackage: DataObject): String = {
 

@@ -36,6 +36,7 @@ val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
+	.enablePlugins(SbtTwirl)
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
@@ -69,6 +70,8 @@ lazy val meta = (project in file("."))
 			case x => ((assemblyMergeStrategy in assembly).value)(x)
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
+
+		sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
 
 		initialCommands in console := """
 			import se.lu.nateko.cp.meta.Playground._

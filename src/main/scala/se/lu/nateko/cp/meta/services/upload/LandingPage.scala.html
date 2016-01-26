@@ -1,0 +1,74 @@
+@import se.lu.nateko.cp.meta.core.data.DataObject
+
+@(dobj: DataObject)
+<DOCTYPE html>
+<html>
+<head>
+	<link href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>Landing Page</title>
+
+	<style type="text/css">
+		.navbar-default {
+			background-color: #414042;
+			border-color: #414042;
+		}
+		.navbar-default span, .navbar-default p, .navbar-default h1 {
+			color: #ffffff;
+		}
+		.col-md-12 > label::after{
+			content: ":";
+		}
+	</style>
+
+</head>
+<body>
+	<nav class="navbar navbar-default navbar-static-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a href="https://www.icos-ri.eu">
+					<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
+				</a>
+			</div>
+			<h1>ICOS RI Data Object Landing Page</h1>
+		</div>
+	</nav>
+
+	<div class="container-fluid">
+
+		<div class="row">
+
+			@panel("blabla"){
+				<p>Inner blabla</p>
+			}
+
+		</div>
+	</div>
+</body>
+</html>
+
+@panel(title: String)(body: Html) = {
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">@title</h3>
+			</div>
+			<div class="panel-body">
+				@body
+			</div>
+		</div>
+	</div>
+}
+
+@panelRow(label: String, value: String) = {
+	<div class="row">
+		<div class="col-md-12">
+			<label>@label</label>
+			@value
+		</div>
+	</div>
+}

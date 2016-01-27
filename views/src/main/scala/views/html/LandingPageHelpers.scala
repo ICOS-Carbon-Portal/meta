@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.upload
+package views.html
 
 import se.lu.nateko.cp.meta.core.data._
 import java.time.Instant
@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
 
 
-object LandingPageHelpers{
+private object LandingPageHelpers{
 
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 

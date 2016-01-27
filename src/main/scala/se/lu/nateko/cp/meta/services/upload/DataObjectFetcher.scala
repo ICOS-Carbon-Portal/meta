@@ -25,6 +25,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
 		val dataObjUri = vocab.getDataObject(hash)
+		val fullHash = Sha256Sum.fromHex(getSingleString(dataObjUri, vocab.hasSha256sum).get).get
 		val fileName: Option[String] = getSingleString(dataObjUri, vocab.hasName)
 
 		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
@@ -33,8 +34,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime).get
 		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime).get
-		val posLat = getSingleDouble(producer, vocab.hasLongitude).getOrElse(None)
-		println(producer)
+		val posLat: Double = getSingleDouble(producer, vocab.hasLongitude).getOrElse(0)
 
 		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
 		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
@@ -49,8 +49,8 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
 
 		DataObject(
-			status = getStatus(dataObjUri),
-			hash = hash,
+			status = getStatus(submStop),
+			hash = fullHash,
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
 			pid = submStop.map(_ => pidFactory(hash)),
@@ -80,14 +80,8 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		)
 	}
 
-	private def getStatus(dataObjUri: URI): DataObjectStatus = {
-		val pid: Option[String] = getSingleString(dataObjUri, vocab.hasPID)
-
-		pid match {
-			case Some(p) => UploadOk
-			case None => NotComplete
-		}
-	}
+	private def getStatus(submStop: Option[Instant]): DataObjectStatus =
+		if(submStop.isDefined) UploadOk else NotComplete
 
 	private def getSingleUri(subj: URI, pred: URI): URI = {
 		val vals = server.getValues(subj, pred).collect{

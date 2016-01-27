@@ -103,7 +103,7 @@
 							panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 						}
 						case UploadOk => {
-							panelRow("Status - OK", "Data and metadata uploaded. PID assigned.")
+							panelRow("Status - OK", "PID=" + dobj.pid.get)
 						}
 						case _ => {
 							panelRow("Status - Unknown", "Status of data object could not be determined.")

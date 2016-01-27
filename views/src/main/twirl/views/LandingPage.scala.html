@@ -21,6 +21,8 @@
 		.navbar-default span, .navbar-default p, .navbar-default h1 {
 			color: #ffffff;
 		}
+		.cp-header-incomplete {background-color: #f7cc43 !important;}
+		.cp-header-ok {background-color: #78d578 !important;}
 		.col-md-12 > label::after{
 			content: ":";
 		}
@@ -42,6 +44,10 @@
 	<div class="container-fluid">
 
 		<div class="row">
+			@summaryPanel()
+		</div>
+
+		<div class="row">
 
 			@panel("Production"){
 				@panelRow("Produced by", dobj.production.producer.getLabel)
@@ -55,7 +61,9 @@
 				@panelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
 				@panelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
 			}
+		</div>
 
+		<div class="row">
 			@panel("Content", 6){
 				@panelRow("Format", dobj.specification.format.getLabel)
 				@panelRow("Encoding", dobj.specification.encoding.getLabel)
@@ -64,6 +72,13 @@
 				@panelRowHtml("Access URL", accessLink)
 			}
 		</div>
+
+		<div class="row">
+		@panel("Coverage", 5){
+			<iframe src="https://static.icos-cp.eu/share/stations/" style="width:100%;height:400px;"></iframe>
+		}
+		</div>
+
 		<div class="row">
 			<div class="col-md-12">
 				<label>Debug</label>
@@ -74,6 +89,39 @@
 </body>
 </html>
 
+@summaryPanel(width: Int = 4) = {
+	<div class="col-md-@width">
+		<div class="panel panel-default">
+			<div class="panel-heading cp-header-@headingClass">
+				<h3 class="panel-title">Summary</h3>
+			</div>
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-md-12">
+					@{dobj.status match {
+						case NotComplete => {
+							panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
+						}
+						case UploadOk => {
+							panelRow("Status - OK", "Data and metadata uploaded. PID assigned.")
+						}
+						case _ => {
+							panelRow("Status - Unknown", "Status of data object could not be determined.")
+						}
+					}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+@headingClass = @{
+	dobj.status match {
+		case UploadOk => "ok"
+		case NotComplete => "incomplete"
+	}
+}
 
 @panel(title: String, width: Int = 3)(body: Html) = {
 	<div class="col-md-@width">

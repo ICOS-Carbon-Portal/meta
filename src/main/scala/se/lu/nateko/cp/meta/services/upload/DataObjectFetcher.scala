@@ -33,6 +33,8 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime).get
 		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime).get
+		val posLat = getSingleDouble(producer, vocab.hasLongitude).getOrElse(None)
+		println(producer)
 
 		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
 		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
@@ -47,6 +49,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
 
 		DataObject(
+			status = getStatus(dataObjUri),
 			hash = hash,
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
@@ -57,7 +60,9 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 					label = Some(producerName)
 				),
 				start = prodStart,
-				stop = prodStop
+				stop = prodStop,
+				pos = Some(Map("lat" -> 1.2, "lon" -> 3)),
+				coverage = None
 			),
 			submission = DataSubmission(
 				submitter = UriResource(
@@ -73,6 +78,15 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 				dataLevel = dataLevel
 			)
 		)
+	}
+
+	private def getStatus(dataObjUri: URI): DataObjectStatus = {
+		val pid: Option[String] = getSingleString(dataObjUri, vocab.hasPID)
+
+		pid match {
+			case Some(p) => UploadOk
+			case None => NotComplete
+		}
 	}
 
 	private def getSingleUri(subj: URI, pred: URI): URI = {
@@ -106,6 +120,15 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		}
 		assert(vals.size == 1, "Expected a single value!")
 		vals.head.stringValue.toInt
+	}
+
+	private def getSingleDouble(subj: URI, pred: URI): Option[Double] = {
+		val vals = server.getValues(subj, pred).collect{
+			case lit: Literal => lit.stringValue
+		}
+
+		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
+		vals.headOption.map(_.toDouble)
 	}
 
 	private def getSingleInstant(subj: URI, pred: URI): Option[Instant] = {

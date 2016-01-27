@@ -11,9 +11,24 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
 	implicit val dataPackageSpecFormat = jsonFormat3(DataObjectSpec)
-	implicit val packageProductionFormat = jsonFormat3(DataProduction)
+	implicit val packageProductionFormat = jsonFormat5(DataProduction)
 
 	implicit val packageSubmissionFormat = jsonFormat3(DataSubmission)
-	implicit val dataPackageFormat = jsonFormat7(DataObject)
+
+	implicit object dataObjectStatusFormat extends RootJsonFormat[DataObjectStatus] {
+
+		def write(status: DataObjectStatus) = JsString(status match{
+			case UploadOk => "OK"
+			case NotComplete => "INCOMPLETE"
+		})
+
+		def read(value: JsValue): DataObjectStatus = value match{
+			case JsString("OK") => UploadOk
+			case JsString("INCOMPLETE") => NotComplete
+			case _ => deserializationError("Expected 'OK' or 'INCOMPLETE'")
+		}
+	}
+
+	implicit val dataPackageFormat = jsonFormat8(DataObject)
 
 }

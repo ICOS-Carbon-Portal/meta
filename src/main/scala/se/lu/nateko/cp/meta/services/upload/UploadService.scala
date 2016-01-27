@@ -83,7 +83,7 @@ class UploadService(
 		) ++ optionals
 
 		server.addAll(triplesToAdd.map(factory.tripleToStatement))
-			.map(_ => packageUri.stringValue)
+			.map(_ => vocab.getDataObjectAccessUrl(hashSum, None).stringValue)
 			.get
 	}
 
@@ -107,7 +107,7 @@ class UploadService(
 			Future.failed(new Exception(s"Upload of $hash is already complete"))
 	}
 
-	def getPidSuffix(hash: Sha256Sum) = hash.base64Url
+	def getPidSuffix(hash: Sha256Sum) = hash.id
 	def getPid(hash: Sha256Sum) = epic.getPid(getPidSuffix(hash))
 
 }

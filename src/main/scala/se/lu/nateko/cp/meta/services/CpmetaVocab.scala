@@ -40,12 +40,12 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val endedAtTime = getRelative("endedAtTime")
 	}
 
-	def getDataObject(hash: Sha256Sum) = factory.createURI("https://meta.icos-cp.eu/objects/", hash.base64Url)
+	def getDataObject(hash: Sha256Sum) = factory.createURI("https://meta.icos-cp.eu/objects/", hash.id)
 	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: Option[String]): JavaUri = {
 		val filePath = fileName.map("/" + URLEncoder.encode(_, "UTF-8")).getOrElse("")
-		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.base64Url}$filePath")
+		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}$filePath")
 	}
 
-	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.base64Url)
-	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.base64Url)
+	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
+	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
 }

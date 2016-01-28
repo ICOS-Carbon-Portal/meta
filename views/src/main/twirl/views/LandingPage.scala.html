@@ -69,14 +69,16 @@
 				@panelRow("Encoding", dobj.specification.encoding.getLabel)
 				@panelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@panelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
-				@panelRowHtml("Access URL", accessLink)
+				@if(dobj.status == UploadOk) {
+					@panelRowHtml("Access URL", accessLink)
+				}
 			}
 		</div>
 
 		<div class="row">
-		@panel("Coverage", 5){
-			<iframe src="https://static.icos-cp.eu/share/stations/" style="width:100%;height:400px;"></iframe>
-		}
+			@panel("Coverage", 5){
+				<iframe src="https://static.icos-cp.eu/share/stations/" style="width:100%;height:400px;"></iframe>
+			}
 		</div>
 
 		<div class="row">
@@ -103,7 +105,8 @@
 							panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 						}
 						case UploadOk => {
-							panelRow("Status - OK", "PID=" + dobj.pid.get)
+							panelRow("Status - OK", "Data and metadata are complete")
+							panelRow("PID", dobj.pid.get)
 						}
 						case _ => {
 							panelRow("Status - Unknown", "Status of data object could not be determined.")

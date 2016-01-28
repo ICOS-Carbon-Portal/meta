@@ -10,6 +10,7 @@ case class DataObjectSpec(format: UriResource, encoding: UriResource, dataLevel:
 
 case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant])
 case class DataProduction(
+	theme: ProducerTheme,
 	producer: UriResource,
 	start: Instant,
 	stop: Instant,
@@ -27,6 +28,13 @@ case class DataObject(
 	submission: DataSubmission,
 	specification: DataObjectSpec
 )
+
+
+sealed trait ProducerTheme
+case object ThemeAS extends ProducerTheme
+case object ThemeES extends ProducerTheme
+case object ThemeOS extends ProducerTheme
+
 
 sealed trait DataObjectStatus
 case object NotComplete extends DataObjectStatus

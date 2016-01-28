@@ -55,6 +55,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 			fileName = fileName,
 			pid = submStop.map(_ => pidFactory(hash)),
 			production = DataProduction(
+				theme = ThemeAS,
 				producer = UriResource(
 					uri = producer,
 					label = Some(producerName)

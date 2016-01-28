@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import spray.json._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.time.Instant
 
 object JsonSupport extends CommonJsonSupport{
 
@@ -11,9 +10,24 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
 	implicit val dataPackageSpecFormat = jsonFormat3(DataObjectSpec)
-	implicit val packageProductionFormat = jsonFormat5(DataProduction)
 
 	implicit val packageSubmissionFormat = jsonFormat3(DataSubmission)
+
+	implicit object ProducerThemeFormat extends RootJsonFormat[ProducerTheme] {
+
+		def write(theme: ProducerTheme) = JsString(theme match{
+			case ThemeAS => "AS"
+			case ThemeES => "ES"
+			case ThemeOS => "OS"
+		})
+
+		def read(value: JsValue): ProducerTheme = value match{
+			case JsString("AS") => ThemeAS
+			case JsString("ES") => ThemeES
+			case JsString("OS") => ThemeOS
+			case _ => deserializationError("Expected 'AS', 'ES' or 'OS'")
+		}
+	}
 
 	implicit object dataObjectStatusFormat extends RootJsonFormat[DataObjectStatus] {
 
@@ -29,6 +43,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
+	implicit val packageProductionFormat = jsonFormat6(DataProduction)
 	implicit val dataPackageFormat = jsonFormat8(DataObject)
 
 }

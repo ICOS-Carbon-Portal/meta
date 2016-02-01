@@ -94,15 +94,11 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		themes.head
 	}
 
-	private def getPos(subj: URI): Option[Map[String, Double]] = {
-		val posLat: Option[Double] = getSingleDouble(subj, vocab.hasLatitude)
-		val posLon: Option[Double] = getSingleDouble(subj, vocab.hasLongitude)
-
-		(posLat, posLon) match {
-			case (Some(posLat), Some(posLon)) => Some(Map("lat" -> posLat, "lon" -> posLon))
-			case _ => None
-		}
-	}
+	private def getPos(subj: URI): Option[Map[String, Double]] =
+		for(
+			posLat <- getSingleDouble(subj, vocab.hasLatitude);
+			posLon <- getSingleDouble(subj, vocab.hasLongitude)
+		) yield Map("lat" -> posLat, "lon" -> posLon)
 
 	private def getSingleUri(subj: URI, pred: URI): URI = {
 		val vals = server.getValues(subj, pred).collect{

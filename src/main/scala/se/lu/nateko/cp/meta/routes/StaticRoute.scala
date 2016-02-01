@@ -7,7 +7,7 @@ import akka.http.scaladsl.model._
 
 object StaticRoute {
 
-	private val staticPrefixes = Seq("labeling", "sparqlclient").map(x => (x, x)).toMap
+	private val staticPrefixes = Seq("labeling", "sparqlclient", "station").map(x => (x, x)).toMap
 
 	def apply(config: CpmetaConfig): Route = get{
 		pathPrefix("edit" / Segment){ontId =>

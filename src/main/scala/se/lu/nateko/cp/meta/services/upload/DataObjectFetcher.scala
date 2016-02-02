@@ -30,11 +30,11 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
 		val producer: URI = getSingleUri(production, vocab.prov.wasAssociatedWith)
-		val producerName: Option[String] = getSingleString(producer, vocab.hasName)
+		val producerName: String = getSingleString(producer, vocab.hasName).get
 
 		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime).get
 		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime).get
-		val pos = getPos(production)
+		val pos = getPos(producer)
 
 		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
 		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
@@ -55,15 +55,17 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 			fileName = fileName,
 			pid = submStop.map(_ => pidFactory(hash)),
 			production = DataProduction(
-				theme = getTheme(producer),
-				producer = UriResource(
+				producer = DataProducer(
 					uri = producer,
-					label = producerName
+					label = producerName,
+					theme = getTheme(producer),
+//					pos = Some(Position(56.09763, 13.41897)),
+					pos = pos,
+					//TODO: Add support for geoJson
+					coverage = None
 				),
 				start = prodStart,
-				stop = prodStop,
-				pos = pos,
-				coverage = None
+				stop = prodStop
 			),
 			submission = DataSubmission(
 				submitter = UriResource(
@@ -94,11 +96,11 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		themes.head
 	}
 
-	private def getPos(subj: URI): Option[Map[String, Double]] =
+	private def getPos(subj: URI): Option[Position] =
 		for(
 			posLat <- getSingleDouble(subj, vocab.hasLatitude);
 			posLon <- getSingleDouble(subj, vocab.hasLongitude)
-		) yield Map("lat" -> posLat, "lon" -> posLon)
+		) yield Position(posLat, posLon)
 
 	private def getSingleUri(subj: URI, pred: URI): URI = {
 		val vals = server.getValues(subj, pred).collect{

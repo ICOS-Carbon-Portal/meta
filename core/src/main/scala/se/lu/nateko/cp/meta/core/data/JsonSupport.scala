@@ -9,9 +9,9 @@ object JsonSupport extends CommonJsonSupport{
 	import Sha256Sum.sha256sumFormat
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
-	implicit val dataPackageSpecFormat = jsonFormat3(DataObjectSpec)
+	implicit val dataObjectSpecFormat = jsonFormat3(DataObjectSpec)
 
-	implicit val packageSubmissionFormat = jsonFormat3(DataSubmission)
+	implicit val objectSubmissionFormat = jsonFormat3(DataSubmission)
 
 	implicit object ProducerThemeFormat extends RootJsonFormat[ProducerTheme] {
 
@@ -43,7 +43,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val packageProductionFormat = jsonFormat6(DataProduction)
-	implicit val dataPackageFormat = jsonFormat8(DataObject)
+	implicit val positionFormat = jsonFormat2(Position)
+	implicit val objectProducerFormat = jsonFormat5(DataProducer)
+	implicit val objectProductionFormat = jsonFormat3(DataProduction)
+	implicit val dataObjectFormat = jsonFormat8(DataObject)
 
 }

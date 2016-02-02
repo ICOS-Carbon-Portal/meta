@@ -50,8 +50,7 @@
 		<div class="row">
 
 			@panel("Production"){
-				@panelRow("Produced by", dobj.production.producer.getLabel)
-				@panelRow("Theme", dobj.production.theme.toString)
+				@panelRow("Produced by", dobj.production.producer.label)
 				@panelRow("Data level", dobj.specification.dataLevel.toString)
 				@panelRow("Production started (UTC)", dobj.production.start.getDateTimeStr)
 				@panelRow("Production ended (UTC)", dobj.production.stop.getDateTimeStr)
@@ -78,8 +77,12 @@
 
 		<div class="row">
 			@panel("Coverage", 5){
-				<iframe src="https://meta.icos-cp.eu/station/?theme=AS&lat=54.1825&lon=7.885278"
-					style="border:none;width:100%;height:400px;"></iframe>
+				@panelRow("Latitude (WGS 84)", getAxis(_.lat))
+				@panelRow("Longitude (WGS 84)", getAxis(_.lon))
+				@if(hasPos) {
+					<iframe src="/station/?theme=@dobj.production.producer.theme.getValue&lat=@getAxis(_.lat)&lon=@getAxis(_.lon)"
+					style="border:none ; width:100% ; height:400px ;"></iframe>
+				}
 			}
 		</div>
 
@@ -107,7 +110,11 @@
 							panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 						}
 						case UploadOk => {
-							List(panelRow("Status - OK", "Data and metadata are complete."), panelRow("PID", dobj.pid.get))
+							List(
+								panelRow("Status - OK", "Data and metadata are complete."),
+								panelRow("PID", dobj.pid.get),
+								panelRowHtml("Access URL", accessLink)
+							)
 						}
 						case _ => {
 							panelRow("Status - Unknown", "Status of data object could not be determined.")
@@ -118,6 +125,20 @@
 			</div>
 		</div>
 	</div>
+}
+
+@hasPos = @{
+	dobj.production.producer.pos match {
+		case Some(pos) => true
+		case _ => false
+	}
+}
+
+@getAxis(axis: Position => Double) = @{
+	dobj.production.producer.pos match {
+		case Some(pos) => axis(pos).toString
+		case _ => "Unknown"
+	}
 }
 
 @headingClass = @{

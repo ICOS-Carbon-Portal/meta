@@ -9,7 +9,6 @@ import spray.json._
 
 
 private object LandingPageHelpers{
-
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
 	implicit class PresentableResource(val res: UriResource) extends AnyVal{
@@ -40,6 +39,10 @@ private object LandingPageHelpers{
 				case None => "Not done"
 			}
 		}
+	}
+
+	implicit class PresentableProducerTheme(val theme: ProducerTheme) extends AnyVal{
+		def getValue: String = theme.toJson.convertTo[String]
 	}
 
 }

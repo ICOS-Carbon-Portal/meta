@@ -62,15 +62,15 @@ function getIcon(theme){
 	};
 
 	switch (theme){
-		case "AS":
+		case "Atmosphere":
 			icon.src = 'https://static.icos-cp.eu/share/stations/icons/as.png';
 			break;
 
-		case "ES":
+		case "Ecosystem":
 			icon.src = 'https://static.icos-cp.eu/share/stations/icons/es.png';
 			break;
 
-		case "OS":
+		case "Ocean":
 			icon.src = 'https://static.icos-cp.eu/share/stations/icons/os.png';
 			break;
 	}

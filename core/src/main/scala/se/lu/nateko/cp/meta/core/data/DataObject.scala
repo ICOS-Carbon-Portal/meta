@@ -4,13 +4,27 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
 
+object DataTheme extends Enumeration{
+	val Atmosphere, Ecosystem, Ocean = Value
+	type DataTheme = Value
+}
+
+object DataObjectStatus extends Enumeration{
+	val UploadOk, NotComplete = Value
+	type DataObjectStatus = Value
+}
+
+import DataTheme.DataTheme
+import DataObjectStatus.DataObjectStatus
+
 case class UriResource(uri: URI, label: Option[String])
+
 case class DataProducer(
-   uri: URI,
-   label: String,
-   theme: ProducerTheme,
-   pos: Option[Position],
-   coverage: Option[String]
+	uri: URI,
+	label: String,
+	theme: DataTheme,
+	pos: Option[Position],
+	coverage: Option[String]
 )
 
 case class Position(lat: Double, lon: Double)
@@ -34,14 +48,3 @@ case class DataObject(
 	submission: DataSubmission,
 	specification: DataObjectSpec
 )
-
-
-sealed trait ProducerTheme
-case object ThemeAS extends ProducerTheme
-case object ThemeES extends ProducerTheme
-case object ThemeOS extends ProducerTheme
-
-
-sealed trait DataObjectStatus
-case object NotComplete extends DataObjectStatus
-case object UploadOk extends DataObjectStatus

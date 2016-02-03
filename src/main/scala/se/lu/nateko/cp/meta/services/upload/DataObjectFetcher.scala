@@ -5,11 +5,14 @@ import org.openrdf.model.{URI, Literal}
 import org.openrdf.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.DataTheme._
+import se.lu.nateko.cp.meta.core.data.DataObjectStatus._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.openrdf.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.EpicPidClient
+import org.openrdf.model.vocabulary.XMLSchema
 
 class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String) {
 
@@ -25,7 +28,6 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
 		val dataObjUri = vocab.getDataObject(hash)
-		val fullHash = Sha256Sum.fromHex(getSingleString(dataObjUri, vocab.hasSha256sum).get).get
 		val fileName: Option[String] = getSingleString(dataObjUri, vocab.hasName)
 
 		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
@@ -46,11 +48,11 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		val spec = getSingleUri(dataObjUri, vocab.hasPackageSpec)
 		val specFormat = getLabeledResource(spec, vocab.hasFormat)
 		val encoding = getLabeledResource(spec, vocab.hasEncoding)
-		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
+		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel).get
 
 		DataObject(
-			status = getStatus(submStop),
-			hash = fullHash,
+			status = if(submStop.isDefined) UploadOk else NotComplete,
+			hash = getHashsum(dataObjUri),
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
 			pid = submStop.map(_ => pidFactory(hash)),
@@ -59,7 +61,6 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 					uri = producer,
 					label = producerName,
 					theme = getTheme(producer),
-//					pos = Some(Position(56.09763, 13.41897)),
 					pos = pos,
 					//TODO: Add support for geoJson
 					coverage = None
@@ -83,16 +84,21 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		)
 	}
 
-	private def getStatus(submStop: Option[Instant]): DataObjectStatus =
-		if(submStop.isDefined) UploadOk else NotComplete
+	private def getHashsum(dataObjUri: URI): Sha256Sum = {
+		val hex: String = getOptionalSingleLiteral(dataObjUri, vocab.hasSha256sum, XMLSchema.HEXBINARY)
+			.getOrElse(throw new Error("Data object metadata lacks SHA-256 hash sum info!"))
+		Sha256Sum.fromHex(hex).get
+	}
 
-	private def getTheme(subj: URI): ProducerTheme = {
+	private def getTheme(subj: URI): DataTheme = {
+		import vocab.{atmoStationClass, ecoStationClass, oceStationClass}
+
 		val themes = server.getValues(subj, RDF.TYPE).collect{
-			case uri: URI if(uri == vocab.atmoStationClass) => ThemeAS
-			case uri: URI if(uri == vocab.ecoStationClass) => ThemeES
-			case uri: URI if(uri == vocab.oceStationClass) => ThemeOS
+			case `atmoStationClass` => Atmosphere
+			case `ecoStationClass` => Ecosystem
+			case `oceStationClass` => Ocean
 		}
-		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size}!")
+		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size} themes!")
 		themes.head
 	}
 
@@ -111,47 +117,29 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 	}
 
 	private def getLabeledResource(subj: URI, pred: URI): UriResource = {
-		val vals = server.getValues(subj, pred).collect{
-			case uri: URI => uri
-		}
-		assert(vals.size == 1, "Expected a single value!")
-		val label = getSingleString(vals.head, RDFS.LABEL)
-		UriResource(vals.head, label)
+		val uri = getSingleUri(subj, pred)
+		UriResource(uri, label = getSingleString(uri, RDFS.LABEL))
 	}
 
-	private def getSingleString(subj: URI, pred: URI): Option[String] = {
-		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal => lit.stringValue
-		}
-		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
-		vals.headOption
-	}
+	private def getSingleString(subj: URI, pred: URI): Option[String] =
+		getOptionalSingleLiteral(subj, pred, XMLSchema.STRING)
 
-	private def getSingleInt(subj: URI, pred: URI): Int = {
-		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal => lit
-		}
-		assert(vals.size == 1, "Expected a single value!")
-		vals.head.stringValue.toInt
-	}
+	private def getSingleInt(subj: URI, pred: URI): Option[Int] =
+		getOptionalSingleLiteral(subj, pred, XMLSchema.INTEGER).map(_.toInt)
 
-	private def getSingleDouble(subj: URI, pred: URI): Option[Double] = {
+	private def getSingleDouble(subj: URI, pred: URI): Option[Double] =
+		getOptionalSingleLiteral(subj, pred, XMLSchema.DOUBLE).map(_.toDouble)
+
+	private def getSingleInstant(subj: URI, pred: URI): Option[Instant] =
+		getOptionalSingleLiteral(subj, pred, XMLSchema.DATETIME).map(Instant.parse)
+
+	private def getOptionalSingleLiteral(subj: URI, pred: URI, dType: URI): Option[String] = {
 		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal => lit.stringValue
+			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
 		}
 
 		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
-		vals.headOption.map(_.toDouble)
-	}
-
-	private def getSingleInstant(subj: URI, pred: URI): Option[Instant] = {
-		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal => lit.stringValue
-		}
-
-		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
-		vals.headOption.map(Instant.parse)
-
+		vals.headOption
 	}
 
 }

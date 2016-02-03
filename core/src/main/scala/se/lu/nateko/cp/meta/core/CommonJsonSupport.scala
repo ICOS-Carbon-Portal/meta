@@ -29,4 +29,20 @@ trait CommonJsonSupport extends DefaultJsonProtocol{
 		}
 	}
 
+	def enumFormat[T <: Enumeration](enum: T) = new RootJsonFormat[enum.Value] {
+		def write(v: enum.Value) = JsString(v.toString)
+
+		def read(value: JsValue): enum.Value = value match{
+			case JsString(s) =>
+				try{
+					enum.withName(s)
+				}catch{
+					case _: NoSuchElementException => deserializationError(
+						"Expected one of: " + enum.values.map(_.toString).mkString("'", "', '", "'")
+					)
+				}
+			case _ => deserializationError("Expected a string")
+		}
+	}
+
 }

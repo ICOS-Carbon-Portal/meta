@@ -58,6 +58,8 @@
 
     <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_AS">
         <rdf:type rdf:resource="&cpmeta;AS"/>
+        <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa atmospheric station</cpmeta:hasName>
         <cpmeta:hasStationClass rdf:datatype="&xsd;string">Station Class II</cpmeta:hasStationClass>
     </owl:NamedIndividual>

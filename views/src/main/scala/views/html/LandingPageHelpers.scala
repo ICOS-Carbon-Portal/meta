@@ -41,8 +41,4 @@ private object LandingPageHelpers{
 		}
 	}
 
-	implicit class PresentableProducerTheme(val theme: ProducerTheme) extends AnyVal{
-		def getValue: String = theme.toJson.convertTo[String]
-	}
-
 }

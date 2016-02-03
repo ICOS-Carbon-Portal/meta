@@ -22,8 +22,13 @@
 		.navbar-default span, .navbar-default p, .navbar-default h1 {
 			color: #ffffff;
 		}
-		.col-md-12 > label::after{
+		.col-md-12 > label::after {
 			content: ":";
+		}
+		iframe {
+			border:solid 1px #ddd;
+			width:100%;
+			height:400px;
 		}
 	</style>
 
@@ -78,11 +83,18 @@
 
 		<div class="row">
 			@panel("Coverage", 5){
-				@panelRow("Latitude (WGS 84)", lat)
-				@panelRow("Longitude (WGS 84)", lon)
-				@if(dobj.production.producer.pos.isDefined) {
-					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"
-					style="border:none ; width:100% ; height:400px ;"></iframe>
+				@if(!coverage.isDefined) {
+					@panelRow("Latitude (WGS 84)", lat)
+					@panelRow("Longitude (WGS 84)", lon)
+				}
+				
+				@if(pos.isDefined) {
+					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"></iframe>
+				} else {
+					@if(coverage.isDefined){
+						@panelRow("Coverage (WGS 84)", coverage.get)
+						<iframe src="/station/?theme=@theme&coverage=@coverage"></iframe>
+					}
 				}
 			}
 		</div>
@@ -98,6 +110,7 @@
 </html>
 
 @pos = @{dobj.production.producer.pos}
+@coverage = @{dobj.production.producer.coverage}
 @theme = @{dobj.production.producer.theme.toString}
 @lat = @{pos.map(_.lat.toString).getOrElse("Unknown")}
 @lon = @{pos.map(_.lon.toString).getOrElse("Unknown")}

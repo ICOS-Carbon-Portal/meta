@@ -37,7 +37,10 @@ nohup.out
 *.*~
 
 #Front end
-src/main/resources/www/*.js
+/src/main/resources/www/sparqlclient.js
+/src/main/resources/www/metaentry.js
+/src/main/resources/www/labeling.js
+
 /webbapps/station-map/local-config.json
 
 #Environment-specific config

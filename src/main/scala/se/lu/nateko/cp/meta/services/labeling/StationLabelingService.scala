@@ -5,7 +5,6 @@ import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
 
 import se.lu.nateko.cp.cpauth.core.UserInfo
-import se.lu.nateko.cp.meta.ingestion.StationStructuringVocab
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.LabelingServiceConfig

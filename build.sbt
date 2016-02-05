@@ -53,8 +53,8 @@ lazy val meta = (project in file("."))
 		version := "0.2",
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-experimental"             % "2.0.2",
-			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.0.2",
+			"com.typesafe.akka"     %% "akka-http-experimental"             % "2.0.3",
+			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.0.3",
 			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.3.14",
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.2",
 			"net.sourceforge.owlapi" % "owlapi-distribution"                % "4.0.2",
@@ -66,7 +66,6 @@ lazy val meta = (project in file("."))
 			 //non-standard Hermit, hosted on repo.icos-cp.eu 3rd-parties repo
 			"com.hermit-reasoner"    % "org.semanticweb.hermit"             % "1.3.8.5" excludeAll(noGeronimo),
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.2",
-			"net.sf.opencsv"         % "opencsv"                            % "2.3",
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"
 		),

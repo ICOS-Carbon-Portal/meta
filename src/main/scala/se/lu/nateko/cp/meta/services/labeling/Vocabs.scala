@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.ingestion
+package se.lu.nateko.cp.meta.services.labeling
 
 import org.openrdf.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab

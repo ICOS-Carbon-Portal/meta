@@ -20,7 +20,10 @@
     "Portal",
     "metadata"
   ],
-  "author": "Oleg Mirzov",
+  "author": [
+    "Oleg Mirzov",
+    "Roger Groth"
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/ICOS-Carbon-Portal/meta/issues"

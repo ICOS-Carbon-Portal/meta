@@ -1,25 +1,14 @@
 <?xml version="1.0"?>
-
-
-<!DOCTYPE rdf:RDF [
-    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
-    <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
-    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
-    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
-    <!ENTITY cpmeta "http://meta.icos-cp.eu/ontologies/cpmeta/" >
-    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
-]>
-
-
-<rdf:RDF xmlns="&cpmeta;instances/"
-     xml:base="&cpmeta;instances/"
+<rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/instances/"
+     xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/instances/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:dc="http://purl.org/dc/elements/1.1/"
      xmlns:cpmeta="http://meta.icos-cp.eu/ontologies/cpmeta/">
-    <owl:Ontology rdf:about="&cpmeta;instances/">
+    <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/">
         <owl:imports rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
     </owl:Ontology>
     
@@ -36,207 +25,183 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/ATC -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/ATC">
-        <rdf:type rdf:resource="&cpmeta;ATC"/>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Atmosphere thematic center</cpmeta:hasName>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/ETC -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/ETC">
-        <rdf:type rdf:resource="&cpmeta;ETC"/>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Ecosystem thematic center</cpmeta:hasName>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_AS -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_AS">
-        <rdf:type rdf:resource="&cpmeta;AS"/>
-        <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
-        <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa atmospheric station</cpmeta:hasName>
-        <cpmeta:hasStationClass rdf:datatype="&xsd;string">Station Class II</cpmeta:hasStationClass>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_AS">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa atmospheric station</cpmeta:hasName>
+        <cpmeta:hasStationClass rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Station Class II</cpmeta:hasStationClass>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_ES -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_ES">
-        <rdf:type rdf:resource="&cpmeta;ES"/>
-        <cpmeta:hasElevation rdf:datatype="&xsd;float">115.0</cpmeta:hasElevation>
-        <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.41897</cpmeta:hasLongitude>
-        <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.09763</cpmeta:hasLatitude>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa ecosystem station</cpmeta:hasName>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_ES">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+        <cpmeta:hasElevation rdf:datatype="http://www.w3.org/2001/XMLSchema#float">115.0</cpmeta:hasElevation>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa ecosystem station</cpmeta:hasName>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_site -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/Hyltemossa_site">
-        <rdf:type rdf:resource="&cpmeta;Site"/>
-        <cpmeta:hasElevation rdf:datatype="&xsd;float">115.0</cpmeta:hasElevation>
-        <cpmeta:hasLongitude rdf:datatype="&xsd;double">13.42</cpmeta:hasLongitude>
-        <cpmeta:hasLatitude rdf:datatype="&xsd;double">56.1</cpmeta:hasLatitude>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Hyltemossa</cpmeta:hasName>
-        <cpmeta:countryCode rdf:datatype="&xsd;string">SE</cpmeta:countryCode>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/Hyltemossa_site">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+        <cpmeta:countryCode rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SE</cpmeta:countryCode>
+        <cpmeta:hasElevation rdf:datatype="http://www.w3.org/2001/XMLSchema#float">115.0</cpmeta:hasElevation>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.1</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.42</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa</cpmeta:hasName>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/Jane_Doe -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/Jane_Doe">
-        <rdf:type rdf:resource="&cpmeta;Person"/>
-        <cpmeta:hasLastName rdf:datatype="&xsd;string">Doe</cpmeta:hasLastName>
-        <cpmeta:hasFirstName rdf:datatype="&xsd;string">Jane</cpmeta:hasFirstName>
-        <cpmeta:hasEmail rdf:datatype="&xsd;string">jane.doe@icos-ri.eu</cpmeta:hasEmail>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/Jane_Doe">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <cpmeta:hasEmail rdf:datatype="http://www.w3.org/2001/XMLSchema#string">jane.doe@icos-ri.eu</cpmeta:hasEmail>
+        <cpmeta:hasFirstName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Jane</cpmeta:hasFirstName>
+        <cpmeta:hasLastName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Doe</cpmeta:hasLastName>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/John_Smith -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/John_Smith">
-        <rdf:type rdf:resource="&cpmeta;Person"/>
-        <cpmeta:hasFirstName rdf:datatype="&xsd;string">John</cpmeta:hasFirstName>
-        <cpmeta:hasLastName rdf:datatype="&xsd;string">Smith</cpmeta:hasLastName>
-        <cpmeta:hasEmail rdf:datatype="&xsd;string">john.smith@icos-ri.eu</cpmeta:hasEmail>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/OTC -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/OTC">
-        <rdf:type rdf:resource="&cpmeta;OTC"/>
-        <cpmeta:hasName rdf:datatype="&xsd;string">Ocean thematic center</cpmeta:hasName>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/John_Smith">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <cpmeta:hasEmail rdf:datatype="http://www.w3.org/2001/XMLSchema#string">john.smith@icos-ri.eu</cpmeta:hasEmail>
+        <cpmeta:hasFirstName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">John</cpmeta:hasFirstName>
+        <cpmeta:hasLastName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Smith</cpmeta:hasLastName>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/atcDirector -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/atcDirector">
-        <rdf:type rdf:resource="&cpmeta;Membership"/>
-        <cpmeta:atOrganization rdf:resource="&cpmeta;instances/ATC"/>
-        <cpmeta:hasRole rdf:resource="&cpmeta;instances/directorRole"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/atcDirector">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <cpmeta:atOrganization rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:hasRole rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/directorRole"/>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionMonthlyColumn -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/co2MoleFractionMonthlyColumn">
-        <rdf:type rdf:resource="&cpmeta;DatasetColumn"/>
-        <cpmeta:hasColumnTitle rdf:datatype="&xsd;string">CO2</cpmeta:hasColumnTitle>
-        <cpmeta:hasValueFormat rdf:resource="&cpmeta;float32"/>
-        <cpmeta:hasValueType rdf:resource="&cpmeta;instances/co2MoleFractionMonthlyMean"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/float32"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CO2</cpmeta:hasColumnTitle>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionMonthlyMean -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataObject -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/co2MoleFractionMonthlyMean">
-        <rdf:type rdf:resource="&cpmeta;ValueType"/>
-        <rdfs:label rdf:datatype="&xsd;string">CO2 mole fraction, monthly mean</rdfs:label>
-        <cpmeta:hasUnit rdf:datatype="&xsd;string">ppm</cpmeta:hasUnit>
-        <cpmeta:hasQuantityKind rdf:resource="&cpmeta;instances/moleFraction"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataObject">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec"/>
+        <cpmeta:containsDataset rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset"/>
+        <cpmeta:hasEncoding rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding"/>
+        <cpmeta:hasFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer"/>
+        <cpmeta:hasDataLevel rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</cpmeta:hasDataLevel>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn"/>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/date -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/date">
-        <rdf:type rdf:resource="&cpmeta;ValueType"/>
-        <rdfs:label rdf:datatype="&xsd;string">measurement date</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">calendar date</rdfs:comment>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/date">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">calendar date</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measurement date</rdfs:label>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/dateColumn">
-        <rdf:type rdf:resource="&cpmeta;DatasetColumn"/>
-        <cpmeta:hasColumnTitle rdf:datatype="&xsd;string">DATE</cpmeta:hasColumnTitle>
-        <cpmeta:hasValueFormat rdf:resource="&cpmeta;iso8601date"/>
-        <cpmeta:hasValueType rdf:resource="&cpmeta;instances/date"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601date"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/date"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DATE</cpmeta:hasColumnTitle>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/directorRole -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/directorRole">
-        <rdf:type rdf:resource="&cpmeta;Role"/>
-        <rdfs:label rdf:datatype="&xsd;string">Director</rdfs:label>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/directorRole">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Director</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <cpmeta:hasQuantityKind rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction"/>
+        <cpmeta:hasUnit rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ppm</cpmeta:hasUnit>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Can be used for different gases, as well as for different averaging time windows</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Gas mole fraction, ppm</rdfs:label>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/moleFraction">
-        <rdf:type rdf:resource="&cpmeta;QuantityKind"/>
-        <rdfs:label rdf:datatype="&xsd;string">mole fraction</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/monthlyCO2noaaDataset -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/monthlyCO2noaaDataset">
-        <rdf:type rdf:resource="&cpmeta;TabularDatasetSpec"/>
-        <cpmeta:hasColumn rdf:resource="&cpmeta;instances/co2MoleFractionMonthlyColumn"/>
-        <cpmeta:hasColumn rdf:resource="&cpmeta;instances/dateColumn"/>
-        <cpmeta:hasColumn rdf:resource="&cpmeta;instances/timeColumn"/>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/monthlyCO2noaaPackage -->
-
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/monthlyCO2noaaPackage">
-        <rdf:type rdf:resource="&cpmeta;SimpleObjectSpec"/>
-        <cpmeta:hasDataLevel rdf:datatype="&xsd;integer">0</cpmeta:hasDataLevel>
-        <cpmeta:hasFormat rdf:resource="&cpmeta;asciiNooaTimeSer"/>
-        <cpmeta:hasEncoding rdf:resource="&cpmeta;plainFileEncoding"/>
-        <cpmeta:containsDataset rdf:resource="&cpmeta;instances/monthlyCO2noaaDataset"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">mole fraction</rdfs:label>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/timeColumn">
-        <rdf:type rdf:resource="&cpmeta;DatasetColumn"/>
-        <cpmeta:hasColumnTitle rdf:datatype="&xsd;string">TIME</cpmeta:hasColumnTitle>
-        <cpmeta:hasValueFormat rdf:resource="&cpmeta;iso8601timeOfDay"/>
-        <cpmeta:hasValueType rdf:resource="&cpmeta;instances/timeOfDay"/>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601timeOfDay"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeOfDay"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">TIME</cpmeta:hasColumnTitle>
     </owl:NamedIndividual>
     
 
 
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeOfDay -->
 
-    <owl:NamedIndividual rdf:about="&cpmeta;instances/timeOfDay">
-        <rdf:type rdf:resource="&cpmeta;ValueType"/>
-        <rdfs:label rdf:datatype="&xsd;string">measurement time</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">measurement time of day</rdfs:comment>
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeOfDay">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measurement time of day</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measurement time</rdfs:label>
     </owl:NamedIndividual>
 </rdf:RDF>
 
 
 
-<!-- Generated by the OWL API (version 3.5.1) http://owlapi.sourceforge.net -->
+<!-- Generated by the OWL API (version 4.1.3.20151118-2017) https://github.com/owlcs/owlapi -->
 

@@ -14,13 +14,17 @@ object Loading {
 	def fromResource(path: String, baseUri: String): Repository = fromResource(path, baseUri, RDFFormat.RDFXML)
 
 	def fromResource(path: String, baseUri: String, format: RDFFormat): Repository = {
-		val instStream = getClass.getResourceAsStream(path)
 		val repo = empty
+		loadResource(repo, path, baseUri, format).get //will cast an exception if loading failed
+		repo
+	}
+
+	def loadResource(repo: Repository, path: String, baseUri: String, format: RDFFormat): Try[Unit] = {
+		val instStream = getClass.getResourceAsStream(path)
 		val ontUri = repo.getValueFactory.createURI(baseUri)
 		repo.transact(conn => {
 			conn.add(instStream, baseUri, format, ontUri)
 		})
-		repo
 	}
 
 	def empty: Repository = {

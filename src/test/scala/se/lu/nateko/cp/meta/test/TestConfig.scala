@@ -10,6 +10,7 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager
 import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
+import org.openrdf.rio.RDFFormat
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
@@ -25,7 +26,11 @@ object TestConfig {
 
 	lazy val instServer: InstanceServer = {
 		val repo = Loading.fromResource("/../classes/owl/cpmetainstances.owl", instOntUri)
-		new SesameInstanceServer(repo, instOntUri)
+		val factory = repo.getValueFactory
+		val instOnt = factory.createURI(instOntUri)
+		val ont = factory.createURI(ontUri)
+		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
+		new SesameInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
 	}
 
 	private val prefixManager: PrefixManager =

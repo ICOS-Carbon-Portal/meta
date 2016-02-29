@@ -58,8 +58,8 @@
 			@panel("Production"){
 				@panelRow("Produced by", dobj.production.producer.label)
 				@panelRow("Data level", dobj.specification.dataLevel.toString)
-				@panelRow("Production started (UTC)", dobj.production.start.getDateTimeStr)
-				@panelRow("Production ended (UTC)", dobj.production.stop.getDateTimeStr)
+				@panelRow("Production started (UTC)", prodStart)
+				@panelRow("Production ended (UTC)", prodStop)
 			}
 
 			@panel("Submission"){
@@ -109,6 +109,8 @@
 </body>
 </html>
 
+@prodStart = @{dobj.production.timeInterval.map(_.start.getDateTimeStr).getOrElse("Unknown")}
+@prodStop = @{dobj.production.timeInterval.map(_.stop.getDateTimeStr).getOrElse("Unknown")}
 @pos = @{dobj.production.producer.pos}
 @coverage = @{dobj.production.producer.coverage}
 @theme = @{dobj.production.producer.theme.toString}

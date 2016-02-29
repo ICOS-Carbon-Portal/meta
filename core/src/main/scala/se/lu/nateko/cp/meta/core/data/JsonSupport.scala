@@ -11,14 +11,15 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
 	implicit val dataObjectSpecFormat = jsonFormat3(DataObjectSpec)
 
-	implicit val objectSubmissionFormat = jsonFormat3(DataSubmission)
+	implicit val objectSubmissionFormat = jsonFormat4(DataSubmission)
 
 	implicit val dataThemeFormat = enumFormat(DataTheme)
 	implicit val dataObjectStatusFormat = enumFormat(DataObjectStatus)
 
 	implicit val positionFormat = jsonFormat2(Position)
 	implicit val objectProducerFormat = jsonFormat5(DataProducer)
-	implicit val objectProductionFormat = jsonFormat3(DataProduction)
+	implicit val timeIntervalFormat = jsonFormat2(TimeInterval)
+	implicit val objectProductionFormat = jsonFormat2(DataProduction)
 	implicit val dataObjectFormat = jsonFormat8(DataObject)
 
 }

@@ -34,8 +34,10 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		val producer: URI = getSingleUri(production, vocab.prov.wasAssociatedWith)
 		val producerName: String = getSingleString(producer, vocab.hasName).get
 
-		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime).get
-		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime).get
+		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime)
+		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime)
+		val prodTimeInterval = for(start <- prodStart; stop <- prodStop)
+			yield TimeInterval(start, stop)
 		val pos = getPos(producer)
 
 		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
@@ -65,8 +67,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 					//TODO: Add support for geoJson
 					coverage = None
 				),
-				start = prodStart,
-				stop = prodStop
+				timeInterval = prodTimeInterval
 			),
 			submission = DataSubmission(
 				submitter = UriResource(
@@ -74,7 +75,8 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 					label = submitterName
 				),
 				start = submStart,
-				stop = submStop
+				stop = submStop,
+				datasetSpec = None
 			),
 			specification = DataObjectSpec(
 				format = specFormat,

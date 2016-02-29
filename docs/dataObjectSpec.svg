@@ -14,7 +14,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="dataPackageSpec.svg">
+   sodipodi:docname="dataObjectSpec.svg">
   <defs
      id="defs4">
     <marker
@@ -334,7 +334,7 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="442.84356"
+     inkscape:cx="444.86387"
      inkscape:cy="350.48215"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -362,15 +362,14 @@
      id="layer1"
      transform="translate(0,-308.2677)">
     <g
-       id="g5122"
-       transform="translate(-10.843553,26.351831)">
+       id="g3106">
       <rect
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
          ry="7.9539099"
          rx="9.2828836"
-         y="935.11957"
-         x="40.72509"
+         y="961.47137"
+         x="29.881536"
          height="51.120079"
          width="149.85226"
          id="rect2995-6"
@@ -380,14 +379,14 @@
          inkscape:export-xdpi="300.02203"
          sodipodi:linespacing="125%"
          id="text4250-0-1"
-         y="969.20544"
-         x="43.242455"
+         y="995.55725"
+         x="42.398903"
          style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
-           y="969.20544"
-           x="43.242455"
+           y="995.55725"
+           x="42.398903"
            id="tspan4252-0-0"
-           sodipodi:role="line">Data Package</tspan></text>
+           sodipodi:role="line">Data Object</tspan></text>
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.85616302px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
@@ -405,61 +404,57 @@
        sodipodi:nodetypes="cc"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203" />
+    <rect
+       inkscape:export-ydpi="300.02203"
+       inkscape:export-xdpi="300.02203"
+       ry="12.874697"
+       rx="13.994498"
+       y="586.66309"
+       x="52.935799"
+       height="104.41908"
+       width="283.86557"
+       id="rect4191"
+       style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+    <text
+       inkscape:export-ydpi="300.02203"
+       inkscape:export-xdpi="300.02203"
+       sodipodi:linespacing="125%"
+       id="text4193"
+       y="617.39844"
+       x="63.531258"
+       style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="617.39844"
+         x="63.531258"
+         id="tspan4195"
+         sodipodi:role="line">Data Object Spec</tspan></text>
     <g
-       id="g5127"
-       transform="translate(-29.711191,-167.52131)">
+       id="g5075"
+       transform="translate(-318.28262,21.05012)">
       <rect
-         style="fill:#ccfacc;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-         id="rect4191"
-         width="283.86557"
-         height="104.41908"
-         x="82.646988"
-         y="754.18439"
-         rx="13.994498"
-         ry="12.874697"
+         style="fill:#f7facc;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="rect4191-0"
+         width="249.73563"
+         height="42.431984"
+         x="385.84647"
+         y="607.57471"
+         rx="6.8989081"
+         ry="6.0769391"
          inkscape:export-xdpi="300.02203"
          inkscape:export-ydpi="300.02203" />
       <text
          xml:space="preserve"
          style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         x="93.242447"
-         y="784.91974"
-         id="text4193"
+         x="399.58957"
+         y="636.00458"
+         id="text4193-7"
          sodipodi:linespacing="125%"
          inkscape:export-xdpi="300.02203"
          inkscape:export-ydpi="300.02203"><tspan
            sodipodi:role="line"
-           id="tspan4195"
-           x="93.242447"
-           y="784.91974">Data Package Spec</tspan></text>
-      <g
-         transform="translate(-288.57143,188.57143)"
-         id="g5075">
-        <rect
-           inkscape:export-ydpi="300.02203"
-           inkscape:export-xdpi="300.02203"
-           ry="6.0769391"
-           rx="6.8989081"
-           y="607.57471"
-           x="385.84647"
-           height="42.431984"
-           width="249.73563"
-           id="rect4191-0"
-           style="fill:#f7facc;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
-        <text
-           inkscape:export-ydpi="300.02203"
-           inkscape:export-xdpi="300.02203"
-           sodipodi:linespacing="125%"
-           id="text4193-7"
-           y="636.00458"
+           id="tspan4195-4"
            x="399.58957"
-           style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-           xml:space="preserve"><tspan
-             y="636.00458"
-             x="399.58957"
-             id="tspan4195-4"
-             sodipodi:role="line">Simple Package Spec</tspan></text>
-      </g>
+           y="636.00458">Simple Object Spec</tspan></text>
     </g>
     <g
        id="g5339"

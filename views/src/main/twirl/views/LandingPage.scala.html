@@ -1,5 +1,4 @@
 @import se.lu.nateko.cp.meta.core.data._
-@import se.lu.nateko.cp.meta.core.data.DataObjectStatus._
 @import LandingPageHelpers._
 
 @(dobj: DataObject)
@@ -75,7 +74,7 @@
 				@panelRow("Encoding", dobj.specification.encoding.getLabel)
 				@panelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@panelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
-				@if(dobj.status == UploadOk) {
+				@if(uploadComplete) {
 					@panelRowHtml("Access URL", accessLink)
 				}
 			}
@@ -116,28 +115,17 @@
 @theme = @{dobj.production.producer.theme.toString}
 @lat = @{pos.map(_.lat.toString).getOrElse("Unknown")}
 @lon = @{pos.map(_.lon.toString).getOrElse("Unknown")}
-
-@summaryStyleContext = @{
-	dobj.status match {
-		case UploadOk => "success"
-		case NotComplete => "warning"
-		case _ => "danger"
-	}
-}
+@uploadComplete = @{dobj.pid.isDefined}
+@summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
 @summary = @{
-	dobj.status match {
-		case NotComplete => {
-			panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
-		}
-		case UploadOk => {
-			panelRow("Status - OK", "Data and metadata are complete.") ::
-			panelRow("PID", dobj.pid.get) ::
-			panelRowHtml("Access URL", accessLink) :: Nil
-		}
-		case _ => {
-			panelRow("Status - Unknown", "Status of data object could not be determined.")
-		}
+	if(uploadComplete) {
+		panelRow("Status - OK", "Data and metadata are complete.") ::
+		panelRow("PID", dobj.pid.get) ::
+		panelRowHtml("Access URL", accessLink) :: Nil
+	}
+	else {
+		panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 	}
 }
 

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.core
 import java.net.URI
 import java.time.Instant
 import spray.json._
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 
 trait CommonJsonSupport extends DefaultJsonProtocol{
 
@@ -28,6 +29,8 @@ trait CommonJsonSupport extends DefaultJsonProtocol{
 			case _ => deserializationError("String representation of a time instant is expected")
 		}
 	}
+
+	implicit val timeIntervalFormat = jsonFormat2(TimeInterval)
 
 	def enumFormat[T <: Enumeration](enum: T) = new RootJsonFormat[enum.Value] {
 		def write(v: enum.Value) = JsString(v.toString)

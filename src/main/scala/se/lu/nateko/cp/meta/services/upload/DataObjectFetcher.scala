@@ -6,7 +6,6 @@ import org.openrdf.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.DataTheme._
-import se.lu.nateko.cp.meta.core.data.DataObjectStatus._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -53,7 +52,6 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel).get
 
 		DataObject(
-			status = if(submStop.isDefined) UploadOk else NotComplete,
 			hash = getHashsum(dataObjUri),
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
@@ -75,13 +73,13 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 					label = submitterName
 				),
 				start = submStart,
-				stop = submStop,
-				datasetSpec = None
+				stop = submStop
 			),
 			specification = DataObjectSpec(
 				format = specFormat,
 				encoding = encoding,
-				dataLevel = dataLevel
+				dataLevel = dataLevel,
+				datasetSpec = None
 			)
 		)
 	}
@@ -93,12 +91,21 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 	}
 
 	private def getTheme(subj: URI): DataTheme = {
-		import vocab.{atmoStationClass, ecoStationClass, oceStationClass}
+		import vocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, atc, etc, otc, cp, cal}
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
 			case `atmoStationClass` => Atmosphere
 			case `ecoStationClass` => Ecosystem
 			case `oceStationClass` => Ocean
+			case `tcClass` => subj match{
+				case `atc` => Atmosphere
+				case `etc` => Ecosystem
+				case `otc` => Ocean
+			}
+			case `cfClass` => subj match{
+				case `cp` => CP
+				case `cal` => CAL
+			}
 		}
 		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size} themes!")
 		themes.head

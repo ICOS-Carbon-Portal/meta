@@ -1,8 +1,9 @@
 package se.lu.nateko.cp.meta
 
 import java.net.URI
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 
 case class ResourceDto(displayName: String, uri: URI, comment: Option[String])
 
@@ -36,8 +37,7 @@ case class UploadMetadataDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	producingOrganization: URI,
-	productionStart: Instant,
-	productionEnd: Instant,
+	productionInterval: Option[TimeInterval],
 	packageSpec: URI,
 	fileName: Option[String]
 )

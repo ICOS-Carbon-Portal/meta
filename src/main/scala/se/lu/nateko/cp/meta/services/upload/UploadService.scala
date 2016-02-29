@@ -37,7 +37,7 @@ class UploadService(
 	val packageFetcher = new DataObjectFetcher(server, getPid)
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
-		import meta.{hashSum, submitterId, packageSpec, producingOrganization}
+		import meta.{hashSum, submitterId, packageSpec, producingOrganization, productionInterval}
 
 		val submitterConf = conf.submitters.get(submitterId).getOrElse(
 			throw new UploadUserErrorException(s"Unknown submitter: $submitterId")
@@ -61,8 +61,12 @@ class UploadService(
 		val productionUri = vocab.getProduction(hashSum)
 
 		val optionals: Seq[(URI, URI, Value)] = Seq(
-			(packageUri, vocab.hasName, meta.fileName.map(vocab.lit))
-		).map{case (s, p, oOpt) => oOpt.map((s, p, _))}.flatten
+			(packageUri, vocab.hasName, meta.fileName.map(vocab.lit)),
+			(productionUri, vocab.prov.startedAtTime, productionInterval.map(_.start).map(vocab.lit)),
+			(productionUri, vocab.prov.endedAtTime, productionInterval.map(_.stop).map(vocab.lit))
+		).collect{
+			case (s, p, Some(o)) => (s, p, o)
+		}
 		
 		val triplesToAdd = Seq[(URI, URI, Value)](
 
@@ -74,8 +78,6 @@ class UploadService(
 
 			(productionUri, RDF.TYPE, vocab.productionClass),
 			(productionUri, vocab.prov.wasAssociatedWith, producingOrganization),
-			(productionUri, vocab.prov.startedAtTime, vocab.lit(meta.productionStart)),
-			(productionUri, vocab.prov.endedAtTime, vocab.lit(meta.productionEnd)),
 
 			(submissionUri, RDF.TYPE, vocab.submissionClass),
 			(submissionUri, vocab.prov.startedAtTime, vocab.lit(Instant.now)),

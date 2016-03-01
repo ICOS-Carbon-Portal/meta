@@ -1,17 +1,15 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import akka.actor.ActorSystem
 import java.time.Instant
-
 import scala.concurrent.Future
 import scala.util.Try
-
 import org.openrdf.model.URI
 import org.openrdf.model.Value
 import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.XMLSchema
-
-import akka.actor.ActorSystem
 import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.EpicPidClient
@@ -23,93 +21,69 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsString
+import org.openrdf.model.Statement
 
-class UploadService(
-	server: InstanceServer,
-	conf: UploadServiceConfig
-)(implicit system: ActorSystem) {
+class UploadService(server: InstanceServer, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
 
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
-	private val epic = EpicPidClient(conf.epicPid)
+	private val validator = new UploadValidator(server, conf, vocab)
+	private val completer = new UploadCompleter(server, conf.epicPid, vocab)
 
-	val packageFetcher = new DataObjectFetcher(server, getPid)
+	val objectFetcher = new DataObjectFetcher(server, completer.getPid)
 
-	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] = Try{
-		import meta.{hashSum, submitterId, packageSpec, producingOrganization, productionInterval}
-
-		val submitterConf = conf.submitters.get(submitterId).getOrElse(
-			throw new UploadUserErrorException(s"Unknown submitter: $submitterId")
-		)
-
-		val userId = uploader.mail
-		if(!submitterConf.authorizedUserIds.contains(userId))
-			throw new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '$submitterId'")
-
-		val packageUri = vocab.getDataObject(hashSum)
-		if(server.getStatements(packageUri).nonEmpty)
-			throw new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!")
-
-		if(server.getStatements(packageSpec).isEmpty)
-			throw new UploadUserErrorException(s"Unknown package specification: $packageSpec")
-
-		if(!server.hasStatement(producingOrganization, RDF.TYPE, submitterConf.producingOrganizationClass))
-			throw new UploadUserErrorException(s"Unknown producing organization: $producingOrganization")
-
-		val submissionUri = vocab.getSubmission(hashSum)
-		val productionUri = vocab.getProduction(hashSum)
-
-		val optionals: Seq[(URI, URI, Value)] = Seq(
-			(packageUri, vocab.hasName, meta.fileName.map(vocab.lit)),
-			(productionUri, vocab.prov.startedAtTime, productionInterval.map(_.start).map(vocab.lit)),
-			(productionUri, vocab.prov.endedAtTime, productionInterval.map(_.stop).map(vocab.lit))
-		).collect{
-			case (s, p, Some(o)) => (s, p, o)
+	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] =
+		for(
+			_ <- validator.validateUpload(meta, uploader);
+			submitterConf <- validator.getSubmitterConfig(meta);
+			_ <- server.addAll(getStatements(meta, submitterConf))
+		) yield{
+			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).stringValue
 		}
-		
-		val triplesToAdd = Seq[(URI, URI, Value)](
-
-			(packageUri, RDF.TYPE, vocab.dataObjectClass),
-			(packageUri, vocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
-			(packageUri, vocab.hasPackageSpec, packageSpec),
-			(packageUri, vocab.wasProducedBy, productionUri),
-			(packageUri, vocab.wasSubmittedBy, submissionUri),
-
-			(productionUri, RDF.TYPE, vocab.productionClass),
-			(productionUri, vocab.prov.wasAssociatedWith, producingOrganization),
-
-			(submissionUri, RDF.TYPE, vocab.submissionClass),
-			(submissionUri, vocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			(submissionUri, vocab.prov.wasAssociatedWith, submitterConf.submittingOrganization)
-		) ++ optionals
-
-		server.addAll(triplesToAdd.map(factory.tripleToStatement))
-			.map(_ => vocab.getDataObjectAccessUrl(hashSum, None).stringValue)
-			.get
-	}
 
 	def checkPermissions(submitter: java.net.URI, userId: String): Boolean =
 		conf.submitters.values
 			.filter(_.submittingOrganization == submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def completeUpload(hash: Sha256Sum): Future[String] = {
-		val submissionUri = vocab.getSubmission(hash)
+	def completeUpload(hash: Sha256Sum): Future[String] = completer.completeUpload(hash, EmptyCompletionInfo)
 
-		if(server.getValues(submissionUri, vocab.prov.endedAtTime).isEmpty){
-			val targetUri = vocab.getDataObject(hash)
-			val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
 
-			epic.create(getPidSuffix(hash), Seq(pidEntry)).map(_ => {
-				server.add(factory.createStatement(submissionUri, vocab.prov.endedAtTime, vocab.lit(Instant.now)))
-				getPid(hash)
-			})
-		} else
-			Future.failed(new Exception(s"Upload of $hash is already complete"))
+	private def getStatements(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Seq[Statement] = {
+		import meta.{hashSum, objectSpecification, producingOrganization, productionInterval}
+
+		val objectUri = vocab.getDataObject(hashSum)
+		val submissionUri = vocab.getSubmission(hashSum)
+		val productionUri = vocab.getProduction(hashSum)
+
+		val prodStart = productionInterval.map(_.start)
+		val prodStop = productionInterval.map(_.stop)
+
+		val optionals: Seq[(URI, URI, Value)] =
+			Seq(
+				(objectUri, vocab.hasName, meta.fileName.map(vocab.lit)),
+				(productionUri, vocab.prov.startedAtTime, prodStart.map(vocab.lit)),
+				(productionUri, vocab.prov.endedAtTime, prodStop.map(vocab.lit))
+			).collect{
+				case (s, p, Some(o)) => (s, p, o)
+			}
+
+		val mandatory = Seq[(URI, URI, Value)](
+			(objectUri, RDF.TYPE, vocab.dataObjectClass),
+			(objectUri, vocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
+			(objectUri, vocab.hasObjectSpec, objectSpecification),
+			(objectUri, vocab.wasProducedBy, productionUri),
+			(objectUri, vocab.wasSubmittedBy, submissionUri),
+
+			(productionUri, RDF.TYPE, vocab.productionClass),
+			(productionUri, vocab.prov.wasAssociatedWith, producingOrganization),
+
+			(submissionUri, RDF.TYPE, vocab.submissionClass),
+			(submissionUri, vocab.prov.startedAtTime, vocab.lit(Instant.now)),
+			(submissionUri, vocab.prov.wasAssociatedWith, submConf.submittingOrganization)
+		)
+
+		(mandatory ++ optionals).map(factory.tripleToStatement)
 	}
-
-	def getPidSuffix(hash: Sha256Sum) = hash.id
-	def getPid(hash: Sha256Sum) = epic.getPid(getPidSuffix(hash))
-
 }

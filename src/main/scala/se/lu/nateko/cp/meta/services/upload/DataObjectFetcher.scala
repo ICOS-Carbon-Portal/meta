@@ -27,32 +27,37 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
 		val dataObjUri = vocab.getDataObject(hash)
-		val fileName: Option[String] = getSingleString(dataObjUri, vocab.hasName)
+		val fileName: Option[String] = getOptionalString(dataObjUri, vocab.hasName)
 
 		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
 		val producer: URI = getSingleUri(production, vocab.prov.wasAssociatedWith)
-		val producerName: String = getSingleString(producer, vocab.hasName).get
+		val producerName: String = getSingleString(producer, vocab.hasName)
 
-		val prodStart = getSingleInstant(production, vocab.prov.startedAtTime)
-		val prodStop = getSingleInstant(production, vocab.prov.endedAtTime)
-		val prodTimeInterval = for(start <- prodStart; stop <- prodStop)
-			yield TimeInterval(start, stop)
-		val pos = getPos(producer)
+		val prodTimeInterval = for(
+			start <- getOptionalInstant(production, vocab.prov.startedAtTime);
+			stop <- getOptionalInstant(production, vocab.prov.endedAtTime)
+		) yield TimeInterval(start, stop)
+
+		val pos = for(
+			posLat <- getOptionalDouble(producer, vocab.hasLatitude);
+			posLon <- getOptionalDouble(producer, vocab.hasLongitude)
+		) yield Position(posLat, posLon)
+
 
 		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
 		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
-		val submitterName: Option[String] = getSingleString(submitter, vocab.hasName)
+		val submitterName: Option[String] = getOptionalString(submitter, vocab.hasName)
 
-		val submStart = getSingleInstant(submission, vocab.prov.startedAtTime).get
-		val submStop = getSingleInstant(submission, vocab.prov.endedAtTime)
+		val submStart = getSingleInstant(submission, vocab.prov.startedAtTime)
+		val submStop = getOptionalInstant(submission, vocab.prov.endedAtTime)
 
-		val spec = getSingleUri(dataObjUri, vocab.hasPackageSpec)
+		val spec = getSingleUri(dataObjUri, vocab.hasObjectSpec)
 		val specFormat = getLabeledResource(spec, vocab.hasFormat)
 		val encoding = getLabeledResource(spec, vocab.hasEncoding)
-		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel).get
+		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
 
 		DataObject(
-			hash = getHashsum(dataObjUri),
+			hash = getHashsum(dataObjUri, vocab.hasSha256sum),
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
 			pid = submStop.map(_ => pidFactory(hash)),
@@ -84,12 +89,6 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		)
 	}
 
-	private def getHashsum(dataObjUri: URI): Sha256Sum = {
-		val hex: String = getOptionalSingleLiteral(dataObjUri, vocab.hasSha256sum, XMLSchema.HEXBINARY)
-			.getOrElse(throw new Error("Data object metadata lacks SHA-256 hash sum info!"))
-		Sha256Sum.fromHex(hex).get
-	}
-
 	private def getTheme(subj: URI): DataTheme = {
 		import vocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, atc, etc, otc, cp, cal}
 
@@ -111,44 +110,35 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		themes.head
 	}
 
-	private def getPos(subj: URI): Option[Position] =
-		for(
-			posLat <- getSingleDouble(subj, vocab.hasLatitude);
-			posLon <- getSingleDouble(subj, vocab.hasLongitude)
-		) yield Position(posLat, posLon)
-
-	private def getSingleUri(subj: URI, pred: URI): URI = {
-		val vals = server.getValues(subj, pred).collect{
-			case uri: URI => uri
-		}
-		assert(vals.size == 1, "Expected a single value!")
-		vals.head
-	}
+	private def getSingleUri(subj: URI, pred: URI): URI =
+		server.getUriValues(subj, pred, InstanceServer.ExactlyOne).head
 
 	private def getLabeledResource(subj: URI, pred: URI): UriResource = {
 		val uri = getSingleUri(subj, pred)
-		UriResource(uri, label = getSingleString(uri, RDFS.LABEL))
+		UriResource(uri, label = getOptionalString(uri, RDFS.LABEL))
 	}
 
-	private def getSingleString(subj: URI, pred: URI): Option[String] =
-		getOptionalSingleLiteral(subj, pred, XMLSchema.STRING)
+	private def getOptionalString(subj: URI, pred: URI): Option[String] =
+		server.getStringValues(subj, pred, InstanceServer.AtMostOne).headOption
 
-	private def getSingleInt(subj: URI, pred: URI): Option[Int] =
-		getOptionalSingleLiteral(subj, pred, XMLSchema.INTEGER).map(_.toInt)
+	private def getSingleString(subj: URI, pred: URI): String =
+		server.getStringValues(subj, pred, InstanceServer.ExactlyOne).head
 
-	private def getSingleDouble(subj: URI, pred: URI): Option[Double] =
-		getOptionalSingleLiteral(subj, pred, XMLSchema.DOUBLE).map(_.toDouble)
+	private def getSingleInt(subj: URI, pred: URI): Int =
+		server.getIntValues(subj, pred, InstanceServer.ExactlyOne).head
 
-	private def getSingleInstant(subj: URI, pred: URI): Option[Instant] =
-		getOptionalSingleLiteral(subj, pred, XMLSchema.DATETIME).map(Instant.parse)
+	private def getOptionalDouble(subj: URI, pred: URI): Option[Double] =
+		server.getDoubleValues(subj, pred, InstanceServer.AtMostOne).headOption
 
-	private def getOptionalSingleLiteral(subj: URI, pred: URI, dType: URI): Option[String] = {
-		val vals = server.getValues(subj, pred).collect{
-			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
-		}
+	private def getOptionalInstant(subj: URI, pred: URI): Option[Instant] =
+		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(Instant.parse)
 
-		assert(vals.size <= 1, s"Expected at most single value, got ${vals.size}!")
-		vals.headOption
+	private def getSingleInstant(subj: URI, pred: URI): Instant =
+		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(Instant.parse).head
+
+	private def getHashsum(dataObjUri: URI, pred: URI): Sha256Sum = {
+		val hex: String = server.getLiteralValues(dataObjUri, pred, XMLSchema.HEXBINARY, InstanceServer.ExactlyOne).head
+		Sha256Sum.fromHex(hex).get
 	}
 
 }

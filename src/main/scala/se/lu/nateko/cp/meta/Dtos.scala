@@ -38,7 +38,7 @@ case class UploadMetadataDto(
 	submitterId: String,
 	producingOrganization: URI,
 	productionInterval: Option[TimeInterval],
-	packageSpec: URI,
+	objectSpecification: URI,
 	fileName: Option[String]
 )
 

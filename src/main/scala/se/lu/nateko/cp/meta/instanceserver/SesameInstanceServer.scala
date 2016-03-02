@@ -33,6 +33,16 @@ class SesameInstanceServer(repo: Repository, val readContexts: Seq[URI], val wri
 				readContexts :_*)
 		)
 
+	def hasStatement(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): Boolean =
+		repo.accessEagerly(conn =>
+			conn.hasStatement(
+				subject.getOrElse(null),
+				predicate.getOrElse(null),
+				obj.getOrElse(null),
+				false,
+				readContexts :_*)
+		)
+
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = repo.transact(conn => 
 		updates.foreach(update => {
 			if(update.isAssertion) conn.add(update.statement, writeContexts :_*)

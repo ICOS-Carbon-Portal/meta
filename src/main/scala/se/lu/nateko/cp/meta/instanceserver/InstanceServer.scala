@@ -20,6 +20,7 @@ trait InstanceServer {
 	def factory: ValueFactory
 
 	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): CloseableIterator[Statement]
+	def hasStatement(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
 
@@ -42,7 +43,7 @@ trait InstanceServer {
 			.toIndexedSeq
 
 	final def hasStatement(subject: URI, predicate: URI, obj: Value): Boolean =
-		getStatements(Some(subject), Some(predicate), Some(obj)).toIndexedSeq.nonEmpty
+		hasStatement(Some(subject), Some(predicate), Some(obj))
 
 	final def add(statements: Statement*): Try[Unit] = addAll(statements)
 	final def remove(statements: Statement*): Try[Unit] = removeAll(statements)

@@ -115,13 +115,13 @@
 @theme = @{dobj.production.producer.theme.toString}
 @lat = @{pos.map(_.lat.toString).getOrElse("Unknown")}
 @lon = @{pos.map(_.lon.toString).getOrElse("Unknown")}
-@uploadComplete = @{dobj.pid.isDefined}
+@uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
 @summary = @{
 	if(uploadComplete) {
 		panelRow("Status - OK", "Data and metadata are complete.") ::
-		panelRow("PID", dobj.pid.get) ::
+		panelRow("PID", dobj.pid.getOrElse("Not assigned")) ::
 		panelRowHtml("Access URL", accessLink) :: Nil
 	}
 	else {

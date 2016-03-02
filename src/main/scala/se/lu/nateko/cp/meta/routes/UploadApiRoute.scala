@@ -6,11 +6,11 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
 import akka.http.scaladsl.server.ExceptionHandler
-
 import scala.util.Success
 import scala.util.Failure
-
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
@@ -38,7 +38,10 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			post{
 				path(Sha256Segment){hash =>
 					ensureLocalRequest{
-						onSuccess(service.completeUpload(hash)){complete(_)}
+						entity(as[UploadCompletionInfo]){ completionInfo =>
+							onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
+						} ~
+						complete((StatusCodes.BadRequest, "Must POST a valid upload completion info object"))
 					}
 				} ~
 				pathEnd{
@@ -46,7 +49,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						entity(as[UploadMetadataDto]){uploadMeta =>
 							complete(service.registerUpload(uploadMeta, uploader))
 						} ~
-						complete((StatusCodes.BadRequest, "Must provide a valid request payload"))
+						complete((StatusCodes.BadRequest, "Must POST a valid metadata object"))
 					}
 				}
 			} ~

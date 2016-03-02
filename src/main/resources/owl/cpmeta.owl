@@ -448,6 +448,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasFormatSpecificMetadata -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormatSpecificMetadata">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName">
@@ -531,6 +540,16 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#long"/>
     </owl:DatatypeProperty>
     
 
@@ -957,6 +976,24 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Role -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec"/>
+                        <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec"/>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+    </owl:Class>
     
 
 

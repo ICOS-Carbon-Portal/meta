@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.PidUpdate
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
@@ -29,7 +30,7 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig)(implicit 
 	private implicit val factory = server.factory
 	private val vocab = new CpmetaVocab(factory)
 	private val validator = new UploadValidator(server, conf, vocab)
-	private val completer = new UploadCompleter(server, conf.epicPid, vocab)
+	private val completer = new UploadCompleter(server, conf, vocab)
 
 	val objectFetcher = new DataObjectFetcher(server, completer.getPid)
 
@@ -47,7 +48,8 @@ class UploadService(server: InstanceServer, conf: UploadServiceConfig)(implicit 
 			.filter(_.submittingOrganization == submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def completeUpload(hash: Sha256Sum): Future[String] = completer.completeUpload(hash, EmptyCompletionInfo)
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[String] =
+		completer.completeUpload(hash, info)
 
 
 	private def getStatements(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Seq[Statement] = {

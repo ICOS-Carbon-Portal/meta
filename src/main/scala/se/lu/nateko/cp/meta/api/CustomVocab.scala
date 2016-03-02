@@ -15,6 +15,7 @@ trait CustomVocab {
 	def lit(litVal: String) = factory.createLiteral(litVal, XMLSchema.STRING)
 	//important! not INT but INTEGER datatype for integers
 	def lit(litVal: Int): Literal = lit(litVal.toString, XMLSchema.INTEGER)
+	def lit(litVal: Long) = factory.createLiteral(litVal)
 	def lit(litVal: Boolean) = factory.createLiteral(litVal)
 	def lit(litVal: Double) = factory.createLiteral(litVal)
 	def lit(litVal: Float) = factory.createLiteral(litVal)

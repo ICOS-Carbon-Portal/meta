@@ -60,7 +60,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 			hash = getHashsum(dataObjUri, vocab.hasSha256sum),
 			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
 			fileName = fileName,
-			pid = submStop.map(_ => pidFactory(hash)),
+			pid = submStop.flatMap(_ => getPid(hash, specFormat.uri)),
 			production = DataProduction(
 				producer = DataProducer(
 					uri = producer,
@@ -87,6 +87,10 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 				datasetSpec = None
 			)
 		)
+	}
+
+	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
+		if(format == vocab.wdcggFormat) None else Some(pidFactory(hash))
 	}
 
 	private def getTheme(subj: URI): DataTheme = {

@@ -34,6 +34,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasObjectSpec = getRelative("hasObjectSpec")
 	val hasFormat = getRelative("hasFormat")
 	val hasEncoding = getRelative("hasEncoding")
+	val hasFormatSpecificMeta = getRelative("hasFormatSpecificMetadata")
+	val hasNumberOfRows = getRelative("hasNumberOfRows")
 
 	val wdcggFormat = getRelative("asciiWdcggTimeSer")
 

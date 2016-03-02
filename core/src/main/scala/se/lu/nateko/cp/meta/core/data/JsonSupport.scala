@@ -20,4 +20,22 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val objectProductionFormat = jsonFormat2(DataProduction)
 	implicit val dataObjectFormat = jsonFormat7(DataObject)
 
+	implicit val wdcggUploadCompletionFormat = jsonFormat2(WdcggUploadCompletion)
+
+	implicit object uploadCompletionInfoFormat extends RootJsonFormat[UploadCompletionInfo]{
+
+		def write(uploadInfo: UploadCompletionInfo): JsValue = uploadInfo match{
+			case EmptyCompletionInfo => JsObject.empty
+			case wdcgg: WdcggUploadCompletion => wdcgg.toJson
+		}
+
+		def read(value: JsValue): UploadCompletionInfo =  value match {
+			case JsObject(fields) if(fields.isEmpty) =>
+				EmptyCompletionInfo
+			case _: JsObject =>
+				value.convertTo[WdcggUploadCompletion]
+			case _ =>
+				deserializationError("Expected JS object representing upload completion info")
+		}
+	}
 }

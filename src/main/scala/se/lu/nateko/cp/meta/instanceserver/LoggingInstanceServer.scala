@@ -16,6 +16,9 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]) =
 		inner.getStatements(subject, predicate, obj)
 
+	def hasStatement(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): Boolean =
+		inner.hasStatement(subject, predicate, obj)
+
 	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement] =
 		inner.filterNotContainedStatements(statements)
 

@@ -8,6 +8,7 @@ sealed class ServiceException(val message: String) extends RuntimeException(
 
 final class UploadUserErrorException(message: String) extends ServiceException(message)
 final class UnauthorizedUploadException(message: String) extends ServiceException(message)
+final class UploadCompletionException(message: String) extends ServiceException(message)
 
 final class UnauthorizedStationUpdateException(message: String) extends ServiceException(message)
 final class UnauthorizedUserInfoUpdateException(message: String) extends ServiceException(message)

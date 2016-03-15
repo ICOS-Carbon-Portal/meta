@@ -96,40 +96,6 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
-        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/float32"/>
-        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction"/>
-        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CO2</cpmeta:hasColumnTitle>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataObject -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataObject">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec"/>
-        <cpmeta:containsDataset rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset"/>
-        <cpmeta:hasEncoding rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding"/>
-        <cpmeta:hasFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer"/>
-        <cpmeta:hasDataLevel rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</cpmeta:hasDataLevel>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2WdcggDataset">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
-        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/co2MoleFractionColumn"/>
-        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn"/>
-        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn"/>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/date -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/date">
@@ -172,6 +138,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionColumn -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/float32"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PARAMETER</cpmeta:hasColumnTitle>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction">
@@ -198,6 +175,29 @@
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measurement time of day</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measurement time</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataObject -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataObject">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec"/>
+        <cpmeta:containsDataset rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataset"/>
+        <cpmeta:hasEncoding rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding"/>
+        <cpmeta:hasFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer"/>
+        <cpmeta:hasDataLevel rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</cpmeta:hasDataLevel>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataset -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataset">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn"/>
     </owl:NamedIndividual>
 </rdf:RDF>
 

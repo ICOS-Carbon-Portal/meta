@@ -179,6 +179,27 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStamp -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStamp">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO8601 dateTime</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">time instant</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStampColumn -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStampColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStamp"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">TIMESTAMP</cpmeta:hasColumnTitle>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataObject -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/wdcggDataObject">
@@ -198,6 +219,7 @@
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionColumn"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStampColumn"/>
     </owl:NamedIndividual>
 </rdf:RDF>
 

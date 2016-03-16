@@ -1276,6 +1276,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601dateTime">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Can be internally represented as int64 seconds since epoch. Precise only to seconds.</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Date-and-time stamp in ISO-8601 format</rdfs:label>
     </owl:NamedIndividual>
     

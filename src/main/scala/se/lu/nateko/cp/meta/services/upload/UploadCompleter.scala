@@ -86,7 +86,7 @@ class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 	}
 
 	private def writeWdcggMetadata(hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
-		case WdcggUploadCompletion(nRows, keyValues) => Future{
+		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
 			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
 
 			val objUri = vocab.getDataObject(hash)

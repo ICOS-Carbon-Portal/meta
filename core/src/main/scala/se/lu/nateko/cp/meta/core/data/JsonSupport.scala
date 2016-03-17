@@ -20,7 +20,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val objectProductionFormat = jsonFormat2(DataProduction)
 	implicit val dataObjectFormat = jsonFormat7(DataObject)
 
-	implicit val wdcggUploadCompletionFormat = jsonFormat2(WdcggUploadCompletion)
+	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
 
 	implicit object uploadCompletionInfoFormat extends RootJsonFormat[UploadCompletionInfo]{
 

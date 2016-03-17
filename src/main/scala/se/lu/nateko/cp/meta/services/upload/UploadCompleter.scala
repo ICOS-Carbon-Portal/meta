@@ -92,6 +92,10 @@ class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 			val objUri = vocab.getDataObject(hash)
 			facts += ((objUri, vocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
+			val productionUri = vocab.getProduction(hash)
+			facts += ((productionUri, vocab.prov.startedAtTime, vocab.lit(interVal.start)))
+			facts += ((productionUri, vocab.prov.endedAtTime, vocab.lit(interVal.stop)))
+
 			for((key, value) <- keyValues){
 				val keyProp = vocab.getRelative("wdcgg/" + URLEncoder.encode(key, "UTF-8"))
 

@@ -1,10 +1,12 @@
 package se.lu.nateko.cp.meta
 
-import akka.actor.ActorSystem
 import scala.concurrent.Await
-import scala.concurrent.duration._
-import akka.stream.ActorMaterializer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
+
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.routes.MainRoute
 
 
@@ -28,16 +30,13 @@ object Main extends App with CpmetaJsonProtocol{
 		.onSuccess{
 			case binding =>
 				sys.addShutdownHook{
-					val doneFuture = binding.unbind().andThen{
-						case _ =>
-							db.close()
-							system.shutdown()
-							logger.info("Shutdown completed")
-					}
+					val exeCtxt = ExecutionContext.Implicits.global
+					val doneFuture = binding
+						.unbind()
+						.flatMap(_ => system.terminate())(exeCtxt)
 					Await.result(doneFuture, 3 seconds)
 				}
-				val port = binding.localAddress.getPort
-				logger.info(s"Server started, listening on port $port")
+				println(binding)
 		}
 
 }

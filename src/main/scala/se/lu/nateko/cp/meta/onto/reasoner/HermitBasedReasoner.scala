@@ -11,9 +11,9 @@ import org.semanticweb.owlapi.model.OWLObjectProperty
 
 
 class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){
-	
-	val reasoner = new org.semanticweb.HermiT.Reasoner.ReasonerFactory()
-		.createReasoner(ontology)
+
+	val reasoner = new org.semanticweb.HermiT.ReasonerFactory().createReasoner(ontology)
+
 	override def close(): Unit = {
 		reasoner.dispose()
 	}

@@ -18,7 +18,7 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 	}
 
 	override def afterAll(){
-		system.shutdown()
+		system.terminate()
 	}
 
 	val suffix = "UNIT-TEST"

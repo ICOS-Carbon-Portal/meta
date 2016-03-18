@@ -15,7 +15,7 @@ object Playground {
 
 	val client = EpicPidClient.default
 
-	def stop(): Unit = system.shutdown()
+	def stop() = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
 		client.create(postfix, Seq(PidUpdate("URL", JsString(targetUrl))))

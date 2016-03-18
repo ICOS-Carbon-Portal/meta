@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.11.7",
+	scalaVersion := "2.11.8",
 
 	scalacOptions ++= Seq(
 		"-unchecked",
@@ -53,9 +53,8 @@ lazy val meta = (project in file("."))
 		version := "0.2",
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-experimental"             % "2.0.3",
-			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.0.3",
-			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.3.14",
+			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.4.2",
+			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.4.2",
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.2",
 			"org.openrdf.sesame"     % "sesame-repository-sail"             % sesameVersion,
 			"org.openrdf.sesame"     % "sesame-sail-memory"                 % sesameVersion,

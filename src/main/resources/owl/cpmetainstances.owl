@@ -131,9 +131,9 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
         <cpmeta:hasQuantityKind rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction"/>
-        <cpmeta:hasUnit rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ppm</cpmeta:hasUnit>
+        <cpmeta:hasUnit rdf:datatype="http://www.w3.org/2001/XMLSchema#string">a.u.</cpmeta:hasUnit>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Can be used for different gases, as well as for different averaging time windows</rdfs:comment>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Gas mole fraction, ppm</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Gas mole fraction, a.u.</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -145,6 +145,28 @@
         <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/float32"/>
         <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFraction"/>
         <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PARAMETER</cpmeta:hasColumnTitle>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSd -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSd">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <cpmeta:hasQuantityKind rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/moleFraction"/>
+        <cpmeta:hasUnit rdf:datatype="http://www.w3.org/2001/XMLSchema#string">a.u.</cpmeta:hasUnit>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Standard deviation of gas mole fraction, a.u.</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSdColumn -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSdColumn">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/float32"/>
+        <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSd"/>
+        <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SD</cpmeta:hasColumnTitle>
     </owl:NamedIndividual>
     
 
@@ -218,6 +240,7 @@
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/dateColumn"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionColumn"/>
+        <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/gasMoleFractionSdColumn"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeColumn"/>
         <cpmeta:hasColumn rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/instances/timeStampColumn"/>
     </owl:NamedIndividual>

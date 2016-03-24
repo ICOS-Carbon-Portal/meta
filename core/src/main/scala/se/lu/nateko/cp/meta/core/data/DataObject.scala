@@ -8,7 +8,7 @@ import DataTheme.DataTheme
 import spray.json.JsValue
 
 object DataTheme extends Enumeration{
-	val Atmosphere, Ecosystem, Ocean, CP, CAL = Value
+	val Atmosphere, Ecosystem, Ocean, CP, CAL, NonICOS = Value
 	type DataTheme = Value
 }
 
@@ -39,7 +39,7 @@ case class DataProduction(producer: DataProducer, timeInterval: Option[TimeInter
 
 case class DataObject(
 	hash: Sha256Sum,
-	accessUrl: URI,
+	accessUrl: Option[URI],
 	pid: Option[String],
 	fileName: Option[String],
 	production: DataProduction,

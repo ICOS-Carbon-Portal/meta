@@ -70,6 +70,9 @@
 
 		<div class="row">
 			@panel("Content", 6){
+				@for(fname <- dobj.fileName){
+					@panelRow("File name", fname)
+				}
 				@panelRow("Format", dobj.specification.format.getLabel)
 				@panelRow("Encoding", dobj.specification.encoding.getLabel)
 				@panelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
@@ -161,5 +164,10 @@
 }
 
 @accessLink = {
-	<a href="@dobj.accessUrl">@{dobj.fileName.getOrElse(dobj.accessUrl.toString)}</a>
+	<span>
+		@{dobj.accessUrl match {
+			case Some(url) => <a href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
+			case None => <span>Not available</span>
+		}}
+	</span>
 }

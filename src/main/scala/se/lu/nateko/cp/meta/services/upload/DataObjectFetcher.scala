@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.openrdf.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import org.openrdf.model.vocabulary.XMLSchema
+import java.net.{URI => JavaUri}
 
 class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String) {
 
@@ -58,7 +59,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 
 		DataObject(
 			hash = getHashsum(dataObjUri, vocab.hasSha256sum),
-			accessUrl = vocab.getDataObjectAccessUrl(hash, fileName),
+			accessUrl = getAccessUrl(hash, fileName, specFormat.uri),
 			fileName = fileName,
 			pid = submStop.flatMap(_ => getPid(hash, specFormat.uri)),
 			production = DataProduction(
@@ -93,8 +94,13 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 		if(format == vocab.wdcggFormat) None else Some(pidFactory(hash))
 	}
 
+	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], specFormat: URI): Option[JavaUri] = {
+		if(specFormat == vocab.wdcggFormat) None
+		else Some(vocab.getDataObjectAccessUrl(hash, fileName))
+	}
+
 	private def getTheme(subj: URI): DataTheme = {
-		import vocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, atc, etc, otc, cp, cal}
+		import vocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, orgClass, atc, etc, otc, cp, cal}
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
 			case `atmoStationClass` => Atmosphere
@@ -109,6 +115,7 @@ class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String)
 				case `cp` => CP
 				case `cal` => CAL
 			}
+			case `orgClass` => NonICOS
 		}
 		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size} themes!")
 		themes.head

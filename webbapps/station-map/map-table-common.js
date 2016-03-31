@@ -8,6 +8,24 @@ function getVectorLayer(stations, config){
 	});
 }
 
+function addPoints(config, newGeom, start, stop){
+	var gc = new GreatCircle(start, stop);
+	var degreeDist = gc.degrDist();
+
+	if (degreeDist > config.maxSegmentLengthDeg) {
+		//Add more segments
+		var segments = Math.ceil(degreeDist / config.maxSegmentLengthDeg);
+		var segmentStep = 1 / segments;
+
+		for (var s = 1; s <= segments; s++) {
+			var newCoord = gc.interpolate(s * segmentStep);
+			newGeom.push(newCoord);
+		}
+	} else {
+		newGeom.push([stop.lon, stop.lat]);
+	}
+}
+
 function getVectorFeatures(stations, config){
 	var mapFeature;
 	var features = [];
@@ -20,13 +38,13 @@ function getVectorFeatures(stations, config){
 		new ol.style.Style({
 			stroke: new ol.style.Stroke({
 				color: 'lightskyblue',
-				width: 4
+				width: 3
 			})
 		}),
 		new ol.style.Style({
 			stroke: new ol.style.Stroke({
 				color: 'darkblue',
-				width: 2
+				width: 1
 			})
 		})
 	];
@@ -41,32 +59,40 @@ function getVectorFeatures(stations, config){
 
 		} else if (station.geoJson != null){
 			var originalGeoJson = JSON.parse(station.geoJson);
+			var geoType = originalGeoJson.type;
 
 			var start, stop;
-			var newGeoJson = JSON.parse('{"type":"LineString","coordinates":[]}');
+			var newGeom = [];
 
-			for (var i=0; i<originalGeoJson.coordinates.length-1; i++){
-				start = {lon: originalGeoJson.coordinates[i][0], lat: originalGeoJson.coordinates[i][1]};
-				stop = {lon: originalGeoJson.coordinates[i+1][0], lat: originalGeoJson.coordinates[i+1][1]};
+			if (geoType == "LineString") {
+				originalGeoJson.coordinates.reduce(function (prev, current) {
+					start = {lon: prev[0], lat: prev[1]};
+					stop = {lon: current[0], lat: current[1]};
+					newGeom.push([start.lon, start.lat]);
 
-				newGeoJson.coordinates.push([start.lon, start.lat]);
+					addPoints(config, newGeom, start, stop);
 
-				var gc = new GreatCircle(start, stop);
-				var degreeDist = gc.degrDist();
+					return current;
+				});
+			} else if(geoType == "MultiLineString") {
+				for (var i = 0; i < originalGeoJson.coordinates.length; i++) {
+					var lineString = [];
 
-				if (degreeDist > config.maxSegmentLengthDeg){
-					//Add more segments
-					var segments = Math.ceil(degreeDist / config.maxSegmentLengthDeg);
-					var segmentStep = 1 / segments;
+					originalGeoJson.coordinates[i].reduce(function (prev, current) {
+						start = {lon: prev[0], lat: prev[1]};
+						stop = {lon: current[0], lat: current[1]};
+						lineString.push([start.lon, start.lat]);
 
-					for (var s=1; s<=segments; s++){
-						var newCoord = gc.interpolate(s * segmentStep);
-						newGeoJson.coordinates.push(newCoord);
-					}
-				} else {
-					newGeoJson.coordinates.push([stop.lon, stop.lat]);
+						addPoints(config, lineString, start, stop);
+						newGeom.push(lineString);
+
+						return current;
+					});
 				}
 			}
+
+			var newGeoJson = JSON.parse('{"type":"' + geoType + '","coordinates":[]}');
+			newGeoJson.coordinates = newGeom;
 
 			var f = new ol.format.GeoJSON();
 

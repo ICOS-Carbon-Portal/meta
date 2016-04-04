@@ -53,9 +53,9 @@ lazy val meta = (project in file("."))
 		version := "0.2",
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.4.2",
-			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.4.2",
-			"ch.qos.logback"         % "logback-classic"                    % "1.1.2",
+			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.4.3",
+			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.4.3",
+			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
 			"org.openrdf.sesame"     % "sesame-repository-sail"             % sesameVersion,
 			"org.openrdf.sesame"     % "sesame-sail-memory"                 % sesameVersion,
 			"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson"    % sesameVersion,

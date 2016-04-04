@@ -80,7 +80,7 @@ object AuthenticationRouting {
 		}.result
 
 	val ensureLocalRequest: Directive0 =
-		optionalHeaderValueByType[`X-Forwarded-For`](ClassMagnet.apply)
+		optionalHeaderValueByType[`X-Forwarded-For`](())
 			.require(_.isEmpty)
 			.recover(_ => complete(StatusCodes.Forbidden))
 }

@@ -55,7 +55,7 @@ export const themeToFiles = {
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	],
 	Ocean: [
-		{min: 0, max: 1, type: otc.geoCoverageFileType, tip: "Format to be defined by Benjamin Pfeil"},
+		{min: 0, max: 1, type: otc.geoCoverageFileType, tip: "A data file or just lat/lon info (used to calculate the geo boundaries of the section)"},
 		{min: 0, max: 1, type: "Financial letter", tip: "Financial stakeholder supporting letter"}
 	]
 };

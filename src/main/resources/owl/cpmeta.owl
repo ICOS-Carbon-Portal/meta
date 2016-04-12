@@ -156,6 +156,24 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum">
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue"/>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn">
@@ -332,6 +350,15 @@
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO 3166-1 alpha-2 country code</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">country code</rdfs:label>
         <rdfs:seeAlso rdf:resource="https://en.wikipedia.org/wiki/ISO_3166-1"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryPlainValue -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryPlainValue">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </owl:DatatypeProperty>
     
 
@@ -662,6 +689,22 @@
     
 
 
+    <!-- http://purl.org/dc/terms/date -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/date">
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/dc/terms/dateSubmitted -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/dateSubmitted">
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://purl.org/dc/terms/title -->
 
     <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/title">
@@ -728,6 +771,40 @@
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmospheric station</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum">
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue"/>
+        </owl:disjointUnionOf>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.org/dc/terms/dateSubmitted"/>
+                <owl:qualifiedCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:qualifiedCardinality>
+                <owl:onDataRange rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum"/>
     </owl:Class>
     
 

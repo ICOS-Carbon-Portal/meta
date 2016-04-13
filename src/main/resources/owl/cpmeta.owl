@@ -164,6 +164,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryEntry -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryEntry">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue">

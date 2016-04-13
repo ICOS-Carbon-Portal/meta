@@ -1,0 +1,228 @@
+variables,controlled_voc,label,comment,explanation
+TEAM_MEMBER_ROLE,PI,Principa Investigator,Person primarily responsible for the site that should be contacted for data policy and other important issues and also CC'ed in all the communications with the team members. At least one PI must be designated.,Principal Investigator: person primarily responsible for the site that should be contacted for data policy and other important issues and also CC'ed in all the communications with the team members. At least one PI must be designated.
+TEAM_MEMBER_ROLE,AncContact,Ancillary data contact,Person in addition to the PI to be contacted regarding site data,Ancillary data contact: person in addition to the PI to be contacted regarding site data
+TEAM_MEMBER_ROLE,FluxContact,Flux-met data contact,Person to be contacted regarding micrometeorological measurements.,Flux-met data contact: person to be contacted regarding micrometeorological measurements.
+TEAM_MEMBER_ROLE,BADMContact,BADM data contact,"Person to be contacted regarding biological, soil, disturbance and management and other site information","BADM data contact: person to be contacted regarding biological, soil, disturbance and management and other site information"
+TEAM_MEMBER_ROLE,DataManager,Data Manager,Person to be contacted regarding data preparation and submission. ,Data Manager: person to be contacted regarding data preparation and submission. 
+TEAM_MEMBER_ROLE,Technician,,Technician responsible for maintaining site operations,Technician responsible for maintaining site operations
+TEAM_MEMBER_ROLE,Affiliate,Affiliated site member,Additional staff members.,Affiliated site member: additional staff members.
+INSTOM_MODEL,SA-Other,,Sonic Anemometer - Other,Sonic Anemometer - Other
+INSTOM_MODEL,SA-ATI SATI A Style,,Sonic Anemometer - ATI SATI A Style,Sonic Anemometer - ATI SATI A Style
+INSTOM_MODEL,SA-ATI SATI K Style,,Sonic Anemometer - ATI SATI K Style,Sonic Anemometer - ATI SATI K Style
+INSTOM_MODEL,SA-ATI Sx Style,,Sonic Anemometer - ATI Sx Style,Sonic Anemometer - ATI Sx Style
+INSTOM_MODEL,SA-ATI V Style,,Sonic Anemometer - ATI V Style,Sonic Anemometer - ATI V Style
+INSTOM_MODEL,SA-ATI Vx Style,,Sonic Anemometer - ATI Vx Style,Sonic Anemometer - ATI Vx Style
+INSTOM_MODEL,SA-ATI CATI/2,,Sonic Anemometer - ATI CATI/2,Sonic Anemometer - ATI CATI/2
+INSTOM_MODEL,SA-ATI SPAS,,Sonic Anemometer - ATI SPAS,Sonic Anemometer - ATI SPAS
+INSTOM_MODEL,SA-ATI,,Sonic Anemometer - ATI,Sonic Anemometer - ATI
+INSTOM_MODEL,SA-Campbell CSAT-3,,Sonic Anemometer - Campbell CSAT-3,Sonic Anemometer - Campbell CSAT-3
+INSTOM_MODEL,SA-Gill HS-50,,Sonic Anemometer - Gill HS-50,Sonic Anemometer - Gill HS-50
+INSTOM_MODEL,SA-Gill HS-100,,Sonic Anemometer - Gill HS-100,Sonic Anemometer - Gill HS-100
+INSTOM_MODEL,SA-Gill R2,,Sonic Anemometer - Gill R2,Sonic Anemometer - Gill R2
+INSTOM_MODEL,SA-Gill R3-50,,Sonic Anemometer - Gill R3-50,Sonic Anemometer - Gill R3-50
+INSTOM_MODEL,SA-Gill R3-100,,Sonic Anemometer - Gill R3-100,Sonic Anemometer - Gill R3-100
+INSTOM_MODEL,SA-Gill R3A-100,,Sonic Anemometer - Gill R3A-100,Sonic Anemometer - Gill R3A-100
+INSTOM_MODEL,SA-Gill Windmaster,,Sonic Anemometer - Gill Windmaster,Sonic Anemometer - Gill Windmaster
+INSTOM_MODEL,SA-Gill Windmaster Pro,,Sonic Anemometer - Gill Windmaster Pro2,Sonic Anemometer - Gill Windmaster Pro2
+INSTOM_MODEL,SA-Metek USA-1 Standard,,Sonic Anemometer - Metek USA-1 Standard,Sonic Anemometer - Metek USA-1 Standard
+INSTOM_MODEL,SA-Metek USA-1 Fast,,Sonic Anemometer - Metek USA-1 Fast,Sonic Anemometer - Metek USA-1 Fast
+INSTOM_MODEL,SA-Young 81000,,Sonic Anemometer - Young 81000,Sonic Anemometer - Young 81000
+INSTOM_MODEL,GA_CP-LGR RMT-200,,"Gas Analyzer, Closed Path, Los Gatos Research RMT-200","Gas Analyzer, Closed Path, Los Gatos Research RMT-200"
+INSTOM_MODEL,GA_CP-LGR 911-0010,,"Gas Analyzer, Closed Path, Los Gatos Research 911-0010","Gas Analyzer, Closed Path, Los Gatos Research 911-0010"
+INSTOM_MODEL,GA_CP-LGR 913-0014,,"Gas Analyzer, Closed Path, Los Gatos Research 913-0014","Gas Analyzer, Closed Path, Los Gatos Research 913-0014"
+INSTOM_MODEL,GA_CP-LGR 913-1054,,"Gas Analyzer, Closed Path, Los Gatos Research 913-1054","Gas Analyzer, Closed Path, Los Gatos Research 913-1054"
+INSTOM_MODEL,GA_CP-LGR 911-0001,,"Gas Analyzer, Closed Path, Los Gatos Research 911-0001","Gas Analyzer, Closed Path, Los Gatos Research 911-0001"
+INSTOM_MODEL,GA_CP-LGR 911-0020,,"Gas Analyzer, Closed Path, Los Gatos Research 911-0020","Gas Analyzer, Closed Path, Los Gatos Research 911-0020"
+INSTOM_MODEL,GA_CP-LGR 913-0029,,"Gas Analyzer, Closed Path, Los Gatos Research 913-0029","Gas Analyzer, Closed Path, Los Gatos Research 913-0029"
+INSTOM_MODEL,GA_CP-LGR 914-0028,,"Gas Analyzer, Closed Path, Los Gatos Research 914-0028","Gas Analyzer, Closed Path, Los Gatos Research 914-0028"
+INSTOM_MODEL,GA_CP-LGR 914-1012,,"Gas Analyzer, Closed Path, Los Gatos Research 914-1012","Gas Analyzer, Closed Path, Los Gatos Research 914-1012"
+INSTOM_MODEL,GA_CP-LI-COR LI-6262,,"Gas Analyzer, Closed Path, LI-COR LI-6262","Gas Analyzer, Closed Path, LI-COR LI-6262"
+INSTOM_MODEL,GA_CP-LI-COR LI-7000,,"Gas Analyzer, Closed Path, LI-COR LI-7000","Gas Analyzer, Closed Path, LI-COR LI-7000"
+INSTOM_MODEL,GA_OP-LI-COR LI-7500,,"Gas Analyzer, Open Path, LI-COR LI-7500","Gas Analyzer, Open Path, LI-COR LI-7500"
+INSTOM_MODEL,GA_OP-LI-COR LI-7500A,,"Gas Analyzer, Open Path, LI-COR LI-7500A","Gas Analyzer, Open Path, LI-COR LI-7500A"
+INSTOM_MODEL,GA_CP-LI-COR LI-7200,,"Gas Analyzer, Closed Path, LI-COR LI-7200","Gas Analyzer, Closed Path, LI-COR LI-7200"
+INSTOM_MODEL,GA_OP-LI-COR LI-7700,,"Gas Analyzer, Open Path,  LI-COR LI-7700","Gas Analyzer, Open Path,  LI-COR LI-7700"
+INSTOM_MODEL,GA_OP-Campbell TGA100,,"Gas Analyzer, Closed Path, Campbell TGA100","Gas Analyzer, Closed Path, Campbell TGA100"
+INSTOM_MODEL,GA_OP-Campbell TGA200A,,"Gas Analyzer, Closed Path, Campbell TGA200A","Gas Analyzer, Closed Path, Campbell TGA200A"
+INSTOM_MODEL,GA_OP_SA-Campbell IRGASON,,"Gas Analyzer, Open Path with Sonic Anemometer, Campbell IRGASON","Gas Analyzer, Open Path with Sonic Anemometer, Campbell IRGASON"
+INSTOM_MODEL,GA_OP-Campbell EC150,,"Gas Analyzer, Open Path, Campbell EC150","Gas Analyzer, Open Path, Campbell EC150"
+INSTOM_MODEL,GA_CP-Campbell EC155,,"Gas Analyzer, Closed Path, Campbell EC155","Gas Analyzer, Closed Path, Campbell EC155"
+INSTOM_MODEL,GA_OP-Krypton Hygrometer,,"Gas Analyzer, Open Path, Krypton Hygrometer","Gas Analyzer, Open Path, Krypton Hygrometer"
+INSTOM_MODEL,GA_OP-Lyman-alpha Hygrometer,,"Gas Analyzer, Open Path, Lyman-alpha Hygrometer","Gas Analyzer, Open Path, Lyman-alpha Hygrometer"
+INSTOM_MODEL,GA_CP-Aerodyne,,"Gas Analyzer, Closed Path Fast Response, Aerodyne","Gas Analyzer, Closed Path Fast Response, Aerodyne"
+INSTOM_MODEL,GA_CP-Picarro G1301-f,,"Gas Analyzer, Closed Path, Picarro G1301-f","Gas Analyzer, Closed Path, Picarro G1301-f"
+INSTOM_MODEL,GA_CP-Picarro G2301-f,,"Gas Analyzer, Closed Path, Picarro G2301-f","Gas Analyzer, Closed Path, Picarro G2301-f"
+INSTOM_MODEL,GA_CP-Picarro G2311-f,,"Gas Analyzer, Closed Path, Picarro G2311-f","Gas Analyzer, Closed Path, Picarro G2311-f"
+INSTOM_MODEL,GA_CP-Other,,"Gas Analyzer, Closed Path Fast Response - Other","Gas Analyzer, Closed Path Fast Response - Other"
+INSTOM_MODEL,GA_OP-Other,,"Gas Analyzer, Open Path Fast Response - Other","Gas Analyzer, Open Path Fast Response - Other"
+VAR_CODE,CO2,Carbon Dioxide (CO2) mole fraction,,Carbon Dioxide (CO2) mole fraction
+VAR_CODE,H2O,Water (H2O) vapor mole fraction,,Water (H2O) vapor mole fraction
+VAR_CODE,CH4,Methane (CH4) mole fraction,,Methane (CH4) mole fraction
+VAR_CODE,N2O,Nitrous Oxide (N2O) mole fraction,,Nitrous Oxide (N2O) mole fraction
+VAR_CODE,NEE,Net Ecosystem Exchange,,Net Ecosystem Exchange
+VAR_CODE,RECO,Ecosystem Respiration,,Ecosystem Respiration
+VAR_CODE,GPP,Gross Primary Productivity,,Gross Primary Productivity
+VAR_CODE,H,Sensible heat flux,,Sensible heat flux
+VAR_CODE,LE,Latent heat flux,,Latent heat flux
+VAR_CODE,FC,Carbon Dioxide (CO2) flux,,Carbon Dioxide (CO2) flux
+VAR_CODE,FCH4,Methane (CH4) flux,,Methane (CH4) flux
+VAR_CODE,FN2O,Nitrous oxide (N2O) flux,,Nitrous oxide (N2O) flux
+VAR_CODE,WD,Wind direction,,Wind direction
+VAR_CODE,WS,Wind speed,,Wind speed
+VAR_CODE,USTAR,Friction velocity,,Friction velocity
+VAR_CODE,ZL,Stability parameter,,Stability parameter
+VAR_CODE,TAU,Momentum flux,,Momentum flux
+VAR_CODE,MO_LENGTH,Monin-Obukhov length,,Monin-Obukhov length
+VAR_CODE,U_SIGMA,Standard deviation of velocity fluctuations,(towards main-wind direction after coordinates rotation),Standard deviation of velocity fluctuations (towards main-wind direction after coordinates rotation)
+VAR_CODE,V_SIGMA,Standard deviation of lateral velocity fluctuations,(cross main-wind direction after coordinates rotation),Standard deviation of lateral velocity fluctuations (cross main-wind direction after coordinates rotation)
+VAR_CODE,W_SIGMA,Standard deviation of vertical velocity fluctuations,,Standard deviation of vertical velocity fluctuations
+VAR_CODE,PA,Atmospheric pressure,,Atmospheric pressure
+VAR_CODE,RH,"Relative humidity, range 0-100",,"Relative humidity, range 0-100"
+VAR_CODE,TA,Air temperature,,Air temperature
+VAR_CODE,VPD,Vapor Pressure Deficit,,Vapor Pressure Deficit
+VAR_CODE,T_SONIC,Sonic temperature,,Sonic temperature
+VAR_CODE,T_SONIC_SIGMA,Standard deviation of sonic temperature,,Standard deviation of sonic temperature
+VAR_CODE,G,Soil heat flux,,Soil heat flux
+VAR_CODE,SWC,"Soil water content (volumetric), range 0-100",,"Soil water content (volumetric), range 0-100"
+VAR_CODE,TS,Soil temperature,,Soil temperature
+VAR_CODE,WATER_TABLE_DEPTH,Water table depth,,Water table depth
+VAR_CODE,ALB,"Albedo, range 0-100",,"Albedo, range 0-100"
+VAR_CODE,APAR,Absorbed PAR,,Absorbed PAR
+VAR_CODE,FAPAR,"Fraction of absorbed PAR, range 0-100",,"Fraction of absorbed PAR, range 0-100"
+VAR_CODE,FIPAR,"Fraction of intercepted PAR, range 0-100",,"Fraction of intercepted PAR, range 0-100"
+VAR_CODE,NETRAD,Net radiation,,Net radiation
+VAR_CODE,PPFD_IN,"Photosynthetic photon flux density, incoming",,"Photosynthetic photon flux density, incoming"
+VAR_CODE,PPFD_OUT,"Photosynthetic photon flux density, outgoing",,"Photosynthetic photon flux density, outgoing"
+VAR_CODE,PPFD_BC_IN,"Photosynthetic photon flux density, below canopy incoming",,"Photosynthetic photon flux density, below canopy incoming"
+VAR_CODE,PPFD_BC_OUT,"Photosynthetic photon flux density, below canopy outgoing",,"Photosynthetic photon flux density, below canopy outgoing"
+VAR_CODE,PPFD_DIF,"Photosynthetic photon flux density, diffuse incoming",,"Photosynthetic photon flux density, diffuse incoming"
+VAR_CODE,PPFD_DIR,"Photosynthetic photon flux density, direct incoming",,"Photosynthetic photon flux density, direct incoming"
+VAR_CODE,SW_IN,"Shortwave radiation, incoming",,"Shortwave radiation, incoming"
+VAR_CODE,SW_OUT,"Shortwave radiation, outgoing",,"Shortwave radiation, outgoing"
+VAR_CODE,SW_BC_IN,"shortwave radiation, below canopy incoming",,"shortwave radiation, below canopy incoming"
+VAR_CODE,SW_BC_OUT,"shortwave radiation, below canopy outgoing",,"shortwave radiation, below canopy outgoing"
+VAR_CODE,SW_DIF,"Shortwave radiation, diffuse incoming",,"Shortwave radiation, diffuse incoming"
+VAR_CODE,SW_DIR,"Shortwave radiation, direct incoming",,"Shortwave radiation, direct incoming"
+VAR_CODE,LW_IN,"Longwave radiation, incoming",,"Longwave radiation, incoming"
+VAR_CODE,LW_OUT,"Longwave radiation, outgoing",,"Longwave radiation, outgoing"
+VAR_CODE,LW_BC_IN,"Longwave radiation, below canopy incoming",,"Longwave radiation, below canopy incoming"
+VAR_CODE,LW_BC_OUT,"Longwave radiation, below canopy outgoing",,"Longwave radiation, below canopy outgoing"
+VAR_CODE,P,Precipitation,,Precipitation
+VAR_CODE,P_RAIN,Rainfall,,Rainfall
+VAR_CODE,P_SNOW,Snowfall,,Snowfall
+VAR_CODE,D_SNOW,Snow depth,,Snow depth
+VAR_CODE,RUNOFF,Run off,,Run off
+IGBP,BSV,Barren Sparse Vegetation,"Lands exposed soil, sand, or rocks and has less than 10% vegetative cover during any time of the year.","Barren Sparse Vegetation: Lands exposed soil, sand, or rocks and has less than 10% vegetative cover during any time of the year."
+IGBP,CRO,Croplands,"Lands covered with temporary crops followed by harvest and a bare soil period (e.g., single and multiple cropping systems). Note that perennial woody crops will be classified as the appropriate forest or shrub land cover type.","Croplands: Lands covered with temporary crops followed by harvest and a bare soil period (e.g., single and multiple cropping systems). Note that perennial woody crops will be classified as the appropriate forest or shrub land cover type."
+IGBP,CSH,Closed Shrublands,Lands with woody vegetation less than 2 meters tall and with shrub canopy cover >60%. The shrub foliage can be either evergreen or deciduous.,Closed Shrublands: Lands with woody vegetation less than 2 meters tall and with shrub canopy cover >60%. The shrub foliage can be either evergreen or deciduous.
+IGBP,CVM,Cropland/Natural Vegetation Mosaics,"Lands with a mosaic of croplands, forest, shrublands, and grasslands in which no one component comprises more than 60% of the landscape","Cropland/Natural Vegetation Mosaics: Lands with a mosaic of croplands, forest, shrublands, and grasslands in which no one component comprises more than 60% of the landscape"
+IGBP,DBF,Deciduous Broadleaf Forests,Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters.  Consists of broadleaf tree communities with an annual cycle of leaf-on and leaf-off periods.,Deciduous Broadleaf Forests: Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters.  Consists of broadleaf tree communities with an annual cycle of leaf-on and leaf-off periods.
+IGBP,DNF,Deciduous Needleleaf Forests,Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters.  Consists of seasonal needleleaf tree communities with an annual cycle of leaf-on and leaf-off periods.,Deciduous Needleleaf Forests: Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters.  Consists of seasonal needleleaf tree communities with an annual cycle of leaf-on and leaf-off periods.
+IGBP,EBF,Evergreen Broadleaf Forests,Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters. Almost all trees and shrubs remain green year round. Canopy is never without green foliage.,Evergreen Broadleaf Forests: Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters. Almost all trees and shrubs remain green year round. Canopy is never without green foliage.
+IGBP,ENF,Evergreen Needleleaf Forests,Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters. Almost all trees remain green all year. Canopy is never without green foliage.,Evergreen Needleleaf Forests: Lands dominated by woody vegetation with a percent cover >60% and height exceeding 2 meters. Almost all trees remain green all year. Canopy is never without green foliage.
+IGBP,GRA,"Grasslands brackish, or fresh water.","Lands with herbaceous types of cover. Tree and shrub cover is less than 10%. Permanent wetlands lands with a permanent mixture of water and herbaceous or woody vegetation. The vegetation can be present in either salt, brackish, or fresh water.","Grasslands: Lands with herbaceous types of cover. Tree and shrub cover is less than 10%. Permanent wetlands lands with a permanent mixture of water and herbaceous or woody vegetation. The vegetation can be present in either salt, brackish, or fresh water."
+IGBP,MF,Mixed Forests of landscape.,Lands dominated by trees with a percent cover >60% and height exceeding 2 meters.  Consists of tree communities with interspersed mixtures or mosaics of the other four forest types.  None of the forest types exceeds 60% of landscape.,Mixed Forests: Lands dominated by trees with a percent cover >60% and height exceeding 2 meters.  Consists of tree communities with interspersed mixtures or mosaics of the other four forest types.  None of the forest types exceeds 60% of landscape.
+IGBP,OSH,Open Shrublands,Lands with woody vegetation less than 2 meters tall and with shrub canopy cover between 10-60%. The shrub foliage can be either evergreen or deciduous.,Open Shrublands: Lands with woody vegetation less than 2 meters tall and with shrub canopy cover between 10-60%. The shrub foliage can be either evergreen or deciduous.
+IGBP,SAV,Savannas,"Lands with herbaceous and other understory systems, and with forest canopy cover between 10-30%. The forest cover height exceeds 2 meters.","Savannas: Lands with herbaceous and other understory systems, and with forest canopy cover between 10-30%. The forest cover height exceeds 2 meters."
+IGBP,SNO,Snow and Ice,Lands under snow/ice cover most of the year. ,Snow and Ice: Lands under snow/ice cover most of the year. 
+IGBP,URB,Urban and Built-Up Lands,Land covered by buildings and other man-made structures.,Urban and Built-Up Lands: Land covered by buildings and other man-made structures.
+IGBP,WAT,Water Bodies,,Water Bodies
+IGBP,WET,Permanent Wetlands,"Lands with a permanent mixture of water and herbaceous or woody vegetation that cover extensive areas. The vegetation can be present in either salt, brackish, or fresh water","Permanent Wetlands: Lands with a permanent mixture of water and herbaceous or woody vegetation that cover extensive areas. The vegetation can be present in either salt, brackish, or fresh water"
+IGBP,WSA,Woody Savannas,"Lands with herbaceous and other understory systems, and with forest canopy cover between 30-60%. The forest cover height exceeds 2 meters.","Woody Savannas: Lands with herbaceous and other understory systems, and with forest canopy cover between 30-60%. The forest cover height exceeds 2 meters."
+TERRAIN,Flat,,Site is flat with no significant land surface changes,Site is flat with no significant land surface changes
+TERRAIN,Undulated/Variable,,,
+TERRAIN,Valley,,"Site is in a valley, with slopes all around","Site is in a valley, with slopes all around"
+TERRAIN,Gentle slope (<2 %),,,
+TERRAIN,"Medium Slope (>2 %, <5%)",,,
+TERRAIN,"Significant Slope (>5%, <10%)",,,
+TERRAIN,Strong Slope (>10%),,,
+TERRAIN,Hilltop,,,
+ASPECT,FLAT,Flat,The site is flat and the exposure is not in any specific direction,The site is flat and the exposure is not in any specific direction
+ASPECT,N,North ,,North 
+ASPECT,NNE,North-northeast,,North-northeast
+ASPECT,NE,Northeast,,Northeast
+ASPECT,ENE,East-northeast,,East-northeast
+ASPECT,E,East,,East
+ASPECT,ESE,East-southeast,,East-southeast
+ASPECT,SE,Southeast,,Southeast
+ASPECT,SSE,South-southeast,,South-southeast
+ASPECT,S,South,,South
+ASPECT,SSW,South-southwest,,South-southwest
+ASPECT,SW,Southwest,,Southwest
+ASPECT,WSW,West-southwest,,West-southwest
+ASPECT,W,West,,West
+ASPECT,WNW,West-northwest,,West-northwest
+ASPECT,NW,Northwest,,Northwest
+ASPECT,NNW,North-northwest,,North-northwest
+DM_AGRICULTURE,Harvest,,,
+DM_AGRICULTURE,Crop residue management,,,
+DM_AGRICULTURE,Other,,,
+DM_ENCROACH,Woody encroachment,,,
+DM_ENCROACH,Invasive species,,,
+DM_ENCROACH,Urban encroachment,,,
+DM_ENCROACH,Other,,,
+DM_EXT_WEATHER,Drought,,,
+DM_EXT_WEATHER,Flood,,,
+DM_EXT_WEATHER,Freeze,,,
+DM_EXT_WEATHER,Heatwave,,,
+DM_EXT_WEATHER,Hurricane,,,
+DM_EXT_WEATHER,Storm,,,
+DM_EXT_WEATHER,Tornado,,,
+DM_EXT_WEATHER,Other,,,
+DM_FERT_M,K,,,
+DM_FERT_M,N,,,
+DM_FERT_M,P,,,
+DM_FERT_M,Lime,,,
+DM_FERT_M,Other,,,
+DM_FERT_O,Liquid manure,,,
+DM_FERT_O,Solid manure,,,
+DM_FERT_O,Compost,,,
+DM_FERT_O,Poultry,,,
+DM_FERT_O,Other,,,
+DM_FIRE,Accidental human induced burn,,,
+DM_FIRE,Accidental human induced underburn,,,
+DM_FIRE,Nature induced burn,,,
+DM_FIRE,Nature induced underburn,,,
+DM_FIRE,Prescribed human induced burn,,,
+DM_FIRE,Prescribed human induced underburn,,,
+DM_FIRE,Other,,,
+DM_FORESTRY,Clearcutting,,,
+DM_FORESTRY,Fallen wood removal,,,
+DM_FORESTRY,Thinning/pruning,,,
+DM_FORESTRY,Other,,,
+DM_GENERAL,Undisturbed,,,
+DM_GENERAL,Other,,,
+DM_GRAZE,Cattle,,,
+DM_GRAZE,Goat,,,
+DM_GRAZE,Sheep,,,
+DM_GRAZE,Other,,,
+DM_INS_PATH,Disease,,,
+DM_INS_PATH,Insect,,,
+DM_INS_PATH,Pathogen,,,
+DM_INS_PATH,Other,,,
+DM_PESTICIDE,Bactericide,,,
+DM_PESTICIDE,Fungicide,,,
+DM_PESTICIDE,Herbicide,,,
+DM_PESTICIDE,Insecticide,,,
+DM_PESTICIDE,Other,,,
+DM_PLANTING,Planting live trees,,,
+DM_PLANTING,Planting live shrubs,,,
+DM_PLANTING,Planting live crops,,,
+DM_PLANTING,Planting live grasses,,,
+DM_PLANTING,Planting other live plants,,,
+DM_PLANTING,Sowing tree seeds,,,
+DM_PLANTING,Sowing shrub trees,,,
+DM_PLANTING,Sowing crop seeds,,,
+DM_PLANTING,Sowing grass seeds,,,
+DM_PLANTING,Sowing other seeds,,,
+DM_PLANTING,Other,,,
+DM_TILL,Conventional,,,
+DM_TILL,Ridge till,,,
+DM_TILL,Scarification,,,
+DM_TILL,Stripe till,,,
+DM_TILL,Conservation,,,
+DM_TILL,Other,,,
+DM_WATER,Drainage,,,
+DM_WATER,Irrigation,,,
+DM_WATER,Human induced flooding,,,
+DM_WATER,Other,,,

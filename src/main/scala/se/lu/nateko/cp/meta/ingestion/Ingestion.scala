@@ -27,9 +27,12 @@ object Ingestion {
 	def ingest(target: InstanceServer, newStatements: Iterator[Statement]): Unit = {
 		val newRepo = Loading.fromStatements(newStatements)
 		val source = new SesameInstanceServer(newRepo)
-		val updates = computeDiff(target, source).toIndexedSeq
-		target.applyAll(updates)
-		source.shutDown()
+		try{
+			val updates = computeDiff(target, source).toIndexedSeq
+			target.applyAll(updates)
+		}finally{
+			source.shutDown()
+		}
 	}
 
 	def computeDiff(from: InstanceServer, to: InstanceServer): Seq[RdfUpdate] = {

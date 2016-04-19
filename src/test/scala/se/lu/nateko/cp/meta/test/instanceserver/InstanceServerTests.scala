@@ -1,11 +1,9 @@
-package se.lu.nateko.cp.meta.instanceserver.test
+package se.lu.nateko.cp.meta.test.instanceserver
 
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.persistence.InMemoryRdfLog
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import org.openrdf.model.impl.ValueFactoryImpl
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._

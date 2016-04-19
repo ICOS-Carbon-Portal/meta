@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.utils.test
+package se.lu.nateko.cp.meta.test.utils
 
 import org.scalatest.FunSpec
 

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.persistence.test
+package se.lu.nateko.cp.meta.test.persistence
 
 import org.scalatest.FunSpec
 import org.openrdf.model.impl.ValueFactoryImpl
@@ -6,9 +6,8 @@ import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.OWL
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import info.aduna.iteration.Iterations
+import scala.Iterator
 
 class RdfUpdateLogIngesterTest extends FunSpec{
 

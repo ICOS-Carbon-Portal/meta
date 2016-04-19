@@ -1,10 +1,10 @@
-package se.lu.nateko.cp.meta.api.test
+package se.lu.nateko.cp.meta.test.api
 
 import akka.actor.ActorSystem
-import scala.util.{Try, Success, Failure}
+import scala.util.{Try, Success}
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPidClient}
-import spray.json.{JsString}
+import spray.json.JsString
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

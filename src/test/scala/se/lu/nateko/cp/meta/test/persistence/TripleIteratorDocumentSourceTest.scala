@@ -1,18 +1,17 @@
-package se.lu.nateko.cp.meta.persistence.test
+package se.lu.nateko.cp.meta.test.persistence
 
 import org.scalatest.FunSpec
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.openrdf.model.impl.ValueFactoryImpl
 import org.openrdf.model.vocabulary.OWL
 import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.Statement
 import se.lu.nateko.cp.meta.persistence.TripleIteratorDocumentSource
 import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.rio.RioMemoryTripleSource
 import org.semanticweb.owlapi.rio.RioNTriplesParserFactory
 import scala.collection.JavaConverters._
 import org.semanticweb.owlapi.io.OWLParserFactory
 import se.lu.nateko.cp.meta.onto.Onto
+import scala.Iterator
 
 class TripleIteratorDocumentSourceTest extends FunSpec{
 

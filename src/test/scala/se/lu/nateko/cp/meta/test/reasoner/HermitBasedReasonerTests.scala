@@ -1,7 +1,6 @@
-package se.lu.nateko.cp.meta.reasoner.test
+package se.lu.nateko.cp.meta.test.reasoner
 
 import org.scalatest.FunSpec
-import se.lu.nateko.cp.meta.onto.Vocab
 import se.lu.nateko.cp.meta.onto.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig
 import se.lu.nateko.cp.meta.utils.owlapi._

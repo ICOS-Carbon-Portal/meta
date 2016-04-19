@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.persistence.postgres.test
+package se.lu.nateko.cp.meta.test.persistence.postgres
 
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import org.openrdf.model.impl.ValueFactoryImpl
@@ -8,8 +8,6 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.test.TestConfig
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.ConfigLoader
 

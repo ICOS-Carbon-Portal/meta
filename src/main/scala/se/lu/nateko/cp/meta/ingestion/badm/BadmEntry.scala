@@ -12,7 +12,8 @@ case class BadmRawEntry(
 	qualifier: String,
 	value: String,
 	valueDate: Option[BadmDate],
-	submissionDate: LocalDate)
+	submissionDate: LocalDate
+)
 
 sealed trait BadmValue{
 	def variable: String

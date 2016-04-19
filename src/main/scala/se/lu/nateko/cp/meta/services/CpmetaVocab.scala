@@ -38,6 +38,10 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasFormatSpecificMeta = getRelative("hasFormatSpecificMetadata")
 	val hasNumberOfRows = getRelative("hasNumberOfRows")
 
+	val ancillaryValueClass = getRelative("AncillaryValue")
+	val hasAncillaryDataValue = getRelative("hasAncillaryDataValue")
+	val hasAncillaryObjectValue = getRelative("hasAncillaryObjectValue")
+
 	val wdcggFormat = getRelative("asciiWdcggTimeSer")
 
 	object prov extends CustomVocab {

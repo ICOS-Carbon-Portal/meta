@@ -43,7 +43,7 @@ class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(facto
 
 	val files = new FilesVocab(factory)
 
-	def piUri(email: String) = getRelative("PI/" + URLEncoder.encode(email, "UTF-8"))
+	def piUri(email: String) = getRelativeRaw("PI/" + URLEncoder.encode(email, "UTF-8"))
 }
 
 

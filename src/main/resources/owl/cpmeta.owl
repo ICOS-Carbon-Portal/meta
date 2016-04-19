@@ -174,9 +174,9 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryObjectValue -->
 
-    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryValue">
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryObjectValue">
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue"/>
@@ -364,9 +364,9 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryPlainValue -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDataValue -->
 
-    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryPlainValue">
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDataValue">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </owl:DatatypeProperty>

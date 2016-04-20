@@ -19,7 +19,7 @@ object SparqlRoute {
 
 		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
-				encodeResponse(complete(SparqlSelect(query)))
+				complete(SparqlSelect(query))
 			}
 		}
 

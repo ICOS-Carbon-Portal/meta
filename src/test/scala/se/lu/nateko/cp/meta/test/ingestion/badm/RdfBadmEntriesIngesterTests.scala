@@ -1,19 +1,22 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
 import org.scalatest.FunSpec
-import se.lu.nateko.cp.meta.ingestion.badm.RdfBadmSchemaIngester
+import se.lu.nateko.cp.meta.ingestion.badm.RdfBadmEntriesIngester
 import org.openrdf.model.ValueFactory
 import org.openrdf.sail.memory.model.MemValueFactory
+import se.lu.nateko.cp.meta.ingestion.badm.Parser._
 
-class RdfBadmSchemaIngesterTests extends FunSpec{
+class RdfBadmEntriesIngesterTests extends FunSpec{
 
 	it("Successfully produces RDF statements from the test BadmSchema"){
 		val schema = BadmTestHelper.getSchema
-		val ingester = new RdfBadmSchemaIngester(schema)
+		val badmSource = BadmTestHelper.getBadmSource
+		val entries = parseEntriesFromCsv(badmSource)
+		val ingester = new RdfBadmEntriesIngester(entries, schema)
 		val factory: ValueFactory = new MemValueFactory
 
 		val statements = ingester.getStatements(factory).toIndexedSeq
-		assert(statements.length === 387)
+		assert(statements.length === 415)
 		//statements.foreach(println)
 	}
 }

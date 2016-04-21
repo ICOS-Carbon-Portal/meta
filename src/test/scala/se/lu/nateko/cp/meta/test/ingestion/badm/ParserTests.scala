@@ -11,11 +11,6 @@ import se.lu.nateko.cp.meta.ingestion.badm.Parser._
 
 class ParserTests extends FunSpec{
 
-	private def getSource: Source = {
-		val url = getClass.getResource("/AncillaryCP_117_20160321.csv")
-		Source.fromURL(url)
-	}
-
 	describe("toBadmDate"){
 		it("Parses BADM date string correctly"){
 			val expected = BadmLocalDate(LocalDate.parse("2001-03-05"))
@@ -26,8 +21,8 @@ class ParserTests extends FunSpec{
 
 	describe("parseEntriesFromCsv"){
 		it("Parses the test BADM CSV file successfully"){
-			val src = getSource
-			val entries = parseEntriesFromCsv(src)
+			val badmSource = BadmTestHelper.getBadmSource
+			val entries = parseEntriesFromCsv(badmSource)
 			assert(entries.size === 95)
 			//entries.foreach(println)
 		}

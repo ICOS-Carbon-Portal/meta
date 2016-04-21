@@ -39,8 +39,11 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasNumberOfRows = getRelative("hasNumberOfRows")
 
 	val ancillaryValueClass = getRelative("AncillaryValue")
+	val ancillaryEntryClass = getRelative("AncillaryEntry")
+
 	val hasAncillaryDataValue = getRelative("hasAncillaryDataValue")
 	val hasAncillaryObjectValue = getRelative("hasAncillaryObjectValue")
+	val hasAncillaryEntry = getRelative("hasAncillaryEntry")
 
 	val wdcggFormat = getRelative("asciiWdcggTimeSer")
 
@@ -50,6 +53,13 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val wasAssociatedWith = getRelative("wasAssociatedWith")
 		val startedAtTime = getRelative("startedAtTime")
 		val endedAtTime = getRelative("endedAtTime")
+	}
+
+	object dcterms extends CustomVocab {
+		val factory = top.factory
+		val baseUri = "http://purl.org/dc/terms/"
+		val date = getRelative("date")
+		val dateSubmitted = getRelative("dateSubmitted")
 	}
 
 	def getDataObject(hash: Sha256Sum) = factory.createURI("https://meta.icos-cp.eu/objects/", hash.id)

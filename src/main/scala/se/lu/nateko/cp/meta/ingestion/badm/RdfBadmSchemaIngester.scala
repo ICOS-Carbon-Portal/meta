@@ -19,6 +19,13 @@ import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 
 class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 
+	import BadmConsts._
+	private[this] val specialVars = Set(
+		SiteVar, SiteIdVar, SiteNameVar, TeamMemberVar, TeamMemberNameVar, TeamMemberRoleVar,
+		TeamMemberEmailVar, TeamMemberInstVar, LocationVar, LocationLatVar, LocationLonVar,
+		LocationElevVar, InstrumentVar, VariableVar, VarCodeVar
+	)
+
 	def getStatements(f: ValueFactory): Iterator[Statement] = {
 		val cpVocab = new CpmetaVocab(f)
 		val badmVocab = new BadmVocab(f)
@@ -27,7 +34,9 @@ class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 			Iterator((uri, RDFS.LABEL, badmVocab.lit(label))) ++
 			comment.map(comm => (uri, RDFS.COMMENT, badmVocab.lit(comm)))
 
-		schema.iterator.flatMap{
+		schema.iterator.filter{
+			case (variable, _) => !specialVars.contains(variable)
+		}.flatMap{
 			case (variable, PropertyInfo(label, comment, None)) =>
 				val prop = badmVocab.getDataProp(variable)
 

@@ -17,10 +17,12 @@ case class BadmRawEntry(
 
 sealed trait BadmValue{
 	def variable: String
+	def valueStr: String
 }
 
-case class BadmStringValue(variable: String, value: String) extends BadmValue
-//case class BadmVocabValue(variable: String, valueIdx: Int) extends BadmValue
+case class BadmStringValue(variable: String, value: String) extends BadmValue{
+	def valueStr = value
+}
 case class BadmNumericValue(variable: String, valueStr: String, value: Number) extends BadmValue
 
 

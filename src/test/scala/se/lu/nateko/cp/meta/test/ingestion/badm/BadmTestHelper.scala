@@ -7,6 +7,7 @@ import scala.collection.immutable.Stream.consWrapper
 import com.opencsv.CSVReader
 
 import se.lu.nateko.cp.meta.ingestion.badm.BadmSchema
+import scala.io.Source
 
 
 object BadmTestHelper {
@@ -15,6 +16,11 @@ object BadmTestHelper {
 		getRows("/variablesHarmonized_OTC_CP.csv"),
 		getRows("/variablesHarmonizedVocab_OTC_CP.csv")
 	)
+
+	def getBadmSource: Source = {
+		val url = getClass.getResource("/AncillaryCP_117_20160321.csv")
+		Source.fromURL(url)
+	}
 
 	private def getRows(path: String): Seq[Array[String]] = {
 		val stream = getClass.getResourceAsStream(path)

@@ -8,11 +8,9 @@ import java.util.Locale
 import scala.annotation.migration
 import scala.io.Source
 
-object Parser {
+import BadmConsts._
 
-	private[this] val badmDateRegex = """(\d{4})(\d\d)(\d\d)""".r
-	private[this] val yearRegex = "(\\d{4})".r
-	private[this] val varCodeRegex = "(.+)_\\d+_\\d+_\\d+".r
+object Parser {
 
 	def toBadmDate(badmDate: String): BadmDate = {
 		badmDate match{
@@ -32,15 +30,14 @@ object Parser {
 
 	def csvRowToRawEntry(row: String): BadmRawEntry = {
 		val cells = rowToCells(row)
-
 		val variable = cells(1)
 
 		val (qualifier, value) = {
 			val value = cells(3)
 			cells(2) match {
-				case "VALUE" => (variable, value)
-				case "VARIABLE_H_V_R" => value match {
-					case varCodeRegex(varCode) => ("VAR_CODE", varCode)
+				case ValueVar => (variable, value)
+				case VariableVar => value match {
+					case varCodeRegex(varCode) => (VarCodeVar, varCode)
 				}
 				case qual => (qual, value)
 			}
@@ -62,7 +59,7 @@ object Parser {
 		)
 	}
 
-	def isDate(entry: BadmRawEntry): Boolean = entry.qualifier == "DATE"
+	def isDate(entry: BadmRawEntry): Boolean = entry.qualifier == DateQualifier
 
 	def aggregateEntries(raw: Seq[BadmRawEntry]): Seq[BadmEntry] = {
 

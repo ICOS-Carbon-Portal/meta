@@ -48,5 +48,5 @@ LAI_O_EVG,,evergreen overstory Leaf Area Index,,Evergreen overstory Leaf Area In
 LAI_TOT,,total Leaf Area Index,,Leaf Area Index (total)
 AG_BIOMASS_TREE,,"trees biomass, g/m^2",Maximum value of biomass of trees in the year in g dry mass (DM) m-2,Maximum value of biomass of trees in the year in g dry mass (DM) m-2
 AG_BIOMASS_SHRUB,,"shrubs biomass, g/m^2",Maximum value of biomass of shrubs in the year in g dry mass (DM) m-2,Maximum value of biomass of shrubs in the year in g dry mass (DM) m-2
-AG_BIOMASS_GRAS,,"grassland vegetation biomass, g/m^2",Maximum value of biomass of grassland vegetation in g dry mass (DM) m-2,Maximum value of biomass of grassland vegetation in g dry mass (DM) m-2
+AG_BIOMASS_GRASS,,"grassland vegetation biomass, g/m^2",Maximum value of biomass of grassland vegetation in g dry mass (DM) m-2,Maximum value of biomass of grassland vegetation in g dry mass (DM) m-2
 AG_BIOMASS_CROP,,"crops vegetation biomass, g/m^2",Maximum value of biomass of crops vegetation in the year in g dry mass (DM) m-2,Maximum value of biomass of crops vegetation in the year in g dry mass (DM) m-2

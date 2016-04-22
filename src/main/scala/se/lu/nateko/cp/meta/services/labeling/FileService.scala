@@ -9,6 +9,12 @@ import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.utils.sesame._
 import akka.http.scaladsl.model.Multipart
+import akka.http.scaladsl.model.ResponseEntity
+import akka.http.scaladsl.model.HttpEntity.Chunked
+import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.model.HttpResponse
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import akka.stream.Materializer
 
 
 trait FileService { self: StationLabelingService =>
@@ -28,7 +34,7 @@ trait FileService { self: StationLabelingService =>
 		assertThatWriteIsAuthorized(station, uploader)
 
 		val stationUriBytes = stationUri.getBytes(StandardCharsets.UTF_8)
-		val hash = fileService.saveAsFile(fileContent, Some(stationUriBytes))
+		val hash = fileStorage.saveAsFile(fileContent, Some(stationUriBytes))
 		val file = vocab.files.getUri(hash)
 
 		val newInfo = Seq(
@@ -55,5 +61,18 @@ trait FileService { self: StationLabelingService =>
 		server.remove(factory.createStatement(stationUri, vocab.hasAssociatedFile, fileUri))
 	}
 
+	def getFilePack(stationId: java.net.URI)(implicit mat: Materializer): HttpResponse = {
+		val stationUri: URI = factory.createURI(stationId)
+		val fileHashesAndNames: Seq[(String, String)] = server
+			.getUriValues(stationUri, vocab.hasAssociatedFile)
+			.map{fileUri =>
+				val hash = vocab.files.getFileHash(fileUri)
+				val fileName = server.getStringValues(fileUri, vocab.files.hasName, InstanceServer.ExactlyOne).head
+				(hash, fileName)
+			}
+		val source = fileStorage.getZipSource(fileHashesAndNames)
+		val entity = Chunked.fromData(ContentTypes.`application/octet-stream`, source)
+		HttpResponse(entity = entity)
+	}
 
 }

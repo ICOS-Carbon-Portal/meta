@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.labeling
 import org.openrdf.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import java.net.URLEncoder
+import org.openrdf.model.URI
 
 
 class StationsVocab(val factory: ValueFactory) extends CustomVocab{
@@ -54,4 +55,5 @@ class FilesVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasName = getRelative("hasName")
 
 	def getUri(hashsum: String) = getRelative(hashsum)
+	def getFileHash(fileUri: URI) = fileUri.getLocalName
 }

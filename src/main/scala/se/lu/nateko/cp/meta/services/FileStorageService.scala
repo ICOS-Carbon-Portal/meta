@@ -7,6 +7,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption._
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.FileIO
+import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
+import akka.stream.Materializer
+import scala.concurrent.Future
+import akka.Done
 
 class FileStorageService(folder: File) {
 
@@ -43,5 +49,16 @@ class FileStorageService(folder: File) {
 		md.digest.map("%02x" format _).mkString
 	}
 
-	def getPath(hash: String) = Paths.get(folder.getAbsolutePath, hash)
+	def getPath(hash: String): Path = Paths.get(folder.getAbsolutePath, hash)
+
+	def getZipSource(fileHashesAndNames: Seq[(String, String)])
+			(implicit mat: Materializer): Source[ByteString, Any] = {
+
+		val fileSourcesAndNames = fileHashesAndNames.map{
+			case (hash, name) => (name, FileIO.fromFile(getPath(hash).toFile))
+		}
+//		val names = fileSourcesAndNames.map(hn => ByteString(hn._1)).toList
+//		Source.apply[ByteString](names)
+		ZipEntryFlow.getMultiEntryZipStream(fileSourcesAndNames)
+	}
 }

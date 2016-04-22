@@ -17,7 +17,7 @@ class StationLabelingService(
 	protected val server: InstanceServer,
 	protected val provisionalInfoServer: InstanceServer,
 	protected val onto: Onto,
-	protected val fileService: FileStorageService,
+	protected val fileStorage: FileStorageService,
 	protected val config: LabelingServiceConfig
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService {
 

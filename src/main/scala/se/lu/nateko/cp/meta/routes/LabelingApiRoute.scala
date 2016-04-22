@@ -19,6 +19,9 @@ import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
 import spray.json.JsObject
 import java.net.URI
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import scala.concurrent.Future
+import scala.util.Try
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
@@ -36,6 +39,9 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 
 		case err => throw err
 	}
+
+	private implicit val urlUnmarshaller: Unmarshaller[String, URI] =
+		Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
 
 	def apply(
 		service: StationLabelingService,
@@ -90,6 +96,11 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 			path("userinfo"){
 				authRouting.mustBeLoggedIn{ user =>
 					complete(service.getLabelingUserInfo(user))
+				}
+			} ~
+			path("filepack" / Segment){ fileName =>
+				parameter("stationId".as[URI]){stationId =>
+					complete(service.getFilePack(stationId))
 				}
 			}
 		}

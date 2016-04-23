@@ -18,7 +18,6 @@ import scala.concurrent.duration.DurationInt
 import java.io.PipedOutputStream
 import java.io.PipedInputStream
 import java.util.zip.ZipOutputStream
-import java.util.UUID
 
 class ZipEntryFlowTests extends FunSuite with BeforeAndAfterAll{
 
@@ -31,23 +30,15 @@ class ZipEntryFlowTests extends FunSuite with BeforeAndAfterAll{
 	}
 
 	test("zipping single ByteString stream as a single file works correctly"){
-		def row = (1 to 10).map(_ => UUID.randomUUID().toString).mkString("", " ", "\n")
-		val elements = Iterable.range(0, 110).map(i => ByteString(row))
+		def row(i: Int) = (1 to 10).map(j => s"word #$j").mkString(s"Line #$i : ", ", ", "\n")
+		val elements = Iterable.range(0, 100).map(i => ByteString(row(i)))
 		val source = Source(elements)
 		val zipped = ZipEntryFlow
 			.getMultiEntryZipStream(Seq("testfile.txt" -> source))
 			.reduce(_ ++ _)
 
 		val zipBytes = Await.result(zipped.runWith(Sink.head), 2 second)
-		println(s"Zipped to ${zipBytes.length} bytes")
-	}
-
-	ignore("piped streams and zipping test"){
-		val os = new PipedOutputStream
-		val is = new PipedInputStream(os)
-		val zos = new ZipOutputStream(os)
-
-//		zos.
+		assert(zipBytes.length === 448)
 	}
 
 }

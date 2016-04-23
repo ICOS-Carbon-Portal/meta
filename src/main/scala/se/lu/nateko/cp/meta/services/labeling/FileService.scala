@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.utils.sesame._
 import akka.http.scaladsl.model.Multipart
 import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.HttpEntity.Chunked
-import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.HttpResponse
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import akka.stream.Materializer
@@ -71,7 +71,7 @@ trait FileService { self: StationLabelingService =>
 				(hash, fileName)
 			}
 		val source = fileStorage.getZipSource(fileHashesAndNames)
-		val entity = Chunked.fromData(ContentTypes.`application/octet-stream`, source)
+		val entity = Chunked.fromData(MediaTypes.`application/zip`, source)
 		HttpResponse(entity = entity)
 	}
 

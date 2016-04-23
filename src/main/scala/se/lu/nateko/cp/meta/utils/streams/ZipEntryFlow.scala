@@ -72,52 +72,33 @@ private class ZipEntryFlow extends GraphStage[FlowShape[ZipFlowElement, ByteStri
 			}
 
 			override def onUpstreamFinish(): Unit = {
-//				println("onUpstreamFinish ...")
 				if(isAvailable(in)) grabAndZip()
-//				println("Closing stream ...")
 				zos.close()
-//				println("Closed stream!")
 				if(isAvailable(out)) pushResultOut()
 			}
 		})
 
 		setHandler(out, new OutHandler {
-			override def onPull(): Unit = {
-				pushResultOut()
-			}
+			override def onPull(): Unit = pushResultOut()
 		})
 
-		private def pushResultOut(): Unit = {
-			if(bsq.isEmpty){
-//				println("No zipped result available yet ...")
-				if(!hasBeenPulled(in) && !isClosed(in)) {
-//					println("Pulling ...")
-					pull(in)
-				}else if(isClosed(in) && !hasBeenPulled(in) && !isAvailable(in)){
-					completeStage()
-				}else{
-//					println("Doing nothing ...")
-				}
-			}
-			else{
-				val bs = bsq.dequeue()
-				push(out, bs)
-//				println("Pushed " + bs.length + " bytes out")
-			}
-		}
-
 		private def grabAndZip(): Unit = grab(in) match {
-
 			case ZipEntryStart(fileName) =>
 				zos.putNextEntry(new ZipEntry(fileName))
 
 			case ZipEntrySegment(bytes) =>
 				val arr = Array.ofDim[Byte](bytes.size)
 				bytes.copyToArray(arr)
-//				println("Will zip " + arr.length + " bytes")
 				zos.write(arr)
-//				println("Zipped " + arr.length + " bytes")
+		}
 
+		private def pushResultOut(): Unit = {
+			if(!bsq.isEmpty)
+				push(out, bsq.dequeue())
+			else if(!hasBeenPulled(in) && !isAvailable(in)) {
+				if(isClosed(in)) completeStage()
+				else pull(in)
+			}
 		}
 	}
 }

@@ -54,11 +54,9 @@ class FileStorageService(folder: File) {
 	def getZipSource(fileHashesAndNames: Seq[(String, String)])
 			(implicit mat: Materializer): Source[ByteString, Any] = {
 
-		val fileSourcesAndNames = fileHashesAndNames.map{
+		val fileAndNamesSources = fileHashesAndNames.map{
 			case (hash, name) => (name, FileIO.fromFile(getPath(hash).toFile))
 		}
-//		val names = fileSourcesAndNames.map(hn => ByteString(hn._1)).toList
-//		Source.apply[ByteString](names)
-		ZipEntryFlow.getMultiEntryZipStream(fileSourcesAndNames)
+		ZipEntryFlow.getMultiEntryZipStream(fileAndNamesSources)
 	}
 }

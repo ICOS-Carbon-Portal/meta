@@ -13,6 +13,8 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 			let station = this.state.chosen;
 			let status = new ApplicationStatus(station);
 
+			const fileName = encodeURIComponent(this.props.stationLabel) + ".zip";
+			const url = `./filepack/${fileName}?stationId=` + encodeURIComponent(station.stationUri);
 			var uploaderNeeded = !_.isEmpty(station.fileTypes) && status.mayBeSubmitted;
 			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
 
@@ -35,6 +37,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 						{uploaderNeeded ? <FileUploader fileSaver={self.fileSaveHandler} fileTypes={station.fileTypes}/> : null}
 					</tbody>
 				</table>
+				{_.isEmpty(station.files) ? null : <a href={url} download><button type="button" className="btn btn-primary">Fetch all the files as a zip archive</button></a>}
 			</ContentPanel>;
 		},
 

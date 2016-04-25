@@ -96,7 +96,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 											<span style={{fontWeight: 600, fontSize: 12, position: 'relative', top: 2}}>{applicationStatus}</span>
 										</label>
 									</div>
-									{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri}/></div> : null }
+									{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName}/></div> : null }
 								</div>
 
 							</li>;

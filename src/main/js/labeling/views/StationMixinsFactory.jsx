@@ -35,7 +35,7 @@ export default function(FileAwareStationStore, fileUploadAction, fileDeleteActio
 					{this.maySave() ? <button type="button" className="btn btn-primary" disabled={!this.canSave()} onClick={this.save}>Save</button> : null}
 				</ContentPanel>
 
-				<FileManager />
+				<FileManager stationLabel={this.props.stationLabel}/>
 
 				<LabelingStartWidget formIsValid={this.state.formIsValid} station={this.state.station}
 					status={this.state.status} isSaved={this.isUnchanged()} complexErrors={complexErrors} />

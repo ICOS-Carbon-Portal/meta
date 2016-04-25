@@ -68,7 +68,8 @@ private class ZipEntryFlow extends GraphStage[FlowShape[ZipFlowElement, ByteStri
 		setHandler(in, new InHandler{
 			override def onPush(): Unit = {
 				grabAndZip()
-				if(isAvailable(out)) pushResultOut()
+				if(bsq.isEmpty) pull(in)
+				else if(isAvailable(out)) pushResultOut()
 			}
 
 			override def onUpstreamFinish(): Unit = {

@@ -94,9 +94,9 @@ private class ZipEntryFlow extends GraphStage[FlowShape[ZipFlowElement, ByteStri
 		}
 
 		private def pushResultOut(): Unit = {
-			if(!bsq.isEmpty)
-				push(out, bsq.dequeue())
-			else if(!hasBeenPulled(in) && !isAvailable(in)) {
+			if(!bsq.isEmpty) push(out, bsq.dequeue())
+
+			if(bsq.isEmpty && !hasBeenPulled(in) && !isAvailable(in)) {
 				if(isClosed(in)) completeStage()
 				else pull(in)
 			}

@@ -14,9 +14,9 @@ VAR_CODE,controlled voc,measured variable,Code of a variable measured by an inst
 SA,,average stand age,,Average stand age
 SA_MAX,,maximum stand age,,Maximum stand age
 SPP_O,multiple,overstory dominant species,Overstory dominant species expressed as scientific name,Overstory dominant species expressed as scientific name
-SPP_O_PERC,multiple,overstory dominant species percent ,,Overstory dominant species percent 
+SPP_O_PERC,multiple,overstory dominant species percent,,Overstory dominant species percent
 SPP_U,multiple,understory dominant species,Understory dominant species expressed as scientific name,Understory dominant species expressed as scientific name
-SPP_U_PERC,multiple,understory dominant species percent ,,Understory dominant species percent 
+SPP_U_PERC,multiple,understory dominant species percent,,Understory dominant species percent
 IGBP,controlled voc,IGBP land cover,,see Vocabulary sheet IGBP
 HEIGHTC,,average canopy height,,Average canopy height
 TERRAIN,controlled voc,terrain topography,,see Vocabulary sheet TERRAIN

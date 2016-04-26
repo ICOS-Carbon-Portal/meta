@@ -6,6 +6,7 @@ import se.lu.nateko.cp.meta.utils.sesame.Loading
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
 
 trait Ingester{
 	def getStatements(valueFactory: ValueFactory): Iterator[Statement]
@@ -13,11 +14,16 @@ trait Ingester{
 
 object Ingestion {
 
-	val allIngesters: Map[String, Ingester] = Map(
-		"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
-		"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
-		"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl")
-	)
+	def allIngesters: Map[String, Ingester] = {
+		val (badmSchema, badm) = BadmIngester.getSchemaAndValuesIngesters
+		Map(
+			"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
+			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
+			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
+			"badm" -> badm,
+			"badmSchema" -> badmSchema
+		)
+	}
 
 	def ingest(target: InstanceServer, ingester: Ingester): Unit = {
 		val newStatements = ingester.getStatements(target.factory)

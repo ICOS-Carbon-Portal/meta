@@ -9,6 +9,8 @@ import scala.annotation.migration
 import scala.io.Source
 
 import BadmConsts._
+import java.io.InputStreamReader
+import com.opencsv.CSVReader
 
 object Parser {
 
@@ -28,8 +30,7 @@ object Parser {
 		case _ => throw new ParseException(s"$badmDate is not convertible to ISO8601 date", -1)
 	}
 
-	def csvRowToRawEntry(row: String): BadmRawEntry = {
-		val cells = rowToCells(row)
+	def csvRowToRawEntry(cells: Array[String]): BadmRawEntry = {
 		val variable = cells(1)
 
 		val (qualifier, value) = {
@@ -79,10 +80,23 @@ object Parser {
 		raw.filterNot(isDate).groupBy(_.id).toSeq.sortBy(_._1).map(_._2).map(fromSameId).toSeq
 	}
 
-	def parseEntriesFromCsv(src: Source): Seq[BadmEntry] = {
-		aggregateEntries(src.getLines().drop(1).map(csvRowToRawEntry).toSeq)
+	def parseEntriesFromCsv(src: java.io.InputStream): Seq[BadmEntry] = {
+		aggregateEntries(getCsvRows(src).map(csvRowToRawEntry).toSeq)
 	}
 
-	def rowToCells(row: String): Array[String] = row.split(',').map(_.trim)
+	def getCsvRows(csvStream: java.io.InputStream): Stream[Array[String]] = {
+		val reader = new InputStreamReader(csvStream)
+		val csvReader = new CSVReader(reader, ',', '"')
+		val iter = csvReader.iterator()
+
+		def getStream: Stream[Array[String]] = {
+			if(iter.hasNext) iter.next() #:: getStream
+			else {
+				csvReader.close()
+				Stream.empty
+			}
+		}
+		getStream.drop(1)
+	}
 
 }

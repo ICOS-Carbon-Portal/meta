@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
+import java.io.InputStream
+
 object BadmSchema{
 
 	type BadmVarVocab = Map[String, AncillaryValue]
@@ -10,6 +12,9 @@ object BadmSchema{
 	case class PropertyInfo(label: String, comment: Option[String], vocab: Option[BadmVarVocab]){
 		def hasVocab = vocab.isDefined
 	}
+
+	def parseSchemaFromCsv(vars: InputStream, vocab: InputStream): Schema =
+		parseSchemaFromCsv(Parser.getCsvRows(vars), Parser.getCsvRows(vocab))
 
 	def parseSchemaFromCsv(vars: Rows, vocab: Rows): Schema = {
 		makeSchema(vars, makeVocabs(vocab))

@@ -106,11 +106,12 @@ object MetaDb {
 		val valueFactory = repo.getValueFactory
 
 		val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
+		val ingesters = Ingestion.allIngesters
 
 		def performIngestion(ingesterId: String, serverFut: Future[InstanceServer]): Future[InstanceServer] = {
 
 			val statementsFut: Future[Iterator[Statement]] = Future{
-				Ingestion.allIngesters(ingesterId).getStatements(valueFactory)
+				ingesters(ingesterId).getStatements(valueFactory)
 			}
 	
 			for(

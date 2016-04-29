@@ -94,6 +94,7 @@ trait InstanceServer {
 object InstanceServer{
 	sealed trait CardinalityExpectation
 	case object AtMostOne extends CardinalityExpectation
+	case object AtLeastOne extends CardinalityExpectation
 	case object ExactlyOne extends CardinalityExpectation
 	case object Default extends CardinalityExpectation
 
@@ -101,6 +102,7 @@ object InstanceServer{
 		expectation match{
 			case Default => ()
 			case AtMostOne => assert(actual <= 1, s"Expected at most one $errorTip, but got $actual")
+			case AtLeastOne => assert(actual >= 1, s"Expected at least one $errorTip, but got $actual")
 			case ExactlyOne => assert(actual == 1, s"Expected exactly one $errorTip, but got $actual")
 		}
 	}

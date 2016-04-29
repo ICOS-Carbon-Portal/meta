@@ -49,7 +49,11 @@ trait LifecycleService { self: StationLabelingService =>
 			if(recipients.nonEmpty){
 				val subject = "Application for labeling received"
 				val templatePath = config.mailing.templatePaths.submitted
-				val body = SendMail.getBody(templatePath, Map("givenName" -> user.givenName, "surname" -> user.surname))
+				val body = SendMail.getBody(templatePath, Map(
+					"givenName" -> user.givenName,
+					"surname" -> user.surname,
+					"stationId" -> lookupStationId(stationUri).getOrElse("???")
+				))
 
 				mailer.send(recipients, subject, body, true, Seq(user.mail))
 			}

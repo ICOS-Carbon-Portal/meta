@@ -38,13 +38,16 @@ class StationLabelingService(
 		)
 	}
 
-	protected def getPiEmails(piUri: URI) = provisionalInfoServer.getValues(piUri, vocab.hasEmail)
-		.collect{ case mail: Literal => mail.getLabel.toLowerCase }
+	protected def getPiEmails(piUri: URI): Seq[String] =
+		provisionalInfoServer.getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
 
 	protected def lookupStationClass(stationUri: URI): Option[URI] =
 		InstanceServerUtils.getSingleTypeIfAny(stationUri, provisionalInfoServer)
 
-	private def getPis(stationUri: URI) = provisionalInfoServer.getValues(stationUri, vocab.hasPi)
-		.collect{ case pi: URI => pi }
+	protected def lookupStationId(stationUri: URI): Option[String] =
+		provisionalInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
+
+	private def getPis(stationUri: URI): Seq[URI] =
+		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi)
 }
 

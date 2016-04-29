@@ -36,10 +36,11 @@ object Parser {
 		val (qualifier, value) = {
 			val value = cells(3)
 			cells(2) match {
-				case ValueVar => (variable, value)
+				case ValueQualifier => (variable, value)
 				case VariableVar => value match {
 					case varCodeRegex(varCode) => (VarCodeVar, varCode)
 				}
+				case PercentQualifier => (variable + "_" + PercentQualifier, value)
 				case qual => (qual, value)
 			}
 		}

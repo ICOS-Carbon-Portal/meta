@@ -25,6 +25,7 @@ object BadmConsts {
 	val VariableVar = "VARIABLE_H_V_R"
 	val VarCodeVar = "VAR_CODE"
 
-	val ValueVar = "VALUE"
+	val ValueQualifier = "VALUE"
 	val DateQualifier = "DATE"
+	val PercentQualifier = "PERC"
 }

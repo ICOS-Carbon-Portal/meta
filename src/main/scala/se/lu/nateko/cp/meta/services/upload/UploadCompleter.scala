@@ -97,7 +97,7 @@ class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 			facts += ((productionUri, vocab.prov.endedAtTime, vocab.lit(interVal.stop)))
 
 			for((key, value) <- keyValues){
-				val keyProp = vocab.getRelative("wdcgg/" + URLEncoder.encode(key, "UTF-8"))
+				val keyProp = vocab.getRelative("wdcgg/", key)
 
 				if(!server.hasStatement(Some(keyProp), None, None)){
 					facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))

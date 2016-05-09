@@ -4,12 +4,14 @@ import se.lu.nateko.cp.meta.CpmetaConfig
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._
+import java.net.URI
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 object StaticRoute {
 
 	private val staticPrefixes = Seq("labeling", "sparqlclient", "station").map(x => (x, x)).toMap
 
-	def apply(config: CpmetaConfig): Route = get{
+	def apply(config: CpmetaConfig, instanceServers: Map[String, InstanceServer]): Route = get{
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
 				getFromResource("www/metaentry.js")
@@ -22,18 +24,16 @@ object StaticRoute {
 					complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
 			}
 		} ~
-		path("ontologies" / Segment){ ontId =>
-			config.onto.instOntoServers.get(ontId) match{
-				case None =>
-					complete(StatusCodes.NotFound)
-				case Some(ontConf) =>
-					val ontId = ontConf.ontoId
-					val ontRes = config.onto.ontologies.find(_.ontoId.contains(ontId)).map(_.owlResource)
-					ontRes match{
-						case None =>
-							complete(StatusCodes.NotFound)
-						case Some(owlResource) => getFromResource(owlResource.stripPrefix("/"))
-					}
+		(pathPrefix("ontologies" | "resources") & extractUri){uri =>
+			val path = uri.path.toString
+			val serverOpt: Option[InstanceServer] = config.instanceServers.collectFirst{
+				case (id, instServConf)
+					if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
+						instanceServers.get(id)
+			}.flatten
+			serverOpt match{
+				case None => complete(StatusCodes.NotFound)
+				case Some(instServer) => complete(StatusCodes.NotImplemented)
 			}
 		} ~
 		pathPrefix(staticPrefixes){ prefix =>

@@ -25,7 +25,7 @@ object MainRoute {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
 		val sparqlRoute = SparqlRoute()
-		val staticRoute = StaticRoute(config)
+		val staticRoute = StaticRoute(config, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting)

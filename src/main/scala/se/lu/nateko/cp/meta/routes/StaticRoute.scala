@@ -6,12 +6,15 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._
 import java.net.URI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerSerializer
 
 object StaticRoute {
 
 	private val staticPrefixes = Seq("labeling", "sparqlclient", "station").map(x => (x, x)).toMap
 
 	def apply(config: CpmetaConfig, instanceServers: Map[String, InstanceServer]): Route = get{
+		implicit val instServerMarshaller = InstanceServerSerializer.marshaller
+
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
 				getFromResource("www/metaentry.js")
@@ -33,7 +36,7 @@ object StaticRoute {
 			}.flatten
 			serverOpt match{
 				case None => complete(StatusCodes.NotFound)
-				case Some(instServer) => complete(StatusCodes.NotImplemented)
+				case Some(instServer) => complete(instServer)
 			}
 		} ~
 		pathPrefix(staticPrefixes){ prefix =>

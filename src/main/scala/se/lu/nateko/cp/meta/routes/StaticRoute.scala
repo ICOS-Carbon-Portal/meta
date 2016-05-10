@@ -4,9 +4,11 @@ import se.lu.nateko.cp.meta.CpmetaConfig
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.`Content-Disposition`
 import java.net.URI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerSerializer
+import akka.http.scaladsl.model.headers.ContentDispositionTypes
 
 object StaticRoute {
 
@@ -29,14 +31,17 @@ object StaticRoute {
 		} ~
 		(pathPrefix("ontologies" | "resources") & extractUri){uri =>
 			val path = uri.path.toString
-			val serverOpt: Option[InstanceServer] = config.instanceServers.collectFirst{
+			val serverOpt: Option[(String, InstanceServer)] = config.instanceServers.collectFirst{
 				case (id, instServConf)
 					if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
-						instanceServers.get(id)
+						instanceServers.get(id).map((id, _))
 			}.flatten
 			serverOpt match{
 				case None => complete(StatusCodes.NotFound)
-				case Some(instServer) => complete(instServer)
+				case Some((id, instServer)) =>
+					import ContentDispositionTypes._
+					val header = `Content-Disposition`(attachment, Map("filename" -> (id + ".rdf")))
+					respondWithHeader(header){ complete(instServer) }
 			}
 		} ~
 		pathPrefix(staticPrefixes){ prefix =>

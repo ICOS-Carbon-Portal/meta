@@ -1,10 +1,17 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import scala.annotation.implicitNotFound
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import org.openrdf.model.Namespace
+import org.openrdf.model.impl.NamespaceImpl
+import org.openrdf.model.vocabulary.OWL
+import org.openrdf.model.vocabulary.RDF
+import org.openrdf.model.vocabulary.RDFS
+import org.openrdf.model.vocabulary.XMLSchema
+import org.openrdf.rio.RDFWriterFactory
 import org.openrdf.rio.rdfxml.RDFXMLWriterFactory
+import org.openrdf.rio.turtle.TurtleWriterFactory
 
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
@@ -15,33 +22,62 @@ import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
+import akka.http.scaladsl.model.MediaTypes
 import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
 
 object InstanceServerSerializer {
 
-	private val mediaType = MediaType.custom("application/rdf+xml", false, fileExtensions = List("rdf"))
-	private val contType = ContentType(mediaType, () => HttpCharsets.`UTF-8`)
+	private val utf8 = HttpCharsets.`UTF-8`
 
 	def marshaller: ToResponseMarshaller[InstanceServer] = Marshaller(
 		implicit exeCtxt => server => Future.successful(
 			List(
 				Marshalling.WithFixedContentType(
-					ContentTypes.`text/xml(UTF-8)`,
-					() => getResponse(server)
+					ContentTypes.`text/plain(UTF-8)`,
+					() => getResponse(server, getContType("text/turtle"), new TurtleWriterFactory())
+				),
+				Marshalling.WithFixedContentType(
+					ContentType(MediaTypes.`application/xml`, utf8),
+					() => getResponse(server, getContType("application/rdf+xml"), new RDFXMLWriterFactory())
 				)
 			)
 		)
 	)
 
-	private def getResponse(server: InstanceServer)(implicit ctxt: ExecutionContext): HttpResponse = {
+	private def getContType(name: String): ContentType = {
+		val mediaType = MediaType.custom(name, false, fileExtensions = List(".rdf"))
+		ContentType(mediaType, () => utf8)
+	}
+
+	private def getResponse(server: InstanceServer, contType: ContentType, writerFactory: RDFWriterFactory)(implicit ctxt: ExecutionContext): HttpResponse = {
 		val entityBytes = OutputStreamWriterSource{ outStr =>
-			val rdfWriter = new RDFXMLWriterFactory().getWriter(outStr)
-			rdfWriter.startRDF()
-			server.getStatements(None, None, None).foreach(rdfWriter.handleStatement)
-			rdfWriter.endRDF()
-			outStr.close()
+			val statements = server.getStatements(None, None, None)
+			try{
+				val rdfWriter = writerFactory.getWriter(outStr)
+				rdfWriter.startRDF()
+				getNamespaces(server).foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
+				statements.foreach(rdfWriter.handleStatement)
+				rdfWriter.endRDF()
+			}finally{
+				outStr.close()
+				statements.close()
+			}
 		}
 		HttpResponse(entity = HttpEntity(contType, entityBytes))
+	}
+
+	private def getNamespaces(server: InstanceServer): Iterable[Namespace] = {
+		import org.openrdf.model.impl.NamespaceImpl
+		import org.openrdf.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
+
+		val ns = new NamespaceImpl("", server.writeContexts.head.stringValue)
+
+		val readNss = server.readContexts.diff(server.writeContexts).map{uri =>
+			val prefix = uri.stringValue.stripSuffix("/").split('/').last
+			new NamespaceImpl(prefix, uri.stringValue)
+		}
+
+		Seq(ns, XMLSchema.NS, OWL.NS, RDFS.NS, RDF.NS) ++ readNss
 	}
 
 }

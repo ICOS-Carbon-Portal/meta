@@ -4,10 +4,12 @@ import java.io.BufferedOutputStream
 import java.io.OutputStream
 import java.util.concurrent.ArrayBlockingQueue
 
-import scala.annotation.implicitNotFound
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import akka.Done
 import akka.stream.Attributes
@@ -40,16 +42,20 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 
 			val asyncPush = getAsyncCallback[Unit]{_ =>
 				if(isAvailable(out)) {
-					val bs = bsq.take()
-					push(out, bs)
-//					println(s"pushed ${bs.length} bytes out!")
-				}// else println("output blocked!")
-			}
-			val asyncClose = getAsyncCallback[Unit]{_ =>
-				if(isAvailable(out)) {
-					pushIfAny()
-					if(bsq.peek == null) completeStage()
+					push(out, bsq.take())
 				}
+			}
+
+			override def preStart(): Unit = {
+				val completer = getAsyncCallback[Try[Done]]{
+					case Success(_) =>
+						if(isAvailable(out)) {
+							pushIfAny()
+							if(bsq.peek == null) completeStage()
+						}
+					case Failure(err) => failStage(err)
+				}
+				done.future.onComplete(completer.invoke)
 			}
 
 			setHandler(out, new OutHandler {
@@ -60,22 +66,16 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 				val head = bsq.poll()
 				if(head != null) {
 					push(out, head)
-//					println(s"${head.length} bytes pulled out")
-				}
-				else {
-//					println(s"queue was empty, nothing to pull out")
-					if(done.isCompleted) completeStage() //queue is empty and writing is done
-				}
+				} else if(done.isCompleted) completeStage() //queue is empty and writer finished
 			}
 		}
 
-		val os = new OutputStream{
+		val os = new BufferedOutputStream(new OutputStream{
 			override def write(b: Array[Byte]) = {
 				bsq.put(ByteString(b))
 				logic.asyncPush.invoke(())
 			}
 			override def write(b: Array[Byte], off: Int, len: Int) = {
-//				println("got an array")
 				bsq.put(ByteString.fromArray(b, off, len))
 				logic.asyncPush.invoke(())
 			}
@@ -83,19 +83,9 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 				bsq.put(ByteString(b.toByte))
 				logic.asyncPush.invoke(())
 			}
-			override def close(): Unit = logic.asyncClose.invoke(())
-		}
-		Future{
-			try{
-				writer(new BufferedOutputStream(os))
-//				println("reporting success!")
-				done.success(Done)
-			}catch{
-				case err: Throwable =>
-//					println("failing!")
-					done.failure(err)
-			}
-		}
+		})
+		Future{writer(os); Done}.onComplete(done.complete)
+
 		(logic, done.future)
 	}
 }

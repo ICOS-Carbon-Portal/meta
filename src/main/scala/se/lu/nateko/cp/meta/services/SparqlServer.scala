@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.services
 
-import java.io.ByteArrayOutputStream
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -17,6 +15,7 @@ import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
 
 case class SparqlSelect(query: String)
 
@@ -70,18 +69,19 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	private def getResponse(query: String, netOpt: SparqlNegotiationOption)
 			(implicit executor: ExecutionContext): HttpResponse = {
 
-		val bytes = repo.accessEagerly(conn => {
-			val outStream = new ByteArrayOutputStream
-	
-			val resultWriter = netOpt.writerFactory.getWriter(outStream)
-			val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-	
-			tupleQuery.evaluate(resultWriter)
-			outStream.close()
-			outStream.toByteArray
-		})
+		val entityBytes = OutputStreamWriterSource{ outStr =>
+			try{
+				repo.accessEagerly(conn => {
+					val resultWriter = netOpt.writerFactory.getWriter(outStr)
+					val tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
+					tupleQuery.evaluate(resultWriter)
+				})
+			}finally{
+				outStr.close()
+			}
+		}
 
-		HttpResponse(entity = HttpEntity(netOpt.returnedType, bytes))
+		HttpResponse(entity = HttpEntity(netOpt.returnedType, entityBytes))
 	}
 }
 

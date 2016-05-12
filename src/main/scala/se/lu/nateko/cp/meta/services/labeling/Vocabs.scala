@@ -12,23 +12,23 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val station = getRelative("Station")
 
 	val hasShortName = getRelative("hasShortName")
-	val hasLongName = getRelative("hasLongName")
-	val hasCountry = getRelative("hasCountry")
-	val hasStationClass = getRelative("hasStationClass")
-	val hasSiteType = getRelative("hasSiteType")
-	val hasStationKind = getRelative("hasStationKind")
-	val hasPiName = getRelative("hasPiName")
-	val hasPiEmail = getRelative("hasPiEmail")
-	val hasPreIcosMeasurements = getRelative("hasPreIcosMeasurements")
-	val isAlreadyOperational = getRelative("isAlreadyOperational")
-	val hasFundingForConstruction = getRelative("hasFundingForConstruction")
-	val hasFundingForOperation = getRelative("hasFundingForOperation")
-	val hasElevationAboveSea = getRelative("hasElevationAboveSea")
-	val hasElevationAboveGround = getRelative("hasElevationAboveGround")
-	val hasOperationalDateEstimate = getRelative("hasOperationalDateEstimate")
-	val hasLocationDescription = getRelative("hasLocationDescription")
-	val hasLat = getRelative("hasLat")
-	val hasLon = getRelative("hasLon")
+//	val hasLongName = getRelative("hasLongName")
+//	val hasCountry = getRelative("hasCountry")
+//	val hasStationClass = getRelative("hasStationClass")
+//	val hasSiteType = getRelative("hasSiteType")
+//	val hasStationKind = getRelative("hasStationKind")
+//	val hasPiName = getRelative("hasPiName")
+//	val hasPiEmail = getRelative("hasPiEmail")
+//	val hasPreIcosMeasurements = getRelative("hasPreIcosMeasurements")
+//	val isAlreadyOperational = getRelative("isAlreadyOperational")
+//	val hasFundingForConstruction = getRelative("hasFundingForConstruction")
+//	val hasFundingForOperation = getRelative("hasFundingForOperation")
+//	val hasElevationAboveSea = getRelative("hasElevationAboveSea")
+//	val hasElevationAboveGround = getRelative("hasElevationAboveGround")
+//	val hasOperationalDateEstimate = getRelative("hasOperationalDateEstimate")
+//	val hasLocationDescription = getRelative("hasLocationDescription")
+//	val hasLat = getRelative("hasLat")
+//	val hasLon = getRelative("hasLon")
 }
 
 class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(factory){
@@ -40,11 +40,11 @@ class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(facto
 	val hasPhone = getRelative("hasPhone")
 	val hasAssociatedFile = getRelative("hasAssociatedFile")
 	val hasApplicationStatus = getRelative("hasApplicationStatus")
-	val PI = getRelative("PI")
+//	val PI = getRelative("PI")
 
 	val files = new FilesVocab(factory)
 
-	def piUri(email: String) = getRelativeRaw("PI/" + URLEncoder.encode(email, "UTF-8"))
+//	def piUri(email: String) = getRelativeRaw("PI/" + URLEncoder.encode(email, "UTF-8"))
 }
 
 

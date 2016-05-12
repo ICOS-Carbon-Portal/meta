@@ -308,7 +308,7 @@ function fetchStations(sparqlUrl){
 		'(IF(bound(?operationalDateEstimate), str(?operationalDateEstimate), "?") AS ?Operational_date_estimate)',
 		'(IF(bound(?isOperational), str(?isOperational), "?") AS ?Is_operational)',
 		'(IF(bound(?fundingForConstruction), str(?fundingForConstruction), "?") AS ?Funding_for_construction)',
-		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
+		'FROM <http://meta.icos-cp.eu/resources/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
 		'OPTIONAL{?s cpst:hasLat ?lat . ?s cpst:hasLon ?lon } .',

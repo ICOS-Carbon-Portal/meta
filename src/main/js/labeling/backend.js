@@ -2,7 +2,7 @@ import {baseUri, lblUri, ontUri, filesUri, stationOwlClassToTheme, themeToProper
 import {status} from './models/ApplicationStatus.js';
 
 const stationPisQuery = `
-	PREFIX cpst: <${baseUri}>
+	PREFIX cpst: <${ontUri}>
 	PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 	SELECT *
 	FROM <${ontUri}>
@@ -52,7 +52,7 @@ function getStationQuery(stationUri){
 function compileStationInfo(bindings, theme){
 
 	let props = themeToProperties(theme);
-	let propUris = _.map(props, prop => baseUri + prop);
+	let propUris = _.map(props, prop => ontUri + prop);
 	let propLookup = _.object(propUris, props);
 
 	function toInfo(bindings){
@@ -72,7 +72,7 @@ function compileStationInfo(bindings, theme){
 
 function getFilesQuery(stationUri){
 	return `
-		PREFIX cpst: <${baseUri}>
+		PREFIX cpst: <${ontUri}>
 		PREFIX cpfls: <${filesUri}>
 		SELECT DISTINCT ?file ?fileType ?fileName
 		FROM <${lblUri}>

@@ -11,7 +11,7 @@ SELECT
 (str(?lName) AS ?Long_name)
 (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
 (str(?siteType) AS ?Site_type)
-FROM <http://meta.icos-cp.eu/ontologies/stationentry/>
+FROM <http://meta.icos-cp.eu/resources/stationentry/>
 WHERE {
 ?s a ?class .
 OPTIONAL{?s cpst:hasLat ?lat } .

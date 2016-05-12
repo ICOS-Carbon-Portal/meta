@@ -319,7 +319,7 @@ function fetchStations(sparqlUrl){
 		'(str(?lName) AS ?Long_name)',
 		'(GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)',
 		'(IF(bound(?siteType), str(?siteType), "?") AS ?Site_type)',
-		'FROM <http://meta.icos-cp.eu/ontologies/stationentry/>',
+		'FROM <http://meta.icos-cp.eu/resources/stationentry/>',
 		'WHERE {',
 		'?s a ?class .',
 		'OPTIONAL{?s cpst:hasLat ?lat . ?s cpst:hasLon ?lon } .',

@@ -1,7 +1,7 @@
 
 export const stationPis = `prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
 select distinct ?stationId ?stationName ?firstName ?lastName ?email
-from <http://meta.icos-cp.eu/ontologies/stationentry/>
+from <http://meta.icos-cp.eu/resources/stationentry/>
 where{
   ?s a st:ES .
   ?s st:hasShortName ?stationId .
@@ -15,7 +15,7 @@ order by ?lastName`;
 
 export const etcClass1And2Pis = `prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
 select distinct ?stationId ?stationClass ?firstName ?lastName ?email
-from <http://meta.icos-cp.eu/ontologies/stationentry/>
+from <http://meta.icos-cp.eu/resources/stationentry/>
 where{
   ?s a st:ES .
   ?s st:hasShortName ?stationId .

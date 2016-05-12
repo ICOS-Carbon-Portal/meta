@@ -1,14 +1,14 @@
-export const baseUri = 'http://meta.icos-cp.eu/ontologies/stationentry/';
-export const lblUri = 'http://meta.icos-cp.eu/ontologies/stationlabeling/';
-export const ontUri = 'http://meta.icos-cp.eu/ontologies/stationsschema/';
+export const baseUri = 'http://meta.icos-cp.eu/resources/stationentry/';
+export const lblUri = 'http://meta.icos-cp.eu/resources/stationlabeling/';
+export const ontUri = 'http://meta.icos-cp.eu/ontologies/stationentry/';
 export const filesUri = 'http://meta.icos-cp.eu/files/';
 
 export function stationOwlClassToTheme(owlClass){
-	if(owlClass === baseUri + 'AS')
+	if(owlClass === ontUri + 'AS')
 		return 'Atmosphere';
-	else if (owlClass === baseUri + 'ES')
+	else if (owlClass === ontUri + 'ES')
 		return 'Ecosystem';
-	else if (owlClass === baseUri + 'OS')
+	else if (owlClass === ontUri + 'OS')
 		return 'Ocean';
 };
 

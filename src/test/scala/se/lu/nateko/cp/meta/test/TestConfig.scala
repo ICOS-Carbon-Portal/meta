@@ -21,7 +21,7 @@ object TestConfig {
 		getOntologyFromJarResourceFile("/../classes/owl/cpmetaui.owl", manager)
 	}
 
-	val instOntUri = "http://meta.icos-cp.eu/ontologies/cpmeta/instances/"
+	val instOntUri = "http://meta.icos-cp.eu/resources/cpmeta/"
 	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 
 	lazy val instServer: InstanceServer = {

@@ -16,6 +16,7 @@ import akka.stream.Attributes
 import akka.stream.Outlet
 import akka.stream.SourceShape
 import akka.stream.scaladsl.Source
+import akka.stream.stage.AsyncCallback
 import akka.stream.stage.GraphStageLogic
 import akka.stream.stage.GraphStageWithMaterializedValue
 import akka.stream.stage.OutHandler
@@ -40,11 +41,15 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 
 		val logic = new GraphStageLogic(shape){
 
-			val asyncPush = getAsyncCallback[Unit]{_ =>
-				if(isAvailable(out)) {
-					push(out, bsq.take())
+			private[this] val hasInitialized = Promise[Unit]()
+
+			val asyncPush: Future[AsyncCallback[Unit]] = hasInitialized.future.map(
+				_ => getAsyncCallback[Unit]{_ =>
+					if(isAvailable(out)) {
+						push(out, bsq.take())
+					}
 				}
-			}
+			)
 
 			override def preStart(): Unit = {
 				val completer = getAsyncCallback[Try[Done]]{
@@ -56,6 +61,7 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 					case Failure(err) => failStage(err)
 				}
 				done.future.onComplete(completer.invoke)
+				hasInitialized.success(())
 			}
 
 			setHandler(out, new OutHandler {
@@ -70,21 +76,24 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 			}
 		}
 
-		val os = new BufferedOutputStream(new OutputStream{
-			override def write(b: Array[Byte]) = {
-				bsq.put(ByteString(b))
-				logic.asyncPush.invoke(())
+		val os: Future[OutputStream] = logic.asyncPush.map{asyncPush =>
+			val os = new OutputStream{
+				override def write(b: Array[Byte]) = {
+					bsq.put(ByteString(b))
+					asyncPush.invoke(())
+				}
+				override def write(b: Array[Byte], off: Int, len: Int) = {
+					bsq.put(ByteString.fromArray(b, off, len))
+					asyncPush.invoke(())
+				}
+				override def write(b: Int) = {
+					bsq.put(ByteString(b.toByte))
+					asyncPush.invoke(())
+				}
 			}
-			override def write(b: Array[Byte], off: Int, len: Int) = {
-				bsq.put(ByteString.fromArray(b, off, len))
-				logic.asyncPush.invoke(())
-			}
-			override def write(b: Int) = {
-				bsq.put(ByteString(b.toByte))
-				logic.asyncPush.invoke(())
-			}
-		})
-		Future{writer(os); Done}.onComplete(done.complete)
+			new BufferedOutputStream(os)
+		}
+		os.flatMap(os => Future{writer(os); Done}).onComplete(done.complete)
 
 		(logic, done.future)
 	}

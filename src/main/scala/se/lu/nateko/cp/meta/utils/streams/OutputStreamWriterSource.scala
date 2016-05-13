@@ -36,22 +36,21 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 	override val shape = SourceShape(out)
 
 	override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
-		val done = Promise[Done]()
-		val bsq = new ArrayBlockingQueue[ByteString](3)
-
 		val logic = new GraphStageLogic(shape){
 
-			private[this] val hasInitialized = Promise[Unit]()
+			private[this] val done = Promise[Done]()
+			private[this] val bsq = new ArrayBlockingQueue[ByteString](3)
 
-			val asyncPush: Future[AsyncCallback[Unit]] = hasInitialized.future.map(
-				_ => getAsyncCallback[Unit]{_ =>
+			val materializedValue = done.future
+
+			override def preStart(): Unit = {
+
+				val asyncPush = getAsyncCallback[Unit]{_ =>
 					if(isAvailable(out)) {
 						push(out, bsq.take())
 					}
 				}
-			)
 
-			override def preStart(): Unit = {
 				val completer = getAsyncCallback[Try[Done]]{
 					case Success(_) =>
 						if(isAvailable(out)) {
@@ -60,8 +59,20 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 						}
 					case Failure(err) => failStage(err)
 				}
-				done.future.onComplete(completer.invoke)
-				hasInitialized.success(())
+
+				Future{
+					val os = new QueueingAndSyncingOutputStream(bsq, () => asyncPush.invoke(()))
+					val bos = new BufferedOutputStream(os)
+					writer(os)
+					Done
+				}.onComplete{result => try{
+						completer.invoke(result)
+						done.complete(result)
+					}catch{
+						// in the unlikely case completer.invoke threw an exception
+						case err: Throwable => done.failure(err)
+					}
+				}
 			}
 
 			setHandler(out, new OutHandler {
@@ -76,25 +87,25 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 			}
 		}
 
-		val os: Future[OutputStream] = logic.asyncPush.map{asyncPush =>
-			val os = new OutputStream{
-				override def write(b: Array[Byte]) = {
-					bsq.put(ByteString(b))
-					asyncPush.invoke(())
-				}
-				override def write(b: Array[Byte], off: Int, len: Int) = {
-					bsq.put(ByteString.fromArray(b, off, len))
-					asyncPush.invoke(())
-				}
-				override def write(b: Int) = {
-					bsq.put(ByteString(b.toByte))
-					asyncPush.invoke(())
-				}
-			}
-			new BufferedOutputStream(os)
-		}
-		os.flatMap(os => Future{writer(os); Done}).onComplete(done.complete)
+		(logic, logic.materializedValue)
+	}
+}
 
-		(logic, done.future)
+private class QueueingAndSyncingOutputStream(
+	bsq: ArrayBlockingQueue[ByteString],
+	sync: () => Unit
+) extends OutputStream{
+
+	override def write(b: Array[Byte]) = {
+		bsq.put(ByteString(b))
+		sync()
+	}
+	override def write(b: Array[Byte], off: Int, len: Int) = {
+		bsq.put(ByteString.fromArray(b, off, len))
+		sync()
+	}
+	override def write(b: Int) = {
+		bsq.put(ByteString(b.toByte))
+		sync()
 	}
 }

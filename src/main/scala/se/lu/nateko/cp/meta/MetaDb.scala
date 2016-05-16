@@ -21,6 +21,8 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import org.openrdf.model.URI
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -76,7 +78,7 @@ object MetaDb {
 
 	def validateConfig(config: CpmetaConfig): Unit = {
 
-		val instServerIds = config.instanceServers.keys.toSet
+		val instServerIds = config.instanceServers.specific.keys.toSet
 		val schemaOntIds = config.onto.ontologies.map(_.ontoId).flatten.toSet
 
 		def ensureInstServerExists(instanceServerId: String): Unit =
@@ -87,12 +89,26 @@ object MetaDb {
 			if(!schemaOntIds.contains(schemaOntId))
 				throw new Exception(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
 		
-		ensureInstServerExists(config.dataUploadService.instanceServerId)
+		ensureInstServerExists(config.dataUploadService.icosMetaServerId)
 
 		config.onto.instOntoServers.values.foreach{ conf =>
 			ensureInstServerExists(conf.instanceServerId)
 			ensureSchemaOntExists(conf.ontoId)
 		}
+	}
+
+	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
+		val dataObjServers = confs.forDataObjects
+
+		confs.specific ++ dataObjServers.definitions.map{ servDef =>
+			val writeCtxt = getInstServerContext(dataObjServers, servDef)
+			(servDef.label, InstanceServerConfig(
+				logName = Some(servDef.label),
+				readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
+				writeContexts = Seq(writeCtxt),
+				ingestion = None
+			))
+		}.toMap
 	}
 
 	def apply(config: CpmetaConfig)(implicit system: ActorSystem): MetaDb = {
@@ -127,7 +143,9 @@ object MetaDb {
 		
 		val instanceServersFut: Future[Map[String, InstanceServer]] = {
 
-			val tupleFuts: Iterable[Future[(String, InstanceServer)]] = config.instanceServers.map{
+			val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
+
+			val tupleFuts: Iterable[Future[(String, InstanceServer)]] = instServerConfs.map{
 				case (servId, servConf) =>
 					val serverFut = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
 
@@ -151,8 +169,24 @@ object MetaDb {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadInstServer = instanceServers(config.dataUploadService.instanceServerId)
-			val uploadService = new UploadService(uploadInstServer, config.dataUploadService)
+			val uploadService = {
+				val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
+				val factory = icosMetaInstServer.factory
+				val dataObjServConfs = config.instanceServers.forDataObjects
+	
+				val allDataObjInstServConf = {
+					val readContexts = dataObjServConfs.definitions.map(getInstServerContext(dataObjServConfs, _))
+					InstanceServerConfig(None, Some(readContexts), Nil, None)
+				}
+				val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
+	
+				val perFormatServers: Map[URI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
+					(factory.createURI(servDef.format), instanceServers(servDef.label))
+				}.toMap
+	
+				val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
+				new UploadService(dataObjServers, config.dataUploadService)
+			}
 
 			val labelingService = {
 				val conf = config.stationLabelingService
@@ -166,4 +200,8 @@ object MetaDb {
 
 		Await.result(dbFuture, Duration.Inf)
 	}
+
+	private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
+		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
+
 }

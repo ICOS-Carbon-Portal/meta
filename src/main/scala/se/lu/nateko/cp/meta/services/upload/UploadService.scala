@@ -23,21 +23,27 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsString
 import org.openrdf.model.Statement
+import se.lu.nateko.cp.meta.core.data.DataObject
 
-class UploadService(server: InstanceServer, conf: UploadServiceConfig)(implicit system: ActorSystem) {
+class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
 
-	private implicit val factory = server.factory
-	private val vocab = new CpmetaVocab(factory)
-	private val validator = new UploadValidator(server, conf, vocab)
-	private val completer = new UploadCompleter(server, conf, vocab)
+	private implicit val factory = servers.icosMeta.factory
+	private val vocab = servers.vocab
+	private val validator = new UploadValidator(servers, conf, vocab)
+	private val completer = new UploadCompleter(servers, conf, vocab)
 
-	val objectFetcher = new DataObjectFetcher(server, completer.getPid)
+	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
+		val server = servers.getInstServerForDataObj(hash).get
+		val objectFetcher = new DataObjectFetcher(server, vocab, completer.getPid)
+		objectFetcher.fetch(hash)
+	}
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] =
 		for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta);
+			server <- servers.getInstServerForDataObj(meta.hashSum);
 			_ <- server.addAll(getStatements(meta, submitterConf))
 		) yield{
 			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).stringValue

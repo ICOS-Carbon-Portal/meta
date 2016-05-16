@@ -14,10 +14,9 @@ import se.lu.nateko.cp.meta.api.EpicPidClient
 import org.openrdf.model.vocabulary.XMLSchema
 import java.net.{URI => JavaUri}
 
-class DataObjectFetcher(server: InstanceServer, pidFactory: Sha256Sum => String) {
+class DataObjectFetcher(server: InstanceServer, vocab: CpmetaVocab, pidFactory: Sha256Sum => String) {
 
-	private implicit val factory = server.factory
-	private val vocab = new CpmetaVocab(factory)
+	private implicit val factory = vocab.factory
 
 	def fetch(hash: Sha256Sum): Option[DataObject] = {
 		val dataObjUri = vocab.getDataObject(hash)

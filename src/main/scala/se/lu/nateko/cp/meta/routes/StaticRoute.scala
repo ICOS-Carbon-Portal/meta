@@ -9,6 +9,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerSerializer
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
+import se.lu.nateko.cp.meta.MetaDb
 
 object StaticRoute {
 
@@ -16,6 +17,7 @@ object StaticRoute {
 
 	def apply(config: CpmetaConfig, instanceServers: Map[String, InstanceServer]): Route = get{
 		implicit val instServerMarshaller = InstanceServerSerializer.marshaller
+		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config.instanceServers)
 
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
@@ -31,7 +33,7 @@ object StaticRoute {
 		} ~
 		(pathPrefix("ontologies" | "resources") & extractUri){uri =>
 			val path = uri.path.toString
-			val serverOpt: Option[(String, InstanceServer)] = config.instanceServers.collectFirst{
+			val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
 				case (id, instServConf)
 					if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
 						instanceServers.get(id).map((id, _))

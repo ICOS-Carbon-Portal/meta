@@ -24,8 +24,10 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import spray.json.JsString
+import scala.util.Success
+import scala.util.Failure
 
-class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: CpmetaVocab)(implicit system: ActorSystem) {
+class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig, vocab: CpmetaVocab)(implicit system: ActorSystem) {
 	import system.dispatcher
 
 	private val epic = EpicPidClient(conf.epicPid)
@@ -34,41 +36,38 @@ class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[String] = {
 		for(
-			_ <- uploadIsNotCompleteYet(hash);
-			format <- getObjectSpecificationFormat(hash);
-			result <- completeUpload(hash, format, info)
+			(format, server) <- Future.fromTry(getFormatAndServer(hash));
+			result <- completeUpload(server, hash, format, info)
 		) yield result
 	}
 
 	private def getPidSuffix(hash: Sha256Sum): String = hash.id
 
-	private def uploadIsNotCompleteYet(hash: Sha256Sum): Future[Unit] = {
+	private def getFormatAndServer(hash: Sha256Sum): Try[(URI, InstanceServer)] =
+		for(
+			objSpec <- servers.getDataObjSpecification(hash);
+			format <- servers.getObjSpecificationFormat(objSpec);
+			server <- servers.getInstServerForFormat(format);
+			_ <- uploadIsNotCompleteYet(hash, server)
+		) yield (format, server)
+
+	private def uploadIsNotCompleteYet(hash: Sha256Sum, server: InstanceServer): Try[Unit] = {
 		val submissionUri = vocab.getSubmission(hash)
 		if(server.getValues(submissionUri, vocab.prov.endedAtTime).isEmpty)
-			Future.successful(())
+			Success(())
 		else
-			Future.failed(new UploadCompletionException(s"Upload of $hash is already complete"))
+			Failure(new UploadCompletionException(s"Upload of $hash is already complete"))
 	}
 
-	private def getObjectSpecificationFormat(hash: Sha256Sum): Future[URI] = {
-		import InstanceServer.ExactlyOne
-		val dataObjUri = vocab.getDataObject(hash)
-
-		Future.fromTry(Try{
-			val objSpec = server.getUriValues(dataObjUri, vocab.hasObjectSpec, ExactlyOne).head
-			server.getUriValues(objSpec, vocab.hasFormat, ExactlyOne).head
-		})
-	}
-
-	private def completeUpload(hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
+	private def completeUpload(server: InstanceServer, hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
 		if(format == vocab.wdcggFormat){
 			for(
-				_ <- writeWdcggMetadata(hash, info);
-				_ <- writeUploadStopTime(hash)
+				_ <- writeWdcggMetadata(server, hash, info);
+				_ <- writeUploadStopTime(server, hash)
 			) yield vocab.getDataObject(hash).stringValue
 		}else for(
 			pid <- mintEpicPid(hash);
-			_ <- writeUploadStopTime(hash)
+			_ <- writeUploadStopTime(server, hash)
 		) yield pid
 	}
 
@@ -79,13 +78,13 @@ class UploadCompleter(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 			.map(_ => getPid(hash))
 	}
 
-	private def writeUploadStopTime(hash: Sha256Sum): Future[Unit] = {
+	private def writeUploadStopTime(server: InstanceServer, hash: Sha256Sum): Future[Unit] = {
 		val submissionUri = vocab.getSubmission(hash)
 		val stopInfo = vocab.factory.createStatement(submissionUri, vocab.prov.endedAtTime, vocab.lit(Instant.now))
 		Future.fromTry(server.add(stopInfo))
 	}
 
-	private def writeWdcggMetadata(hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
+	private def writeWdcggMetadata(server: InstanceServer, hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
 		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
 			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
 

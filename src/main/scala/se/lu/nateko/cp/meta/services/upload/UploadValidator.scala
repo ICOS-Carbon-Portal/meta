@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
 
-class UploadValidator(server: InstanceServer, conf: UploadServiceConfig, vocab: CpmetaVocab){
+class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig, vocab: CpmetaVocab){
 	implicit val factory = vocab.factory
 
 	def validateUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[Unit] = for(
@@ -25,7 +25,7 @@ class UploadValidator(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		_ <- dataObjectIsNew(meta.hashSum);
-		format <- getObjSpecificationFormat(meta.objectSpecification);
+		format <- servers.getObjSpecificationFormat(meta.objectSpecification);
 		_ <- validateForFormat(meta, format)
 	) yield ()
 
@@ -48,7 +48,7 @@ class UploadValidator(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 		import meta.producingOrganization
 
 		for(prodOrgClass <- submConf.producingOrganizationClass){
-			if(!server.hasStatement(producingOrganization, RDF.TYPE, prodOrgClass))
+			if(!servers.icosMeta.hasStatement(producingOrganization, RDF.TYPE, prodOrgClass))
 				throw new UnauthorizedUploadException(
 					s"User is not authorized to upload on behalf of producer '$producingOrganization'"
 				)
@@ -62,19 +62,9 @@ class UploadValidator(server: InstanceServer, conf: UploadServiceConfig, vocab: 
 	}
 
 	private def dataObjectIsNew(hashSum: Sha256Sum): Try[Unit] = {
-		val objectUri = vocab.getDataObject(hashSum)
-		if(server.getStatements(objectUri).nonEmpty)
+		if(servers.dataObjectIsKnown(hashSum))
 			Failure(new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!"))
 		else Success(())
-	}
-
-	private def getObjSpecificationFormat(objectSpecification: URI): Try[URI] = {
-		import InstanceServer.AtMostOne
-
-		server.getUriValues(objectSpecification, vocab.hasFormat, AtMostOne).headOption match {
-			case None => Failure(new UploadUserErrorException(s"Object Specification '$objectSpecification' has no format"))
-			case Some(uri) => Success(uri)
-		}
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, format: URI): Try[Unit] = {

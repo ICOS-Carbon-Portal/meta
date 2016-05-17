@@ -43,7 +43,8 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta);
-			server <- servers.getInstServerForDataObj(meta.hashSum);
+			format <- servers.getObjSpecificationFormat(meta.objectSpecification);
+			server <- servers.getInstServerForFormat(format);
 			_ <- server.addAll(getStatements(meta, submitterConf))
 		) yield{
 			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).stringValue

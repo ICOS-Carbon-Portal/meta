@@ -63,8 +63,8 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		import meta.{hashSum, objectSpecification, producingOrganization, productionInterval}
 
 		val objectUri = vocab.getDataObject(hashSum)
-		val submissionUri = vocab.getSubmission(hashSum)
-		val productionUri = vocab.getProduction(hashSum)
+		val submissionUri = vocab.resources.getSubmission(hashSum)
+		val productionUri = vocab.resources.getProduction(hashSum)
 
 		val prodStart = productionInterval.map(_.start)
 		val prodStop = productionInterval.map(_.stop)

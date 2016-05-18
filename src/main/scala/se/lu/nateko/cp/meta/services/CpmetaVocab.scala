@@ -68,6 +68,11 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}$filePath")
 	}
 
-	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
-	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
+	object resources extends CustomVocab{
+		val factory = top.factory
+		val baseUri = "https://meta.icos-cp.eu/resources/"
+
+		def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
+		def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
+	}
 }

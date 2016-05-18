@@ -1395,6 +1395,14 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/testObjectFormatL0 -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/testObjectFormatL0">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/zipEncoding -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/zipEncoding">

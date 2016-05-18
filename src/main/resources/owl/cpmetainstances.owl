@@ -189,6 +189,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/testObjectSpecL0 -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/testObjectSpecL0">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+        <cpmeta:hasEncoding rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/plainFileEncoding"/>
+        <cpmeta:hasFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/testObjectFormatL0"/>
+        <cpmeta:hasDataLevel rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</cpmeta:hasDataLevel>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/resources/cpmeta/timeColumn -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/timeColumn">

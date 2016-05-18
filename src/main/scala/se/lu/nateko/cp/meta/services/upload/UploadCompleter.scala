@@ -52,7 +52,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		) yield (format, server)
 
 	private def uploadIsNotCompleteYet(hash: Sha256Sum, server: InstanceServer): Try[Unit] = {
-		val submissionUri = vocab.getSubmission(hash)
+		val submissionUri = vocab.resources.getSubmission(hash)
 		if(server.getValues(submissionUri, vocab.prov.endedAtTime).isEmpty)
 			Success(())
 		else
@@ -79,7 +79,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def writeUploadStopTime(server: InstanceServer, hash: Sha256Sum): Future[Unit] = {
-		val submissionUri = vocab.getSubmission(hash)
+		val submissionUri = vocab.resources.getSubmission(hash)
 		val stopInfo = vocab.factory.createStatement(submissionUri, vocab.prov.endedAtTime, vocab.lit(Instant.now))
 		Future.fromTry(server.add(stopInfo))
 	}
@@ -91,7 +91,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			val objUri = vocab.getDataObject(hash)
 			facts += ((objUri, vocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
-			val productionUri = vocab.getProduction(hash)
+			val productionUri = vocab.resources.getProduction(hash)
 			facts += ((productionUri, vocab.prov.startedAtTime, vocab.lit(interVal.start)))
 			facts += ((productionUri, vocab.prov.endedAtTime, vocab.lit(interVal.stop)))
 

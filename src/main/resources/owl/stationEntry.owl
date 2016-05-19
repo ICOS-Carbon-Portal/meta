@@ -1,19 +1,9 @@
 <?xml version="1.0"?>
-
-
-<!DOCTYPE rdf:RDF [
-    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
-    <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
-    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
-    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
-    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
-]>
-
-
 <rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/stationentry/"
      xml:base="http://meta.icos-cp.eu/ontologies/stationentry/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -34,13 +24,13 @@
 
     <!-- http://www.w3.org/2000/01/rdf-schema#comment -->
 
-    <owl:AnnotationProperty rdf:about="&rdfs;comment"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#comment"/>
     
 
 
     <!-- http://www.w3.org/2000/01/rdf-schema#label -->
 
-    <owl:AnnotationProperty rdf:about="&rdfs;label"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#label"/>
     
 
 
@@ -57,43 +47,43 @@
 
     <!-- http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral -->
 
-    <rdfs:Datatype rdf:about="&rdf;PlainLiteral"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"/>
     
 
 
     <!-- http://www.w3.org/2000/01/rdf-schema#Literal -->
 
-    <rdfs:Datatype rdf:about="&rdfs;Literal"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     
 
 
     <!-- http://www.w3.org/2001/XMLSchema#boolean -->
 
-    <rdfs:Datatype rdf:about="&xsd;boolean"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#boolean"/>
     
 
 
     <!-- http://www.w3.org/2001/XMLSchema#double -->
 
-    <rdfs:Datatype rdf:about="&xsd;double"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#double"/>
     
 
 
     <!-- http://www.w3.org/2001/XMLSchema#float -->
 
-    <rdfs:Datatype rdf:about="&xsd;float"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#float"/>
     
 
 
     <!-- http://www.w3.org/2001/XMLSchema#integer -->
 
-    <rdfs:Datatype rdf:about="&xsd;integer"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
     
 
 
     <!-- http://www.w3.org/2001/XMLSchema#string -->
 
-    <rdfs:Datatype rdf:about="&xsd;string"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#string"/>
     
 
 
@@ -111,9 +101,9 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPi -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPi">
-        <rdfs:label rdf:datatype="&xsd;string">principal investigator</rdfs:label>
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">principal investigator</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -132,11 +122,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAccessibility -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAccessibility">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">accessibility</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">accessibility</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -144,11 +134,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAddress -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAddress">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">address</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">address</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -156,10 +146,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">affiliation</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">affiliation</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -167,11 +157,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">anemometer arm direction</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;integer"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">anemometer arm direction</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -179,11 +169,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAnthropogenics -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAnthropogenics">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">anthropogenic density</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">anthropogenic density</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -191,32 +181,31 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label>application status</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">ACKNOWLEDGED</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ACKNOWLEDGED</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">APPROVED</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">APPROVED</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">NOT SUBMITTED</rdf:first>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NOT SUBMITTED</rdf:first>
                                         <rdf:rest>
                                             <rdf:Description>
-                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                <rdf:first rdf:datatype="&xsd;string">REJECTED</rdf:first>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">REJECTED</rdf:first>
                                                 <rdf:rest>
                                                     <rdf:Description>
-                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                        <rdf:first rdf:datatype="&xsd;string">SUBMITTED</rdf:first>
-                                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SUBMITTED</rdf:first>
+                                                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                                     </rdf:Description>
                                                 </rdf:rest>
                                             </rdf:Description>
@@ -229,6 +218,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label>application status</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -242,11 +232,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">construction end date</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">construction end date</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -254,11 +244,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionStartDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionStartDate">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">construction start date</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">construction start date</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -266,69 +256,73 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasCountry -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasCountry">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">country code (two-letter)</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">BE, CH, CZ, DE, FI, FR, GB, GF, NO,  IE, NL, PL, SE</rdfs:comment>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">BE</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BE</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">CH</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CH</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">CZ</rdf:first>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CZ</rdf:first>
                                         <rdf:rest>
                                             <rdf:Description>
-                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                <rdf:first rdf:datatype="&xsd;string">DE</rdf:first>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DE</rdf:first>
                                                 <rdf:rest>
                                                     <rdf:Description>
-                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                        <rdf:first rdf:datatype="&xsd;string">FI</rdf:first>
+                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DK</rdf:first>
                                                         <rdf:rest>
                                                             <rdf:Description>
-                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                <rdf:first rdf:datatype="&xsd;string">FR</rdf:first>
+                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">FI</rdf:first>
                                                                 <rdf:rest>
                                                                     <rdf:Description>
-                                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                                        <rdf:first rdf:datatype="&xsd;string">GB</rdf:first>
+                                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">FR</rdf:first>
                                                                         <rdf:rest>
                                                                             <rdf:Description>
-                                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                                <rdf:first rdf:datatype="&xsd;string">GF</rdf:first>
+                                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">GB</rdf:first>
                                                                                 <rdf:rest>
                                                                                     <rdf:Description>
-                                                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                                                        <rdf:first rdf:datatype="&xsd;string">IE</rdf:first>
+                                                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">GF</rdf:first>
                                                                                         <rdf:rest>
                                                                                             <rdf:Description>
-                                                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                <rdf:first rdf:datatype="&xsd;string">IT</rdf:first>
+                                                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">IE</rdf:first>
                                                                                                 <rdf:rest>
                                                                                                     <rdf:Description>
-                                                                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                        <rdf:first rdf:datatype="&xsd;string">NL</rdf:first>
+                                                                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">IT</rdf:first>
                                                                                                         <rdf:rest>
                                                                                                             <rdf:Description>
-                                                                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                                <rdf:first rdf:datatype="&xsd;string">NO</rdf:first>
+                                                                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NL</rdf:first>
                                                                                                                 <rdf:rest>
                                                                                                                     <rdf:Description>
-                                                                                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                                        <rdf:first rdf:datatype="&xsd;string">PL</rdf:first>
+                                                                                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NO</rdf:first>
                                                                                                                         <rdf:rest>
                                                                                                                             <rdf:Description>
-                                                                                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                                                                                <rdf:first rdf:datatype="&xsd;string">SE</rdf:first>
-                                                                                                                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                                                                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PL</rdf:first>
+                                                                                                                                <rdf:rest>
+                                                                                                                                    <rdf:Description>
+                                                                                                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                                                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SE</rdf:first>
+                                                                                                                                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                                                                                                                    </rdf:Description>
+                                                                                                                                </rdf:rest>
                                                                                                                             </rdf:Description>
                                                                                                                         </rdf:rest>
                                                                                                                     </rdf:Description>
@@ -359,6 +353,8 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BE, CH, CZ, DE, DK, FI, FR, GB, GF, NO,  IE, NL, PL, SE</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">country code (two-letter)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -366,10 +362,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAdditionalInfo -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAdditionalInfo">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -377,10 +373,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityCurveFitting -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityCurveFitting">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -388,10 +384,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityMethodReferences -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityMethodReferences">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -399,10 +395,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityOtherTitration -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityOtherTitration">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -410,10 +406,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityTitrationType -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityTitrationType">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -421,10 +417,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2Analysis -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2Analysis">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -432,10 +428,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2AnalysisMethod -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2AnalysisMethod">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -443,10 +439,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2MethodReferences -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2MethodReferences">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -454,10 +450,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhAnalysisMethod -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhAnalysisMethod">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -465,10 +461,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhMethodReferences -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhMethodReferences">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -476,10 +472,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhScale -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhScale">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -487,10 +483,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2AnalysisMethod -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2AnalysisMethod">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -498,10 +494,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2MethodReferences -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2MethodReferences">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -509,10 +505,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2StandardizationTechnique -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2StandardizationTechnique">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -520,10 +516,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2TechniqueDescription -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2TechniqueDescription">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -531,18 +527,18 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasEasternmostLon -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasEasternmostLon">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-180.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">180.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -554,12 +550,12 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">eddy covariance system height</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">height of the eddy covariance system, meters above ground</rdfs:comment>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;float"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">height of the eddy covariance system, meters above ground</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">eddy covariance system height</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -567,10 +563,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">elevation above ground, meters</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">elevation above ground, meters</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -578,10 +574,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">elevation of ground above sea, meters</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;float"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">elevation of ground above sea, meters</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -589,12 +585,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasEmail -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasEmail">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">E-mail address</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;string"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
                         <xsd:pattern>^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
@@ -602,6 +597,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">E-mail address</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -615,11 +611,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">existing infrastructure</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">existing infrastructure</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -627,10 +623,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">first name</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">first name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -638,10 +634,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">funding for construction</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">funding for construction</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -649,10 +645,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">funding for operation</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">funding for operation</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -660,11 +656,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasLastName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">last name</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">everything except the (first) first name</rdfs:comment>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">everything except the (first) first name</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">last name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -672,22 +668,22 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasLat -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasLat">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">decimal latitude</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-90.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">90.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">decimal latitude</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -695,11 +691,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasLocationDescription -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasLocationDescription">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">location description</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">location description</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -707,22 +703,22 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasLon -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasLon">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">decimal longitude</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-180.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">180.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">decimal longitude</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -730,10 +726,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasLongName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">long name</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">long name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -741,9 +737,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasMainPersonnelNamesList -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasMainPersonnelNamesList">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">main personnel names list</rdfs:label>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -752,6 +746,8 @@
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">main personnel names list</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -759,11 +755,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasNameListOfNetworksItBelongsTo -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasNameListOfNetworksItBelongsTo">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">name list of the networks station belongs to</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">name list of the networks station belongs to</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -771,18 +767,18 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasNothernmostLat -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasNothernmostLat">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-90.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">90.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -794,10 +790,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">estimated date when operational</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">estimated date when operational</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -811,13 +807,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPhone -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPhone">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">phone number (international format)</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">e.g. +46 46 22 29173</rdfs:comment>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;string"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
                         <xsd:pattern>^\+[\d\s]{8,}$</xsd:pattern>
@@ -825,6 +819,8 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">e.g. +46 46 22 29173</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">phone number (international format)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -832,25 +828,24 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPlatformType -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPlatformType">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">platform type</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">FOS</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">FOS</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">ROS</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ROS</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">VOS</rdf:first>
-                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">VOS</rdf:first>
+                                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                     </rdf:Description>
                                 </rdf:rest>
                             </rdf:Description>
@@ -859,6 +854,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">platform type</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -866,10 +862,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">has pre-ICOS measurements (true/false)</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;boolean"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has pre-ICOS measurements (true/false)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -877,11 +873,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">responsible institution name</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">responsible institution name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -889,10 +885,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasShortName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">short name</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">short name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -900,10 +896,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">site type</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">site type</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -911,18 +907,18 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasSouthernmostLat -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasSouthernmostLat">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-90.0</xsd:minInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-90.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">90.0</xsd:maxInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">90.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -934,12 +930,12 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasSpatialReference -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasSpatialReference">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">spatial reference</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">spatial reference in GeoJSON (any feature except points; encoded as plain string)</rdfs:comment>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">spatial reference in GeoJSON (any feature except points; encoded as plain string)</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">spatial reference</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -947,29 +943,27 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">ICOS station class</rdfs:label>
-        <rdfs:comment rdf:datatype="&xsd;string">1, 2 or 3</rdfs:comment>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">1</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">2</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">3</rdf:first>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">3</rdf:first>
                                         <rdf:rest>
                                             <rdf:Description>
-                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                <rdf:first rdf:datatype="&xsd;string">Ass</rdf:first>
-                                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ass</rdf:first>
+                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                             </rdf:Description>
                                         </rdf:rest>
                                     </rdf:Description>
@@ -980,6 +974,8 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1, 2 or 3</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS station class</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -987,36 +983,35 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">kind of station (TT, aircraft, atm, ground, eco, ocean)</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">TT</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">TT</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">aircraft</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">aircraft</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">atm</rdf:first>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">atm</rdf:first>
                                         <rdf:rest>
                                             <rdf:Description>
-                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                <rdf:first rdf:datatype="&xsd;string">eco</rdf:first>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">eco</rdf:first>
                                                 <rdf:rest>
                                                     <rdf:Description>
-                                                        <rdf:type rdf:resource="&rdf;List"/>
-                                                        <rdf:first rdf:datatype="&xsd;string">ground</rdf:first>
+                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ground</rdf:first>
                                                         <rdf:rest>
                                                             <rdf:Description>
-                                                                <rdf:type rdf:resource="&rdf;List"/>
-                                                                <rdf:first rdf:datatype="&xsd;string">ocean</rdf:first>
-                                                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ocean</rdf:first>
+                                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                                             </rdf:Description>
                                                         </rdf:rest>
                                                     </rdf:Description>
@@ -1031,6 +1026,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">kind of station (TT, aircraft, atm, ground, eco, ocean)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1038,11 +1034,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasTelecom -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasTelecom">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">telecommunication means</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">telecommunication means</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1050,25 +1046,24 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasTypeOfSampling -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasTypeOfSampling">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">type of sampling</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>
                     <rdf:Description>
-                        <rdf:type rdf:resource="&rdf;List"/>
-                        <rdf:first rdf:datatype="&xsd;string">discrete</rdf:first>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">discrete</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
-                                <rdf:type rdf:resource="&rdf;List"/>
-                                <rdf:first rdf:datatype="&xsd;string">discrete and underway</rdf:first>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">discrete and underway</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
-                                        <rdf:type rdf:resource="&rdf;List"/>
-                                        <rdf:first rdf:datatype="&xsd;string">underway</rdf:first>
-                                        <rdf:rest rdf:resource="&rdf;nil"/>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">underway</rdf:first>
+                                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                     </rdf:Description>
                                 </rdf:rest>
                             </rdf:Description>
@@ -1077,6 +1072,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">type of sampling</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1084,10 +1080,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayAdditionalInfo -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayAdditionalInfo">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1095,10 +1091,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorManufacturer -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorManufacturer">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1106,10 +1102,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorModel -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorModel">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1117,10 +1113,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayEquilibratorType -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayEquilibratorType">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1128,10 +1124,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayMethodReferences -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayMethodReferences">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1139,10 +1135,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorManufacturer -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorManufacturer">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1150,10 +1146,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorModel -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorModel">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
 
@@ -1161,11 +1157,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasVegetation -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasVegetation">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">vegetation</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">vegetation</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1173,11 +1169,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasVesselOwner -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasVesselOwner">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">vessel owner</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">vessel owner</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1185,11 +1181,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasWebsite -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasWebsite">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">website</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">website</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1197,18 +1193,18 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasWesternmostLon -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasWesternmostLon">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range>
             <rdfs:Datatype>
-                <owl:onDatatype rdf:resource="&xsd;double"/>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:maxInclusive rdf:datatype="&xsd;double">180.0</xsd:maxInclusive>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-180.0</xsd:minInclusive>
                     </rdf:Description>
                     <rdf:Description>
-                        <xsd:minInclusive rdf:datatype="&xsd;double">-180.0</xsd:minInclusive>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">180.0</xsd:maxInclusive>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>
@@ -1220,11 +1216,11 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">submitted wind data to the European Database</rdfs:label>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue"/>
-        <rdfs:range rdf:resource="&xsd;boolean"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">submitted wind data to the European Database</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1232,10 +1228,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational">
-        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
-        <rdfs:label rdf:datatype="&xsd;string">already operational (true/false)</rdfs:label>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="&xsd;boolean"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">already operational (true/false)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1254,20 +1250,20 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/AS -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/AS">
-        <rdfs:label rdf:datatype="&xsd;string">Atmospheric Station</rdfs:label>
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmospheric Station</rdfs:label>
     </owl:Class>
     
 
@@ -1275,20 +1271,20 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/ES -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/ES">
-        <rdfs:label rdf:datatype="&xsd;string">Ecosystem Station</rdfs:label>
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLat"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLon"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem Station</rdfs:label>
     </owl:Class>
     
 
@@ -1296,8 +1292,8 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/OS -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/OS">
-        <rdfs:label rdf:datatype="&xsd;string">Ocean Station</rdfs:label>
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean Station</rdfs:label>
     </owl:Class>
     
 
@@ -1305,26 +1301,26 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/PI -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/PI">
-        <rdfs:label rdf:datatype="&xsd;string">Principal Investigator</rdfs:label>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasEmail"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLastName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <owl:disjointWith rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Principal Investigator</rdfs:label>
     </owl:Class>
     
 
@@ -1334,20 +1330,20 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/Station">
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasPi"/>
-                <owl:someValuesFrom rdf:resource="&owl;Thing"/>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasLongName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/hasShortName"/>
-                <owl:someValuesFrom rdf:resource="&rdfs;Literal"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>
@@ -1355,5 +1351,5 @@
 
 
 
-<!-- Generated by the OWL API (version 3.5.1) http://owlapi.sourceforge.net -->
+<!-- Generated by the OWL API (version 4.1.3.20151118-2017) https://github.com/owlcs/owlapi -->
 

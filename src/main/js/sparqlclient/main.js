@@ -1,5 +1,7 @@
 import queries from './queries';
 
+const txtReturnType = 'TSV or Turtle';
+
 function runQuery(){
 	var start;
 	var selectedReturnType = $("#returnTypeGrp > .active").text();
@@ -14,7 +16,11 @@ function runQuery(){
 			accept = "text/csv; charset=utf-8";
 			break;
 
-		case "TSV":
+		case "XML":
+			accept = "application/xml; charset=utf-8";
+			break;
+
+		case txtReturnType:
 			accept = "text/plain; charset=utf-8";
 			break;
 	}
@@ -62,8 +68,12 @@ function postProcessing(result, selectedReturnType, requestTime){
 		$("#result").html(syntaxHighlight(result));
 		highlightTime = new Date().getTime() - highlightStart;
 
-	} else if (selectedReturnType == "TSV") {
+	} else if (selectedReturnType == txtReturnType) {
 		$("#result").html(result.replace(/\</g,"&lt;"));
+
+	} else if (selectedReturnType == "XML") {
+		let resultStr = new XMLSerializer().serializeToString(result.documentElement);
+		$("#result").html(syntaxHighlight(resultStr));
 
 	} else {
 		$("#result").html(result);

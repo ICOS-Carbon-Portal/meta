@@ -29,18 +29,19 @@ object InstanceServerSerializer {
 
 	private val utf8 = HttpCharsets.`UTF-8`
 
+	val turtleContType = getContType("text/turtle")
+	val xmlContType = getContType("application/rdf+xml")
+
 	def marshaller: ToResponseMarshaller[InstanceServer] = Marshaller(
 		implicit exeCtxt => server => Future.successful(
-			List(
-				Marshalling.WithFixedContentType(
-					ContentTypes.`text/plain(UTF-8)`,
-					() => getResponse(server, getContType("text/turtle"), new TurtleWriterFactory())
-				),
-				Marshalling.WithFixedContentType(
-					ContentType(MediaTypes.`application/xml`, utf8),
-					() => getResponse(server, getContType("application/rdf+xml"), new RDFXMLWriterFactory())
-				)
-			)
+			Marshalling.WithFixedContentType(
+				ContentTypes.`text/plain(UTF-8)`,
+				() => getResponse(server, turtleContType, new TurtleWriterFactory())
+			) ::
+			Marshalling.WithFixedContentType(
+				ContentType(MediaTypes.`application/xml`, utf8),
+				() => getResponse(server, xmlContType, new RDFXMLWriterFactory())
+			) :: Nil
 		)
 	)
 

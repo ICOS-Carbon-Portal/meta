@@ -25,7 +25,7 @@ object TestConfig {
 	val ontUri = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 
 	lazy val instServer: InstanceServer = {
-		val repo = Loading.fromResource("/../classes/owl/cpmetainstances.owl", instOntUri)
+		val repo = Loading.fromResource("/owl/cpmetainstances.owl", instOntUri)
 		val factory = repo.getValueFactory
 		val instOnt = factory.createURI(instOntUri)
 		val ont = factory.createURI(ontUri)

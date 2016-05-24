@@ -30,7 +30,7 @@ package object sesame {
 	implicit def sesameUriToJava(uri: URI) = java.net.URI.create(uri.stringValue)
 
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
-		def asScalaIterator: CloseableIterator[T] = new RepositoryResultIterator(res, () => ())
+		def asScalaIterator: CloseableIterator[T] = new SesameIterationIterator(res, () => ())
 	}
 
 	implicit class SesameRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
@@ -65,7 +65,7 @@ package object sesame {
 
 			try{
 				val repRes = accessor(conn)
-				new RepositoryResultIterator(repRes, finalCleanup)
+				new SesameIterationIterator(repRes, finalCleanup)
 			}
 			catch{
 				case err: Throwable =>

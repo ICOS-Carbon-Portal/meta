@@ -23,6 +23,9 @@ import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import org.openrdf.model.URI
+import scala.concurrent.ExecutionContext
+import se.lu.nateko.cp.meta.ingestion.Ingester
+import se.lu.nateko.cp.meta.ingestion.Extractor
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -43,7 +46,78 @@ class MetaDb private (
 
 object MetaDb {
 
-	def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, logConf: RdflogConfig): InstanceServer = {
+	def apply(config: CpmetaConfig)(implicit system: ActorSystem): MetaDb = {
+
+		validateConfig(config)
+		import system.dispatcher
+
+		val ontosFut = Future{makeOntos(config.onto.ontologies)}
+		val repo = Loading.empty
+		val serversFut = makeInstanceServers(repo, config)
+
+		val dbFuture = for(instanceServers <- serversFut; ontos <-ontosFut) yield{
+			val instOntos = config.onto.instOntoServers.map{
+				case (servId, servConf) =>
+					val instServer = instanceServers(servConf.instanceServerId)
+					val onto = ontos(servConf.ontoId)
+					(servId, new InstOnto(instServer, onto))
+			}
+
+			val uploadService = makeUploadService(config, repo, instanceServers)
+
+			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
+
+			val labelingService = {
+				val conf = config.stationLabelingService
+				val provisional = instanceServers(conf.provisionalInfoInstanceServerId)
+				val main = instanceServers(conf.instanceServerId)
+				val onto = ontos(conf.ontoId)
+				new StationLabelingService(main, provisional, onto, fileService, conf)
+			}
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
+		}
+
+		Await.result(dbFuture, Duration.Inf)
+	}
+
+	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
+		val dataObjServers = confs.forDataObjects
+
+		confs.specific ++ dataObjServers.definitions.map{ servDef =>
+			val writeCtxt = getInstServerContext(dataObjServers, servDef)
+			(servDef.label, InstanceServerConfig(
+				logName = Some(servDef.label),
+				readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
+				writeContexts = Seq(writeCtxt),
+				ingestion = None
+			))
+		}.toMap
+	}
+
+	private def makeUploadService(
+		config: CpmetaConfig,
+		repo: Repository,
+		instanceServers: Map[String, InstanceServer]
+	)(implicit system: ActorSystem): UploadService = {
+		val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
+		val factory = icosMetaInstServer.factory
+		val dataObjServConfs = config.instanceServers.forDataObjects
+
+		val allDataObjInstServConf = {
+			val readContexts = dataObjServConfs.definitions.map(getInstServerContext(dataObjServConfs, _))
+			InstanceServerConfig(None, Some(readContexts), Nil, None)
+		}
+		val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
+
+		val perFormatServers: Map[URI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
+			(factory.createURI(servDef.format), instanceServers(servDef.label))
+		}.toMap
+
+		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
+		new UploadService(dataObjServers, config.dataUploadService)
+	}
+
+	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, logConf: RdflogConfig): InstanceServer = {
 
 		val factory = initRepo.getValueFactory
 
@@ -63,7 +137,7 @@ object MetaDb {
 
 	}
 
-	def makeOntos(confs: Seq[SchemaOntologyConfig]): Map[String, Onto] = {
+	private def makeOntos(confs: Seq[SchemaOntologyConfig]): Map[String, Onto] = {
 		val owlManager = OWLManager.createOWLOntologyManager
 
 		confs.foldLeft(Map.empty[String, Onto])((acc, conf) => {
@@ -76,7 +150,7 @@ object MetaDb {
 		})
 	}
 
-	def validateConfig(config: CpmetaConfig): Unit = {
+	private def validateConfig(config: CpmetaConfig): Unit = {
 
 		val instServerIds = config.instanceServers.specific.keys.toSet
 		val schemaOntIds = config.onto.ontologies.map(_.ontoId).flatten.toSet
@@ -97,108 +171,52 @@ object MetaDb {
 		}
 	}
 
-	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
-		val dataObjServers = confs.forDataObjects
+	/**
+	 * Includes support for dependencies when initializing InstanceServers.
+	 * Namely, ingestion can now wait until certain other InstanceServers have
+	 * been initialized from their RDF logs. Dependencies of ingestions as such
+	 * on each other are not included in this. So, two-pass initialization with
+	 * second pass waiting on the first pass (per InstanceServer) if needed.
+	 */
+	private def makeInstanceServers(
+		repo: Repository,
+		config: CpmetaConfig
+	)(implicit ctxt: ExecutionContext): Future[Map[String, InstanceServer]] = {
 
-		confs.specific ++ dataObjServers.definitions.map{ servDef =>
-			val writeCtxt = getInstServerContext(dataObjServers, servDef)
-			(servDef.label, InstanceServerConfig(
-				logName = Some(servDef.label),
-				readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
-				writeContexts = Seq(writeCtxt),
-				ingestion = None
-			))
-		}.toMap
-	}
+		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
 
-	def apply(config: CpmetaConfig)(implicit system: ActorSystem): MetaDb = {
+		val firstPass: Map[String, Future[InstanceServer]] = instServerConfs.map{
+			case (id, servConf) => (id, Future{
+				makeInstanceServer(repo, servConf, config.rdfLog)
+			})
+		}
 
-		validateConfig(config)
-		import system.dispatcher
-
-		val ontosFut = Future{makeOntos(config.onto.ontologies)}
-
-		val repo = Loading.empty
+		val ingesters = Ingestion.allProviders
 		val valueFactory = repo.getValueFactory
 
-		val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
-		val ingesters = Ingestion.allIngesters
+		val secondPass: Map[String, Future[InstanceServer]] = instServerConfs.map{ case (id, servConf) =>
 
-		def performIngestion(ingesterId: String, serverFut: Future[InstanceServer]): Future[InstanceServer] = {
+			(id, servConf.ingestion match {
+				case Some(IngestionConfig(ingesterId, waitFor, Some(true))) =>
+					for(
+						server <- firstPass(id);
+						_ <- waitFor match {
+							case None => Future.successful(())
+							case Some(depIds) => Future.sequence(depIds.map(firstPass.apply)).map(_ => ())
+						};
+						_ <- Future{
+							val statements = ingesters(ingesterId) match {
+								case ingester: Ingester => ingester.getStatements(valueFactory)
+								case extractor: Extractor => extractor.getStatements(repo)
+							}
+							Ingestion.ingest(server, statements)
+						}
+					) yield server
 
-			val statementsFut: Future[Iterator[Statement]] = Future{
-				ingesters(ingesterId).getStatements(valueFactory)
-			}
-	
-			for(
-				server <- serverFut;
-				statements <- statementsFut;
-				afterIngestion <- Future{
-					Ingestion.ingest(server, statements)
-					server
-				}
-			) yield afterIngestion
+				case _ => firstPass(id)
+			})
 		}
-
-		
-		val instanceServersFut: Future[Map[String, InstanceServer]] = {
-
-			val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
-
-			val tupleFuts: Iterable[Future[(String, InstanceServer)]] = instServerConfs.map{
-				case (servId, servConf) =>
-					val serverFut = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
-
-					val finalFut = servConf.ingestion match{
-						case Some(IngestionConfig(ingesterId, Some(true), _)) => performIngestion(ingesterId, serverFut)
-						case _ => serverFut
-					}
-					finalFut.map((servId, _))
-			}
-			Future.sequence(tupleFuts).map(_.toMap)
-		}
-
-		val dbFuture = for(
-			ontos <- ontosFut;
-			instanceServers <- instanceServersFut
-		) yield{
-			val instOntos = config.onto.instOntoServers.map{
-				case (servId, servConf) =>
-					val instServer = instanceServers(servConf.instanceServerId)
-					val onto = ontos(servConf.ontoId)
-					(servId, new InstOnto(instServer, onto))
-			}
-
-			val uploadService = {
-				val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
-				val factory = icosMetaInstServer.factory
-				val dataObjServConfs = config.instanceServers.forDataObjects
-	
-				val allDataObjInstServConf = {
-					val readContexts = dataObjServConfs.definitions.map(getInstServerContext(dataObjServConfs, _))
-					InstanceServerConfig(None, Some(readContexts), Nil, None)
-				}
-				val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
-	
-				val perFormatServers: Map[URI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
-					(factory.createURI(servDef.format), instanceServers(servDef.label))
-				}.toMap
-	
-				val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
-				new UploadService(dataObjServers, config.dataUploadService)
-			}
-
-			val labelingService = {
-				val conf = config.stationLabelingService
-				val provisional = instanceServers(conf.provisionalInfoInstanceServerId)
-				val main = instanceServers(conf.instanceServerId)
-				val onto = ontos(conf.ontoId)
-				new StationLabelingService(main, provisional, onto, fileService, conf)
-			}
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
-		}
-
-		Await.result(dbFuture, Duration.Inf)
+		Future.sequence(secondPass.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)
 	}
 
 	private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =

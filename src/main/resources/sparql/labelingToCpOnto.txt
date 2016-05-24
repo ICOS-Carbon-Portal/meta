@@ -1,0 +1,56 @@
+prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix role: <http://meta.icos-cp.eu/resources/roles/>
+construct {
+	?station a ?stClass ;
+		cpmeta:hasStationId ?stationId ;
+		cpmeta:hasName ?stationName ;
+		cpmeta:hasStationClass ?icosClass ;
+		cpmeta:hasLatitude ?latitude ;
+		cpmeta:hasLongitude ?longitude ;
+		cpmeta:countryCode ?country ;
+		cpmeta:hasElevation ?elevation .
+	?person a cpmeta:Person ;
+		cpmeta:hasFirstName ?firstName ;
+		cpmeta:hasLastName ?lastName ;
+		cpmeta:hasEmail ?email ;
+		cpmeta:hasMembership ?piMemb .
+	?piMemb a cpmeta:Membership ;
+		cpmeta:atOrganization ?station ;
+		cpmeta:hasRole role:PI .
+	role:PI a cpmeta:Role ;
+		rdfs:label "Principal Investigator" .
+}
+from <http://meta.icos-cp.eu/resources/stationentry/>
+from named <http://meta.icos-cp.eu/resources/stationlabeling/>
+where{
+	VALUES (?stClass ?entryStClass ?tc ?theme) {
+		(cpmeta:AS st:AS cpmeta:ATC "AS")
+		(cpmeta:ES st:ES cpmeta:ETC "ES")
+		(cpmeta:OS st:OS cpmeta:OTC "OS")
+	}
+	?s a ?entryStClass .
+	?s st:hasShortName ?stationId0 .
+	?s st:hasLongName ?stationName0 .
+	OPTIONAL{ GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasShortName ?stationId1 } }
+	OPTIONAL{ GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasLongName ?stationName1 } }
+	BIND (if(bound(?stationId1), ?stationId1, ?stationId0) AS ?stationId)
+	BIND (if(bound(?stationName1), ?stationName1, ?stationName0) AS ?stationName)
+	?s st:hasStationClass ?icosClass .
+	?s st:hasCountry ?country .
+	?s st:hasPi ?pi .
+	OPTIONAL{ ?s st:hasLat ?lat0 . ?s st:hasLon ?lon0 }
+	OPTIONAL{ GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s st:hasLat ?lat1 . ?s st:hasLon ?lon1 } }
+	BIND (if(bound(?lat1), ?lat1, ?lat0) AS ?latitude)
+	BIND (if(bound(?lon1), ?lon1, ?lon0) AS ?longitude)
+	OPTIONAL{?s st:hasElevationAboveSea ?elev0 }
+	OPTIONAL{GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasElevationAboveSea ?elev1 }}
+	BIND (if(bound(?elev1), ?elev1, ?elev0) AS ?elevation)
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/stations/", ?theme, "_", ENCODE_FOR_URI(?stationId))) AS ?station) .
+	?pi st:hasEmail ?email .
+	?pi st:hasFirstName ?firstName .
+	?pi st:hasLastName ?lastName .
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/people/", ENCODE_FOR_URI(?firstName), "_", ENCODE_FOR_URI(?lastName))) AS ?person) .
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?stationId), "_pi_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
+}
+

@@ -1,12 +1,13 @@
 package se.lu.nateko.cp.meta.utils.sesame
 
-import org.openrdf.repository.RepositoryResult
 import scala.collection.AbstractIterator
+
+import info.aduna.iteration.CloseableIteration
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 
-//TODO Make this thread-safe
-private class RepositoryResultIterator[T](res: RepositoryResult[T], closer: () => Unit) extends AbstractIterator[T] with CloseableIterator[T]{
+//TODO Make this thread-safe ?
+class SesameIterationIterator[T](res: CloseableIteration[T, _], closer: () => Unit) extends AbstractIterator[T] with CloseableIterator[T]{
 
 	private[this] var closed: Boolean = false
 

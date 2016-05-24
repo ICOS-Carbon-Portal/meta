@@ -11,14 +11,12 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 
 
 object Main extends App with CpmetaJsonProtocol{
-
+	//needed to initialize logging, even if not used in this class
 	val logger = org.slf4j.LoggerFactory.getLogger("Cpmeta")
 
 	implicit val system = ActorSystem("cpmeta")
 	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
-
-	implicit val dispatcher = system.dispatcher
-	implicit val scheduler = system.scheduler
+	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
 	val db: MetaDb = MetaDb(config)

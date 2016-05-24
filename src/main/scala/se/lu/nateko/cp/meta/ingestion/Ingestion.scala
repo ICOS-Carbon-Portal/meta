@@ -7,27 +7,30 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
+import org.openrdf.repository.Repository
 
-trait Ingester{
+sealed trait StatementProvider
+
+trait Ingester extends StatementProvider{
 	def getStatements(valueFactory: ValueFactory): Iterator[Statement]
+}
+
+trait Extractor extends StatementProvider{
+	def getStatements(repo: Repository): Iterator[Statement]
 }
 
 object Ingestion {
 
-	def allIngesters: Map[String, Ingester] = {
+	def allProviders: Map[String, StatementProvider] = {
 		val (badmSchema, badm) = BadmIngester.getSchemaAndValuesIngesters
 		Map(
 			"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,
-			"badmSchema" -> badmSchema
+			"badmSchema" -> badmSchema,
+			"pisAndStations" -> new SparqlConstructExtractor("/sparql/labelingToCpOnto.txt")
 		)
-	}
-
-	def ingest(target: InstanceServer, ingester: Ingester): Unit = {
-		val newStatements = ingester.getStatements(target.factory)
-		ingest(target, newStatements)
 	}
 
 	def ingest(target: InstanceServer, newStatements: Iterator[Statement]): Unit = {

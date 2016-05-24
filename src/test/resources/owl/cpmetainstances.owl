@@ -25,11 +25,82 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_AS -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_AS">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa atmospheric station</cpmeta:hasName>
+        <cpmeta:hasStationClass rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Station Class II</cpmeta:hasStationClass>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_ES -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_ES">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+        <cpmeta:hasElevation rdf:datatype="http://www.w3.org/2001/XMLSchema#float">115.0</cpmeta:hasElevation>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa ecosystem station</cpmeta:hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_site -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_site">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
+        <cpmeta:countryCode rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SE</cpmeta:countryCode>
+        <cpmeta:hasElevation rdf:datatype="http://www.w3.org/2001/XMLSchema#float">115.0</cpmeta:hasElevation>
+        <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.1</cpmeta:hasLatitude>
+        <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.42</cpmeta:hasLongitude>
+        <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa</cpmeta:hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/Jane_Doe -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Jane_Doe">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <cpmeta:hasEmail rdf:datatype="http://www.w3.org/2001/XMLSchema#string">jane.doe@icos-ri.eu</cpmeta:hasEmail>
+        <cpmeta:hasFirstName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Jane</cpmeta:hasFirstName>
+        <cpmeta:hasLastName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Doe</cpmeta:hasLastName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/John_Smith -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/John_Smith">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
+        <cpmeta:hasEmail rdf:datatype="http://www.w3.org/2001/XMLSchema#string">john.smith@icos-ri.eu</cpmeta:hasEmail>
+        <cpmeta:hasFirstName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">John</cpmeta:hasFirstName>
+        <cpmeta:hasLastName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Smith</cpmeta:hasLastName>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/resources/cpmeta/WDCGG -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/WDCGG">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">World Data Centre for Greenhouse Gases</cpmeta:hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/atcDirector -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcDirector">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <cpmeta:atOrganization rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:hasRole rdf:resource="http://meta.icos-cp.eu/resources/cpmeta/directorRole"/>
     </owl:NamedIndividual>
     
 
@@ -51,6 +122,15 @@
         <cpmeta:hasValueFormat rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601date"/>
         <cpmeta:hasValueType rdf:resource="http://meta.icos-cp.eu/resources/cpmeta/date"/>
         <cpmeta:hasColumnTitle rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DATE</cpmeta:hasColumnTitle>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/cpmeta/directorRole -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/directorRole">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Director</rdfs:label>
     </owl:NamedIndividual>
     
 

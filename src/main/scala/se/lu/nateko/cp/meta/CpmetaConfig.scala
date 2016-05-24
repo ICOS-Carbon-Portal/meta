@@ -13,8 +13,8 @@ case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
 case class IngestionConfig(
 	ingesterId: String,
-	ingestAtStartup: Option[Boolean],
-	ingestionInterval: Option[Int] //seconds
+	waitFor: Option[Seq[String]],
+	ingestAtStartup: Option[Boolean]
 )
 
 case class InstanceServerConfig(

@@ -50,7 +50,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		for(prodOrgClass <- submConf.producingOrganizationClass){
 			if(!servers.icosMeta.hasStatement(producingOrganization, RDF.TYPE, prodOrgClass))
 				throw new UnauthorizedUploadException(
-					s"User is not authorized to upload on behalf of producer '$producingOrganization'"
+					s"Data producer '$producingOrganization' does not belong to class '$prodOrgClass'"
 				)
 		}
 

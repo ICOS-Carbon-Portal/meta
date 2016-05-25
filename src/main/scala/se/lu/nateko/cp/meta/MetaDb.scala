@@ -174,9 +174,7 @@ object MetaDb {
 	/**
 	 * Includes support for dependencies when initializing InstanceServers.
 	 * Namely, ingestion can now wait until certain other InstanceServers have
-	 * been initialized from their RDF logs. Dependencies of ingestions as such
-	 * on each other are not included in this. So, two-pass initialization with
-	 * second pass waiting on the first pass (per InstanceServer) if needed.
+	 * been completely initialized from their RDF logs and other ingesters.
 	 */
 	private def makeInstanceServers(
 		repo: Repository,
@@ -184,28 +182,33 @@ object MetaDb {
 	)(implicit ctxt: ExecutionContext): Future[Map[String, InstanceServer]] = {
 
 		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
-
-		val firstPass: Map[String, Future[InstanceServer]] = instServerConfs.map{
-			case (id, servConf) => (id, Future{
-				makeInstanceServer(repo, servConf, config.rdfLog)
-			})
-		}
-
-		val ingesters = Ingestion.allProviders
+		lazy val providers = Ingestion.allProviders
 		val valueFactory = repo.getValueFactory
 
-		val secondPass: Map[String, Future[InstanceServer]] = instServerConfs.map{ case (id, servConf) =>
+		type ServerFutures = Map[String, Future[InstanceServer]]
 
-			(id, servConf.ingestion match {
+		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else {
+			val servConf: InstanceServerConfig = instServerConfs(id)
+			val basicInit = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
+
+			servConf.ingestion match{
+
 				case Some(IngestionConfig(ingesterId, waitFor, Some(true))) =>
-					for(
-						server <- firstPass(id);
-						_ <- waitFor match {
-							case None => Future.successful(())
-							case Some(depIds) => Future.sequence(depIds.map(firstPass.apply)).map(_ => ())
-						};
+
+					val (withDependencies, dependenciesDone): (ServerFutures, Future[Unit]) = waitFor match {
+						case None =>
+							(acc, Future.successful(()))
+						case Some(depIds) =>
+							val withDeps = depIds.foldLeft(acc)(makeNextServer)
+							val done = Future.sequence(depIds.map(withDeps.apply)).map(_ => ())
+							(withDeps, done)
+					}
+
+					val afterIngestion = for(
+						server <- basicInit;
+						_ <- dependenciesDone;
 						_ <- Future{
-							val statements = ingesters(ingesterId) match {
+							val statements = providers(ingesterId) match {
 								case ingester: Ingester => ingester.getStatements(valueFactory)
 								case extractor: Extractor => extractor.getStatements(repo)
 							}
@@ -213,10 +216,15 @@ object MetaDb {
 						}
 					) yield server
 
-				case _ => firstPass(id)
-			})
+					withDependencies + (id -> afterIngestion)
+
+				case _ =>
+					acc + (id -> basicInit)
+			}
 		}
-		Future.sequence(secondPass.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)
+
+		val futures: ServerFutures = instServerConfs.keys.foldLeft[ServerFutures](Map.empty)(makeNextServer)
+		Future.sequence(futures.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)
 	}
 
 	private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =

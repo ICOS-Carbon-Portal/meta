@@ -27,6 +27,8 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 		statements: Seq[Statement]
 	)
 
+	private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
+
 	def getStatements(f: ValueFactory): Iterator[Statement] = {
 		implicit val vocab = new CpVocab(f)
 		implicit val metaVocab = new CpmetaVocab(f)
@@ -65,7 +67,13 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 				(implicit vocab: CpVocab, metaVocab: CpmetaVocab): Seq[Statement] = {
 
 		val varToVal: Map[String, String] = entry.values.map(bv => (bv.variable, bv.valueStr)).toMap
-		val Array(firstName, lastName) = varToVal(TeamMemberNameVar).trim.split(' ')
+
+		//logger.info("Parsing name: " + varToVal(TeamMemberNameVar))
+		val (firstName, lastName) = varToVal(TeamMemberNameVar) match {
+			case standardNameRegex(firstName, lastName) => (firstName, lastName)
+			case withMiddleNameRegex(firstName, lastName) => (firstName, lastName)
+		}
+
 		val email = varToVal(TeamMemberEmailVar).toLowerCase
 		val roleId = varToVal(TeamMemberRoleVar)
 		val membership = vocab.getEtcMembership(siteId, roleId, lastName)
@@ -105,12 +113,12 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 		entryInformationDate.map{
 			(ancillEntry, metaVocab.dcterms.date, _)
 		} ++
-		entry.values.map(badmValue2PropValue).map{
-			case (prop, value) => (ancillEntry, prop, value)
+		entry.values.map(badmValue2PropValue).collect{
+			case Some((prop, value)) => (ancillEntry, prop, value)
 		} map metaVocab.factory.tripleToStatement
 	}
 
-	private def badmValue2PropValue(badmValue: BadmValue)(implicit badmVocab: BadmVocab): (URI, Value) = {
+	private def badmValue2PropValue(badmValue: BadmValue)(implicit badmVocab: BadmVocab): Option[(URI, Value)] = {
 		val variable = badmValue.variable
 		val valueString = badmValue.valueStr
 
@@ -118,20 +126,21 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 
 			case Some(PropertyInfo(_, _, None)) =>
 				val prop = badmVocab.getDataProp(variable)
-				(prop, getPlainValue(badmValue))
+				Some((prop, getPlainValue(badmValue)))
 
 			case Some(PropertyInfo(_, _, Some(badmVarVocab))) =>
 				if(badmVarVocab.contains(valueString)) {
 					val prop = badmVocab.getObjProp(variable)
 					val badmValue = badmVocab.getVocabValue(variable, valueString)
-					(prop, badmValue)
-				} else throw new BadmFormatException(
-					s"Value '$valueString' is not in BADM vocabulary for variable $variable"
-				)
-
-			case None => throw new BadmFormatException(
-				s"Variable '$variable' is not present in BADM schema"
-			)
+					Some((prop, badmValue))
+				} else {
+					logger.error(s"Value '$valueString' is not in BADM vocabulary for variable $variable")
+					None
+				}
+			case None => {
+				logger.error(s"Variable '$variable' is not present in BADM schema")
+				None
+			}
 		}
 	}
 }

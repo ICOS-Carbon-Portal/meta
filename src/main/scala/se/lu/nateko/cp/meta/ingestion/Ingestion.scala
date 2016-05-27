@@ -8,6 +8,8 @@ import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
 import org.openrdf.repository.Repository
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 
 sealed trait StatementProvider
 
@@ -21,7 +23,7 @@ trait Extractor extends StatementProvider{
 
 object Ingestion {
 
-	def allProviders: Map[String, StatementProvider] = {
+	def allProviders(implicit system: ActorSystem, mat: Materializer): Map[String, StatementProvider] = {
 		val (badmSchema, badm) = BadmIngester.getSchemaAndValuesIngesters
 		Map(
 			"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),

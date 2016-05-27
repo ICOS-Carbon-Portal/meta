@@ -26,6 +26,8 @@ import org.openrdf.model.URI
 import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Extractor
+import se.lu.nateko.cp.meta.ingestion.StatementProvider
+import akka.stream.Materializer
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -46,14 +48,14 @@ class MetaDb private (
 
 object MetaDb {
 
-	def apply(config: CpmetaConfig)(implicit system: ActorSystem): MetaDb = {
+	def apply(config: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer): MetaDb = {
 
 		validateConfig(config)
 		import system.dispatcher
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 		val repo = Loading.empty
-		val serversFut = makeInstanceServers(repo, config)
+		val serversFut = makeInstanceServers(repo, Ingestion.allProviders, config)
 
 		val dbFuture = for(instanceServers <- serversFut; ontos <-ontosFut) yield{
 			val instOntos = config.onto.instOntoServers.map{
@@ -178,12 +180,13 @@ object MetaDb {
 	 */
 	private def makeInstanceServers(
 		repo: Repository,
+		providersFactory: => Map[String, StatementProvider],
 		config: CpmetaConfig
 	)(implicit ctxt: ExecutionContext): Future[Map[String, InstanceServer]] = {
 
 		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
-		lazy val providers = Ingestion.allProviders
 		val valueFactory = repo.getValueFactory
+		lazy val providers = providersFactory
 
 		type ServerFutures = Map[String, Future[InstanceServer]]
 

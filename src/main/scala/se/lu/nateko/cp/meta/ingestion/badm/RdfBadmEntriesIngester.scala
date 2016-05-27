@@ -7,11 +7,7 @@ import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.RDF
 import org.openrdf.model.vocabulary.XMLSchema
 
-import BadmConsts.InstrumentVar
-import BadmConsts.LocationVar
-import BadmConsts.SiteIdVar
-import BadmConsts.SiteVar
-import BadmConsts.TeamMemberVar
+import BadmConsts._
 import BadmSchema.PropertyInfo
 import BadmSchema.Schema
 import se.lu.nateko.cp.meta.api.CustomVocab
@@ -32,7 +28,7 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 	)
 
 	def getStatements(f: ValueFactory): Iterator[Statement] = {
-		val vocab = new CpVocab(f)
+		implicit val vocab = new CpVocab(f)
 		implicit val metaVocab = new CpmetaVocab(f)
 		implicit val badmVocab = new BadmVocab(f)
 
@@ -42,8 +38,12 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 				case SiteVar =>
 					ScanAcc(getSiteId(entry), Map.empty, Seq.empty)
 
-				case TeamMemberVar | LocationVar | InstrumentVar =>
+				case LocationVar | InstrumentVar =>
 					acc.copy(statements = Seq.empty)
+
+				case TeamMemberVar =>
+					val siteId = acc.siteId.get //will throw here if no site id
+					acc.copy(statements = getTeamMemberStatements(siteId, entry))
 
 				case variable =>
 					val siteId = acc.siteId.get //will throw here if no site id
@@ -59,6 +59,33 @@ class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) exten
 					)
 			}
 		}.flatMap(_.statements)
+	}
+
+	private def getTeamMemberStatements(siteId: String, entry: BadmEntry)
+				(implicit vocab: CpVocab, metaVocab: CpmetaVocab): Seq[Statement] = {
+
+		val varToVal: Map[String, String] = entry.values.map(bv => (bv.variable, bv.valueStr)).toMap
+		val Array(firstName, lastName) = varToVal(TeamMemberNameVar).trim.split(' ')
+		val email = varToVal(TeamMemberEmailVar).toLowerCase
+		val roleId = varToVal(TeamMemberRoleVar)
+		val membership = vocab.getEtcMembership(siteId, roleId, lastName)
+		val person = vocab.getPerson(firstName, lastName)
+
+		val membershipStart = entry.date.map(_ match {
+			case BadmYear(year) => vocab.lit(year.toString, XMLSchema.DATE)
+			case BadmLocalDate(date) => vocab.lit(date)
+		}).getOrElse(vocab.lit(entry.submissionDate))
+
+		Seq[(URI, URI, Value)](
+			(person, RDF.TYPE, metaVocab.personClass),
+			(person, metaVocab.hasFirstName, vocab.lit(firstName)),
+			(person, metaVocab.hasLastName, vocab.lit(lastName)),
+			(person, metaVocab.hasEmail, vocab.lit(email)),
+			(person, metaVocab.hasMembership, membership),
+			(membership, metaVocab.atOrganization, vocab.getEcosystemStation(siteId)),
+			(membership, metaVocab.hasRole, vocab.getRole(roleId)),
+			(membership, metaVocab.hasStartTime, membershipStart)
+		) map metaVocab.factory.tripleToStatement
 	}
 
 	private def getEntryStatements(station: URI, entry: BadmEntry, ancillEntry: URI)

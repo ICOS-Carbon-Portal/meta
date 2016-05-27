@@ -33,6 +33,7 @@ npm-debug.log
 *.sublime-workspace
 
 #Miscellaneous
+/src/main/resources/owl/catalog-v001.xml
 nohup.out
 *.*~
 

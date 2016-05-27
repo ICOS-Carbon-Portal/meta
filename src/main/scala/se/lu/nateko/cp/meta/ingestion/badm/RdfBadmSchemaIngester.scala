@@ -16,6 +16,7 @@ import BadmSchema.Schema
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
+import se.lu.nateko.cp.meta.ingestion.CpVocab
 
 class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 
@@ -27,6 +28,7 @@ class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 	)
 
 	def getStatements(f: ValueFactory): Iterator[Statement] = {
+		val vocab = new CpVocab(f)
 		val cpVocab = new CpmetaVocab(f)
 		val badmVocab = new BadmVocab(f)
 
@@ -34,35 +36,47 @@ class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 			Iterator((uri, RDFS.LABEL, badmVocab.lit(label))) ++
 			comment.map(comm => (uri, RDFS.COMMENT, badmVocab.lit(comm)))
 
-		schema.iterator.filter{
-			case (variable, _) => !specialVars.contains(variable)
-		}.flatMap{
-			case (variable, PropertyInfo(label, comment, None)) =>
-				val prop = badmVocab.getDataProp(variable)
-
-				Iterator[(URI, URI, Value)](
-					(prop, RDF.TYPE, OWL.DATATYPEPROPERTY),
-					(prop, RDFS.SUBPROPERTYOF, cpVocab.hasAncillaryDataValue)
-				) ++
-				getLabelAndComment(prop, label, comment)
-
-			case (variable, PropertyInfo(label, comment, Some(varVocab))) =>
-				val prop = badmVocab.getObjProp(variable)
-
-				Iterator[(URI, URI, Value)](
-					(prop, RDF.TYPE, OWL.OBJECTPROPERTY),
-					(prop, RDFS.SUBPROPERTYOF, cpVocab.hasAncillaryObjectValue)
-				) ++
-				getLabelAndComment(prop, label, comment) ++
-				varVocab.iterator.flatMap{
-					case (badmValue, AncillaryValue(label, comment)) =>
-						val value = badmVocab.getVocabValue(variable, badmValue)
+		schema.iterator.collect{
+			case (variable, propInfo) if !specialVars.contains(variable) =>
+				propInfo match {
+					case PropertyInfo(label, comment, None) =>
+						val prop = badmVocab.getDataProp(variable)
 
 						Iterator[(URI, URI, Value)](
-							(value, RDF.TYPE, cpVocab.ancillaryValueClass)
+							(prop, RDF.TYPE, OWL.DATATYPEPROPERTY),
+							(prop, RDFS.SUBPROPERTYOF, cpVocab.hasAncillaryDataValue)
 						) ++
-						getLabelAndComment(value, label, comment)
+						getLabelAndComment(prop, label, comment)
+
+					case PropertyInfo(label, comment, Some(varVocab)) =>
+						val prop = badmVocab.getObjProp(variable)
+
+						Iterator[(URI, URI, Value)](
+							(prop, RDF.TYPE, OWL.OBJECTPROPERTY),
+							(prop, RDFS.SUBPROPERTYOF, cpVocab.hasAncillaryObjectValue)
+						) ++
+						getLabelAndComment(prop, label, comment) ++
+						varVocab.iterator.flatMap{
+							case (badmValue, AncillaryValue(label, comment)) =>
+								val value = badmVocab.getVocabValue(variable, badmValue)
+
+								Iterator[(URI, URI, Value)](
+									(value, RDF.TYPE, cpVocab.ancillaryValueClass)
+								) ++
+								getLabelAndComment(value, label, comment)
+						}
 				}
-		}.map(f.tripleToStatement)
+			case (TeamMemberRoleVar, PropertyInfo(_, _, Some(varVocab))) =>
+				varVocab.iterator.flatMap{
+					case ("PI", _) =>
+						Iterator.empty //PI role is common to all ICOS and is declared elsewhere
+					case (roleId, AncillaryValue(label, comment)) =>
+						val role = vocab.getRole(roleId)
+						Iterator[(URI, URI, Value)](
+							(role, RDF.TYPE, cpVocab.roleClass)
+						) ++
+						getLabelAndComment(role, label, comment)
+				}
+		}.flatMap(s => s).map(f.tripleToStatement)
 	}
 }

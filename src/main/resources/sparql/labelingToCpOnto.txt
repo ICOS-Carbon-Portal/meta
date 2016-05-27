@@ -18,8 +18,6 @@ construct {
 	?piMemb a cpmeta:Membership ;
 		cpmeta:atOrganization ?station ;
 		cpmeta:hasRole role:PI .
-	role:PI a cpmeta:Role ;
-		rdfs:label "Principal Investigator" .
 }
 from <http://meta.icos-cp.eu/resources/stationentry/>
 from named <http://meta.icos-cp.eu/resources/stationlabeling/>
@@ -51,6 +49,6 @@ where{
 	?pi st:hasFirstName ?firstName .
 	?pi st:hasLastName ?lastName .
 	BIND (IRI(concat("http://meta.icos-cp.eu/resources/people/", ENCODE_FOR_URI(?firstName), "_", ENCODE_FOR_URI(?lastName))) AS ?person) .
-	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?stationId), "_pi_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?stationId), "_PI_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
 }
 

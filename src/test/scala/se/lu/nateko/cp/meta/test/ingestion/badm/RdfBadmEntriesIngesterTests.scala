@@ -16,7 +16,7 @@ class RdfBadmEntriesIngesterTests extends FunSpec{
 		val factory: ValueFactory = new MemValueFactory
 
 		val statements = ingester.getStatements(factory).toIndexedSeq
-		assert(statements.length === 415)
+		assert(statements.length === 423)
 		//statements.foreach(println)
 	}
 }

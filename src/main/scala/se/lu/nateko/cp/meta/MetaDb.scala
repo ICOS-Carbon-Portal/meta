@@ -1,33 +1,39 @@
 package se.lu.nateko.cp.meta
 
-import akka.actor.ActorSystem
 import java.io.Closeable
+
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import org.openrdf.model.Statement
-import org.openrdf.model.ValueFactory
+
+import org.openrdf.model.URI
 import org.openrdf.repository.Repository
 import org.semanticweb.owlapi.apibinding.OWLManager
+
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.ingestion.Extractor
+import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
+import se.lu.nateko.cp.meta.ingestion.StatementProvider
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
-import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.onto.InstOnto
+import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.services._
+import se.lu.nateko.cp.meta.services.FileStorageService
+import se.lu.nateko.cp.meta.services.SesameSparqlServer
+import se.lu.nateko.cp.meta.services.SparqlServer
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
-import se.lu.nateko.cp.meta.services.upload.UploadService
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.services.linkeddata.SesameUriSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import org.openrdf.model.URI
-import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.ingestion.Ingester
-import se.lu.nateko.cp.meta.ingestion.Extractor
-import se.lu.nateko.cp.meta.ingestion.StatementProvider
-import akka.stream.Materializer
+import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.sesame.Loading
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -35,9 +41,12 @@ class MetaDb private (
 	val uploadService: UploadService,
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
-	repo: Repository) extends Closeable{
+	repo: Repository
+) extends Closeable{
 
 	val sparql: SparqlServer = new SesameSparqlServer(repo)
+
+	val uriSerializer: UriSerializer = new SesameUriSerializer(repo)
 
 	def close(): Unit = {
 		for((_, server) <- instanceServers) server.shutDown()

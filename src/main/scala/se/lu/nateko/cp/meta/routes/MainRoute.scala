@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.OntoConfig
+import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 
 object MainRoute {
 
@@ -25,7 +26,8 @@ object MainRoute {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
 		val sparqlRoute = SparqlRoute()
-		val staticRoute = StaticRoute(config, db.instanceServers)
+		val staticRoute = StaticRoute(config.onto)
+		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting)
@@ -44,7 +46,8 @@ object MainRoute {
 			labelingRoute ~
 			filesRoute ~
 			authRouting.route ~
-			staticRoute
+			staticRoute ~
+			linkedDataRoute
 		}
 	}
 

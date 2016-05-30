@@ -1,18 +1,11 @@
-package se.lu.nateko.cp.meta.instanceserver
+package se.lu.nateko.cp.meta.services.linkeddata
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.openrdf.model.Namespace
-import org.openrdf.model.impl.NamespaceImpl
-import org.openrdf.model.vocabulary.OWL
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
-import org.openrdf.model.vocabulary.XMLSchema
 import org.openrdf.rio.RDFWriterFactory
 import org.openrdf.rio.rdfxml.RDFXMLWriterFactory
 import org.openrdf.rio.turtle.TurtleWriterFactory
-
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -24,6 +17,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
 import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 object InstanceServerSerializer {
 

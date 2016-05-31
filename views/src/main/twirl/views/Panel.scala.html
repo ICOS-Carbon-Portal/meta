@@ -1,0 +1,11 @@
+@(title: String, width: Int = 3, styleContext: String = "default")(body: Html)
+<div class="col-md-@width">
+	<div class="panel panel-@styleContext">
+		<div class="panel-heading">
+			<h3 class="panel-title" style="color: #333">@title</h3>
+		</div>
+		<div class="panel-body">
+		@body
+		</div>
+	</div>
+</div>

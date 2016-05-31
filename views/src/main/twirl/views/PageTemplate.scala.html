@@ -1,0 +1,44 @@
+@(title: String, header: String)(body: Html)
+<DOCTYPE html>
+<html>
+<head>
+	<link href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>@title</title>
+
+	<style type="text/css">
+		.navbar-default {
+			background-color: #414042;
+			border-color: #414042;
+		}
+		.navbar-default span, .navbar-default p, .navbar-default h1 {
+			color: #ffffff;
+		}
+		.col-md-12 > label::after {
+			content: ":";
+		}
+		iframe {
+			border:solid 1px #ddd;
+			width:100%;
+			height:400px;
+		}
+	</style>
+
+</head>
+<body>
+	<nav class="navbar navbar-default navbar-static-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a href="https://www.icos-ri.eu">
+					<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
+				</a>
+			</div>
+			<h1>@header</h1>
+		</div>
+	</nav>
+	@body
+</body>

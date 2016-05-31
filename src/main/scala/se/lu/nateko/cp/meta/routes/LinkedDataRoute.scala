@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.headers.`Content-Disposition`
 import akka.http.scaladsl.model.StatusCodes
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import akka.http.scaladsl.model.Uri
 
 object LinkedDataRoute {
 	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller
@@ -21,6 +22,7 @@ object LinkedDataRoute {
 	): Route = {
 
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
+		val prefixUri = Uri(config.forDataObjects.uriPrefix.toString)
 		implicit val uriMarshaller = uriSerializer.marshaller
 
 		get{
@@ -42,7 +44,7 @@ object LinkedDataRoute {
 						}
 					}
 				} ~ extractUri{uri =>
-					complete(uri)
+					complete(prefixUri.withPath(uri.path))
 				}
 			}
 		}

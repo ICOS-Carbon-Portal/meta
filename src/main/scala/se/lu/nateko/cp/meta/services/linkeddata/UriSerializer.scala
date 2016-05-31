@@ -106,7 +106,7 @@ private object SesameUriSerializer{
 	}
 
 	private def getOptLit(bset: BindingSet, varName: String): Option[String] = {
-		bset.getBinding(varName) match {
+		bset.getValue(varName) match {
 			case null => None
 			case lit: Literal => Some(lit.stringValue)
 			case _ => None

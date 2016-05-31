@@ -2,99 +2,64 @@
 @import LandingPageHelpers._
 
 @(dobj: DataObject)
-<DOCTYPE html>
-<html>
-<head>
-	<link href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet" />
-	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
-
-	<meta charset="utf-8"/>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-
-	<title>Landing Page</title>
-
-	<style type="text/css">
-		.navbar-default {
-			background-color: #414042;
-			border-color: #414042;
-		}
-		.navbar-default span, .navbar-default p, .navbar-default h1 {
-			color: #ffffff;
-		}
-		.col-md-12 > label::after {
-			content: ":";
-		}
-		iframe {
-			border:solid 1px #ddd;
-			width:100%;
-			height:400px;
-		}
-	</style>
-
-</head>
-<body>
-	<nav class="navbar navbar-default navbar-static-top">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<a href="https://www.icos-ri.eu">
-					<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
-				</a>
-			</div>
-			<h1>ICOS RI Data Object Landing Page</h1>
-		</div>
-	</nav>
-
+@PageTemplate("Landing Page", "ICOS RI Data Object Landing Page"){
 	<div class="container-fluid">
 
 		<div class="row">
-			@panel("Summary", 4, summaryStyleContext){
-				@summary
-			}
-		</div>
-
-		<div class="row">
-
-			@panel("Production"){
-				@panelRow("Produced by", dobj.production.producer.label)
-				@panelRow("Data level", dobj.specification.dataLevel.toString)
-				@panelRow("Production started (UTC)", prodStart)
-				@panelRow("Production ended (UTC)", prodStop)
-			}
-
-			@panel("Submission"){
-				@panelRow("Submitted by", dobj.submission.submitter.getLabel)
-				@panelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
-				@panelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
-			}
-		</div>
-
-		<div class="row">
-			@panel("Content", 6){
-				@for(fname <- dobj.fileName){
-					@panelRow("File name", fname)
-				}
-				@panelRow("Format", dobj.specification.format.getLabel)
-				@panelRow("Encoding", dobj.specification.encoding.getLabel)
-				@panelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
-				@panelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+			@Panel("Summary", 4, summaryStyleContext){
 				@if(uploadComplete) {
-					@panelRowHtml("Access URL", accessLink)
+					@PanelRow("Status - OK", "Data and metadata are complete.")
+					@PanelRow("PID", dobj.pid.getOrElse("Not assigned"))
+					@accessUrlRow
+				} else {
+					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 				}
 			}
 		</div>
 
 		<div class="row">
-			@panel("Coverage", 5){
+
+			@Panel("Production"){
+				@PanelRow("Produced by", dobj.production.producer.label)
+				@PanelRow("Data level", dobj.specification.dataLevel.toString)
+				@PanelRow("Production started (UTC)", prodStart)
+				@PanelRow("Production ended (UTC)", prodStop)
+			}
+
+			@Panel("Submission"){
+				@PanelRow("Submitted by", dobj.submission.submitter.getLabel)
+				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
+				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Content", 6){
+				@for(fname <- dobj.fileName){
+					@PanelRow("File name", fname)
+				}
+				@PanelRow("Format", dobj.specification.format.getLabel)
+				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
+				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+				@if(uploadComplete) {
+					@accessUrlRow
+				}
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Coverage", 5){
 				@if(!coverage.isDefined) {
-					@panelRow("Latitude (WGS 84)", lat)
-					@panelRow("Longitude (WGS 84)", lon)
+					@PanelRow("Latitude (WGS 84)", lat)
+					@PanelRow("Longitude (WGS 84)", lon)
 				}
 				
 				@if(pos.isDefined) {
 					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"></iframe>
 				} else {
 					@if(coverage.isDefined){
-						@panelRow("Coverage (WGS 84)", coverage.get)
+						@PanelRow("Coverage (WGS 84)", coverage.get)
 						<iframe src="/station/?theme=@theme&coverage=@coverage"></iframe>
 					}
 				}
@@ -108,8 +73,7 @@
 			</div>
 		</div>
 	</div>
-</body>
-</html>
+}
 
 @prodStart = @{dobj.production.timeInterval.map(_.start.getDateTimeStr).getOrElse("Unknown")}
 @prodStop = @{dobj.production.timeInterval.map(_.stop.getDateTimeStr).getOrElse("Unknown")}
@@ -121,57 +85,17 @@
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
-@summary = @{
-	if(uploadComplete) {
-		panelRow("Status - OK", "Data and metadata are complete.") ::
-		panelRow("PID", dobj.pid.getOrElse("Not assigned")) ::
-		panelRowHtml("Access URL", accessLink) :: Nil
-	}
-	else {
-		panelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
-	}
-}
-
-@panel(title: String, width: Int = 3, styleContext: String = "default")(body: Html) = {
-	<div class="col-md-@width">
-		<div class="panel panel-@styleContext">
-			<div class="panel-heading">
-				<h3 class="panel-title" style="color: #333">@title</h3>
-			</div>
-			<div class="panel-body">
-			@body
-			</div>
-		</div>
-	</div>
-}
-
-@panelRow(label: String, value: String) = {
-	<div class="row">
-		<div class="col-md-12">
-			<label>@label</label>
-			@value
-		</div>
-	</div>
-}
-
-@panelRowHtml(label: String, value: Html) = {
-	<div class="row">
-		<div class="col-md-12">
-			<label>@label</label>
-			@value
-		</div>
-	</div>
-}
-
-@accessLink = {
-	<span>
-		@dobj.accessUrl match {
-			case Some(url) => {
-				<a href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
+@accessUrlRow = {
+	@PanelHtmlRow{Access URL}{
+		<span>
+			@dobj.accessUrl match {
+				case Some(url) => {
+					<a href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
+				}
+				case None => {
+					<span>Not available</span>
+				}
 			}
-			case None => {
-				<span>Not available</span>
-			}
-		}
-	</span>
+		</span>
+	}
 }

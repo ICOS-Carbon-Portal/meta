@@ -1,11 +1,64 @@
+@import se.lu.nateko.cp.meta.core.data.UriResource
+
 @(info: ResourceViewInfo)
-<DOCTYPE html>
-<html>
-<head>
-</head>
-<body>
-	<div>
-		<p>@{info.res.uri}</p>
+@PageTemplate("ICOS Metadata Entity Page", info.res.uri.toString){
+	<div class="container-fluid">
+
+		<div class="row">
+			@Panel("Basic information", 10){
+				@PanelRow("URI", info.res.uri.toString)
+				@for(label <- info.res.label) {
+					@PanelRow("Label", label)
+				}
+				@for(comment <- info.comment) {
+					@PanelRow("Comment", comment)
+				}
+				@for((rdfType, idx) <- info.types.zipWithIndex){
+					@PanelHtmlRow{
+						@if(info.types.size > 1){
+							@{"Type " + (idx + 1)}
+						} else {Type}
+					}{
+						@resourceLink(rdfType)
+					}
+				}
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Property values", 10){
+				@for((prop, value) <- info.propValues){
+					@PanelHtmlRow{
+						@resourceLink(prop)
+					}{
+						@value match {
+							case Left(objValue) => {
+								@resourceLink(objValue)
+							}
+							case Right(litValue) => {
+								@litValue
+							}
+						}
+					}
+				}
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Usages of this Resource by others", 10){
+				@for((subject, prop) <- info.usage){
+					@PanelHtmlRow{
+						@resourceLink(subject)
+					}{
+						@resourceLink(prop)
+					}
+				}
+			}
+		</div>
+
 	</div>
-</body>
-</html>
+}
+
+@resourceLink(res: UriResource) = {
+	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}

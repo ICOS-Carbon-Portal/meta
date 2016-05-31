@@ -13,51 +13,52 @@ import org.openrdf.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import org.openrdf.model.vocabulary.XMLSchema
 import java.net.{URI => JavaUri}
+import se.lu.nateko.cp.meta.services.CpVocab
 
-class DataObjectFetcher(server: InstanceServer, vocab: CpmetaVocab, pidFactory: Sha256Sum => String) {
+class DataObjectFetcher(server: InstanceServer, vocab: CpVocab, metaVocab: CpmetaVocab, pidFactory: Sha256Sum => String) {
 
-	private implicit val factory = vocab.factory
+	private implicit val factory = metaVocab.factory
 
 	def fetch(hash: Sha256Sum): Option[DataObject] = {
 		val dataObjUri = vocab.getDataObject(hash)
-		if(server.hasStatement(dataObjUri, RDF.TYPE, vocab.dataObjectClass))
+		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
 		else None
 	}
 
 	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
 		val dataObjUri = vocab.getDataObject(hash)
-		val fileName: Option[String] = getOptionalString(dataObjUri, vocab.hasName)
+		val fileName: Option[String] = getOptionalString(dataObjUri, metaVocab.hasName)
 
-		val production: URI = getSingleUri(dataObjUri, vocab.wasProducedBy)
-		val producer: URI = getSingleUri(production, vocab.prov.wasAssociatedWith)
-		val producerName: String = getSingleString(producer, vocab.hasName)
+		val production: URI = getSingleUri(dataObjUri, metaVocab.wasProducedBy)
+		val producer: URI = getSingleUri(production, metaVocab.prov.wasAssociatedWith)
+		val producerName: String = getSingleString(producer, metaVocab.hasName)
 
 		val prodTimeInterval = for(
-			start <- getOptionalInstant(production, vocab.prov.startedAtTime);
-			stop <- getOptionalInstant(production, vocab.prov.endedAtTime)
+			start <- getOptionalInstant(production, metaVocab.prov.startedAtTime);
+			stop <- getOptionalInstant(production, metaVocab.prov.endedAtTime)
 		) yield TimeInterval(start, stop)
 
 		val pos = for(
-			posLat <- getOptionalDouble(producer, vocab.hasLatitude);
-			posLon <- getOptionalDouble(producer, vocab.hasLongitude)
+			posLat <- getOptionalDouble(producer, metaVocab.hasLatitude);
+			posLon <- getOptionalDouble(producer, metaVocab.hasLongitude)
 		) yield Position(posLat, posLon)
 
 
-		val submission: URI = getSingleUri(dataObjUri, vocab.wasSubmittedBy)
-		val submitter: URI = getSingleUri(submission, vocab.prov.wasAssociatedWith)
-		val submitterName: Option[String] = getOptionalString(submitter, vocab.hasName)
+		val submission: URI = getSingleUri(dataObjUri, metaVocab.wasSubmittedBy)
+		val submitter: URI = getSingleUri(submission, metaVocab.prov.wasAssociatedWith)
+		val submitterName: Option[String] = getOptionalString(submitter, metaVocab.hasName)
 
-		val submStart = getSingleInstant(submission, vocab.prov.startedAtTime)
-		val submStop = getOptionalInstant(submission, vocab.prov.endedAtTime)
+		val submStart = getSingleInstant(submission, metaVocab.prov.startedAtTime)
+		val submStop = getOptionalInstant(submission, metaVocab.prov.endedAtTime)
 
-		val spec = getSingleUri(dataObjUri, vocab.hasObjectSpec)
-		val specFormat = getLabeledResource(spec, vocab.hasFormat)
-		val encoding = getLabeledResource(spec, vocab.hasEncoding)
-		val dataLevel: Int = getSingleInt(spec, vocab.hasDataLevel)
+		val spec = getSingleUri(dataObjUri, metaVocab.hasObjectSpec)
+		val specFormat = getLabeledResource(spec, metaVocab.hasFormat)
+		val encoding = getLabeledResource(spec, metaVocab.hasEncoding)
+		val dataLevel: Int = getSingleInt(spec, metaVocab.hasDataLevel)
 
 		DataObject(
-			hash = getHashsum(dataObjUri, vocab.hasSha256sum),
+			hash = getHashsum(dataObjUri, metaVocab.hasSha256sum),
 			accessUrl = getAccessUrl(hash, fileName, specFormat.uri),
 			fileName = fileName,
 			pid = submStop.flatMap(_ => getPid(hash, specFormat.uri)),
@@ -90,16 +91,16 @@ class DataObjectFetcher(server: InstanceServer, vocab: CpmetaVocab, pidFactory: 
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
-		if(format == vocab.wdcggFormat) None else Some(pidFactory(hash))
+		if(format == metaVocab.wdcggFormat) None else Some(pidFactory(hash))
 	}
 
 	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], specFormat: URI): Option[JavaUri] = {
-		if(specFormat == vocab.wdcggFormat) None
+		if(specFormat == metaVocab.wdcggFormat) None
 		else Some(vocab.getDataObjectAccessUrl(hash, fileName))
 	}
 
 	private def getTheme(subj: URI): DataTheme = {
-		import vocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, orgClass, atc, etc, otc, cp, cal}
+		import metaVocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, orgClass, atc, etc, otc, cp, cal}
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
 			case `atmoStationClass` => Atmosphere

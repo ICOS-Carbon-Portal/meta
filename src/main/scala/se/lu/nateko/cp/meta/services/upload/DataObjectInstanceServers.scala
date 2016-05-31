@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.services.CpVocab
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
@@ -18,12 +19,13 @@ class DataObjectInstanceServers(
 ) {
 	import InstanceServer.AtMostOne
 
-	val vocab = new CpmetaVocab(icosMeta.factory)
+	val metaVocab = new CpmetaVocab(icosMeta.factory)
+	val vocab = new CpVocab(icosMeta.factory)
 
 	def getDataObjSpecification(objHash: Sha256Sum): Try[URI] = {
 		val dataObjUri = vocab.getDataObject(objHash)
 
-		allDataObjs.getUriValues(dataObjUri, vocab.hasObjectSpec, AtMostOne).headOption match {
+		allDataObjs.getUriValues(dataObjUri, metaVocab.hasObjectSpec, AtMostOne).headOption match {
 			case None => Failure(new UploadUserErrorException(s"Object '$objHash' is unknown or has no object specification"))
 			case Some(uri) => Success(uri)
 		}
@@ -32,7 +34,7 @@ class DataObjectInstanceServers(
 
 	def getObjSpecificationFormat(objectSpecification: URI): Try[URI] = {
 
-		icosMeta.getUriValues(objectSpecification, vocab.hasFormat, AtMostOne).headOption match {
+		icosMeta.getUriValues(objectSpecification, metaVocab.hasFormat, AtMostOne).headOption match {
 			case None => Failure(new UploadUserErrorException(s"Object Specification '$objectSpecification' has no format"))
 			case Some(uri) => Success(uri)
 		}
@@ -54,7 +56,7 @@ class DataObjectInstanceServers(
 
 	def dataObjectIsKnown(hashSum: Sha256Sum): Boolean = {
 		val objectUri = vocab.getDataObject(hashSum)
-		allDataObjs.hasStatement(Some(objectUri), Some(vocab.hasObjectSpec), None)
+		allDataObjs.hasStatement(Some(objectUri), Some(metaVocab.hasObjectSpec), None)
 	}
 
 }

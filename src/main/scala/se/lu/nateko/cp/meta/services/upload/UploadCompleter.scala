@@ -27,10 +27,11 @@ import spray.json.JsString
 import scala.util.Success
 import scala.util.Failure
 
-class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig, vocab: CpmetaVocab)(implicit system: ActorSystem) {
+class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
 
 	private val epic = EpicPidClient(conf.epicPid)
+	import servers.{vocab, metaVocab}
 
 	def getPid(hash: Sha256Sum): String = epic.getPid(getPidSuffix(hash))
 
@@ -52,15 +53,15 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		) yield (format, server)
 
 	private def uploadIsNotCompleteYet(hash: Sha256Sum, server: InstanceServer): Try[Unit] = {
-		val submissionUri = vocab.resources.getSubmission(hash)
-		if(server.getValues(submissionUri, vocab.prov.endedAtTime).isEmpty)
+		val submissionUri = vocab.getSubmission(hash)
+		if(server.getValues(submissionUri, metaVocab.prov.endedAtTime).isEmpty)
 			Success(())
 		else
 			Failure(new UploadCompletionException(s"Upload of $hash is already complete"))
 	}
 
 	private def completeUpload(server: InstanceServer, hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
-		if(format == vocab.wdcggFormat){
+		if(format == metaVocab.wdcggFormat){
 			for(
 				_ <- writeWdcggMetadata(server, hash, info);
 				_ <- writeUploadStopTime(server, hash)
@@ -79,8 +80,8 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def writeUploadStopTime(server: InstanceServer, hash: Sha256Sum): Future[Unit] = {
-		val submissionUri = vocab.resources.getSubmission(hash)
-		val stopInfo = vocab.factory.createStatement(submissionUri, vocab.prov.endedAtTime, vocab.lit(Instant.now))
+		val submissionUri = vocab.getSubmission(hash)
+		val stopInfo = vocab.factory.createStatement(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(Instant.now))
 		Future.fromTry(server.add(stopInfo))
 	}
 
@@ -89,18 +90,18 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
 
 			val objUri = vocab.getDataObject(hash)
-			facts += ((objUri, vocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
+			facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
-			val productionUri = vocab.resources.getProduction(hash)
-			facts += ((productionUri, vocab.prov.startedAtTime, vocab.lit(interVal.start)))
-			facts += ((productionUri, vocab.prov.endedAtTime, vocab.lit(interVal.stop)))
+			val productionUri = vocab.getProduction(hash)
+			facts += ((productionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
+			facts += ((productionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
 
 			for((key, value) <- keyValues){
 				val keyProp = vocab.getRelative("wdcgg/", key)
 
 				if(!server.hasStatement(Some(keyProp), None, None)){
 					facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))
-					facts += ((keyProp, RDFS.SUBPROPERTYOF, vocab.hasFormatSpecificMeta))
+					facts += ((keyProp, RDFS.SUBPROPERTYOF, metaVocab.hasFormatSpecificMeta))
 					facts += ((keyProp, RDFS.LABEL, vocab.lit(key)))
 				}
 				facts += ((objUri, keyProp, vocab.lit(value)))

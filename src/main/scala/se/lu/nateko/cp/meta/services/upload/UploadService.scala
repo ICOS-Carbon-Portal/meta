@@ -29,13 +29,13 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 	import system.dispatcher
 
 	private implicit val factory = servers.icosMeta.factory
-	private val vocab = servers.vocab
-	private val validator = new UploadValidator(servers, conf, vocab)
-	private val completer = new UploadCompleter(servers, conf, vocab)
+	import servers.{vocab, metaVocab}
+	private val validator = new UploadValidator(servers, conf)
+	private val completer = new UploadCompleter(servers, conf)
 
 	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
-		val objectFetcher = new DataObjectFetcher(server, vocab, completer.getPid)
+		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, completer.getPid)
 		objectFetcher.fetch(hash)
 	}
 
@@ -63,34 +63,34 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		import meta.{hashSum, objectSpecification, producingOrganization, productionInterval}
 
 		val objectUri = vocab.getDataObject(hashSum)
-		val submissionUri = vocab.resources.getSubmission(hashSum)
-		val productionUri = vocab.resources.getProduction(hashSum)
+		val submissionUri = vocab.getSubmission(hashSum)
+		val productionUri = vocab.getProduction(hashSum)
 
 		val prodStart = productionInterval.map(_.start)
 		val prodStop = productionInterval.map(_.stop)
 
 		val optionals: Seq[(URI, URI, Value)] =
 			Seq(
-				(objectUri, vocab.hasName, meta.fileName.map(vocab.lit)),
-				(productionUri, vocab.prov.startedAtTime, prodStart.map(vocab.lit)),
-				(productionUri, vocab.prov.endedAtTime, prodStop.map(vocab.lit))
+				(objectUri, metaVocab.hasName, meta.fileName.map(vocab.lit)),
+				(productionUri, metaVocab.prov.startedAtTime, prodStart.map(vocab.lit)),
+				(productionUri, metaVocab.prov.endedAtTime, prodStop.map(vocab.lit))
 			).collect{
 				case (s, p, Some(o)) => (s, p, o)
 			}
 
 		val mandatory = Seq[(URI, URI, Value)](
-			(objectUri, RDF.TYPE, vocab.dataObjectClass),
-			(objectUri, vocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
-			(objectUri, vocab.hasObjectSpec, objectSpecification),
-			(objectUri, vocab.wasProducedBy, productionUri),
-			(objectUri, vocab.wasSubmittedBy, submissionUri),
+			(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
+			(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
+			(objectUri, metaVocab.hasObjectSpec, objectSpecification),
+			(objectUri, metaVocab.wasProducedBy, productionUri),
+			(objectUri, metaVocab.wasSubmittedBy, submissionUri),
 
-			(productionUri, RDF.TYPE, vocab.productionClass),
-			(productionUri, vocab.prov.wasAssociatedWith, producingOrganization),
+			(productionUri, RDF.TYPE, metaVocab.productionClass),
+			(productionUri, metaVocab.prov.wasAssociatedWith, producingOrganization),
 
-			(submissionUri, RDF.TYPE, vocab.submissionClass),
-			(submissionUri, vocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			(submissionUri, vocab.prov.wasAssociatedWith, submConf.submittingOrganization)
+			(submissionUri, RDF.TYPE, metaVocab.submissionClass),
+			(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
+			(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization)
 		)
 
 		(mandatory ++ optionals).map(factory.tripleToStatement)

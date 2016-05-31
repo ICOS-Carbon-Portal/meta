@@ -17,8 +17,9 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
 
-class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig, vocab: CpmetaVocab){
-	implicit val factory = vocab.factory
+class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
+	import servers.metaVocab
+	implicit val factory = servers.icosMeta.factory
 
 	def validateUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[Unit] = for(
 		submConf <- getSubmitterConfig(meta);
@@ -68,7 +69,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, format: URI): Try[Unit] = {
-		if(format == vocab.wdcggFormat)
+		if(format == metaVocab.wdcggFormat)
 			Success(())
 		else if(meta.productionInterval.isDefined)
 			Success(())

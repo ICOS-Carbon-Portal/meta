@@ -16,7 +16,7 @@ import BadmSchema.Schema
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
-import se.lu.nateko.cp.meta.ingestion.CpVocab
+import se.lu.nateko.cp.meta.services.CpVocab
 
 class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
 

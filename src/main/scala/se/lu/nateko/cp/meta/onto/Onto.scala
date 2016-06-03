@@ -30,7 +30,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		reasoner.close()
 	}
 
-	def getExposedClasses: Seq[ResourceDto] =
+	def getExposedClasses: Seq[ClassInfoDto] =
 		owlOntology.getAxioms(AxiomType.ANNOTATION_ASSERTION, Imports.INCLUDED).toIterable
 			.filter(axiom =>
 				axiom.getProperty == Vocab.exposedToUsersAnno && {
@@ -41,9 +41,16 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 				}
 			)
 			.map(_.getSubject)
-			.collect{case iri: IRI => factory.getOWLClass(iri)}
-			.flatMap(getBottomSubClasses)
-			.map(rdfsLabeling)
+			.collect{case iri: IRI =>
+				val owlClass = factory.getOWLClass(iri)
+				val res = rdfsLabeling(owlClass)
+				val newInstBaseUri = EntitySearcher
+					.getAnnotations(owlClass, ontologies, Vocab.newInstanceBaseUriAnno)
+					.map(_.getValue).collect{
+						case iri: IRI => iri.toURI
+					}.headOption
+				ClassInfoDto(res.displayName, res.uri, newInstBaseUri)
+			}
 			.toSeq
 			.distinct
 

@@ -21,6 +21,7 @@ object Vocab {
 		factory.getOWLAnnotationProperty(localName, prefixManager)
 
 	val exposedToUsersAnno: OWLAnnotationProperty = getAnnotationProperty("isExposedToUsers")
+	val newInstanceBaseUriAnno: OWLAnnotationProperty = getAnnotationProperty("newInstanceBaseUri")
 	val displayPropAnno: OWLAnnotationProperty = getAnnotationProperty("displayProperty")
 	val displayPropAnnos: IndexedSeq[OWLAnnotationProperty] =
 		(1 to 4).map(i => getAnnotationProperty(s"displayProperty$i"))

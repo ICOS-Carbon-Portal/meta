@@ -24,17 +24,16 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 	private implicit val factory = instServer.factory
 
+	def getWriteContext: URI = {
+		val writeContexts = instServer.writeContexts
+		val nCtxts = writeContexts.length
+		assert(nCtxts == 1, s"Expected exactly one write context, found $nCtxts")
+		writeContexts.head
+	}
+
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
-
 		val labeler = onto.getLabelerForClassIndividuals(classUri)
-
-		def getForClass(owlClass: URI): Seq[ResourceDto] =
-			instServer.getInstances(owlClass).map(labeler.getInfo(_, instServer))
-
-		val ownIndividuals = getForClass(classUri)
-		val subclassIndividuals = onto.getSubClasses(classUri, false).map(_.getIRI.toURI).flatMap(getForClass)
-
-		(ownIndividuals ++ subclassIndividuals).distinct
+		instServer.getInstances(classUri).map(labeler.getInfo(_, instServer))
 	}
 
 	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
@@ -72,10 +71,8 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		)
 	}
 
-	def hasIndividual(uriStr: String): Boolean = {
-		val uri = instServer.factory.createURI(uriStr)
-		!instServer.getStatements(uri).isEmpty
-	}
+	def hasIndividual(uriStr: String): Boolean =
+		instServer.hasStatement(Some(factory.createURI(uriStr)), None, None)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
@@ -111,18 +108,11 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		rdfUpdates.flatMap(instServer.applyAll)
 	}
 	
-	private def hasStatement(statement: Statement): Boolean = {
-
-		val stIter = instServer.getStatements(
-			Some(statement.getSubject.asInstanceOf[SesameURI]),
-			Some(statement.getPredicate),
-			Some(statement.getObject)
-		)
-		val length = stIter.size
-		stIter.close() //just in case; should have already closed itself by now
-		assert(length <= 1, "An RDF statement cannot be present in the triplestore more than once!")
-		length == 1
-	}
+	private def hasStatement(statement: Statement): Boolean = instServer.hasStatement(
+		Some(statement.getSubject.asInstanceOf[SesameURI]),
+		Some(statement.getPredicate),
+		Some(statement.getObject)
+	)
 
 	private def updateDtoToStatement(update: UpdateDto): Statement = {
 		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer)

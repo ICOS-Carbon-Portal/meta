@@ -1,19 +1,37 @@
 Prefix: : <http://meta.icos-cp.eu/ontologies/uiannotations/>
 Prefix: dc: <http://purl.org/dc/elements/1.1/>
-Prefix: qb: <http://purl.org/linked-data/cube#>
 Prefix: geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
 Prefix: owl: <http://www.w3.org/2002/07/owl#>
+Prefix: prov: <http://www.w3.org/ns/prov#>
+Prefix: qb: <http://purl.org/linked-data/cube#>
 Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Prefix: xml: <http://www.w3.org/XML/1998/namespace>
 Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-Prefix: prov: <http://www.w3.org/ns/prov#>
-Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 
 
 Ontology: <http://meta.icos-cp.eu/ontologies/uiannotations/>
 
 
+AnnotationProperty: displayProperty
+
+    Domain: 
+        <http://www.w3.org/2002/07/owl#Class>
+    
+    
+AnnotationProperty: displayProperty1
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
+AnnotationProperty: displayProperty2
+
+    SubPropertyOf: 
+        displayProperty
+    
+    
 AnnotationProperty: displayProperty3
 
     SubPropertyOf: 
@@ -41,30 +59,24 @@ AnnotationProperty: isExposedToUsers
         <http://www.w3.org/2001/XMLSchema#boolean>
     
     
-AnnotationProperty: displayProperty1
-
-    SubPropertyOf: 
-        displayProperty
-    
-    
-AnnotationProperty: rdfs:seeAlso
-
-    
-AnnotationProperty: displayProperty
+AnnotationProperty: newInstanceBaseUri
 
     Domain: 
         <http://www.w3.org/2002/07/owl#Class>
     
+    Range: 
+        <http://www.w3.org/2001/XMLSchema#anyURI>
     
-AnnotationProperty: displayProperty2
+    
+AnnotationProperty: rdfs:comment
 
-    SubPropertyOf: 
-        displayProperty
-    
     
 AnnotationProperty: rdfs:label
 
     
-AnnotationProperty: rdfs:comment
+AnnotationProperty: rdfs:seeAlso
 
+    
 Datatype: xsd:boolean
+
+    

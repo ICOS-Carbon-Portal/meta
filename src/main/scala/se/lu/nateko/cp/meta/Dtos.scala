@@ -25,6 +25,11 @@ case class DataPropertyDto(resource: ResourceDto, cardinality: CardinalityDto, r
 case class ObjectPropertyDto(resource: ResourceDto, cardinality: CardinalityDto, range: ResourceDto) extends PropertyDto
 
 case class ClassDto(resource: ResourceDto, properties: Seq[PropertyDto])
+case class ClassInfoDto(displayName: String, uri: URI, newInstanceBaseUri: Option[URI]){
+	def withFallbackBaseUri(fallback: URI) =
+		if(newInstanceBaseUri.isDefined) this
+		else this.copy(newInstanceBaseUri = Some(fallback))
+}
 case class IndividualDto(resource: ResourceDto, owlClass: ClassDto, values: Seq[ValueDto])
 
 case class UpdateDto(isAssertion: Boolean, subject: URI, predicate: URI, obj: String)

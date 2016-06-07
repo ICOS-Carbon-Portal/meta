@@ -38,9 +38,6 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 			pathSuffix("getExposedClasses"){
 				complete(onto.getExposedClasses.map(_.withFallbackBaseUri(instOnto.getWriteContext)))
 			} ~
-			pathSuffix("getTopLevelClasses"){
-				complete(onto.getTopLevelClasses)
-			} ~
 			pathSuffix("listIndividuals"){
 				parameter('classUri){ uriStr =>
 					complete(instOnto.getIndividuals(new URI(uriStr)))

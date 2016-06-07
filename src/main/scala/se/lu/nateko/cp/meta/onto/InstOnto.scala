@@ -19,10 +19,24 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.sesame._
+import org.openrdf.model.vocabulary.XMLSchema
+import org.openrdf.model.vocabulary.RDFS
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 	private implicit val factory = instServer.factory
+
+	private val rdfsLabelInfo = DataPropertyDto(
+		ResourceDto("label", RDFS.LABEL, None),
+		CardinalityDto(None, None),
+		DataRangeDto(XMLSchema.STRING, Nil)
+	)
+
+	private val rdfsCommentInfo = DataPropertyDto(
+		ResourceDto("comment", RDFS.COMMENT, None),
+		CardinalityDto(None, None),
+		DataRangeDto(XMLSchema.STRING, Nil)
+	)
 
 	def getWriteContext: URI = {
 		val writeContexts = instServer.writeContexts
@@ -46,8 +60,12 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	def getIndividual(uri: URI): IndividualDto = {
 		val labeler = onto.getUniversalLabeler
 
-		val theType = InstanceServerUtils.getSingleType(uri, instServer)
-		val classInfo = onto.getClassInfo(theType)
+		val classInfo: ClassDto = {
+			val theType = InstanceServerUtils.getSingleType(uri, instServer)
+			val mainInfo = onto.getClassInfo(theType)
+			val extraProps: Seq[PropertyDto] = Seq(rdfsLabelInfo, rdfsCommentInfo)
+			mainInfo.copy(properties = extraProps ++ mainInfo.properties)
+		}
 
 		val values: Seq[ValueDto] = instServer.getStatements(uri).collect{
 			case SesameStatement(_, pred, value: Literal) =>
@@ -117,7 +135,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	private def updateDtoToStatement(update: UpdateDto): Statement = {
 		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer)
 
-		val obj: Value = onto.getPropInfo(update.predicate, classUri) match{
+		val obj: Value = getPropInfo(update.predicate, classUri) match{
 			case dp: DataPropertyDto =>
 				val dtype = dp.range.dataType
 				factory.createLiteral(update.obj, dtype)
@@ -127,6 +145,13 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 		factory.createStatement(update.subject, update.predicate, obj)
 	}
+
+	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =
+		javaUriToSesame(propUri) match {
+			case RDFS.LABEL => rdfsLabelInfo
+			case RDFS.COMMENT => rdfsCommentInfo
+			case _ => onto.getPropInfo(propUri, classUri)
+		}
 
 	private def updateDtoToRdfUpdate(update: UpdateDto) =
 		RdfUpdate(updateDtoToStatement(update), update.isAssertion)

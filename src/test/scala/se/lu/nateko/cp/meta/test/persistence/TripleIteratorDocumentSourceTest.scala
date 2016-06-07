@@ -31,7 +31,7 @@ class TripleIteratorDocumentSourceTest extends FunSpec{
 			val owlOnt = manager.loadOntologyFromOntologyDocument(source)
 			val onto = new Onto(owlOnt)
 
-			val person2 = onto.getTopLevelClasses.head.uri.toString
+			val person2 = onto.getTopLevelClasses.head.getIRI.toString
 			assert(person.toString === person2)
 		}
 

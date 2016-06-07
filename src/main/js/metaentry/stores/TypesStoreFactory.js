@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
+export default function(Backend, chooseTypeAction, checkSuffixAction){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -9,6 +9,7 @@ module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
 			return {
 				types: [],
 				chosen: null,
+				chosenIdx: -1,
 				candidateUriSuffix: null,
 				candidateUri: null,
 				suffixAvailable: false
@@ -23,12 +24,7 @@ module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
 
 			Backend.listClasses().then(
 				function(types){
-					self.state.types = _.chain(types)
-						.map(function(theType){
-							return _.extend({}, theType, {chosen: false});
-						})
-						.sortBy('displayName')
-						.value();
+					self.state.types = _.sortBy(types, 'displayName');
 					self.publishState();
 				},
 				function(err){console.log(err);}
@@ -39,11 +35,13 @@ module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
 
 			if(this.state.chosen != chosenType){
 
-				var newTypes = _.map(this.state.types, function(theType){
-					return _.extend({}, theType, {chosen: (theType.uri == chosenType)});
-				});
+				const chosenIdx = _.findIndex(this.state.types, theType => (theType.uri == chosenType));
 
-				this.state = {types: newTypes, chosen: chosenType};
+				this.state = _.extend(this.getInitialState(), {
+					types: this.state.types,
+					chosen: chosenType,
+					chosenIdx
+				});
 
 				this.publishState();
 			}
@@ -65,11 +63,14 @@ module.exports = function(Backend, chooseTypeAction, checkSuffixAction){
 				return;
 			}
 
-			Backend.checkSuffix(baseClass, suffix).then(
+			const uriBase = this.state.types[this.state.chosenIdx].newInstanceBaseUri;
+
+			Backend.checkSuffix(uriBase, suffix).then(
 				function(checkRes){
-					if(baseClass !== self.state.chosen || suffix !== self.state.candidateUriSuffix) return;
-					_.extend(self.state, checkRes);
-					self.publishState();
+					if(baseClass === self.state.chosen && suffix === self.state.candidateUriSuffix){
+						_.extend(self.state, checkRes);
+						self.publishState();
+					}
 				},
 				function(err){console.log(err);}
 			);

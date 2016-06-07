@@ -60,7 +60,8 @@ var dataTypeValidators = _.object([
 	[xsd + "integer", intValidator],
 	[xsd + "boolean", boolValidator],
 	[xsd + "double", doubleValidator],
-	[xsd + "float", doubleValidator]
+	[xsd + "float", doubleValidator],
+	[xsd + "dateTime", stringValidator] //TODO Change to proper dateTimeValidator!
 ]);
 
 function conditionalValidator(conditionValidator, otherValidators){

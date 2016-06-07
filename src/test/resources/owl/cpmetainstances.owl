@@ -29,7 +29,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_AS">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
-        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/resources/organizations/ATC"/>
         <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
         <cpmeta:hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hyltemossa atmospheric station</cpmeta:hasName>
@@ -42,7 +42,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/Hyltemossa_ES">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
-        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+        <cpmeta:belongsToTheNetworkOf rdf:resource="http://meta.icos-cp.eu/resources/organizations/ETC"/>
         <cpmeta:hasElevation rdf:datatype="http://www.w3.org/2001/XMLSchema#float">115.0</cpmeta:hasElevation>
         <cpmeta:hasLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.09763</cpmeta:hasLatitude>
         <cpmeta:hasLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.41897</cpmeta:hasLongitude>
@@ -99,7 +99,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcDirector">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
-        <cpmeta:atOrganization rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+        <cpmeta:atOrganization rdf:resource="http://meta.icos-cp.eu/resources/organizations/ATC"/>
         <cpmeta:hasRole rdf:resource="http://meta.icos-cp.eu/resources/cpmeta/directorRole"/>
     </owl:NamedIndividual>
     

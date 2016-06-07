@@ -2,6 +2,7 @@
 <rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
+     xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
@@ -449,14 +450,7 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
@@ -777,7 +771,7 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
+                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/ATC"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmospheric station</rdfs:label>
@@ -823,6 +817,7 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Central Facility</rdfs:label>
     </owl:Class>
     
 
@@ -869,7 +864,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data Object Specification</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data Object specification</rdfs:label>
     </owl:Class>
     
 
@@ -930,6 +925,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Dataset column</rdfs:label>
     </owl:Class>
     
 
@@ -950,7 +946,7 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
+                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/ETC"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem station</rdfs:label>
@@ -985,7 +981,7 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/OTC"/>
+                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/OTC"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Oceanic station</rdfs:label>
@@ -1092,8 +1088,13 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
-                <owl:qualifiedCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:qualifiedCardinality>
-                <owl:onClass rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
+                <owl:cardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:cardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -1102,6 +1103,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Simple Object specification</rdfs:label>
     </owl:Class>
     
 
@@ -1180,9 +1182,9 @@
         <owl:equivalentClass>
             <owl:Class>
                 <owl:oneOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ATC"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ETC"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OTC"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/ATC"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/ETC"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/OTC"/>
                 </owl:oneOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -1248,33 +1250,6 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ATC -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ATC">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmosphere thematic center</hasName>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ETC -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ETC">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem thematic center</hasName>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/OTC -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OTC">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean thematic center</hasName>
-    </owl:NamedIndividual>
     
 
 
@@ -1390,6 +1365,33 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/zipEncoding">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">zip</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/organizations/ATC -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ATC">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmosphere thematic center</hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/organizations/ETC -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ETC">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem thematic center</hasName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/resources/organizations/OTC -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/OTC">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean thematic center</hasName>
     </owl:NamedIndividual>
 </rdf:RDF>
 

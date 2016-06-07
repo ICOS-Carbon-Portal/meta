@@ -26,7 +26,6 @@ object Ingestion {
 	def allProviders(implicit system: ActorSystem, mat: Materializer): Map[String, StatementProvider] = {
 		val (badmSchema, badm) = BadmIngester.getSchemaAndValuesIngesters
 		Map(
-			"manualContent" -> new RdfXmlFileIngester("/owl/cpmetainstances.owl"),
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,

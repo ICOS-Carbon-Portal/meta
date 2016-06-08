@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.onto
 
 import java.net.URI
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions.asScalaSet
 import scala.collection.JavaConversions.collectionAsScalaIterable
 
@@ -22,6 +23,8 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	private val ontologies = owlOntology.getImportsClosure
 	private val reasoner: Reasoner = new HermitBasedReasoner(owlOntology)
 	private val labeler = new UniversalLabeler(owlOntology)
+	private val classDtoCache = TrieMap.empty[URI, ClassDto]
+	private val propDtoCache = TrieMap.empty[(URI, URI), PropertyDto]
 
 	def rdfsLabeling(entity: OWLEntity): ResourceDto =
 		Labeler.getInfo(entity, owlOntology)
@@ -77,29 +80,34 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	def getClassInfo(classUri: URI): ClassDto =
 		getClassInfo(factory.getOWLClass(IRI.create(classUri)))
 
-	def getClassInfo(owlClass: OWLClass)= ClassDto(
-		resource = rdfsLabeling(owlClass),
-		properties = reasoner.getPropertiesWhoseDomainIncludes(owlClass).collect{
-			case op: OWLObjectProperty => getPropInfo(op, owlClass)
-			case dp: OWLDataProperty => getPropInfo(dp, owlClass)
+	def getClassInfo(owlClass: OWLClass): ClassDto = classDtoCache.getOrElseUpdate(
+		owlClass.getIRI.toURI,
+		ClassDto(
+			resource = rdfsLabeling(owlClass),
+			properties = reasoner.getPropertiesWhoseDomainIncludes(owlClass).collect{
+				case op: OWLObjectProperty => getPropInfo(op, owlClass)
+				case dp: OWLDataProperty => getPropInfo(dp, owlClass)
+			}
+		)
+	)
+
+	def getPropInfo(propUri: URI, classUri: URI): PropertyDto = propDtoCache.getOrElseUpdate(
+		(propUri, classUri), {
+			val iri = IRI.create(propUri)
+			val owlClass = factory.getOWLClass(IRI.create(classUri))
+
+			if(owlOntology.containsDataPropertyInSignature(iri, Imports.INCLUDED))
+				getPropInfo(factory.getOWLDataProperty(iri), owlClass)
+
+			else if(owlOntology.containsObjectPropertyInSignature(iri, Imports.INCLUDED))
+				getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
+
+			else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")
 		}
 	)
 
-	def getPropInfo(propUri: URI, classUri: URI): PropertyDto = {
-		val iri = IRI.create(propUri)
-		val owlClass = factory.getOWLClass(IRI.create(classUri))
-
-		if(owlOntology.containsDataPropertyInSignature(iri, Imports.INCLUDED))
-			getPropInfo(factory.getOWLDataProperty(iri), owlClass)
-
-		else if(owlOntology.containsObjectPropertyInSignature(iri, Imports.INCLUDED))
-			getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
-
-		else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")
-	}
-
 	//TODO Take property restrictions into account for range calculations
-	def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
+	private def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
 		val ranges = EntitySearcher.getRanges(prop, ontologies).collect{
 			case owlClass: OWLClass => rdfsLabeling(owlClass)
 		}.toSeq
@@ -113,7 +121,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		)
 	}
 	
-	def getPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
+	private def getPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
 		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontologies).collect{
 			case dt: OWLDatatype => DataRangeDto(dt.getIRI.toURI, Nil)
 
@@ -143,7 +151,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		)
 	}
 	
-	def getCardinalityInfo(prop: OWLProperty, ctxt: OWLClass): CardinalityDto = {
+	private def getCardinalityInfo(prop: OWLProperty, ctxt: OWLClass): CardinalityDto = {
 
 		val restrictions = reasoner.getSuperClasses(ctxt, false).filter{
 			case oor: OWLObjectRestriction if(oor.getProperty == prop) => true
@@ -168,5 +176,4 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 
 		CardinalityDto(minCardinality, maxCardinality)
 	}
-	
 }

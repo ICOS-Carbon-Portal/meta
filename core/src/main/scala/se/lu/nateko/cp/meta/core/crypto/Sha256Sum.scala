@@ -21,7 +21,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 
 	def base64: String = Base64.getEncoder.withoutPadding.encodeToString(bytes)
 	def base64Url: String = Base64.getUrlEncoder.withoutPadding.encodeToString(bytes)
-	def hex: String = DatatypeConverter.printHexBinary(bytes)
+	def hex: String = DatatypeConverter.printHexBinary(bytes).toLowerCase
 
 	/**
 	 * URL- and filename-friendly id that is sufficiently unique.
@@ -60,7 +60,7 @@ object Sha256Sum extends DefaultJsonProtocol{
 	def fromString(hash: String): Try[Sha256Sum] = fromHex(hash).orElse(
 		fromBase64Url(hash).orElse(
 			fromBase64(hash).orElse(Failure(new Exception(
-				"Could not parse SHA-256 hashsum, expected a 32- or 18-byte array, either hex- or Base64-encoded"
+				"Could not parse SHA-256 hashsum, expected a 32- or 18-byte array, either hex-, Base64Url-, or Base64-encoded"
 			)))
 		)
 	)

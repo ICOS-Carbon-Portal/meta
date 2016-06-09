@@ -15,6 +15,7 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.HttpResponse
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 trait FileService { self: StationLabelingService =>
@@ -63,7 +64,7 @@ trait FileService { self: StationLabelingService =>
 
 	def getFilePack(stationId: java.net.URI)(implicit mat: Materializer): HttpResponse = {
 		val stationUri: URI = factory.createURI(stationId)
-		val fileHashesAndNames: Seq[(String, String)] = server
+		val fileHashesAndNames: Seq[(Sha256Sum, String)] = server
 			.getUriValues(stationUri, vocab.hasAssociatedFile)
 			.map{fileUri =>
 				val hash = vocab.files.getFileHash(fileUri)

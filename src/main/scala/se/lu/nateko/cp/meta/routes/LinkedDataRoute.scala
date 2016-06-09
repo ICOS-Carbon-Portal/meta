@@ -25,6 +25,10 @@ object LinkedDataRoute {
 		val prefixUri = Uri(config.forDataObjects.uriPrefix.toString)
 		implicit val uriMarshaller = uriSerializer.marshaller
 
+		val genericRdfUriResourcePage: Route = extractUri{uri =>
+			complete(prefixUri.withPath(uri.path))
+		}
+
 		get{
 			pathPrefix("ontologies" | "resources"){
 				path(Segment /){_ =>
@@ -43,10 +47,10 @@ object LinkedDataRoute {
 								respondWithHeader(header){ complete(instServer) }
 						}
 					}
-				} ~ extractUri{uri =>
-					complete(prefixUri.withPath(uri.path))
-				}
-			}
+				} ~
+				genericRdfUriResourcePage
+			} ~
+			path("files" / Segment){ _ => genericRdfUriResourcePage}
 		}
 	}
 }

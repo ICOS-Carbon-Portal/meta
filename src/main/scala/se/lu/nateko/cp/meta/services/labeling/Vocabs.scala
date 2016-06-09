@@ -4,6 +4,7 @@ import org.openrdf.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import java.net.URLEncoder
 import org.openrdf.model.URI
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 class StationsVocab(val factory: ValueFactory) extends CustomVocab{
@@ -54,6 +55,6 @@ class FilesVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasType = getRelative("hasType")
 	val hasName = getRelative("hasName")
 
-	def getUri(hashsum: String) = getRelative(hashsum)
-	def getFileHash(fileUri: URI) = fileUri.getLocalName
+	def getUri(hashsum: Sha256Sum) = getRelative(hashsum.id)
+	def getFileHash(fileUri: URI): Sha256Sum = Sha256Sum.fromString(fileUri.getLocalName).get
 }

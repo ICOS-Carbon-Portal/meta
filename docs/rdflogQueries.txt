@@ -5,3 +5,11 @@ where ctid in (
 	offset 42
 	limit 32
 );
+
+UPDATE public.wdcgg
+SET "OBJECT" = REPLACE(
+ "OBJECT",
+ 'http://meta.icos-cp.eu/resources/cpmeta/WDCGG',
+ 'http://meta.icos-cp.eu/resources/organizations/WDCGG'
+);
+

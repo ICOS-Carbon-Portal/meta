@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
 import akka.stream.Materializer
 import scala.concurrent.Future
 import akka.Done
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 class FileStorageService(folder: File) {
 
@@ -24,7 +25,7 @@ class FileStorageService(folder: File) {
 	/**
 	 * returns SHA256 hash sum of file's contents
 	 */
-	def saveAsFile(bs: ByteString, hashSalt: Option[Array[Byte]]): String = {
+	def saveAsFile(bs: ByteString, hashSalt: Option[Array[Byte]]): Sha256Sum = {
 		val fname = getSha256(bs, hashSalt)
 		val path = getPath(fname)
 		
@@ -42,16 +43,16 @@ class FileStorageService(folder: File) {
 		fname
 	}
 
-	def getSha256(bs: ByteString, salt: Option[Array[Byte]]): String = {
+	def getSha256(bs: ByteString, salt: Option[Array[Byte]]): Sha256Sum = {
 		val md = MessageDigest.getInstance("SHA-256")
 		salt.foreach(md.update)
 		bs.asByteBuffers.foreach(md.update)
-		md.digest.map("%02x" format _).mkString
+		new Sha256Sum(md.digest)
 	}
 
-	def getPath(hash: String): Path = Paths.get(folder.getAbsolutePath, hash)
+	def getPath(hash: Sha256Sum): Path = Paths.get(folder.getAbsolutePath, hash.hex.substring(0, 36))
 
-	def getZipSource(fileHashesAndNames: Seq[(String, String)])
+	def getZipSource(fileHashesAndNames: Seq[(Sha256Sum, String)])
 			(implicit mat: Materializer): Source[ByteString, Any] = {
 
 		val fileAndNamesSources = fileHashesAndNames.map{

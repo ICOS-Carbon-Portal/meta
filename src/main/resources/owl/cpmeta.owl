@@ -143,7 +143,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Central Facility</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">belongs to thematic center</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -157,20 +157,13 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum -->
-
-    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum">
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum"/>
-    </owl:ObjectProperty>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryEntry -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryEntry">
-        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ancillary entry associated with a station</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ancillary entry</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -178,9 +171,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryObjectValue -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryObjectValue">
-        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDatum"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">parent property for ancillary value properties whose values come from controlled vocabularies</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ancillary object value</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -190,6 +184,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has column</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -201,6 +196,8 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">data stream encoding, e.g. zip, gzip, plain file</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">encoding</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -212,6 +209,8 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">format of the Data Object; will be used to determine the machinery for processing it</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">format</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -232,6 +231,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">data object specification</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -242,6 +242,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">quantity kind</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -263,6 +264,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">value format</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -273,6 +275,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">value type</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -294,6 +297,7 @@
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#wasGeneratedBy"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">was produced by</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -305,13 +309,16 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">was submitted by</rdfs:label>
     </owl:ObjectProperty>
     
 
 
     <!-- http://purl.org/dc/terms/format -->
 
-    <owl:ObjectProperty rdf:about="http://purl.org/dc/terms/format"/>
+    <owl:ObjectProperty rdf:about="http://purl.org/dc/terms/format">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Format</rdfs:label>
+    </owl:ObjectProperty>
     
 
 
@@ -320,6 +327,8 @@
     <owl:ObjectProperty rdf:about="http://www.w3.org/ns/prov#wasAssociatedWith">
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Activity"/>
         <rdfs:range rdf:resource="http://www.w3.org/ns/prov#Agent"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A prov:Agent that had some (unspecified) responsibility for an occurrence of a prov:Activity</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">was associated with</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -378,6 +387,8 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAncillaryDataValue">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryEntry"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">parent property for ancillary value properties whose values are plain literals (not from vocabularies)</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ancillary data value</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -389,6 +400,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">column title</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -472,6 +484,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">end time</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -482,7 +495,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">First name</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">first name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -492,6 +505,8 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormatSpecificMetadata">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">parent property for concrete format-specific metadata properties</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">format-specific metadata</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -502,7 +517,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Last name</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">last name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -589,6 +604,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#long"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">number of rows</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -619,6 +635,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SHA-256 hashsum</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -629,6 +646,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">start time</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -689,6 +707,8 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">unit of measurement</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">unit</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -697,6 +717,7 @@
 
     <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/date">
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Date</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -705,6 +726,7 @@
 
     <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/dateSubmitted">
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Date Submitted</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -713,6 +735,7 @@
 
     <owl:DatatypeProperty rdf:about="http://purl.org/dc/terms/title">
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Title</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -740,6 +763,7 @@
     <owl:DatatypeProperty rdf:about="http://www.w3.org/ns/prov#endedAtTime">
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Activity"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">endedAtTime</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -749,6 +773,7 @@
     <owl:DatatypeProperty rdf:about="http://www.w3.org/ns/prov#startedAtTime">
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Activity"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">startedAtTime</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -801,6 +826,8 @@
                 <owl:onDataRange rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">contains the ancillary value(s), submission date, and optional information date</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ancillary Entry</rdfs:label>
     </owl:Class>
     
 
@@ -809,6 +836,8 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryValue">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AncillaryDatum"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">the class of ancillary values coming from controlled vocabularies</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ancillary Value</rdfs:label>
     </owl:Class>
     
 

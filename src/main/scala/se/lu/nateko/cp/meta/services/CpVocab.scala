@@ -19,7 +19,7 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	)
 
 	def getEtcMembership(siteId: String, roleId: String, lastName: String) = getRelative(
-		"membership/", s"ES_${siteId}_${roleId}_$lastName"
+		"memberships/", s"ES_${siteId}_${roleId}_$lastName"
 	)
 	def getRole(roleId: String) = getRelative("roles/", roleId)
 

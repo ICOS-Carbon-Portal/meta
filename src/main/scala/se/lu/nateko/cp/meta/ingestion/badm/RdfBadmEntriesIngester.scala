@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 
-class RdfBadmEntriesIngester(entries: Iterable[BadmEntry], schema: Schema) extends Ingester{
+class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema) extends Ingester{
 
 	import RdfBadmEntriesIngester._
 

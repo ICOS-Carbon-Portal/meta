@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.CpVocab
 
-class RdfBadmSchemaIngester(schema: Schema) extends Ingester{
+class RdfBadmSchemaIngester(schema: => Schema) extends Ingester{
 
 	import BadmConsts._
 	private[this] val specialVars = Set(

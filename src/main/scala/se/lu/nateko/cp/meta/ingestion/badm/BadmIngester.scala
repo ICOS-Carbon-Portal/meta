@@ -36,10 +36,10 @@ object BadmIngester{
 
 
 	def getSchemaAndValuesIngesters(implicit system: ActorSystem, m: Materializer): (Ingester, Ingester) = {
-		val schema = BadmSchema.parseSchemaFromCsv(variablesUrl.openStream(), badmVocabsUrl.openStream())
+		lazy val schema = BadmSchema.parseSchemaFromCsv(variablesUrl.openStream(), badmVocabsUrl.openStream())
 
 		//val badmEntries = Parser.parseEntriesFromCsv(badmEntriesUrl.openStream())
-		val badmEntries = try{
+		lazy val badmEntries = try{
 			import system.dispatcher
 			val badmEntriesFut = getEtcBadmEntriesJson.map(Parser.parseEntriesFromEtcJson)
 			Await.result(badmEntriesFut, 10 seconds)

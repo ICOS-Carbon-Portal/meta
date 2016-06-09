@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URLEncoder
 import java.time.Instant
 
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 import scala.util.Try
 
 import org.openrdf.model.URI
@@ -20,18 +21,15 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import spray.json.JsString
-import scala.util.Success
-import scala.util.Failure
 
 class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
 
 	private val epic = EpicPidClient(conf.epicPid)
-	import servers.{vocab, metaVocab}
+	import servers.{ metaVocab, vocab }
 
 	def getPid(hash: Sha256Sum): String = epic.getPid(getPidSuffix(hash))
 

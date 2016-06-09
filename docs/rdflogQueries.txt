@@ -13,3 +13,17 @@ SET "OBJECT" = REPLACE(
  'http://meta.icos-cp.eu/resources/organizations/WDCGG'
 );
 
+UPDATE public.stations
+SET "OBJECT" = REPLACE(
+ "OBJECT",
+ '%40',
+ '@'
+);
+
+UPDATE public.stations
+SET "SUBJECT" = REPLACE(
+ "SUBJECT",
+ '%40',
+ '@'
+);
+

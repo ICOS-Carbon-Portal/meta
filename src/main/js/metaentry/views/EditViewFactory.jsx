@@ -16,6 +16,7 @@ export default function(editStore, updateRequestAction){
 
 			var individ = this.state.individual;
 			var indKey = individ.getKey() + '_';
+			const uri = individ.getInfo().uri;
 
 			function requestUpdate(updateRequest){
 				var fullRequest = _.extend({}, updateRequest, {subject: individ.getInfo().uri});
@@ -24,7 +25,7 @@ export default function(editStore, updateRequestAction){
 
 			return <Widget widgetType="primary" widgetTitle="Entry editor">
 				<ScreenHeightColumn>
-					<StaticWidget widgetTitle="Entry">{individ.getLabel()}</StaticWidget>
+					<StaticWidget widgetTitle="Entry">{individ.getLabel()} (<a href={uri} target="_blank">{uri}</a>)</StaticWidget>
 					<StaticWidget widgetTitle="Entry type">{individ.getClassInfo().displayName}</StaticWidget>{
 
 						_.map(individ.getPropertyValues(), function(propValues, i){

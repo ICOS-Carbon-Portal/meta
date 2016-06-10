@@ -8,13 +8,13 @@ import org.openrdf.model.URI
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.XMLSchema
 
-import akka.http.scaladsl.model.Uri.Path
-
 trait CustomVocab {
 	def baseUri: String
 	def factory: ValueFactory
 
-	protected def urlEncode(s: String) = Path(s).toString
+	protected def urlEncode(s: String): String = {
+		new java.net.URI(null, null, s, null).toASCIIString
+	}
 
 	def getRelativeRaw(local: String): URI = factory.createURI(baseUri, local)
 	def getRelative(local: String): URI = getRelativeRaw(urlEncode(local))

@@ -18,7 +18,7 @@ object TestConfig {
 	lazy val owlOnto = {
 		getOntologyFromJarResourceFile("/../classes/owl/uiannotations.owl", manager)
 		getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
-		getOntologyFromJarResourceFile("/../classes/owl/cpmetaui.owl", manager)
+		getOntologyFromJarResourceFile("/owl/cpmetaui.owl", manager)
 	}
 
 	val instOntUri = "http://meta.icos-cp.eu/resources/cpmeta/"

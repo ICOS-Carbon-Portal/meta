@@ -16,6 +16,7 @@ construct {
 		cpmeta:hasEmail ?email ;
 		cpmeta:hasMembership ?piMemb .
 	?piMemb a cpmeta:Membership ;
+		rdfs:label ?membLabel ;
 		cpmeta:atOrganization ?station ;
 		cpmeta:hasRole role:PI .
 }
@@ -50,5 +51,6 @@ where{
 	?pi st:hasLastName ?lastName .
 	BIND (IRI(concat("http://meta.icos-cp.eu/resources/people/", ENCODE_FOR_URI(?firstName), "_", ENCODE_FOR_URI(?lastName))) AS ?person) .
 	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?stationId), "_PI_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
+	BIND (concat(?lastName, " as PI at ", ?stationName, " (", ?theme, ")") AS ?membLabel) .
 }
 

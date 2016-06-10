@@ -43,6 +43,21 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:hasRole</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#string"> at </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
+        <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
+        <AbbreviatedIRI>cpmeta:atOrganization</AbbreviatedIRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>

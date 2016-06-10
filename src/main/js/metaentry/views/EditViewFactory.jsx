@@ -25,8 +25,7 @@ export default function(editStore, updateRequestAction){
 
 			return <Widget widgetType="primary" widgetTitle="Entry editor">
 				<ScreenHeightColumn>
-					<StaticWidget widgetTitle="Entry">{individ.getLabel()} (<a href={uri} target="_blank">{uri}</a>)</StaticWidget>
-					<StaticWidget widgetTitle="Entry type">{individ.getClassInfo().displayName}</StaticWidget>{
+					<StaticWidget widgetTitle="Entry">{individ.getLabel()} (<a href={uri} target="_blank">{uri}</a>)</StaticWidget>{
 
 						_.map(individ.getPropertyValues(), function(propValues, i){
 

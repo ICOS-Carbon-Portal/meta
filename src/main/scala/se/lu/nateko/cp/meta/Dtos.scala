@@ -41,11 +41,21 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 case class UploadMetadataDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
-	producingOrganization: URI,
-	productionInterval: Option[TimeInterval],
 	objectSpecification: URI,
-	fileName: Option[String]
+	fileName: Option[String],
+	specificMetadata: DataLevelSpecificMetadata
 )
+
+sealed trait DataLevelSpecificMetadata
+case class StationDataMetadata(producingOrganization: URI, productionInterval: Option[TimeInterval]) extends DataLevelSpecificMetadata
+case class ElaboratedProductMetadata(
+	creator: URI,
+	contributors: Seq[URI],
+	title: String,
+	creationDate: Instant,
+	temporalCoverage: TimeInterval
+) extends DataLevelSpecificMetadata
+
 
 case class FileDeletionDto(stationUri: URI, file: URI)
 case class LabelingUserDto(

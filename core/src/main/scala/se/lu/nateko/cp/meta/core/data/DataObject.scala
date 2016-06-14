@@ -31,18 +31,18 @@ case class DataObjectSpec(
 	datasetSpec: Option[JsValue]
 )
 
-case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant])
-
 case class TimeInterval(start: Instant, stop: Instant)
 
-case class DataProduction(producer: DataProducer, timeInterval: Option[TimeInterval])
+sealed trait DataProvenance
+case class DataAcquisition(producer: DataProducer, timeInterval: Option[TimeInterval]) extends DataProvenance
+case class DataProduction(producers: Seq[UriResource], dateTime: Option[Instant]) extends DataProvenance
+case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant]) extends DataProvenance
 
 case class DataObject(
 	hash: Sha256Sum,
 	accessUrl: Option[URI],
 	pid: Option[String],
 	fileName: Option[String],
-	production: DataProduction,
-	submission: DataSubmission,
+	provenance: Seq[DataProvenance],
 	specification: DataObjectSpec
 )

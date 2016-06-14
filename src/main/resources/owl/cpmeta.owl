@@ -291,6 +291,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#wasGeneratedBy"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition"/>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy">
@@ -847,6 +857,20 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Central Facility</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/prov#Activity"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.w3.org/ns/prov#wasAssociatedWith"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
     </owl:Class>
     
 

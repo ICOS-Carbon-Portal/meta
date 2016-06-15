@@ -11,27 +11,27 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 class RdfUpdateResultSetIterator(rs: ResultSet, factory: ValueFactory, closer: () => Unit) extends ResultSetIterator[RdfUpdate](rs){
 
 	override protected def construct(rs: ResultSet): RdfUpdate = {
-		val tripleType = rs.getShort(3)
-		val objString = rs.getString(6)
+		val tripleType = rs.getShort("TYPE")
+		val objString = rs.getString("OBJECT")
 
 		val obj: Value = tripleType match{
 			case 0 => //object is a URI
 				factory.createURI(objString)
 			case 1 => //object is a typed literal
-				val litDatatype = getUri(7)
+				val litDatatype = getUri("LITATTR")
 				factory.createLiteral(objString, litDatatype)
 			case 2 => //object is a language-tagged literal
-				val lang = rs.getString(7)
+				val lang = rs.getString("LITATTR")
 				factory.createLiteral(objString, lang)
 		}
 
-		val statement = factory.createStatement(getUri(4), getUri(5), obj)
-		val isAssertion = rs.getBoolean(2)
+		val statement = factory.createStatement(getUri("SUBJECT"), getUri("PREDICATE"), obj)
+		val isAssertion = rs.getBoolean("ASSERTION")
 
 		RdfUpdate(statement, isAssertion)
 	}
 
 	override protected def closeInternal(): Unit = closer()
 
-	private def getUri(i: Int): URI = factory.createURI(rs.getString(i))
+	private def getUri(colName: String): URI = factory.createURI(rs.getString(colName))
 }

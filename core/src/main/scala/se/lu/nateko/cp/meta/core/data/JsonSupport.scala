@@ -15,10 +15,16 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataThemeFormat = enumFormat(DataTheme)
 
 	implicit val positionFormat = jsonFormat2(Position)
-	implicit val objectProducerFormat = jsonFormat5(DataProducer)
-	implicit val dataProductionFormat = jsonFormat2(DataProduction)
+	implicit val objectProducerFormat = jsonFormat5(Station)
+	implicit val dataProductionFormat = jsonFormat4(DataProduction)
 	implicit val dataAcquisitionFormat = jsonFormat2(DataAcquisition)
 	implicit val dataSubmissionFormat = jsonFormat3(DataSubmission)
+
+	implicit val spatialCoverageFormat = jsonFormat3(SpatialCoverage)
+	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
+
+	implicit val l2SpecificMetaFormat = jsonFormat2(L2OrLessSpecificMeta)
+	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
 
@@ -39,22 +45,6 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit object dataProvenanceFormat extends JsonFormat[DataProvenance] {
-
-		def write(prov: DataProvenance): JsValue = prov match{
-			case acq: DataAcquisition => acq.toJson
-			case prod: DataProduction => prod.toJson
-			case subm: DataSubmission => subm.toJson
-		}
-
-		def read(value: JsValue): DataProvenance = {
-			val fields = value.asJsObject("DataProvenance object expected").fields
-			if(fields.contains("producer")) value.convertTo[DataAcquisition]
-			else if(fields.contains("producers")) value.convertTo[DataProduction]
-			else value.convertTo[DataSubmission]
-		}
-	}
-
-	implicit val dataObjectFormat = jsonFormat6(DataObject)
+	implicit val dataObjectFormat = jsonFormat7(DataObject)
 
 }

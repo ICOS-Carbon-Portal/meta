@@ -19,15 +19,25 @@
 
 		<div class="row">
 
-			@Panel("Production"){
-				@PanelRow("Produced by", dobj.production.producer.label)
-				@PanelRow("Data level", dobj.specification.dataLevel.toString)
-				@PanelRow("Production started (UTC)", prodStart)
-				@PanelRow("Production ended (UTC)", prodStop)
+			@for(production <- dobj.production){
+				@Panel("Production"){
+					@PanelHtmlRow{Created by}{
+						@resourceLink(production.creator)
+					}
+					@for(contributor <- production.contributors){
+						@PanelHtmlRow{Contributor}{
+							@resourceLink(contributor)
+						}
+					}
+					@PanelRow("Data level", dobj.specification.dataLevel.toString)
+					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
+				}
 			}
 
 			@Panel("Submission"){
-				@PanelRow("Submitted by", dobj.submission.submitter.getLabel)
+				@PanelHtmlRow{Submitted by}{
+					@resourceLink(dobj.submission.submitter)
+				}
 				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
 				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
 			}
@@ -50,16 +60,16 @@
 
 		<div class="row">
 			@Panel("Coverage", 5){
-				@if(!coverage.isDefined) {
+				@if(!dobj.coverage.isDefined) {
 					@PanelRow("Latitude (WGS 84)", lat)
 					@PanelRow("Longitude (WGS 84)", lon)
 				}
 				
-				@if(pos.isDefined) {
+				@if(dobj.pos.isDefined) {
 					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"></iframe>
 				} else {
-					@if(coverage.isDefined){
-						@PanelRow("Coverage (WGS 84)", coverage.get)
+					@for(coverage <- dobj.coverage){
+						@PanelRow("Coverage (WGS 84)", coverage)
 						<iframe src="/station/?theme=@theme&coverage=@coverage"></iframe>
 					}
 				}
@@ -75,13 +85,13 @@
 	</div>
 }
 
-@prodStart = @{dobj.production.timeInterval.map(_.start.getDateTimeStr).getOrElse("Unknown")}
-@prodStop = @{dobj.production.timeInterval.map(_.stop.getDateTimeStr).getOrElse("Unknown")}
-@pos = @{dobj.production.producer.pos}
-@coverage = @{dobj.production.producer.coverage}
-@theme = @{dobj.production.producer.theme.toString}
-@lat = @{pos.map(_.lat.toString).getOrElse("Unknown")}
-@lon = @{pos.map(_.lon.toString).getOrElse("Unknown")}
+@resourceLink(res: UriResource) = {
+	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@theme = @{dobj.theme.toString}
+@lat = @{dobj.pos.map(_.lat.toString).getOrElse("Unknown")}
+@lon = @{dobj.pos.map(_.lon.toString).getOrElse("Unknown")}
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 

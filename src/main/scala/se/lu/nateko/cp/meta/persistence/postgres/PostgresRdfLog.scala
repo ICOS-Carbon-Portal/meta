@@ -55,17 +55,17 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	def updates: Iterator[RdfUpdate] = {
 		val conn = getConnection
 		val st = conn.createStatement
-		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY tstamp")
+		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY id")
 		new RdfUpdateResultSetIterator(rs, factory, () => {st.close; conn.close()})
 	}
 
-	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
+/*	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
 		val conn = getConnection
-		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY tstamp")
+		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY id") //no index on time, better test in Scala
 		ps.setTimestamp(1, time)
 		val rs = ps.executeQuery()
 		new RdfUpdateResultSetIterator(rs, factory, () => {ps.close(); conn.close()})
-	}
+	}*/
 
 	def close(): Unit = {}
 
@@ -75,7 +75,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 		val createTable =
 			s"""CREATE TABLE $logName (
-	   			|id serial PRIMARY KEY,
+				|id serial PRIMARY KEY,
 				|tstamp timestamptz,
 				|"ASSERTION" boolean,
 				|"TYPE" smallint,

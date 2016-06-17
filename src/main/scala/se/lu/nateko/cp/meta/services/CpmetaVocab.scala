@@ -16,6 +16,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getRelative)
 
+	val aquisitionClass = getRelative("DataAcquisition")
 	val productionClass = getRelative("DataProduction")
 	val submissionClass = getRelative("DataSubmission")
 	val dataObjectClass = getRelative("DataObject")
@@ -26,6 +27,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasStationId = getRelative("hasStationId")
 
 	val hasSha256sum = getRelative("hasSha256sum")
+	val wasAcquiredBy = getRelative("wasAcquiredBy")
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
 	val wasProducedBy = getRelative("wasProducedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
@@ -68,6 +70,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val factory = top.factory
 		val baseUri = "http://purl.org/dc/terms/"
 		val date = getRelative("date")
+		val title = getRelative("title")
+		val description = getRelative("description")
 		val dateSubmitted = getRelative("dateSubmitted")
 	}
 

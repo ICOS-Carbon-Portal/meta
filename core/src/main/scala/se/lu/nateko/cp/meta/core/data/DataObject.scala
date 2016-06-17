@@ -51,10 +51,10 @@ case class L2OrLessSpecificMeta(
 	productionInfo: Option[DataProduction]
 )
 case class L3SpecificMeta(
+	title: String,
+	description: Option[String],
 	spatial: SpatialCoverage,
 	temporal: TemporalCoverage,
-	title: Option[String],
-	description: Option[String],
 	productionInfo: DataProduction,
 	theme: DataTheme
 )

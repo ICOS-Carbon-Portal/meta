@@ -31,6 +31,7 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}$filePath")
 	}
 
+	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
 	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
 }

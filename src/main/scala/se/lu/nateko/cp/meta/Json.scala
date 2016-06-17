@@ -5,6 +5,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import se.lu.nateko.cp.cpauth.core.UserInfo
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
 
 object CpmetaJsonProtocol{
@@ -65,8 +66,11 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
 	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
 	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
-	
-	implicit val uploadMetadataDtoFormat = jsonFormat6(UploadMetadataDto)
+
+	implicit val dataProductionDtoFormat = jsonFormat4(DataProductionDto)
+	implicit val stationDataMetadataFormat = jsonFormat3(StationDataMetadata)
+	implicit val elaboratedProductMetadataFormat = jsonFormat5(ElaboratedProductMetadata)
+	implicit val uploadMetadataDtoFormat = jsonFormat5(UploadMetadataDto)
 
 	implicit val userInfoFormat = jsonFormat3(UserInfo)
 

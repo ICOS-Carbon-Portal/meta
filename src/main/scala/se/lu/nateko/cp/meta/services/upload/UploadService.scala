@@ -24,6 +24,9 @@ import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsString
 import org.openrdf.model.Statement
 import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.DataProductionDto
 
 class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
@@ -60,39 +63,65 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 
 
 	private def getStatements(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Seq[Statement] = {
-		import meta.{hashSum, objectSpecification, producingOrganization, productionInterval}
+		import meta.{hashSum, objectSpecification}
 
 		val objectUri = vocab.getDataObject(hashSum)
 		val submissionUri = vocab.getSubmission(hashSum)
-		val productionUri = vocab.getProduction(hashSum)
 
-		val prodStart = productionInterval.map(_.start)
-		val prodStop = productionInterval.map(_.stop)
-
-		val optionals: Seq[(URI, URI, Value)] =
-			Seq(
-				(objectUri, metaVocab.hasName, meta.fileName.map(vocab.lit)),
-				(productionUri, metaVocab.prov.startedAtTime, prodStart.map(vocab.lit)),
-				(productionUri, metaVocab.prov.endedAtTime, prodStop.map(vocab.lit))
-			).collect{
-				case (s, p, Some(o)) => (s, p, o)
-			}
-
-		val mandatory = Seq[(URI, URI, Value)](
-			(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
-			(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
-			(objectUri, metaVocab.hasObjectSpec, objectSpecification),
-			(objectUri, metaVocab.wasProducedBy, productionUri),
-			(objectUri, metaVocab.wasSubmittedBy, submissionUri),
-
-			(productionUri, RDF.TYPE, metaVocab.productionClass),
-			(productionUri, metaVocab.prov.wasAssociatedWith, producingOrganization),
-
-			(submissionUri, RDF.TYPE, metaVocab.submissionClass),
-			(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization)
+		val specificStatements = meta.specificInfo.fold(
+			elProd => getElaboratedProductStatements(hashSum, elProd),
+			stationData => getStationDataStatements(hashSum, stationData)
 		)
 
-		(mandatory ++ optionals).map(factory.tripleToStatement)
+		specificStatements ++
+		makeSt(objectUri, metaVocab.hasName, meta.fileName.map(vocab.lit)) ++ Seq(
+			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
+			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.hex, XMLSchema.HEXBINARY)),
+			makeSt(objectUri, metaVocab.hasObjectSpec, objectSpecification),
+			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
+			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
+			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
+			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization)
+		)
 	}
+
+	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata): Seq[Statement] = {
+		//TODO encode to RDF Spatial and Temporal coverage
+		val objUri = vocab.getDataObject(hash)
+		makeSt(objUri, metaVocab.dcterms.title, vocab.lit(meta.title)) +: (
+			makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
+			getProductionStatements(hash, meta.production)
+		)
+	}
+
+	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {
+		val objectUri = vocab.getDataObject(hash)
+		val aquisitionUri = vocab.getAcquisition(hash)
+		val acqStart = meta.aquisitionInterval.map(_.start)
+		val acqStop = meta.aquisitionInterval.map(_.stop)
+
+		val productionStatements = meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
+		Seq(
+			makeSt(objectUri, metaVocab.wasAcquiredBy, aquisitionUri),
+			makeSt(aquisitionUri, RDF.TYPE, metaVocab.aquisitionClass),
+			makeSt(aquisitionUri, metaVocab.prov.wasAssociatedWith, meta.station)
+		) ++
+		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
+		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
+		productionStatements
+	}
+
+	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto): Seq[Statement] = {
+		val productionUri = vocab.getProduction(hash)
+		val objectUri = vocab.getDataObject(hash)
+		//makeSt(objectUri, metaVocab.wasProducedBy, productionUri),
+		???
+	}
+	private def makeSt(subj: URI, pred: URI, obj: Option[Value]): Seq[Statement] = obj match {
+		case None => Seq.empty
+		case Some(o) => Seq(factory.createStatement(subj, pred, o))
+	}
+
+	private def makeSt(subj: URI, pred: URI, obj: Value): Statement = factory.createStatement(subj, pred, obj)
+
 }

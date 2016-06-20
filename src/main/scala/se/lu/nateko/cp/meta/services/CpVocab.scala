@@ -34,4 +34,5 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
 	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
+	def getSpatialCoverate(hash: Sha256Sum) = getRelative("spcov_" + hash.id)
 }

@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
+import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.metaVocab
@@ -26,8 +27,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		_ <- dataObjectIsNew(meta.hashSum);
-		format <- servers.getObjSpecificationFormat(meta.objectSpecification);
-		_ <- validateForFormat(meta, format)
+		spec <- servers.getDataObjSpecification(meta.objectSpecification);
+		_ <- validateForFormat(meta, spec)
 	) yield ()
 
 	def getSubmitterConfig(meta: UploadMetadataDto): Try[DataSubmitterConfig] = {
@@ -46,18 +47,21 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def userAuthorizedByProducer(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Try[Unit] = Try{
-		import meta.producingOrganization
+		val producer = meta.specificInfo.fold(
+			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
+			_.station
+		)
 
 		for(prodOrgClass <- submConf.producingOrganizationClass){
-			if(!servers.icosMeta.hasStatement(producingOrganization, RDF.TYPE, prodOrgClass))
+			if(!servers.icosMeta.hasStatement(producer, RDF.TYPE, prodOrgClass))
 				throw new UnauthorizedUploadException(
-					s"Data producer '$producingOrganization' does not belong to class '$prodOrgClass'"
+					s"Data producer '$producer' does not belong to class '$prodOrgClass'"
 				)
 		}
 
 		for(prodOrg <- submConf.producingOrganization){
-			if(producingOrganization != prodOrg) throw new UnauthorizedUploadException(
-				s"User is not authorized to upload on behalf of producer '$producingOrganization'"
+			if(producer != prodOrg) throw new UnauthorizedUploadException(
+				s"User is not authorized to upload on behalf of producer '$producer'"
 			)
 		}
 	}
@@ -68,12 +72,14 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		else Success(())
 	}
 
-	private def validateForFormat(meta: UploadMetadataDto, format: URI): Try[Unit] = {
-		if(format == metaVocab.wdcggFormat)
+	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {
+		if(spec.format == metaVocab.wdcggFormat || spec.dataLevel == 3)
 			Success(())
-		else if(meta.productionInterval.isDefined)
-			Success(())
-		else Failure(new UploadUserErrorException("Must provide 'productionInterval' with start and stop timestamps."))
+		else {
+			val acqInterval = meta.specificInfo.right.toOption.flatMap(_.aquisitionInterval)
+			if(acqInterval.isDefined) Success(())
+			else Failure(new UploadUserErrorException("Must provide 'aquisitionInterval' with start and stop timestamps."))
+		}
 	}
 
 }

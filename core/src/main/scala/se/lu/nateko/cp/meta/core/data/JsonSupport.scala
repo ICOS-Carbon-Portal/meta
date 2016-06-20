@@ -15,7 +15,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataThemeFormat = enumFormat(DataTheme)
 
 	implicit val positionFormat = jsonFormat2(Position)
-	implicit val objectProducerFormat = jsonFormat5(Station)
+	implicit val objectProducerFormat = jsonFormat6(Station)
 	implicit val dataProductionFormat = jsonFormat4(DataProduction)
 	implicit val dataAcquisitionFormat = jsonFormat2(DataAcquisition)
 	implicit val dataSubmissionFormat = jsonFormat3(DataSubmission)

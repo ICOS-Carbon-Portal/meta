@@ -18,7 +18,8 @@ case class TimeInterval(start: Instant, stop: Instant)
 
 case class Station(
 	uri: URI,
-	label: String,
+	id: String,
+	name: String,
 	theme: DataTheme,
 	pos: Option[Position],
 	coverage: Option[String]
@@ -68,7 +69,10 @@ case class DataObject(
 	specification: DataObjectSpec,
 	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta]
 ){
-	def production: Option[DataProduction] = specificInfo.left.toOption.map(_.productionInfo)
+	def production: Option[DataProduction] = specificInfo.fold(
+		l3 => Some(l3.productionInfo),
+		l2 => l2.productionInfo
+	)
 	def pos: Option[Position] = specificInfo.right.toOption.flatMap(_.aquisition.station.pos)
 	def coverage: Option[String] = specificInfo.fold(
 		l3 => Some(l3.spatial.geoJson),

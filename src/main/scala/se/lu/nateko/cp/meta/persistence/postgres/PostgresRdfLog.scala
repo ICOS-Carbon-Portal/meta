@@ -16,50 +16,56 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit = {
 		//TODO Use a pool of connections/prepared statements for better performance
-		val appendPs = getAppendingStatement
-		appendPs.clearBatch()
 
-		for(update <- updates){
-			appendPs.setTimestamp(1, new Timestamp(System.currentTimeMillis))
-			appendPs.setBoolean(2, update.isAssertion)
-			appendPs.setString(4, update.statement.getSubject.stringValue)
-			appendPs.setString(5, update.statement.getPredicate.stringValue)
+		val appendPs: PreparedStatement = getConnection.prepareStatement(
+			s"""INSERT INTO $logName (tstamp, "ASSERTION", "TYPE", "SUBJECT", "PREDICATE", "OBJECT", "LITATTR") VALUES (?, ?, ?, ?, ?, ?, ?)"""
+		)
+		try{
+			val Seq(tstamp, assertion, typeCol, subject, predicate, objectCol, litattr) = 1 to 7
+			appendPs.clearBatch()
 
-			update.statement.getObject match{
-				case uri: URI =>
-					appendPs.setShort(3, 0) //triple type 0
-					appendPs.setString(6, uri.stringValue)
-					appendPs.setString(7, null)
-				case lit: Literal if lit.getLanguage != null =>
-					appendPs.setShort(3, 2) //triple type 2
-					appendPs.setString(6, lit.getLabel)
-					appendPs.setString(7, lit.getLanguage)
-				case lit: Literal =>
-					appendPs.setShort(3, 1) //triple type 1
-					appendPs.setString(6, lit.getLabel)
-					appendPs.setString(7, safeDatatype(lit))
+			for(update <- updates){
+				appendPs.setTimestamp(tstamp, new Timestamp(System.currentTimeMillis))
+				appendPs.setBoolean(assertion, update.isAssertion)
+				appendPs.setString(subject, update.statement.getSubject.stringValue)
+				appendPs.setString(predicate, update.statement.getPredicate.stringValue)
+
+				update.statement.getObject match{
+					case uri: URI =>
+						appendPs.setShort(typeCol, 0) //triple type 0
+						appendPs.setString(objectCol, uri.stringValue)
+						appendPs.setString(litattr, null)
+					case lit: Literal if lit.getLanguage != null =>
+						appendPs.setShort(typeCol, 2) //triple type 2
+						appendPs.setString(objectCol, lit.getLabel)
+						appendPs.setString(litattr, lit.getLanguage)
+					case lit: Literal =>
+						appendPs.setShort(typeCol, 1) //triple type 1
+						appendPs.setString(objectCol, lit.getLabel)
+						appendPs.setString(litattr, safeDatatype(lit))
+				}
+				appendPs.addBatch()
 			}
-
-			appendPs.addBatch()
+			appendPs.executeBatch()
+		} finally{
+			appendPs.getConnection.close()
 		}
-		appendPs.executeBatch()
-		appendPs.getConnection.close()
 	}
 
 	def updates: Iterator[RdfUpdate] = {
 		val conn = getConnection
 		val st = conn.createStatement
-		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY tstamp")
+		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY id")
 		new RdfUpdateResultSetIterator(rs, factory, () => {st.close; conn.close()})
 	}
 
-	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
+/*	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
 		val conn = getConnection
-		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY tstamp")
+		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY id") //no index on time, better test in Scala
 		ps.setTimestamp(1, time)
 		val rs = ps.executeQuery()
 		new RdfUpdateResultSetIterator(rs, factory, () => {ps.close(); conn.close()})
-	}
+	}*/
 
 	def close(): Unit = {}
 
@@ -69,26 +75,17 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 		val createTable =
 			s"""CREATE TABLE $logName (
-				"tstamp" timestamptz,
-				"ASSERTION" boolean,
-				"TYPE" smallint,
-				"SUBJECT" text,
-				"PREDICATE" text,
-				"OBJECT" text,
-				"LITATTR" text
-			) WITH (OIDS=FALSE)"""
+				|id serial PRIMARY KEY,
+				|tstamp timestamptz,
+				|"ASSERTION" boolean,
+				|"TYPE" smallint,
+				|"SUBJECT" text,
+				|"PREDICATE" text,
+				|"OBJECT" text,
+				|"LITATTR" text
+			);""".stripMargin
 
-		val setOwner = s"ALTER TABLE $logName OWNER TO ${creds.user}"
-
-//		val makeIndexes = Seq("SUBJECT", "PREDICATE", "OBJECT", "LITATTR").map(colName =>{
-//			val colLow = colName.toLowerCase
-//			s"""CREATE INDEX ${colLow}_index ON rdflog USING btree ("$colName" COLLATE pg_catalog."C")"""
-//		})
-		val createIndex = s"""CREATE INDEX ${logName}_index ON ${logName} USING btree (tstamp)"""
-
-		val all = createTable +: setOwner +: createIndex +: Nil
-
-		execute(all: _*)
+		execute(createTable)
 	}
 
 	def isInitialized: Boolean = {
@@ -99,20 +96,15 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		tblPresent
 	}
 
-	private def execute(statements: String*): Unit = {
+	private def execute(statement: String): Unit = {
 		val conn = getConnection
 		val st = conn.createStatement
-		statements.foreach(st.execute)
+		st.execute(statement)
 		st.close()
 		conn.close()
 	}
 
 	private def getConnection = Postgres.getConnection(serv, creds).get
-
-	private def getAppendingStatement: PreparedStatement = {
-		val appenderConn = getConnection
-		appenderConn.prepareStatement(s"INSERT INTO $logName VALUES (?, ?, ?, ?, ?, ?, ?)")
-	}
 
 	private def safeDatatype(lit: Literal): String =
 		if(lit.getDatatype == null) XMLSchema.STRING.stringValue

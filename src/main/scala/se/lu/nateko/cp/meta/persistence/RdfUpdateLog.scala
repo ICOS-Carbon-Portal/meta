@@ -11,6 +11,6 @@ trait RdfUpdateLog extends Closeable{
 	def append(updates: RdfUpdate*): Unit = appendAll(updates)
 
 	def updates: Iterator[RdfUpdate]
-	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate]
+	//def updatesUpTo(time: Timestamp): Iterator[RdfUpdate]
 
 }

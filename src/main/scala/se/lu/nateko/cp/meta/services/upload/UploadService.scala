@@ -100,8 +100,8 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {
 		val objectUri = vocab.getDataObject(hash)
 		val aquisitionUri = vocab.getAcquisition(hash)
-		val acqStart = meta.aquisitionInterval.map(_.start)
-		val acqStop = meta.aquisitionInterval.map(_.stop)
+		val acqStart = meta.acquisitionInterval.map(_.start)
+		val acqStop = meta.acquisitionInterval.map(_.stop)
 
 		Seq(
 			makeSt(objectUri, metaVocab.wasAcquiredBy, aquisitionUri),

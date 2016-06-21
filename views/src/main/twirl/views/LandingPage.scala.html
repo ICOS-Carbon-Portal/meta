@@ -18,6 +18,33 @@
 		</div>
 
 		<div class="row">
+			@Panel("Content", 6){
+				@for(fname <- dobj.fileName){
+					@PanelRow("File name", fname)
+				}
+				@PanelRow("Format", dobj.specification.format.getLabel)
+				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
+				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+				@if(uploadComplete) {
+					@accessUrlRow
+				}
+			}
+		</div>
+
+		<div class="row">
+
+			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
+				@Panel("Acquisition"){
+					@PanelHtmlRow{Station}{
+						<a href="@station.uri">@station.name</a>
+					}
+					@for(interval <- acquisition.interval){
+						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
+						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
+					}
+				}
+			}
 
 			@for(production <- dobj.production){
 				@Panel("Production"){
@@ -27,6 +54,11 @@
 					@for(contributor <- production.contributors){
 						@PanelHtmlRow{Contributor}{
 							@resourceLink(contributor)
+						}
+					}
+					@for(host <- production.hostOrganization){
+						@PanelHtmlRow{Host organization}{
+							@resourceLink(host)
 						}
 					}
 					@PanelRow("Data level", dobj.specification.dataLevel.toString)
@@ -44,34 +76,13 @@
 		</div>
 
 		<div class="row">
-			@Panel("Content", 6){
-				@for(fname <- dobj.fileName){
-					@PanelRow("File name", fname)
-				}
-				@PanelRow("Format", dobj.specification.format.getLabel)
-				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
-				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
-				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
-				@if(uploadComplete) {
-					@accessUrlRow
-				}
-			}
-		</div>
-
-		<div class="row">
 			@Panel("Coverage", 5){
 				@if(!dobj.coverage.isDefined) {
-					@PanelRow("Latitude (WGS 84)", lat)
-					@PanelRow("Longitude (WGS 84)", lon)
+					@PanelRow("Coverage", "unknown")
 				}
-				
-				@if(dobj.pos.isDefined) {
-					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"></iframe>
-				} else {
-					@for(coverage <- dobj.coverage){
-						@PanelRow("Coverage (WGS 84)", coverage)
-						<iframe src="/station/?theme=@theme&coverage=@coverage"></iframe>
-					}
+
+				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+					<iframe src="/station/?theme=@theme&coverage=@geoJson"></iframe>
 				}
 			}
 		</div>
@@ -90,8 +101,6 @@
 }
 
 @theme = @{dobj.theme.toString}
-@lat = @{dobj.pos.map(_.lat.toString).getOrElse("Unknown")}
-@lon = @{dobj.pos.map(_.lon.toString).getOrElse("Unknown")}
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 

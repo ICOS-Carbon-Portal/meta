@@ -76,7 +76,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		if(spec.format == metaVocab.wdcggFormat || spec.dataLevel == 3)
 			Success(())
 		else {
-			val acqInterval = meta.specificInfo.right.toOption.flatMap(_.aquisitionInterval)
+			val acqInterval = meta.specificInfo.right.toOption.flatMap(_.acquisitionInterval)
 			if(acqInterval.isDefined) Success(())
 			else Failure(new UploadUserErrorException("Must provide 'aquisitionInterval' with start and stop timestamps."))
 		}

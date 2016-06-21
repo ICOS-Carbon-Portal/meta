@@ -13,7 +13,7 @@ object DataTheme extends Enumeration{
 }
 
 case class UriResource(uri: URI, label: Option[String])
-case class Position(lat: Double, lon: Double)
+
 case class TimeInterval(start: Instant, stop: Instant)
 
 case class Station(
@@ -41,19 +41,10 @@ case class DataProduction(
 )
 case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant])
 
-case class SpatialCoverage(min: Position, max: Position, label: Option[String]){
-	def geoJson: String = s"""{
-	|	"type": "Polygon",
-	|	"coordinates": [
-	|	[[${min.lon}, ${min.lat}], [${min.lon}, ${max.lat}], [${max.lon}, ${max.lat}], [${max.lon}, ${min.lat}], [${min.lon}, ${min.lat}]]
-	|	]
-	|}""".stripMargin
-}
-
 case class TemporalCoverage(interval: TimeInterval, resolution: Option[String])
 
 case class L2OrLessSpecificMeta(
-	aquisition: DataAcquisition,
+	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction]
 )
 case class L3SpecificMeta(
@@ -78,10 +69,12 @@ case class DataObject(
 		l3 => Some(l3.productionInfo),
 		l2 => l2.productionInfo
 	)
-	def pos: Option[Position] = specificInfo.right.toOption.flatMap(_.aquisition.station.pos)
-	def coverage: Option[String] = specificInfo.fold(
-		l3 => Some(l3.spatial.geoJson),
-		l2 => l2.aquisition.station.coverage
+	def coverage: Option[GeoFeature] = specificInfo.fold(
+		l3 => Some(l3.spatial),
+		l2 => {
+			val station = l2.acquisition.station
+			station.coverage.map(GeoFeature.apply).orElse(station.pos)
+		}
 	)
-	def theme: DataTheme = specificInfo.fold(_.theme, _.aquisition.station.theme)
+	def theme: DataTheme = specificInfo.fold(_.theme, _.acquisition.station.theme)
 }

@@ -68,7 +68,7 @@ function getIcon(theme){
 				popupAnchor:  [0, -23]
 			});
 
-		case 'atm':
+		case 'Atmosphere':
 			return L.icon({
 				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/as.png',
 				iconSize:     [23, 28],
@@ -76,7 +76,7 @@ function getIcon(theme){
 				popupAnchor:  [0, -23]
 			});
 
-		case 'eco':
+		case 'Ecosystem':
 			return L.icon({
 				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/es.png',
 				iconSize:     [23, 28],
@@ -84,7 +84,7 @@ function getIcon(theme){
 				popupAnchor:  [0, -23]
 			});
 
-		case 'oce':
+		case 'Ocean':
 			return L.icon({
 				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/os.png',
 				iconSize:     [23, 28],
@@ -145,3 +145,4 @@ function processQuery(paramsEnc) {
 
 	return query;
 }
+

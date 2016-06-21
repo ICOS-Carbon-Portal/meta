@@ -46,7 +46,7 @@ class DataObjectFetcher(
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
 			submission = submission,
 			specification = spec,
-			specificInfo = getL3Meta(dobj, production.get).map(Left(_)).getOrElse(Right(getL2Meta(dobj, production)))
+			specificInfo = getL3Meta(dobj, production).map(Left(_)).getOrElse(Right(getL2Meta(dobj, production)))
 		)
 	}
 
@@ -92,7 +92,7 @@ class DataObjectFetcher(
 	private def getStation(stat: URI) = Station(
 		uri = stat,
 		id = getSingleString(stat, metaVocab.hasStationId),
-		name = getSingleString(stat, metaVocab.hasStationId),
+		name = getSingleString(stat, metaVocab.hasName),
 		theme = getTheme(stat),
 		pos = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
@@ -102,15 +102,19 @@ class DataObjectFetcher(
 		coverage = None
 	)
 
-	private def getL3Meta(dobj: URI, prod: DataProduction): Option[L3SpecificMeta] =
-		getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{ cov => L3SpecificMeta(
-			title = getSingleString(dobj, metaVocab.dcterms.title),
-			description = getOptionalString(dobj, metaVocab.dcterms.description),
-			spatial = getSpatialCoverage(cov),
-			temporal = getTemporalCoverage(dobj),
-			productionInfo = prod,
-			theme = getTheme(prod.hostOrganization.getOrElse(prod.creator).uri)
-		)}
+	private def getL3Meta(dobj: URI, prodOpt: Option[DataProduction]): Option[L3SpecificMeta] =
+		getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{ cov =>
+			assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
+			val prod = prodOpt.get
+			L3SpecificMeta(
+				title = getSingleString(dobj, metaVocab.dcterms.title),
+				description = getOptionalString(dobj, metaVocab.dcterms.description),
+				spatial = getSpatialCoverage(cov),
+				temporal = getTemporalCoverage(dobj),
+				productionInfo = prod,
+				theme = getTheme(prod.hostOrganization.getOrElse(prod.creator).uri)
+			)
+		}
 
 	private def getL2Meta(dobj: URI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)

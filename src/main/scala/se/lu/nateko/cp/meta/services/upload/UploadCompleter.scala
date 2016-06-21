@@ -90,9 +90,9 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			val objUri = vocab.getDataObject(hash)
 			facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
-			val productionUri = vocab.getProduction(hash)
-			facts += ((productionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
-			facts += ((productionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
+			val acquisitionUri = vocab.getAcquisition(hash)
+			facts += ((acquisitionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
+			facts += ((acquisitionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
 
 			for((key, value) <- keyValues){
 				val keyProp = vocab.getRelative("wdcgg/", key)

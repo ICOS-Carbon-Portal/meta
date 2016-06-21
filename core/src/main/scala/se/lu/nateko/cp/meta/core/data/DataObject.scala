@@ -42,7 +42,12 @@ case class DataProduction(
 case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant])
 
 case class SpatialCoverage(min: Position, max: Position, label: Option[String]){
-	def geoJson: String = ???
+	def geoJson: String = s"""{
+	|	"type": "Polygon",
+	|	"coordinates": [
+	|	[[${min.lon}, ${min.lat}], [${min.lon}, ${max.lat}], [${max.lon}, ${max.lat}], [${max.lon}, ${min.lat}], [${min.lon}, ${min.lat}]]
+	|	]
+	|}""".stripMargin
 }
 
 case class TemporalCoverage(interval: TimeInterval, resolution: Option[String])

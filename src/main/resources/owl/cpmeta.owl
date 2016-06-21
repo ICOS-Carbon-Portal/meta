@@ -383,7 +383,7 @@
     <owl:ObjectProperty rdf:about="http://www.w3.org/ns/prov#wasAssociatedWith">
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Activity"/>
         <rdfs:range rdf:resource="http://www.w3.org/ns/prov#Agent"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A prov:Agent that had some (unspecified) responsibility for an occurrence of a prov:Activity</rdfs:label>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A prov:Agent that had some (unspecified) responsibility for an occurrence of a prov:Activity</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">was associated with</rdfs:label>
     </owl:ObjectProperty>
     
@@ -1596,6 +1596,15 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601timeOfDay">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time of day in ISO-8601 format</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/netcdf -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/netcdf">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NetCDF</rdfs:label>
     </owl:NamedIndividual>
     
 

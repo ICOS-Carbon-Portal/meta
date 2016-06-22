@@ -9,7 +9,10 @@ function initMap(queryParams) {
 
 	if (mapDiv) {
 		var geoJson = JSON.parse(queryParams.coverage);
-		var map = L.map(mapDiv);
+		var map = L.map(mapDiv, {
+			minZoom: 1,
+			maxBounds: [[-90, -180],[90, 180]]
+		});
 
 		var baseMaps = getBaseMaps(18);
 		map.addLayer(baseMaps.Topographic);
@@ -18,8 +21,9 @@ function initMap(queryParams) {
 		if (geoJson.type == "Polygon"){
 			L.Mask = L.Polygon.extend({
 				options: {
-					stroke: false,
-					color: '#333',
+					weight: 2,
+					color: 'red',
+					fillColor: '#333',
 					fillOpacity: 0.5,
 					clickable: false,
 					outerBounds: new L.LatLngBounds([-90, -360], [90, 360])
@@ -155,15 +159,15 @@ function getMarker(theme){
 			marker.fillColor = 'red';
 			break;
 
-		case 'atm':
+		case 'Atmosphere':
 			marker.fillColor = 'blue';
 			break;
 
-		case 'eco':
+		case 'Ecosystem':
 			marker.fillColor = 'green';
 			break;
 
-		case 'oce':
+		case 'Ocean':
 			marker.fillColor = 'blue';
 			break;
 	}

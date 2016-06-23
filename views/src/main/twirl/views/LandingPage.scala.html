@@ -22,6 +22,17 @@
 				@for(fname <- dobj.fileName){
 					@PanelRow("File name", fname)
 				}
+				@for(l3meta <- dobj.specificInfo.left.toOption){
+					@PanelRow("Title", l3meta.title)
+					@for(description <- l3meta.description){
+						@PanelRow("Description", description)
+					}
+					@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
+					@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
+					@for(resolution <- l3meta.temporal.resolution){
+						@PanelRow("Temporal resolution", resolution)
+					}
+				}
 				@PanelRow("Format", dobj.specification.format.getLabel)
 				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
 				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
@@ -76,7 +87,7 @@
 		</div>
 
 		<div class="row">
-			@Panel("Coverage", 5){
+			@Panel("Spatial coverage", 5){
 				@if(!dobj.coverage.isDefined) {
 					@PanelRow("Coverage", "unknown")
 				}

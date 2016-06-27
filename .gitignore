@@ -15,8 +15,9 @@ npm-debug.log
 /lib/
 /project/project/
 /project/target/
-
 /views/target
+/jobAd/target
+
 # Scala-IDE specific
 .project
 .settings/
@@ -27,6 +28,7 @@ npm-debug.log
 /bin/
 /core/bin/
 /views/bin/
+/jobAd/bin/
 
 #Sublime
 *.sublime-project

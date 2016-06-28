@@ -90,6 +90,7 @@ lazy val jobAd = (project in file("jobAd"))
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % "2.4.7",
 			"com.typesafe.akka"     %% "akka-slf4j"                         % "2.4.7",
+			"com.fasterxml.uuid"     % "java-uuid-generator"                % "3.1.4",
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3"
 		)
 	)

@@ -1,0 +1,71 @@
+<DOCTYPE html>
+<html>
+<head>
+	<link href="https://static.icos-cp.eu/constant/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>Test assignment for a job applicant</title>
+
+	<style type="text/css">
+		.navbar-default {
+			background-color: #414042;
+			border-color: #414042;
+		}
+		.navbar-default span, .navbar-default p, .navbar-default h1 {
+			color: #ffffff;
+		}
+	</style>
+
+</head>
+<body>
+	<nav class="navbar navbar-default navbar-static-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a href="https://www.icos-ri.eu">
+					<img alt="Carbon Portal" src="https://static.icos-cp.eu/images/Icos_Logo_RGB_White_Carbon_Portal_80px.png">
+				</a>
+			</div>
+			<h1>Test assignment for an applicant for the Software developer position at ICOS Cabon Portal</h1>
+		</div>
+	</nav>
+
+	<div class="container-fluid">
+
+		<div class="row">
+			<div class="col-md-12">
+				<p>In order to demonstrate some basic level of skills, the candidates are invited to complete a simple preliminary assignment. Please follow these steps:</p>
+				<ol>
+					<li>Fetch the assignment data from <a href="/assignment">https://job.icos-cp.eu/assignment</a>.
+						The assignment has a unique ID (which you must keep), as well as information on yearly CO2 emissions (in <strong>kilotonnes</strong>) and population of a random country.</li>
+					<li>Calculate the annual CO2 emission (in <strong>tonnes</strong>) per capita for the country.</li>
+					<li>Prepare an assignment report JSON document with the original assignment ID, the answer (country name and the calculated value), and information about yourself. Please see the example below. </li>
+					<li>HTTP POST the report to https://job.icos-cp.eu/report within 5 seconds of fetching the assignment. Good luck!</li>
+				</ol>
+			</div>
+		</div>
+
+
+		<div class="row">
+			<div class="col-md-12">
+				<label>Example of assignment report JSON</label>
+				<pre>{
+	"assignmentId": "59a563ca-3d39-11e6-a280-0242105c419f",
+	"answer": {
+		"country": "Sweden",
+		"annualCO2PerCapita": 3.6
+	},
+	"candidateInfo": {
+		"firstName": "Jane",
+		"lastName": "Doe",
+		"email": "jane.doe@mail.org"
+	}
+}</pre>
+			</div>
+		</div>
+	</div>
+
+</body>
+

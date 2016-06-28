@@ -9,11 +9,16 @@ import akka.http.scaladsl.Http
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import JobAdJson._
+import scala.util.Failure
+import scala.util.Success
 
 object Main extends App {
 	implicit val system = ActorSystem("cpmeta")
 	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
 	import system.dispatcher
+	val log = system.log
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>
@@ -26,9 +31,29 @@ object Main extends App {
 
 	val route = handleExceptions(exceptionHandler){
 		get{
-			complete(StatusCodes.OK)
+			pathEndOrSingleSlash{
+				getFromResource("index.html")
+			} ~
+			path("assignment"){
+				complete(AssignmentGenerator.createAssignment)
+			}
+		} ~
+		(post & path("report")){
+			entity(as[Report]){report =>
+				ReportValidator.validate(report) match{
+					case Failure(err) =>
+						val msg = err.getMessage
+						log.info(s"BAD($msg) ${report.toString}")
+						complete((StatusCodes.BadRequest, msg))
+					case Success(_) =>
+						log.info("GOOD " + report.toString)
+						complete((StatusCodes.OK, "Good job!"))
+				}
+			} ~
+			complete((StatusCodes.BadRequest, "Expected a properly formed assignment report JSON as request payload"))
 		}
 	}
+
 	Http()
 		.bindAndHandle(route, "localhost", 9050)
 		.onSuccess{

@@ -7,6 +7,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val baseUri = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 
+	val stationClass = getRelative("Station")
 	val atmoStationClass = getRelative("AS")
 	val ecoStationClass = getRelative("ES")
 	val oceStationClass = getRelative("OS")
@@ -30,6 +31,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasWesternBound = getRelative("hasWesternBound")
 	val hasName = getRelative("hasName")
 	val hasStationId = getRelative("hasStationId")
+	val country = getRelative("country")
 
 	val hasSha256sum = getRelative("hasSha256sum")
 	val wasAcquiredBy = getRelative("wasAcquiredBy")

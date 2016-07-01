@@ -29,6 +29,10 @@ package object sesame {
 	implicit def javaUriToSesame(uri: java.net.URI)(implicit factory: ValueFactory): URI = factory.createURI(uri)
 	implicit def sesameUriToJava(uri: URI) = java.net.URI.create(uri.stringValue)
 
+	implicit class EnrichedSesameUri(val uri: URI) extends AnyVal{
+		def toJava: java.net.URI = uri
+	}
+
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
 		def asScalaIterator: CloseableIterator[T] = new SesameIterationIterator(res, () => ())
 	}

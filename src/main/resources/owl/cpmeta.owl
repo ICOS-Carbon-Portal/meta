@@ -418,6 +418,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/country -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/country">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/countryCode -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/countryCode">
@@ -1397,11 +1407,6 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <owl:disjointUnionOf rdf:parseType="Collection">
-            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
-            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
-            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OS"/>
-        </owl:disjointUnionOf>
     </owl:Class>
     
 

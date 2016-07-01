@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
+import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
@@ -73,7 +73,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {
-		if(spec.format == metaVocab.wdcggFormat || spec.dataLevel == 3)
+		if(spec.format.uri == metaVocab.wdcggFormat.toJava || spec.dataLevel == 3)
 			Success(())
 		else {
 			val acqInterval = meta.specificInfo.right.toOption.flatMap(_.acquisitionInterval)

@@ -77,8 +77,7 @@ class DataObjectFetcher(
 			}
 			case `orgClass` => NonICOS
 		}
-		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size} themes!")
-		themes.head
+		themes.headOption.getOrElse(NonICOS)
 	}
 
 	private def getTemporalCoverage(dobj: URI) = TemporalCoverage(
@@ -91,8 +90,8 @@ class DataObjectFetcher(
 
 	private def getStation(stat: URI) = Station(
 		uri = stat,
-		id = getSingleString(stat, metaVocab.hasStationId),
-		name = getSingleString(stat, metaVocab.hasName),
+		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
+		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
 		theme = getTheme(stat),
 		pos = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);

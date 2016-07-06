@@ -18,25 +18,20 @@
 		</div>
 
 		<div class="row">
-
-			@Panel("Production"){
-				@PanelRow("Produced by", dobj.production.producer.label)
-				@PanelRow("Data level", dobj.specification.dataLevel.toString)
-				@PanelRow("Production started (UTC)", prodStart)
-				@PanelRow("Production ended (UTC)", prodStop)
-			}
-
-			@Panel("Submission"){
-				@PanelRow("Submitted by", dobj.submission.submitter.getLabel)
-				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
-				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
-			}
-		</div>
-
-		<div class="row">
 			@Panel("Content", 6){
 				@for(fname <- dobj.fileName){
 					@PanelRow("File name", fname)
+				}
+				@for(l3meta <- dobj.specificInfo.left.toOption){
+					@PanelRow("Title", l3meta.title)
+					@for(description <- l3meta.description){
+						@PanelRow("Description", description)
+					}
+					@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
+					@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
+					@for(resolution <- l3meta.temporal.resolution){
+						@PanelRow("Temporal resolution", resolution)
+					}
 				}
 				@PanelRow("Format", dobj.specification.format.getLabel)
 				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
@@ -49,19 +44,56 @@
 		</div>
 
 		<div class="row">
-			@Panel("Coverage", 5){
-				@if(!coverage.isDefined) {
-					@PanelRow("Latitude (WGS 84)", lat)
-					@PanelRow("Longitude (WGS 84)", lon)
-				}
-				
-				@if(pos.isDefined) {
-					<iframe src="/station/?theme=@theme&lat=@lat&lon=@lon"></iframe>
-				} else {
-					@if(coverage.isDefined){
-						@PanelRow("Coverage (WGS 84)", coverage.get)
-						<iframe src="/station/?theme=@theme&coverage=@coverage"></iframe>
+
+			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
+				@Panel("Acquisition"){
+					@PanelHtmlRow{Station}{
+						<a href="@station.uri">@station.name</a>
 					}
+					@for(interval <- acquisition.interval){
+						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
+						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
+					}
+				}
+			}
+
+			@for(production <- dobj.production){
+				@Panel("Production"){
+					@PanelHtmlRow{Created by}{
+						@resourceLink(production.creator)
+					}
+					@for(contributor <- production.contributors){
+						@PanelHtmlRow{Contributor}{
+							@resourceLink(contributor)
+						}
+					}
+					@for(host <- production.hostOrganization){
+						@PanelHtmlRow{Host organization}{
+							@resourceLink(host)
+						}
+					}
+					@PanelRow("Data level", dobj.specification.dataLevel.toString)
+					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
+				}
+			}
+
+			@Panel("Submission"){
+				@PanelHtmlRow{Submitted by}{
+					@resourceLink(dobj.submission.submitter)
+				}
+				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
+				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Spatial coverage", 5){
+				@if(!dobj.coverage.isDefined) {
+					@PanelRow("Coverage", "unknown")
+				}
+
+				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+					<iframe src="/station/?theme=@theme&coverage=@geoJson"></iframe>
 				}
 			}
 		</div>
@@ -75,13 +107,11 @@
 	</div>
 }
 
-@prodStart = @{dobj.production.timeInterval.map(_.start.getDateTimeStr).getOrElse("Unknown")}
-@prodStop = @{dobj.production.timeInterval.map(_.stop.getDateTimeStr).getOrElse("Unknown")}
-@pos = @{dobj.production.producer.pos}
-@coverage = @{dobj.production.producer.coverage}
-@theme = @{dobj.production.producer.theme.toString}
-@lat = @{pos.map(_.lat.toString).getOrElse("Unknown")}
-@lon = @{pos.map(_.lon.toString).getOrElse("Unknown")}
+@resourceLink(res: UriResource) = {
+	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@theme = @{dobj.theme.toString}
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 

@@ -8,10 +8,6 @@ import scala.util.Success
 import scala.util.Try
 
 import org.openrdf.model.URI
-import org.openrdf.model.Value
-import org.openrdf.model.vocabulary.OWL
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
 
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.UploadServiceConfig
@@ -19,10 +15,8 @@ import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.PidUpdate
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UploadCompletionException
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import spray.json.JsString
 
 class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
@@ -60,8 +54,9 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 	private def completeUpload(server: InstanceServer, hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
 		if(format == metaVocab.wdcggFormat){
+			val wdcggCompleter = new WdcggUploadCompleter(server, vocab, metaVocab)
 			for(
-				_ <- writeWdcggMetadata(server, hash, info);
+				_ <- wdcggCompleter.writeMetadata(hash, info);
 				_ <- writeUploadStopTime(server, hash)
 			) yield vocab.getDataObject(hash).stringValue
 		}else for(
@@ -81,35 +76,6 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		val submissionUri = vocab.getSubmission(hash)
 		val stopInfo = vocab.factory.createStatement(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(Instant.now))
 		Future.fromTry(server.add(stopInfo))
-	}
-
-	private def writeWdcggMetadata(server: InstanceServer, hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
-		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
-			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
-
-			val objUri = vocab.getDataObject(hash)
-			facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
-
-			val productionUri = vocab.getProduction(hash)
-			facts += ((productionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
-			facts += ((productionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
-
-			for((key, value) <- keyValues){
-				val keyProp = vocab.getRelative("wdcgg/", key)
-
-				if(!server.hasStatement(Some(keyProp), None, None)){
-					facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))
-					facts += ((keyProp, RDFS.SUBPROPERTYOF, metaVocab.hasFormatSpecificMeta))
-					facts += ((keyProp, RDFS.LABEL, vocab.lit(key)))
-				}
-				facts += ((objUri, keyProp, vocab.lit(value)))
-			}
-			server.addAll(facts.map(vocab.factory.tripleToStatement))
-		}
-
-		case _ => Future.failed(new UploadCompletionException(
-			"Encountered wrong type of upload completion info, must be WdcggUploadCompletion"
-		))
 	}
 
 }

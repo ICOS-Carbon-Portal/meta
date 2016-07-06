@@ -15,6 +15,8 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.UploadMetadataDto
+import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.server.MalformedRequestContentRejection
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -25,6 +27,12 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			complete((StatusCodes.BadRequest, userErr.getMessage))
 		case err => throw err
 	}
+	private val replyWithErrorOnBadContent = handleRejections(
+		RejectionHandler.newBuilder().handle{
+			case MalformedRequestContentRejection(msg, cause) =>
+				complete((StatusCodes.BadRequest, msg))
+		}.result()
+	)
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
 	implicit val dataObjectMarshaller = LandingPageMarshalling.marshaller
@@ -37,19 +45,19 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		pathPrefix("upload"){
 			post{
 				path(Sha256Segment){hash =>
-					ensureLocalRequest{
+					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[UploadCompletionInfo]){ completionInfo =>
 							onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
-						} ~
-						complete((StatusCodes.BadRequest, "Must POST a valid upload completion info object"))
+						}
 					}
 				} ~
 				pathEnd{
 					authRouting.mustBeLoggedIn{uploader =>
-						entity(as[UploadMetadataDto]){uploadMeta =>
-							complete(service.registerUpload(uploadMeta, uploader))
-						} ~
-						complete((StatusCodes.BadRequest, "Must POST a valid metadata object"))
+						replyWithErrorOnBadContent{
+							entity(as[UploadMetadataDto]){uploadMeta =>
+								complete(service.registerUpload(uploadMeta, uploader))
+							}
+						}
 					}
 				}
 			} ~

@@ -7,6 +7,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val baseUri = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 
+	val stationClass = getRelative("Station")
 	val atmoStationClass = getRelative("AS")
 	val ecoStationClass = getRelative("ES")
 	val oceStationClass = getRelative("OS")
@@ -16,24 +17,37 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getRelative)
 
+	val aquisitionClass = getRelative("DataAcquisition")
 	val productionClass = getRelative("DataProduction")
 	val submissionClass = getRelative("DataSubmission")
 	val dataObjectClass = getRelative("DataObject")
+	val latLonBoxClass = getRelative("LatLonBox")
 
 	val hasLatitude = getRelative("hasLatitude")
+	val hasNothernBound = getRelative("hasNothernBound")
+	val hasSouthernBound = getRelative("hasSouthernBound")
 	val hasLongitude = getRelative("hasLongitude")
+	val hasEasternBound = getRelative("hasEasternBound")
+	val hasWesternBound = getRelative("hasWesternBound")
 	val hasName = getRelative("hasName")
 	val hasStationId = getRelative("hasStationId")
+	val country = getRelative("country")
 
 	val hasSha256sum = getRelative("hasSha256sum")
+	val wasAcquiredBy = getRelative("wasAcquiredBy")
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
 	val wasProducedBy = getRelative("wasProducedBy")
+	val wasPerformedBy = getRelative("wasPerformedBy")
+	val wasParticipatedInBy = getRelative("wasParticipatedInBy")
+	val wasHostedBy = getRelative("wasHostedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
 	val hasObjectSpec = getRelative("hasObjectSpec")
 	val hasFormat = getRelative("hasFormat")
 	val hasEncoding = getRelative("hasEncoding")
 	val hasFormatSpecificMeta = getRelative("hasFormatSpecificMetadata")
 	val hasNumberOfRows = getRelative("hasNumberOfRows")
+	val hasTemporalResolution = getRelative("hasTemporalResolution")
+	val hasSpatialCoverage = getRelative("hasSpatialCoverage")
 
 	val personClass = getRelative("Person")
 	val roleClass = getRelative("Role")
@@ -68,6 +82,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val factory = top.factory
 		val baseUri = "http://purl.org/dc/terms/"
 		val date = getRelative("date")
+		val title = getRelative("title")
+		val description = getRelative("description")
 		val dateSubmitted = getRelative("dateSubmitted")
 	}
 

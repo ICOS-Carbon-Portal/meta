@@ -1,85 +1,204 @@
-$(function () {
-	var queryParams = processQuery(window.location.search);
+var queryParams = processQuery(window.location.search);
 
-	if(isNumeric(queryParams.lat) && isNumeric(queryParams.lon)){
-		queryParams.lat = parseFloat(queryParams.lat);
-		queryParams.lon = parseFloat(queryParams.lon);
-
-		initMap(queryParams);
-	}
-});
-
-function initMap(queryParams) {
-	var topoMapESRI = new ol.layer.Tile({
-		tag: "topoMapESRI",
-		visible: true,
-		source: new ol.source.XYZ({
-			url: 'http://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
-		}),
-		opacity: 0.8
-	});
-
-	var station = getVectorLayer(queryParams);
-	station.theme = queryParams.theme;
-
-	var view = new ol.View({
-		center: ol.proj.fromLonLat([queryParams.lon, queryParams.lat]),
-		zoom: 6
-	});
-
-	var map = new ol.Map({
-		layers: [
-			topoMapESRI,
-			station
-		],
-		target: 'map',
-		view: view
-	});
+if (queryParams.theme && queryParams.coverage){
+	initMap(queryParams);
 }
 
-function getVectorLayer(queryParams){
-	var iconStyle = new ol.style.Style({
-		image: getIcon(queryParams.theme)
+function initMap(queryParams) {
+	var mapDiv = document.getElementById("map");
+
+	if (mapDiv) {
+		var geoJson = JSON.parse(queryParams.coverage);
+		var map = L.map(mapDiv, {
+			minZoom: 1,
+			maxBounds: [[-90, -180],[90, 180]]
+		});
+
+		var baseMaps = getBaseMaps(18);
+		map.addLayer(baseMaps.Topographic);
+		L.control.layers(baseMaps).addTo(map);
+
+		if (geoJson.type == "Polygon"){
+			L.Mask = L.Polygon.extend({
+				options: {
+					weight: 2,
+					color: 'red',
+					fillColor: '#333',
+					fillOpacity: 0.5,
+					clickable: false,
+					outerBounds: new L.LatLngBounds([-90, -360], [90, 360])
+				},
+
+				initialize: function (latLngs, options) {
+					var outerBoundsLatLngs = [
+						this.options.outerBounds.getSouthWest(),
+						this.options.outerBounds.getNorthWest(),
+						this.options.outerBounds.getNorthEast(),
+						this.options.outerBounds.getSouthEast()
+					];
+					L.Polygon.prototype.initialize.call(this, [outerBoundsLatLngs, latLngs], options);
+				},
+
+			});
+
+			L.mask = function (latLngs, options) {
+				return new L.Mask(latLngs, options);
+			};
+
+			var mask = getMask(geoJson);
+			L.mask(mask).addTo(map);
+			map.fitBounds(mask);
+
+		} else {
+			var fg = new L.FeatureGroup();
+			var icon = getIcon(queryParams.theme);
+			// var marker = getMarker(queryParams.theme);
+
+			fg.addLayer(L.geoJson(geoJson, {
+				pointToLayer: function (feature, latlng) {
+					// return L.circleMarker(latlng, marker);
+					return L.marker(latlng, {icon});
+				},
+				style: function (feature) {
+					switch (feature.geometry.type) {
+						case 'Line':
+							return {color: "rgb(50,50,255)", weight: 2};
+							break;
+
+						case 'LineString':
+							return {color: "rgb(50,50,255)", weight: 2};
+							break;
+
+						case 'MultiLineString':
+							return {color: "rgb(50,50,255)", weight: 2};
+							break;
+
+						default:
+							return {color: "rgb(50,255,50)", weight: 2};
+					}
+				}
+			}));
+
+			map.addLayer(fg);
+
+			if (geoJson.type == "Point") {
+				map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], 4);
+			} else {
+				map.fitBounds(fg.getBounds());
+			}
+		}
+	}
+}
+
+function getMask(geoJson){
+	var coordinates = geoJson.coordinates[0];
+	var latLngs = [];
+
+	coordinates.forEach(function(coord){
+		latLngs.push(new L.LatLng(coord[1], coord[0]));
 	});
 
-	var mapFeature = new ol.Feature({
-		geometry: new ol.geom.Point(ol.proj.fromLonLat([queryParams.lon, queryParams.lat]))
-	});
-
-	mapFeature.setStyle(iconStyle);
-
-	return new ol.layer.Vector({
-		source: new ol.source.Vector({
-			features: [mapFeature]
-		})
-	});
+	return latLngs;
 }
 
 function getIcon(theme){
-	var icon = {
-		anchor: [0.5, 1],
-		opacity: 1
+	switch(theme){
+		case 'NonICOS':
+			return L.icon({
+				iconUrl: 'https://static.icos-cp.eu/images/tmp/wdcgg.svg',
+				iconSize:     [23, 28],
+				iconAnchor:   [12, 28],
+				popupAnchor:  [0, -23]
+			});
+
+		case 'Atmosphere':
+			return L.icon({
+				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/as.png',
+				iconSize:     [23, 28],
+				iconAnchor:   [12, 28],
+				popupAnchor:  [0, -23]
+			});
+
+		case 'Ecosystem':
+			return L.icon({
+				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/es.png',
+				iconSize:     [23, 28],
+				iconAnchor:   [12, 28],
+				popupAnchor:  [0, -23]
+			});
+
+		case 'Ocean':
+			return L.icon({
+				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/os.png',
+				iconSize:     [23, 28],
+				iconAnchor:   [12, 28],
+				popupAnchor:  [0, -23]
+			});
+
+		default:
+			return L.icon({
+				iconUrl: 'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-icon.png',
+				shadowUrl: 'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-shadow.png',
+				iconSize:     [25, 41],
+				iconAnchor:   [13, 41]
+			});
+	}
+}
+
+function getMarker(theme){
+	var marker = {
+		radius: 5,
+		weight: 2,
+		color: 'black',
+		fillColor: 'rgb(255,50,50)',
+		fillOpacity: 1
 	};
 
-	switch (theme){
-		case "Atmosphere":
-			icon.src = 'https://static.icos-cp.eu/share/stations/icons/as.png';
+	switch(theme){
+		case 'NonICOS':
+			marker.fillColor = 'red';
 			break;
 
-		case "Ecosystem":
-			icon.src = 'https://static.icos-cp.eu/share/stations/icons/es.png';
+		case 'Atmosphere':
+			marker.fillColor = 'blue';
 			break;
 
-		case "Ocean":
-			icon.src = 'https://static.icos-cp.eu/share/stations/icons/os.png';
+		case 'Ecosystem':
+			marker.fillColor = 'green';
+			break;
+
+		case 'Ocean':
+			marker.fillColor = 'blue';
 			break;
 	}
 
-	return new ol.style.Icon(icon);
+	return marker;
 }
 
-function isNumeric(n) {
-	return !isNaN(parseFloat(n)) && isFinite(n);
+function getBaseMaps(maxZoom){
+	var topo = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+		maxZoom
+	});
+
+	var image = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+		maxZoom
+	});
+
+	var osm = L.tileLayer(window.location.protocol + "//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+		maxZoom
+	});
+
+	var mapQuest = L.tileLayer("http://otile{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png", {
+		maxZoom,
+		subdomains: "1234"
+	});
+
+	return {
+		"Topographic": topo,
+		"Satellite": image,
+		"OSM": osm,
+		"MapQuest": mapQuest
+	};
 }
 
 function processQuery(paramsEnc) {
@@ -95,3 +214,4 @@ function processQuery(paramsEnc) {
 
 	return query;
 }
+

@@ -11,16 +11,18 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
 	allDataObjs: InstanceServer,
 	perFormat: Map[URI, InstanceServer]
-) {
+) extends CpmetaFetcher{
 	import InstanceServer.AtMostOne
 
 	val metaVocab = new CpmetaVocab(icosMeta.factory)
 	val vocab = new CpVocab(icosMeta.factory)
+	protected val server = icosMeta
 
 	def getDataObjSpecification(objHash: Sha256Sum): Try[URI] = {
 		val dataObjUri = vocab.getDataObject(objHash)
@@ -39,6 +41,8 @@ class DataObjectInstanceServers(
 			case Some(uri) => Success(uri)
 		}
 	}
+
+	def getDataObjSpecification(spec: URI): Try[DataObjectSpec] = Try{getSpecification(spec)}
 
 	def getInstServerForFormat(format: URI): Try[InstanceServer] = {
 		perFormat.get(format) match{

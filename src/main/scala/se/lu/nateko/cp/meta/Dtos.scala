@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta
 import java.net.URI
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.data._
 
 case class ResourceDto(displayName: String, uri: URI, comment: Option[String])
 
@@ -41,10 +41,29 @@ case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject
 case class UploadMetadataDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
-	producingOrganization: URI,
-	productionInterval: Option[TimeInterval],
 	objectSpecification: URI,
-	fileName: Option[String]
+	fileName: Option[String],
+	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata]
+)
+
+case class StationDataMetadata(
+	station: URI,
+	acquisitionInterval: Option[TimeInterval],
+	production: Option[DataProductionDto]
+)
+case class ElaboratedProductMetadata(
+	title: String,
+	description: Option[String],
+	spatial: Either[SpatialCoverage, URI],
+	temporal: TemporalCoverage,
+	production: DataProductionDto
+)
+
+case class DataProductionDto(
+	creator: URI,
+	contributors: Seq[URI],
+	hostOrganization: Option[URI],
+	creationDate: Instant
 )
 
 case class FileDeletionDto(stationUri: URI, file: URI)

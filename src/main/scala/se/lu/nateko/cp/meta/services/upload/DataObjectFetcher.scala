@@ -1,21 +1,24 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.time.Instant
-import org.openrdf.model.{URI, Literal}
+import java.net.{URI => JavaUri}
+
+import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
+
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.DataTheme._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.utils.sesame._
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import org.openrdf.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.api.EpicPidClient
-import org.openrdf.model.vocabulary.XMLSchema
-import java.net.{URI => JavaUri}
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.sesame._
 
-class DataObjectFetcher(server: InstanceServer, vocab: CpVocab, metaVocab: CpmetaVocab, pidFactory: Sha256Sum => String) {
+class DataObjectFetcher(
+	protected val server: InstanceServer,
+	vocab: CpVocab,
+	protected val metaVocab: CpmetaVocab,
+	pidFactory: Sha256Sum => String
+) extends CpmetaFetcher {
 
 	private implicit val factory = metaVocab.factory
 
@@ -27,66 +30,23 @@ class DataObjectFetcher(server: InstanceServer, vocab: CpVocab, metaVocab: Cpmet
 	}
 
 	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
-		val dataObjUri = vocab.getDataObject(hash)
-		val fileName: Option[String] = getOptionalString(dataObjUri, metaVocab.hasName)
+		val dobj = vocab.getDataObject(hash)
 
-		val production: URI = getSingleUri(dataObjUri, metaVocab.wasProducedBy)
-		val producer: URI = getSingleUri(production, metaVocab.prov.wasAssociatedWith)
-		val producerName: String = getSingleString(producer, metaVocab.hasName)
+		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
+			.map(getDataProduction)
 
-		val prodTimeInterval = for(
-			start <- getOptionalInstant(production, metaVocab.prov.startedAtTime);
-			stop <- getOptionalInstant(production, metaVocab.prov.endedAtTime)
-		) yield TimeInterval(start, stop)
-
-		val pos = for(
-			posLat <- getOptionalDouble(producer, metaVocab.hasLatitude);
-			posLon <- getOptionalDouble(producer, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon)
-
-
-		val submission: URI = getSingleUri(dataObjUri, metaVocab.wasSubmittedBy)
-		val submitter: URI = getSingleUri(submission, metaVocab.prov.wasAssociatedWith)
-		val submitterName: Option[String] = getOptionalString(submitter, metaVocab.hasName)
-
-		val submStart = getSingleInstant(submission, metaVocab.prov.startedAtTime)
-		val submStop = getOptionalInstant(submission, metaVocab.prov.endedAtTime)
-
-		val spec = getSingleUri(dataObjUri, metaVocab.hasObjectSpec)
-		val specFormat = getLabeledResource(spec, metaVocab.hasFormat)
-		val encoding = getLabeledResource(spec, metaVocab.hasEncoding)
-		val dataLevel: Int = getSingleInt(spec, metaVocab.hasDataLevel)
+		val fileName = getOptionalString(dobj, metaVocab.hasName)
+		val spec = getSpecification(getSingleUri(dobj, metaVocab.hasObjectSpec))
+		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
 		DataObject(
-			hash = getHashsum(dataObjUri, metaVocab.hasSha256sum),
-			accessUrl = getAccessUrl(hash, fileName, specFormat.uri),
+			hash = getHashsum(dobj, metaVocab.hasSha256sum),
+			accessUrl = getAccessUrl(hash, fileName, spec.format.uri),
 			fileName = fileName,
-			pid = submStop.flatMap(_ => getPid(hash, specFormat.uri)),
-			production = DataProduction(
-				producer = DataProducer(
-					uri = producer,
-					label = producerName,
-					theme = getTheme(producer),
-					pos = pos,
-					//TODO: Add support for geoJson
-					coverage = None
-				),
-				timeInterval = prodTimeInterval
-			),
-			submission = DataSubmission(
-				submitter = UriResource(
-					uri = submitter,
-					label = submitterName
-				),
-				start = submStart,
-				stop = submStop
-			),
-			specification = DataObjectSpec(
-				format = specFormat,
-				encoding = encoding,
-				dataLevel = dataLevel,
-				datasetSpec = None
-			)
+			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
+			submission = submission,
+			specification = spec,
+			specificInfo = getL3Meta(dobj, production).map(Left(_)).getOrElse(Right(getL2Meta(dobj, production)))
 		)
 	}
 
@@ -100,7 +60,7 @@ class DataObjectFetcher(server: InstanceServer, vocab: CpVocab, metaVocab: Cpmet
 	}
 
 	private def getTheme(subj: URI): DataTheme = {
-		import metaVocab.{atmoStationClass, ecoStationClass, oceStationClass, tcClass, cfClass, orgClass, atc, etc, otc, cp, cal}
+		import metaVocab.{ atc, atmoStationClass, cal, cfClass, cp, ecoStationClass, etc, oceStationClass, orgClass, otc, tcClass }
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
 			case `atmoStationClass` => Atmosphere
@@ -117,39 +77,54 @@ class DataObjectFetcher(server: InstanceServer, vocab: CpVocab, metaVocab: Cpmet
 			}
 			case `orgClass` => NonICOS
 		}
-		assert(themes.size == 1, s"Expected $subj to be a station of exactly one theme but got ${themes.size} themes!")
-		themes.head
+		themes.headOption.getOrElse(NonICOS)
 	}
 
-	private def getSingleUri(subj: URI, pred: URI): URI =
-		server.getUriValues(subj, pred, InstanceServer.ExactlyOne).head
+	private def getTemporalCoverage(dobj: URI) = TemporalCoverage(
+		interval = TimeInterval(
+			start = getSingleInstant(dobj, metaVocab.hasStartTime),
+			stop = getSingleInstant(dobj, metaVocab.hasEndTime)
+		),
+		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
+	)
 
-	private def getLabeledResource(subj: URI, pred: URI): UriResource = {
-		val uri = getSingleUri(subj, pred)
-		UriResource(uri, label = getOptionalString(uri, RDFS.LABEL))
-	}
+	private def getStation(stat: URI) = Station(
+		uri = stat,
+		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
+		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
+		theme = getTheme(stat),
+		pos = for(
+			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
+			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
+		) yield Position(posLat, posLon),
+		//TODO: Add support for geoJson from station info (OTC)
+		coverage = None
+	)
 
-	private def getOptionalString(subj: URI, pred: URI): Option[String] =
-		server.getStringValues(subj, pred, InstanceServer.AtMostOne).headOption
+	private def getL3Meta(dobj: URI, prodOpt: Option[DataProduction]): Option[L3SpecificMeta] =
+		getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{ cov =>
+			assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
+			val prod = prodOpt.get
+			L3SpecificMeta(
+				title = getSingleString(dobj, metaVocab.dcterms.title),
+				description = getOptionalString(dobj, metaVocab.dcterms.description),
+				spatial = getSpatialCoverage(cov),
+				temporal = getTemporalCoverage(dobj),
+				productionInfo = prod,
+				theme = getTheme(prod.hostOrganization.getOrElse(prod.creator).uri)
+			)
+		}
 
-	private def getSingleString(subj: URI, pred: URI): String =
-		server.getStringValues(subj, pred, InstanceServer.ExactlyOne).head
-
-	private def getSingleInt(subj: URI, pred: URI): Int =
-		server.getIntValues(subj, pred, InstanceServer.ExactlyOne).head
-
-	private def getOptionalDouble(subj: URI, pred: URI): Option[Double] =
-		server.getDoubleValues(subj, pred, InstanceServer.AtMostOne).headOption
-
-	private def getOptionalInstant(subj: URI, pred: URI): Option[Instant] =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(Instant.parse)
-
-	private def getSingleInstant(subj: URI, pred: URI): Instant =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(Instant.parse).head
-
-	private def getHashsum(dataObjUri: URI, pred: URI): Sha256Sum = {
-		val hex: String = server.getLiteralValues(dataObjUri, pred, XMLSchema.HEXBINARY, InstanceServer.ExactlyOne).head
-		Sha256Sum.fromHex(hex).get
+	private def getL2Meta(dobj: URI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
+		val acq = DataAcquisition(
+			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),
+			interval = for(
+				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
+				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
+			) yield TimeInterval(start, stop)
+		)
+		L2OrLessSpecificMeta(acq, prod)
 	}
 
 }

@@ -11,14 +11,20 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
 	implicit val dataObjectSpecFormat = jsonFormat4(DataObjectSpec)
 
-	implicit val objectSubmissionFormat = jsonFormat3(DataSubmission)
 
 	implicit val dataThemeFormat = enumFormat(DataTheme)
 
 	implicit val positionFormat = jsonFormat2(Position)
-	implicit val objectProducerFormat = jsonFormat5(DataProducer)
-	implicit val objectProductionFormat = jsonFormat2(DataProduction)
-	implicit val dataObjectFormat = jsonFormat7(DataObject)
+	implicit val objectProducerFormat = jsonFormat6(Station)
+	implicit val dataProductionFormat = jsonFormat4(DataProduction)
+	implicit val dataAcquisitionFormat = jsonFormat2(DataAcquisition)
+	implicit val dataSubmissionFormat = jsonFormat3(DataSubmission)
+
+	implicit val spatialCoverageFormat = jsonFormat3(SpatialCoverage)
+	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
+
+	implicit val l2SpecificMetaFormat = jsonFormat2(L2OrLessSpecificMeta)
+	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
 
@@ -38,4 +44,7 @@ object JsonSupport extends CommonJsonSupport{
 				deserializationError("Expected JS object representing upload completion info")
 		}
 	}
+
+	implicit val dataObjectFormat = jsonFormat7(DataObject)
+
 }

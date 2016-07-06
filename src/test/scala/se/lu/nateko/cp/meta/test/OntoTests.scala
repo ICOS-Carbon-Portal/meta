@@ -17,7 +17,7 @@ class OntoTests extends FunSpec{
 		
 		describe("for Station class"){
 			val props = getClassInfo("Station").properties
-			val expected = 10
+			val expected = 8
 
 			it(s"should find $expected properties"){
 				assert(props.size === expected)

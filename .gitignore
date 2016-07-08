@@ -17,6 +17,7 @@ npm-debug.log
 /project/target/
 /views/target
 /jobAd/target
+/jobAd/src/main/js
 
 # Scala-IDE specific
 .project

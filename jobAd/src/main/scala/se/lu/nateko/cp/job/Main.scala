@@ -13,6 +13,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import JobAdJson._
 import scala.util.Failure
 import scala.util.Success
+import spray.json.JsObject
+import spray.json.JsString
 
 object Main extends App {
 	implicit val system = ActorSystem("cpmeta")
@@ -44,15 +46,21 @@ object Main extends App {
 					case Failure(err) =>
 						val msg = err.getMessage
 						log.info(s"BAD($msg) ${report.toString}")
-						complete((StatusCodes.BadRequest, msg))
+						complete((StatusCodes.BadRequest, getResponse(msg)))
 					case Success(_) =>
 						log.info("GOOD " + report.toString)
-						complete((StatusCodes.OK, "Good job!"))
+						complete((StatusCodes.OK, getResponse("Good job!")))
 				}
-			} ~
-			complete((StatusCodes.BadRequest, "Expected a properly formed assignment report JSON as request payload"))
+			} ~ {
+				val msg = "Expected a properly formed assignment report JSON as request payload."
+				complete((StatusCodes.BadRequest, msg))
+			}
 		}
 	}
+
+	private def getResponse(message: String)= JsObject(
+		Map("status" -> JsString(message))
+	)
 
 	Http()
 		.bindAndHandle(route, "localhost", 9050)

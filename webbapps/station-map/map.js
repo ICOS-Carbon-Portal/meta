@@ -74,13 +74,6 @@ function initMap(stations, config) {
 		opacity: 0.6
 	});
 
-	//Layer 4
-	var mapQuestMap = new ol.layer.Tile({
-		tag: "mapQuestMap",
-		visible: false,
-		source: new ol.source.MapQuest({layer: 'osm'})
-	});
-
 	//Station layers
 	var OsStations = getVectorLayer(stations.OS, config);
 	OsStations.theme = "OS";
@@ -103,7 +96,6 @@ function initMap(stations, config) {
 			worldAerialBing,
 			worldWaterColorStamen,
 			worldWaterColorStamenLbl,
-			mapQuestMap,
 			OsStations,
 			EsStations,
 			AsStations

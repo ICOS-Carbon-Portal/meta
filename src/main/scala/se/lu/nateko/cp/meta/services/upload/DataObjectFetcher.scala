@@ -4,6 +4,7 @@ import java.net.{URI => JavaUri}
 
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
+import org.openrdf.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
@@ -41,7 +42,7 @@ class DataObjectFetcher(
 
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
-			accessUrl = getAccessUrl(hash, fileName, spec.format.uri),
+			accessUrl = Some(getAccessUrl(hash, fileName, spec.format.uri)),
 			fileName = fileName,
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
 			submission = submission,
@@ -54,9 +55,15 @@ class DataObjectFetcher(
 		if(format == metaVocab.wdcggFormat) None else Some(pidFactory(hash))
 	}
 
-	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], specFormat: URI): Option[JavaUri] = {
-		if(specFormat == metaVocab.wdcggFormat) None
-		else Some(vocab.getDataObjectAccessUrl(hash, fileName))
+	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], specFormat: URI): JavaUri = {
+		if(specFormat == metaVocab.wdcggFormat)
+			new JavaUri("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html")
+		else {
+			val dobj = vocab.getDataObject(hash)
+			getOptionalUri(dobj, RDFS.SEEALSO).map(sesameUriToJava).getOrElse(
+				vocab.getDataObjectAccessUrl(hash, fileName)
+			)
+		}
 	}
 
 	private def getTheme(subj: URI): DataTheme = {

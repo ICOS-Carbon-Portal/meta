@@ -79,6 +79,10 @@ lazy val meta = (project in file("."))
 
 		initialCommands in console := """
 			import se.lu.nateko.cp.meta.Playground._
+		""",
+
+		cleanupCommands in console := """
+			stop()
 		"""
 	)
 

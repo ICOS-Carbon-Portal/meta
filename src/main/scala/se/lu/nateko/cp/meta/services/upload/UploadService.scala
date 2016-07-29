@@ -94,7 +94,8 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		} ++
 		makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
 		getProductionStatements(hash, meta.production) ++
-		getSpatialCoverageStatements(hash, meta.spatial)
+		getSpatialCoverageStatements(hash, meta.spatial) ++
+		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(uri => vocab.factory.createURI(uri)))
 	}
 
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {

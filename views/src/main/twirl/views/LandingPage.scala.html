@@ -120,7 +120,7 @@
 		<span>
 			@dobj.accessUrl match {
 				case Some(url) => {
-					<a href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
+					<a target="_blank" href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
 				}
 				case None => {
 					<span>Not available</span>

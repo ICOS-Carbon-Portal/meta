@@ -56,7 +56,8 @@ case class ElaboratedProductMetadata(
 	description: Option[String],
 	spatial: Either[SpatialCoverage, URI],
 	temporal: TemporalCoverage,
-	production: DataProductionDto
+	production: DataProductionDto,
+	customLandingPage: Option[URI]
 )
 
 case class DataProductionDto(

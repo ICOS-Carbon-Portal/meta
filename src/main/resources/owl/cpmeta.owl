@@ -153,6 +153,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">contains dataset</rdfs:label>
     </owl:ObjectProperty>
     
 

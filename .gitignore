@@ -38,6 +38,7 @@ npm-debug.log
 #Miscellaneous
 /src/main/resources/owl/catalog-v001.xml
 nohup.out
+README.html
 *.*~
 
 #Front end

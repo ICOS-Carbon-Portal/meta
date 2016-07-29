@@ -180,9 +180,11 @@ function showMap(sender, title, theme, lat, lon, geoJson, config){
 
 	if ($('#map').find('canvas').length == 0) {
 		var mapQuestMap = new ol.layer.Tile({
-			tag: "mapQuestMap",
+			tag: "topoMapESRI",
 			visible: true,
-			source: new ol.source.MapQuest({layer: 'osm'})
+			source: new ol.source.XYZ({
+				url: 'http://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
+			})
 		});
 
 		var station = getVectorLayer({

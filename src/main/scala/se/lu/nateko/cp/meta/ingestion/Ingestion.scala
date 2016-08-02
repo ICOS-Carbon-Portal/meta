@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
 import org.openrdf.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import java.net.URI
 
 sealed trait StatementProvider
 
@@ -30,7 +31,11 @@ object Ingestion {
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,
 			"badmSchema" -> badmSchema,
-			"pisAndStations" -> new SparqlConstructExtractor("/sparql/labelingToCpOnto.txt")
+			"pisAndStations" -> new SparqlConstructExtractor("/sparql/labelingToCpOnto.txt"),
+			"cpMetaInstances" -> new RemoteRdfGraphIngester(
+				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
+				rdfGraph = new URI("http://meta.icos-cp.eu/resources/cpmeta/")
+			)
 		)
 	}
 

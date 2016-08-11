@@ -15,6 +15,8 @@ import scala.util.Failure
 import scala.util.Success
 import spray.json.JsObject
 import spray.json.JsString
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.ContentTypes
 
 object Main extends App {
 	implicit val system = ActorSystem("cpmeta")
@@ -34,7 +36,9 @@ object Main extends App {
 	val route = handleExceptions(exceptionHandler){
 		get{
 			pathEndOrSingleSlash{
-				getFromResource("index.html")
+				val pageContent: String = views.html.JobTestAssignmentPage().body
+				val entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, pageContent)
+				complete(entity)
 			} ~
 			path("assignment"){
 				complete(AssignmentGenerator.createAssignment)

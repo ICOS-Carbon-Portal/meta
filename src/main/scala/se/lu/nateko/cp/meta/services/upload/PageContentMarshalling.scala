@@ -11,8 +11,29 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import spray.json._
+import play.twirl.api.Html
 
-object LandingPageMarshalling {
+object PageContentMarshalling {
+
+	def twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
+		implicit exeCtxt => html => Future.successful(
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
+		)
+	)
+
+	def dataObjectMarshaller: ToResponseMarshaller[DataObject] = Marshaller(
+		implicit exeCtxt => dataObj => Future.successful(
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObj, _)) ::
+			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObj)) :: Nil
+		)
+	)
+
+	private def getHtml(html: Html, charset: HttpCharset) = HttpResponse(
+		entity = HttpEntity(
+			ContentType.WithCharset(MediaTypes.`text/html`, charset),
+			html.body
+		)
+	)
 
 	private def getHtml(dataObj: DataObject, charset: HttpCharset) = HttpResponse(
 		entity = HttpEntity(
@@ -23,13 +44,6 @@ object LandingPageMarshalling {
 
 	private def getJson(dataObj: DataObject) = HttpResponse(
 		entity = HttpEntity(ContentTypes.`application/json`, dataObj.toJson.prettyPrint)
-	)
-
-	def marshaller: ToResponseMarshaller[DataObject] = Marshaller(
-		implicit exeCtxt => dataObj => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObj, _)) ::
-			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObj)) :: Nil
-		)
 	)
 
 }

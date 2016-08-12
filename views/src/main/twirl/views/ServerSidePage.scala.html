@@ -1,0 +1,17 @@
+@(title: String, header: String)(body: Html)
+@CpMetaPage(title){
+	<style type="text/css">
+		.col-md-12 > label::after {
+			content: ":";
+		}
+		iframe {
+			border:solid 1px #ddd;
+			width:100%;
+			height:400px;
+		}
+	</style>
+}{
+	@CpMetaNavBar(header)
+	@body
+}
+

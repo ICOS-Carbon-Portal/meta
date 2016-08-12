@@ -1,22 +1,21 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.stream.Materializer
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
-import scala.util.Success
-import scala.util.Failure
+import akka.http.scaladsl.server.MalformedRequestContentRejection
+import akka.http.scaladsl.server.RejectionHandler
+
+import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.CpmetaJsonProtocol
+import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
-import se.lu.nateko.cp.meta.UploadMetadataDto
-import akka.http.scaladsl.server.RejectionHandler
-import akka.http.scaladsl.server.MalformedRequestContentRejection
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -35,7 +34,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	)
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
-	implicit val dataObjectMarshaller = LandingPageMarshalling.marshaller
+	implicit val dataObjectMarshaller = PageContentMarshalling.dataObjectMarshaller
 	import AuthenticationRouting.ensureLocalRequest
 
 	def apply(

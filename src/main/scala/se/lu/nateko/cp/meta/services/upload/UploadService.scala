@@ -14,7 +14,7 @@ import org.openrdf.model.vocabulary.RDFS
 import org.openrdf.model.vocabulary.XMLSchema
 
 import akka.actor.ActorSystem
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.ElaboratedProductMetadata
@@ -39,7 +39,7 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		objectFetcher.fetch(hash)
 	}
 
-	def registerUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[String] =
+	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Try[String] =
 		for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta);

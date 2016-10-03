@@ -8,7 +8,7 @@ import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
 
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
 import se.lu.nateko.cp.meta.utils.sesame._
@@ -26,20 +26,20 @@ trait UserInfoService { self: StationLabelingService =>
 		userTcPairs.groupBy(_._1).mapValues(pairs => pairs.map(_._2))
 	}
 
-	def getLabelingUserInfo(uinfo: UserInfo): LabelingUserDto = {
+	def getLabelingUserInfo(uinfo: UserId): LabelingUserDto = {
 		val allEmails = provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
 
 		val piUriOpt = allEmails.collectFirst{
 			case SesameStatement(uri: URI, _, mail)
-				if(mail.stringValue.equalsIgnoreCase(uinfo.mail)) => uri
+				if(mail.stringValue.equalsIgnoreCase(uinfo.email)) => uri
 		}
 		allEmails.close()
 
-		val tcs = userToTcsLookup.get(uinfo.mail).getOrElse(Nil)
+		val tcs = userToTcsLookup.get(uinfo.email).getOrElse(Nil)
 
 		piUriOpt match{
 			case None =>
-				LabelingUserDto(None, uinfo.mail, false, tcs, Some(uinfo.givenName), Some(uinfo.surname))
+				LabelingUserDto(None, uinfo.email, false, tcs, None, None)
 			case Some(piUri) =>
 				val props = provisionalInfoServer
 					.getStatements(piUri)
@@ -49,24 +49,24 @@ trait UserInfoService { self: StationLabelingService =>
 					.toMap
 				LabelingUserDto(
 					uri = Some(piUri),
-					mail = uinfo.mail,
+					mail = uinfo.email,
 					isPi = true,
 					tcs = tcs,
-					firstName = props.get(vocab.hasFirstName).orElse(Some(uinfo.givenName)),
-					lastName = props.get(vocab.hasLastName).orElse(Some(uinfo.surname)),
+					firstName = props.get(vocab.hasFirstName),
+					lastName = props.get(vocab.hasLastName),
 					affiliation = props.get(vocab.hasAffiliation),
 					phone = props.get(vocab.hasPhone)
 				)
 		}
 	}
 
-	def saveUserInfo(info: LabelingUserDto, uploader: UserInfo): Unit = {
+	def saveUserInfo(info: LabelingUserDto, uploader: UserId): Unit = {
 		if(info.uri.isEmpty) throw new UnauthorizedUserInfoUpdateException("User must be identified by a URI")
 		val userUri = factory.createURI(info.uri.get)
 		val userEmail = getPiEmails(userUri).toIndexedSeq.headOption.getOrElse(
 			throw new UnauthorizedUserInfoUpdateException("User had no email in the database")
 		)
-		if(!userEmail.equalsIgnoreCase(uploader.mail))
+		if(!userEmail.equalsIgnoreCase(uploader.email))
 			throw new UnauthorizedUserInfoUpdateException("User is allowed to update only his/her own information")
 
 		def fromString(pred: URI)(str: String) = factory.createStatement(userUri, pred, vocab.lit(str))

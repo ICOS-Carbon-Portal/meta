@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import org.openrdf.model.URI
 import akka.util.ByteString
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.utils.sesame._
 import akka.http.scaladsl.model.Multipart
 import akka.http.scaladsl.model.ResponseEntity
@@ -22,7 +22,7 @@ trait FileService { self: StationLabelingService =>
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
 
-	def processFile(upload: Multipart.FormData.Strict, uploader: UserInfo)(implicit ex: ExecutionContext): Future[Unit] = Future{
+	def processFile(upload: Multipart.FormData.Strict, uploader: UserId)(implicit ex: ExecutionContext): Future[Unit] = Future{
 		val nameToParts = upload.strictParts.map(part => (part.name, part)).toMap
 		val fileType = nameToParts("fileType").entity.data.decodeString("UTF-8")
 		val stationUri = nameToParts("stationUri").entity.data.decodeString("UTF-8")
@@ -53,7 +53,7 @@ trait FileService { self: StationLabelingService =>
 		server.applyDiff(currentInfo, newInfo)
 	}
 
-	def deleteFile(station: java.net.URI, file: java.net.URI, uploader: UserInfo): Unit = {
+	def deleteFile(station: java.net.URI, file: java.net.URI, uploader: UserId): Unit = {
 		val stationUri: URI = factory.createURI(station)
 
 		assertThatWriteIsAuthorized(stationUri, uploader)

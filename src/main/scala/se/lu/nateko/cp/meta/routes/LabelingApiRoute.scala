@@ -88,11 +88,6 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		get{
-			path("login"){
-				authRouting.ensureLogin{
-					redirect(Uri("/labeling/"), StatusCodes.Found)
-				}
-			} ~
 			path("userinfo"){
 				authRouting.mustBeLoggedIn{ user =>
 					complete(service.getLabelingUserInfo(user))

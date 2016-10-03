@@ -6,7 +6,7 @@ import scala.util.Try
 import org.openrdf.model.URI
 import org.openrdf.model.ValueFactory
 import org.openrdf.model.vocabulary.RDF
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
@@ -22,7 +22,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	import servers.metaVocab
 	implicit val factory = servers.icosMeta.factory
 
-	def validateUpload(meta: UploadMetadataDto, uploader: UserInfo): Try[Unit] = for(
+	def validateUpload(meta: UploadMetadataDto, uploader: UserId): Try[Unit] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
@@ -39,8 +39,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserInfo): Try[Unit] = {
-		val userId = uploader.mail
+	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[Unit] = {
+		val userId = uploader.email
 		if(!submConf.authorizedUserIds.contains(userId))
 			Failure(new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'"))
 		else Success(())

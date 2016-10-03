@@ -4,7 +4,7 @@ import org.openrdf.model.Literal
 import org.openrdf.model.URI
 import org.openrdf.model.vocabulary.RDF
 
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.LabelingServiceConfig
@@ -29,10 +29,10 @@ class StationLabelingService(
 		(factory, vocab)
 	}
 
-	protected def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserInfo): Unit = {
+	protected def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserId): Unit = {
 		val piEmails = getPis(stationUri).flatMap(getPiEmails).toIndexedSeq
 
-		if(!piEmails.contains(uploader.mail.toLowerCase)) throw new UnauthorizedStationUpdateException(
+		if(!piEmails.contains(uploader.email.toLowerCase)) throw new UnauthorizedStationUpdateException(
 			"Only the following user(s) is(are) authorized to update this station's info: " +
 				piEmails.mkString(" and ")
 		)

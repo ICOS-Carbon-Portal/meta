@@ -41,7 +41,7 @@ lazy val views = (project in file("views"))
 		libraryDependencies += "se.lu.nateko.cp" %% "views-core" % "0.1-SNAPSHOT"
 	)
 
-val akkaVersion = "2.4.8"
+val akkaVersion = "2.4.10"
 val sesameVersion = "2.8.7"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
@@ -63,7 +63,7 @@ lazy val meta = (project in file("."))
 			"org.openrdf.sesame"     % "sesame-queryresultio-text"          % sesameVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.413" excludeAll(noGeronimo),
-			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.4-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"
 		),

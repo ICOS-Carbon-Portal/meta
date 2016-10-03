@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
 import se.lu.nateko.cp.cpauth.core.Authenticator
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.cpauth.core.CookieToToken
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
@@ -26,19 +26,19 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 
 	private[this] val authenticator = Authenticator(authConfig).get
 
-	private def user(inner: UserInfo => Route): Route = cookie(authConfig.authCookieName)(cookie => {
-		val userTry = for(
-			token <- CookieToToken.recoverToken(cookie.value);
-			uinfo <- authenticator.unwrapUserInfo(token)
-		) yield uinfo
+	private def user(inner: UserId => Route): Route = cookie(authConfig.authCookieName)(cookie => {
+		val uidTry = for(
+			signedToken <- CookieToToken.recoverToken(cookie.value);
+			token <- authenticator.unwrapToken(signedToken)
+		) yield token.userId
 
-		userTry match {
-			case Success(uinfo) => inner(uinfo)
+		uidTry match {
+			case Success(uid) => inner(uid)
 			case Failure(err) => reject(InvalidCpauthTokenRejection(toMessage(err)))
 		}
 	})
 
-	def mustBeLoggedIn(inner: UserInfo => Route): Route = handleRejections(authRejectionHandler)(user(inner))
+	def mustBeLoggedIn(inner: UserId => Route): Route = handleRejections(authRejectionHandler)(user(inner))
 
 	private def toMessage(err: Throwable): String = {
 		val msg = err.getMessage
@@ -47,25 +47,19 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 	
 	def allowUsers(userIds: Seq[String])(inner: => Route): Route =
 		if(userIds.isEmpty) inner else {
-			mustBeLoggedIn{ uinfo =>
-				if(userIds.contains(uinfo.mail.toLowerCase))
+			mustBeLoggedIn{ uid =>
+				if(userIds.contains(uid.email.toLowerCase))
 					inner
 				else
-					forbid(s"User ${uinfo.givenName} ${uinfo.surname} is not authorized to perform this operation")
+					forbid(s"User ${uid.email} is not authorized to perform this operation")
 			}
 		}
 
 	def route(implicit mat: Materializer) = get{
 		path("whoami"){
-			mustBeLoggedIn{uinfo => complete(uinfo)}
+			mustBeLoggedIn{uid => complete(uid)}
 		}
 	}
-
-	//TODO Make the cpauth login url and the name of the query param configurable
-	def ensureLogin(inner: => Route): Route = user(uinfo => inner) ~
-		extractUri{uri =>
-			redirect(Uri("https://cpauth.icos-cp.eu/login/").withQuery(Query("targetUrl" -> uri.toString)), StatusCodes.Found)
-		}
 }
 
 object AuthenticationRouting {

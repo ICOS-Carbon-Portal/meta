@@ -23,4 +23,5 @@ OPTIONAL{?s cpst:hasLon ?lon } .
 OPTIONAL{?s cpst:hasSpatialReference ?spatRef } .
 OPTIONAL{?pi cpst:hasFirstName ?piFname } .
 }
-GROUP BY ?lat ?lon ?class ?country ?sName ?lName ?siteType`;
+GROUP BY ?lat ?lon ?class ?country ?sName ?lName ?siteType
+ORDER BY ?themeShort ?sName`;

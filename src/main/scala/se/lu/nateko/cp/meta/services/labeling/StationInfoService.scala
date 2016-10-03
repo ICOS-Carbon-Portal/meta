@@ -5,7 +5,7 @@ import scala.util.Try
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
 
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsObject
 import spray.json.JsString
@@ -32,7 +32,7 @@ trait StationInfoService { self: StationLabelingService =>
 			.toMap
 	}
 
-	def saveStationInfo(info: JsObject, uploader: UserInfo): Unit = {
+	def saveStationInfo(info: JsObject, uploader: UserId): Unit = {
 
 		val stationUri = info.fields.get("stationUri")
 			.collect{case JsString(str) => str}

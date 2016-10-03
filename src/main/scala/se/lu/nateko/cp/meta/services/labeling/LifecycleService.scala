@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
 import java.net.URI
-import se.lu.nateko.cp.cpauth.core.UserInfo
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.sesame._
 import org.openrdf.model.Literal
@@ -18,7 +18,7 @@ trait LifecycleService { self: StationLabelingService =>
 	private val (factory, vocab) = getFactoryAndVocab(server)
 	private val mailer = SendMail(config.mailing)
 
-	def updateStatus(station: URI, newStatus: String, user: UserInfo)(implicit ctxt: ExecutionContext): Unit = {
+	def updateStatus(station: URI, newStatus: String, user: UserId)(implicit ctxt: ExecutionContext): Unit = {
 
 		ensureStatusIsLegal(newStatus)
 
@@ -50,17 +50,16 @@ trait LifecycleService { self: StationLabelingService =>
 				val subject = "Application for labeling received"
 				val templatePath = config.mailing.templatePaths.submitted
 				val body = SendMail.getBody(templatePath, Map(
-					"givenName" -> user.givenName,
-					"surname" -> user.surname,
+					"email" -> user.email,
 					"stationId" -> lookupStationId(stationUri).getOrElse("???")
 				))
 
-				mailer.send(recipients, subject, body, true, Seq(user.mail))
+				mailer.send(recipients, subject, body, true, Seq(user.email))
 			}
 		}
 	}
 
-	private def assertUserRepresentsTc(station: SesameUri, user: UserInfo): Unit = {
+	private def assertUserRepresentsTc(station: SesameUri, user: UserId): Unit = {
 		val tcUsersListOpt = for(
 			stationClass <- lookupStationClass(station);
 			list <- config.tcUserIds.get(stationClass)
@@ -82,10 +81,10 @@ object LifecycleService{
 
 	private def afterSubmission(statuses: String*) = statuses.forall(wereSubmitted.contains)
 
-	def userRepresentsTc(authorizedUserIds: Seq[String], user: UserInfo): Boolean =
+	def userRepresentsTc(authorizedUserIds: Seq[String], user: UserId): Boolean =
 		// If no user is authorised, then everyone is authorised
 		authorizedUserIds.isEmpty ||
-		authorizedUserIds.map(_.toLowerCase).contains(user.mail.toLowerCase)
+		authorizedUserIds.map(_.toLowerCase).contains(user.email.toLowerCase)
 
 	private def statusChangeIsLegal(currentStatus: Option[String], newStatus: String): Boolean =
 		(currentStatus, newStatus) match {
@@ -113,7 +112,7 @@ object LifecycleService{
 			throw new IllegalLabelingStatusException(msg)
 		}
 
-	def ensureUserRepresentsTc(tcUsersListOpt: Option[Seq[String]], user: UserInfo, station: SesameUri): Unit = {
+	def ensureUserRepresentsTc(tcUsersListOpt: Option[Seq[String]], user: UserId, station: SesameUri): Unit = {
 		if(tcUsersListOpt.isEmpty){
 			val message = s"No authorization config found for station (${station}) TC"
 			throw new UnauthorizedStationUpdateException(message)
@@ -122,7 +121,7 @@ object LifecycleService{
 		val authorizedUserIds = tcUsersListOpt.getOrElse(Nil)
 
 		if(!userRepresentsTc(authorizedUserIds, user)){
-			val message = s"User ${user.mail} does not represent station's Thematic Center!"
+			val message = s"User ${user.email} does not represent station's Thematic Center!"
 			throw new UnauthorizedStationUpdateException(message)
 		}
 	}

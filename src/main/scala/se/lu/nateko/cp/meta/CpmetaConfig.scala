@@ -63,12 +63,10 @@ case class UploadServiceConfig(
 	epicPid: EpicPidConfig
 )
 
-case class MailTemplatesConfig(submitted: String)
 case class EmailConfig(
 	mailSendingActive: Boolean,
 	smtpServer: String,
 	fromAddress: String,
-	templatePaths: MailTemplatesConfig,
 	logBccAddress: Option[String]
 )
 
@@ -110,8 +108,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat3(EpicPidConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat3(UploadServiceConfig)
-	implicit val templatesConfigFormat = jsonFormat1(MailTemplatesConfig)
-	implicit val emailConfigFormat = jsonFormat5(EmailConfig)
+	implicit val emailConfigFormat = jsonFormat4(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat5(LabelingServiceConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)

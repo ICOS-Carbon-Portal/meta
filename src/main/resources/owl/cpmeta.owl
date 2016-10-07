@@ -1541,6 +1541,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcTimeSer -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcTimeSer">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time series in ICOS ETC CSV format</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv">
@@ -1555,6 +1564,15 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">WDCGG gas mole fraction time series</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/etcDate -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/etcDate">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">h/m/yyyy</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1609,7 +1627,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/iso8601timeOfDay">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time of day in ISO-8601 format</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">[h]h:mm[:ss]</rdfs:label>
     </owl:NamedIndividual>
     
 

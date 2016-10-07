@@ -21,7 +21,7 @@ module.exports = function(StationMixins) {
 				<Inputs.Header txt="Identification" />
 				<Inputs.String {...this.getProps('hasLongName')} header="Station full name" />
 				<Inputs.String {...this.getProps('hasShortName')}
-					header="Station short name (short name trigram should be obtained form the GAWSIS system at http://gaw.empa.ch/gawsis/)" />
+					header="Station short name (short name trigram should be obtained from the GAWSIS system at http://gaw.empa.ch/gawsis/)" />
 				<Inputs.TextArea {...this.getProps('hasMainPersonnelNamesList')} header="List of the names of the main personnel involved in ICOS station operation" />
 				<Inputs.String {...this.getProps('hasResponsibleInstitutionName')} header="Institution name responsible for the station"/>
 				<Inputs.TextArea {...this.getProps('hasAddress')} header="Postal address" />

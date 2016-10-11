@@ -8,15 +8,6 @@ module.exports = function(StationMixins) {
 		mixins: StationMixins,
 
 		getForm: function() {
-			var stationClassOptions = _.extend({
-				options: {
-					"1": "1",
-					"2": "2",
-					"3": "3",
-					"Ass": "Ass"
-				}
-			}, this.getProps('hasStationClass'));
-
 			return <Inputs.FormForm>
 				<Inputs.Header txt="Identification" />
 				<Inputs.String {...this.getProps('hasLongName')} header="Station full name" />
@@ -26,7 +17,7 @@ module.exports = function(StationMixins) {
 				<Inputs.String {...this.getProps('hasResponsibleInstitutionName')} header="Institution name responsible for the station"/>
 				<Inputs.TextArea {...this.getProps('hasAddress')} header="Postal address" />
 				<Inputs.URL {...this.getProps('hasWebsite')} header="Web site" />
-				<Inputs.DropDownString {...stationClassOptions} header="Station class" />
+				<Inputs.String {...this.getProps('hasStationClass')} header="Station class" disabled={true}/>
 
 				<Inputs.Header txt="Station Localisation" />
 				<Inputs.Latitude {...this.getProps('hasLat')} header="Latitude [WGS84, decimal degrees]" />

@@ -42,7 +42,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction, updat
 		saveStationHandler: function(station){
 			var self = this;
 			var stationInfo = _.omit(station, 'files', 'fileExpectations', 'fileTypes', 'emails',
-				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersNeedingActionStation', 'hasApplicationStatus');
+				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersNeedingActionStation', 'hasApplicationStatus', 'hasStationClass');
 
 			Backend.saveStationInfo(stationInfo).then(
 				() => self.refreshIfStillRelevant(station),

@@ -20,9 +20,12 @@ export default function(StationMixins) {
 		},
 
 		getPrologue: function(){
-			return this.state.station.isUsersStation
+			const station = this.state.station;
+			const docLink = isAssociatedSite(station) ? etc.step1DocAssStations : etc.step1Doc;
+
+			return station.isUsersStation
 				? <ContentPanel panelTitle="Labeling how-to">
-					<p>Please see the Ecosystem stations labeling process <a target="_blank" href={etc.step1Doc}>document</a>.
+					<p>Please see the Ecosystem stations labeling process <a target="_blank" href={docLink}>document</a>.
 					Some of the file type descriptions in the &quot;Uploaded files&quot; panel below refer to the paragraphs (§) of the document.
 					When uploading files, please follow the file naming conventions specified there.
 					</p>
@@ -31,18 +34,47 @@ export default function(StationMixins) {
 		},
 
 		getComplexValidationErrors: function(){
-			var files = this.state.station.files;
+			const errors = [];
+			const station = this.state.station;
 
-			var type1 = _.findWhere(files, {fileType: etc.windDirectionFileType1});
-			var type2 = _.findWhere(files, {fileType: etc.windDirectionFileType2});
-			var alreadySubmitted = (this.state.station.hasWindDataInEuropeanDatabase === 'true');
+			const fileCount = fileType => (station.files || []).reduce(
+				(sum, file) => file.fileType === fileType ? sum + 1 : sum,
+				0
+			);
 
-			return (type1 || type2 || alreadySubmitted)
-				? []
-				: ['Must either supply one of the wind-direction types of files, or declare that the data is already submitted'];
+			function require(fileType){
+				if(fileCount(fileType) === 0)  errors.push("File missing: " + fileType);
+			}
+
+			if(isAssociatedSite(station)) require(etc.instrumentsFileType);
+			else {
+				require(etc.powerAvailabilityFileType);
+				require(etc.internetConnFileType);
+				require(etc.otherProjectsFileType);
+				require(etc.demFileType);
+				require(etc.highResImageFileType);
+
+				const canopyMissing = 12 - fileCount(etc.photos30DegOutsideFileType);
+				if(canopyMissing > 0) errors.push(
+					`${canopyMissing} file${canopyMissing == 1 ? '' : 's'} missing: ` + etc.photos30DegOutsideFileType
+				);
+
+				const windDirectionFileCount = fileCount(etc.windDirectionFileType1) + fileCount(etc.windDirectionFileType2);
+				var alreadySubmitted = (station.hasWindDataInEuropeanDatabase === 'true');
+
+				if (windDirectionFileCount == 0 && !alreadySubmitted) errors.push(
+					'Must either supply one of the wind-direction types of files, or declare that the data is already submitted'
+				);
+			}
+
+			return errors;
 		}
 
 	});
 
 };
+
+function isAssociatedSite(station){
+	return station.hasStationClass == "Ass";
+}
 

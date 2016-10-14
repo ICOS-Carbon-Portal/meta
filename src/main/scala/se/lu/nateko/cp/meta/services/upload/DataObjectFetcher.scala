@@ -131,7 +131,8 @@ class DataObjectFetcher(
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
 			) yield TimeInterval(start, stop)
 		)
-		L2OrLessSpecificMeta(acq, prod)
+		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
+		L2OrLessSpecificMeta(acq, prod, nRows)
 	}
 
 }

@@ -53,13 +53,23 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def completeUpload(server: InstanceServer, hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
+
 		if(format == metaVocab.wdcggFormat){
 			val wdcggCompleter = new WdcggUploadCompleter(server, vocab, metaVocab)
 			for(
 				_ <- wdcggCompleter.writeMetadata(hash, info);
 				_ <- writeUploadStopTime(server, hash)
 			) yield vocab.getDataObject(hash).stringValue
-		}else for(
+
+		} else if(format == metaVocab.wdcggFormat){
+			val completer = new EcoCsvUploadCompleter(server, vocab, metaVocab)
+			for(
+				_ <- completer.writeMetadata(hash, info);
+				_ <- writeUploadStopTime(server, hash);
+				pid <- mintEpicPid(hash)
+			) yield pid
+
+		} else for(
 			pid <- mintEpicPid(hash);
 			_ <- writeUploadStopTime(server, hash)
 		) yield pid

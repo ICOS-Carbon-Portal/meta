@@ -109,6 +109,7 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 			makeSt(aquisitionUri, RDF.TYPE, metaVocab.aquisitionClass),
 			makeSt(aquisitionUri, metaVocab.prov.wasAssociatedWith, meta.station)
 		) ++
+		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)

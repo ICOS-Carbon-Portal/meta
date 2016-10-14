@@ -76,9 +76,14 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		if(spec.format.uri == metaVocab.wdcggFormat.toJava || spec.dataLevel == 3)
 			Success(())
 		else {
-			val acqInterval = meta.specificInfo.right.toOption.flatMap(_.acquisitionInterval)
-			if(acqInterval.isDefined) Success(())
-			else Failure(new UploadUserErrorException("Must provide 'aquisitionInterval' with start and stop timestamps."))
+			val stationMetaOpt = meta.specificInfo.right.toOption
+			val acqInterval = stationMetaOpt.flatMap(_.acquisitionInterval)
+			val nRows = stationMetaOpt.flatMap(_.nRows)
+			if(acqInterval.isEmpty)
+				Failure(new UploadUserErrorException("Must provide 'aquisitionInterval' with start and stop timestamps."))
+			else if(nRows.isEmpty && spec.dataLevel == 2)
+				Failure(new UploadUserErrorException("Must provide 'nRows' with number of rows in the uploaded data file."))
+			else Success(())
 		}
 	}
 

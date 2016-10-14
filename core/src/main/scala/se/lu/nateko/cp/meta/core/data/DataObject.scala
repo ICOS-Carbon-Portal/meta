@@ -45,7 +45,8 @@ case class TemporalCoverage(interval: TimeInterval, resolution: Option[String])
 
 case class L2OrLessSpecificMeta(
 	acquisition: DataAcquisition,
-	productionInfo: Option[DataProduction]
+	productionInfo: Option[DataProduction],
+	nRows: Option[Int]
 )
 case class L3SpecificMeta(
 	title: String,

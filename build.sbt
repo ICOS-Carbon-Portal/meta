@@ -80,11 +80,11 @@ lazy val meta = (project in file("."))
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		initialCommands in console := """
-			import se.lu.nateko.cp.meta.Playground._
+		initialCommands in console in Test := """
+			import se.lu.nateko.cp.meta.test.Playground._
 		""",
 
-		cleanupCommands in console := """
+		cleanupCommands in console in Test := """
 			stop()
 		"""
 	)

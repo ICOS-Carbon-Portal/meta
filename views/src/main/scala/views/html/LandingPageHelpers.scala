@@ -11,15 +11,6 @@ import spray.json._
 private object LandingPageHelpers{
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
-	implicit class PresentableResource(val res: UriResource) extends AnyVal{
-		def getLabel: String = {
-			res.label match {
-				case Some(l) => l.capitalize
-				case None => res.uri.toString
-			}
-		}
-	}
-
 	private def formatDate(inst: Instant): String = {
 		val formatter: DateTimeFormatter = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd HH:mm:ss")

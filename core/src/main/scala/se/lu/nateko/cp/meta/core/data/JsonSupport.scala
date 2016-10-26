@@ -9,7 +9,7 @@ object JsonSupport extends CommonJsonSupport{
 	import Sha256Sum.sha256sumFormat
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
-	implicit val dataObjectSpecFormat = jsonFormat4(DataObjectSpec)
+	implicit val dataObjectSpecFormat = jsonFormat5(DataObjectSpec)
 
 
 	implicit val dataThemeFormat = enumFormat(DataTheme)

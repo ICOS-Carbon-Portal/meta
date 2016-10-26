@@ -13,6 +13,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def metaVocab: CpmetaVocab
 
 	protected def getSpecification(spec: URI) = DataObjectSpec(
+		self = getLabeledResource(spec),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),

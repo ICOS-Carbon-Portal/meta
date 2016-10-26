@@ -26,6 +26,7 @@ case class Station(
 )
 
 case class DataObjectSpec(
+	self: UriResource,
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,

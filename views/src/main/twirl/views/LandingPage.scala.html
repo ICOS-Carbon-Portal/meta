@@ -33,8 +33,9 @@
 						@PanelRow("Temporal resolution", resolution)
 					}
 				}
-				@PanelRow("Format", dobj.specification.format.getLabel)
-				@PanelRow("Encoding", dobj.specification.encoding.getLabel)
+				@resourcePanelRow("Specification", dobj.specification.self)
+				@resourcePanelRow("Format", dobj.specification.format)
+				@resourcePanelRow("Encoding", dobj.specification.encoding)
 				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
 				@if(uploadComplete) {
@@ -59,18 +60,12 @@
 
 			@for(production <- dobj.production){
 				@Panel("Production"){
-					@PanelHtmlRow{Created by}{
-						@resourceLink(production.creator)
-					}
+					@resourcePanelRow("Created by", production.creator)
 					@for(contributor <- production.contributors){
-						@PanelHtmlRow{Contributor}{
-							@resourceLink(contributor)
-						}
+						@resourcePanelRow("Contributor", contributor)
 					}
 					@for(host <- production.hostOrganization){
-						@PanelHtmlRow{Host organization}{
-							@resourceLink(host)
-						}
+						@resourcePanelRow("Host organization", host)
 					}
 					@PanelRow("ICOS data level", dobj.specification.dataLevel.toString)
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
@@ -81,9 +76,7 @@
 			}
 
 			@Panel("Submission"){
-				@PanelHtmlRow{Submitted by}{
-					@resourceLink(dobj.submission.submitter)
-				}
+				@resourcePanelRow("Submitted by", dobj.submission.submitter)
 				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
 				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
 			}
@@ -112,6 +105,12 @@
 
 @resourceLink(res: UriResource) = {
 	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@resourcePanelRow(label: String, res: UriResource) = {
+	@PanelHtmlRow{@label}{
+		@resourceLink(res)
+	}
 }
 
 @theme = @{dobj.theme.toString}

@@ -37,6 +37,7 @@ case class DataProduction(
 	creator: UriResource,
 	contributors: Seq[UriResource],
 	hostOrganization: Option[UriResource],
+	comment: Option[String],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: UriResource, start: Instant, stop: Option[Instant])

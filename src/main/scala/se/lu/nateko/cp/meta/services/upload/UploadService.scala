@@ -124,11 +124,10 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 			makeSt(productionUri, metaVocab.wasPerformedBy, prod.creator),
 			makeSt(productionUri, metaVocab.hasEndTime, vocab.lit(prod.creationDate))
 		) ++
+		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
+		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(javaUriToSesame)) ++
 		prod.contributors.map{
 			makeSt(productionUri, metaVocab.wasParticipatedInBy, _)
-		} ++
-		prod.hostOrganization.map{
-			makeSt(productionUri, metaVocab.wasHostedBy, _)
 		}
 	}
 

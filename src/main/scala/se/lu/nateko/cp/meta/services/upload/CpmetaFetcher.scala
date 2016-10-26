@@ -35,6 +35,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		creator = getLabeledResource(prod, metaVocab.wasPerformedBy),
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getLabeledResource),
 		hostOrganization = getOptionalUri(prod, metaVocab.wasHostedBy).map(getLabeledResource),
+		comment = getOptionalString(prod, RDFS.COMMENT),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 

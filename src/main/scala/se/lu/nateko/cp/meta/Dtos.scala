@@ -65,6 +65,7 @@ case class DataProductionDto(
 	creator: URI,
 	contributors: Seq[URI],
 	hostOrganization: Option[URI],
+	comment: Option[String],
 	creationDate: Instant
 )
 

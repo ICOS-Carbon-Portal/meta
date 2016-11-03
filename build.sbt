@@ -39,7 +39,7 @@ lazy val views = (project in file("views"))
 		name := "meta-views",
 		version := "0.1.0-SNAPSHOT",
 		libraryDependencies ++= Seq(
-			"se.lu.nateko.cp"       %% "views-core"         % "0.1-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "views-core"         % "0.2-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"        % "0.5-SNAPSHOT"
 		)
 	)

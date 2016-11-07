@@ -1,5 +1,5 @@
 @(title: String, header: String)(body: Html)
-@CpMetaPage(title){
+@CpCommonPage(title, Nil){
 	<style type="text/css">
 		.col-md-12 > label::after {
 			content: ":";
@@ -11,7 +11,9 @@
 		}
 	</style>
 }{
-	@CpMetaNavBar(header)
+	<div class="page-header">
+		<h1>@header</h1>
+	</div>
 	@body
 }
 

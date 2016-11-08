@@ -1,5 +1,7 @@
-@(title: String, header: String)(body: Html)
-@CpCommonPage(title, Nil){
+@import views.CpMenuItem
+
+@(title: String, header: String, menu: Seq[CpMenuItem] = Nil)(body: Html)
+@CpCommonPage(title, menu){
 	<style type="text/css">
 		.col-md-12 > label::after {
 			content: ":";

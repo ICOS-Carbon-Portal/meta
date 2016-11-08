@@ -1,8 +1,9 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import LandingPageHelpers._
+@import views.CpMenu
 
 @(dobj: DataObject)
-@ServerSidePage("Landing Page", "ICOS RI Data Object Landing Page"){
+@ServerSidePage("Landing Page", "ICOS RI Data Object Landing Page", CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">

@@ -24,12 +24,13 @@ object StaticRoute {
 			path("metaentry.js"){
 				getFromResource("www/metaentry.js")
 			} ~ {
-				if(config.instOntoServers.contains(ontId)){
-					pathSingleSlash{
-						complete(views.html.MetaentryPage())
-					}
-				} else
-					complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
+				config.instOntoServers.get(ontId) match {
+					case Some(ontConfig) => pathSingleSlash{
+							complete(views.html.MetaentryPage(ontConfig.serviceTitle))
+						}
+					case None =>
+						complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))
+				}
 			}
 		} ~
 		pathPrefix(Segment){page =>

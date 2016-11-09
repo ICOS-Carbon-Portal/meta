@@ -1,4 +1,5 @@
-@CpBarePage("ICOS metadata entry service"){
+@(pageTitle: String)
+@CpCommonPage("ICOS metadata entry service"){
 	<script src="https://static.icos-cp.eu/constant/react/0.13.3/react.min.js"></script>
 	<script src="https://static.icos-cp.eu/constant/reflux/0.2.7/reflux.min.js"></script>
 	<!--[if IE]>
@@ -13,11 +14,11 @@
 		.cp-lnk:hover{
 			cursor: pointer;
 		}
-		body{
-			overflow-y: hidden;
-		}
 	</style>
 }{
+	<div class="page-header">
+		<h1>@pageTitle</h1>
+	</div>
 	<div id="main"></div>
 	<script src="metaentry.js"></script>
 }

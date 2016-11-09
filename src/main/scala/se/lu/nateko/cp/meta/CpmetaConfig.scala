@@ -40,6 +40,7 @@ case class InstanceServersConfig(
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
 
 case class InstOntoServerConfig(
+	serviceTitle: String,
 	ontoId: String,
 	instanceServerId: String,
 	authorizedUserIds: Seq[String]
@@ -103,7 +104,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
 	implicit val publicAuthConfigFormat = jsonFormat2(PublicAuthConfig)
 	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
-	implicit val instOntoServerConfigFormat = jsonFormat3(InstOntoServerConfig)
+	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat3(EpicPidConfig)

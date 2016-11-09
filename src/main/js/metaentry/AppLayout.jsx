@@ -17,17 +17,14 @@ var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.choo
 var IndividualAdder = require('./views/IndividualAdderFactory.jsx')(TypesStore, actions.checkUriSuffix, actions.createIndividual);
 var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.chooseIndividual, actions.removeIndividual, IndividualAdder);
 var EditView = require('./views/EditViewFactory.jsx')(EditStore, actions.requestUpdate);
-var ScreenHeightColumn = require('./views/ScreenHeightColumn.jsx');
 
 module.exports = React.createClass({
 	render: function(){
 
-		return <div className="container-fluid">
-			<div className="row" style={{marginTop: "2px"}}>
-				<div className="col-md-2"><TypesList /></div>
-				<div className="col-md-3"><IndividualsList /></div>
-				<div className="col-md-7"><EditView /></div>
-			</div>
+		return <div className="row" style={{marginTop: "2px"}}>
+			<div className="col-md-2"><TypesList /></div>
+			<div className="col-md-3"><IndividualsList /></div>
+			<div className="col-md-7"><EditView /></div>
 		</div>;
 	}
 });

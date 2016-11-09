@@ -15,10 +15,16 @@ module.exports = React.createClass({
 		window.removeEventListener("resize", this.resizeListener);
 	},
 	ensureScreenHeight: function(){
-		var elem = React.findDOMNode(this);
-		var top = elem.getBoundingClientRect().top;
-		var desiredHeight = window.innerHeight - top - 20;
-		elem.style.height = desiredHeight + "px";
+		var listElem = React.findDOMNode(this);
+
+		var listRect = listElem.getBoundingClientRect();
+		var panelRect = listElem.parentElement.parentElement.getBoundingClientRect();
+
+		var totalMargin = panelRect.height - listRect.height;
+
+		var desiredHeight = window.innerHeight - totalMargin - 10;
+
+		listElem.style.height = desiredHeight + "px";
 	},
 	render: function(){
 		return <div className={this.props.className} style={{overflowY: "auto", overflowX: "hidden"}}>

@@ -75,6 +75,6 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val userIdFormat = jsonFormat1(UserId)
 
 	implicit val fileDeletionFormat = jsonFormat2(FileDeletionDto)
-	implicit val labelingUserFormat = jsonFormat8(LabelingUserDto)
+	implicit val labelingUserFormat = jsonFormat9(LabelingUserDto)
 	implicit val labelingStatusUpdateFormat = jsonFormat2(LabelingStatusUpdate)
 }

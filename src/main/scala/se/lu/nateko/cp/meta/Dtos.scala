@@ -74,6 +74,7 @@ case class LabelingUserDto(
 	uri: Option[URI],
 	mail: String,
 	isPi: Boolean,
+	isDg: Boolean,
 	tcs: Seq[URI],
 	firstName: Option[String],
 	lastName: Option[String],

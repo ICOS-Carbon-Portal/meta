@@ -36,10 +36,11 @@ trait UserInfoService { self: StationLabelingService =>
 		allEmails.close()
 
 		val tcs = userToTcsLookup.get(uinfo.email).getOrElse(Nil)
+		val isDg: Boolean = config.dgUserId == uinfo.email
 
 		piUriOpt match{
 			case None =>
-				LabelingUserDto(None, uinfo.email, false, tcs, None, None)
+				LabelingUserDto(None, uinfo.email, false, isDg, tcs, None, None)
 			case Some(piUri) =>
 				val props = provisionalInfoServer
 					.getStatements(piUri)
@@ -51,6 +52,7 @@ trait UserInfoService { self: StationLabelingService =>
 					uri = Some(piUri),
 					mail = uinfo.email,
 					isPi = true,
+					isDg = isDg,
 					tcs = tcs,
 					firstName = props.get(vocab.hasFirstName),
 					lastName = props.get(vocab.hasLastName),

@@ -51,10 +51,12 @@ export default function(WhoAmIStore, StationsListStore){
 					station.emails,
 					piMail => piMail.toUpperCase() === this.whoami.mail.toUpperCase()
 				);
+				const isUsersDgStation = this.whoami.isDg;
 
 				return _.extend({}, station, {
 					isUsersStation: userIsPi,
 					isUsersTcStation,
+					isUsersDgStation,
 					isUsersNeedingActionStation: isUsersTcStation && (
 						station.hasApplicationStatus === status.submitted ||
 						station.hasApplicationStatus === status.acknowledged

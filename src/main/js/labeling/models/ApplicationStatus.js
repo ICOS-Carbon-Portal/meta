@@ -11,105 +11,56 @@ export const status = {
 	step3approved: 'STEP3APPROVED'
 };
 
+const dg = {}, tc = {}, pi = {}, s = status;
+const allowedStateTransitions = [ //from, to, role
+	[s.submitted,      s.acknowledged, tc],
+	[s.acknowledged,   s.notSubmitted, tc],
+	[s.acknowledged,   s.approved,     tc],
+	[s.acknowledged,   s.rejected,     tc],
+	[s.notSubmitted,   s.approved,     tc],
+	[s.notSubmitted,   s.rejected,     tc],
+	[s.approved,       s.rejected,     tc],
+];
+
+
+function userHasRoleForStation(station, role){
+	if(role === pi) return station.isUsersStation;
+	if(role === tc) return station.isUsersTcStation;
+	if(role === dg) return station.isUsersDgStation;
+	return false;
+}
+
 export default class ApplicationStatus{
 
 	constructor(station){
 		this.station = station;
+		this.transitions = [];
+
+		if(!station) return;
+
+		const transitions = _.filter(
+			allowedStateTransitions,
+			([from, , role]) => from === station.hasApplicationStatus && userHasRoleForStation(station, role)
+		);
+
+		this.transitions = _.map(transitions, ([, to]) => to);
 	}
 
 	get value(){
-		return this.station.hasApplicationStatus;
+		return this.station.hasApplicationStatus || s.neverSubmitted;
 	}
 
 	get mayBeSubmitted(){
-		return this.station.isUsersStation && (
-			!this.value || this.value === status.notSubmitted
-		);
-	}
-
-	get canBeAcknowledged(){
-		return this.value === status.submitted;
-	}
-
-	get canBeReturned(){
-		return !!this.value && (this.value !== status.notSubmitted);
-	}
-
-	get canBeApproved(){
-		return this.canBeReturned && this.value !== status.approved;
-	}
-
-	get canBeRejected(){
-		return this.canBeReturned && this.value !== status.rejected;
-	}
-
-	get step2CanStart(){
-		return this.station.isUsersStation && this.value === status.approved;
-	}
-
-	get step2CanBeDecided(){
-		return this.station.isUsersTcStation && this.value === status.step2started;
-	}
-
-	get step3CanBeDecided(){
-		return this.station.isUsersDgStation && this.value === status.step2approved;
+		return this.station.isUsersStation && (this.value === s.neverSubmitted || this.value === s.notSubmitted);
 	}
 
 	get canControlLifecycle(){
-		return this.station.isUsersStation || this.station.isUsersTcStation || this.station.isUsersDgStation;
+		const userHasRole = userHasRoleForStation.bind(null, this.station);
+		return _.some([pi, tc, dg], userHasRole);
 	}
 
-	getSubmitted(){
-		this.assert(this.mayBeSubmitted, 'This station is already submitted or you are not allowed to submit');
-		return this.withStatus(status.submitted);
-	}
-
-	getAcknowledged(){
-		this.assert(this.canBeAcknowledged, 'Cannot acknowledge this application!');
-		return this.withStatus(status.acknowledged);
-	}
-
-	getReturned(){
-		this.assert(this.canBeReturned, 'Cannot return this application for resubmission!');
-		return this.withStatus(status.notSubmitted);
-	}
-
-	getApproved(){
-		this.assert(this.canBeApproved, 'Cannot approve this application!');
-		return this.withStatus(status.approved);
-	}
-
-	getRejected(){
-		this.assert(this.canBeRejected, 'Cannot reject this application!');
-		return this.withStatus(status.rejected);
-	}
-
-	getStep2Started(){
-		this.assert(this.step2CanStart, 'Cannot start Step 2!');
-		return this.withStatus(status.step2started);
-	}
-
-	getStep2Approved(){
-		this.assert(this.step2CanBeDecided, 'Cannot approve Step 2!');
-		return this.withStatus(status.step2approved);
-	}
-
-	getStep2Rejected(){
-		this.assert(this.step2CanBeDecided, 'Cannot reject Step 2!');
-		return this.withStatus(status.step2rejected);
-	}
-
-	getStep3Approved(){
-		this.assert(this.step3CanBeDecided, 'Cannot approve Step 3!');
-		return this.withStatus(status.step3approved);
-	}
-
-	withStatus(newStatus){
+	stationWithStatus(newStatus){
 		return _.extend({}, this.station, {hasApplicationStatus: newStatus});
-	}
-
-	assert(condition, errorMessage){
-		if(!condition) throw new Error(errorMessage);
 	}
 
 }

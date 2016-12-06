@@ -1,4 +1,5 @@
 import ContentPanel from './ContentPanel.jsx';
+import {status} from '../models/ApplicationStatus';
 
 var Warning = React.createClass({
 	render: function(){
@@ -83,7 +84,7 @@ module.exports = function(statusUpdateAction) {
 		},
 
 		submitHandler: function(){
-			let submittedStation = this.props.status.getSubmitted();
+			let submittedStation = this.props.status.stationWithStatus(status.submitted);
 			statusUpdateAction(submittedStation);
 		}
 

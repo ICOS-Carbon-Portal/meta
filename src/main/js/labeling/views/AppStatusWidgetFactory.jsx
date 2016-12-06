@@ -1,5 +1,28 @@
 import ContentPanel from './ContentPanel.jsx';
 import {statusFullText, statusClass} from './StationsListFactory.jsx';
+import {status} from '../models/ApplicationStatus.js';
+
+function getTransitionText(from, to){
+	switch(to){
+		case status.acknowledged: return ["Acknowledge step 1", "Acknowledge the step 1 application"];
+		case status.notSubmitted: return ["Return step 1",      "Return the step 1 application for correction and resubmission"];
+		case status.approved: return ["Approve step 1",     "Approve step 1 of labeling for this station"];
+		case status.rejected: return ["Reject step 1",      "Reject the application at step 1"];
+	}
+}
+
+function transitionButtonClass(to){
+	switch(to){
+		case status.acknowledged: return "btn-primary";
+		case status.notSubmitted: return "cp-btn-gray";
+		case status.approved: return "btn-success";
+		case status.rejected: return "btn-danger";
+		case status.step2started : return "btn-warning";
+		case status.step2approved : return "btn-success";
+		case status.step2rejected : return "btn-danger";
+		case status.step3approved : return "btn-success";
+	}
+}
 
 export default function(saveStationAction) {
 
@@ -7,7 +30,6 @@ export default function(saveStationAction) {
 
 		render: function(){
 			const props = this.props;
-			if(!props.active) return null;
 
 			return <button type="button" className={'btn ' + props.buttonClass}
 					onClick={() => saveStationAction(props.getUpdated())} title={props.tooltip} style={{marginRight: 5}}>{props.buttonName}</button>;
@@ -20,33 +42,16 @@ export default function(saveStationAction) {
 			let status = this.props.status;
 			if(!status.canControlLifecycle) return null;
 
-			return <div style={{marginTop: 15}}>
+			return <div style={{marginTop: 15}}>{
+				_.map(status.transitions, to => {
+					let [buttonLabel, helpText] = getTransitionText(status.value, to);
 
-				<LifecycleButton buttonClass="btn-primary" active={status.canBeAcknowledged} getUpdated={() => status.getAcknowledged()}
-					tooltip="Acknowledge the step 1 application" buttonName="Acknowledge step 1" />
-
-				<LifecycleButton buttonClass="cp-btn-gray" active={status.canBeReturned} getUpdated={() => status.getReturned()}
-					tooltip="Return the step 1 application for correction and resubmission" buttonName="Return step 1" />
-
-				<LifecycleButton buttonClass="btn-success" active={status.canBeApproved} getUpdated={() => status.getApproved()}
-					tooltip="Approve the step 1 of labeling" buttonName="Approve step 1" />
-
-				<LifecycleButton buttonClass="btn-danger" active={status.canBeRejected} getUpdated={() => status.getRejected()}
-					tooltip="Reject the application at step 1" buttonName="Reject step 1" />
-
-				<LifecycleButton buttonClass="btn-warning" active={status.step2CanStart} getUpdated={() => status.getStep2Started()}
-					tooltip="Start step 2 of labeling" buttonName="Start step 2" />
-
-				<LifecycleButton buttonClass="btn-success" active={status.step2CanBeDecided} getUpdated={() => status.getStep2Approved()}
-					tooltip="Approve step 2 of labeling" buttonName="Approve step 2" />
-
-				<LifecycleButton buttonClass="btn-danger" active={status.step2CanBeDecided} getUpdated={() => status.getStep2Rejected()}
-					tooltip="Reject step 2 of labeling" buttonName="Reject step 2" />
-
-				<LifecycleButton buttonClass="btn-danger" active={status.step3CanBeDecided} getUpdated={() => status.getStep3Approved()}
-					tooltip="Grant final approval to the labeling application" buttonName="Grant final approval" />
-
-			</div>;
+					return <LifecycleButton key={to} buttonClass={transitionButtonClass(to)}
+						getUpdated={() => status.stationWithStatus(to)}
+						tooltip={helpText} buttonName={buttonLabel}
+					/>;
+				})
+			}</div>;
 		}
 
 	});

@@ -1,5 +1,3 @@
-import {status} from '../models/ApplicationStatus.js';
-
 
 function filterByType(stationType, station){
 	if (_.isEmpty(stationType)){
@@ -14,7 +12,7 @@ function filterByStatus(appStatus, station){
 		return true;
 	} else {
 		var filter = _.find(appStatus, function (filter) {
-			return filter.txt == station.hasApplicationStatus
+			return filter.value == station.hasApplicationStatus
 		});
 
 		return filter.selected;
@@ -64,3 +62,4 @@ export default function(StationsListStore, StationFilterStore){
 		}
 	});
 }
+

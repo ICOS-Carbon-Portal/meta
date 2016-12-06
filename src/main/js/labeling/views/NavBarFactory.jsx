@@ -19,7 +19,7 @@ module.exports = function(WhoAmIStore) {
 				</div>
 				{this.props.piMode
 					? <h1>PI Information <small>for ICOS metadata</small></h1>
-					: <h1>ICOS Station Labeling <small>Step 1</small></h1>}
+					: <h1>ICOS Station Labeling <small>Steps 1, 2, 3</small></h1>}
 			</div>;
 		}
 

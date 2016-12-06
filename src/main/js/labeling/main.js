@@ -1,5 +1,7 @@
 'use strict';
 
+import StationsListFactory from './views/StationsListFactory.jsx';
+
 var actions = Reflux.createActions([
 	'chooseStation',
 	'saveStation',
@@ -20,7 +22,7 @@ var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backen
 
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
 
-var StationFilterStore = require('./stores/StationFilterStoreFactory.js')(Backend, actions.stationFilters);
+var StationFilterStore = require('./stores/StationFilterStoreFactory.js')(actions.stationFilters);
 var StationFilteringStore = require('./stores/StationFilteringStoreFactory.js')(StationsListStore, StationFilterStore);
 
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationFilteringStore);
@@ -43,7 +45,7 @@ var themeToStation = {
 
 var StationFilter = require('./views/StationFilterFactory.jsx')(StationFilterStore, actions.stationFilters);
 
-var StationsList = require('./views/StationsListFactory.jsx')(StationAuthStore, themeToStation, actions.chooseStation);
+var StationsList = StationsListFactory(StationAuthStore, themeToStation, actions.chooseStation);
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
 var PiInfo = require('./views/PiInfoFactory.jsx')(WhoAmIStore, actions.savePi);
 

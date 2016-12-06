@@ -28,7 +28,7 @@ function postProcessStationsList(stations){
 				{
 					hasShortName: station.provShortName,
 					hasLongName: station.provLongName,
-					hasApplicationStatus: status.notSubmitted,
+					hasApplicationStatus: status.neverSubmitted,
 				},
 				_.omit(station, 'email', 'pi', 'provShortName', 'provLongName', 's', 'owlClass'),
 				{
@@ -116,10 +116,7 @@ export default function(ajax, sparql){
 		deleteFile: fileInfo => ajax.postJson('filedeletion', fileInfo),
 
 		whoAmI: () => ajax.getJson('userinfo'),
-		saveUserInfo: userInfo => ajax.postJson('saveuserinfo', userInfo),
-
-		saveFilterState: state => localStorage.setItem('filterState', JSON.stringify(state)),
-		loadFilterState: () => JSON.parse(localStorage.getItem('filterState') || null)
+		saveUserInfo: userInfo => ajax.postJson('saveuserinfo', userInfo)
 	};
 };
 

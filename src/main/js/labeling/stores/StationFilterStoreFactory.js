@@ -1,24 +1,23 @@
 import {status} from '../models/ApplicationStatus.js';
 
-function setDefaultFilters(){
+function setDefaultFilters(deselectAllAppStatuses){
 	return {
 		stationType: {
 			Atmosphere: true,
 			Ecosystem: true,
 			Ocean: true
 		},
-		appStatus: _.map(status, function(txt, key){
+		appStatus: _.map(status, function(value, key){
 			return {
-				name: key,
-				txt: txt,
-				selected: true
+				value,
+				selected: !deselectAllAppStatuses
 			};
 		}),
 		stationName: ""
 	};
 }
 
-export default function(Backend, stationFiltersAction){
+export default function(stationFiltersAction){
 
 	return Reflux.createStore({
 
@@ -28,23 +27,20 @@ export default function(Backend, stationFiltersAction){
 
 		init: function(){
 			this.listenTo(stationFiltersAction, this.stationFiltersHandler);
-
-			this.filterState = Backend.loadFilterState() || setDefaultFilters();
-		},
-
-		saveAndPublishFilterState: function(){
-			Backend.saveFilterState(this.filterState);
-			this.trigger(this.filterState);
+			this.filterState = setDefaultFilters();
 		},
 
 		stationFiltersHandler: function(filterAction){
-			if (filterAction.clearAllFilters){
-				this.filterState = setDefaultFilters();
-			} else {
-				_.extend(this.filterState, filterAction);
-			}
 
-			this.saveAndPublishFilterState();
+			if (filterAction.resetAllFilters)
+				this.filterState = setDefaultFilters();
+			else
+				if(filterAction.unselectStatuses)
+					this.filterState = setDefaultFilters(true);
+			else
+				_.extend(this.filterState, filterAction);
+
+			this.trigger(this.filterState);
 		}
 
 	});

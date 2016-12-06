@@ -22,7 +22,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction, updat
 					if(self.chosen.stationUri !== stationInfo.stationUri) return;
 
 					var newChosenStation = _.extend({chosen: true},
-						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation'),
+						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation'),
 						stationInfo
 					);
 					self.trigger({chosen: newChosenStation});
@@ -42,7 +42,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction, updat
 		saveStationHandler: function(station){
 			var self = this;
 			var stationInfo = _.omit(station, 'files', 'fileExpectations', 'fileTypes', 'emails',
-				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersNeedingActionStation', 'hasApplicationStatus', 'hasStationClass');
+				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation', 'isUsersNeedingActionStation', 'hasApplicationStatus', 'hasStationClass');
 
 			Backend.saveStationInfo(stationInfo).then(
 				() => self.refreshIfStillRelevant(station),

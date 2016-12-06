@@ -1,9 +1,14 @@
 export const status = {
+	neverSubmitted: 'NEVER SUBMITTED',
 	notSubmitted: 'NOT SUBMITTED',
 	submitted: 'SUBMITTED',
 	acknowledged: 'ACKNOWLEDGED',
 	approved: 'APPROVED',
-	rejected: 'REJECTED'
+	rejected: 'REJECTED',
+	step2started: 'STEP2STARTED',
+	step2approved: 'STEP2APPROVED',
+	step2rejected: 'STEP2REJECTED',
+	step3approved: 'STEP3APPROVED'
 };
 
 export default class ApplicationStatus{
@@ -12,32 +17,46 @@ export default class ApplicationStatus{
 		this.station = station;
 	}
 
+	get value(){
+		return this.station.hasApplicationStatus;
+	}
+
 	get mayBeSubmitted(){
-		let appStatus = this.station.hasApplicationStatus;
 		return this.station.isUsersStation && (
-			!appStatus || appStatus === status.notSubmitted
+			!this.value || this.value === status.notSubmitted
 		);
 	}
 
 	get canBeAcknowledged(){
-		return this.station.hasApplicationStatus === status.submitted;
+		return this.value === status.submitted;
 	}
 
 	get canBeReturned(){
-		let appStatus = this.station.hasApplicationStatus;
-		return !!appStatus && (appStatus !== status.notSubmitted);
+		return !!this.value && (this.value !== status.notSubmitted);
 	}
 
 	get canBeApproved(){
-		return this.canBeReturned && this.station.hasApplicationStatus !== status.approved;
+		return this.canBeReturned && this.value !== status.approved;
 	}
 
 	get canBeRejected(){
-		return this.canBeReturned && this.station.hasApplicationStatus !== status.rejected;
+		return this.canBeReturned && this.value !== status.rejected;
+	}
+
+	get step2CanStart(){
+		return this.station.isUsersStation && this.value === status.approved;
+	}
+
+	get step2CanBeDecided(){
+		return this.station.isUsersTcStation && this.value === status.step2started;
+	}
+
+	get step3CanBeDecided(){
+		return this.station.isUsersDgStation && this.value === status.step2approved;
 	}
 
 	get canControlLifecycle(){
-		return this.station.isUsersTcStation;
+		return this.station.isUsersStation || this.station.isUsersTcStation || this.station.isUsersDgStation;
 	}
 
 	getSubmitted(){
@@ -65,6 +84,26 @@ export default class ApplicationStatus{
 		return this.withStatus(status.rejected);
 	}
 
+	getStep2Started(){
+		this.assert(this.step2CanStart, 'Cannot start Step 2!');
+		return this.withStatus(status.step2started);
+	}
+
+	getStep2Approved(){
+		this.assert(this.step2CanBeDecided, 'Cannot approve Step 2!');
+		return this.withStatus(status.step2approved);
+	}
+
+	getStep2Rejected(){
+		this.assert(this.step2CanBeDecided, 'Cannot reject Step 2!');
+		return this.withStatus(status.step2rejected);
+	}
+
+	getStep3Approved(){
+		this.assert(this.step3CanBeDecided, 'Cannot approve Step 3!');
+		return this.withStatus(status.step3approved);
+	}
+
 	withStatus(newStatus){
 		return _.extend({}, this.station, {hasApplicationStatus: newStatus});
 	}
@@ -73,21 +112,5 @@ export default class ApplicationStatus{
 		if(!condition) throw new Error(errorMessage);
 	}
 
-	get label(){
-		let appStatus = this.station.hasApplicationStatus;
-		if(appStatus === status.submitted)
-			return {kind: 'info', text: 'Application submitted, waiting for acknowlegment and review'};
-		else if(appStatus === status.acknowledged)
-			return {kind: 'primary', text: 'Application sumbission acknowledged, waiting for review'};
-		else if(appStatus === status.approved)
-			return {kind: 'success', text: 'Application has been approved!'};
-		else if(appStatus === status.rejected)
-			return {kind: 'danger', text: 'Application has been rejected!'};
-		else if(appStatus === status.notSubmitted)
-			return {kind: 'warning', text: 'Application was returned for resubmission'};
-		else if(!appStatus)
-			return {kind: 'default', text: 'Application has not been submitted yet'};
-		else return {kind: 'danger', text: 'Invalid application status! Please inform Carbon Portal developers about the problem.'};
-	}
 }
 

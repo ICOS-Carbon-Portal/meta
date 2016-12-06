@@ -1,14 +1,5 @@
 import {status} from '../models/ApplicationStatus.js';
-
-function statusClass(appStatus){
-	switch(appStatus){
-		case status.acknowledged: return "label-primary";
-		case status.rejected: return "label-danger";
-		case status.approved: return "label-success";
-		case status.submitted: return "label-warning";
-		case status.notSubmitted: return "label-default";
-	}
-}
+import {statusClass, statusLabel} from './StationsListFactory.jsx';
 
 export default function(StationFilterStore, stationFiltersAction) {
 
@@ -64,24 +55,19 @@ export default function(StationFilterStore, stationFiltersAction) {
 
 					<div className="row" style={rowStyle}>
 						<div className="col-md-12">{
-							_.map(self.state.appStatus, function(item, index){
-
-									var css = "label " + statusClass(item.txt);
-
-									return (
-									<label key={item.name}
-										   style={{float: 'left', height: 20, padding: '0 5px 0 0', margin: '0 15px 10px 0'}}
-										   className={css}>
-										<input type="checkbox"
-											   style={{position:'relative', top: 2, left: 3, margin: '2px 7px 0 0'}}
-											   onChange={() => self.toggleStatusChkBx(index)}
-											   checked={item.selected}
-											   name={item.name}>
-											<span style={{fontWeight: 600, fontSize: 12}}>{item.txt}</span>
-										</input>
-									</label>
-									);
-								})
+							_.map(self.state.appStatus, (item, index) =>
+								<label key={item.value}
+									style={{float: 'left', height: 20, padding: '0 5px 0 0', margin: '0 15px 10px 0'}}
+									className={statusClass(item.value)}>
+									<input type="checkbox"
+										style={{position:'relative', top: 2, left: 3, margin: '2px 7px 0 0'}}
+										onChange={() => self.toggleStatusChkBx(index)}
+										checked={item.selected}
+										name={item.value}>
+										<span style={{fontWeight: 600, fontSize: 12}}>{statusLabel(item.value)}</span>
+									</input>
+								</label>
+							)
 						}</div>
 					</div>
 
@@ -89,9 +75,10 @@ export default function(StationFilterStore, stationFiltersAction) {
 						<div className="col-md-3" style={rowStyle}>
 							<div className="input-group">
 								<input type="text" className="form-control"
-									   onChange={self.stationNameSearch}
-									   placeholder="Station name text search"
-										value={self.state.stationName}></input>
+									onChange={self.stationNameSearch}
+									placeholder="Station name text search"
+									value={self.state.stationName}>
+								</input>
 								<span className="input-group-btn">
 									<button className="btn btn-primary" onClick={self.clearStationName} type="button">Clear text</button>
 								</span>
@@ -99,7 +86,11 @@ export default function(StationFilterStore, stationFiltersAction) {
 						</div>
 
 						<div className="col-md-1" style={rowStyle}>
-							<button className="btn btn-primary" onClick={self.clearAllFilters} type="button">Clear all filters</button>
+							<button className="btn btn-primary" onClick={self.resetAllFilters} type="button">Reset all filters</button>
+						</div>
+
+						<div className="col-md-2" style={rowStyle}>
+							<button className="btn btn-primary" onClick={self.unselectStatuses} type="button">Unselect all statuses</button>
 						</div>
 					</div>
 
@@ -132,8 +123,12 @@ export default function(StationFilterStore, stationFiltersAction) {
 			stationFiltersAction({stationName: ""});
 		},
 
-		clearAllFilters: function(){
-			stationFiltersAction({clearAllFilters: true});
+		unselectStatuses: function(){
+			stationFiltersAction({unselectStatuses: true});
+		},
+
+		resetAllFilters: function(){
+			stationFiltersAction({resetAllFilters: true});
 		}
 	});
 };

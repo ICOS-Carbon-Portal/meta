@@ -10,116 +10,183 @@ import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
 import scala.concurrent.{Future, ExecutionContext}
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 trait LifecycleService { self: StationLabelingService =>
 
 	import LifecycleService._
+	import AppStatus.AppStatus
 
 	private val (factory, vocab) = getFactoryAndVocab(server)
 	private val mailer = SendMail(config.mailing)
 
-	def updateStatus(station: URI, newStatus: String, user: UserId)(implicit ctxt: ExecutionContext): Unit = {
-
-		ensureStatusIsLegal(newStatus)
-
+	def updateStatus(station: URI, newStatus: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
 		val stationUri = factory.createURI(station)
 
-		val currentStatus = server.getValues(stationUri, vocab.hasApplicationStatus)
-			.collect{case status: Literal => status.getLabel}.headOption
+		for(
+			toStatus <- lookupAppStatus(newStatus);
+			fromStatus <- getCurrentStatus(stationUri);
+			role <- getRoleForTransition(fromStatus, toStatus);
+			_ <- if(userHasRole(user, role, stationUri))
+					Success(())
+				else
+					Failure(new UnauthorizedStationUpdateException(s"User lacks the role of $role"))
+		) yield {
+			writeStatusChange(fromStatus, toStatus, stationUri)
+			sendMailOnStatusUpdate(fromStatus, toStatus, stationUri, user)
+		}
 
-		ensureStatusChangeIsLegal(currentStatus, newStatus)
+	}
 
-		if(needsPiPermissions(newStatus)) assertThatWriteIsAuthorized(stationUri, user)
-		if(needsTcPermissions(newStatus)) assertUserRepresentsTc(stationUri, user)
+	private def userHasRole(user: UserId, role: Role.Role, station: SesameUri): Boolean = {
+		import Role._
+		role match{
+			case PI =>
+				userIsPi(user, station)
+			case TC =>
+				val tcUsersListOpt = for(
+					stationClass <- lookupStationClass(station);
+					list <- config.tcUserIds.get(stationClass)
+				) yield list
+				tcUsersListOpt.toList.flatten.map(_.toLowerCase).contains(user.email.toLowerCase)
+			case DG =>
+				config.dgUserId.equalsIgnoreCase(user.email)
 
-		def toStatement(status: String) = factory
-			.createStatement(stationUri, vocab.hasApplicationStatus, vocab.lit(status))
+			case _ => false
+		}
+	}
 
-		val currentInfo = currentStatus.map(toStatement).toSeq
-		val newInfo = Seq(toStatement(newStatus))
+	private def getCurrentStatus(station: SesameUri): Try[AppStatus] = {
+		server.getStringValues(station, vocab.hasApplicationStatus)
+			.headOption
+			.map(lookupAppStatus)
+			.getOrElse(Success(AppStatus.neverSubmitted))
+	}
 
-		server.applyDiff(currentInfo, newInfo)
+	private def writeStatusChange(from: AppStatus, to: AppStatus, station: SesameUri): Unit = {
+		def toStatements(status: AppStatus) = Seq(factory
+			.createStatement(station, vocab.hasApplicationStatus, vocab.lit(status.toString))
+		)
+		server.applyDiff(toStatements(from), toStatements(to))
+	}
 
-		if(newStatus == submitted) Future{
-			val recipients: Seq[String] = lookupStationClass(factory.createURI(station))
+	private def sendMailOnStatusUpdate(
+		from: AppStatus, to: AppStatus,
+		station: SesameUri, user: UserId
+	)(implicit ctxt: ExecutionContext): Unit = {
+
+		if(to == AppStatus.submitted) Future{
+			val recipients: Seq[String] = lookupStationClass(station)
 					.flatMap(cls => config.tcUserIds.get(cls))
 					.toSeq
 					.flatten
 
 			if(recipients.nonEmpty){
 				val subject = "Application for labeling received"
-				val stationId = lookupStationId(stationUri).getOrElse("???")
+				val stationId = lookupStationId(station).getOrElse("???")
 				val body = views.html.LabelingEmail(user, stationId).body
 
 				mailer.send(recipients, subject, body, Seq(user.email))
 			}
 		}
 	}
-
-	private def assertUserRepresentsTc(station: SesameUri, user: UserId): Unit = {
-		val tcUsersListOpt = for(
-			stationClass <- lookupStationClass(station);
-			list <- config.tcUserIds.get(stationClass)
-		) yield list
-
-		ensureUserRepresentsTc(tcUsersListOpt, user, station)
-	}
 }
 
 object LifecycleService{
-	val notSubmitted: String = "NOT SUBMITTED"
-	val submitted: String = "SUBMITTED"
-	val acknowledged: String = "ACKNOWLEDGED"
-	val approved: String = "APPROVED"
-	val rejected: String = "REJECTED"
 
-	private val allStatuses = Set(notSubmitted, submitted, acknowledged, approved, rejected)
-	private val wereSubmitted = Set(submitted, acknowledged, approved, rejected)
+	object AppStatus extends Enumeration{
+		type AppStatus = Value
 
-	private def afterSubmission(statuses: String*) = statuses.forall(wereSubmitted.contains)
+		val neverSubmitted = Value("NEVER SUBMITTED")
+		val notSubmitted = Value("NOT SUBMITTED")
+		val submitted = Value("SUBMITTED")
+		val acknowledged = Value("ACKNOWLEDGED")
+		val approved = Value("APPROVED")
+		val rejected = Value("REJECTED")
+		val step2started = Value("STEP2STARTED")
+		val step2approved = Value("STEP2APPROVED")
+		val step2rejected = Value("STEP2REJECTED")
+		val step3approved = Value("STEP3APPROVED")
 
-	def userRepresentsTc(authorizedUserIds: Seq[String], user: UserId): Boolean =
-		// If no user is authorised, then everyone is authorised
-		authorizedUserIds.isEmpty ||
-		authorizedUserIds.map(_.toLowerCase).contains(user.email.toLowerCase)
+	}
 
-	private def statusChangeIsLegal(currentStatus: Option[String], newStatus: String): Boolean =
-		(currentStatus, newStatus) match {
-			case (None, `submitted`) => true
-			case (Some(`notSubmitted`), `submitted`) => true
-			case (Some(from), `submitted`) if afterSubmission(from) => false
-			case (Some(from), to) if afterSubmission(from, to) => true
-			case (Some(from), `notSubmitted`) if afterSubmission(from) => true
-			case _ => false
-		}
+	object Role extends Enumeration{
+		type Role = Value
+		val PI = Value("Station PI")
+		val TC = Value("ICOS TC representative")
+		val DG = Value("ICOS DG")
+	}
 
-	def needsPiPermissions(newStatus: String): Boolean = newStatus == submitted
-	def needsTcPermissions(newStatus: String): Boolean = newStatus != submitted
+	import AppStatus._
+	import Role._
 
-	def ensureStatusChangeIsLegal(currentStatus: Option[String], newStatus: String): Unit =
-		if(!statusChangeIsLegal(currentStatus, newStatus)) {
-			val status = currentStatus.getOrElse("(Nothing)")
-			val message = s"Changing application status from $status to $newStatus is illegal"
-			throw new IllegalLabelingStatusException(message)
-		}
+	val transitions: Map[AppStatus, Map[AppStatus, Role]] = Map(
+		neverSubmitted -> Map(submitted -> PI),
+		submitted -> Map(acknowledged -> TC),
+		acknowledged -> Map(
+			notSubmitted -> TC,
+			approved -> TC,
+			rejected -> TC
+		),
+		notSubmitted -> Map(
+			approved -> TC,
+			rejected -> TC,
+			submitted -> PI
+		),
+		approved -> Map(
+			rejected -> TC,
+			notSubmitted -> TC,
+			step2started -> PI
+		),
+		rejected -> Map(
+			approved -> TC,
+			notSubmitted -> TC
+		),
+		step2started -> Map(
+			approved -> TC,
+			step2approved -> TC,
+			step2rejected -> TC
+		),
+		step2approved -> Map(
+			step2started -> TC,
+			step2rejected -> TC,
+			step3approved -> DG
+		),
+		step2rejected -> Map(
+			step2started -> TC,
+			step2approved -> TC
+		),
+		step3approved -> Map(step2approved -> DG)
+	)
 
-	def ensureStatusIsLegal(newStatus: String): Unit =
-		if(!allStatuses.contains(newStatus)){
-			val msg = s"Unsupported labeling application status '$newStatus'"
-			throw new IllegalLabelingStatusException(msg)
-		}
+	private def getRoleForTransition(from: AppStatus, to: AppStatus): Try[Role] = {
+		transitions.get(from) match{
 
-	def ensureUserRepresentsTc(tcUsersListOpt: Option[Seq[String]], user: UserId, station: SesameUri): Unit = {
-		if(tcUsersListOpt.isEmpty){
-			val message = s"No authorization config found for station (${station}) TC"
-			throw new UnauthorizedStationUpdateException(message)
-		}
+			case None =>
+				val message = s"No transitions defined from status: $from"
+				Failure(new IllegalLabelingStatusException(message))
 
-		val authorizedUserIds = tcUsersListOpt.getOrElse(Nil)
+			case Some(destinations) =>
+				destinations.get(to) match {
 
-		if(!userRepresentsTc(authorizedUserIds, user)){
-			val message = s"User ${user.email} does not represent station's Thematic Center!"
-			throw new UnauthorizedStationUpdateException(message)
+					case None =>
+						val message = s"No transitions defined from $from to $to"
+						Failure(new IllegalLabelingStatusException(message))
+
+					case Some(role) =>
+						Success(role)
+				}
 		}
 	}
+
+	private def lookupAppStatus(name: String): Try[AppStatus] = try{
+		Success(AppStatus.withName(name))
+	} catch{
+		case nsee: NoSuchElementException =>
+			val msg = s"Unsupported labeling application status '$name'"
+			Failure(new IllegalLabelingStatusException(msg))
+	}
+
 }

@@ -60,7 +60,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				} ~
 				path("updatestatus"){
 					entity(as[LabelingStatusUpdate]){update =>
-						service.updateStatus(update.stationUri, update.newStatus, uploader)
+						service.updateStatus(update.stationUri, update.newStatus, uploader).get
 						complete(StatusCodes.OK)
 					}
 				} ~

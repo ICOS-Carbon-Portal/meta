@@ -4,10 +4,23 @@ import {status} from '../models/ApplicationStatus.js';
 
 function getTransitionText(from, to){
 	switch(to){
-		case status.acknowledged: return ["Acknowledge step 1", "Acknowledge the step 1 application"];
-		case status.notSubmitted: return ["Return step 1",      "Return the step 1 application for correction and resubmission"];
-		case status.approved: return ["Approve step 1",     "Approve step 1 of labeling for this station"];
-		case status.rejected: return ["Reject step 1",      "Reject the application at step 1"];
+		case status.acknowledged: return ["Acknowledge Step 1", "Acknowledge the Step 1 application"];
+		case status.notSubmitted: return ["Return Step 1", "Return the Step 1 application for correction and resubmission"];
+		case status.approved: return from === status.step2started
+			? ["Cancel Step 2", "Reset the status back to \"Step 1 approved\""]
+			: ["Approve Step 1", "Approve Step 1 of labeling for this station"];
+		case status.rejected: return ["Reject Step 1", "Reject the application at Step 1"];
+		case status.step2started:
+			return from === status.approved
+				? ["Start Step 2", "Start Step 2 of station labeling"]
+				: ["Reset Step 2", "Change application status back to \"Started Step 2\""];
+		case status.step2approved:
+			return from === status.step3approved
+				? ["Revoke final approval", "Reset the status back to \"Step 2 approved\""]
+				: ["Approve Step 2", "Approve Step 2 of station's labeling procedure"];
+		case status.step2rejected: return ["Reject Step 2", "Reject the application at Step 2"];
+		case status.step3approved: return ["Grant final approval", "Make this an official ICOS station"];
+		default: return ["Unsupported status", "Unsupported status: " + to];
 	}
 }
 
@@ -24,7 +37,7 @@ function transitionButtonClass(to){
 	}
 }
 
-export default function(saveStationAction) {
+export default function(updateStatusAction) {
 
 	const LifecycleButton = React.createClass({
 
@@ -32,7 +45,7 @@ export default function(saveStationAction) {
 			const props = this.props;
 
 			return <button type="button" className={'btn ' + props.buttonClass}
-					onClick={() => saveStationAction(props.getUpdated())} title={props.tooltip} style={{marginRight: 5}}>{props.buttonName}</button>;
+					onClick={() => updateStatusAction(props.getUpdated())} title={props.tooltip} style={{marginRight: 5}}>{props.buttonName}</button>;
 		}
 	});
 

@@ -29,13 +29,13 @@ class StationLabelingService(
 		(factory, vocab)
 	}
 
-	protected def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserId): Unit = {
-		val piEmails = getPis(stationUri).flatMap(getPiEmails).toIndexedSeq
-
-		if(!piEmails.contains(uploader.email.toLowerCase)) throw new UnauthorizedStationUpdateException(
-			"Only the following user(s) is(are) authorized to update this station's info: " +
-				piEmails.mkString(" and ")
+	protected def assertThatWriteIsAuthorized(stationUri: URI, uploader: UserId): Unit =
+		if(!userIsPi(uploader, stationUri)) throw new UnauthorizedStationUpdateException(
+			"Only PIs are authorized to update station's info"
 		)
+
+	protected def userIsPi(user: UserId, station: URI): Boolean = {
+		getPis(station).flatMap(getPiEmails).contains(user.email.toLowerCase)
 	}
 
 	protected def getPiEmails(piUri: URI): Seq[String] =

@@ -1,13 +1,13 @@
 @import se.lu.nateko.cp.cpauth.core.UserId
 
 @(uid: UserId, stationName: String)
-@CpEmail("Labeling application submited"){
+@CpEmail("Labeling application Step 1 submited"){
 	<table>
 		<tr>
 			<td style="font-size: 12pt;padding-bottom:20px;">Dear TC representative(s)</td>
 		</tr>
 		<tr>
-			<td style="font-size: 12pt">Carbon Portal's labeling service has received an application for station @stationName from @{uid.email}.</td>
+			<td style="font-size: 12pt">Carbon Portal's labeling service has received a Step 1 application for station @stationName from @{uid.email}.</td>
 		</tr>
 		<tr>
 			<td style="font-size: 12pt">Please go to the <a href="https://meta.icos-cp.eu/labeling/">Carbon Portal labeling service</a> to review the application.</td>

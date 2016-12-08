@@ -35,7 +35,7 @@ class StationLabelingService(
 		)
 
 	protected def userIsPi(user: UserId, station: URI): Boolean = {
-		getPis(station).flatMap(getPiEmails).contains(user.email.toLowerCase)
+		getStationPiEmails(station).contains(user.email.toLowerCase)
 	}
 
 	protected def getPiEmails(piUri: URI): Seq[String] =
@@ -47,7 +47,7 @@ class StationLabelingService(
 	protected def lookupStationId(stationUri: URI): Option[String] =
 		provisionalInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
 
-	private def getPis(stationUri: URI): Seq[URI] =
-		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi)
+	protected def getStationPiEmails(stationUri: URI): Seq[String] =
+		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi).flatMap(getPiEmails)
 }
 

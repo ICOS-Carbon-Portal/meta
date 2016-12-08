@@ -40,17 +40,19 @@ trait LifecycleService { self: StationLabelingService =>
 
 	}
 
+	private def getTcUsers(station: SesameUri): Seq[String] = lookupStationClass(station)
+		.flatMap(cls => config.tcUserIds.get(cls))
+		.toSeq
+		.flatten
+		.map(_.toLowerCase)
+
 	private def userHasRole(user: UserId, role: Role.Role, station: SesameUri): Boolean = {
 		import Role._
 		role match{
 			case PI =>
 				userIsPi(user, station)
 			case TC =>
-				val tcUsersListOpt = for(
-					stationClass <- lookupStationClass(station);
-					list <- config.tcUserIds.get(stationClass)
-				) yield list
-				tcUsersListOpt.toList.flatten.map(_.toLowerCase).contains(user.email.toLowerCase)
+				getTcUsers(station).contains(user.email.toLowerCase)
 			case DG =>
 				config.dgUserId.equalsIgnoreCase(user.email)
 
@@ -75,21 +77,44 @@ trait LifecycleService { self: StationLabelingService =>
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus,
 		station: SesameUri, user: UserId
-	)(implicit ctxt: ExecutionContext): Unit = {
+	)(implicit ctxt: ExecutionContext): Unit = if(config.mailing.mailSendingActive) Future{
 
-		if(to == AppStatus.submitted) Future{
-			val recipients: Seq[String] = lookupStationClass(station)
-					.flatMap(cls => config.tcUserIds.get(cls))
-					.toSeq
-					.flatten
+		val stationId = lookupStationId(station).getOrElse("???")
 
-			if(recipients.nonEmpty){
+		(from, to) match{
+			case (_, AppStatus.submitted) =>
+				val recipients: Seq[String] = getTcUsers(station)
 				val subject = "Application for labeling received"
-				val stationId = lookupStationId(station).getOrElse("???")
-				val body = views.html.LabelingEmail(user, stationId).body
+				val body = views.html.LabelingEmailSubmitted1(user, stationId).body
 
-				mailer.send(recipients, subject, body, Seq(user.email))
-			}
+				mailer.send(recipients, subject, body, cc = Seq(user.email))
+
+			case (AppStatus.approved, AppStatus.step2started) =>
+				val recipients = getTcUsers(station) :+ config.dgUserId //TODO Add CAL leader email(s) here
+				val subject = s"Labeling Step2 activated for $stationId"
+				val body = views.html.LabelingEmailActivated2(user, stationId).body
+
+				mailer.send(recipients, subject, body, cc = Seq(user.email))
+
+			case (_, AppStatus.step2approved) | (_, AppStatus.step2rejected) if(from != AppStatus.step3approved) =>
+				val isRejected = to == AppStatus.step2rejected
+
+				val recipients = getStationPiEmails(station)
+				val cc = getTcUsers(station) //TODO Add RIcom here
+				val subject = s"Labeling Step2 ${if(isRejected) "rejected" else "approved"} for $stationId"
+				val body = views.html.LabelingEmailDecided2(stationId, isRejected).body
+
+				mailer.send(recipients, subject, body, cc)
+
+			case (_, AppStatus.step3approved) =>
+				val recipients = getStationPiEmails(station)
+				val subject = s"Labeling complete for $stationId"
+				val body = views.html.LabelingEmailApproved3(stationId).body
+				val cc = Nil//TODO Add RIcom here
+
+				mailer.send(recipients, subject, body, cc)
+
+			case _ => ()
 		}
 	}
 }

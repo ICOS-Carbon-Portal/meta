@@ -1,0 +1,16 @@
+
+@(stationName: String, rejected: Boolean)
+@CpEmail("Labeling Step2 " + message(rejected)){
+	<table>
+		<tr>
+			<td style="font-size: 12pt;padding-bottom:20px;">Dear PI and RIcom,</td>
+		</tr>
+		<tr>
+			<td style="font-size: 12pt">Step 2 of labeling of station @stationName has been @message(rejected) by TC.</td>
+		</tr>
+	</table>
+}
+
+@message(rejected: Boolean) = @{
+	if(rejected) "rejected" else "accepted"
+}

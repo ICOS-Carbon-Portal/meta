@@ -1,0 +1,16 @@
+@import se.lu.nateko.cp.cpauth.core.UserId
+
+@(uid: UserId, stationName: String)
+@CpEmail("Labeling Step2 activated"){
+	<table>
+		<tr>
+			<td style="font-size: 12pt;padding-bottom:20px;">Dear ICOS TC and CAL leaders and DG,</td>
+		</tr>
+		<tr>
+			<td style="font-size: 12pt">PI of station @stationName (@{uid.email}) has activated Step 2 of labeling.</td>
+		</tr>
+		<tr>
+			<td style="font-size: 12pt">TC leader, please visit <a href="https://meta.icos-cp.eu/labeling/">Carbon Portal labeling service</a> to accept or reject Step 2 of labeling for the station.</td>
+		</tr>
+	</table>
+}

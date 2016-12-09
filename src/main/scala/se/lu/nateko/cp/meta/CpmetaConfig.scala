@@ -76,6 +76,8 @@ case class LabelingServiceConfig(
 	provisionalInfoInstanceServerId: String,
 	tcUserIds: Map[URI, Seq[String]],
 	dgUserId: String,
+	riComEmail: String,
+	calLabEmails: Seq[String],
 	mailing: EmailConfig,
 	ontoId: String
 )
@@ -111,7 +113,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val epicPidFormat = jsonFormat3(EpicPidConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat3(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat4(EmailConfig)
-	implicit val labelingServiceConfigFormat = jsonFormat6(LabelingServiceConfig)
+	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
 

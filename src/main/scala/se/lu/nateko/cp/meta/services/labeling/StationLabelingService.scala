@@ -25,7 +25,7 @@ class StationLabelingService(
 
 	protected def getFactoryAndVocab(instServer: InstanceServer) = {
 		val factory = instServer.factory
-		val vocab = new StationStructuringVocab(factory)
+		val vocab = new StationsVocab(factory)
 		(factory, vocab)
 	}
 

@@ -11,11 +11,9 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val baseUri = "http://meta.icos-cp.eu/ontologies/stationentry/"
 
 	val station = getRelative("Station")
+	val atmoStationClass = getRelative("AS")
 
 	val hasShortName = getRelative("hasShortName")
-}
-
-class StationStructuringVocab(factory: ValueFactory) extends StationsVocab(factory){
 	val hasPi = getRelative("hasPi")
 	val hasFirstName = getRelative("hasFirstName")
 	val hasLastName = getRelative("hasLastName")

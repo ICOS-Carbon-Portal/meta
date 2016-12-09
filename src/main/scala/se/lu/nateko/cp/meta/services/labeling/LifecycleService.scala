@@ -67,6 +67,9 @@ trait LifecycleService { self: StationLabelingService =>
 			.getOrElse(Success(AppStatus.neverSubmitted))
 	}
 
+	private def stationIsAtmospheric(station: SesameUri): Boolean =
+		lookupStationClass(station).map(_ == vocab.atmoStationClass).getOrElse(false)
+
 	private def writeStatusChange(from: AppStatus, to: AppStatus, station: SesameUri): Unit = {
 		def toStatements(status: AppStatus) = Seq(factory
 			.createStatement(station, vocab.hasApplicationStatus, vocab.lit(status.toString))
@@ -90,7 +93,8 @@ trait LifecycleService { self: StationLabelingService =>
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
 			case (AppStatus.approved, AppStatus.step2started) =>
-				val recipients = getTcUsers(station) :+ config.dgUserId //TODO Add CAL leader email(s) here
+				val calLabRecipients = if(stationIsAtmospheric(station)) config.calLabEmails else Nil
+				val recipients = (getTcUsers(station) :+ config.dgUserId) ++ calLabRecipients
 				val subject = s"Labeling Step2 activated for $stationId"
 				val body = views.html.LabelingEmailActivated2(user, stationId).body
 
@@ -100,7 +104,7 @@ trait LifecycleService { self: StationLabelingService =>
 				val isRejected = to == AppStatus.step2rejected
 
 				val recipients = getStationPiEmails(station)
-				val cc = getTcUsers(station) //TODO Add RIcom here
+				val cc = getTcUsers(station) :+ config.riComEmail
 				val subject = s"Labeling Step2 ${if(isRejected) "rejected" else "approved"} for $stationId"
 				val body = views.html.LabelingEmailDecided2(stationId, isRejected).body
 
@@ -110,7 +114,7 @@ trait LifecycleService { self: StationLabelingService =>
 				val recipients = getStationPiEmails(station)
 				val subject = s"Labeling complete for $stationId"
 				val body = views.html.LabelingEmailApproved3(stationId).body
-				val cc = Nil//TODO Add RIcom here
+				val cc = Seq(config.riComEmail)
 
 				mailer.send(recipients, subject, body, cc)
 

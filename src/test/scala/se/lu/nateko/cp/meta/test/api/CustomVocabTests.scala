@@ -27,4 +27,16 @@ class CustomVocabTests extends FunSpec{
 			assert(simple === extraEncoded)
 		}
 	}
+
+	describe("equality of URIs"){
+
+		it("Works as expected even for CustomVocabs with different ValueFactories"){
+			val tempVocab = new CustomVocab{
+				val baseUri = Vocab.baseUri
+				val factory: ValueFactory = new MemValueFactory
+			}
+
+			assert(Vocab.getRelative("bebe") === tempVocab.getRelative("be" + "be"))
+		}
+	}
 }

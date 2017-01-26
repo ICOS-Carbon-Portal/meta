@@ -30,6 +30,15 @@ object SparqlRoute {
 			post{
 				formField('query)(makeResponse) ~
 				entity(as[String])(makeResponse)
+			} ~
+			options{
+				respondWithHeaders(
+					`Access-Control-Allow-Origin`.*,
+					`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
+					`Access-Control-Allow-Headers`("Content-Type")
+				){
+					complete(StatusCodes.OK)
+				}
 			}
 		}
 	}

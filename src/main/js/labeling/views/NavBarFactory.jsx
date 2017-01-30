@@ -10,7 +10,7 @@ module.exports = function(WhoAmIStore) {
 			return <div className="page-header">
 				<div className="pull-right">
 					{loggedIn ? <p>Logged in as {this.state.user.mail}</p> : <p>Not logged in</p>}
-					{loggedIn ? null : <p>Log in <a href="https://cpauth.icos-cp.eu/login/?targetUrl=http://meta.icos-cp.eu/labeling/">here</a></p>}
+					{loggedIn ? null : <p>Log in <a href="https://cpauth.icos-cp.eu/login/?targetUrl=https://meta.icos-cp.eu/labeling/">here</a></p>}
 					{this.state.user.isPi
 						? this.props.piMode
 							? <p>Back to <a href="#">station labeling</a></p>

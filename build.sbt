@@ -31,33 +31,22 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-lazy val views = (project in file("views"))
-	.dependsOn(metaCore)
-	.settings(commonSettings: _*)
-	.enablePlugins(SbtTwirl)
-	.settings(
-		name := "meta-views",
-		version := "0.1.0-SNAPSHOT",
-		libraryDependencies ++= Seq(
-			"se.lu.nateko.cp"       %% "views-core"         % "0.2-SNAPSHOT",
-			"se.lu.nateko.cp"       %% "cpauth-core"        % "0.5-SNAPSHOT"
-		)
-	)
-
-val akkaVersion = "2.4.10"
+val akkaVersion = "2.4.16"
+val akkaHttpVersion = "10.0.3"
 val sesameVersion = "2.8.7"
+
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
-	.dependsOn(views)
+	.enablePlugins(SbtTwirl)
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.2",
+		version := "0.2.1",
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % akkaVersion,
+			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
 			"org.openrdf.sesame"     % "sesame-repository-sail"             % sesameVersion,
@@ -67,6 +56,8 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.413" excludeAll(noGeronimo),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.2-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
 			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"
 		),
 
@@ -89,6 +80,7 @@ lazy val meta = (project in file("."))
 		"""
 	)
 
+/*
 lazy val jobAd = (project in file("jobAd"))
 	.settings(commonSettings: _*)
 	.enablePlugins(SbtTwirl)
@@ -103,4 +95,4 @@ lazy val jobAd = (project in file("jobAd"))
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.1-SNAPSHOT"
 		)
 	)
-
+*/

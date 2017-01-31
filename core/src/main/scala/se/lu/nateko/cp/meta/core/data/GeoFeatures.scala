@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.core.data
 
-trait GeoFeature{
+sealed trait GeoFeature{
 	def geoJson: String
 }
 

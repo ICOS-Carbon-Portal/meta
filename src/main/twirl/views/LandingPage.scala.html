@@ -68,7 +68,7 @@
 					@for(host <- production.hostOrganization){
 						@resourcePanelRow("Host organization", host)
 					}
-					@PanelRow("ICOS data level", dobj.specification.dataLevel.toString)
+					@PanelRow("Data level", dobj.specification.dataLevel.toString)
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
 					@for(comment <- production.comment){
 						@PanelRow("Comment", comment)

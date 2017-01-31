@@ -26,11 +26,12 @@ object LinkedDataRoute {
 		implicit val uriMarshaller = uriSerializer.marshaller
 
 		val genericRdfUriResourcePage: Route = extractUri{uri =>
+			//TODO Handle the case of objects and HTTP(S) here properly
 			complete(prefixUri.withPath(uri.path))
 		}
 
 		get{
-			pathPrefix("ontologies" | "resources"){
+			pathPrefix("ontologies" | "resources" | "objects"){
 				path(Segment /){_ =>
 					extractUri{uri =>
 						val path = uri.path.toString

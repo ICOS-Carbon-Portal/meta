@@ -34,7 +34,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	)
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
-	implicit val dataObjectMarshaller = PageContentMarshalling.dataObjectMarshaller
+	import PageContentMarshalling.dataObjectMarshaller
 	import AuthenticationRouting.ensureLocalRequest
 
 	def apply(
@@ -70,10 +70,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		(get & path("objects" / Sha256Segment)){ hash =>
-			service.fetchDataObj(hash) match{
-				case None => complete(StatusCodes.NotFound)
-				case Some(dataObj) => complete(dataObj)
-			}
+			complete(() => service.fetchDataObj(hash))
 		}
 	}
 }

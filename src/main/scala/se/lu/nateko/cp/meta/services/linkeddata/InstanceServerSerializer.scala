@@ -18,6 +18,10 @@ import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
 import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import org.openrdf.model.Statement
+import org.openrdf.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
+import org.openrdf.model.impl.NamespaceImpl
 
 object InstanceServerSerializer {
 
@@ -25,32 +29,55 @@ object InstanceServerSerializer {
 
 	val turtleContType = getContType("text/turtle")
 	val xmlContType = getContType("application/rdf+xml")
+	private val basicNamespaces = Seq(XMLSchema.NS, OWL.NS, RDFS.NS, RDF.NS)
 
-	def marshaller: ToResponseMarshaller[InstanceServer] = Marshaller(
-		implicit exeCtxt => server => Future.successful(
+
+	private val statementProdMarshaller: ToResponseMarshaller[StatementProducer] = Marshaller(
+		implicit exeCtxt => producer => Future.successful(
 			Marshalling.WithFixedContentType(
 				ContentTypes.`text/plain(UTF-8)`,
-				() => getResponse(server, turtleContType, new TurtleWriterFactory())
+				() => getResponse(producer, turtleContType, new TurtleWriterFactory())
 			) ::
 			Marshalling.WithFixedContentType(
 				ContentType(MediaTypes.`application/xml`, utf8),
-				() => getResponse(server, xmlContType, new RDFXMLWriterFactory())
+				() => getResponse(producer, xmlContType, new RDFXMLWriterFactory())
 			) :: Nil
 		)
 	)
+
+	val marshaller: ToResponseMarshaller[InstanceServer] = statementProdMarshaller
+		.compose(is => new StatementProducer{
+			def statements = is.getStatements(None, None, None)
+			def namespaces = {
+				val ns = new NamespaceImpl("", is.writeContexts.head.stringValue)
+
+				val readNss = is.readContexts.diff(is.writeContexts).map{uri =>
+					val prefix = uri.stringValue.stripSuffix("/").split('/').last
+					new NamespaceImpl(prefix, uri.stringValue)
+				}
+
+				ns +: (basicNamespaces ++ readNss)
+			}
+		})
+
+	val statementIterMarshaller: ToResponseMarshaller[() => CloseableIterator[Statement]] = statementProdMarshaller
+		.compose(stMaker => new StatementProducer{
+			def statements = stMaker()
+			def namespaces = basicNamespaces
+		})
 
 	private def getContType(name: String): ContentType = {
 		val mediaType = MediaType.custom(name, false, fileExtensions = List(".rdf"))
 		ContentType(mediaType, () => utf8)
 	}
 
-	private def getResponse(server: InstanceServer, contType: ContentType, writerFactory: RDFWriterFactory)(implicit ctxt: ExecutionContext): HttpResponse = {
+	private def getResponse(producer: StatementProducer, contType: ContentType, writerFactory: RDFWriterFactory)(implicit ctxt: ExecutionContext): HttpResponse = {
 		val entityBytes = OutputStreamWriterSource{ outStr =>
-			val statements = server.getStatements(None, None, None)
+			val statements = producer.statements
 			try{
 				val rdfWriter = writerFactory.getWriter(outStr)
 				rdfWriter.startRDF()
-				getNamespaces(server).foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
+				producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
 				statements.foreach(rdfWriter.handleStatement)
 				rdfWriter.endRDF()
 			}finally{
@@ -61,18 +88,8 @@ object InstanceServerSerializer {
 		HttpResponse(entity = HttpEntity(contType, entityBytes))
 	}
 
-	private def getNamespaces(server: InstanceServer): Iterable[Namespace] = {
-		import org.openrdf.model.impl.NamespaceImpl
-		import org.openrdf.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
-
-		val ns = new NamespaceImpl("", server.writeContexts.head.stringValue)
-
-		val readNss = server.readContexts.diff(server.writeContexts).map{uri =>
-			val prefix = uri.stringValue.stripSuffix("/").split('/').last
-			new NamespaceImpl(prefix, uri.stringValue)
-		}
-
-		Seq(ns, XMLSchema.NS, OWL.NS, RDFS.NS, RDF.NS) ++ readNss
+	private trait StatementProducer{
+		def statements: CloseableIterator[Statement]
+		def namespaces: Iterable[Namespace]
 	}
-
 }

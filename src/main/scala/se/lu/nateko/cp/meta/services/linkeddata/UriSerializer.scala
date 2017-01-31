@@ -28,19 +28,28 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.marshalling.Marshaller
 import scala.concurrent.Future
 import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import org.openrdf.model.Statement
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
 class SesameUriSerializer(repo: Repository) extends UriSerializer{
-	import SesameUriSerializer.getViewInfo
+	import SesameUriSerializer._
+	import InstanceServerSerializer.statementIterMarshaller
 
-	def marshaller: ToResponseMarshaller[Uri] = Marshaller(
-		implicit exeCtxt => uri => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(getViewInfo(uri, repo), _)) :: Nil
+	val marshaller: ToResponseMarshaller[Uri] = {
+		val htmlMarshaller: ToResponseMarshaller[Uri] = Marshaller(
+			implicit exeCtxt => uri => Future.successful(
+				WithOpenCharset(MediaTypes.`text/html`, getHtml(getViewInfo(uri, repo), _)) :: Nil
+			)
 		)
-	)
+		val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
+			.compose(uri => () => getStatementsIter(uri, repo))
+
+		Marshaller.oneOf(htmlMarshaller, rdfMarshaller)
+	}
 
 	private def getHtml(viewInfo: ResourceViewInfo, charset: HttpCharset) = HttpResponse(
 		entity = HttpEntity(
@@ -51,6 +60,13 @@ class SesameUriSerializer(repo: Repository) extends UriSerializer{
 }
 
 private object SesameUriSerializer{
+
+	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
+		val uri = repo.getValueFactory.createURI(res.toString)
+		val own = repo.access(conn => conn.getStatements(uri, null, null, false))
+		val about = repo.access(conn => conn.getStatements(null, null, uri, false))
+		own ++ about
+	}
 
 	def getViewInfo(res: Uri, repo: Repository): ResourceViewInfo = repo.accessEagerly{conn =>
 

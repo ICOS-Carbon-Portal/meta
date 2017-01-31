@@ -15,16 +15,16 @@ import play.twirl.api.Html
 
 object PageContentMarshalling {
 
-	def twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
+	val twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
 		implicit exeCtxt => html => Future.successful(
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)
 	)
 
-	def dataObjectMarshaller: ToResponseMarshaller[DataObject] = Marshaller(
-		implicit exeCtxt => dataObj => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObj, _)) ::
-			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObj)) :: Nil
+	implicit val dataObjectMarshaller: ToResponseMarshaller[() => Option[DataObject]] = Marshaller(
+		implicit exeCtxt => dataObjGetter => Future.successful(
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObjGetter, _)) ::
+			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObjGetter)) :: Nil
 		)
 	)
 
@@ -35,15 +35,23 @@ object PageContentMarshalling {
 		)
 	)
 
-	private def getHtml(dataObj: DataObject, charset: HttpCharset) = HttpResponse(
-		entity = HttpEntity(
-			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			views.html.LandingPage(dataObj).body
-		)
-	)
+	private def getHtml(dataObjGetter: () => Option[DataObject], charset: HttpCharset) =
+		dataObjGetter() match {
+			case Some(dataObj) => HttpResponse(
+				entity = HttpEntity(
+					ContentType.WithCharset(MediaTypes.`text/html`, charset),
+					views.html.LandingPage(dataObj).body
+				)
+			)
+			case None => HttpResponse(StatusCodes.NotFound)
+		}
 
-	private def getJson(dataObj: DataObject) = HttpResponse(
-		entity = HttpEntity(ContentTypes.`application/json`, dataObj.toJson.prettyPrint)
-	)
+	private def getJson(dataObjGetter: () => Option[DataObject]) =
+		dataObjGetter() match {
+			case Some(dataObj) => HttpResponse(
+				entity = HttpEntity(ContentTypes.`application/json`, dataObj.toJson.prettyPrint)
+			)
+			case None => HttpResponse(StatusCodes.NotFound)
+		}
 
 }

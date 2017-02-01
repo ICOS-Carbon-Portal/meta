@@ -29,15 +29,15 @@ trait InstanceServer {
 	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))
 	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))
 
-	final def getInstances(classUri: URI): Seq[URI] =
+	final def getInstances(classUri: URI): IndexedSeq[URI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))
 			.map(_.getSubject)
 			.collect{case uri: URI => uri}
 			.toIndexedSeq
 
-	final def getStatements(instUri: URI): Seq[Statement] = getStatements(Some(instUri), None, None).toIndexedSeq
+	final def getStatements(instUri: URI): IndexedSeq[Statement] = getStatements(Some(instUri), None, None).toIndexedSeq
 
-	final def getValues(instUri: URI, propUri: URI): Seq[Value] =
+	final def getValues(instUri: URI, propUri: URI): IndexedSeq[Value] =
 		getStatements(Some(instUri), Some(propUri), None)
 			.map(_.getObject)
 			.toIndexedSeq

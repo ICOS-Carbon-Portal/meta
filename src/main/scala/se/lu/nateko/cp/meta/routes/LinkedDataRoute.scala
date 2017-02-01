@@ -26,32 +26,40 @@ object LinkedDataRoute {
 		implicit val uriMarshaller = uriSerializer.marshaller
 
 		val genericRdfUriResourcePage: Route = extractUri{uri =>
-			//TODO Handle the case of objects and HTTP(S) here properly
-			complete(prefixUri.withPath(uri.path))
+
+			import akka.http.scaladsl.model.Uri.Path.{Segment, Slash}
+
+			val scheme = uri.path match{
+				case Slash(Segment("objects", _)) => "https" //objects have HTTPS URIs in our RDF
+				case _ => "http"
+			}
+
+			complete(prefixUri.withPath(uri.path).withScheme(scheme))
 		}
 
 		get{
-			pathPrefix("ontologies" | "resources" | "objects"){
-				path(Segment /){_ =>
-					extractUri{uri =>
-						val path = uri.path.toString
-						val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
-							case (id, instServConf)
-								if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
-									instanceServers.get(id).map((id, _))
-						}.flatten
-						serverOpt match{
-							case None => complete(StatusCodes.NotFound)
-							case Some((id, instServer)) =>
-								import ContentDispositionTypes._
-								val header = `Content-Disposition`(attachment, Map("filename" -> (id + ".rdf")))
-								respondWithHeader(header){ complete(instServer) }
-						}
+			path(("ontologies" | "resources") / Segment /){_ =>
+				extractUri{uri =>
+					val path = uri.path.toString
+
+					val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
+						case (id, instServConf)
+							if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
+								instanceServers.get(id).map((id, _))
+					}.flatten
+
+					serverOpt match{
+						case None => complete(StatusCodes.NotFound)
+						case Some((id, instServer)) =>
+							import ContentDispositionTypes._
+							val header = `Content-Disposition`(attachment, Map("filename" -> (id + ".rdf")))
+							respondWithHeader(header){ complete(instServer) }
 					}
-				} ~
-				genericRdfUriResourcePage
+				}
 			} ~
-			path("files" / Segment){ _ => genericRdfUriResourcePage}
+			pathPrefix("ontologies" | "resources" | "objects" | "files"){
+				genericRdfUriResourcePage
+			}
 		}
 	}
 }

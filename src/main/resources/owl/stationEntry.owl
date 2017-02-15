@@ -109,6 +109,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/PI"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">deputy PI</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasPi -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasPi">

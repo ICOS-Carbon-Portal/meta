@@ -1603,6 +1603,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ingosRar -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ingosRar">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">RAR archive with InGoS time series results</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/int32 -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/int32">

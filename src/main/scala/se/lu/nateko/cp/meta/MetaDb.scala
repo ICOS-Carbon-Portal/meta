@@ -220,11 +220,10 @@ object MetaDb {
 						server <- basicInit;
 						_ <- dependenciesDone;
 						_ <- Future{
-							val statements = providers(ingesterId) match {
-								case ingester: Ingester => ingester.getStatements(valueFactory)
-								case extractor: Extractor => extractor.getStatements(repo)
+							providers(ingesterId) match {
+								case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
+								case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
 							}
-							Ingestion.ingest(server, statements)
 						}
 					) yield server
 

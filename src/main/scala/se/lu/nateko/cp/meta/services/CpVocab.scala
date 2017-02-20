@@ -20,7 +20,14 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	def getEtcMembership(siteId: String, roleId: String, lastName: String) = getRelative(
 		"memberships/", s"ES_${siteId}_${roleId}_$lastName"
 	)
+
+	def getMembership(orgId: String, roleId: String, lastName: String) = getRelative(
+		"memberships/", s"${orgId}_${roleId}_$lastName"
+	)
+
 	def getRole(roleId: String) = getRelative("roles/", roleId)
+
+	def getOrganization(orgId: String) = getRelative("organizations/", orgId)
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 

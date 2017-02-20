@@ -35,14 +35,21 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 						appendPs.setShort(typeCol, 0) //triple type 0
 						appendPs.setString(objectCol, uri.stringValue)
 						appendPs.setString(litattr, null)
+
 					case lit: Literal if lit.getLanguage != null =>
 						appendPs.setShort(typeCol, 2) //triple type 2
 						appendPs.setString(objectCol, lit.getLabel)
 						appendPs.setString(litattr, lit.getLanguage)
+
 					case lit: Literal =>
 						appendPs.setShort(typeCol, 1) //triple type 1
 						appendPs.setString(objectCol, lit.getLabel)
 						appendPs.setString(litattr, safeDatatype(lit))
+
+					case value =>
+						val st = update.statement
+						throw new Exception("Attempted to append an invalid triple:\n" +
+							s"${st.getSubject} -> ${st.getPredicate} -> ${st.getObject}")
 				}
 				appendPs.addBatch()
 			}

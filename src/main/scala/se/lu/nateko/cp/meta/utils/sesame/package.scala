@@ -21,13 +21,17 @@ package object sesame {
 		def createURI(base: java.net.URI, fragment: String): URI = factory.createURI(base.toString, fragment)
 		def createURI(base: URI, fragment: String): URI = factory.createURI(base.stringValue, fragment)
 		def createLiteral(label: String, dtype: java.net.URI) = factory.createLiteral(label, createURI(dtype))
-		
+		def createStringLiteral(label: String) = factory.createLiteral(label, XMLSchema.STRING)
+
 		def tripleToStatement(triple: (URI, URI, Value)): Statement =
 			factory.createStatement(triple._1, triple._2, triple._3)
 	}
 
 	implicit def javaUriToSesame(uri: java.net.URI)(implicit factory: ValueFactory): URI = factory.createURI(uri)
 	implicit def sesameUriToJava(uri: URI) = java.net.URI.create(uri.stringValue)
+
+	implicit def stringToStringLiteral(label: String)(implicit factory: ValueFactory): Literal =
+		factory.createLiteral(label, XMLSchema.STRING)
 
 	implicit class EnrichedSesameUri(val uri: URI) extends AnyVal{
 		def toJava: java.net.URI = uri

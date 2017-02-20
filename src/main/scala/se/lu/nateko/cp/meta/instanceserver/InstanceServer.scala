@@ -23,6 +23,7 @@ trait InstanceServer {
 	def hasStatement(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
+	def writeContextsView: InstanceServer
 
 	def shutDown(): Unit = {}
 

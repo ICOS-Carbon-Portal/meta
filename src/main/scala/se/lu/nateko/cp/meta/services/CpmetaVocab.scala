@@ -14,6 +14,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val tcClass = getRelative("ThematicCenter")
 	val cfClass = getRelative("CentralFacility")
 	val orgClass = getRelative("Organization")
+	val membershipClass = getRelative("Membership")
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getRelative)
 

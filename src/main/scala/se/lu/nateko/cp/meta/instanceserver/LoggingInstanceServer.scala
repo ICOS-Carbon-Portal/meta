@@ -31,4 +31,6 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 		inner.shutDown()
 		log.close()
 	}
+
+	def writeContextsView = new LoggingInstanceServer(inner.writeContextsView, log)
 }

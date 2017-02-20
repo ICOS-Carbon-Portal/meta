@@ -56,4 +56,6 @@ class SesameInstanceServer(repo: Repository, val readContexts: Seq[URI], val wri
 		}
 	}
 
+	def writeContextsView = new SesameInstanceServer(repo, writeContexts, writeContexts)
+
 }

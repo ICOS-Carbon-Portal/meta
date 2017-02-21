@@ -36,8 +36,8 @@ trait CpmetaFetcher extends FetchingHelper{
 	)
 
 	protected def getDataProduction(prod: URI) = DataProduction(
-		creator = getLabeledResource(prod, metaVocab.wasPerformedBy),
-		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getLabeledResource),
+		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
+		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
@@ -52,9 +52,22 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
+	private def getAgent(uri: URI): Agent = {
+		if(getOptionalString(uri, metaVocab.hasFirstName).isDefined)
+			getPerson(uri)
+		else getOrganization(uri)
+	}
+
 	private def getOrganization(org: URI) = Organization(
 		self = getLabeledResource(org),
+		name = getSingleString(org, metaVocab.hasName),
 		orgClass = getOrgClass(org)
+	)
+
+	private def getPerson(pers: URI) = Person(
+		self = getLabeledResource(pers),
+		firstName = getSingleString(pers, metaVocab.hasFirstName),
+		lastName = getSingleString(pers, metaVocab.hasLastName)
 	)
 
 	private def getOrgClass(subj: URI): OrganizationClass = {
@@ -130,7 +143,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				spatial = getSpatialCoverage(cov),
 				temporal = getTemporalCoverage(dobj),
 				productionInfo = prod,
-				theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator).uri)
+				theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri)
 			)
 		}
 	}

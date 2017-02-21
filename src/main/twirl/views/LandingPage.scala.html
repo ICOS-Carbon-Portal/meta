@@ -52,9 +52,7 @@
 
 			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
 				@Panel("Acquisition"){
-					@PanelHtmlRow{Station}{
-						<a href="@station.org.self.uri">@station.name</a>
-					}
+					@agentPanelRow("Station", station.org)
 					@for(interval <- acquisition.interval){
 						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
 						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
@@ -64,12 +62,12 @@
 
 			@for(production <- dobj.production){
 				@Panel("Production"){
-					@resourcePanelRow("Created by", production.creator)
+					@agentPanelRow("Created by", production.creator)
 					@for(contributor <- production.contributors){
-						@resourcePanelRow("Contributor", contributor)
+						@agentPanelRow("Contributor", contributor)
 					}
 					@for(host <- production.host){
-						@resourcePanelRow("Host organization", host.self)
+						@agentPanelRow("Host organization", host)
 					}
 					@PanelRow("Data level", dobj.specification.dataLevel.toString)
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
@@ -80,7 +78,7 @@
 			}
 
 			@Panel("Submission"){
-				@resourcePanelRow("Submitted by", dobj.submission.submitter.self)
+				@agentPanelRow("Submitted by", dobj.submission.submitter)
 				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
 				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
 			}
@@ -126,7 +124,7 @@
 			<span><strong>Official ICOS data</strong></span>
 		}
 		case OrgAffiliation(org) => {
-			@resourceLink(org)
+			@agentLink(org)
 		}
 	}
 }
@@ -138,6 +136,25 @@
 @resourcePanelRow(label: String, res: UriResource) = {
 	@PanelHtmlRow{@label}{
 		@resourceLink(res)
+	}
+}
+
+@agentLink(agent: Agent) = {
+	<a href=@{agent.self.uri.toString}>
+		@agent match {
+			case person: Person => {
+				<span>@{person.firstName + " " + person.lastName}</span>
+			}
+			case org: Organization => {
+				<span>@{org.name}</span>
+			}
+		}
+	</a>
+}
+
+@agentPanelRow(label: String, agent: Agent) = {
+	@PanelHtmlRow{@label}{
+		@agentLink(agent)
 	}
 }
 

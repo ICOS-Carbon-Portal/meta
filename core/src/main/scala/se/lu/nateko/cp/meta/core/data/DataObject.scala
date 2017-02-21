@@ -22,7 +22,12 @@ case class UriResource(uri: URI, label: Option[String])
 
 case class TimeInterval(start: Instant, stop: Instant)
 
-case class Organization(self: UriResource, orgClass: OrganizationClass)
+sealed trait Agent{
+	val self: UriResource
+}
+case class Organization(self: UriResource, name: String, orgClass: OrganizationClass) extends Agent
+case class Person(self: UriResource, firstName: String, lastName: String) extends Agent
+
 
 case class Station(
 	org: Organization,
@@ -43,8 +48,8 @@ case class DataObjectSpec(
 
 case class DataAcquisition(station: Station, interval: Option[TimeInterval])
 case class DataProduction(
-	creator: UriResource,
-	contributors: Seq[UriResource],
+	creator: Agent,
+	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
 	dateTime: Instant
@@ -69,7 +74,7 @@ case class L3SpecificMeta(
 
 sealed trait DataAffiliation
 case object Icos extends DataAffiliation
-case class OrgAffiliation(org: UriResource) extends DataAffiliation
+case class OrgAffiliation(org: Organization) extends DataAffiliation
 
 case class DataObject(
 	hash: Sha256Sum,
@@ -99,7 +104,7 @@ case class DataObject(
 			val orgOpt = specificInfo.fold(
 				l3 => Some(l3.productionInfo),
 				l2 => l2.productionInfo
-			).flatMap(_.host).map(_.self)
-			OrgAffiliation(orgOpt.getOrElse(submission.submitter.self))
+			).flatMap(_.host)
+			OrgAffiliation(orgOpt.getOrElse(submission.submitter))
 		}
 }

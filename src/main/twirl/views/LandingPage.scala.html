@@ -3,14 +3,23 @@
 @import views.CpMenu
 
 @(dobj: DataObject)
-@ServerSidePage("Landing Page", pageTitle, CpMenu.landingPage){
+@ServerSidePage(pageTitle, pageHeading, CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">
 			@Panel("Summary", 4, summaryStyleContext){
 				@if(uploadComplete) {
 					@PanelRow("Status - OK", "Data and metadata are complete.")
-					@PanelRow("PID", dobj.pid.getOrElse("Not assigned"))
+					@PanelHtmlRow{PID}{
+						@dobj.pid match{
+							case None => {
+								<span>Not assigned</span>
+							}
+							case Some(pid) => {
+								<span>@{pid} (<a href=@{"https://doi.org/" + pid}>link</a>)</span>
+							}
+						}
+					}
 					@accessUrlRow
 				} else {
 					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
@@ -86,9 +95,7 @@
 
 		<div class="row">
 			@Panel("Spatial coverage", 5){
-				@if(!dobj.coverage.isDefined) {
-					@PanelRow("Coverage", "unknown")
-				}
+				@PanelRow("Coverage", coverageText)
 
 				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
 					<iframe src="/station/?theme=@theme&coverage=@geoJson"></iframe>
@@ -107,15 +114,22 @@
 	</div>
 }
 
-@pageTitle = @{
+@pageHeading = @{
 	dobj.affiliation match {
 		case Icos => {
 			"ICOS RI Data Object Landing Page"
 		}
 		case _ => {
-			"Carbon Portal Data Object Landing Page"
+			"Data Object Landing Page at Carbon Portal"
 		}
 	}
+}
+
+@pageTitle = @{
+	dobj.specificInfo.left.toOption.map(_.title)
+		.orElse(dobj.fileName)
+		.orElse(dobj.pid)
+		.getOrElse(dobj.hash.id)
 }
 
 @affiliationInfo(aff: DataAffiliation) = {
@@ -174,5 +188,12 @@
 				}
 			}
 		</span>
+	}
+}
+
+@coverageText = @{
+	dobj.coverage match{
+		case None => "unknown"
+		case Some(geo) => geo.textSpecification
 	}
 }

@@ -33,8 +33,10 @@ where{
 	?s st:hasLongName ?stationName0 .
 	OPTIONAL{ GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasShortName ?stationId1 } }
 	OPTIONAL{ GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasLongName ?stationName1 } }
+	OPTIONAL{ ?s st:hasTcId ?stationTcId }
 	BIND (if(bound(?stationId1), ?stationId1, ?stationId0) AS ?stationId)
 	BIND (if(bound(?stationName1), ?stationName1, ?stationName0) AS ?stationName)
+	BIND (if(bound(?stationTcId), ?stationTcId, ?stationId) AS ?urlSuffix)
 	?s st:hasStationClass ?icosClass .
 	?s st:hasCountry ?country .
 	?s st:hasPi ?pi .
@@ -45,12 +47,12 @@ where{
 	OPTIONAL{?s st:hasElevationAboveSea ?elev0 }
 	OPTIONAL{GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {?s st:hasElevationAboveSea ?elev1 }}
 	BIND (if(bound(?elev1), ?elev1, ?elev0) AS ?elevation)
-	BIND (IRI(concat("http://meta.icos-cp.eu/resources/stations/", ?theme, "_", ENCODE_FOR_URI(?stationId))) AS ?station) .
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/stations/", ?theme, "_", ENCODE_FOR_URI(?urlSuffix))) AS ?station) .
 	?pi st:hasEmail ?email .
 	?pi st:hasFirstName ?firstName .
 	?pi st:hasLastName ?lastName .
 	BIND (IRI(concat("http://meta.icos-cp.eu/resources/people/", ENCODE_FOR_URI(?firstName), "_", ENCODE_FOR_URI(?lastName))) AS ?person) .
-	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?stationId), "_PI_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
+	BIND (IRI(concat("http://meta.icos-cp.eu/resources/memberships/", ?theme, "_", ENCODE_FOR_URI(?urlSuffix), "_PI_", ENCODE_FOR_URI(?lastName))) AS ?piMemb) .
 	BIND (concat(?lastName, " as PI at ", ?stationName, " (", ?theme, ")") AS ?membLabel) .
 }
 

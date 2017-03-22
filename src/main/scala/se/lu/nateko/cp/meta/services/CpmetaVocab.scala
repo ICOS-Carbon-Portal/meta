@@ -39,6 +39,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wasSubmittedBy = getRelative("wasSubmittedBy")
 	val wasProducedBy = getRelative("wasProducedBy")
 	val wasPerformedBy = getRelative("wasPerformedBy")
+	val wasPerformedWith = getRelative("wasPerformedWith")
 	val wasParticipatedInBy = getRelative("wasParticipatedInBy")
 	val wasHostedBy = getRelative("wasHostedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
@@ -71,6 +72,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val wdcggFormat = getRelative("asciiWdcggTimeSer")
 	val etcFormat = getRelative("asciiEtcTimeSer")
+	val atcFormat = getRelative("asciiAtcTimeSer")
 
 	object prov extends CustomVocab {
 		val factory = top.factory

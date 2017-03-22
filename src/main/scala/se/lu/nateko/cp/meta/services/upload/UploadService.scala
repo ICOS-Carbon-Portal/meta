@@ -112,6 +112,7 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
+		makeSt(aquisitionUri, metaVocab.wasPerformedWith, meta.instrument.map(javaUriToSesame)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 

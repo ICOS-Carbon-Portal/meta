@@ -75,18 +75,37 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {
 		def hasFormat(format: URI): Boolean = spec.format.uri == format.toJava
 
-		if(hasFormat(metaVocab.wdcggFormat) || spec.dataLevel == 3)
-			Success(())
-		else {
-			val stationMetaOpt = meta.specificInfo.right.toOption
-			val acqInterval = stationMetaOpt.flatMap(_.acquisitionInterval)
-			val nRows = stationMetaOpt.flatMap(_.nRows)
-			if(acqInterval.isEmpty && !hasFormat(metaVocab.etcFormat))
-				Failure(new UploadUserErrorException("Must provide 'aquisitionInterval' with start and stop timestamps."))
-			else if(nRows.isEmpty && spec.dataLevel == 2)
-				Failure(new UploadUserErrorException("Must provide 'nRows' with number of rows in the uploaded data file."))
-			else Success(())
+		val errors = scala.collection.mutable.Buffer.empty[String]
+
+		meta.specificInfo match{
+			case Left(_) =>
+				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"
+
+			case Right(stationMeta) =>
+				if(spec.dataLevel > 2) errors += "The data level for this kind of metadata package must have been 2 or less"
+				else{
+					if(spec.dataLevel <= 1 && stationMeta.acquisitionInterval.isEmpty)
+						errors += "Must provide 'aquisitionInterval' with start and stop timestamps."
+
+					if(spec.dataLevel == 2 && stationMeta.nRows.isEmpty && !hasFormat(metaVocab.wdcggFormat))
+						errors += "Must provide 'nRows' with number of rows in the uploaded data file."
+
+					if(hasFormat(metaVocab.atcFormat)){
+						stationMeta.instrument match{
+							case None =>
+								errors += "Instrument URL is expected for ATC time series"
+
+							case Some(instrUrl) =>
+								val urlPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
+								if(!instrUrl.toString.startsWith(urlPrefix))
+									errors += s"Instrument URL is expected to start with '$urlPrefix'"
+						}
+					}
+				}
 		}
+
+		if(errors.isEmpty) Success(())
+		else Failure(new UploadUserErrorException(errors.mkString("\n")))
 	}
 
 }

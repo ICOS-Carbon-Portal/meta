@@ -340,6 +340,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">instrument used to perform data acquisition</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy">

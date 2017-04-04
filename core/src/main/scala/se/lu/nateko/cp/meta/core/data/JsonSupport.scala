@@ -49,14 +49,14 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
-	implicit val ecocsvUploadCompletionFormat = jsonFormat1(EcoCsvUploadCompletion)
+	implicit val ecocsvUploadCompletionFormat = jsonFormat1(TimeSeriesUploadCompletion)
 
 	implicit object uploadCompletionInfoFormat extends RootJsonFormat[UploadCompletionInfo]{
 
 		def write(uploadInfo: UploadCompletionInfo): JsValue = uploadInfo match{
 			case EmptyCompletionInfo => JsObject.empty
 			case wdcgg: WdcggUploadCompletion => wdcgg.toJson
-			case ecocsv: EcoCsvUploadCompletion => ecocsv.toJson
+			case ts: TimeSeriesUploadCompletion => ts.toJson
 		}
 
 		def read(value: JsValue): UploadCompletionInfo =  value match {
@@ -66,7 +66,7 @@ object JsonSupport extends CommonJsonSupport{
 				else if(fields.contains("customMetadata"))
 					value.convertTo[WdcggUploadCompletion]
 				else
-					value.convertTo[EcoCsvUploadCompletion]
+					value.convertTo[TimeSeriesUploadCompletion]
 			case _ =>
 				deserializationError("Expected JS object representing upload completion info")
 		}

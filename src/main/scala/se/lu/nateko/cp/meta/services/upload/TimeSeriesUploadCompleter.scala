@@ -11,7 +11,7 @@ import org.openrdf.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.core.data.EcoCsvUploadCompletion
+import se.lu.nateko.cp.meta.core.data.TimeSeriesUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
@@ -22,7 +22,7 @@ import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import scala.util.Try
 
 
-private class EcoCsvUploadCompleter(
+private class TimeSeriesUploadCompleter(
 	val server: InstanceServer,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
@@ -32,7 +32,7 @@ private class EcoCsvUploadCompleter(
 
 	def writeMetadata(hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
 
-		case EcoCsvUploadCompletion(interval) => Future{
+		case TimeSeriesUploadCompletion(interval) => Future{
 
 			val objUri = vocab.getDataObject(hash)
 			val acquisitionUri = vocab.getAcquisition(hash)

@@ -61,8 +61,8 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				_ <- writeUploadStopTime(server, hash)
 			) yield vocab.getDataObject(hash).stringValue
 
-		} else if(format == metaVocab.etcFormat){
-			val completer = new EcoCsvUploadCompleter(server, vocab, metaVocab)
+		} else if(format == metaVocab.etcFormat || format == metaVocab.socatFormat){
+			val completer = new TimeSeriesUploadCompleter(server, vocab, metaVocab)
 			for(
 				_ <- completer.writeMetadata(hash, info);
 				_ <- writeUploadStopTime(server, hash);

@@ -7,4 +7,4 @@ case object EmptyCompletionInfo extends UploadCompletionInfo
 
 case class WdcggUploadCompletion(nRows: Int, interval: TimeInterval, customMetadata: Map[String, String]) extends UploadCompletionInfo
 
-case class EcoCsvUploadCompletion(interval: TimeInterval) extends UploadCompletionInfo
+case class TimeSeriesUploadCompletion(interval: TimeInterval) extends UploadCompletionInfo

@@ -62,7 +62,7 @@ private class WdcggUploadCompleter(
 		}
 
 		case _ => Future.failed(new UploadCompletionException(
-			"Encountered wrong type of upload completion info, must be WdcggUploadCompletion"
+			s"Encountered wrong type of upload completion info, must be WdcggUploadCompletion, got $info"
 		))
 	}
 

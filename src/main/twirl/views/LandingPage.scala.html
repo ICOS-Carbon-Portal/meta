@@ -47,6 +47,7 @@
 					}
 				}
 				@resourcePanelRow("Specification", dobj.specification.self)
+				@PanelRow("Data level", dobj.specification.dataLevel.toString)
 				@resourcePanelRow("Format", dobj.specification.format)
 				@resourcePanelRow("Encoding", dobj.specification.encoding)
 				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
@@ -78,7 +79,6 @@
 					@for(host <- production.host){
 						@agentPanelRow("Host organization", host)
 					}
-					@PanelRow("Data level", dobj.specification.dataLevel.toString)
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
 					@for(comment <- production.comment){
 						@PanelRow("Comment", comment)
@@ -184,7 +184,7 @@
 					<a target="_blank" href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
 				}
 				case None => {
-					<span>Not available</span>
+					<span>Available on request</span>
 				}
 			}
 		</span>

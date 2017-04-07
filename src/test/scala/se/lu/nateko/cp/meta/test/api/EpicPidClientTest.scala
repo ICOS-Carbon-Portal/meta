@@ -12,9 +12,11 @@ import scala.concurrent.duration._
 class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 	implicit var system: ActorSystem = _
+	var ep: EpicPidClient = _
 
 	override def beforeAll(){
 		system = ActorSystem("EpicPidTestSystem")
+		ep = EpicPidClient.default
 	}
 
 	override def afterAll(){
@@ -49,30 +51,27 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 		}
 	}
 
-	def isSuccess(value: Option[Try[Unit]]): Boolean = {
-		value match {
-			case Some(Success(s: Unit)) => true
-			case _ => false
-		}
-	}
-
 	ignore("EpicPid operations"){
 
 		it("creates a new PID with specified name"){
 
-			val ep = EpicPidClient.default
-			val r = ep.create(suffix, testPid(originalUrl, originalEmail))
+			val r = ep.createNew(suffix, testPid(originalUrl, originalEmail))
 
-			val result = Await.ready(r, waitTime second)
+			Await.result(r, waitTime second)
 
-			assert(isSuccess(result.value) === true)
+		}
+
+		it("recreates the newly created PID"){
+
+			val r = ep.createOrRecreate(suffix, testPid(originalUrl, originalEmail))
+
+			Await.result(r, waitTime second)
 
 		}
 
 		it("creates a PID with random name") {
 
-			val ep = EpicPidClient.default
-			val r = ep.create(testPid(originalUrl, originalEmail))
+			val r = ep.createRandom(testPid(originalUrl, originalEmail))
 
 			randomSuffix = Await.result(r, waitTime second)
 
@@ -82,7 +81,6 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 		it("lists existing pids"){
 
-			val ep = EpicPidClient.default
 			val l = ep.list
 
 			val pids = Await.result(l, waitTime second)
@@ -94,7 +92,6 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 		it("lists data for specific PID"){
 
-			val ep = EpicPidClient.default
 			val p = ep.get(randomSuffix)
 
 			val pid = Await.result(p, waitTime second)
@@ -106,12 +103,9 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 		it("allows us to edit existing PID"){
 
-			val ep = EpicPidClient.default
 			val r = ep.update(suffix, testPid(editedUrl, editedEmail))
 
-			val result = Await.ready(r, waitTime second)
-
-			assert(isSuccess(result.value) === true)
+			Await.result(r, waitTime second)
 
 			val p = ep.get(suffix)
 
@@ -124,23 +118,17 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 
 		it("allows us to delete specific PID (fixed suffix)"){
 
-			val ep = EpicPidClient.default
 			val r = ep.delete(suffix)
 
-			val result = Await.ready(r, waitTime second)
-
-			assert(isSuccess(result.value) === true)
+			Await.result(r, waitTime second)
 
 		}
 
 		it("allows us to delete specific PID (random suffix)"){
 
-			val ep = EpicPidClient.default
 			val r = ep.delete(randomSuffix)
 
-			val result = Await.ready(r, waitTime second)
-
-			assert(isSuccess(result.value) === true)
+			Await.result(r, waitTime second)
 
 		}
 	}

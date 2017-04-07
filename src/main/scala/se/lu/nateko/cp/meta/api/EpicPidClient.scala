@@ -35,9 +35,15 @@ object EpicPidClient{
 	def apply(config: EpicPidConfig)(implicit system: ActorSystem) = new EpicPidClient(config)
 
 	def toUpdate(entry: PidEntry) = PidUpdate(entry.`type`, entry.parsed_data)
+
+	private sealed trait WriteOpResult
+	private case object Ok extends WriteOpResult
+	private case object PidExists extends WriteOpResult
 }
 
 class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends DefaultJsonProtocol {
+
+	import EpicPidClient._
 
 	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
@@ -124,24 +130,41 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		)
 	}
 
-	def create(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] = {
+	def createNew(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] =
+		createOrReportExistence(suffix, newEntries).flatMap{
+			case Ok =>
+				Future.successful(())
+			case PidExists => Future.failed(
+				new Exception(s"Failed to mint pid '${getPid(suffix)}'. Make sure it does not exist already.")
+			)
+		}
+
+	def createOrRecreate(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] =
+		createOrReportExistence(suffix, newEntries).flatMap{
+			case Ok =>
+				Future.successful(())
+			case PidExists =>
+				delete(suffix).flatMap(_ => createNew(suffix, newEntries))
+		}
+
+	private def createOrReportExistence(suffix: String, newEntries: Seq[PidUpdate]): Future[WriteOpResult] = {
 		val pid = getPid(suffix)
 		httpSend(
 			uri = config.url + pid,
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-None-Match`.*),
 			payload = newEntries
-		).map(resp => resp.status match {
+		).flatMap(resp => resp.status match {
 			case StatusCodes.Created =>
-				()
+				Future.successful(Ok)
 			case StatusCodes.PreconditionFailed =>
-				throw new Exception(s"Failed to mint pid '$pid'. Make sure it does not exist already.")
+				Future.successful(PidExists)
 			case _ =>
-				throw new Exception(s"Unexpectedly got '${resp.status}' from the EPIC PID server while minting '$pid'")
+				Future.failed(new Exception(s"Unexpectedly got '${resp.status}' from the EPIC PID server while minting '$pid'"))
 		})
 	}
 
-	def create(newEntries: Seq[PidUpdate]): Future[String] = {
+	def createRandom(newEntries: Seq[PidUpdate]): Future[String] = {
 
 		httpSend(
 			uri = config.url + config.prefix + "/",
@@ -159,11 +182,11 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 	}
 
 	def delete(suffix: String): Future[Unit] = {
-
-		httpDelete(config.url + getPid(suffix))
+		val pid = getPid(suffix)
+		httpDelete(config.url + pid)
 			.map(resp =>
 				if(resp.status != StatusCodes.NoContent) {
-					throw new Exception(s"Got ${resp.status} from the server")
+					throw new Exception(s"Got ${resp.status} from the server while trying to delete $pid")
 				}
 			)
 	}

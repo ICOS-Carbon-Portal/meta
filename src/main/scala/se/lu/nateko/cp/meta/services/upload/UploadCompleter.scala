@@ -78,7 +78,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private def mintEpicPid(hash: Sha256Sum): Future[String] = {
 		val targetUri = vocab.getDataObject(hash)
 		val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
-		epic.create(getPidSuffix(hash), Seq(pidEntry))
+		epic.createOrRecreate(getPidSuffix(hash), Seq(pidEntry))
 			.map(_ => getPid(hash))
 	}
 

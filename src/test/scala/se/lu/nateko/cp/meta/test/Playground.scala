@@ -22,11 +22,11 @@ object Playground {
 	def stop() = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
-		epic.create(postfix, Seq(PidUpdate("URL", JsString(targetUrl))))
+		epic.createNew(postfix, Seq(PidUpdate("URL", JsString(targetUrl))))
 	}
 
 	def create(targetUrl: String): String = wait{
-		epic.create(Seq(PidUpdate("URL", JsString(targetUrl))))
+		epic.createRandom(Seq(PidUpdate("URL", JsString(targetUrl))))
 	}
 
 	def addHash(postfix: String, hash: String): Unit = wait{

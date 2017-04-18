@@ -73,7 +73,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {
-		def hasFormat(format: URI): Boolean = spec.format.uri == format.toJava
+		def hasFormat(format: URI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
 

@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UploadCompletionException
+import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsString
 
 class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
@@ -54,14 +55,14 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 	private def completeUpload(server: InstanceServer, hash: Sha256Sum, format: URI, info: UploadCompletionInfo): Future[String] = {
 
-		if(format == metaVocab.wdcggFormat){
+		if(format === metaVocab.wdcggFormat){
 			val wdcggCompleter = new WdcggUploadCompleter(server, vocab, metaVocab)
 			for(
 				_ <- wdcggCompleter.writeMetadata(hash, info);
 				_ <- writeUploadStopTime(server, hash)
 			) yield vocab.getDataObject(hash).stringValue
 
-		} else if(format == metaVocab.etcFormat || format == metaVocab.socatFormat){
+		} else if(format === metaVocab.etcFormat || format === metaVocab.socatFormat){
 			val completer = new TimeSeriesUploadCompleter(server, vocab, metaVocab)
 			for(
 				_ <- completer.writeMetadata(hash, info);

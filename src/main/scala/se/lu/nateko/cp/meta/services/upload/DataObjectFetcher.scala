@@ -50,13 +50,13 @@ class DataObjectFetcher(
 		)
 	}
 
-	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
-		if(format == metaVocab.wdcggFormat) None else Some(pidFactory(hash))
+	private def getPid(hash: Sha256Sum, format: JavaUri): Option[String] = {
+		if(metaVocab.wdcggFormat === format) None else Some(pidFactory(hash))
 	}
 
 	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], spec: DataObjectSpec): Option[JavaUri] = {
 
-		if(spec.format.uri == metaVocab.wdcggFormat)
+		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new JavaUri("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
 		else {
 			val dobj = vocab.getDataObject(hash)

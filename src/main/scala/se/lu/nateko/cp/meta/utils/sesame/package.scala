@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.utils
 
+import java.net.{URI => JavaUri}
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -27,14 +28,15 @@ package object sesame {
 			factory.createStatement(triple._1, triple._2, triple._3)
 	}
 
-	implicit def javaUriToSesame(uri: java.net.URI)(implicit factory: ValueFactory): URI = factory.createURI(uri)
-	implicit def sesameUriToJava(uri: URI) = java.net.URI.create(uri.stringValue)
+	implicit def javaUriToSesame(uri: JavaUri)(implicit factory: ValueFactory): URI = factory.createURI(uri)
+	implicit def sesameUriToJava(uri: URI): JavaUri = JavaUri.create(uri.stringValue)
 
 	implicit def stringToStringLiteral(label: String)(implicit factory: ValueFactory): Literal =
 		factory.createLiteral(label, XMLSchema.STRING)
 
 	implicit class EnrichedSesameUri(val uri: URI) extends AnyVal{
-		def toJava: java.net.URI = uri
+		def ===(other: URI): Boolean = uri == other
+		def ===(other: JavaUri): Boolean = sesameUriToJava(uri) == other
 	}
 
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{

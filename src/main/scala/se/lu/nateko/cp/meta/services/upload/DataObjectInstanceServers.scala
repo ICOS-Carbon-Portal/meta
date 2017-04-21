@@ -58,9 +58,4 @@ class DataObjectInstanceServers(
 			server <- getInstServerForFormat(format)
 		) yield server
 
-	def dataObjectIsKnown(hashSum: Sha256Sum): Boolean = {
-		val objectUri = vocab.getDataObject(hashSum)
-		allDataObjs.hasStatement(Some(objectUri), Some(metaVocab.hasObjectSpec), None)
-	}
-
 }

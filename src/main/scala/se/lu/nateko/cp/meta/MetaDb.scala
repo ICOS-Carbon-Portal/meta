@@ -13,6 +13,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
@@ -26,7 +27,6 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.SesameSparqlServer
-import se.lu.nateko.cp.meta.services.SparqlServer
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.SesameUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
@@ -34,6 +34,7 @@ import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
 import se.lu.nateko.cp.meta.utils.sesame.Loading
+import se.lu.nateko.cp.meta.services.SesameSparqlRunner
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -125,7 +126,8 @@ object MetaDb {
 		}.toMap
 
 		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
-		new UploadService(dataObjServers, config.dataUploadService)
+		val sparqlRunner = new SesameSparqlRunner(repo)(system.dispatcher)//sesame is embedded, so it will not block threads idly, but use them
+		new UploadService(dataObjServers, sparqlRunner, config.dataUploadService)
 	}
 
 	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, logConf: RdflogConfig): InstanceServer = {

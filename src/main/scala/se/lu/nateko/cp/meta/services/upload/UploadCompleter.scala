@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.sesame._
 import spray.json.JsString
 
+//TODO Make these operations idempotent
 class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	import system.dispatcher
 

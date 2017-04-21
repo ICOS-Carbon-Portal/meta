@@ -5,7 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-import se.lu.nateko.cp.meta.services.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlQuery
 import akka.stream.Materializer
 
 object SparqlRoute {

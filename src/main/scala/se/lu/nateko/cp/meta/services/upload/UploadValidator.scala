@@ -26,7 +26,6 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
-		_ <- dataObjectIsNew(meta.hashSum);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification);
 		_ <- validateForFormat(meta, spec)
 	) yield ()
@@ -64,12 +63,6 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				s"User is not authorized to upload on behalf of producer '$producer'"
 			)
 		}
-	}
-
-	private def dataObjectIsNew(hashSum: Sha256Sum): Try[Unit] = {
-		if(servers.dataObjectIsKnown(hashSum))
-			Failure(new UploadUserErrorException(s"Upload with hash sum $hashSum has already been registered. Amendments are not supported yet!"))
-		else Success(())
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {

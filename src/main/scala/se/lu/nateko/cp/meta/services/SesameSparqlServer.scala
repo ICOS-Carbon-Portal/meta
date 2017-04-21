@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import org.openrdf.query.BooleanQuery
 import org.openrdf.query.GraphQuery
 import org.openrdf.query.MalformedQueryException
 import org.openrdf.query.QueryLanguage
@@ -24,24 +25,15 @@ import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpCharsets
 import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpEntity.apply
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
+
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
-import org.openrdf.query.BooleanQuery
-
-case class SparqlQuery(query: String)
-
-trait SparqlServer {
-	/**
-	 * Executes SPARQL SELECT, CONSTRUCT, DESCRIBE queries
-	 * Serializes the query results to one of the standard formats, depending on HTTP content negotiation
-	 */
-	def marshaller: ToResponseMarshaller[SparqlQuery]
-}
 
 private case class SparqlNegotiationOption(
 	requestedType: ContentType,

@@ -4,7 +4,6 @@ import java.net.{URI => JavaUri}
 import java.time.Instant
 
 import scala.concurrent.Future
-import scala.util.Try
 
 import org.openrdf.model.Statement
 import org.openrdf.model.URI
@@ -21,17 +20,20 @@ import se.lu.nateko.cp.meta.ElaboratedProductMetadata
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.SpatialCoverage
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.utils.sesame._
 
-class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
+class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	private implicit val factory = servers.icosMeta.factory
 	import servers.{ metaVocab, vocab }
+	import system.dispatcher
 	private val validator = new UploadValidator(servers, conf)
 	private val completer = new UploadCompleter(servers, conf)
+	private val metaUpdater = new MetadataUpdater(vocab, metaVocab, sparql)
 
 	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
@@ -39,20 +41,28 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 		objectFetcher.fetch(hash)
 	}
 
-	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Try[String] =
-		for(
+	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Future[String] = {
+		val serverTry = for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta);
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification);
-			server <- servers.getInstServerForFormat(format);
-			_ <- server.addAll(getStatements(meta, submitterConf))
+			server <- servers.getInstServerForFormat(format)
+		) yield (server, submitterConf)
+
+		for(
+			(server, submitterConf) <- Future.fromTry(serverTry);
+			newStatements = getStatements(meta, submitterConf);
+			currentStatements <- metaUpdater.getCurrentStatements(meta.hashSum, server);
+			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
+			_ <- Future.fromTry(server.applyAll(updates))
 		) yield{
 			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).stringValue
 		}
+	}
 
-	def checkPermissions(submitter: java.net.URI, userId: String): Boolean =
+	def checkPermissions(submitter: JavaUri, userId: String): Boolean =
 		conf.submitters.values
-			.filter(_.submittingOrganization == submitter)
+			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[String] =
@@ -148,6 +158,7 @@ class UploadService(servers: DataObjectInstanceServers, conf: UploadServiceConfi
 				makeSt(covUri, RDFS.LABEL, coverage.label.map(vocab.lit))
 			case Right(existing) =>
 				//TODO Add a validation that 'existing' actually exists
+				//TODO Handle metadata update scenario for this case (or 'existing' may be removed, if it is in the same RDF graph)
 				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing))
 		}
 	}

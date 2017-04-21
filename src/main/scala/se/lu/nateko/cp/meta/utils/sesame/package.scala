@@ -39,6 +39,11 @@ package object sesame {
 		def ===(other: JavaUri): Boolean = sesameUriToJava(uri) == other
 	}
 
+	implicit class EnrichedJavaUri(val uri: JavaUri) extends AnyVal{
+		def ===(other: URI): Boolean = sesameUriToJava(other) == uri
+		def ===(other: JavaUri): Boolean = uri == other
+	}
+
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
 		def asScalaIterator: CloseableIterator[T] = new SesameIterationIterator(res, () => ())
 	}

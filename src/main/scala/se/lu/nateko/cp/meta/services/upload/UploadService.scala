@@ -26,6 +26,7 @@ import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.SpatialCoverage
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 
 class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	private implicit val factory = servers.icosMeta.factory
@@ -66,7 +67,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 			.exists(_.authorizedUserIds.contains(userId))
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[String] =
-		completer.completeUpload(hash, info)
+		completer.completeUpload(hash, info).map(_.message)
 
 
 	private def getStatements(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Seq[Statement] = {

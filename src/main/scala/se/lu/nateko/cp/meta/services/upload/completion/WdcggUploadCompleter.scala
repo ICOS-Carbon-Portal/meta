@@ -1,7 +1,8 @@
-package se.lu.nateko.cp.meta.services.upload
+package se.lu.nateko.cp.meta.services.upload.completion
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 
 import org.openrdf.model.URI
 import org.openrdf.model.Value
@@ -14,25 +15,24 @@ import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
-import scala.util.Try
 
 
 private class WdcggUploadCompleter(
 	val server: InstanceServer,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
-)(implicit ctxt: ExecutionContext) extends FetchingHelper {
+)(implicit ctxt: ExecutionContext) extends FormatSpecificCompleter with FetchingHelper {
 
 	import WdcggUploadCompleter._
 
 	private val factory = vocab.factory
 
-	def writeMetadata(hash: Sha256Sum, info: UploadCompletionInfo): Future[Unit] = info match {
+	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info match {
 		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
 			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
 
@@ -58,13 +58,17 @@ private class WdcggUploadCompleter(
 				}
 				facts += ((objUri, keyProp, vocab.lit(value)))
 			}
-			server.addAll(facts.map(factory.tripleToStatement))
+			facts.map(triple => RdfUpdate(factory.tripleToStatement(triple), true))
 		}
 
 		case _ => Future.failed(new UploadCompletionException(
 			s"Encountered wrong type of upload completion info, must be WdcggUploadCompletion, got $info"
 		))
 	}
+
+	def finalize(hash: Sha256Sum): Future[Report] = Future.successful(
+		Report(vocab.getDataObject(hash).stringValue)
+	)
 
 	private def getStationFacts(station: URI, keyValues: Map[String, String]): Seq[(URI, URI, Value)] = {
 		def doubleOpt(key: String): Option[Double] = keyValues.get(key).flatMap{v =>

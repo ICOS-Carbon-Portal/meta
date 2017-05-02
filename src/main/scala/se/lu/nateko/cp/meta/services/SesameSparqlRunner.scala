@@ -16,8 +16,14 @@ class SesameSparqlRunner(repo: Repository)(implicit ctxt: ExecutionContext) exte
 
 	def evaluateGraphQuery(q: SparqlQuery): Future[CloseableIterator[Statement]] = Future{
 		val conn = repo.getConnection
-		val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, q.query)
-		val qres = query.evaluate()
-		new SesameIterationIterator(qres, conn.close)
-	}
+		try{
+			val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, q.query)
+			val qres = query.evaluate()
+			Future.successful(new SesameIterationIterator(qres, conn.close))
+		} catch{
+			case err: Throwable =>
+				conn.close()
+				Future.failed(err)
+		}
+	}.flatMap(identity)
 }

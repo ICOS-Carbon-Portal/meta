@@ -12,6 +12,7 @@ import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.{ConfigLoader, EpicPidConfig}
 import scala.concurrent.Future
 import spray.json._
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 case class PidEntry(
@@ -98,6 +99,8 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 	}
 
 	def getPid(suffix: String): String = config.prefix + "/" + suffix
+	def getSuffix(hash: Sha256Sum): String = hash.id
+	def getPid(hash: Sha256Sum): String = getPid(getSuffix(hash))
 
 	def list: Future[Seq[String]] = {
 		httpGet(config.url + config.prefix).flatMap(

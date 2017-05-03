@@ -17,14 +17,9 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.sesame._
 
-class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceConfig)(implicit system: ActorSystem) {
-	import UploadCompleter._
+class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(implicit system: ActorSystem) {
 	import system.dispatcher
-
-	private val epic = EpicPidClient(conf.epicPid)
 	import servers.{ metaVocab, vocab }
-
-	def getPid(hash: Sha256Sum): String = epic.getPid(getPidSuffix(hash))
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[Report] = {
 		for(
@@ -61,8 +56,4 @@ class UploadCompleter(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-}
-
-object UploadCompleter{
-	def getPidSuffix(hash: Sha256Sum): String = hash.id
 }

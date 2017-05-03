@@ -27,18 +27,20 @@ import se.lu.nateko.cp.meta.core.data.SpatialCoverage
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.utils.sesame._
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
+import se.lu.nateko.cp.meta.api.EpicPidClient
 
 class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, conf: UploadServiceConfig)(implicit system: ActorSystem) {
 	private implicit val factory = servers.icosMeta.factory
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher
 	private val validator = new UploadValidator(servers, conf)
-	private val completer = new UploadCompleter(servers, conf)
+	private val epic = new EpicPidClient(conf.epicPid)
+	private val completer = new UploadCompleter(servers, epic)
 	private val metaUpdater = new MetadataUpdater(vocab, metaVocab, sparql)
 
 	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
-		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, completer.getPid)
+		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, epic.getPid)
 		objectFetcher.fetch(hash)
 	}
 
@@ -158,8 +160,11 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 				) ++
 				makeSt(covUri, RDFS.LABEL, coverage.label.map(vocab.lit))
 			case Right(existing) =>
-				//TODO Add a validation that 'existing' actually exists
-				//TODO Handle metadata update scenario for this case (or 'existing' may be removed, if it is in the same RDF graph)
+				// TODO Add a validation that 'existing' actually exists
+				/* TODO Protect 'existing' coverage object in the metadata update scenario
+				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
+				 *  by this object any more; it may be needed by others)
+				 */
 				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing))
 		}
 	}

@@ -13,8 +13,6 @@ import spray.json.JsString
 
 class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionContext) extends FormatSpecificCompleter {
 
-	import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter.getPidSuffix
-
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] =
 		Future.successful(Nil)
 
@@ -22,7 +20,7 @@ class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionC
 	final def finalize(hash: Sha256Sum): Future[Report] = {
 
 		val targetUri = vocab.getDataObject(hash)
-		val suffix = getPidSuffix(hash)
+		val suffix = epic.getSuffix(hash)
 		val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
 
 		epic.createOrRecreate(suffix, Seq(pidEntry))

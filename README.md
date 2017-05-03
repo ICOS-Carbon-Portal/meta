@@ -36,7 +36,7 @@ Naturally, instead of `curl`, one can automate this process (as well as all the 
 
 ### Registering the metadata package
 
-The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content may vary somewhat depending on the data object's ICOS data level. For example, for L0 the metadata has the following format:
+The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content depends on the data object's ICOS data level. For example, for L0 the metadata has the following format:
 
 ```json
 {
@@ -44,13 +44,13 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 	"hashSum": "7e14552660931a5bf16f86ad6984f15df9b13efb5b3663afc48c47a07e7739c6",
 	"fileName": "L0test.csv",
 	"specificInfo": {
-		"station": "http://meta.icos-cp.eu/resources/stations/AS_ATM-HYY",
+		"station": "http://meta.icos-cp.eu/resources/stations/AS_SMR",
 		"acquisitionInterval": {
 			"start": "2008-09-01T00:00:00.000Z",
 			"stop": "2008-12-31T23:59:59.999Z"
 		}
 	},
-	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/testObjectSpecL0"
+	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject"
 }
 ```
 

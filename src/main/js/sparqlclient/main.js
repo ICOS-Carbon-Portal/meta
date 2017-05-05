@@ -5,23 +5,23 @@ const txtReturnType = 'TSV or Turtle';
 function runQuery(){
 	var start;
 	var selectedReturnType = $("#returnTypeGrp > .active").text();
-	var accept = "application/json; charset=utf-8";
+	var accept = "application/json";
 
 	switch(selectedReturnType){
 		case "JSON":
-			accept = "application/json; charset=utf-8";
+			accept = "application/json";
 			break;
 
 		case "CSV":
-			accept = "text/csv; charset=utf-8";
+			accept = "text/csv";
 			break;
 
 		case "XML":
-			accept = "application/xml; charset=utf-8";
+			accept = "application/xml";
 			break;
 
 		case txtReturnType:
-			accept = "text/plain; charset=utf-8";
+			accept = "text/plain";
 			break;
 	}
 
@@ -32,7 +32,6 @@ function runQuery(){
 		beforeSend: function(){
 			start = new Date().getTime();
 		},
-		contentType: "application/x-www-form-urlencoded; charset=UTF-8",
 		headers: { Accept: accept },
 		success: function(result){
 			var requestTime = new Date().getTime() - start;

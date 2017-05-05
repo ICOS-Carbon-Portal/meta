@@ -3,10 +3,11 @@ package se.lu.nateko.cp.meta.routes
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.api.SparqlQuery
 
 object SparqlRoute {
 
@@ -19,7 +20,9 @@ object SparqlRoute {
 
 		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
-				complete(SparqlQuery(query))
+				handleRejections(RejectionHandler.default){
+					complete(SparqlQuery(query))
+				}
 			}
 		}
 

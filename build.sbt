@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.11.8",
+	scalaVersion := "2.11.11",
 
 	scalacOptions ++= Seq(
 		"-unchecked",
@@ -31,8 +31,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.4.17"
-val akkaHttpVersion = "10.0.4"
+val akkaVersion = "2.4.18"
+val akkaHttpVersion = "10.0.6"
 val sesameVersion = "2.8.7"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")

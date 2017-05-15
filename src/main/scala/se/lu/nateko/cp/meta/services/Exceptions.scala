@@ -14,3 +14,5 @@ final class UnauthorizedStationUpdateException(message: String) extends ServiceE
 final class UnauthorizedUserInfoUpdateException(message: String) extends ServiceException(message)
 
 final class IllegalLabelingStatusException(message: String) extends ServiceException(message)
+
+final class PidMintingException(message: String) extends ServiceException(message)

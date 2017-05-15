@@ -46,6 +46,8 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 
 	import EpicPidClient._
 
+	private val http = Http()
+
 	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
 
@@ -63,7 +65,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 	}
 
 	private def httpGet(uri: String): Future[HttpResponse] = {
-		Http().singleRequest(
+		http.singleRequest(
 			HttpRequest(
 				uri = uri,
 				headers = getHeaders()
@@ -78,7 +80,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		payload: T
 	) (implicit m: Marshaller[T, RequestEntity]): Future[HttpResponse] =
 		Marshal(payload).to[RequestEntity].flatMap(entity =>
-			Http().singleRequest(
+			http.singleRequest(
 				HttpRequest(
 					method = method,
 					uri = uri,
@@ -89,7 +91,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		)
 
 	private def httpDelete(uri: String): Future[HttpResponse] = {
-		Http().singleRequest(
+		http.singleRequest(
 			HttpRequest(
 				method = HttpMethods.DELETE,
 				uri = uri,
@@ -106,7 +108,9 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		httpGet(config.url + config.prefix).flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[String]]
-				case _ => Future.failed(new Exception(s"Got ${resp.status} from the server"))
+				case _ =>
+					resp.discardEntityBytes()
+					Future.failed(new Exception(s"Got ${resp.status} from the server"))
 			}
 		)
 	}
@@ -115,7 +119,9 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		httpGet(config.url + getPid(suffix)).flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK => Unmarshal(resp.entity).to[Seq[PidEntry]]
-				case _ => Future.failed(new Exception(s"Got ${resp.status} from the server"))
+				case _ =>
+					resp.discardEntityBytes()
+					Future.failed(new Exception(s"Got ${resp.status} from the server"))
 			}
 		)
 	}
@@ -126,11 +132,12 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-Match`.*),
 			payload = updates
-		).map(resp =>
+		).map{resp =>
+			resp.discardEntityBytes()
 			if (resp.status != StatusCodes.NoContent) {
 				throw new Exception(s"Got ${resp.status} from the server")
 			}
-		)
+		}
 	}
 
 	def createNew(suffix: String, newEntries: Seq[PidUpdate]): Future[Unit] =
@@ -157,14 +164,17 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 			method = HttpMethods.PUT,
 			extraHeaders = List(headers.`If-None-Match`.*),
 			payload = newEntries
-		).flatMap(resp => resp.status match {
-			case StatusCodes.Created =>
-				Future.successful(Ok)
-			case StatusCodes.PreconditionFailed =>
-				Future.successful(PidExists)
-			case _ =>
-				Future.failed(new Exception(s"Unexpectedly got '${resp.status}' from the EPIC PID server while minting '$pid'"))
-		})
+		).flatMap{resp =>
+			resp.discardEntityBytes()
+			resp.status match {
+				case StatusCodes.Created =>
+					Future.successful(Ok)
+				case StatusCodes.PreconditionFailed =>
+					Future.successful(PidExists)
+				case _ =>
+					Future.failed(new Exception(s"Unexpectedly got '${resp.status}' from the EPIC PID server while minting '$pid'"))
+			}
+		}
 	}
 
 	def createRandom(newEntries: Seq[PidUpdate]): Future[String] = {
@@ -173,7 +183,8 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 			uri = config.url + config.prefix + "/",
 			method = HttpMethods.POST,
 			payload = newEntries
-		).map(resp =>
+		).map{resp =>
+			resp.discardEntityBytes()
 			if (resp.status != StatusCodes.Created) {
 				throw new Exception(s"Got ${resp.status} from the server")
 			} else {
@@ -181,17 +192,18 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 					throw new Exception("'Location' was not found in the response header")
 				).value.split("/").last
 			}
-		)
+		}
 	}
 
 	def delete(suffix: String): Future[Unit] = {
 		val pid = getPid(suffix)
 		httpDelete(config.url + pid)
-			.map(resp =>
+			.map{resp =>
+				resp.discardEntityBytes()
 				if(resp.status != StatusCodes.NoContent) {
 					throw new Exception(s"Got ${resp.status} from the server while trying to delete $pid")
 				}
-			)
+			}
 	}
 
 }

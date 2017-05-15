@@ -66,7 +66,9 @@ object BadmIngester{
 				case StatusCodes.OK => Unmarshal(resp.entity).to[JsValue].collect{
 					case obj: JsObject => obj
 				}
-				case _ => Future.failed(new Exception(s"Got ${resp.status} from the ETC metadata server"))
+				case _ =>
+					resp.discardEntityBytes()
+					Future.failed(new Exception(s"Got ${resp.status} from the ETC metadata server"))
 			}
 		)
 	}

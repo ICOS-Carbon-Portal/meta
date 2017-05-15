@@ -10,6 +10,10 @@ import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import spray.json.JsString
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.Await
+import java.util.concurrent.TimeoutException
+import se.lu.nateko.cp.meta.services.PidMintingException
 
 class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionContext) extends FormatSpecificCompleter {
 
@@ -23,7 +27,12 @@ class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionC
 		val suffix = epic.getSuffix(hash)
 		val pidEntry = PidUpdate("URL", JsString(targetUri.toString))
 
-		epic.createOrRecreate(suffix, Seq(pidEntry))
+		val reportFut = epic.createOrRecreate(suffix, Seq(pidEntry))
 			.map(_ => Report(epic.getPid(suffix)))
+
+		Await.ready(reportFut, 6 seconds).recoverWith{
+			case _: TimeoutException =>
+				Future.failed(new PidMintingException("PID minting timed out"))
+		}
 	}
 }

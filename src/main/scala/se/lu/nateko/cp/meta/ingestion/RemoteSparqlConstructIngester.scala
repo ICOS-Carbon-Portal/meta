@@ -48,6 +48,7 @@ class RemoteRdfGraphIngester(endpoint: JavaUri, rdfGraph: JavaUri)(implicit syst
 							collector.getStatements.iterator().asScala
 						}
 					case _ =>
+						resp.discardEntityBytes()
 						Future.failed(new Exception(s"Got ${resp.status} from the server"))
 				}
 			)

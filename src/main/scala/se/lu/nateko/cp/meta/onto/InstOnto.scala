@@ -6,21 +6,21 @@ import scala.util.Failure
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
-import org.openrdf.model.Literal
-import org.openrdf.model.Statement
-import org.openrdf.model.{ URI => SesameURI }
-import org.openrdf.model.Value
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.query.UpdateExecutionException
-import org.semanticweb.owlapi.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.query.UpdateExecutionException
+import org.semanticweb.owlapi.model.{IRI => OwlIri}
 
 import se.lu.nateko.cp.meta._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.sesame._
-import org.openrdf.model.vocabulary.XMLSchema
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 
@@ -69,13 +69,13 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 		val values: Seq[ValueDto] = instServer.getStatements(uri).collect{
 			case SesameStatement(_, pred, value: Literal) =>
-				val prop = onto.factory.getOWLDataProperty(IRI.create(pred))
+				val prop = onto.factory.getOWLDataProperty(OwlIri.create(pred))
 				LiteralValueDto(
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
-			case SesameStatement(_, pred, value: SesameURI)  if(pred != RDF.TYPE) =>
-				val prop = onto.factory.getOWLObjectProperty(IRI.create(pred))
+			case SesameStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
+				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred))
 				ObjectValueDto(
 					value = labeler.getInfo(value, instServer),
 					property = onto.rdfsLabeling(prop)
@@ -90,19 +90,19 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	}
 
 	def hasIndividual(uriStr: String): Boolean =
-		instServer.hasStatement(Some(factory.createURI(uriStr)), None, None)
+		instServer.hasStatement(Some(factory.createIRI(uriStr)), None, None)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
 		else Try{
-			val uri = instServer.factory.createURI(uriStr)
-			val typeUri = instServer.factory.createURI(typeUriStr)
+			val uri = instServer.factory.createIRI(uriStr)
+			val typeUri = instServer.factory.createIRI(typeUriStr)
 			instServer.addInstance(uri, typeUri)
 		}.flatten
 	}
 
 	def deleteIndividual(uriStr: String): Try[Unit] = Try{
-		val uri = instServer.factory.createURI(uriStr)
+		val uri = instServer.factory.createIRI(uriStr)
 		val asSubject = instServer.getStatements(uri)
 		val asObject = instServer.getStatements(None, None, Some(uri))
 		instServer.removeAll(asSubject ++ asObject)
@@ -127,7 +127,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	}
 	
 	private def hasStatement(statement: Statement): Boolean = instServer.hasStatement(
-		Some(statement.getSubject.asInstanceOf[SesameURI]),
+		Some(statement.getSubject.asInstanceOf[IRI]),
 		Some(statement.getPredicate),
 		Some(statement.getObject)
 	)
@@ -140,7 +140,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 				val dtype = dp.range.dataType
 				factory.createLiteral(update.obj, dtype)
 
-			case op: ObjectPropertyDto => factory.createURI(update.obj)
+			case op: ObjectPropertyDto => factory.createIRI(update.obj)
 		}
 
 		factory.createStatement(update.subject, update.predicate, obj)

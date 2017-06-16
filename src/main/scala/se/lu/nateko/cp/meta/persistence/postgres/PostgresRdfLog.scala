@@ -2,10 +2,10 @@ package se.lu.nateko.cp.meta.persistence.postgres
 
 import java.sql.PreparedStatement
 import java.sql.Timestamp
-import org.openrdf.model.Literal
-import org.openrdf.model.URI
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 import se.lu.nateko.cp.meta.RdflogConfig
@@ -31,15 +31,15 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 				appendPs.setString(predicate, update.statement.getPredicate.stringValue)
 
 				update.statement.getObject match{
-					case uri: URI =>
+					case uri: IRI =>
 						appendPs.setShort(typeCol, 0) //triple type 0
 						appendPs.setString(objectCol, uri.stringValue)
 						appendPs.setString(litattr, null)
 
-					case lit: Literal if lit.getLanguage != null =>
+					case lit: Literal if lit.getLanguage.isPresent =>
 						appendPs.setShort(typeCol, 2) //triple type 2
 						appendPs.setString(objectCol, lit.getLabel)
-						appendPs.setString(litattr, lit.getLanguage)
+						appendPs.setString(litattr, lit.getLanguage.get)
 
 					case lit: Literal =>
 						appendPs.setShort(typeCol, 1) //triple type 1

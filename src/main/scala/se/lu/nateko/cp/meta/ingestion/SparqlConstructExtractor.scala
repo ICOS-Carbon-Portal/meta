@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import org.apache.commons.io.IOUtils
-import org.openrdf.model.Statement
-import org.openrdf.query.QueryLanguage
-import org.openrdf.repository.Repository
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.utils.sesame.SesameIterationIterator
 

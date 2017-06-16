@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.IRI
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.utils.sesame._
@@ -30,7 +30,7 @@ trait FileService { self: StationLabelingService =>
 		val fileName = filePart.filename.get
 		val fileContent = filePart.entity.data
 
-		val station = factory.createURI(stationUri)
+		val station = factory.createIRI(stationUri)
 
 		assertThatWriteIsAuthorized(station, uploader)
 
@@ -54,16 +54,16 @@ trait FileService { self: StationLabelingService =>
 	}
 
 	def deleteFile(station: java.net.URI, file: java.net.URI, uploader: UserId): Unit = {
-		val stationUri: URI = factory.createURI(station)
+		val stationUri: IRI = factory.createIRI(station.toString)
 
 		assertThatWriteIsAuthorized(stationUri, uploader)
 
-		val fileUri = factory.createURI(file)
+		val fileUri = factory.createIRI(file)
 		server.remove(factory.createStatement(stationUri, vocab.hasAssociatedFile, fileUri))
 	}
 
 	def getFilePack(stationId: java.net.URI)(implicit mat: Materializer): HttpResponse = {
-		val stationUri: URI = factory.createURI(stationId)
+		val stationUri: IRI = factory.createIRI(stationId.toString)
 		val fileHashesAndNames: Seq[(Sha256Sum, String)] = server
 			.getUriValues(stationUri, vocab.hasAssociatedFile)
 			.map{fileUri =>

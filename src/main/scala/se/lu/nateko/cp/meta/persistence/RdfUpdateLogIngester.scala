@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.persistence
 
-import org.openrdf.model.URI
-import org.openrdf.repository.Repository
-import org.openrdf.repository.sail.SailRepository
-import org.openrdf.sail.memory.MemoryStore
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
 
 import scala.util.Try
 import scala.util.Failure
@@ -16,10 +16,10 @@ object RdfUpdateLogIngester{
 
 	private val chunkSize = 5000
 
-	def ingest(updates: Iterator[RdfUpdate], contexts: URI*): Repository =
+	def ingest(updates: Iterator[RdfUpdate], contexts: IRI*): Repository =
 		ingest(updates, Loading.empty, contexts: _*)
 
-	def ingest(updates: Iterator[RdfUpdate], repo: Repository, contexts: URI*): Repository = {
+	def ingest(updates: Iterator[RdfUpdate], repo: Repository, contexts: IRI*): Repository = {
 
 		def commitChunk(chunk: Seq[RdfUpdate]): Try[Unit] =
 			repo.transact(conn => {

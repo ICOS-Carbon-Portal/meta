@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
-import org.openrdf.model.Value
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 import BadmConsts._
 import BadmSchema.PropertyInfo
@@ -84,7 +84,7 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 			case BadmLocalDate(date) => vocab.lit(date)
 		}).getOrElse(vocab.lit(entry.submissionDate))
 
-		Seq[(URI, URI, Value)](
+		Seq[(IRI, IRI, Value)](
 			(person, RDF.TYPE, metaVocab.personClass),
 			(person, metaVocab.hasFirstName, vocab.lit(firstName)),
 			(person, metaVocab.hasLastName, vocab.lit(lastName)),
@@ -96,7 +96,7 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 		) map metaVocab.factory.tripleToStatement
 	}
 
-	private def getEntryStatements(station: URI, entry: BadmEntry, ancillEntry: URI)
+	private def getEntryStatements(station: IRI, entry: BadmEntry, ancillEntry: IRI)
 				(implicit metaVocab: CpmetaVocab, badmVocab: BadmVocab): Seq[Statement] = {
 		val submissionDate = metaVocab.lit(entry.submissionDate)
 
@@ -105,7 +105,7 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 			case BadmYear(year) => metaVocab.lit(year.toString, XMLSchema.DATE)
 		}
 
-		Seq[(URI, URI, Value)](
+		Seq[(IRI, IRI, Value)](
 			(station, metaVocab.hasAncillaryEntry, ancillEntry),
 			(ancillEntry, RDF.TYPE, metaVocab.ancillaryEntryClass),
 			(ancillEntry, metaVocab.dcterms.dateSubmitted, submissionDate)
@@ -118,7 +118,7 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 		} map metaVocab.factory.tripleToStatement
 	}
 
-	private def badmValue2PropValue(badmValue: BadmValue)(implicit badmVocab: BadmVocab): Option[(URI, Value)] = {
+	private def badmValue2PropValue(badmValue: BadmValue)(implicit badmVocab: BadmVocab): Option[(IRI, Value)] = {
 		val variable = badmValue.variable
 		val valueString = badmValue.valueStr
 

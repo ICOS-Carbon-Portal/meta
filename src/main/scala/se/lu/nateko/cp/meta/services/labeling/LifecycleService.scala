@@ -4,8 +4,8 @@ import java.net.URI
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.sesame._
-import org.openrdf.model.Literal
-import org.openrdf.model.{URI => SesameUri}
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
@@ -23,7 +23,7 @@ trait LifecycleService { self: StationLabelingService =>
 	private val mailer = SendMail(config.mailing)
 
 	def updateStatus(station: URI, newStatus: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
-		val stationUri = factory.createURI(station)
+		val stationUri = factory.createIRI(station)
 
 		for(
 			toStatus <- lookupAppStatus(newStatus);
@@ -40,13 +40,13 @@ trait LifecycleService { self: StationLabelingService =>
 
 	}
 
-	private def getTcUsers(station: SesameUri): Seq[String] = lookupStationClass(station)
+	private def getTcUsers(station: IRI): Seq[String] = lookupStationClass(station)
 		.flatMap(cls => config.tcUserIds.get(cls))
 		.toSeq
 		.flatten
 		.map(_.toLowerCase)
 
-	private def userHasRole(user: UserId, role: Role.Role, station: SesameUri): Boolean = {
+	private def userHasRole(user: UserId, role: Role.Role, station: IRI): Boolean = {
 		import Role._
 		role match{
 			case PI =>
@@ -60,17 +60,17 @@ trait LifecycleService { self: StationLabelingService =>
 		}
 	}
 
-	private def getCurrentStatus(station: SesameUri): Try[AppStatus] = {
+	private def getCurrentStatus(station: IRI): Try[AppStatus] = {
 		server.getStringValues(station, vocab.hasApplicationStatus)
 			.headOption
 			.map(lookupAppStatus)
 			.getOrElse(Success(AppStatus.neverSubmitted))
 	}
 
-	private def stationIsAtmospheric(station: SesameUri): Boolean =
+	private def stationIsAtmospheric(station: IRI): Boolean =
 		lookupStationClass(station).map(_ == vocab.atmoStationClass).getOrElse(false)
 
-	private def writeStatusChange(from: AppStatus, to: AppStatus, station: SesameUri): Unit = {
+	private def writeStatusChange(from: AppStatus, to: AppStatus, station: IRI): Unit = {
 		def toStatements(status: AppStatus) = Seq(factory
 			.createStatement(station, vocab.hasApplicationStatus, vocab.lit(status.toString))
 		)
@@ -79,7 +79,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus,
-		station: SesameUri, user: UserId
+		station: IRI, user: UserId
 	)(implicit ctxt: ExecutionContext): Unit = if(config.mailing.mailSendingActive) Future{
 
 		val stationId = lookupStationId(station).getOrElse("???")

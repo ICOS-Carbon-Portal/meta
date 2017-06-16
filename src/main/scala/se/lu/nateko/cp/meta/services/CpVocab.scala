@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services
 
-import org.openrdf.model.ValueFactory
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.{URI => JavaUri}
@@ -31,7 +31,7 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 
-	def getDataObject(hash: Sha256Sum) = factory.createURI("https://meta.icos-cp.eu/objects/", hash.id)
+	def getDataObject(hash: Sha256Sum) = factory.createIRI("https://meta.icos-cp.eu/objects/", hash.id)
 
 	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: Option[String]): JavaUri = {
 		val filePath = fileName.map("/" + urlEncode(_)).getOrElse("")

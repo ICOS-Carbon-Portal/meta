@@ -3,9 +3,9 @@ package se.lu.nateko.cp.meta.services.upload
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import org.openrdf.model.URI
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.UploadMetadataDto
@@ -66,7 +66,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[Unit] = {
-		def hasFormat(format: URI): Boolean = format === spec.format.uri
+		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
 

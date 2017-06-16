@@ -5,7 +5,7 @@ import java.time.Instant
 import scala.concurrent.Future
 import scala.util.Try
 
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.IRI
 
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.UploadServiceConfig
@@ -39,7 +39,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 		) yield (getSpecificCompleter(server, format), server)
 
 
-	private def getSpecificCompleter(server: InstanceServer, format: URI): FormatSpecificCompleter = {
+	private def getSpecificCompleter(server: InstanceServer, format: IRI): FormatSpecificCompleter = {
 		if(format === metaVocab.wdcggFormat)
 			new WdcggUploadCompleter(server, vocab, metaVocab)
 		else if(format === metaVocab.etcFormat || format === metaVocab.socatFormat)

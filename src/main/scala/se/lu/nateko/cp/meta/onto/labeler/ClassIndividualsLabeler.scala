@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
 import se.lu.nateko.cp.meta._
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.onto.labeler._
@@ -12,11 +12,9 @@ object ClassIndividualsLabeler{
 
 	def apply(owlClass: OWLClass, onto: OWLOntology, nested: InstanceLabeler): InstanceLabeler = {
 
-		val ontologies = onto.getImportsClosure
-
 		def getDisplayComponents(prop: OWLAnnotationProperty): Seq[DisplayComponent] =
 			EntitySearcher
-				.getAnnotations(owlClass, ontologies, prop)
+				.getAnnotations(owlClass, onto.importsClosure, prop).iterator.asScala
 				.map{anno => DisplayComponent(anno.getValue, onto)}
 				.flatten
 				.toSeq
@@ -31,14 +29,14 @@ object ClassIndividualsLabeler{
 
 		if(displayComps.nonEmpty)
 			new MultiComponentIndividualLabeler(displayComps, nested)
-		else getSingleSuperClass(owlClass, ontologies) match{
+		else getSingleSuperClass(owlClass, onto.importsClosure) match{
 			case Some(superClass) => apply(superClass, onto, nested)
 			case None => Labeler.rdfs
 		}
 	}
 
-	private def getSingleSuperClass(owlClass: OWLClass, ontologies: java.util.Set[OWLOntology]): Option[OWLClass] = {
-		val superClasses = EntitySearcher.getSuperClasses(owlClass, ontologies)
+	private def getSingleSuperClass(owlClass: OWLClass, ontologies: java.util.stream.Stream[OWLOntology]): Option[OWLClass] = {
+		val superClasses = EntitySearcher.getSuperClasses(owlClass, ontologies).iterator.asScala
 			.collect{case oc: OWLClass => oc}.toSeq
 
 		assert(

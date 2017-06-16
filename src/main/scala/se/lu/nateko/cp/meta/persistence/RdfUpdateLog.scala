@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.persistence
 
-import org.openrdf.model.Statement
+import org.eclipse.rdf4j.model.Statement
 import java.io.Closeable
 import java.sql.Timestamp
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate

@@ -4,11 +4,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 
-import org.openrdf.model.URI
-import org.openrdf.model.Value
-import org.openrdf.model.vocabulary.OWL
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.OWL
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
@@ -34,7 +34,7 @@ private class WdcggUploadCompleter(
 
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info match {
 		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
-			val facts = scala.collection.mutable.Queue.empty[(URI, URI, Value)]
+			val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 
 			val objUri = vocab.getDataObject(hash)
 			facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
@@ -70,11 +70,11 @@ private class WdcggUploadCompleter(
 		Report(vocab.getDataObject(hash).stringValue)
 	)
 
-	private def getStationFacts(station: URI, keyValues: Map[String, String]): Seq[(URI, URI, Value)] = {
+	private def getStationFacts(station: IRI, keyValues: Map[String, String]): Seq[(IRI, IRI, Value)] = {
 		def doubleOpt(key: String): Option[Double] = keyValues.get(key).flatMap{v =>
 			Try(v.toDouble).toOption
 		}
-		Seq[Option[(URI, URI, Value)]](
+		Seq[Option[(IRI, IRI, Value)]](
 			Some((station, RDF.TYPE, metaVocab.stationClass)),
 			keyValues.get(StationName).map(stName => (station, metaVocab.hasName, vocab.lit(stName))),
 			keyValues.get(Country).map(country => (station, metaVocab.country, vocab.lit(country))),

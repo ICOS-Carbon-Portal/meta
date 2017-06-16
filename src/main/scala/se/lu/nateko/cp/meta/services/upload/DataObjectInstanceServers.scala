@@ -4,7 +4,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
 	allDataObjs: InstanceServer,
-	perFormat: Map[URI, InstanceServer]
+	perFormat: Map[IRI, InstanceServer]
 ) extends CpmetaFetcher{
 	import InstanceServer.AtMostOne
 
@@ -24,7 +24,7 @@ class DataObjectInstanceServers(
 	val vocab = new CpVocab(icosMeta.factory)
 	protected val server = icosMeta
 
-	def getDataObjSpecification(objHash: Sha256Sum): Try[URI] = {
+	def getDataObjSpecification(objHash: Sha256Sum): Try[IRI] = {
 		val dataObjUri = vocab.getDataObject(objHash)
 
 		allDataObjs.getUriValues(dataObjUri, metaVocab.hasObjectSpec, AtMostOne).headOption match {
@@ -34,7 +34,7 @@ class DataObjectInstanceServers(
 		
 	}
 
-	def getObjSpecificationFormat(objectSpecification: URI): Try[URI] = {
+	def getObjSpecificationFormat(objectSpecification: IRI): Try[IRI] = {
 
 		icosMeta.getUriValues(objectSpecification, metaVocab.hasFormat, AtMostOne).headOption match {
 			case None => Failure(new UploadUserErrorException(s"Object Specification '$objectSpecification' has no format"))
@@ -42,9 +42,9 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getDataObjSpecification(spec: URI): Try[DataObjectSpec] = Try{getSpecification(spec)}
+	def getDataObjSpecification(spec: IRI): Try[DataObjectSpec] = Try{getSpecification(spec)}
 
-	def getInstServerForFormat(format: URI): Try[InstanceServer] = {
+	def getInstServerForFormat(format: IRI): Try[InstanceServer] = {
 		perFormat.get(format) match{
 			case None => Failure(new UploadUserErrorException(s"Format '$format' has no instance server configured for it"))
 			case Some(server) => Success(server)

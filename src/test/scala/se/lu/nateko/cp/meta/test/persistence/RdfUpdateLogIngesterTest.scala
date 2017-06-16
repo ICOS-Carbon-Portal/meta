@@ -1,13 +1,12 @@
 package se.lu.nateko.cp.meta.test.persistence
 
 import org.scalatest.FunSpec
-import org.openrdf.model.impl.ValueFactoryImpl
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.OWL
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.OWL
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import info.aduna.iteration.Iterations
-import scala.Iterator
+import org.eclipse.rdf4j.common.iteration.Iterations
 
 class RdfUpdateLogIngesterTest extends FunSpec{
 
@@ -16,10 +15,10 @@ class RdfUpdateLogIngesterTest extends FunSpec{
 		import scala.concurrent.ExecutionContext.Implicits.global
 
 		it("works for a simple list of assertions"){
-			val f = new ValueFactoryImpl()
-			val ctxt = f.createURI("http://www.icos-cp.eu/ontology/")
-			val person = f.createURI("http://www.icos-cp.eu/ontology/Person")
-			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS)
+			val f = SimpleValueFactory.getInstance()
+			val ctxt = f.createIRI("http://www.icos-cp.eu/ontology/")
+			val person = f.createIRI("http://www.icos-cp.eu/ontology/Person")
+			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS, ctxt)
 
 			val iter = Iterator(RdfUpdate(statement, true))
 			val repo = RdfUpdateLogIngester.ingest(iter, ctxt)

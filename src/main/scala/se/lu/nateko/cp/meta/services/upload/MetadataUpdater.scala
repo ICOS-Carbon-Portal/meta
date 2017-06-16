@@ -3,9 +3,9 @@ package se.lu.nateko.cp.meta.services.upload
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.openrdf.model.Resource
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.Resource
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
@@ -24,7 +24,7 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 		if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true))
 		else {
 
-			def isProvTime(pred: URI): Boolean = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
+			def isProvTime(pred: IRI): Boolean = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
 	
 			val acq = vocab.getAcquisition(hash)
 			val subm = vocab.getSubmission(hash)
@@ -84,7 +84,7 @@ object MetadataUpdater{
 		val Plain, Sticky, Fixed = Value
 	}
 
-	private type SubjPred = (Resource, URI)
+	private type SubjPred = (Resource, IRI)
 
 
 	def diff(olds: Seq[Statement], news: Seq[Statement]): Seq[RdfUpdate] =

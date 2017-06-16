@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services
 
-import org.openrdf.model.ValueFactory
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>

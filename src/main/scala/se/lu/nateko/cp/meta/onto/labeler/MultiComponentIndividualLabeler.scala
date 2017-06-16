@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import org.semanticweb.owlapi.model._
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import org.openrdf.model.Literal
+import org.eclipse.rdf4j.model.Literal
 import se.lu.nateko.cp.meta.onto.labeler._
 
 class MultiComponentIndividualLabeler(
@@ -16,10 +16,10 @@ class MultiComponentIndividualLabeler(
 	private val compMakers = components.map{
 		case DataPropComponent(prop) => getComponent(prop) _
 		case ObjectPropComponent(prop) => getComponent(prop) _
-		case ConstantComponent(value) => (instUri: URI, instServer: InstanceServer) => value
+		case ConstantComponent(value) => (instUri: IRI, instServer: InstanceServer) => value
 	}
 
-	override def getLabel(instUri: URI, instServer: InstanceServer): String = {
+	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {
 
 		val labelComponents = compMakers.map(_(instUri, instServer))
 
@@ -34,7 +34,7 @@ class MultiComponentIndividualLabeler(
 			super.getLabel(instUri, instServer)
 	}
 
-	private def getComponent(prop: OWLDataProperty)(instUri: URI, instServer: InstanceServer): String = {
+	private def getComponent(prop: OWLDataProperty)(instUri: IRI, instServer: InstanceServer): String = {
 		val propUri = toUri(prop, instServer)
 		val values = instServer.getValues(instUri, propUri).collect{
 			case literal: Literal => literal.getLabel
@@ -42,14 +42,14 @@ class MultiComponentIndividualLabeler(
 		Labeler.joinMultiValues(values)
 	}
 
-	private def getComponent(prop: OWLObjectProperty)(instUri: URI, instServer: InstanceServer): String = {
+	private def getComponent(prop: OWLObjectProperty)(instUri: IRI, instServer: InstanceServer): String = {
 		val propUri = toUri(prop, instServer)
 		val values = instServer.getValues(instUri, propUri).collect{
-			case uri: URI => inner.getLabel(uri, instServer)
+			case uri: IRI => inner.getLabel(uri, instServer)
 		}
 		Labeler.joinMultiValues(values)
 	}
 
-	private def toUri(prop: OWLProperty, instServer: InstanceServer): URI =
-		instServer.factory.createURI(prop.getIRI.toURI.toString)
+	private def toUri(prop: OWLProperty, instServer: InstanceServer): IRI =
+		instServer.factory.createIRI(prop.getIRI.toURI.toString)
 }

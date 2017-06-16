@@ -3,20 +3,20 @@ package se.lu.nateko.cp.meta.services
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.openrdf.query.BooleanQuery
-import org.openrdf.query.GraphQuery
-import org.openrdf.query.MalformedQueryException
-import org.openrdf.query.QueryLanguage
-import org.openrdf.query.TupleQuery
-import org.openrdf.query.resultio.TupleQueryResultWriterFactory
-import org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
-import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
-import org.openrdf.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
-import org.openrdf.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
-import org.openrdf.repository.Repository
-import org.openrdf.rio.RDFWriterFactory
-import org.openrdf.rio.rdfxml.RDFXMLWriterFactory
-import org.openrdf.rio.turtle.TurtleWriterFactory
+import org.eclipse.rdf4j.query.BooleanQuery
+import org.eclipse.rdf4j.query.GraphQuery
+import org.eclipse.rdf4j.query.MalformedQueryException
+import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.query.TupleQuery
+import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
+import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
+import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
+import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
+import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
+import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.rio.RDFWriterFactory
+import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
+import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
 
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling

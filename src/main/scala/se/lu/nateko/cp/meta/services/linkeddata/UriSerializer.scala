@@ -6,13 +6,13 @@ import scala.Left
 import scala.Right
 import scala.collection.TraversableOnce.flattenTraversableOnce
 
-import org.openrdf.model.Literal
-import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
-import org.openrdf.query.BindingSet
-import org.openrdf.query.QueryLanguage
-import org.openrdf.repository.Repository
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.repository.Repository
 
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.Uri
@@ -29,7 +29,7 @@ import akka.http.scaladsl.marshalling.Marshaller
 import scala.concurrent.Future
 import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import org.openrdf.model.Statement
+import org.eclipse.rdf4j.model.Statement
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -62,7 +62,7 @@ class SesameUriSerializer(repo: Repository) extends UriSerializer{
 private object SesameUriSerializer{
 
 	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
-		val uri = repo.getValueFactory.createURI(res.toString)
+		val uri = repo.getValueFactory.createIRI(res.toString)
 		val own = repo.access(conn => conn.getStatements(uri, null, null, false))
 		val about = repo.access(conn => conn.getStatements(null, null, uri, false))
 		own ++ about
@@ -77,7 +77,7 @@ private object SesameUriSerializer{
 			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
 
 			val propValueOpt: Option[PropValue] = bset.getValue("val") match {
-				case uri: URI =>
+				case uri: IRI =>
 					val valLabel = getOptLit(bset, "valLabel")
 					Some(Left(UriResource(uri, valLabel)))
 				case lit: Literal =>
@@ -114,7 +114,7 @@ private object SesameUriSerializer{
 
 	private def getOptUriRes(bset: BindingSet, varName: String, lblName: String): Option[UriResource] = {
 		bset.getValue(varName) match {
-			case uri: URI =>
+			case uri: IRI =>
 				val label = getOptLit(bset, lblName)
 				Some(UriResource(uri, label))
 			case _ => None

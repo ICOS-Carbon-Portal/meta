@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.{URI => JavaUri}
+import java.net.URI
 import java.time.Instant
 
 import scala.concurrent.Future
 
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
-import org.openrdf.model.Value
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
-import org.openrdf.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.cpauth.core.UserId
@@ -63,7 +63,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		}
 	}
 
-	def checkPermissions(submitter: JavaUri, userId: String): Boolean =
+	def checkPermissions(submitter: URI, userId: String): Boolean =
 		conf.submitters.values
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
@@ -108,7 +108,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
 		getProductionStatements(hash, meta.production) ++
 		getSpatialCoverageStatements(hash, meta.spatial) ++
-		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(uri => vocab.factory.createURI(uri)))
+		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(uri => vocab.factory.createIRI(uri)))
 	}
 
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {
@@ -145,7 +145,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[SpatialCoverage, JavaUri]): Seq[Statement] = {
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[SpatialCoverage, URI]): Seq[Statement] = {
 		val objectUri = vocab.getDataObject(hash)
 		spatial match{
 			case Left(coverage) =>
@@ -169,9 +169,9 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		}
 	}
 
-	private def makeSt(subj: URI, pred: URI, obj: Option[Value]): Iterable[Statement] =
+	private def makeSt(subj: IRI, pred: IRI, obj: Option[Value]): Iterable[Statement] =
 		obj.map(factory.createStatement(subj, pred, _))
 
-	private def makeSt(subj: URI, pred: URI, obj: Value): Statement = factory.createStatement(subj, pred, obj)
+	private def makeSt(subj: IRI, pred: IRI, obj: Value): Statement = factory.createStatement(subj, pred, obj)
 
 }

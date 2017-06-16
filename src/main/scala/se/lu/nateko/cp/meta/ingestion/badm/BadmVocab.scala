@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import org.openrdf.model.ValueFactory
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 
 class BadmVocab (val factory: ValueFactory) extends CustomVocab {

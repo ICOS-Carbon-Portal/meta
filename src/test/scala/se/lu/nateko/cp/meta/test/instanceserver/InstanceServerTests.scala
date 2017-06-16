@@ -3,23 +3,23 @@ package se.lu.nateko.cp.meta.test.instanceserver
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.persistence.InMemoryRdfLog
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import org.openrdf.model.impl.ValueFactoryImpl
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.utils.sesame._
-import org.openrdf.repository.sail.SailRepository
-import org.openrdf.sail.memory.MemoryStore
-import org.openrdf.model.vocabulary.RDF
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 class InstanceServerTests extends FunSpec{
 
 	import scala.concurrent.ExecutionContext.Implicits.global
 
-	val factory = new ValueFactoryImpl()
-	val ctxt = factory.createURI("http://www.icos-cp.eu/ontology/")
-	val ctxt2 = factory.createURI("http://www.icos-cp.eu/ontology2/")
+	val factory = SimpleValueFactory.getInstance()
+	val ctxt = factory.createIRI("http://www.icos-cp.eu/ontology/")
+	val ctxt2 = factory.createIRI("http://www.icos-cp.eu/ontology2/")
 
-	def makeUri(suff: String) = factory.createURI(ctxt.stringValue, suff)
+	def makeUri(suff: String) = factory.createIRI(ctxt.stringValue, suff)
 
 	describe("LoggingInstanceServer over SesameInstanceServer"){
 

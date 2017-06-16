@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.openrdf.model._
-import org.openrdf.model.vocabulary.{RDF, RDFS, XMLSchema}
+import org.eclipse.rdf4j.model._
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XMLSchema}
 import scala.annotation.migration
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.CloseableIterator
@@ -11,16 +11,16 @@ trait InstanceServer {
 	import InstanceServer._
 
 	/**
-	 * Makes a new URI for the new instance, but does not add any triples to the repository.
-	 * @param prefix The prefix to start the new URI with
+	 * Makes a new IRI for the new instance, but does not add any triples to the repository.
+	 * @param prefix The prefix to start the new IRI with
 	 */
-	def makeNewInstance(prefix: URI): URI
-	def readContexts: Seq[URI]
-	def writeContexts: Seq[URI]
+	def makeNewInstance(prefix: IRI): IRI
+	def readContexts: Seq[IRI]
+	def writeContexts: Seq[IRI]
 	def factory: ValueFactory
 
-	def getStatements(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): CloseableIterator[Statement]
-	def hasStatement(subject: Option[URI], predicate: Option[URI], obj: Option[Value]): Boolean
+	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
+	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
 	def writeContextsView: InstanceServer
@@ -30,34 +30,34 @@ trait InstanceServer {
 	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))
 	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))
 
-	final def getInstances(classUri: URI): IndexedSeq[URI] =
+	final def getInstances(classUri: IRI): IndexedSeq[IRI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))
 			.map(_.getSubject)
-			.collect{case uri: URI => uri}
+			.collect{case uri: IRI => uri}
 			.toIndexedSeq
 
-	final def getStatements(instUri: URI): IndexedSeq[Statement] = getStatements(Some(instUri), None, None).toIndexedSeq
+	final def getStatements(instUri: IRI): IndexedSeq[Statement] = getStatements(Some(instUri), None, None).toIndexedSeq
 
-	final def getValues(instUri: URI, propUri: URI): IndexedSeq[Value] =
+	final def getValues(instUri: IRI, propUri: IRI): IndexedSeq[Value] =
 		getStatements(Some(instUri), Some(propUri), None)
 			.map(_.getObject)
 			.toIndexedSeq
 
-	final def hasStatement(subject: URI, predicate: URI, obj: Value): Boolean =
+	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
 		hasStatement(Some(subject), Some(predicate), Some(obj))
 
 	final def add(statements: Statement*): Try[Unit] = addAll(statements)
 	final def remove(statements: Statement*): Try[Unit] = removeAll(statements)
 
-	final def addInstance(instUri: URI, classUri: URI): Try[Unit] =
+	final def addInstance(instUri: IRI, classUri: IRI): Try[Unit] =
 		add(factory.createStatement(instUri, RDF.TYPE, classUri))
 
-	final def removeInstance(instUri: URI): Unit = removeAll(getStatements(instUri))
+	final def removeInstance(instUri: IRI): Unit = removeAll(getStatements(instUri))
 
-	final def addPropertyValue(instUri: URI, propUri: URI, value: Value): Try[Unit] =
+	final def addPropertyValue(instUri: IRI, propUri: IRI, value: Value): Try[Unit] =
 		add(factory.createStatement(instUri, propUri, value))
 
-	final def removePropertyValue(instUri: URI, propUri: URI, value: Value): Try[Unit] =
+	final def removePropertyValue(instUri: IRI, propUri: IRI, value: Value): Try[Unit] =
 		remove(factory.createStatement(instUri, propUri, value))
 
 	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit = {
@@ -67,13 +67,13 @@ trait InstanceServer {
 		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
 	}
 
-	final def getUriValues(subj: URI, pred: URI, exp: CardinalityExpectation = Default): Seq[URI] = {
-		val values = getValues(subj, pred).collect{case uri: URI => uri}
-		assertCardinality(values.size, exp, s"URI value(s) of $pred for $subj")
+	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[IRI] = {
+		val values = getValues(subj, pred).collect{case uri: IRI => uri}
+		assertCardinality(values.size, exp, s"IRI value(s) of $pred for $subj")
 		values
 	}
 
-	final def getLiteralValues(subj: URI, pred: URI, dType: URI, exp: CardinalityExpectation = Default): Seq[String] = {
+	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): Seq[String] = {
 		val values = getValues(subj, pred).collect{
 			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
 		}
@@ -81,13 +81,13 @@ trait InstanceServer {
 		values
 	}
 
-	final def getStringValues(subj: URI, pred: URI, exp: CardinalityExpectation = Default): Seq[String] =
+	final def getStringValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[String] =
 		getLiteralValues(subj, pred, XMLSchema.STRING, exp)
 
-	final def getIntValues(subj: URI, pred: URI, exp: CardinalityExpectation = Default): Seq[Int] =
+	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Int] =
 		getLiteralValues(subj, pred, XMLSchema.INTEGER, exp).map(_.toInt)
 
-	final def getDoubleValues(subj: URI, pred: URI, exp: CardinalityExpectation = Default): Seq[Double] =
+	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Double] =
 		getLiteralValues(subj, pred, XMLSchema.DOUBLE, exp).map(_.toDouble)
 
 }

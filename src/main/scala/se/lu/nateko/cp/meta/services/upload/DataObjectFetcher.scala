@@ -2,9 +2,8 @@ package se.lu.nateko.cp.meta.services.upload
 
 import java.net.{URI => JavaUri}
 
-import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._

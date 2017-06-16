@@ -1,15 +1,17 @@
 package se.lu.nateko.cp.meta.utils
 
 
-import com.google.common.base.Optional
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.io.XMLUtils
 import org.semanticweb.owlapi.search.EntitySearcher
-import scala.collection.JavaConversions._
+import java.util.Optional
 
 package object owlapi {
 
-	implicit class GoogleScalaOptionable[T](val opt: Optional[T]) extends AnyVal{
+//	implicit class GoogleScalaOptionable[T](val opt: Optional[T]) extends AnyVal{
+//		def toOption: Option[T] = if(opt.isPresent) Some(opt.get) else None
+//	}
+	implicit class JavaUtilOptionable[T](val opt: Optional[T]) extends AnyVal{
 		def toOption: Option[T] = if(opt.isPresent) Some(opt.get) else None
 	}
 

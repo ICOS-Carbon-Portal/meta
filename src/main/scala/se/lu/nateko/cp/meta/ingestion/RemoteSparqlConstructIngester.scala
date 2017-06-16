@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import java.net.{URI => JavaUri}
+import java.net.URI
 
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
-import org.openrdf.model.ValueFactory
-import org.openrdf.rio.helpers.ContextStatementCollector
-import org.openrdf.rio.turtle.TurtleParser
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector
+import org.eclipse.rdf4j.rio.turtle.TurtleParser
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -24,7 +24,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
 
-class RemoteRdfGraphIngester(endpoint: JavaUri, rdfGraph: JavaUri)(implicit system: ActorSystem) extends Ingester{
+class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem) extends Ingester{
 
 	implicit private val materializer = ActorMaterializer()
 	import system.dispatcher
@@ -36,7 +36,7 @@ class RemoteRdfGraphIngester(endpoint: JavaUri, rdfGraph: JavaUri)(implicit syst
 					case StatusCodes.OK =>
 
 						val inputStr = resp.entity.dataBytes.runWith(StreamConverters.asInputStream())
-						val graphUri: URI = javaUriToSesame(rdfGraph)(factory)
+						val graphUri: IRI = javaUriToSesame(rdfGraph)(factory)
 						val collector = new ContextStatementCollector(factory, graphUri)
 						val parser = new TurtleParser(factory)
 

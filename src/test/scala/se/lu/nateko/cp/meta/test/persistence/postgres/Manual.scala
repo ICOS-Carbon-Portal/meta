@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.persistence.postgres
 
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import org.openrdf.model.impl.ValueFactoryImpl
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import se.lu.nateko.cp.meta.persistence.postgres._
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.ConfigLoader
 
 object Manual {
 
-	val factory = new ValueFactoryImpl
+	val factory = SimpleValueFactory.getInstance()
 
 	def getLog: PostgresRdfLog = {
 		val config = ConfigLoader.default
@@ -44,7 +44,7 @@ object Manual {
 	def serverFromLog: InstanceServer = {
 		import scala.concurrent.ExecutionContext.Implicits.global
 		val log = getLog
-		val ctxt = factory.createURI(TestConfig.instOntUri)
+		val ctxt = factory.createIRI(TestConfig.instOntUri)
 		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
 		log.close()
 		new SesameInstanceServer(repo, ctxt)

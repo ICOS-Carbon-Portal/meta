@@ -1,13 +1,13 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.Statement
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.meta.utils.sesame.Loading
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
-import org.openrdf.repository.Repository
+import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import java.net.URI

@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import scala.concurrent.Future
-import org.openrdf.model.Statement
+import org.eclipse.rdf4j.model.Statement
 
 case class SparqlQuery(query: String)
 

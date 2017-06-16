@@ -2,8 +2,8 @@ package se.lu.nateko.cp.meta.test.ingestion.badm
 
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.ingestion.badm.RdfBadmEntriesIngester
-import org.openrdf.model.ValueFactory
-import org.openrdf.sail.memory.model.MemValueFactory
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import se.lu.nateko.cp.meta.ingestion.badm.Parser._
 
 class RdfBadmEntriesIngesterTests extends FunSpec{

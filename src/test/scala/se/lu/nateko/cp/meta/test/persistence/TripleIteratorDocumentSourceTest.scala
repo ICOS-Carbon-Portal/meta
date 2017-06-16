@@ -2,9 +2,9 @@ package se.lu.nateko.cp.meta.test.persistence
 
 import org.scalatest.FunSpec
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.openrdf.model.impl.ValueFactoryImpl
-import org.openrdf.model.vocabulary.OWL
-import org.openrdf.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.vocabulary.OWL
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.persistence.TripleIteratorDocumentSource
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.rio.RioNTriplesParserFactory
@@ -23,8 +23,8 @@ class TripleIteratorDocumentSourceTest extends FunSpec{
 		manager.setOntologyParsers(Set[OWLParserFactory](new RioNTriplesParserFactory).asJava)
 
 		it("Can be used as OWLOntologyDocumentSource to load an ontology"){
-			val f = new ValueFactoryImpl()
-			val person = f.createURI("http://www.icos-cp.eu/ontology/Person")
+			val f = SimpleValueFactory.getInstance()
+			val person = f.createIRI("http://www.icos-cp.eu/ontology/Person")
 			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS)
 
 			val source = new TripleIteratorDocumentSource(ontIri, Iterator(statement))

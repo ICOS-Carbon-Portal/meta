@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLProperty
@@ -20,7 +20,7 @@ class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){
 
 	override def getTopLevelClasses: Seq[OWLClass] = reasoner
 		.getSubClasses(factory.getOWLThing, true)
-		.getFlattened
+		.entities.iterator.asScala
 		.toSeq
 
 	override def isSubClass(subClass: OWLClassExpression, superClass: OWLClassExpression): Boolean = {
@@ -29,11 +29,11 @@ class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){
 	}
 	
 	override protected def getParentProps(owlProp: OWLProperty): Seq[OWLProperty] = owlProp match {
-		case dp: OWLDataProperty => reasoner.getSuperDataProperties(dp, false).getFlattened.toSeq
+		case dp: OWLDataProperty => reasoner.getSuperDataProperties(dp, false).entities.iterator.asScala.toIndexedSeq
 		case op: OWLObjectProperty =>
-			reasoner.getSuperObjectProperties(op, false).getFlattened.toSeq.collect{
+			reasoner.getSuperObjectProperties(op, false).entities.iterator.asScala.collect{
 				case op: OWLObjectProperty => op
-			}
+			}.toIndexedSeq
 		case _ => Nil //ignoring annotation properties
 	}
 }

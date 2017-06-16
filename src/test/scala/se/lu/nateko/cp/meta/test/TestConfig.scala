@@ -10,7 +10,7 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager
 import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
-import org.openrdf.rio.RDFFormat
+import org.eclipse.rdf4j.rio.RDFFormat
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
@@ -27,8 +27,8 @@ object TestConfig {
 	lazy val instServer: InstanceServer = {
 		val repo = Loading.fromResource("/owl/cpmetainstances.owl", instOntUri)
 		val factory = repo.getValueFactory
-		val instOnt = factory.createURI(instOntUri)
-		val ont = factory.createURI(ontUri)
+		val instOnt = factory.createIRI(instOntUri)
+		val ont = factory.createIRI(ontUri)
 		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
 		new SesameInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
 	}

@@ -4,9 +4,9 @@ import scala.util.Try
 
 import java.net.{URI => JavaURI}
 
-import org.openrdf.model.Literal
-import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
@@ -30,7 +30,7 @@ trait UserInfoService { self: StationLabelingService =>
 		val allEmails = provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
 
 		val piUriOpt = allEmails.collectFirst{
-			case SesameStatement(uri: URI, _, mail)
+			case SesameStatement(uri: IRI, _, mail)
 				if(mail.stringValue.equalsIgnoreCase(uinfo.email)) => uri
 		}
 		allEmails.close()
@@ -64,14 +64,14 @@ trait UserInfoService { self: StationLabelingService =>
 
 	def saveUserInfo(info: LabelingUserDto, uploader: UserId): Unit = {
 		if(info.uri.isEmpty) throw new UnauthorizedUserInfoUpdateException("User must be identified by a URI")
-		val userUri = factory.createURI(info.uri.get)
+		val userUri = factory.createIRI(info.uri.get)
 		val userEmail = getPiEmails(userUri).toIndexedSeq.headOption.getOrElse(
 			throw new UnauthorizedUserInfoUpdateException("User had no email in the database")
 		)
 		if(!userEmail.equalsIgnoreCase(uploader.email))
 			throw new UnauthorizedUserInfoUpdateException("User is allowed to update only his/her own information")
 
-		def fromString(pred: URI)(str: String) = factory.createStatement(userUri, pred, vocab.lit(str))
+		def fromString(pred: IRI)(str: String) = factory.createStatement(userUri, pred, vocab.lit(str))
 
 		val newInfo = Seq(
 			info.firstName.map(fromString(vocab.hasFirstName)),

@@ -33,7 +33,7 @@ lazy val metaCore = (project in file("core"))
 
 val akkaVersion = "2.4.18"
 val akkaHttpVersion = "10.0.6"
-val sesameVersion = "2.8.7"
+val rdf4jVersion = "2.2.2"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 
@@ -49,12 +49,14 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
-			"org.openrdf.sesame"     % "sesame-repository-sail"             % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-sail-memory"                 % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-queryresultio-sparqljson"    % sesameVersion,
-			"org.openrdf.sesame"     % "sesame-queryresultio-text"          % sesameVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
+//			"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
-			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.413" excludeAll(noGeronimo),
+			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.2-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",

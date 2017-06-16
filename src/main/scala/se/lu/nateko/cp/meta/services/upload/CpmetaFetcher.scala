@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
@@ -15,7 +15,7 @@ import OrganizationClass.OrganizationClass
 trait CpmetaFetcher extends FetchingHelper{
 	protected def metaVocab: CpmetaVocab
 
-	protected def getSpecification(spec: URI) = DataObjectSpec(
+	protected def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
@@ -23,7 +23,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		datasetSpec = None
 	)
 
-	protected def getSpatialCoverage(cov: URI) = SpatialCoverage(
+	protected def getSpatialCoverage(cov: IRI) = SpatialCoverage(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
@@ -35,7 +35,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		label = getOptionalString(cov, RDFS.LABEL)
 	)
 
-	protected def getDataProduction(prod: URI) = DataProduction(
+	protected def getDataProduction(prod: IRI) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
@@ -43,8 +43,8 @@ trait CpmetaFetcher extends FetchingHelper{
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 
-	protected def getSubmission(subm: URI): DataSubmission = {
-		val submitter: URI = getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+	protected def getSubmission(subm: IRI): DataSubmission = {
+		val submitter: IRI = getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
 		DataSubmission(
 			submitter = getOrganization(submitter),
 			start = getSingleInstant(subm, metaVocab.prov.startedAtTime),
@@ -52,25 +52,25 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
-	private def getAgent(uri: URI): Agent = {
+	private def getAgent(uri: IRI): Agent = {
 		if(getOptionalString(uri, metaVocab.hasFirstName).isDefined)
 			getPerson(uri)
 		else getOrganization(uri)
 	}
 
-	private def getOrganization(org: URI) = Organization(
+	private def getOrganization(org: IRI) = Organization(
 		self = getLabeledResource(org),
 		name = getSingleString(org, metaVocab.hasName),
 		orgClass = getOrgClass(org)
 	)
 
-	private def getPerson(pers: URI) = Person(
+	private def getPerson(pers: IRI) = Person(
 		self = getLabeledResource(pers),
 		firstName = getSingleString(pers, metaVocab.hasFirstName),
 		lastName = getSingleString(pers, metaVocab.hasLastName)
 	)
 
-	private def getOrgClass(subj: URI): OrganizationClass = {
+	private def getOrgClass(subj: IRI): OrganizationClass = {
 		val vocab = metaVocab
 		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, tcClass, stationClass }
 		import OrganizationClass._
@@ -87,7 +87,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		themes.headOption.getOrElse(Org)
 	}
 
-	private def getDataTheme(subj: URI): DataTheme = {
+	private def getDataTheme(subj: IRI): DataTheme = {
 		val vocab = metaVocab
 		import vocab.{ atc, atmoStationClass, cal, cfClass, cp, ecoStationClass, etc, oceStationClass, orgClass, otc, tcClass }
 
@@ -109,7 +109,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		themes.headOption.getOrElse(Other)
 	}
 
-	private def getTemporalCoverage(dobj: URI) = TemporalCoverage(
+	private def getTemporalCoverage(dobj: IRI) = TemporalCoverage(
 		interval = TimeInterval(
 			start = getSingleInstant(dobj, metaVocab.hasStartTime),
 			stop = getSingleInstant(dobj, metaVocab.hasEndTime)
@@ -117,7 +117,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	private def getStation(stat: URI) = Station(
+	private def getStation(stat: IRI) = Station(
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
@@ -130,7 +130,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		coverage = None
 	)
 
-	protected def getL3Meta(dobj: URI, prodOpt: Option[DataProduction]): Option[L3SpecificMeta] = {
+	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): Option[L3SpecificMeta] = {
 		implicit val factory = metaVocab.factory
 
 		getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{ cov =>
@@ -148,7 +148,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		}
 	}
 
-	protected def getL2Meta(dobj: URI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+	protected def getL2Meta(dobj: IRI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 		val acq = DataAcquisition(
 			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),

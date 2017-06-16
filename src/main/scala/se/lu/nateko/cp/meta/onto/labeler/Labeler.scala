@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import org.openrdf.model.URI
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.ResourceDto
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.semanticweb.owlapi.model.OWLEntity
@@ -9,20 +9,21 @@ import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
+import scala.collection.JavaConverters._
 
 trait InstanceLabeler {
 
 	// rdfs:label is the default, to be overridden in some implementations
-	def getLabel(instUri: URI, instServer: InstanceServer): String =
+	def getLabel(instUri: IRI, instServer: InstanceServer): String =
 		getRdfsLabel(instUri, instServer).getOrElse(instUri.getLocalName)
 
-	final def getRdfsLabel(instUri: URI, instServer: InstanceServer): Option[String] =
+	final def getRdfsLabel(instUri: IRI, instServer: InstanceServer): Option[String] =
 		instServer.getValues(instUri, RDFS.LABEL).headOption.map(_.stringValue)
 
-	final def getRdfsComment(instUri: URI, instServer: InstanceServer): Option[String] =
+	final def getRdfsComment(instUri: IRI, instServer: InstanceServer): Option[String] =
 		instServer.getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
 
-	final def getInfo(instUri: URI, instServer: InstanceServer) = ResourceDto(
+	final def getInfo(instUri: IRI, instServer: InstanceServer) = ResourceDto(
 		displayName = getLabel(instUri, instServer),
 		uri = java.net.URI.create(instUri.stringValue),
 		comment = getRdfsComment(instUri, instServer)
@@ -32,8 +33,6 @@ trait InstanceLabeler {
 object Labeler{
 
 	object rdfs extends InstanceLabeler
-
-	import scala.collection.JavaConversions._
 
 	def joinMultiValues(values: Iterable[String]): String = values.toList match{
 		case only :: Nil => only
@@ -59,10 +58,11 @@ object Labeler{
 	)
 
 	private def getAnnotation(entity: OWLEntity, anno: OWLAnnotationProperty, onto: OWLOntology): Option[String] = EntitySearcher
-		.getAnnotations(entity, onto.getImportsClosure, anno)
-		.toIterable
+		.getAnnotations(entity, onto.importsClosure, anno)
+		.iterator.asScala
 		.map(_.getValue.asLiteral.toOption)
 		.collect{case Some(lit) => lit.getLiteral}
+		.toSeq
 		.headOption
 
 	private def getFactory(onto: OWLOntology) = onto.getOWLOntologyManager.getOWLDataFactory

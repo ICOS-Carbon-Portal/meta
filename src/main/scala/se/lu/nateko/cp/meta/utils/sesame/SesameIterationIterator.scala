@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.utils.sesame
 
 import scala.collection.AbstractIterator
 
-import info.aduna.iteration.CloseableIteration
+import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 

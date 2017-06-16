@@ -1,5 +1,5 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.openrdf.model.Statement
+import org.eclipse.rdf4j.model.Statement
 
 case class RdfUpdate(statement: Statement, isAssertion: Boolean)

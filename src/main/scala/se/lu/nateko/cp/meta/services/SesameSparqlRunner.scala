@@ -3,9 +3,9 @@ package se.lu.nateko.cp.meta.services
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.openrdf.model.Statement
-import org.openrdf.query.QueryLanguage
-import org.openrdf.repository.Repository
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery

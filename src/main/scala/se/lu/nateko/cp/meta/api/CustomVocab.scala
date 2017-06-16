@@ -3,10 +3,10 @@ package se.lu.nateko.cp.meta.api
 import java.time.Instant
 import java.time.LocalDate
 
-import org.openrdf.model.Literal
-import org.openrdf.model.URI
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 trait CustomVocab {
 	def baseUri: String
@@ -16,12 +16,12 @@ trait CustomVocab {
 		new java.net.URI(null, null, s, null).toASCIIString
 	}
 
-	def getRelativeRaw(local: String): URI = factory.createURI(baseUri, local)
-	def getRelative(local: String): URI = getRelativeRaw(urlEncode(local))
-	def getRelative(suffix: String, local: String): URI = getRelativeRaw(suffix + urlEncode(local))
+	def getRelativeRaw(local: String): IRI = factory.createIRI(baseUri, local)
+	def getRelative(local: String): IRI = getRelativeRaw(urlEncode(local))
+	def getRelative(suffix: String, local: String): IRI = getRelativeRaw(suffix + urlEncode(local))
 
 
-	def lit(litVal: String, dtype: URI) = factory.createLiteral(litVal, dtype)
+	def lit(litVal: String, dtype: IRI) = factory.createLiteral(litVal, dtype)
 	def lit(litVal: String) = factory.createLiteral(litVal, XMLSchema.STRING)
 	def lit(litVal: Int): Literal = lit(litVal.toString, XMLSchema.INTEGER) //INTEGER, not INT!
 	def lit(litVal: Long) = factory.createLiteral(litVal)

@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.utils.sesame
 
-import org.openrdf.repository.Repository
-import org.openrdf.repository.sail.SailRepository
-import org.openrdf.sail.memory.MemoryStore
-import org.openrdf.rio.RDFFormat
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.eclipse.rdf4j.rio.RDFFormat
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
 import scala.util.Failure
 import scala.util.Try
 
@@ -21,7 +21,7 @@ object Loading {
 
 	def loadResource(repo: Repository, path: String, baseUri: String, format: RDFFormat): Try[Unit] = {
 		val instStream = getClass.getResourceAsStream(path)
-		val ontUri = repo.getValueFactory.createURI(baseUri)
+		val ontUri = repo.getValueFactory.createIRI(baseUri)
 		repo.transact(conn => {
 			conn.add(instStream, baseUri, format, ontUri)
 		})
@@ -35,7 +35,7 @@ object Loading {
 
 	private val chunkSize = 1000
 
-	def fromStatements(statements: Iterator[Statement], contexts: URI*): Repository = {
+	def fromStatements(statements: Iterator[Statement], contexts: IRI*): Repository = {
 
 		val repo = Loading.empty
 

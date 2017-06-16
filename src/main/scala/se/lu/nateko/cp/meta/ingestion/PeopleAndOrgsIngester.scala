@@ -2,12 +2,12 @@ package se.lu.nateko.cp.meta.ingestion
 
 import scala.io.Source
 
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
-import org.openrdf.model.Value
-import org.openrdf.model.ValueFactory
-import org.openrdf.model.vocabulary.RDF
-import org.openrdf.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -38,7 +38,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 		}.distinct.flatMap{
 			case (orgName, orgId) =>
 				val org = vocab.getOrganization(orgId)
-				Seq[(URI, URI, Value)](
+				Seq[(IRI, IRI, Value)](
 					(org, RDF.TYPE, metaVocab.orgClass),
 					(org, metaVocab.hasName, orgName),
 					(org, RDFS.LABEL, orgId)
@@ -50,7 +50,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 		}.distinct.flatMap{
 			case (lname, fname) =>
 				val person = vocab.getPerson(fname, lname)
-				Seq[(URI, URI, Value)](
+				Seq[(IRI, IRI, Value)](
 					(person, RDF.TYPE, metaVocab.personClass),
 					(person, metaVocab.hasFirstName, fname),
 					(person, metaVocab.hasLastName, lname)
@@ -62,7 +62,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
 				val membership = vocab.getMembership(orgId, roleId, lname)
-				Seq[(URI, URI, Value)](
+				Seq[(IRI, IRI, Value)](
 					(person, metaVocab.hasMembership, membership),
 					(membership, RDF.TYPE, metaVocab.membershipClass),
 					(membership, RDFS.LABEL, s"$lname as $roleId at $orgId"),

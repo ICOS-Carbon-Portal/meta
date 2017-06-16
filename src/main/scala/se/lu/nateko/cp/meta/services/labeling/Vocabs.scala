@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.openrdf.model.URI
-import org.openrdf.model.ValueFactory
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -34,5 +34,5 @@ class FilesVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasName = getRelative("hasName")
 
 	def getUri(hashsum: Sha256Sum) = getRelative(hashsum.id)
-	def getFileHash(fileUri: URI): Sha256Sum = Sha256Sum.fromString(fileUri.getLocalName).get
+	def getFileHash(fileUri: IRI): Sha256Sum = Sha256Sum.fromString(fileUri.getLocalName).get
 }

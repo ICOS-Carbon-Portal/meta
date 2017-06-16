@@ -7,8 +7,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-import org.openrdf.model.URI
-import org.openrdf.repository.Repository
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.repository.Repository
 import org.semanticweb.owlapi.apibinding.OWLManager
 
 import akka.actor.ActorSystem
@@ -121,8 +121,8 @@ object MetaDb {
 		}
 		val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
 
-		val perFormatServers: Map[URI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
-			(factory.createURI(servDef.format), instanceServers(servDef.label))
+		val perFormatServers: Map[IRI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
+			(factory.createIRI(servDef.format), instanceServers(servDef.label))
 		}.toMap
 
 		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
@@ -134,8 +134,8 @@ object MetaDb {
 
 		val factory = initRepo.getValueFactory
 
-		val writeContexts = conf.writeContexts.map(ctxt => factory.createURI(ctxt))
-		val readContexts = conf.readContexts.getOrElse(conf.writeContexts).map(ctxt => factory.createURI(ctxt))
+		val writeContexts = conf.writeContexts.map(ctxt => factory.createIRI(ctxt))
+		val readContexts = conf.readContexts.getOrElse(conf.writeContexts).map(ctxt => factory.createIRI(ctxt))
 
 		conf.logName match{
 			case Some(logName) =>

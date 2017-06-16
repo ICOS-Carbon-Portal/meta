@@ -2,8 +2,8 @@ package se.lu.nateko.cp.meta.services.labeling
 
 import scala.util.Try
 
-import org.openrdf.model.Statement
-import org.openrdf.model.URI
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.utils.sesame._
@@ -36,7 +36,7 @@ trait StationInfoService { self: StationLabelingService =>
 
 		val stationUri = info.fields.get("stationUri")
 			.collect{case JsString(str) => str}
-			.map(factory.createURI).get
+			.map(factory.createIRI).get
 
 		assertThatWriteIsAuthorized(stationUri, uploader)
 
@@ -55,8 +55,8 @@ trait StationInfoService { self: StationLabelingService =>
 		server.applyDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
 	}
 
-	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[URI] =
-		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createURI(uri))
+	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[IRI] =
+		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createIRI(uri))
 
 	private def notProtected(statement: Statement): Boolean = statement match{
 		case SesameStatement(_, pred, _) if protectedPredicates.contains(pred) => false

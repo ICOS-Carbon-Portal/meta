@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import scala.util.Try
-
 import java.net.{URI => JavaURI}
 
 import org.eclipse.rdf4j.model.Literal

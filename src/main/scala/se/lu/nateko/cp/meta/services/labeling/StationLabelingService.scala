@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer

@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.SparqlQuery
 
 object SparqlRoute {
@@ -16,7 +15,7 @@ object SparqlRoute {
 		`Cache-Control`(CacheDirectives.`no-cache`, CacheDirectives.`no-store`, CacheDirectives.`must-revalidate`)
 	)
 
-	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery], mat: Materializer): Route = {
+	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery]): Route = {
 
 		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){

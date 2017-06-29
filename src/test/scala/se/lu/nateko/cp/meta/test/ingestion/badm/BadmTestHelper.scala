@@ -1,15 +1,6 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
-import java.io.InputStreamReader
-
-import scala.collection.immutable.Stream.consWrapper
-
-import com.opencsv.CSVReader
-
 import se.lu.nateko.cp.meta.ingestion.badm.BadmSchema
-import scala.io.Source
-import se.lu.nateko.cp.meta.ingestion.badm.Parser
-
 
 object BadmTestHelper {
 

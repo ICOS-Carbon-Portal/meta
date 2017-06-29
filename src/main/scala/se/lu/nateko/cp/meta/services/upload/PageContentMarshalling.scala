@@ -8,7 +8,6 @@ import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import spray.json._
 import play.twirl.api.Html

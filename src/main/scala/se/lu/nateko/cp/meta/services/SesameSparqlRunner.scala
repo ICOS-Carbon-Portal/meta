@@ -19,7 +19,7 @@ class SesameSparqlRunner(repo: Repository)(implicit ctxt: ExecutionContext) exte
 		try{
 			val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, q.query)
 			val qres = query.evaluate()
-			Future.successful(new SesameIterationIterator(qres, conn.close))
+			Future.successful(new SesameIterationIterator(qres, () => conn.close()))
 		} catch{
 			case err: Throwable =>
 				conn.close()

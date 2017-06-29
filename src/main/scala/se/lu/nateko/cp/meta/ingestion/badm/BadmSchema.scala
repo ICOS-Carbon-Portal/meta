@@ -25,12 +25,12 @@ object BadmSchema{
 			val value = row(1)
 			val explicitLabel = row(2)
 			val explicitComment = row(3)
-			new {
-				val variable = row(0)
-				val vocabValue = value
-				val label = if(explicitLabel.isEmpty) value else explicitLabel
-				val comment = if(explicitComment.isEmpty) None else Some(explicitComment)
-			}
+			new BadmRow(
+				variable = row(0),
+				vocabValue = value,
+				label = if(explicitLabel.isEmpty) value else explicitLabel,
+				comment = (if(explicitComment.isEmpty) None else Some(explicitComment))
+			)
 		}.groupBy(_.variable)
 		 .collect{
 			case(variable, rows) if !variable.isEmpty =>
@@ -51,4 +51,5 @@ object BadmSchema{
 		}.toMap
 	}
 
+	private class BadmRow(val variable: String, val vocabValue: String, val label: String, val comment: Option[String])
 }

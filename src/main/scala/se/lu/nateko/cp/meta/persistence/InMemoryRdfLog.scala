@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.persistence
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
-import java.sql.Timestamp
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 class InMemoryRdfLog extends RdfUpdateLog{
@@ -14,6 +13,6 @@ class InMemoryRdfLog extends RdfUpdateLog{
 	}
 
 	def updates: Iterator[RdfUpdate] = log.iterator.asScala
-	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = ???
+	//def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = ???
 	def close(): Unit = {}
 }

@@ -62,42 +62,42 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 					case tupleQuery: TupleQuery =>
 						Marshalling.WithFixedContentType(
 							jsonType,
-							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, conn.close)
+							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`application/json`,
-							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, conn.close)
+							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							xmlSparql,
-							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, conn.close)
+							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							xml,
-							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, conn.close)
+							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/csv(UTF-8)`,
-							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsCSVWriterFactory(), csvSparql, conn.close)
+							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsCSVWriterFactory(), csvSparql, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/plain(UTF-8)`,
-							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsTSVWriterFactory(), tsvSparql, conn.close)
+							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsTSVWriterFactory(), tsvSparql, () => conn.close())
 						) :: Nil
 					case graphQuery: GraphQuery =>
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/plain(UTF-8)`,
-							() => getGraphQueryResponse(graphQuery, new TurtleWriterFactory(), InstanceServerSerializer.turtleContType, conn.close)
+							() => getGraphQueryResponse(graphQuery, new TurtleWriterFactory(), InstanceServerSerializer.turtleContType, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							xml,
-							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, conn.close)
+							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, () => conn.close())
 						) ::
 						Marshalling.WithFixedContentType(
 							InstanceServerSerializer.xmlContType,
-							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, conn.close)
+							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, () => conn.close())
 						) :: Nil
-					case boolQuery: BooleanQuery =>
+					case _: BooleanQuery =>
 						Marshalling.Opaque(() => HttpResponse(
 							status = StatusCodes.NotImplemented,
 							entity = "Boolean queries are not supported yet"

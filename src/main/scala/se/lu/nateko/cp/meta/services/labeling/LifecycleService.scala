@@ -4,7 +4,6 @@ import java.net.URI
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.sesame._
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
@@ -213,7 +212,7 @@ object LifecycleService{
 	private def lookupAppStatus(name: String): Try[AppStatus] = try{
 		Success(AppStatus.withName(name))
 	} catch{
-		case nsee: NoSuchElementException =>
+		case _: NoSuchElementException =>
 			val msg = s"Unsupported labeling application status '$name'"
 			Failure(new IllegalLabelingStatusException(msg))
 	}

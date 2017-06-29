@@ -1,11 +1,9 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import org.eclipse.rdf4j.model._
-import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XMLSchema}
-import scala.annotation.migration
+import org.eclipse.rdf4j.model.vocabulary.{RDF, XMLSchema}
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.utils.sesame._
 
 trait InstanceServer {
 	import InstanceServer._

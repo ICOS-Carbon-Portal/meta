@@ -2,8 +2,6 @@ package se.lu.nateko.cp.meta.test.ingestion.badm
 
 import java.time.LocalDate
 
-import scala.io.Source
-
 import org.scalatest.FunSpec
 
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate

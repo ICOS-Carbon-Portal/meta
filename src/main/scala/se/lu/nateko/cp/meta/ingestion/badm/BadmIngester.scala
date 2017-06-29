@@ -13,11 +13,8 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaRange.apply
-import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -42,7 +39,7 @@ object BadmIngester{
 		lazy val badmEntries = try{
 			import system.dispatcher
 			val badmEntriesFut = getEtcBadmEntriesJson.map(Parser.parseEntriesFromEtcJson)
-			Await.result(badmEntriesFut, 10 seconds)
+			Await.result(badmEntriesFut, 10.seconds)
 		}catch{
 			case err : Throwable =>
 				system.log.error(err, "Failed importing BADM metadata from ETC's web service")

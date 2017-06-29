@@ -3,18 +3,14 @@ package se.lu.nateko.cp.meta.services.labeling
 import java.nio.charset.StandardCharsets
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
-import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.utils.sesame._
 import akka.http.scaladsl.model.Multipart
-import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.HttpEntity.Chunked
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.HttpResponse
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import akka.stream.Materializer
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
@@ -62,7 +58,7 @@ trait FileService { self: StationLabelingService =>
 		server.remove(factory.createStatement(stationUri, vocab.hasAssociatedFile, fileUri))
 	}
 
-	def getFilePack(stationId: java.net.URI)(implicit mat: Materializer): HttpResponse = {
+	def getFilePack(stationId: java.net.URI): HttpResponse = {
 		val stationUri: IRI = factory.createIRI(stationId.toString)
 		val fileHashesAndNames: Seq[(Sha256Sum, String)] = server
 			.getUriValues(stationUri, vocab.hasAssociatedFile)

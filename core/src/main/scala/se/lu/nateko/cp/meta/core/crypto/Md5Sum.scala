@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.core.crypto
 import java.util.Arrays
 
 import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
 import javax.xml.bind.DatatypeConverter

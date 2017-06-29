@@ -8,7 +8,6 @@ import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
 
 import akka.http.scaladsl.server.Route
-import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -28,7 +27,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	}
 	private val replyWithErrorOnBadContent = handleRejections(
 		RejectionHandler.newBuilder().handle{
-			case MalformedRequestContentRejection(msg, cause) =>
+			case MalformedRequestContentRejection(msg, _) =>
 				complete((StatusCodes.BadRequest, msg))
 		}.result()
 	)
@@ -40,7 +39,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting
-	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
+	): Route = handleExceptions(errHandler){
 		pathPrefix("upload"){
 			post{
 				path(Sha256Segment){hash =>
@@ -62,7 +61,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			get{
 				path("permissions"){
-					parameters('submitter, 'userId)((submitter, userId) => {
+					parameters(('submitter, 'userId))((submitter, userId) => {
 						val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
 						complete(spray.json.JsBoolean(isAllowed))
 					})

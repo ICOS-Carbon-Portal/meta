@@ -140,7 +140,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 				val dtype = dp.range.dataType
 				factory.createLiteral(update.obj, dtype)
 
-			case op: ObjectPropertyDto => factory.createIRI(update.obj)
+			case _: ObjectPropertyDto => factory.createIRI(update.obj)
 		}
 
 		factory.createStatement(update.subject, update.predicate, obj)

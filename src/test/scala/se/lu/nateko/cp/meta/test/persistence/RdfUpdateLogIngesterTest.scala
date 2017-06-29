@@ -12,8 +12,6 @@ class RdfUpdateLogIngesterTest extends FunSpec{
 
 	describe("RdfUpdate sequence ingestion functionality"){
 
-		import scala.concurrent.ExecutionContext.Implicits.global
-
 		it("works for a simple list of assertions"){
 			val f = SimpleValueFactory.getInstance()
 			val ctxt = f.createIRI("http://www.icos-cp.eu/ontology/")

@@ -11,7 +11,6 @@ import BadmConsts._
 import BadmSchema.PropertyInfo
 import BadmSchema.Schema
 import se.lu.nateko.cp.meta.api.CustomVocab
-import se.lu.nateko.cp.meta.ingestion.BadmFormatException
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab

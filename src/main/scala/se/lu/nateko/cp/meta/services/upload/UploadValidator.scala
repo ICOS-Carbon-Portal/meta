@@ -4,15 +4,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.sesame._

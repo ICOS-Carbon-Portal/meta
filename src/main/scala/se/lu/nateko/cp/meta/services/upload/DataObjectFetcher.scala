@@ -19,8 +19,6 @@ class DataObjectFetcher(
 	pidFactory: Sha256Sum => String
 ) extends CpmetaFetcher {
 
-	private implicit val factory = metaVocab.factory
-
 	def fetch(hash: Sha256Sum): Option[DataObject] = {
 		val dataObjUri = vocab.getDataObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))

@@ -4,7 +4,6 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.OWL
 import org.eclipse.rdf4j.model.Literal
-import scala.util.Try
 
 object InstanceServerUtils {
 

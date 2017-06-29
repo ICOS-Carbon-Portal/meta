@@ -42,7 +42,6 @@ object Manual {
 	}
 
 	def serverFromLog: InstanceServer = {
-		import scala.concurrent.ExecutionContext.Implicits.global
 		val log = getLog
 		val ctxt = factory.createIRI(TestConfig.instOntUri)
 		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)

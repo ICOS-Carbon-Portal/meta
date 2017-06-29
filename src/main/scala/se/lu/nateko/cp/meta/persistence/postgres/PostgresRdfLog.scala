@@ -46,7 +46,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 						appendPs.setString(objectCol, lit.getLabel)
 						appendPs.setString(litattr, safeDatatype(lit))
 
-					case value =>
+					case _ =>
 						val st = update.statement
 						throw new Exception("Attempted to append an invalid triple:\n" +
 							s"${st.getSubject} -> ${st.getPredicate} -> ${st.getObject}")

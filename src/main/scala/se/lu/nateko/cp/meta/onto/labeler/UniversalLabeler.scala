@@ -5,7 +5,6 @@ import org.semanticweb.owlapi.model.OWLOntology
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.utils.sesame._
-import se.lu.nateko.cp.meta.onto.labeler._
 import org.eclipse.rdf4j.model.IRI
 
 class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{

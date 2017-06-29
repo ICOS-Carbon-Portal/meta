@@ -7,13 +7,12 @@ import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UpdateDto
 import se.lu.nateko.cp.meta.ReplaceDto
-import akka.stream.Materializer
 import java.net.URI
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import se.lu.nateko.cp.meta.InstOntoServerConfig
 import spray.json.JsBoolean
 
-class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Materializer) extends CpmetaJsonProtocol{
+class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{
 
 	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, InstOntoServerConfig]): Route = {
 		val ontoInfos = ontoConfs.map{
@@ -54,7 +53,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 				}
 			} ~
 			pathSuffix("getRangeValues"){
-				parameters('classUri, 'propUri){ (classUri, propUri) =>
+				parameters(('classUri, 'propUri)){ (classUri, propUri) =>
 					complete(instOnto.getRangeValues(new URI(classUri), new URI(propUri)))
 				}
 			}
@@ -75,7 +74,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(implicit mat: Mat
 					})
 				} ~
 				pathSuffix("createIndividual"){
-					parameters('uri, 'typeUri){ (uriStr, typeUriStr) =>
+					parameters(('uri, 'typeUri)){ (uriStr, typeUriStr) =>
 						instOnto.createIndividual(uriStr, typeUriStr).get
 						complete(StatusCodes.OK)
 					} ~

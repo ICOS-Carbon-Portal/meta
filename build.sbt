@@ -1,15 +1,20 @@
+val defaultScala = "2.12.2"
+
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.11.11",
+	scalaVersion := defaultScala,
 
 	scalacOptions ++= Seq(
-		"-unchecked",
-		"-deprecation",
-		"-Xlint",
-		"-Ywarn-dead-code",
-		"-language:_",
 		"-target:jvm-1.8",
-		"-encoding", "UTF-8"
+		"-encoding", "UTF-8",
+		"-unchecked",
+		"-feature",
+		"-deprecation",
+		"-Xfuture",
+		"-Yno-adapted-args",
+		"-Ywarn-dead-code",
+		"-Ywarn-numeric-widen",
+		"-Ywarn-unused"
 	)
 )
 
@@ -28,6 +33,7 @@ lazy val metaCore = (project in file("core"))
 			else
 				Some("releases"  at nexus + "releases")
 		},
+		crossScalaVersions := Seq(defaultScala, "2.11.11"),
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
@@ -43,7 +49,7 @@ lazy val meta = (project in file("."))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.2.2",
+		version := "0.3.0",
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
@@ -60,8 +66,10 @@ lazy val meta = (project in file("."))
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.2-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
-			"org.scalatest"          % "scalatest_2.11"                     % "2.2.1" % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
+
+		scalacOptions += "-Ywarn-unused-import:false",
 
 		assemblyMergeStrategy in assembly := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first

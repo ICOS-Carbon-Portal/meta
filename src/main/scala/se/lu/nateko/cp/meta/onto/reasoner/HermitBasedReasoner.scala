@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
 import scala.collection.JavaConverters._
-import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLProperty
 import org.semanticweb.owlapi.model.OWLClassExpression

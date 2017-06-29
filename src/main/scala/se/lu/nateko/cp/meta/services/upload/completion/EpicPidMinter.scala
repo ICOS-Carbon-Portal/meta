@@ -30,7 +30,7 @@ class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionC
 		val reportFut = epic.createOrRecreate(suffix, Seq(pidEntry))
 			.map(_ => Report(epic.getPid(suffix)))
 
-		Await.ready(reportFut, 6 seconds).recoverWith{
+		Await.ready(reportFut, 6.seconds).recoverWith{
 			case _: TimeoutException =>
 				Future.failed(new PidMintingException("PID minting timed out"))
 		}

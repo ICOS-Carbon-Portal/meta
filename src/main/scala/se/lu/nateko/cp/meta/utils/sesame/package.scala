@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
 import java.net.{URI => JavaUri}
+import scala.language.implicitConversions
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -73,7 +74,7 @@ package object sesame {
 		def access[T](accessor: RepositoryConnection => RepositoryResult[T], extraCleanup: () => Unit): CloseableIterator[T] = {
 			val conn = repo.getConnection
 
-			def finalCleanup(): Unit = {
+			val finalCleanup = () => {
 				conn.close()
 				extraCleanup()
 			}

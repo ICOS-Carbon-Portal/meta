@@ -17,7 +17,7 @@ class SparqlConstructExtractor(pathToQueryRes: String) extends Extractor {
 		try{
 			val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, queryText)
 			val res = query.evaluate()
-			new SesameIterationIterator(res, conn.close)
+			new SesameIterationIterator(res, () => conn.close())
 		}catch{
 			case err: Throwable =>
 				conn.close()

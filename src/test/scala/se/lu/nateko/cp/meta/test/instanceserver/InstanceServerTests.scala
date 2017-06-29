@@ -13,8 +13,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 
 class InstanceServerTests extends FunSpec{
 
-	import scala.concurrent.ExecutionContext.Implicits.global
-
 	val factory = SimpleValueFactory.getInstance()
 	val ctxt = factory.createIRI("http://www.icos-cp.eu/ontology/")
 	val ctxt2 = factory.createIRI("http://www.icos-cp.eu/ontology2/")

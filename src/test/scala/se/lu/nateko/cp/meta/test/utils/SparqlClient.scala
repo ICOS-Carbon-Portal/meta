@@ -10,9 +10,6 @@ import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
 import se.lu.nateko.cp.meta.core.sparql.JsonSupport._
 import java.net.URL
-import akka.http.scaladsl.model.HttpEntity.apply
-import akka.http.scaladsl.model.MediaRange.apply
-import akka.http.scaladsl.model.Uri.apply
 
 class SparqlClient(url: URL)(implicit system: ActorSystem) {
 	implicit val materializer = ActorMaterializer()

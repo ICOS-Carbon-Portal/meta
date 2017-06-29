@@ -10,9 +10,6 @@ import java.nio.file.StandardOpenOption._
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.FileIO
 import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
-import akka.stream.Materializer
-import scala.concurrent.Future
-import akka.Done
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 class FileStorageService(folder: File) {
@@ -52,8 +49,7 @@ class FileStorageService(folder: File) {
 
 	def getPath(hash: Sha256Sum): Path = Paths.get(folder.getAbsolutePath, hash.hex.substring(0, 36))
 
-	def getZipSource(fileHashesAndNames: Seq[(Sha256Sum, String)])
-			(implicit mat: Materializer): Source[ByteString, Any] = {
+	def getZipSource(fileHashesAndNames: Seq[(Sha256Sum, String)]): Source[ByteString, Any] = {
 
 		val fileAndNamesSources = fileHashesAndNames.map{
 			case (hash, name) => (name, FileIO.fromPath(getPath(hash)))

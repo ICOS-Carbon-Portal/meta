@@ -1,11 +1,9 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import java.util.UUID
-import scala.collection.JavaConverters.asScalaBufferConverter
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.common.iteration.Iterations
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.utils.sesame._
 import scala.util.Try

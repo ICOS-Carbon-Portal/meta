@@ -52,7 +52,7 @@ class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: Acto
 						Future.failed(new Exception(s"Got ${resp.status} from the server"))
 				}
 			)
-		Await.result(statementsFut, 10 seconds)
+		Await.result(statementsFut, 10.seconds)
 	}
 
 	private def makeQuery(): Future[HttpResponse] = {

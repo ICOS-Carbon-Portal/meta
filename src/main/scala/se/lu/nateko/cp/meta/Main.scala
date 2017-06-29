@@ -25,14 +25,13 @@ object Main extends App with CpmetaJsonProtocol{
 
 	Http()
 		.bindAndHandle(route, "localhost", config.port)
-		.onSuccess{
-			case binding =>
+		.foreach{binding =>
 				sys.addShutdownHook{
 					val exeCtxt = ExecutionContext.Implicits.global
 					val doneFuture = binding
 						.unbind()
 						.flatMap(_ => system.terminate())(exeCtxt)
-					Await.result(doneFuture, 3 seconds)
+					Await.result(doneFuture, 3.seconds)
 				}
 				println(binding)
 		}

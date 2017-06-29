@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta
 
 import spray.json._
-import java.net.URI
-import java.net.URISyntaxException
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.data.JsonSupport._

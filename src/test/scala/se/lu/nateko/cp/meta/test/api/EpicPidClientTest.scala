@@ -1,7 +1,8 @@
 package se.lu.nateko.cp.meta.test.api
 
+import scala.language.postfixOps
+
 import akka.actor.ActorSystem
-import scala.util.{Try, Success}
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPidClient}
 import spray.json.JsString
@@ -14,12 +15,12 @@ class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
 	implicit var system: ActorSystem = _
 	var ep: EpicPidClient = _
 
-	override def beforeAll(){
+	override def beforeAll(): Unit = {
 		system = ActorSystem("EpicPidTestSystem")
 		ep = EpicPidClient.default
 	}
 
-	override def afterAll(){
+	override def afterAll(): Unit = {
 		system.terminate()
 	}
 

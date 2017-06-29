@@ -58,7 +58,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 		}
 
 		val membershipTriples = info.flatMap{
-			case (lname, fname, orgName, orgId) =>
+			case (lname, fname, _, orgId) =>
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
 				val membership = vocab.getMembership(orgId, roleId, lname)

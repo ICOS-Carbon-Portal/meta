@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
+import scala.language.postfixOps
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.ContentDispositionTypes

@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.utils
 
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.io.XMLUtils
-import org.semanticweb.owlapi.search.EntitySearcher
 import java.util.Optional
 
 package object owlapi {

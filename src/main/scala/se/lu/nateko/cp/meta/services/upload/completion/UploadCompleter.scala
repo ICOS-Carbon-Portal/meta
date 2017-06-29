@@ -8,7 +8,6 @@ import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
 
 import akka.actor.ActorSystem
-import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo

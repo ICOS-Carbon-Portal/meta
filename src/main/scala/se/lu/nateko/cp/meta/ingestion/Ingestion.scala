@@ -11,7 +11,6 @@ import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import java.net.URI
-import scala.reflect.ClassTag
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false

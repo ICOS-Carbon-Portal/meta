@@ -2,8 +2,6 @@ package se.lu.nateko.cp.meta.persistence
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.memory.MemoryStore
 
 import scala.util.Try
 import scala.util.Failure

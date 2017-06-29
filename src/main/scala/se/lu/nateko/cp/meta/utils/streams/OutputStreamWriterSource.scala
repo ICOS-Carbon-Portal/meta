@@ -16,7 +16,6 @@ import akka.stream.Attributes
 import akka.stream.Outlet
 import akka.stream.SourceShape
 import akka.stream.scaladsl.Source
-import akka.stream.stage.AsyncCallback
 import akka.stream.stage.GraphStageLogic
 import akka.stream.stage.GraphStageWithMaterializedValue
 import akka.stream.stage.OutHandler
@@ -36,12 +35,12 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 	override val shape = SourceShape(out)
 
 	override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
+		val done = Promise[Done]()
+
 		val logic = new GraphStageLogic(shape){
 
-			private[this] val done = Promise[Done]()
 			private[this] val bsq = new ArrayBlockingQueue[ByteString](3)
 
-			val materializedValue = done.future
 
 			override def preStart(): Unit = {
 
@@ -63,7 +62,7 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 				Future{
 					val os = new QueueingAndSyncingOutputStream(bsq, () => asyncPush.invoke(()))
 					val bos = new BufferedOutputStream(os)
-					writer(os)
+					writer(bos)
 					Done
 				}.onComplete{result => try{
 						completer.invoke(result)
@@ -87,7 +86,7 @@ private class OutputStreamWriterSource(writer: OutputStream => Unit)(implicit ct
 			}
 		}
 
-		(logic, logic.materializedValue)
+		(logic, done.future)
 	}
 }
 

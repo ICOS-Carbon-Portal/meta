@@ -5,9 +5,6 @@ import java.text.ParseException
 import java.time.LocalDate
 import java.util.Locale
 
-import scala.annotation.migration
-import scala.io.Source
-
 import BadmConsts._
 import com.opencsv.CSVReader
 import java.io.InputStreamReader
@@ -60,7 +57,7 @@ object Parser {
 				try{
 					BadmNumericValue(re.qualifier, re.value, parser.parse(re.value))
 				}catch{
-					case err: ParseException =>
+					case _: ParseException =>
 						BadmStringValue(re.qualifier, re.value)
 				}
 			}.toIndexedSeq

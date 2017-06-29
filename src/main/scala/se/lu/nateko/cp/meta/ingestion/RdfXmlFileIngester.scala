@@ -17,7 +17,7 @@ class RdfFileIngester(resourcePath: String, format: RDFFormat) extends Ingester{
 
 		repo.access(
 			_.getStatements(null, null, null, false, valueFactory.createIRI(baseUri)),
-			repo.shutDown
+			() => repo.shutDown()
 		)
 
 	}

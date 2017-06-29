@@ -4,7 +4,6 @@ import scala.concurrent.duration.DurationInt
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Multipart
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
@@ -72,7 +71,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				} ~
 				path("fileupload"){
 					entity(as[Multipart.FormData]){ fdata =>
-						onSuccess(fdata.toStrict(1 hour)){strictFormData =>
+						onSuccess(fdata.toStrict(1.hour)){strictFormData =>
 							onSuccess(service.processFile(strictFormData, uploader)){
 								complete(StatusCodes.OK)
 							}

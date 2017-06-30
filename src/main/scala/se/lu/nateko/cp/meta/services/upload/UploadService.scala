@@ -48,7 +48,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		val serverTry = for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta);
-			format <- servers.getObjSpecificationFormat(meta.objectSpecification);
+			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
 		) yield (server, submitterConf)
 
@@ -59,7 +59,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
 			_ <- Future.fromTry(server.applyAll(updates))
 		) yield{
-			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).stringValue
+			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).toString
 		}
 	}
 
@@ -87,11 +87,11 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		makeSt(objectUri, metaVocab.hasName, meta.fileName.map(vocab.lit)) ++ Seq(
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XMLSchema.BASE64BINARY)),
-			makeSt(objectUri, metaVocab.hasObjectSpec, objectSpecification),
+			makeSt(objectUri, metaVocab.hasObjectSpec, objectSpecification.toRdf),
 			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
 			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization)
+			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization.toRdf)
 		)
 	}
 
@@ -120,12 +120,12 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		Seq(
 			makeSt(objectUri, metaVocab.wasAcquiredBy, aquisitionUri),
 			makeSt(aquisitionUri, RDF.TYPE, metaVocab.aquisitionClass),
-			makeSt(aquisitionUri, metaVocab.prov.wasAssociatedWith, meta.station)
+			makeSt(aquisitionUri, metaVocab.prov.wasAssociatedWith, meta.station.toRdf)
 		) ++
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
-		makeSt(aquisitionUri, metaVocab.wasPerformedWith, meta.instrument.map(javaUriToSesame)) ++
+		makeSt(aquisitionUri, metaVocab.wasPerformedWith, meta.instrument.map(_.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 
@@ -135,13 +135,13 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		Seq(
 			makeSt(objectUri, metaVocab.wasProducedBy, productionUri),
 			makeSt(productionUri, RDF.TYPE, metaVocab.productionClass),
-			makeSt(productionUri, metaVocab.wasPerformedBy, prod.creator),
+			makeSt(productionUri, metaVocab.wasPerformedBy, prod.creator.toRdf),
 			makeSt(productionUri, metaVocab.hasEndTime, vocab.lit(prod.creationDate))
 		) ++
 		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
-		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(javaUriToSesame)) ++
-		prod.contributors.map{
-			makeSt(productionUri, metaVocab.wasParticipatedInBy, _)
+		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
+		prod.contributors.map{ contrib =>
+			makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)
 		}
 	}
 
@@ -165,7 +165,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
 				 *  by this object any more; it may be needed by others)
 				 */
-				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing))
+				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing.toRdf))
 		}
 	}
 

@@ -40,7 +40,7 @@ trait LifecycleService { self: StationLabelingService =>
 	}
 
 	private def getTcUsers(station: IRI): Seq[String] = lookupStationClass(station)
-		.flatMap(cls => config.tcUserIds.get(cls))
+		.flatMap(cls => config.tcUserIds.get(cls.toJava))
 		.toSeq
 		.flatten
 		.map(_.toLowerCase)

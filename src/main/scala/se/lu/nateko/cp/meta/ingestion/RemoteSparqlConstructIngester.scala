@@ -22,7 +22,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
-import se.lu.nateko.cp.meta.utils.sesame.javaUriToSesame
+import se.lu.nateko.cp.meta.utils.sesame.EnrichedJavaUri
 
 class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem) extends Ingester{
 
@@ -36,7 +36,7 @@ class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: Acto
 					case StatusCodes.OK =>
 
 						val inputStr = resp.entity.dataBytes.runWith(StreamConverters.asInputStream())
-						val graphUri: IRI = javaUriToSesame(rdfGraph)(factory)
+						val graphUri: IRI = rdfGraph.toRdf(factory)
 						val collector = new ContextStatementCollector(factory, graphUri)
 						val parser = new TurtleParser(factory)
 

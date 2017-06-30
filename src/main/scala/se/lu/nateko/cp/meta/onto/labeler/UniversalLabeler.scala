@@ -17,7 +17,7 @@ class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 
 		val theType: IRI = InstanceServerUtils.getSingleType(instUri, instServer)
 
-		val theClass = owlFactory.getOWLClass(OwlIri.create(theType))
+		val theClass = owlFactory.getOWLClass(OwlIri.create(theType.toJava))
 
 		val labeler = cache.getOrElseUpdate(theType, ClassIndividualsLabeler(theClass, ontology, this))
 

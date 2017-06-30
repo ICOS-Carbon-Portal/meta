@@ -22,7 +22,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
-		spec <- servers.getDataObjSpecification(meta.objectSpecification);
+		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec)
 	) yield ()
 
@@ -48,7 +48,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		)
 
 		for(prodOrgClass <- submConf.producingOrganizationClass){
-			if(!servers.icosMeta.hasStatement(producer, RDF.TYPE, prodOrgClass))
+			if(!servers.icosMeta.hasStatement(producer.toRdf, RDF.TYPE, prodOrgClass.toRdf))
 				throw new UnauthorizedUploadException(
 					s"Data producer '$producer' does not belong to class '$prodOrgClass'"
 				)

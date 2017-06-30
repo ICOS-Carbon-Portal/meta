@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
 
 
-private object LandingPageHelpers{
+object LandingPageHelpers{
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
 	private def formatDate(inst: Instant): String = {

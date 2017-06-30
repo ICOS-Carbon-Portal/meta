@@ -143,7 +143,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				spatial = getSpatialCoverage(cov),
 				temporal = getTemporalCoverage(dobj),
 				productionInfo = prod,
-				theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri)
+				theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri.toRdf)
 			)
 		}
 	}

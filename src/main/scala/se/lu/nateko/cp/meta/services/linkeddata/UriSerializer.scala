@@ -79,7 +79,7 @@ private object SesameUriSerializer{
 			val propValueOpt: Option[PropValue] = bset.getValue("val") match {
 				case uri: IRI =>
 					val valLabel = getOptLit(bset, "valLabel")
-					Some(Left(UriResource(uri, valLabel)))
+					Some(Left(UriResource(uri.toJava, valLabel)))
 				case lit: Literal =>
 					Some(Right(lit.stringValue))
 				case _ => None
@@ -98,13 +98,13 @@ private object SesameUriSerializer{
 
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 
-			case (UriResource(propUri, _), Right(strVal)) if(propUri == sesameUriToJava(RDFS.LABEL)) =>
+			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.LABEL) =>
 				acc.copy(res = UriResource(uri, Some(strVal)))
 
-			case (UriResource(propUri, _), Right(strVal)) if(propUri == sesameUriToJava(RDFS.COMMENT)) =>
+			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.COMMENT) =>
 				acc.copy(comment = Some(strVal))
 
-			case (UriResource(propUri, _), Left(rdfType)) if(propUri == sesameUriToJava(RDF.TYPE)) =>
+			case (UriResource(propUri, _), Left(rdfType)) if(propUri === RDF.TYPE) =>
 				acc.copy(types = rdfType :: acc.types)
 
 			case _ =>
@@ -116,7 +116,7 @@ private object SesameUriSerializer{
 		bset.getValue(varName) match {
 			case uri: IRI =>
 				val label = getOptLit(bset, lblName)
-				Some(UriResource(uri, label))
+				Some(UriResource(uri.toJava, label))
 			case _ => None
 		}
 	}

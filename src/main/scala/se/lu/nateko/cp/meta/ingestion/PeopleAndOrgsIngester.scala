@@ -40,8 +40,8 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 				val org = vocab.getOrganization(orgId)
 				Seq[(IRI, IRI, Value)](
 					(org, RDF.TYPE, metaVocab.orgClass),
-					(org, metaVocab.hasName, orgName),
-					(org, RDFS.LABEL, orgId)
+					(org, metaVocab.hasName, orgName.toRdf),
+					(org, RDFS.LABEL, orgId.toRdf)
 				)
 		}
 
@@ -52,8 +52,8 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 				val person = vocab.getPerson(fname, lname)
 				Seq[(IRI, IRI, Value)](
 					(person, RDF.TYPE, metaVocab.personClass),
-					(person, metaVocab.hasFirstName, fname),
-					(person, metaVocab.hasLastName, lname)
+					(person, metaVocab.hasFirstName, fname.toRdf),
+					(person, metaVocab.hasLastName, lname.toRdf)
 				)
 		}
 
@@ -65,7 +65,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 				Seq[(IRI, IRI, Value)](
 					(person, metaVocab.hasMembership, membership),
 					(membership, RDF.TYPE, metaVocab.membershipClass),
-					(membership, RDFS.LABEL, s"$lname as $roleId at $orgId"),
+					(membership, RDFS.LABEL, s"$lname as $roleId at $orgId".toRdf),
 					(membership, metaVocab.hasRole, role),
 					(membership, metaVocab.atOrganization, org)
 				)

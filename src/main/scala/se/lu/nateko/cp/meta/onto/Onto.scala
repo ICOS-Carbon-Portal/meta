@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.onto
 import java.net.URI
 
 import scala.collection.concurrent.TrieMap
-import scala.collection.JavaConverters._
 
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.model.parameters.Imports
@@ -33,7 +32,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	}
 
 	def getExposedClasses: Seq[ClassInfoDto] =
-		owlOntology.axioms(AxiomType.ANNOTATION_ASSERTION, Imports.INCLUDED).iterator.asScala
+		owlOntology.axioms(AxiomType.ANNOTATION_ASSERTION, Imports.INCLUDED)
 			.filter(axiom =>
 				axiom.getProperty == Vocab.exposedToUsersAnno && {
 					axiom.getValue.asLiteral.toOption match {
@@ -42,18 +41,20 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 					}
 				}
 			)
-			.map(_.getSubject)
+			.map[OWLAnnotationSubject](_.getSubject)
+			.toIndexedSeq
 			.collect{case iri: IRI =>
 				val owlClass = factory.getOWLClass(iri)
 				val res = rdfsLabeling(owlClass)
 				val newInstBaseUri = EntitySearcher
-					.getAnnotations(owlClass, ontologies, Vocab.newInstanceBaseUriAnno).iterator.asScala
-					.map(_.getValue).collect{
+					.getAnnotations(owlClass, ontologies, Vocab.newInstanceBaseUriAnno)
+					.map[OWLAnnotationValue](_.getValue)
+					.toIndexedSeq
+					.collect{
 						case iri: IRI => iri.toURI
-					}.toSeq.headOption
+					}.headOption
 				ClassInfoDto(res.displayName, res.uri, newInstBaseUri)
 			}
-			.toSeq
 			.distinct
 
 	def getLabelerForClassIndividuals(classUri: URI): InstanceLabeler = {
@@ -107,9 +108,9 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 
 	//TODO Take property restrictions into account for range calculations
 	private def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
-		val ranges = EntitySearcher.getRanges(prop, ontologies).iterator.asScala.collect{
+		val ranges = EntitySearcher.getRanges(prop, ontologies).toIndexedSeq.collect{
 			case owlClass: OWLClass => rdfsLabeling(owlClass)
-		}.toSeq
+		}
 
 		assert(ranges.size == 1, "Only single object property ranges, of the simple OWLClass kind, are supported at the moment")
 
@@ -121,25 +122,25 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	}
 	
 	private def getPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
-		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontologies).iterator.asScala.collect{
+		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontologies).toIndexedSeq.collect{
 			case dt: OWLDatatype => DataRangeDto(dt.getIRI.toURI, Nil)
 
 			case dtr: OWLDatatypeRestriction =>
-				val restrictions = dtr.facetRestrictions.iterator.asScala.collect{
+				val restrictions = dtr.facetRestrictions.toIndexedSeq.collect{
 					case r if(r.getFacet == OWLFacet.MIN_INCLUSIVE) => MinRestrictionDto(r.getFacetValue.parseDouble)
 					case r if(r.getFacet == OWLFacet.MAX_INCLUSIVE) => MaxRestrictionDto(r.getFacetValue.parseDouble)
 					case r if(r.getFacet == OWLFacet.PATTERN) => RegexpRestrictionDto(r.getFacetValue.getLiteral)
-				}.toSeq
+				}
 				DataRangeDto(dtr.getDatatype.getIRI.toURI, restrictions)
 
 			case oneOf: OWLDataOneOf =>
-				val literals = oneOf.values.iterator.asScala.toIndexedSeq
+				val literals = oneOf.values.toIndexedSeq
 				val dtypes = literals.map(_.getDatatype).distinct
 				assert(dtypes.length == 1, "Expecting 1 or more literals of same data type in OneOf data range definition")
 
 				val restriction = OneOfRestrictionDto(literals.map(_.getLiteral))
 				DataRangeDto(dtypes.head.getIRI.toURI, Seq(restriction))
-		}.toSeq
+		}
 
 		assert(ranges.size == 1, s"Got ${ranges.size} data ranges for property ${prop.getIRI} (expecting exactly 1)")
 

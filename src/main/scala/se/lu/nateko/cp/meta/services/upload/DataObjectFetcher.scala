@@ -57,7 +57,7 @@ class DataObjectFetcher(
 			Some(new JavaUri("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
 		else {
 			val dobj = vocab.getDataObject(hash)
-			getOptionalUri(dobj, RDFS.SEEALSO).map(sesameUriToJava).orElse(
+			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(
 				if(spec.dataLevel < 1) None
 				else Some(vocab.getDataObjectAccessUrl(hash, fileName))
 			)

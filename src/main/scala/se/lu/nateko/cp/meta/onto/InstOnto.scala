@@ -27,27 +27,27 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	private implicit val factory = instServer.factory
 
 	private val rdfsLabelInfo = DataPropertyDto(
-		ResourceDto("label", RDFS.LABEL, None),
+		ResourceDto("label", RDFS.LABEL.toJava, None),
 		CardinalityDto(None, None),
-		DataRangeDto(XMLSchema.STRING, Nil)
+		DataRangeDto(XMLSchema.STRING.toJava, Nil)
 	)
 
 	private val rdfsCommentInfo = DataPropertyDto(
-		ResourceDto("comment", RDFS.COMMENT, None),
+		ResourceDto("comment", RDFS.COMMENT.toJava, None),
 		CardinalityDto(None, None),
-		DataRangeDto(XMLSchema.STRING, Nil)
+		DataRangeDto(XMLSchema.STRING.toJava, Nil)
 	)
 
 	def getWriteContext: URI = {
 		val writeContexts = instServer.writeContexts
 		val nCtxts = writeContexts.length
 		assert(nCtxts == 1, s"Expected exactly one write context, found $nCtxts")
-		writeContexts.head
+		writeContexts.head.toJava
 	}
 
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
 		val labeler = onto.getLabelerForClassIndividuals(classUri)
-		instServer.getInstances(classUri).map(labeler.getInfo(_, instServer))
+		instServer.getInstances(classUri.toRdf).map(labeler.getInfo(_, instServer))
 	}
 
 	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
@@ -59,23 +59,24 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 
 	def getIndividual(uri: URI): IndividualDto = {
 		val labeler = onto.getUniversalLabeler
+		val iri = uri.toRdf
 
 		val classInfo: ClassDto = {
-			val theType = InstanceServerUtils.getSingleType(uri, instServer)
-			val mainInfo = onto.getClassInfo(theType)
+			val theType = InstanceServerUtils.getSingleType(iri, instServer)
+			val mainInfo = onto.getClassInfo(theType.toJava)
 			val extraProps: Seq[PropertyDto] = Seq(rdfsLabelInfo, rdfsCommentInfo)
 			mainInfo.copy(properties = extraProps ++ mainInfo.properties)
 		}
 
-		val values: Seq[ValueDto] = instServer.getStatements(uri).collect{
+		val values: Seq[ValueDto] = instServer.getStatements(iri).collect{
 			case SesameStatement(_, pred, value: Literal) =>
-				val prop = onto.factory.getOWLDataProperty(OwlIri.create(pred))
+				val prop = onto.factory.getOWLDataProperty(OwlIri.create(pred.toJava))
 				LiteralValueDto(
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
 			case SesameStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
-				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred))
+				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred.toJava))
 				ObjectValueDto(
 					value = labeler.getInfo(value, instServer),
 					property = onto.rdfsLabeling(prop)
@@ -83,7 +84,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		}
 
 		IndividualDto(
-			resource = labeler.getInfo(uri, instServer),
+			resource = labeler.getInfo(iri, instServer),
 			owlClass = classInfo,
 			values = values
 		)
@@ -133,9 +134,9 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	)
 
 	private def updateDtoToStatement(update: UpdateDto): Statement = {
-		val classUri = InstanceServerUtils.getSingleType(update.subject, instServer)
+		val classUri = InstanceServerUtils.getSingleType(update.subject.toRdf, instServer)
 
-		val obj: Value = getPropInfo(update.predicate, classUri) match{
+		val obj: Value = getPropInfo(update.predicate, classUri.toJava) match{
 			case dp: DataPropertyDto =>
 				val dtype = dp.range.dataType
 				factory.createLiteral(update.obj, dtype)
@@ -143,11 +144,11 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case _: ObjectPropertyDto => factory.createIRI(update.obj)
 		}
 
-		factory.createStatement(update.subject, update.predicate, obj)
+		factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
 	}
 
 	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =
-		javaUriToSesame(propUri) match {
+		propUri.toRdf match {
 			case RDFS.LABEL => rdfsLabelInfo
 			case RDFS.COMMENT => rdfsCommentInfo
 			case _ => onto.getPropInfo(propUri, classUri)

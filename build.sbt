@@ -42,6 +42,7 @@ val akkaHttpVersion = "10.0.6"
 val rdf4jVersion = "2.2.2"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
+val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
@@ -62,7 +63,7 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
-			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo),
+			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.2-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",

@@ -15,7 +15,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
-package object sesame {
+package object rdf4j {
 
 	implicit class EnrichedValueFactory(val factory: ValueFactory) extends AnyVal{
 		def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
@@ -45,10 +45,10 @@ package object sesame {
 	}
 
 	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
-		def asScalaIterator: CloseableIterator[T] = new SesameIterationIterator(res, () => ())
+		def asScalaIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res, () => ())
 	}
 
-	implicit class SesameRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
+	implicit class Rdf4jRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
 
 		def transact(action: RepositoryConnection => Unit): Try[Unit] = {
 			val conn = repo.getConnection
@@ -80,7 +80,7 @@ package object sesame {
 
 			try{
 				val repRes = accessor(conn)
-				new SesameIterationIterator(repRes, finalCleanup)
+				new Rdf4jIterationIterator(repRes, finalCleanup)
 			}
 			catch{
 				case err: Throwable =>

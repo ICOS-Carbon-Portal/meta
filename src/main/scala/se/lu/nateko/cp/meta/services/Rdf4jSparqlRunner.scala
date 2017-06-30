@@ -10,16 +10,16 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.utils.sesame.SesameIterationIterator
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jIterationIterator
 
-class SesameSparqlRunner(repo: Repository)(implicit ctxt: ExecutionContext) extends SparqlRunner {
+class Rdf4jSparqlRunner(repo: Repository)(implicit ctxt: ExecutionContext) extends SparqlRunner {
 
 	def evaluateGraphQuery(q: SparqlQuery): Future[CloseableIterator[Statement]] = Future{
 		val conn = repo.getConnection
 		try{
 			val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, q.query)
 			val qres = query.evaluate()
-			Future.successful(new SesameIterationIterator(qres, () => conn.close()))
+			Future.successful(new Rdf4jIterationIterator(qres, () => conn.close()))
 		} catch{
 			case err: Throwable =>
 				conn.close()

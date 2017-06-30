@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json.JsObject
 import spray.json.JsString
 
@@ -57,7 +57,7 @@ trait StationInfoService { self: StationLabelingService =>
 		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createIRI(uri))
 
 	private def notProtected(statement: Statement): Boolean = statement match{
-		case SesameStatement(_, pred, _) if protectedPredicates.contains(pred) => false
+		case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
 		case _ => true
 	}
 }

@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import DataTheme._
 import OrganizationClass.OrganizationClass

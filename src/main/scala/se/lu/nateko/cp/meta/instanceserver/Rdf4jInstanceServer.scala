@@ -5,11 +5,11 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Try
 import org.eclipse.rdf4j.model.Value
 
-class SesameInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContexts: Seq[IRI]) extends InstanceServer{
+class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContexts: Seq[IRI]) extends InstanceServer{
 
 	def this(repo: Repository) = this(repo, Nil, Nil)
 	def this(repo: Repository, context: IRI) = this(repo, Seq(context), Seq(context))
@@ -54,6 +54,6 @@ class SesameInstanceServer(repo: Repository, val readContexts: Seq[IRI], val wri
 		}
 	}
 
-	def writeContextsView = new SesameInstanceServer(repo, writeContexts, writeContexts)
+	def writeContextsView = new Rdf4jInstanceServer(repo, writeContexts, writeContexts)
 
 }

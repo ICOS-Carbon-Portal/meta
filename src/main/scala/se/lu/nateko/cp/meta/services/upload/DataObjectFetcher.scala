@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 
 class DataObjectFetcher(
 	protected val server: InstanceServer,

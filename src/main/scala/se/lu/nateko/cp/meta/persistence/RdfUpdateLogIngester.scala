@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.repository.Repository
 import scala.util.Try
 import scala.util.Failure
 
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 

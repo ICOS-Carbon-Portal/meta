@@ -17,7 +17,7 @@ import org.eclipse.rdf4j.repository.Repository
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.meta.core.data.UriResource
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
 import akka.http.scaladsl.model.HttpCharset
@@ -35,8 +35,8 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
-class SesameUriSerializer(repo: Repository) extends UriSerializer{
-	import SesameUriSerializer._
+class Rdf4jUriSerializer(repo: Repository) extends UriSerializer{
+	import Rdf4jUriSerializer._
 	import InstanceServerSerializer.statementIterMarshaller
 
 	val marshaller: ToResponseMarshaller[Uri] = {
@@ -59,7 +59,7 @@ class SesameUriSerializer(repo: Repository) extends UriSerializer{
 	)
 }
 
-private object SesameUriSerializer{
+private object Rdf4jUriSerializer{
 
 	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
 		val uri = repo.getValueFactory.createIRI(res.toString)
@@ -72,7 +72,7 @@ private object SesameUriSerializer{
 
 		val propInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
 
-		val propInfos = new SesameIterationIterator(propInfo).map{bset =>
+		val propInfos = new Rdf4jIterationIterator(propInfo).map{bset =>
 
 			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
 
@@ -89,7 +89,7 @@ private object SesameUriSerializer{
 
 		val usageInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate()
 
-		val usageInfos = new SesameIterationIterator(usageInfo).map{bset =>
+		val usageInfos = new Rdf4jIterationIterator(usageInfo).map{bset =>
 			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
 		}.flatten.toIndexedSeq
 

@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.labeling
 import java.net.URI
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.mail.SendMail
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException

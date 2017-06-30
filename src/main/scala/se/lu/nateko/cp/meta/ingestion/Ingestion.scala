@@ -2,9 +2,9 @@ package se.lu.nateko.cp.meta.ingestion
 
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.Statement
-import se.lu.nateko.cp.meta.utils.sesame.Loading
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
 import org.eclipse.rdf4j.repository.Repository
@@ -56,7 +56,7 @@ object Ingestion {
 			target.applyAll(toAdd)
 		} else {
 			val newRepo = Loading.fromStatements(newStatements)
-			val source = new SesameInstanceServer(newRepo)
+			val source = new Rdf4jInstanceServer(newRepo)
 			try{
 				val updates = computeDiff(target.writeContextsView, source).toIndexedSeq
 				target.applyAll(updates)

@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 
@@ -69,13 +69,13 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		}
 
 		val values: Seq[ValueDto] = instServer.getStatements(iri).collect{
-			case SesameStatement(_, pred, value: Literal) =>
+			case Rdf4jStatement(_, pred, value: Literal) =>
 				val prop = onto.factory.getOWLDataProperty(OwlIri.create(pred.toJava))
 				LiteralValueDto(
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
-			case SesameStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
+			case Rdf4jStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
 				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred.toJava))
 				ObjectValueDto(
 					value = labeler.getInfo(value, instServer),

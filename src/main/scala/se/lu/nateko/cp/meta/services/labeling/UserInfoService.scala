@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 
 trait UserInfoService { self: StationLabelingService =>
 
@@ -28,7 +28,7 @@ trait UserInfoService { self: StationLabelingService =>
 		val allEmails = provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
 
 		val piUriOpt = allEmails.collectFirst{
-			case SesameStatement(uri: IRI, _, mail)
+			case Rdf4jStatement(uri: IRI, _, mail)
 				if(mail.stringValue.equalsIgnoreCase(uinfo.email)) => uri
 		}
 		allEmails.close()
@@ -44,7 +44,7 @@ trait UserInfoService { self: StationLabelingService =>
 					.getStatements(piUri)
 					.groupBy(_.getPredicate)
 					.map{case (pred, statements) => (pred, statements.head)} //ignoring multiprops
-					.collect{case (pred, SesameStatement(_, _, v: Literal)) => (pred, v.getLabel)} //keeping only data props
+					.collect{case (pred, Rdf4jStatement(_, _, v: Literal)) => (pred, v.getLabel)} //keeping only data props
 					.toMap
 				LabelingUserDto(
 					uri = Some(piUri.toJava),
@@ -81,7 +81,7 @@ trait UserInfoService { self: StationLabelingService =>
 		val protectedPredicates = Set(vocab.hasEmail, RDF.TYPE)
 
 		val currentInfo = provisionalInfoServer.getStatements(userUri).filter{
-			case SesameStatement(_, pred, _) if protectedPredicates.contains(pred) => false
+			case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
 			case _ => true
 		}
 

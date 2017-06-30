@@ -22,7 +22,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedJavaUri
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 
 class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem) extends Ingester{
 

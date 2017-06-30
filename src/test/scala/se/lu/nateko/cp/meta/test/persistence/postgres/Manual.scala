@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.test.TestConfig
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.ConfigLoader
 
 object Manual {
@@ -46,6 +46,6 @@ object Manual {
 		val ctxt = factory.createIRI(TestConfig.instOntUri)
 		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
 		log.close()
-		new SesameInstanceServer(repo, ctxt)
+		new Rdf4jInstanceServer(repo, ctxt)
 	}
 }

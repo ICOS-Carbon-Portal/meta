@@ -20,21 +20,21 @@ import se.lu.nateko.cp.meta.ingestion.Ingestion
 import se.lu.nateko.cp.meta.ingestion.StatementProvider
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
-import se.lu.nateko.cp.meta.services.SesameSparqlServer
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
-import se.lu.nateko.cp.meta.services.linkeddata.SesameUriSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.UploadService
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
-import se.lu.nateko.cp.meta.utils.sesame.Loading
-import se.lu.nateko.cp.meta.services.SesameSparqlRunner
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -45,9 +45,9 @@ class MetaDb private (
 	repo: Repository
 ) extends Closeable{
 
-	val sparql: SparqlServer = new SesameSparqlServer(repo)
+	val sparql: SparqlServer = new Rdf4jSparqlServer(repo)
 
-	val uriSerializer: UriSerializer = new SesameUriSerializer(repo)
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)
 
 	def close(): Unit = {
 		for((_, server) <- instanceServers) server.shutDown()
@@ -126,7 +126,7 @@ object MetaDb {
 		}.toMap
 
 		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
-		val sparqlRunner = new SesameSparqlRunner(repo)(system.dispatcher)//sesame is embedded, so it will not block threads idly, but use them
+		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
 		new UploadService(dataObjServers, sparqlRunner, config.dataUploadService)
 	}
 
@@ -141,11 +141,11 @@ object MetaDb {
 			case Some(logName) =>
 				val log = PostgresRdfLog(logName, logConf, factory)
 				val repo = RdfUpdateLogIngester.ingest(log.updates, initRepo, writeContexts: _*)
-				val sesameServer = new SesameInstanceServer(repo, readContexts, writeContexts)
-				new LoggingInstanceServer(sesameServer, log)
+				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContexts)
+				new LoggingInstanceServer(rdf4jServer, log)
 
 			case None =>
-				new SesameInstanceServer(initRepo, readContexts, writeContexts)
+				new Rdf4jInstanceServer(initRepo, readContexts, writeContexts)
 		}
 
 	}

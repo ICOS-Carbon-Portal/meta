@@ -42,8 +42,8 @@ private case class SparqlNegotiationOption(
 )
 
 
-class SesameSparqlServer(repo: Repository) extends SparqlServer{
-	import SesameSparqlServer._
+class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
+	import Rdf4jSparqlServer._
 
 	private val jsonType = getSparqlContentType("application/sparql-results+json", ".srj")
 	private val xmlSparql = getSparqlContentType("application/sparql-results+xml", ".srx")
@@ -157,7 +157,7 @@ class SesameSparqlServer(repo: Repository) extends SparqlServer{
 	}
 }
 
-object SesameSparqlServer{
+object Rdf4jSparqlServer{
 
 	private val utf8 = HttpCharsets.`UTF-8`
 

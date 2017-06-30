@@ -3,8 +3,8 @@ package se.lu.nateko.cp.meta.test
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.utils.owlapi._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.SesameInstanceServer
-import se.lu.nateko.cp.meta.utils.sesame.Loading
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import org.semanticweb.owlapi.model.PrefixManager
 import org.semanticweb.owlapi.util.DefaultPrefixManager
 import org.semanticweb.owlapi.model.OWLClass
@@ -30,7 +30,7 @@ object TestConfig {
 		val instOnt = factory.createIRI(instOntUri)
 		val ont = factory.createIRI(ontUri)
 		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
-		new SesameInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
+		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
 	}
 
 	private val prefixManager: PrefixManager =

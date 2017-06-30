@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.utils.sesame
+package se.lu.nateko.cp.meta.utils.rdf4j
 
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository

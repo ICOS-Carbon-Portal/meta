@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.utils.sesame
+package se.lu.nateko.cp.meta.utils.rdf4j
 
 import scala.collection.AbstractIterator
 
@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 
 
 //TODO Make this thread-safe ?
-class SesameIterationIterator[T](res: CloseableIteration[T, _], closer: () => Unit = () => ()) extends AbstractIterator[T] with CloseableIterator[T]{
+class Rdf4jIterationIterator[T](res: CloseableIteration[T, _], closer: () => Unit = () => ()) extends AbstractIterator[T] with CloseableIterator[T]{
 
 	private[this] var closed: Boolean = false
 

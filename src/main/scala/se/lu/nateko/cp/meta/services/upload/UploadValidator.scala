@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){

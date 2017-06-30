@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 
 class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema) extends Ingester{
 

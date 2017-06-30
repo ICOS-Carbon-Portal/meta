@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.utils.sesame._
+import se.lu.nateko.cp.meta.utils.rdf4j._
 
 class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(implicit system: ActorSystem) {
 	import system.dispatcher

@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
-import se.lu.nateko.cp.meta.utils.sesame.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 
 
 private class WdcggUploadCompleter(

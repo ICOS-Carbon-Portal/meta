@@ -5,7 +5,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 
-import se.lu.nateko.cp.meta.utils.sesame.SesameIterationIterator
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jIterationIterator
 
 class SparqlConstructExtractor(pathToQueryRes: String) extends Extractor {
 
@@ -17,7 +17,7 @@ class SparqlConstructExtractor(pathToQueryRes: String) extends Extractor {
 		try{
 			val query = conn.prepareGraphQuery(QueryLanguage.SPARQL, queryText)
 			val res = query.evaluate()
-			new SesameIterationIterator(res, () => conn.close())
+			new Rdf4jIterationIterator(res, () => conn.close())
 		}catch{
 			case err: Throwable =>
 				conn.close()

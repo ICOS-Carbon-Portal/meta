@@ -1,4 +1,4 @@
-#ICOS Carbon Portal metadata service
+# ICOS Carbon Portal metadata service
 
 
 Metadata service for hosting, mantaining and querying information about things like ICOS stations, people, instruments, archived data objects, etc.
@@ -86,7 +86,7 @@ Proceed with the upload as instructed [here](https://github.com/ICOS-Carbon-Port
 - Install Node.js dependencies: `npm install`
 - Now you can run Gulp tasks: `npm run <task>` (see `package.json` for the list of defined tasks)
 
-###Getting started with the back-end part
+### Getting started with the back-end part
 
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure/tree/master/rdflogdb))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.

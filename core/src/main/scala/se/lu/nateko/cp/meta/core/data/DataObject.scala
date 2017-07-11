@@ -80,7 +80,7 @@ case class DataObject(
 	hash: Sha256Sum,
 	accessUrl: Option[URI],
 	pid: Option[String],
-	fileName: Option[String],
+	fileName: String,
 	submission: DataSubmission,
 	specification: DataObjectSpec,
 	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta]

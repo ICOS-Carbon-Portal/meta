@@ -4,6 +4,7 @@ import java.net.URI
 import java.time.Instant
 import spray.json._
 import se.lu.nateko.cp.meta.core.data.TimeInterval
+import java.time.LocalDateTime
 
 trait CommonJsonSupport extends DefaultJsonProtocol{
 
@@ -17,6 +18,16 @@ trait CommonJsonSupport extends DefaultJsonProtocol{
 					case err: Throwable => deserializationError(s"Could not parse URI from $uri", err)
 				}
 			case _ => deserializationError("URI string expected")
+		}
+	}
+
+	implicit object javaLocalDateTimeFormat extends RootJsonFormat[LocalDateTime] {
+
+		def write(dt: LocalDateTime) = JsString(dt.toString)
+
+		def read(value: JsValue): LocalDateTime = value match{
+			case JsString(s) => LocalDateTime.parse(s)
+			case _ => deserializationError("String representation of a LocalDateTime is expected")
 		}
 	}
 

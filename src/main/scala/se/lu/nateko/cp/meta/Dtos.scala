@@ -42,7 +42,7 @@ case class UploadMetadataDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	objectSpecification: URI,
-	fileName: Option[String],
+	fileName: String,
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata]
 )
 

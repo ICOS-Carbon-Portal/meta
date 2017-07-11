@@ -32,9 +32,7 @@
 
 		<div class="row">
 			@Panel("Content", 6){
-				@for(fname <- dobj.fileName){
-					@PanelRow("File name", fname)
-				}
+				@PanelRow("File name", dobj.fileName)
 				@for(l3meta <- dobj.specificInfo.left.toOption){
 					@PanelRow("Title", l3meta.title)
 					@for(description <- l3meta.description){
@@ -127,9 +125,7 @@
 
 @pageTitle = @{
 	dobj.specificInfo.left.toOption.map(_.title)
-		.orElse(dobj.fileName)
-		.orElse(dobj.pid)
-		.getOrElse(dobj.hash.id)
+		.getOrElse(dobj.fileName)
 }
 
 @affiliationInfo(aff: DataAffiliation) = {
@@ -181,7 +177,7 @@
 		<span>
 			@dobj.accessUrl match {
 				case Some(url) => {
-					<a target="_blank" href="@url">@{dobj.fileName.getOrElse(url.toString)}</a>
+					<a target="_blank" href="@url">@{dobj.fileName}</a>
 				}
 				case None => {
 					<span>Available on request</span>

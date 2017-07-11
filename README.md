@@ -58,7 +58,7 @@ Clarifications:
 
 - `submitterId` will be provided by the CP's technical people. This is not the same as username for logging in with CPauth.
 - `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems.
-- `fileName` can be freely chosen by you. Every data object is stored and distributed as a single file.
+- `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
 - `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
 

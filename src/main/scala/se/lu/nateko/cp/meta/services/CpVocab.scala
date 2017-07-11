@@ -33,10 +33,8 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	def getDataObject(hash: Sha256Sum) = factory.createIRI("https://meta.icos-cp.eu/objects/", hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: Option[String]): JavaUri = {
-		val filePath = fileName.map("/" + urlEncode(_)).getOrElse("")
-		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}$filePath")
-	}
+	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: String): JavaUri =
+		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}/${urlEncode(fileName)}")
 
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)

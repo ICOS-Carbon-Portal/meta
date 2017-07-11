@@ -83,8 +83,8 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 			stationData => getStationDataStatements(hashSum, stationData)
 		)
 
-		specificStatements ++
-		makeSt(objectUri, metaVocab.hasName, meta.fileName.map(vocab.lit)) ++ Seq(
+		specificStatements ++ Seq(
+			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XMLSchema.BASE64BINARY)),
 			makeSt(objectUri, metaVocab.hasObjectSpec, objectSpecification.toRdf),

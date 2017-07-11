@@ -1,8 +1,7 @@
-val defaultScala = "2.12.2"
 
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := defaultScala,
+	scalaVersion := "2.12.2",
 
 	scalacOptions ++= Seq(
 		"-target:jvm-1.8",
@@ -22,9 +21,9 @@ lazy val metaCore = (project in file("core"))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta-core",
-		version := "0.3.2-SNAPSHOT",
+		version := "0.3.3-SNAPSHOT",
 		libraryDependencies ++= Seq(
-			"io.spray" %% "spray-json" % "1.3.2"
+			"io.spray" %% "spray-json" % "1.3.3"
 		),
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"
@@ -33,12 +32,11 @@ lazy val metaCore = (project in file("core"))
 			else
 				Some("releases"  at nexus + "releases")
 		},
-		crossScalaVersions := Seq(defaultScala, "2.11.11"),
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.4.18"
-val akkaHttpVersion = "10.0.6"
+val akkaVersion = "2.4.19"
+val akkaHttpVersion = "10.0.9"
 val rdf4jVersion = "2.2.2"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")

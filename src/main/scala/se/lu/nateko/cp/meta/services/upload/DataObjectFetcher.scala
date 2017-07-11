@@ -32,7 +32,7 @@ class DataObjectFetcher(
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
 			.map(getDataProduction)
 
-		val fileName = getOptionalString(dobj, metaVocab.hasName)
+		val fileName = getSingleString(dobj, metaVocab.hasName)
 		val spec = getSpecification(getSingleUri(dobj, metaVocab.hasObjectSpec))
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
@@ -51,7 +51,7 @@ class DataObjectFetcher(
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory(hash))
 	}
 
-	private def getAccessUrl(hash: Sha256Sum, fileName: Option[String], spec: DataObjectSpec): Option[JavaUri] = {
+	private def getAccessUrl(hash: Sha256Sum, fileName: String, spec: DataObjectSpec): Option[JavaUri] = {
 
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new JavaUri("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))

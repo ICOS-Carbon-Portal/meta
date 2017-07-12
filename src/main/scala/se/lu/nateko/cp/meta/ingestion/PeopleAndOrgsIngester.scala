@@ -12,6 +12,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import scala.concurrent.Future
 
 class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 
@@ -19,7 +20,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 
 	private val regexp = """^(.+),\ (.+):\ (.+)\ \((.+)\)$""".r
 
-	def getStatements(factory: ValueFactory): Iterator[Statement] = {
+	def getStatements(factory: ValueFactory): Ingestion.Statements = {
 
 		implicit val f = factory
 		val vocab = new CpVocab(factory)
@@ -70,6 +71,6 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 					(membership, metaVocab.atOrganization, org)
 				)
 		}
-		(orgTriples ++ personTriples ++ membershipTriples).map(factory.tripleToStatement).iterator
+		Future.successful((orgTriples ++ personTriples ++ membershipTriples).map(factory.tripleToStatement).iterator)
 	}
 }

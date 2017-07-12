@@ -1,16 +1,21 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
 import se.lu.nateko.cp.meta.ingestion.badm.BadmSchema
+import org.apache.commons.io.IOUtils
+import java.nio.charset.Charset
+import org.apache.commons.io.Charsets
+import java.nio.charset.StandardCharsets
 
 object BadmTestHelper {
 
 	def getSchema: BadmSchema.Schema = BadmSchema.parseSchemaFromCsv(
-		getClass.getResourceAsStream("/variablesHarmonized_OTC_CP.csv"),
-		getClass.getResourceAsStream("/variablesHarmonizedVocab_OTC_CP.csv")
+		getResAsString("/variablesHarmonized_OTC_CP.csv"),
+		getResAsString("/variablesHarmonizedVocab_OTC_CP.csv")
 	)
 
-	def getBadmSource: java.io.InputStream = {
-		getClass.getResourceAsStream("/AncillaryCP_117_20160321.csv")
+	def getBadmSource: String = {
+		getResAsString("/AncillaryCP_117_20160321.csv")
 	}
 
+	def getResAsString(path: String): String = IOUtils.toString(getClass.getResourceAsStream(path), StandardCharsets.UTF_8)
 }

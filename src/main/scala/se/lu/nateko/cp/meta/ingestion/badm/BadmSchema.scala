@@ -13,7 +13,7 @@ object BadmSchema{
 		def hasVocab = vocab.isDefined
 	}
 
-	def parseSchemaFromCsv(vars: InputStream, vocab: InputStream): Schema =
+	def parseSchemaFromCsv(vars: String, vocab: String): Schema =
 		parseSchemaFromCsv(Parser.getCsvRows(vars), Parser.getCsvRows(vocab))
 
 	def parseSchemaFromCsv(vars: Rows, vocab: Rows): Schema = {

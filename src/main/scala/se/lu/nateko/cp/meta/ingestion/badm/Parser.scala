@@ -12,10 +12,11 @@ import spray.json.JsArray
 import spray.json.JsNumber
 import spray.json.JsObject
 import spray.json.JsString
+import java.io.StringReader
 
 object Parser {
 
-	def parseEntriesFromCsv(src: java.io.InputStream): Seq[BadmEntry] = {
+	def parseEntriesFromCsv(src: String): Seq[BadmEntry] = {
 		aggregateEntries(getCsvRows(src).map(csvRowToRawEntry).toSeq)
 	}
 
@@ -33,8 +34,8 @@ object Parser {
 		}.flatten.flatten
 	}
 
-	def getCsvRows(csvStream: java.io.InputStream): Stream[Array[String]] = {
-		val reader = new InputStreamReader(csvStream)
+	def getCsvRows(csvStream: String): Stream[Array[String]] = {
+		val reader = new StringReader(csvStream)
 		val csvReader = new CSVReader(reader, ',', '"')
 		val iter = csvReader.iterator()
 

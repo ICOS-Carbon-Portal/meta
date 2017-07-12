@@ -14,11 +14,14 @@ import BadmSchema.AncillaryValue
 import BadmSchema.PropertyInfo
 import BadmSchema.Schema
 import se.lu.nateko.cp.meta.ingestion.Ingester
+import se.lu.nateko.cp.meta.ingestion.Ingestion
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.CpVocab
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-class RdfBadmSchemaIngester(schema: => Schema) extends Ingester{
+class RdfBadmSchemaIngester(schemaFut: => Future[Schema])(implicit ctxt: ExecutionContext) extends Ingester{
 
 	import BadmConsts._
 	private[this] val specialVars = Set(
@@ -27,7 +30,11 @@ class RdfBadmSchemaIngester(schema: => Schema) extends Ingester{
 		LocationElevVar, InstrumentVar, VariableVar, VarCodeVar
 	)
 
-	def getStatements(f: ValueFactory): Iterator[Statement] = {
+	def getStatements(f: ValueFactory): Ingestion.Statements = {
+		schemaFut.map(mapStatements(f, _))
+	}
+
+	private def mapStatements(f: ValueFactory, schema: Schema): Iterator[Statement] = {
 		val vocab = new CpVocab(f)
 		val cpVocab = new CpmetaVocab(f)
 		val badmVocab = new BadmVocab(f)

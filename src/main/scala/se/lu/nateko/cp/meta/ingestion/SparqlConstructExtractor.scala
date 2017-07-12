@@ -6,10 +6,12 @@ import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jIterationIterator
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-class SparqlConstructExtractor(pathToQueryRes: String) extends Extractor {
+class SparqlConstructExtractor(pathToQueryRes: String)(implicit ctxt: ExecutionContext) extends Extractor {
 
-	def getStatements(repo: Repository): Iterator[Statement] = {
+	def getStatements(repo: Repository): Ingestion.Statements = Future{
 		val queryText = IOUtils.toString(getClass.getResourceAsStream(pathToQueryRes), "UTF-8")
 
 		val conn = repo.getConnection

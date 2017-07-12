@@ -11,23 +11,28 @@ import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import java.net.URI
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false
 }
 
 trait Ingester extends StatementProvider{
-	def getStatements(valueFactory: ValueFactory): Iterator[Statement]
+	def getStatements(valueFactory: ValueFactory): Ingestion.Statements
 }
 
 trait Extractor extends StatementProvider{
-	def getStatements(repo: Repository): Iterator[Statement]
+	def getStatements(repo: Repository): Ingestion.Statements
 }
 
 object Ingestion {
 
+	type Statements = Future[Iterator[Statement]]
+
 	def allProviders(implicit system: ActorSystem, mat: Materializer): Map[String, StatementProvider] = {
-		val (badmSchema, badm) = BadmIngester.getSchemaAndValuesIngesters
+		import system.dispatcher
+		val (badmSchema, badm) = new BadmIngester().getSchemaAndValuesIngesters
 		Map(
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
@@ -42,14 +47,16 @@ object Ingestion {
 		)
 	}
 
-	def ingest(target: InstanceServer, ingester: Ingester, factory: ValueFactory): Unit =
+	def ingest(target: InstanceServer, ingester: Ingester, factory: ValueFactory)(implicit ctxt: ExecutionContext): Future[Unit] =
 		ingest[Ingester](target, ingester, _.getStatements(factory))
 
-	def ingest(target: InstanceServer, extractor: Extractor, repo: Repository): Unit =
+	def ingest(target: InstanceServer, extractor: Extractor, repo: Repository)(implicit ctxt: ExecutionContext): Future[Unit] =
 		ingest[Extractor](target, extractor, _.getStatements(repo))
 
-	private def ingest[T <: StatementProvider](target: InstanceServer, provider: T, stFactory: T => Iterator[Statement]): Unit = {
-		val newStatements = stFactory(provider)
+	private def ingest[T <: StatementProvider](
+			target: InstanceServer,
+			provider: T, stFactory: T => Statements
+	)(implicit ctxt: ExecutionContext): Future[Unit] = stFactory(provider).map{newStatements =>
 
 		if(provider.isAppendOnly){
 			val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))

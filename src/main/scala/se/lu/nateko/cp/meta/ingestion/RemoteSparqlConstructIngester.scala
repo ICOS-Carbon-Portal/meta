@@ -23,36 +23,34 @@ import akka.http.scaladsl.model.headers
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
+import akka.stream.Materializer
 
-class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem) extends Ingester{
+class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem, m: Materializer) extends Ingester{
 
-	implicit private val materializer = ActorMaterializer()
 	import system.dispatcher
 
-	override def getStatements(factory: ValueFactory): Iterator[Statement] = {
-		val statementsFut: Future[Iterator[Statement]] =
-			makeQuery().flatMap(
-				resp => resp.status match {
-					case StatusCodes.OK =>
+	override def getStatements(factory: ValueFactory): Ingestion.Statements = {
+		makeQuery().flatMap(
+			resp => resp.status match {
+				case StatusCodes.OK =>
 
-						val inputStr = resp.entity.dataBytes.runWith(StreamConverters.asInputStream())
-						val graphUri: IRI = rdfGraph.toRdf(factory)
-						val collector = new ContextStatementCollector(factory, graphUri)
-						val parser = new TurtleParser(factory)
+					val inputStr = resp.entity.dataBytes.runWith(StreamConverters.asInputStream())
+					val graphUri: IRI = rdfGraph.toRdf(factory)
+					val collector = new ContextStatementCollector(factory, graphUri)
+					val parser = new TurtleParser(factory)
 
-						parser.setRDFHandler(collector)
+					parser.setRDFHandler(collector)
 
-						Future{
-							parser.parse(inputStr, rdfGraph.toString)
-							import scala.collection.JavaConverters.asScalaIteratorConverter
-							collector.getStatements.iterator().asScala
-						}
-					case _ =>
-						resp.discardEntityBytes()
-						Future.failed(new Exception(s"Got ${resp.status} from the server"))
-				}
-			)
-		Await.result(statementsFut, 10.seconds)
+					Future{
+						parser.parse(inputStr, rdfGraph.toString)
+						import scala.collection.JavaConverters.asScalaIteratorConverter
+						collector.getStatements.iterator().asScala
+					}
+				case _ =>
+					resp.discardEntityBytes()
+					Future.failed(new Exception(s"Got ${resp.status} from the server"))
+			}
+		)
 	}
 
 	private def makeQuery(): Future[HttpResponse] = {

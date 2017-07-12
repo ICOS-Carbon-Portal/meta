@@ -221,11 +221,9 @@ object MetaDb {
 					val afterIngestion = for(
 						server <- basicInit;
 						_ <- dependenciesDone;
-						_ <- Future{
-							providers(ingesterId) match {
-								case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
-								case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
-							}
+						_ <- providers(ingesterId) match {
+							case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
+							case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
 						}
 					) yield server
 

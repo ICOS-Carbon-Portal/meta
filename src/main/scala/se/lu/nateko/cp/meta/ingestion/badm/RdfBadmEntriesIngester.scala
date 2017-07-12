@@ -15,8 +15,14 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.ingestion.Ingestion
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema) extends Ingester{
+class RdfBadmEntriesIngester(
+		entriesFut: => Future[Iterable[BadmEntry]],
+		schema: => Future[Schema]
+)(implicit ctxt: ExecutionContext) extends Ingester{
 
 	import RdfBadmEntriesIngester._
 
@@ -28,38 +34,41 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 
 	private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
 
-	def getStatements(f: ValueFactory): Iterator[Statement] = {
+	def getStatements(f: ValueFactory): Ingestion.Statements = {
 		implicit val vocab = new CpVocab(f)
 		implicit val metaVocab = new CpmetaVocab(f)
 		implicit val badmVocab = new BadmVocab(f)
 
-		entries.iterator.scanLeft[ScanAcc](ScanAcc(None, Map.empty, Seq.empty)){
-			(acc, entry) => entry.variable match {
+		entriesFut.zip(schema).map{
+			case (entries, schema) =>
+				entries.iterator.scanLeft[ScanAcc](ScanAcc(None, Map.empty, Seq.empty)){
+					(acc, entry) => entry.variable match {
 
-				case SiteVar =>
-					ScanAcc(getSiteId(entry), Map.empty, Seq.empty)
+					case SiteVar =>
+						ScanAcc(getSiteId(entry), Map.empty, Seq.empty)
 
-				case LocationVar | InstrumentVar =>
-					acc.copy(statements = Seq.empty)
+					case LocationVar | InstrumentVar =>
+						acc.copy(statements = Seq.empty)
 
-				case TeamMemberVar =>
-					val siteId = acc.siteId.get //will throw here if no site id
-					acc.copy(statements = getTeamMemberStatements(siteId, entry))
+					case TeamMemberVar =>
+						val siteId = acc.siteId.get //will throw here if no site id
+						acc.copy(statements = getTeamMemberStatements(siteId, entry))
 
-				case variable =>
-					val siteId = acc.siteId.get //will throw here if no site id
-					val station = vocab.getEcosystemStation(siteId)
-					val varCount = acc.varValueCounts.getOrElse(variable, -1) + 1
-					val ancillEntry = {
-						val ancillEntryId = s"${siteId}_${variable}_${varCount}"
-						vocab.getAncillaryEntry(ancillEntryId)
-					}
-					acc.copy(
-						varValueCounts = acc.varValueCounts + (variable -> varCount),
-						statements = getEntryStatements(station, entry, ancillEntry)
-					)
-			}
-		}.flatMap(_.statements)
+					case variable =>
+						val siteId = acc.siteId.get //will throw here if no site id
+						val station = vocab.getEcosystemStation(siteId)
+						val varCount = acc.varValueCounts.getOrElse(variable, -1) + 1
+						val ancillEntry = {
+							val ancillEntryId = s"${siteId}_${variable}_${varCount}"
+							vocab.getAncillaryEntry(ancillEntryId)
+						}
+						acc.copy(
+							varValueCounts = acc.varValueCounts + (variable -> varCount),
+							statements = getEntryStatements(station, entry, schema, ancillEntry)
+						)
+				}
+			}.flatMap(_.statements)
+		}
 	}
 
 	private def getTeamMemberStatements(siteId: String, entry: BadmEntry)
@@ -95,7 +104,7 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 		) map metaVocab.factory.tripleToStatement
 	}
 
-	private def getEntryStatements(station: IRI, entry: BadmEntry, ancillEntry: IRI)
+	private def getEntryStatements(station: IRI, entry: BadmEntry, schema: Schema, ancillEntry: IRI)
 				(implicit metaVocab: CpmetaVocab, badmVocab: BadmVocab): Seq[Statement] = {
 		val submissionDate = metaVocab.lit(entry.submissionDate)
 
@@ -112,12 +121,12 @@ class RdfBadmEntriesIngester(entries: => Iterable[BadmEntry], schema: => Schema)
 		entryInformationDate.map{
 			(ancillEntry, metaVocab.dcterms.date, _)
 		} ++
-		entry.values.map(badmValue2PropValue).collect{
+		entry.values.map(badmValue2PropValue(_, schema)).collect{
 			case Some((prop, value)) => (ancillEntry, prop, value)
 		} map metaVocab.factory.tripleToStatement
 	}
 
-	private def badmValue2PropValue(badmValue: BadmValue)(implicit badmVocab: BadmVocab): Option[(IRI, Value)] = {
+	private def badmValue2PropValue(badmValue: BadmValue, schema: Schema)(implicit badmVocab: BadmVocab): Option[(IRI, Value)] = {
 		val variable = badmValue.variable
 		val valueString = badmValue.valueStr
 

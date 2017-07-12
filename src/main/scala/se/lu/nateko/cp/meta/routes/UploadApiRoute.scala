@@ -15,6 +15,8 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
+import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
+import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -46,6 +48,13 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[UploadCompletionInfo]){ completionInfo =>
 							onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
+						}
+					}
+				} ~
+				path("etc"){
+					(ensureLocalRequest & replyWithErrorOnBadContent){
+						entity(as[EtcUploadMetadata]){ uploadMeta =>
+							complete(service.registerEtcUpload(uploadMeta))
 						}
 					}
 				} ~

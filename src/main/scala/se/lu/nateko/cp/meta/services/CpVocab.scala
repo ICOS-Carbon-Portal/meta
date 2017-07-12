@@ -4,21 +4,22 @@ import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.{URI => JavaUri}
+import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
 
 class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	val baseUri = "http://meta.icos-cp.eu/resources/"
 
 	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)
-	def getEcosystemStation(siteId: String) = getRelative("stations/ES_", siteId)
+	def getEcosystemStation(id: EtcStationId) = getRelative("stations/ES_", id.id)
 	def getOceanStation(siteId: String) = getRelative("stations/OS_", siteId)
 
 	def getPerson(firstName: String, lastName: String) = getRelativeRaw(
 		s"people/${urlEncode(firstName)}_${urlEncode(lastName)}"
 	)
 
-	def getEtcMembership(siteId: String, roleId: String, lastName: String) = getRelative(
-		"memberships/", s"ES_${siteId}_${roleId}_$lastName"
+	def getEtcMembership(id: EtcStationId, roleId: String, lastName: String) = getRelative(
+		"memberships/", s"ES_${id.id}_${roleId}_$lastName"
 	)
 
 	def getMembership(orgId: String, roleId: String, lastName: String) = getRelative(
@@ -40,4 +41,6 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
 	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
 	def getSpatialCoverate(hash: Sha256Sum) = getRelative("spcov_" + hash.id)
+
+	def getObjectSpecification(lastSegment: String) = getRelative("cpmeta/", lastSegment)
 }

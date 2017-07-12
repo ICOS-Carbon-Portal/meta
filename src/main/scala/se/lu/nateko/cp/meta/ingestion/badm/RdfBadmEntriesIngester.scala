@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import BadmConsts._
 import BadmSchema.PropertyInfo
 import BadmSchema.Schema
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.ingestion.Ingester
@@ -27,7 +28,7 @@ class RdfBadmEntriesIngester(
 	import RdfBadmEntriesIngester._
 
 	private case class ScanAcc(
-		siteId: Option[String],
+		siteId: Option[StationId],
 		varValueCounts: Map[String, Int],
 		statements: Seq[Statement]
 	)
@@ -59,7 +60,7 @@ class RdfBadmEntriesIngester(
 						val station = vocab.getEcosystemStation(siteId)
 						val varCount = acc.varValueCounts.getOrElse(variable, -1) + 1
 						val ancillEntry = {
-							val ancillEntryId = s"${siteId}_${variable}_${varCount}"
+							val ancillEntryId = s"${siteId.id}_${variable}_${varCount}"
 							vocab.getAncillaryEntry(ancillEntryId)
 						}
 						acc.copy(
@@ -71,7 +72,7 @@ class RdfBadmEntriesIngester(
 		}
 	}
 
-	private def getTeamMemberStatements(siteId: String, entry: BadmEntry)
+	private def getTeamMemberStatements(siteId: StationId, entry: BadmEntry)
 				(implicit vocab: CpVocab, metaVocab: CpmetaVocab): Seq[Statement] = {
 
 		val varToVal: Map[String, String] = entry.values.map(bv => (bv.variable, bv.valueStr)).toMap
@@ -155,9 +156,9 @@ class RdfBadmEntriesIngester(
 
 object RdfBadmEntriesIngester{
 
-	def getSiteId(siteEntry: BadmEntry): Option[String] =
+	def getSiteId(siteEntry: BadmEntry): Option[StationId] =
 		siteEntry.values.collectFirst{
-			case BadmStringValue(SiteIdVar, siteId) => siteId
+			case BadmStringValue(SiteIdVar, StationId(id)) => id
 		}
 
 	def getPlainValue(badmValue: BadmValue)(implicit vocab: CustomVocab): Value = badmValue match {

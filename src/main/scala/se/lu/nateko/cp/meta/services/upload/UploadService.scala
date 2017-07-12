@@ -28,8 +28,14 @@ import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.api.EpicPidClient
+import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 
-class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, conf: UploadServiceConfig)(implicit system: ActorSystem) {
+class UploadService(
+		servers: DataObjectInstanceServers,
+		sparql: SparqlRunner,
+		etcHelper: EtcUploadTransformer,
+		conf: UploadServiceConfig
+)(implicit system: ActorSystem) {
 	private implicit val factory = servers.icosMeta.factory
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher
@@ -45,16 +51,31 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 	}
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Future[String] = {
-		val serverTry = for(
+		val submitterOrgUriTry = for(
 			_ <- validator.validateUpload(meta, uploader);
-			submitterConf <- validator.getSubmitterConfig(meta);
-			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
-			server <- servers.getInstServerForFormat(format)
-		) yield (server, submitterConf)
+			submitterConf <- validator.getSubmitterConfig(meta)
+		) yield submitterConf.submittingOrganization
 
 		for(
-			(server, submitterConf) <- Future.fromTry(serverTry);
-			newStatements = getStatements(meta, submitterConf);
+			submitterOrg <- Future.fromTry(submitterOrgUriTry);
+			res <- registerUpload(meta, submitterOrg)
+		) yield res
+	}
+
+	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[String] = {
+		val meta = etcHelper.transform(etcMeta, vocab)
+		registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
+	}
+
+	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI): Future[String] = {
+		val serverTry = for(
+			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
+			server <- servers.getInstServerForFormat(format)
+		) yield server
+
+		for(
+			server <- Future.fromTry(serverTry);
+			newStatements = getStatements(meta, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(meta.hashSum, server);
 			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
 			_ <- Future.fromTry(server.applyAll(updates))
@@ -72,7 +93,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 		completer.completeUpload(hash, info).map(_.message)
 
 
-	private def getStatements(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Seq[Statement] = {
+	private def getStatements(meta: UploadMetadataDto, submittingOrg: URI): Seq[Statement] = {
 		import meta.{ hashSum, objectSpecification }
 
 		val objectUri = vocab.getDataObject(hashSum)
@@ -91,7 +112,7 @@ class UploadService(servers: DataObjectInstanceServers, sparql: SparqlRunner, co
 			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
 			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submConf.submittingOrganization.toRdf)
+			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		)
 	}
 

@@ -15,5 +15,6 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val etcUploatMetaFormat = jsonFormat6(EtcUploadMetadata)
+	implicit val dataTypeFormat = enumFormat(DataType)
+	implicit val etcUploatMetaFormat = jsonFormat7(EtcUploadMetadata)
 }

@@ -35,6 +35,7 @@ import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.services.upload.EtcUploadTransformer
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -58,7 +59,7 @@ class MetaDb private (
 
 object MetaDb {
 
-	def apply(config: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer): MetaDb = {
+	def apply(config: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer): Future[MetaDb] = {
 
 		validateConfig(config)
 		import system.dispatcher
@@ -67,7 +68,7 @@ object MetaDb {
 		val repo = Loading.empty
 		val serversFut = makeInstanceServers(repo, Ingestion.allProviders, config)
 
-		val dbFuture = for(instanceServers <- serversFut; ontos <-ontosFut) yield{
+		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
 			val instOntos = config.onto.instOntoServers.map{
 				case (servId, servConf) =>
 					val instServer = instanceServers(servConf.instanceServerId)
@@ -88,8 +89,6 @@ object MetaDb {
 			}
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
 		}
-
-		Await.result(dbFuture, Duration.Inf)
 	}
 
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
@@ -125,9 +124,13 @@ object MetaDb {
 			(factory.createIRI(servDef.format), instanceServers(servDef.label))
 		}.toMap
 
+		val uploadConf = config.dataUploadService
+
+		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
 		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
-		new UploadService(dataObjServers, sparqlRunner, config.dataUploadService)
+
+		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}
 
 	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, logConf: RdflogConfig): InstanceServer = {

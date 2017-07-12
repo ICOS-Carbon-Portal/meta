@@ -2,7 +2,17 @@ package se.lu.nateko.cp.meta.core.etcupload
 
 import java.util.regex.Pattern
 
-class StationId private (val id: String)
+class StationId private (val id: String){
+
+	override def equals(other: Any) = other match{
+		case otherId: StationId => otherId.id == id
+		case _ => false
+	}
+
+	override def hashCode: Int = id.hashCode
+
+	override def toString = s"StationId($id)"
+}
 
 object StationId{
 

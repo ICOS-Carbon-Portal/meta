@@ -84,6 +84,6 @@ class RdfBadmSchemaIngester(schemaFut: => Future[Schema])(implicit ctxt: Executi
 						) ++
 						getLabelAndComment(role, label, comment)
 				}
-		}.flatMap(s => s).map(f.tripleToStatement)
+		}.flatten.map(f.tripleToStatement)
 	}
 }

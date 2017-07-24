@@ -35,7 +35,7 @@ import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.upload.EtcUploadTransformer
+import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],

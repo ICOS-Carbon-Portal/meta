@@ -1,14 +1,12 @@
-package se.lu.nateko.cp.meta.services.upload
+package se.lu.nateko.cp.meta.services.upload.etc
 
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.UploadMetadataDto
-import java.net.URI
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.utils.rdf4j._
-
 
 class EtcUploadTransformer(config: EtcUploadConfig) {
 

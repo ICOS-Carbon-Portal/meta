@@ -16,7 +16,7 @@ class RdfBadmEntriesIngesterTests extends AsyncFunSpec{
 		val badmSource = BadmTestHelper.getBadmSource
 
 		val entries = Future.successful(parseEntriesFromCsv(badmSource))
-		
+
 		val ingester = new RdfBadmEntriesIngester(entries, schema)
 
 		val factory: ValueFactory = new MemValueFactory

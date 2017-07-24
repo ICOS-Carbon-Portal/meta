@@ -29,6 +29,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
+import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 
 class UploadService(
 		servers: DataObjectInstanceServers,

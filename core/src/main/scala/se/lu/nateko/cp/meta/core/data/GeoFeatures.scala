@@ -16,7 +16,7 @@ case class Position(lat: Double, lon: Double) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Point",
 	|	"coordinates": [$lon, $lat]
-	}""".stripMargin
+	|}""".stripMargin
 
 	def textSpecification = s"Lat: $lat, Lon: $lon"
 }
@@ -30,4 +30,13 @@ case class SpatialCoverage(min: Position, max: Position, label: Option[String]) 
 	|}""".stripMargin
 
 	def textSpecification = s"S: ${min.lat}, W: ${min.lon}, N: ${max.lat}, E: ${max.lon}"
+}
+
+case class GeoTrack(points: Seq[Position]) extends GeoFeature{
+	def geoJson: String = s"""{
+		|	"type": "LineString",
+		|	"coordinates": $textSpecification
+		|}""".stripMargin
+
+	def textSpecification = points.map(p => s"[${p.lon}, ${p.lat}]").mkString("[", ", ", "]")
 }

@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 
 class DataObjectFetcher(
 	protected val server: InstanceServer,
-	vocab: CpVocab,
+	protected val vocab: CpVocab,
 	protected val metaVocab: CpmetaVocab,
 	pidFactory: Sha256Sum => String
 ) extends CpmetaFetcher {

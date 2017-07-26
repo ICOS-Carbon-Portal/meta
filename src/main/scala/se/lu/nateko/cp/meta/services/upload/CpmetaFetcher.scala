@@ -11,9 +11,11 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import DataTheme._
 import OrganizationClass.OrganizationClass
+import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected def metaVocab: CpmetaVocab
+	protected def vocab: CpVocab
 
 	protected def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
@@ -88,8 +90,10 @@ trait CpmetaFetcher extends FetchingHelper{
 	}
 
 	private def getDataTheme(subj: IRI): DataTheme = {
-		val vocab = metaVocab
-		import vocab.{ atc, atmoStationClass, cal, cfClass, cp, ecoStationClass, etc, oceStationClass, orgClass, otc, tcClass }
+		val metavocab = metaVocab
+		val cpvocab = vocab
+		import metavocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, tcClass }
+		import cpvocab.{ atc, cal, cp, etc, otc }
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
 			case `atmoStationClass` => Atmosphere

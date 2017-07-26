@@ -30,6 +30,8 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	def getOrganization(orgId: String) = getRelative("organizations/", orgId)
 
+	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization)
+
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 
 	def getDataObject(hash: Sha256Sum) = factory.createIRI("https://meta.icos-cp.eu/objects/", hash.id)

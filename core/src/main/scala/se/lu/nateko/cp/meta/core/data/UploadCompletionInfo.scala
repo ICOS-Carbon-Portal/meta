@@ -9,7 +9,4 @@ case class WdcggUploadCompletion(nRows: Int, interval: TimeInterval, customMetad
 
 case class TimeSeriesUploadCompletion(interval: TimeInterval) extends UploadCompletionInfo
 
-case class SpatialTimeSeriesUploadCompletion(
-	interval: TimeInterval,
-	coverage: Either[SpatialCoverage, GeoTrack]
-) extends UploadCompletionInfo
+case class SpatialTimeSeriesUploadCompletion(interval: TimeInterval, coverage: GeoFeature) extends UploadCompletionInfo

@@ -34,8 +34,7 @@ case class Station(
 	id: String,
 	name: String,
 	theme: DataTheme,
-	pos: Option[Position],
-	coverage: Option[String]
+	coverage: Option[GeoFeature]
 )
 
 case class DataObjectSpec(
@@ -47,6 +46,7 @@ case class DataObjectSpec(
 )
 
 case class DataAcquisition(station: Station, interval: Option[TimeInterval])
+
 case class DataProduction(
 	creator: Agent,
 	contributors: Seq[Agent],
@@ -61,12 +61,14 @@ case class TemporalCoverage(interval: TimeInterval, resolution: Option[String])
 case class L2OrLessSpecificMeta(
 	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction],
-	nRows: Option[Int]
+	nRows: Option[Int],
+	coverage: Option[GeoFeature]
 )
+
 case class L3SpecificMeta(
 	title: String,
 	description: Option[String],
-	spatial: SpatialCoverage,
+	spatial: LatLonBox,
 	temporal: TemporalCoverage,
 	productionInfo: DataProduction,
 	theme: DataTheme
@@ -91,10 +93,7 @@ case class DataObject(
 	)
 	def coverage: Option[GeoFeature] = specificInfo.fold(
 		l3 => Some(l3.spatial),
-		l2 => {
-			val station = l2.acquisition.station
-			station.coverage.map(GeoFeature.apply).orElse(station.pos)
-		}
+		l2 => l2.coverage.orElse(l2.acquisition.station.coverage)
 	)
 	def theme: DataTheme = specificInfo.fold(_.theme, _.acquisition.station.theme)
 

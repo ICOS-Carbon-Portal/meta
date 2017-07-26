@@ -56,7 +56,7 @@ case class StationDataMetadata(
 case class ElaboratedProductMetadata(
 	title: String,
 	description: Option[String],
-	spatial: Either[SpatialCoverage, URI],
+	spatial: Either[LatLonBox, URI],
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
 	customLandingPage: Option[URI]

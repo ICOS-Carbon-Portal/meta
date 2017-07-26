@@ -5,11 +5,8 @@ sealed trait GeoFeature{
 	def textSpecification: String
 }
 
-object GeoFeature{
-	def apply(geojson: String) = new GeoFeature{
-		def geoJson = geojson
-		def textSpecification = geojson
-	}
+case class GenericGeoFeature(val geoJson: String) extends GeoFeature{
+	def textSpecification = geoJson
 }
 
 case class Position(lat: Double, lon: Double) extends GeoFeature{
@@ -21,7 +18,7 @@ case class Position(lat: Double, lon: Double) extends GeoFeature{
 	def textSpecification = s"Lat: $lat, Lon: $lon"
 }
 
-case class SpatialCoverage(min: Position, max: Position, label: Option[String]) extends GeoFeature{
+case class LatLonBox(min: Position, max: Position, label: Option[String]) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Polygon",
 	|	"coordinates": [
@@ -35,8 +32,9 @@ case class SpatialCoverage(min: Position, max: Position, label: Option[String]) 
 case class GeoTrack(points: Seq[Position]) extends GeoFeature{
 	def geoJson: String = s"""{
 		|	"type": "LineString",
-		|	"coordinates": $textSpecification
+		|	"coordinates": ${points.map(p => s"[${p.lon}, ${p.lat}]").mkString("[", ", ", "]")}
 		|}""".stripMargin
 
-	def textSpecification = points.map(p => s"[${p.lon}, ${p.lat}]").mkString("[", ", ", "]")
+	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
+
 }

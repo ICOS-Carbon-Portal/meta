@@ -89,7 +89,12 @@ case class LabelingServiceConfig(
 	ontoId: String
 )
 
-case class EpicPidConfig(url: String, prefix: String, password: String)
+case class EpicPidConfig(
+	url: String,
+	prefix: String,
+	password: String,
+	dryRun: Boolean
+)
 
 case class CpmetaConfig(
 	port: Int,
@@ -117,7 +122,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
-	implicit val epicPidFormat = jsonFormat3(EpicPidConfig)
+	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat3(EtcUploadConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat4(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat4(EmailConfig)

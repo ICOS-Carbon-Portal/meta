@@ -25,7 +25,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		datasetSpec = None
 	)
 
-	protected def getSpatialCoverage(cov: IRI) = SpatialCoverage(
+	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
@@ -126,34 +126,33 @@ trait CpmetaFetcher extends FetchingHelper{
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
 		theme = getDataTheme(stat),
-		pos = for(
+		//TODO: Add support for geoJson from station info (OTC)
+		coverage = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon),
-		//TODO: Add support for geoJson from station info (OTC)
-		coverage = None
+		) yield Position(posLat, posLon)
 	)
 
-	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): Option[L3SpecificMeta] = {
+	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
 		implicit val factory = metaVocab.factory
 
-		getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{ cov =>
-			assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
-			val prod = prodOpt.get
+		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
+		val prod = prodOpt.get
 
-			L3SpecificMeta(
-				title = getSingleString(dobj, metaVocab.dcterms.title),
-				description = getOptionalString(dobj, metaVocab.dcterms.description),
-				spatial = getSpatialCoverage(cov),
-				temporal = getTemporalCoverage(dobj),
-				productionInfo = prod,
-				theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri.toRdf)
-			)
-		}
+		L3SpecificMeta(
+			title = getSingleString(dobj, metaVocab.dcterms.title),
+			description = getOptionalString(dobj, metaVocab.dcterms.description),
+			spatial = getLatLonBox(cov),
+			temporal = getTemporalCoverage(dobj),
+			productionInfo = prod,
+			theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri.toRdf)
+		)
 	}
 
 	protected def getL2Meta(dobj: IRI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
+
 		val acq = DataAcquisition(
 			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),
 			interval = for(
@@ -162,7 +161,11 @@ trait CpmetaFetcher extends FetchingHelper{
 			) yield TimeInterval(start, stop)
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
-		L2OrLessSpecificMeta(acq, prod, nRows)
+
+		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{covUri =>
+			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
+		}
+		L2OrLessSpecificMeta(acq, prod, nRows, coverage)
 	}
 
 }

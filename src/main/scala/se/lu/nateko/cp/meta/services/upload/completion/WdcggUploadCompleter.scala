@@ -33,6 +33,7 @@ private class WdcggUploadCompleter(
 	private val factory = vocab.factory
 
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info match {
+//TODO Add support for idempotence here
 		case WdcggUploadCompletion(nRows, interVal, keyValues) => Future{
 			val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 

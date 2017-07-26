@@ -21,7 +21,7 @@ lazy val metaCore = (project in file("core"))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta-core",
-		version := "0.3.3-SNAPSHOT",
+		version := "0.3.4-SNAPSHOT",
 		libraryDependencies ++= Seq(
 			"io.spray" %% "spray-json" % "1.3.3"
 		),
@@ -48,7 +48,7 @@ lazy val meta = (project in file("."))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.3.0",
+		version := "0.3.1",
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,

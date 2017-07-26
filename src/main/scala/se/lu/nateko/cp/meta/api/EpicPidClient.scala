@@ -126,7 +126,9 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		)
 	}
 
-	def update(suffix: String, updates: Seq[PidUpdate]): Future[Unit] = {
+	def update(suffix: String, updates: Seq[PidUpdate]): Future[Unit] = if(config.dryRun)
+		Future.successful(())
+	else{
 		httpSend(
 			uri = config.url + getPid(suffix),
 			method = HttpMethods.PUT,
@@ -157,7 +159,9 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 				delete(suffix).flatMap(_ => createNew(suffix, newEntries))
 		}
 
-	private def createOrReportExistence(suffix: String, newEntries: Seq[PidUpdate]): Future[WriteOpResult] = {
+	private def createOrReportExistence(suffix: String, newEntries: Seq[PidUpdate]): Future[WriteOpResult] =
+		if(config.dryRun) Future.successful(Ok)
+	else {
 		val pid = getPid(suffix)
 		httpSend(
 			uri = config.url + pid,
@@ -177,8 +181,9 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		}
 	}
 
-	def createRandom(newEntries: Seq[PidUpdate]): Future[String] = {
-
+	def createRandom(newEntries: Seq[PidUpdate]): Future[String] = if(config.dryRun)
+		Future.failed(new Exception("EpicPidClient is in dry run, operation not supported"))
+	else {
 		httpSend(
 			uri = config.url + config.prefix + "/",
 			method = HttpMethods.POST,
@@ -195,7 +200,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		}
 	}
 
-	def delete(suffix: String): Future[Unit] = {
+	def delete(suffix: String): Future[Unit] = if(config.dryRun) Future.successful(()) else {
 		val pid = getPid(suffix)
 		httpDelete(config.url + pid)
 			.map{resp =>

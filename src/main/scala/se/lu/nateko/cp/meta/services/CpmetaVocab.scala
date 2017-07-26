@@ -20,6 +20,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val productionClass = getRelative("DataProduction")
 	val submissionClass = getRelative("DataSubmission")
 	val dataObjectClass = getRelative("DataObject")
+	val spatialCoverageClass = getRelative("SpatialCoverage")
 	val latLonBoxClass = getRelative("LatLonBox")
 
 	val hasLatitude = getRelative("hasLatitude")
@@ -48,6 +49,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasNumberOfRows = getRelative("hasNumberOfRows")
 	val hasTemporalResolution = getRelative("hasTemporalResolution")
 	val hasSpatialCoverage = getRelative("hasSpatialCoverage")
+	val asGeoJSON = getRelative("asGeoJSON")
 
 	val personClass = getRelative("Person")
 	val roleClass = getRelative("Role")

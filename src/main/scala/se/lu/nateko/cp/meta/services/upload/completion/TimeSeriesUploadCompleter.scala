@@ -13,6 +13,11 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.services.upload.StatementsProducer
+import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import org.eclipse.rdf4j.model.IRI
 
 
 private class TimeSeriesUploadCompleter(
@@ -23,28 +28,47 @@ private class TimeSeriesUploadCompleter(
 )(implicit ex: ExecutionContext) extends EpicPidMinter(epic, vocab) {
 
 	private val factory = vocab.factory
+	private val statementsProd = new StatementsProducer(vocab, metaVocab)
 
 	override def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info match {
 
 		case TimeSeriesUploadCompletion(interval) => Future{
-			val acqUri = vocab.getAcquisition(hash)
+			acqusitionIntervalUpdates(hash, interval)
+		}
 
-			val news = Seq(
-				factory.createStatement(acqUri, metaVocab.prov.startedAtTime, vocab.lit(interval.start)),
-				factory.createStatement(acqUri, metaVocab.prov.endedAtTime, vocab.lit(interval.stop))
-			)
+		case SpatialTimeSeriesUploadCompletion(interval, spatial) => Future{
+			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
-			val olds = (
-				server.getStatements(Some(acqUri), Some(metaVocab.prov.startedAtTime), None) ++
-				server.getStatements(Some(acqUri), Some(metaVocab.prov.endedAtTime), None)
-			).toIndexedSeq
+			val objUri = vocab.getDataObject(hash)
+			val oldCovs = server.getStatements(Some(objUri), Some(metaVocab.hasSpatialCoverage), None)
 
-			MetadataUpdater.diff(olds, news)
+			val olds = oldCovs.toIndexedSeq ++ oldCovs.collect{
+				case Rdf4jStatement(_, _, coverage: IRI) =>
+					server.getStatements(Some(coverage), None, None)
+			}.flatten
+
+			val coverageUpdates = MetadataUpdater.diff(olds, news)
+			val intervalUpdates = acqusitionIntervalUpdates(hash, interval)
+
+			coverageUpdates ++ intervalUpdates
 		}
 
 		case _ => Future.failed(new UploadCompletionException(
-			s"Encountered wrong type of upload completion info, must be TimeSeriesUploadCompletion, got $info"
+			s"Encountered wrong type of upload completion info, must be (Spatial)TimeSeriesUploadCompletion, got $info"
 		))
 	}
 
+	private def acqusitionIntervalUpdates(hash: Sha256Sum, interval: TimeInterval): Seq[RdfUpdate] = {
+		val acqUri = vocab.getAcquisition(hash)
+
+		val news = IndexedSeq(
+			factory.createStatement(acqUri, metaVocab.prov.startedAtTime, vocab.lit(interval.start)),
+			factory.createStatement(acqUri, metaVocab.prov.endedAtTime, vocab.lit(interval.stop))
+		)
+
+		val olds = server.getStatements(Some(acqUri), Some(metaVocab.prov.startedAtTime), None).toIndexedSeq ++
+			server.getStatements(Some(acqUri), Some(metaVocab.prov.endedAtTime), None)
+
+		MetadataUpdater.diff(olds, news)
+	}
 }

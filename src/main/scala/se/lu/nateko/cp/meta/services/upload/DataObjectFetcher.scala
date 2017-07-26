@@ -36,6 +36,11 @@ class DataObjectFetcher(
 		val spec = getSpecification(getSingleUri(dobj, metaVocab.hasObjectSpec))
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
+		val levelSpecificInfo = if(spec.dataLevel == 3)
+				Left(getL3Meta(dobj, production))
+			else
+				Right(getL2Meta(dobj, production))
+
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
 			accessUrl = getAccessUrl(hash, fileName, spec),
@@ -43,7 +48,7 @@ class DataObjectFetcher(
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
 			submission = submission,
 			specification = spec,
-			specificInfo = getL3Meta(dobj, production).map(Left(_)).getOrElse(Right(getL2Meta(dobj, production)))
+			specificInfo = levelSpecificInfo
 		)
 	}
 

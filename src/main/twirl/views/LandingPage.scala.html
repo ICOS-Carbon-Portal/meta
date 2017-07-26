@@ -93,7 +93,9 @@
 
 		<div class="row">
 			@Panel("Spatial coverage", 5){
-				@PanelRow("Coverage", coverageText)
+				@for(covText <- coverageText){
+					@PanelRow("Coverage", covText)
+				}
 
 				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
 					<iframe src="/station/?theme=@theme&coverage=@geoJson"></iframe>
@@ -189,7 +191,8 @@
 
 @coverageText = @{
 	dobj.coverage match{
-		case None => "unknown"
-		case Some(geo) => geo.textSpecification
+		case None => None
+		case Some(_: GeoTrack) | Some(_: GenericGeoFeature) => None
+		case Some(geo) => Some(geo.textSpecification)
 	}
 }

@@ -162,10 +162,17 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
 
-		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map{covUri =>
-			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
-		}
+		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map(getCoverage)
+
 		L2OrLessSpecificMeta(acq, prod, nRows, coverage)
 	}
 
+	private def getCoverage(covUri: IRI): GeoFeature = {
+		val covClass = getSingleUri(covUri, RDF.TYPE)
+
+		if(covClass === metaVocab.latLonBoxClass)
+			getLatLonBox(covUri)
+		else
+			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
+	}
 }

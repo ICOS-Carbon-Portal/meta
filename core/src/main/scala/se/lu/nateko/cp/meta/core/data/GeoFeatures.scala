@@ -12,27 +12,30 @@ case class GenericGeoFeature(val geoJson: String) extends GeoFeature{
 case class Position(lat: Double, lon: Double) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Point",
-	|	"coordinates": [$lon, $lat]
+	|	"coordinates": [$lon6, $lat6]
 	|}""".stripMargin
 
-	def textSpecification = s"Lat: $lat, Lon: $lon"
+	def textSpecification = s"Lat: $lat6, Lon: $lon6"
+
+	def lat6 = "%.6f".format(lat)
+	def lon6 = "%.6f".format(lon)
 }
 
 case class LatLonBox(min: Position, max: Position, label: Option[String]) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Polygon",
 	|	"coordinates": [
-	|		[[${min.lon}, ${min.lat}], [${min.lon}, ${max.lat}], [${max.lon}, ${max.lat}], [${max.lon}, ${min.lat}], [${min.lon}, ${min.lat}]]
+	|		[[${min.lon6}, ${min.lat6}], [${min.lon6}, ${max.lat6}], [${max.lon6}, ${max.lat6}], [${max.lon6}, ${min.lat6}], [${min.lon6}, ${min.lat6}]]
 	|	]
 	|}""".stripMargin
 
-	def textSpecification = s"S: ${min.lat}, W: ${min.lon}, N: ${max.lat}, E: ${max.lon}"
+	def textSpecification = s"S: ${min.lat6}, W: ${min.lon6}, N: ${max.lat6}, E: ${max.lon6}"
 }
 
 case class GeoTrack(points: Seq[Position]) extends GeoFeature{
 	def geoJson: String = s"""{
 		|	"type": "LineString",
-		|	"coordinates": ${points.map(p => s"[${p.lon}, ${p.lat}]").mkString("[", ", ", "]")}
+		|	"coordinates": ${points.map(p => s"[${p.lon6}, ${p.lat6}]").mkString("[", ", ", "]")}
 		|}""".stripMargin
 
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")

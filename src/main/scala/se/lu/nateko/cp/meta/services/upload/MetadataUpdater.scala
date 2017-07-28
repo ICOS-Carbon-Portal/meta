@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import org.eclipse.rdf4j.model.ValueFactory
 
 class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) {
 	import MetadataUpdater._
@@ -28,10 +29,12 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 	
 			val acq = vocab.getAcquisition(hash)
 			val subm = vocab.getSubmission(hash)
+			val cov = vocab.getSpatialCoverate(hash)
 	
 			def stability(sp: SubjPred): StatementStability = {
 				val (subj, pred) = sp
 				if(subj == acq && isProvTime(pred)) Sticky
+				else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
 				else if(subj == subm && isProvTime(pred)) Fixed
 				else Plain
 			}
@@ -49,7 +52,7 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 					Nil
 
 				case _ =>
-					diff(oldBySp(sp), newBySp(sp))
+					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
 		}
 	}
@@ -86,10 +89,13 @@ object MetadataUpdater{
 
 	private type SubjPred = (Resource, IRI)
 
+	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
 
-	def diff(olds: Seq[Statement], news: Seq[Statement]): Seq[RdfUpdate] =
+		val olds = dirtyOlds.map(s => factory.createStatement(s.getSubject, s.getPredicate, s.getObject))
+
 		olds.diff(news).map(RdfUpdate(_, false)) ++
 		news.diff(olds).map(RdfUpdate(_, true))
+	}
 
 	private class BySubjPred(stats: Seq[Statement]){
 

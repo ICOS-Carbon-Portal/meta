@@ -40,14 +40,14 @@ private class TimeSeriesUploadCompleter(
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
 			val objUri = vocab.getDataObject(hash)
-			val oldCovs = server.getStatements(Some(objUri), Some(metaVocab.hasSpatialCoverage), None)
+			val oldCovs = server.getStatements(Some(objUri), Some(metaVocab.hasSpatialCoverage), None).toIndexedSeq
 
-			val olds = oldCovs.toIndexedSeq ++ oldCovs.collect{
+			val olds = oldCovs ++ oldCovs.collect{
 				case Rdf4jStatement(_, _, coverage: IRI) =>
 					server.getStatements(Some(coverage), None, None)
 			}.flatten
 
-			val coverageUpdates = MetadataUpdater.diff(olds, news)
+			val coverageUpdates = MetadataUpdater.diff(olds, news, factory)
 			val intervalUpdates = acqusitionIntervalUpdates(hash, interval)
 
 			coverageUpdates ++ intervalUpdates
@@ -69,6 +69,6 @@ private class TimeSeriesUploadCompleter(
 		val olds = server.getStatements(Some(acqUri), Some(metaVocab.prov.startedAtTime), None).toIndexedSeq ++
 			server.getStatements(Some(acqUri), Some(metaVocab.prov.endedAtTime), None)
 
-		MetadataUpdater.diff(olds, news)
+		MetadataUpdater.diff(olds, news, factory)
 	}
 }

@@ -45,7 +45,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
-		)
+		) ++
+			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject))
 	}
 
 	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature): Seq[Statement] = {

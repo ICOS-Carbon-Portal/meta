@@ -85,7 +85,9 @@ case class DataObject(
 	fileName: String,
 	submission: DataSubmission,
 	specification: DataObjectSpec,
-	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta]
+	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],
+	previousVersion: Option[URI],
+	nextVersion: Option[URI]
 ){
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),

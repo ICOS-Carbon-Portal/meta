@@ -99,6 +99,6 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val dataObjectFormat = jsonFormat7(DataObject)
+	implicit val dataObjectFormat = jsonFormat9(DataObject)
 
 }

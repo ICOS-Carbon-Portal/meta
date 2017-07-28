@@ -1,5 +1,6 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import LandingPageHelpers._
+@import java.net.URI
 @import views.CpMenu
 
 @(dobj: DataObject)
@@ -27,6 +28,8 @@
 				@PanelHtmlRow{Data affiliation}{
 					@affiliationInfo(dobj.affiliation)
 				}
+				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
+				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
 			}
 		</div>
 
@@ -143,6 +146,17 @@
 
 @resourceLink(res: UriResource) = {
 	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@versionLink(vers: Option[URI]) = {
+	@vers match{
+		case None => {
+			not available
+		}
+		case Some(uri) => {
+			<a href=@{uri}>available</a>
+		}
+	}
 }
 
 @resourcePanelRow(label: String, res: UriResource) = {

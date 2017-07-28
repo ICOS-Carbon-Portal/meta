@@ -18,7 +18,7 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 
-	for(
+	val startup = for(
 		db <- MetaDb(config);
 		route = MainRoute(db, config);
 		binding <- Http().bindAndHandle(route, "localhost", config.port)
@@ -31,6 +31,10 @@ object Main extends App with CpmetaJsonProtocol{
 			Await.result(doneFuture, 5.seconds)
 		}
 		system.log.info(binding.toString)
+	}
+
+	startup.failed.foreach{err =>
+		system.log.error(err, "Could not start meta service")
 	}
 
 }

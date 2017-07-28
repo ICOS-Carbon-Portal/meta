@@ -29,7 +29,8 @@ class EtcUploadTransformer(config: EtcUploadConfig) {
 					nRows = None,
 					production = None
 				)
-			)
+			),
+			isNextVersionOf = None
 		)
 	}
 

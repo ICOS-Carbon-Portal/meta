@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.metaVocab
@@ -23,7 +24,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
-		_ <- validateForFormat(meta, spec)
+		_ <- validateForFormat(meta, spec);
+		_ <- validatePreviousVersion(meta.isNextVersionOf, spec)
 	) yield ()
 
 	def getSubmitterConfig(meta: UploadMetadataDto): Try[DataSubmitterConfig] = {
@@ -97,4 +99,17 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		else Failure(new UploadUserErrorException(errors.mkString("\n")))
 	}
 
+	private def validatePreviousVersion(prevVers: Option[Sha256Sum], spec: DataObjectSpec): Try[Unit] = {
+		prevVers match{
+			case None => Success(())
+			case Some(prevHash) => servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>
+				val dobj = servers.vocab.getDataObject(prevHash)
+
+				if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
+					Success(())
+				else
+					Failure(new UploadUserErrorException(s"Previous-version data object was not found: $dobj"))
+			}
+		}
+	}
 }

@@ -71,6 +71,7 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 				|	} UNION
 				|	{
 				|		<$objUri> ?p0 ?s .
+				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
 				|	}
 				|}""".stripMargin)

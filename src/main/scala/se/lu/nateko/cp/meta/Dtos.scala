@@ -43,7 +43,8 @@ case class UploadMetadataDto(
 	submitterId: String,
 	objectSpecification: URI,
 	fileName: String,
-	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata]
+	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
+	isNextVersionOf: Option[Sha256Sum]
 )
 
 case class StationDataMetadata(

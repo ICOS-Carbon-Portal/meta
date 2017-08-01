@@ -37,7 +37,7 @@ class DataObjectFetcher(
 		val spec = getSpecification(getSingleUri(dobj, metaVocab.hasObjectSpec))
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
-		val levelSpecificInfo = if(spec.dataLevel == 3)
+		val levelSpecificInfo = if(spec.dataLevel == 3 || spec.self.uri === new URI("http://meta.icos-cp.eu/resources/cpmeta/ingosArchive"))
 				Left(getL3Meta(dobj, production))
 			else
 				Right(getL2Meta(dobj, production))

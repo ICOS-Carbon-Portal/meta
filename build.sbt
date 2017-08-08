@@ -1,7 +1,7 @@
 
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.12.2",
+	scalaVersion := "2.12.3",
 
 	scalacOptions ++= Seq(
 		"-target:jvm-1.8",
@@ -48,7 +48,7 @@ lazy val meta = (project in file("."))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.3.1",
+		version := "0.3.2",
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
@@ -63,7 +63,7 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.2-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.3.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),

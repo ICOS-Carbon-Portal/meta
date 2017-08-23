@@ -8,6 +8,7 @@ import spray.json._
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -130,7 +131,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
 
-	private def getAppConfig: Config = {
+	private val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
 		val default = ConfigFactory.load
 		if(confFile.exists)
@@ -138,11 +139,18 @@ object ConfigLoader extends CpmetaJsonProtocol{
 		else default
 	}
 
+	private val renderOpts = ConfigRenderOptions.concise.setJson(true)
+
 	val default: CpmetaConfig = {
-		val renderOpts = ConfigRenderOptions.concise.setJson(true)
-		val confJson: String = getAppConfig.getValue("cpmeta").render(renderOpts)
+		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
 		
 		confJson.parseJson.convertTo[CpmetaConfig]
+	}
+
+	val core: MetaCoreConfig = {
+		val default = ConfigFactory.parseResources("metacore.conf")
+		appConfig.withFallback(default).getValue("metacore").render(renderOpts)
+			.parseJson.convertTo[MetaCoreConfig]
 	}
 
 }

@@ -60,3 +60,5 @@ trait CommonJsonSupport extends DefaultJsonProtocol{
 	}
 
 }
+
+object CommonJsonSupport extends CommonJsonSupport

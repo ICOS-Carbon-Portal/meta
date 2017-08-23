@@ -5,10 +5,13 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.{URI => JavaUri}
 import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.ConfigLoader
 
 class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
-	val baseUri = "http://meta.icos-cp.eu/resources/"
+	private val config: MetaCoreConfig = ConfigLoader.core
+	val baseUri = config.metaResourcePrefix.toString
 
 	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)
 	def getEcosystemStation(id: EtcStationId) = getRelative("stations/ES_", id.id)
@@ -34,10 +37,10 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 
-	def getDataObject(hash: Sha256Sum) = factory.createIRI("https://meta.icos-cp.eu/objects/", hash.id)
+	def getDataObject(hash: Sha256Sum) = factory.createIRI(config.landingPagePrefix.toString, hash.id)
 
 	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: String): JavaUri =
-		new JavaUri(s"https://data.icos-cp.eu/objects/${hash.id}/${urlEncode(fileName)}")
+		new JavaUri(s"${config.dataObjPrefix + hash.id}/${urlEncode(fileName)}")
 
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)

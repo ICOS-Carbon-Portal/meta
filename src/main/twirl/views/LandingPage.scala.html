@@ -1,4 +1,5 @@
 @import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.ConfigLoader.core.handleService
 @import LandingPageHelpers._
 @import java.net.URI
 @import views.CpMenu
@@ -17,7 +18,7 @@
 								<span>Not assigned</span>
 							}
 							case Some(pid) => {
-								<span>@{pid} (<a href=@{"https://doi.org/" + pid}>link</a>)</span>
+								<span>@{pid} (<a href=@{handleService.toString + pid}>link</a>)</span>
 							}
 						}
 					}

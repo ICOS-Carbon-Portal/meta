@@ -17,5 +17,7 @@ object BadmTestHelper {
 		getResAsString("/AncillaryCP_117_20160321.csv")
 	}
 
+	def getIcosMetaJson: String = getResAsString("/falsometa.json")
+
 	def getResAsString(path: String): String = IOUtils.toString(getClass.getResourceAsStream(path), StandardCharsets.UTF_8)
 }

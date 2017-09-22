@@ -13,6 +13,8 @@ import spray.json.JsNumber
 import spray.json.JsObject
 import spray.json.JsString
 import java.io.StringReader
+import java.time.LocalDateTime
+import java.time.format.DateTimeParseException
 
 object Parser {
 
@@ -70,12 +72,15 @@ object Parser {
 
 	private def etcJsonRowToSiteIdAndRawEntry(entry: JsObject): Option[(String, BadmRawEntry)] = {
 		val fields = entry.fields
-		def getStr(fieldName: String): Option[String] =
-			fields.get(fieldName).collect{case JsString(s) => s}
+
+		def getStr(fieldName: String): Option[String] = fields.get(fieldName).collect{
+			case JsString(s) if !s.trim.isEmpty => s.trim
+		}
+
 		for(
 			id <- fields.get("Index").collect{case JsNumber(n) => n.toInt};
-			variable <- getStr("VarName");
-			qualifier0 <- getStr("QualName");
+			variable <- getStr("GrName").orElse(getStr("VarName"));
+			qualifier0 <- getStr("QualName").orElse(getStr("VarName"));
 			value0 <- getStr("Value");
 			valueDate = getStr("IsoDate").flatMap(toValueDate);
 			submissionDate <- getStr("SubDate").map(toIsoDate);
@@ -121,8 +126,13 @@ object Parser {
 				BadmLocalDate(LocalDate.parse(s"$year-$month-$day"))
 			case yearRegex(year) =>
 				BadmYear(year.toInt)
-			case _ =>
-				throw new ParseException(s"$badmDate is not a valid BADM date string", -1)
+			case _ => try{
+				val dt = LocalDateTime.parse(badmDate, americanDateTime)
+				BadmLocalDate(dt.toLocalDate)
+			}catch{
+				case _: DateTimeParseException =>
+					throw new ParseException(s"$badmDate is not a valid BADM date string", -1)
+			}
 		}
 	}
 

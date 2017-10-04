@@ -7,7 +7,7 @@ import java.util.Locale
 
 import BadmConsts._
 import com.opencsv.CSVReader
-import java.io.InputStreamReader
+
 import spray.json.JsArray
 import spray.json.JsNumber
 import spray.json.JsObject
@@ -16,21 +16,26 @@ import java.io.StringReader
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+
 object Parser {
 
 	def parseEntriesFromCsv(src: String): Seq[BadmEntry] = {
-		aggregateEntries(getCsvRows(src).map(csvRowToRawEntry).toSeq)
+		aggregateEntries(None, getCsvRows(src).map(csvRowToRawEntry).toSeq)
 	}
 
 	def parseEntriesFromEtcJson(entries: JsObject): Seq[BadmEntry] = {
 		entries.fields.get("d").toSeq.collect{
 			case JsArray(entries) => entries
 				.collect{
-					case obj: JsObject => etcJsonRowToSiteIdAndRawEntry(obj).toSeq
+					case obj: JsObject => etcJsonRowToSiteIdAndRawEntry(obj)
 				}.flatten
 				.groupBy(_._1) //by site id
 				.mapValues{
-					idAndRaw => aggregateEntries(idAndRaw.map(_._2).sortBy(_.id))
+					idAndRaw => aggregateEntries(
+						idAndRaw.headOption.map{case (StationId(id), _) => id},
+						idAndRaw.map(_._2).sortBy(_.id)
+					)
 				}
 				.values
 		}.flatten.flatten
@@ -51,7 +56,7 @@ object Parser {
 		getStream.drop(1)
 	}
 
-	private def aggregateEntries(raw: Seq[BadmRawEntry]): Seq[BadmEntry] = {
+	private def aggregateEntries(station: Option[StationId], raw: Seq[BadmRawEntry]): Seq[BadmEntry] = {
 
 		val parser = NumberFormat.getNumberInstance(Locale.ROOT)
 
@@ -64,7 +69,9 @@ object Parser {
 						BadmStringValue(re.qualifier, re.value)
 				}
 			}.toIndexedSeq
-			BadmEntry(raw.head.variable, values, raw.head.valueDate, raw.head.submissionDate)
+			val firstRaw = raw.head
+			import firstRaw._
+			BadmEntry(variable, values, valueDate, station, submissionDate)
 		}
 		raw.filter(_.qualifier != DateQualifier).groupBy(_.id).toSeq
 			.sortBy(_._1).map(_._2).map(fromSameId)

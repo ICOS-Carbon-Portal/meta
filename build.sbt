@@ -1,4 +1,3 @@
-
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
 	scalaVersion := "2.12.3",
@@ -44,7 +43,7 @@ val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
-	.enablePlugins(SbtTwirl)
+	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
@@ -67,6 +66,8 @@ lazy val meta = (project in file("."))
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
+		cpDeployTarget := "cpmeta",
+		cpDeployBuildInfoPackage := "se.lu.nateko.cp.cpmeta",
 
 		scalacOptions += "-Ywarn-unused-import:false",
 

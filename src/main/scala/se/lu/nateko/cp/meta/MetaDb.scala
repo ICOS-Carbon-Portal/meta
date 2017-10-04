@@ -109,7 +109,7 @@ object MetaDb {
 		config: CpmetaConfig,
 		repo: Repository,
 		instanceServers: Map[String, InstanceServer]
-	)(implicit system: ActorSystem): UploadService = {
+	)(implicit system: ActorSystem, m: Materializer): UploadService = {
 		val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
 		val factory = icosMetaInstServer.factory
 		val dataObjServConfs = config.instanceServers.forDataObjects

@@ -79,7 +79,7 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 
 trait EtcFileMetadataStore {
 
-	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dateType: DataType.Value): Option[EtcFileMeta]
+	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value): Option[EtcFileMeta]
 
 	def lookupLogger(station: StationId, loggerId: Int): Option[EtcLoggerMeta]
 

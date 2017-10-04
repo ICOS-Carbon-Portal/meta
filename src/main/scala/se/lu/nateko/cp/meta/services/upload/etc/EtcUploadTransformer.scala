@@ -1,20 +1,33 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
-import se.lu.nateko.cp.meta.core.etcupload.DataType
-import se.lu.nateko.cp.meta.UploadMetadataDto
-import se.lu.nateko.cp.meta.services.CpVocab
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.etcupload.DataType
+import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.services.MetadataException
 
-class EtcUploadTransformer(config: EtcUploadConfig) {
+class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
 
-	def transform(meta: EtcUploadMetadata, vocab: CpVocab) = {
+	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider
+
+	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[UploadMetadataDto] = {
 
 		val objSpec = vocab.getObjectSpecification(getObjSpecUrlSegment(meta.dataType))
 
-		UploadMetadataDto(
+		def getCpUploadMeta(utcOffset: Int) = UploadMetadataDto(
 			hashSum = meta.hashSum,
 			submitterId = "dummy", //will not be used
 			objectSpecification = objSpec.toJava,
@@ -22,16 +35,26 @@ class EtcUploadTransformer(config: EtcUploadConfig) {
 			specificInfo = Right(
 				StationDataMetadata(
 					station = vocab.getEcosystemStation(meta.station).toJava,
-					//TODO Add instrument info
-					instrument = None,
-					//TODO Add acquisition interval info
-					acquisitionInterval = None,
+					instrument = Some(vocab.getEtcInstrument(meta.station, meta.logger).toJava),
+					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
 					nRows = None,
 					production = None
 				)
 			),
 			isNextVersionOf = None
 		)
+
+		def getAcquisitionInterval(offset: Int) = {
+			def getInstant(dt: LocalDateTime) = dt.atOffset(ZoneOffset.ofHours(offset)).toInstant
+			TimeInterval(getInstant(meta.acquisitionStart), getInstant(meta.acquisitionStop))
+		}
+
+		etcMeta.getUtcOffset(meta.station)
+			.map(Success.apply)
+			.getOrElse(Failure(new MetadataException(
+				s"UTC offset info for station ${meta.station.id} not found in ETC metadata on Carbon Portal"
+			)))
+			.map(getCpUploadMeta)
 	}
 
 	private def getObjSpecUrlSegment(dtype: DataType.Value): String = dtype match {

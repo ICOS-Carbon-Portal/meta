@@ -54,8 +54,10 @@ class UploadService(
 	}
 
 	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[String] = {
-		val meta = etcHelper.transform(etcMeta, vocab)
-		registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
+		for(
+			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
+			response <- registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
+		) yield response
 	}
 
 	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI): Future[String] = {

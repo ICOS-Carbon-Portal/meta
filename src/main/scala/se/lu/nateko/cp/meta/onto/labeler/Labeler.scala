@@ -34,10 +34,10 @@ object Labeler{
 
 	object rdfs extends InstanceLabeler
 
-	def joinMultiValues(values: Iterable[String]): String = values.toList match{
+	def joinMultiValues(values: Iterable[String]): String = values.toList.distinct match{
 		case only :: Nil => only
 		case Nil => ""
-		case _ => values.mkString("{", ",", "}")
+		case list => list.mkString("{", ",", "}")
 	}
 
 	def joinComponents(values: Iterable[String]): String = values.mkString("")

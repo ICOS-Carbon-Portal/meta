@@ -98,6 +98,7 @@ object MetaDb {
 			val writeCtxt = getInstServerContext(dataObjServers, servDef)
 			(servDef.label, InstanceServerConfig(
 				logName = Some(servDef.label),
+				skipLogIngestionAtStart = None,
 				readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 				writeContexts = Seq(writeCtxt),
 				ingestion = None
@@ -116,7 +117,7 @@ object MetaDb {
 
 		val allDataObjInstServConf = {
 			val readContexts = dataObjServConfs.definitions.map(getInstServerContext(dataObjServConfs, _))
-			InstanceServerConfig(None, Some(readContexts), Nil, None)
+			InstanceServerConfig(Nil, None, None, Some(readContexts), None)
 		}
 		val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
 
@@ -143,7 +144,12 @@ object MetaDb {
 		conf.logName match{
 			case Some(logName) =>
 				val log = PostgresRdfLog(logName, logConf, factory)
-				val repo = RdfUpdateLogIngester.ingest(log.updates, initRepo, writeContexts: _*)
+
+				val repo = if(conf.skipLogIngestionAtStart.getOrElse(false))
+						initRepo
+					else
+						RdfUpdateLogIngester.ingest(log.updates, initRepo, writeContexts: _*)
+
 				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContexts)
 				new LoggingInstanceServer(rdf4jServer, log)
 

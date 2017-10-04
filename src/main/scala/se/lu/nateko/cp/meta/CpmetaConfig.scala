@@ -19,9 +19,10 @@ case class IngestionConfig(
 )
 
 case class InstanceServerConfig(
-	logName: Option[String],
-	readContexts: Option[Seq[URI]],
 	writeContexts: Seq[URI],
+	logName: Option[String],
+	skipLogIngestionAtStart: Option[Boolean],
+	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
 )
 
@@ -111,7 +112,7 @@ case class CpmetaConfig(
 object ConfigLoader extends CpmetaJsonProtocol{
 
 	implicit val ingestionConfigFormat = jsonFormat3(IngestionConfig)
-	implicit val instanceServerConfigFormat = jsonFormat4(InstanceServerConfig)
+	implicit val instanceServerConfigFormat = jsonFormat5(InstanceServerConfig)
 	implicit val dataObjectInstServerDefinitionFormat = jsonFormat2(DataObjectInstServerDefinition)
 	implicit val dataObjectInstServersConfigFormat = jsonFormat3(DataObjectInstServersConfig)
 	implicit val instanceServersConfigFormat = jsonFormat2(InstanceServersConfig)

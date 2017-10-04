@@ -14,14 +14,18 @@ class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 	private[this] val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
 
 	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {
+		try{
+			val theType: IRI = InstanceServerUtils.getSingleType(instUri, instServer)
 
-		val theType: IRI = InstanceServerUtils.getSingleType(instUri, instServer)
+			val theClass = owlFactory.getOWLClass(OwlIri.create(theType.toJava))
 
-		val theClass = owlFactory.getOWLClass(OwlIri.create(theType.toJava))
+			val labeler = cache.getOrElseUpdate(theType, ClassIndividualsLabeler(theClass, ontology, this))
 
-		val labeler = cache.getOrElseUpdate(theType, ClassIndividualsLabeler(theClass, ontology, this))
-
-		labeler.getLabel(instUri, instServer)
+			labeler.getLabel(instUri, instServer)
+		} catch{
+			case _: Throwable =>
+				super.getLabel(instUri, instServer)
+		}
 	}
 
 }

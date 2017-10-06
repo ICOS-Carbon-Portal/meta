@@ -71,14 +71,15 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val l2SpecificMetaFormat = jsonFormat4(L2OrLessSpecificMeta)
 	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
-	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
-	implicit val ecocsvUploadCompletionFormat = jsonFormat1(TimeSeriesUploadCompletion)
-	implicit val socatUploadCompletionFormat = jsonFormat2(SpatialTimeSeriesUploadCompletion)
+	implicit val defaultUploadCompletionFormat = jsonFormat1(DefaultCompletionInfo)
+	implicit val wdcggUploadCompletionFormat = jsonFormat4(WdcggUploadCompletion)
+	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)
+	implicit val socatUploadCompletionFormat = jsonFormat3(SpatialTimeSeriesUploadCompletion)
 
 	implicit object uploadCompletionInfoFormat extends RootJsonFormat[UploadCompletionInfo]{
 
 		def write(uploadInfo: UploadCompletionInfo): JsValue = uploadInfo match{
-			case EmptyCompletionInfo => JsObject.empty
+			case dci: DefaultCompletionInfo => dci.toJson
 			case wdcgg: WdcggUploadCompletion => wdcgg.toJson
 			case ts: TimeSeriesUploadCompletion => ts.toJson
 			case sts: SpatialTimeSeriesUploadCompletion => sts.toJson
@@ -86,8 +87,8 @@ object JsonSupport extends CommonJsonSupport{
 
 		def read(value: JsValue): UploadCompletionInfo =  value match {
 			case JsObject(fields)  =>
-				if(fields.isEmpty)
-					EmptyCompletionInfo
+				if(!fields.contains("interval"))
+					value.convertTo[DefaultCompletionInfo]
 				else if(fields.contains("customMetadata"))
 					value.convertTo[WdcggUploadCompletion]
 				else if(fields.contains("coverage"))

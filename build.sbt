@@ -67,7 +67,7 @@ lazy val meta = (project in file("."))
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
 		cpDeployTarget := "cpmeta",
-		cpDeployBuildInfoPackage := "se.lu.nateko.cp.cpmeta",
+		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 
 		scalacOptions += "-Ywarn-unused-import:false",
 

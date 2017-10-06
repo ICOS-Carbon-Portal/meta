@@ -44,7 +44,10 @@ object MainRoute {
 			filesRoute ~
 			authRouting.route ~
 			staticRoute ~
-			linkedDataRoute
+			linkedDataRoute ~
+			path("buildInfo"){
+				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
+			}
 		}
 	}
 

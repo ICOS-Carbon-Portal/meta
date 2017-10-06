@@ -1580,11 +1580,11 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiCsv -->
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcRawTimeSer -->
 
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiCsv">
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcRawTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ASCII CSV</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Raw ASCII ETC station data</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1607,20 +1607,20 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiTsv">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ASCII TSV</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiWdcggTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">WDCGG gas mole fraction time series</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/binEtcRawTimeSer -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/binEtcRawTimeSer">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Raw binary ETC station data</rdfs:label>
     </owl:NamedIndividual>
     
 

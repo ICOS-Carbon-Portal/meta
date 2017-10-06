@@ -21,8 +21,8 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 		s"people/${urlEncode(firstName)}_${urlEncode(lastName)}"
 	)
 
-	def getEtcMembership(id: EtcStationId, roleId: String, lastName: String) = getRelative(
-		"memberships/", s"ES_${id.id}_${roleId}_$lastName"
+	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
+		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
 	)
 
 	def getMembership(orgId: String, roleId: String, lastName: String) = getRelative(
@@ -32,6 +32,10 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	def getRole(roleId: String) = getRelative("roles/", roleId)
 
 	def getOrganization(orgId: String) = getRelative("organizations/", orgId)
+
+	def getEtcInstrument(station: EtcStationId, id: Int) = getRelative(
+		"instruments/", s"ETC_${station.id}_$id"
+	)
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization)
 

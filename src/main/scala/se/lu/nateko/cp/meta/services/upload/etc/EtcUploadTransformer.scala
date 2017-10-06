@@ -1,20 +1,41 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
-import se.lu.nateko.cp.meta.core.etcupload.DataType
-import se.lu.nateko.cp.meta.UploadMetadataDto
-import se.lu.nateko.cp.meta.services.CpVocab
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+
+import scala.util.Try
+
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.etcupload.DataType
+import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
-class EtcUploadTransformer(config: EtcUploadConfig) {
+class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
 
-	def transform(meta: EtcUploadMetadata, vocab: CpVocab) = {
+	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider
 
-		val objSpec = vocab.getObjectSpecification(getObjSpecUrlSegment(meta.dataType))
+	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[UploadMetadataDto] = {
 
-		UploadMetadataDto(
+		def getAcquisitionInterval(offset: Int) = {
+			def getInstant(dt: LocalDateTime) = dt.atOffset(ZoneOffset.ofHours(offset)).toInstant
+			TimeInterval(getInstant(meta.acquisitionStart), getInstant(meta.acquisitionStop))
+		}
+
+		for(
+			utcOffset <- getUtcOffset(meta.station);
+			fileMeta <- getFileMeta(meta);
+			specUriSegment = getObjSpecUrlSegment(meta.fileName, fileMeta);
+			objSpec = vocab.getObjectSpecification(specUriSegment)
+		) yield UploadMetadataDto(
 			hashSum = meta.hashSum,
 			submitterId = "dummy", //will not be used
 			objectSpecification = objSpec.toJava,
@@ -22,10 +43,8 @@ class EtcUploadTransformer(config: EtcUploadConfig) {
 			specificInfo = Right(
 				StationDataMetadata(
 					station = vocab.getEcosystemStation(meta.station).toJava,
-					//TODO Add instrument info
-					instrument = None,
-					//TODO Add acquisition interval info
-					acquisitionInterval = None,
+					instrument = Some(vocab.getEtcInstrument(meta.station, meta.logger).toJava),
+					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
 					nRows = None,
 					production = None
 				)
@@ -34,9 +53,29 @@ class EtcUploadTransformer(config: EtcUploadConfig) {
 		)
 	}
 
-	private def getObjSpecUrlSegment(dtype: DataType.Value): String = dtype match {
-		case DataType.BM => config.bioMeteoObjSpecId
-		case DataType.EC => config.eddyCovarObjSpecId
-		case DataType.ST => config.storageObjSpecId
+	private def getObjSpecUrlSegment(fileName: String, meta: EtcFileMeta): String = {
+
+		val baseSegment = meta.dtype match {
+			case DataType.BM => config.bioMeteoObjSpecId
+			case DataType.EC => config.eddyCovarObjSpecId
+			case DataType.ST => config.storageObjSpecId
+		}
+
+		val binSuff = if(meta.isBinary) "Bin" else "Csv"
+		val zipSuff = if(fileName.endsWith("zip")) "Zip" else ""
+
+		baseSegment + binSuff + zipSuff
 	}
+
+	private def getUtcOffset(station: StationId): Try[Int] = etcMeta
+		.getUtcOffset(station)
+		.toTry(new MetadataException(
+			s"UTC offset info for station ${station.id} not found in ETC metadata on Carbon Portal"
+		))
+
+	private def getFileMeta(meta: EtcUploadMetadata): Try[EtcFileMeta] = etcMeta
+		.lookupFile(meta.station, meta.logger, meta.fileId, meta.dataType)
+		.toTry(new MetadataException(
+			s"Could not find ETC file metadata for $meta on Carbon Portal"
+		))
 }

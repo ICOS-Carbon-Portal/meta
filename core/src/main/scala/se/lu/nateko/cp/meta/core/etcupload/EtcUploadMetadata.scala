@@ -7,8 +7,9 @@ case class EtcUploadMetadata(
 	hashSum: Sha256Sum,
 	fileName: String,
 	station: StationId,
-	dataType: DataType.Value,
 	logger: Int,
+	dataType: DataType.Value,
+	fileId: Int,
 	acquisitionStart: LocalDateTime,
 	acquisitionStop: LocalDateTime
 )

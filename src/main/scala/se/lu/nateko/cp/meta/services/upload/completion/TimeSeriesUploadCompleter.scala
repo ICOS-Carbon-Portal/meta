@@ -30,13 +30,14 @@ private class TimeSeriesUploadCompleter(
 	private val factory = vocab.factory
 	private val statementsProd = new StatementsProducer(vocab, metaVocab)
 
-	override def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info match {
+	//TODO Add updates for number of bytes
+	override def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
 
-		case TimeSeriesUploadCompletion(interval) => Future{
+		case Some(TimeSeriesUploadCompletion(interval)) => Future{
 			acqusitionIntervalUpdates(hash, interval)
 		}
 
-		case SpatialTimeSeriesUploadCompletion(interval, spatial) => Future{
+		case Some(SpatialTimeSeriesUploadCompletion(interval, spatial)) => Future{
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
 			val objUri = vocab.getDataObject(hash)
@@ -52,6 +53,8 @@ private class TimeSeriesUploadCompleter(
 
 			coverageUpdates ++ intervalUpdates
 		}
+
+		case None => Future.successful(Nil)
 
 		case _ => Future.failed(new UploadCompletionException(
 			s"Encountered wrong type of upload completion info, must be (Spatial)TimeSeriesUploadCompletion, got $info"

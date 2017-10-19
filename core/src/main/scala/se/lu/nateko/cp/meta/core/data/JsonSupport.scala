@@ -71,25 +71,21 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val l2SpecificMetaFormat = jsonFormat4(L2OrLessSpecificMeta)
 	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
-	implicit val defaultUploadCompletionFormat = jsonFormat1(DefaultCompletionInfo)
-	implicit val wdcggUploadCompletionFormat = jsonFormat4(WdcggUploadCompletion)
-	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)
-	implicit val socatUploadCompletionFormat = jsonFormat3(SpatialTimeSeriesUploadCompletion)
+	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
+	implicit val ecocsvUploadCompletionFormat = jsonFormat1(TimeSeriesUploadCompletion)
+	implicit val socatUploadCompletionFormat = jsonFormat2(SpatialTimeSeriesUploadCompletion)
 
-	implicit object uploadCompletionInfoFormat extends RootJsonFormat[UploadCompletionInfo]{
+	implicit object ingestionMetadataExtractFormat extends JsonFormat[IngestionMetadataExtract]{
 
-		def write(uploadInfo: UploadCompletionInfo): JsValue = uploadInfo match{
-			case dci: DefaultCompletionInfo => dci.toJson
+		def write(uploadInfo: IngestionMetadataExtract): JsValue = uploadInfo match{
 			case wdcgg: WdcggUploadCompletion => wdcgg.toJson
 			case ts: TimeSeriesUploadCompletion => ts.toJson
 			case sts: SpatialTimeSeriesUploadCompletion => sts.toJson
 		}
 
-		def read(value: JsValue): UploadCompletionInfo =  value match {
+		def read(value: JsValue): IngestionMetadataExtract =  value match {
 			case JsObject(fields)  =>
-				if(!fields.contains("interval"))
-					value.convertTo[DefaultCompletionInfo]
-				else if(fields.contains("customMetadata"))
+				if(fields.contains("customMetadata"))
 					value.convertTo[WdcggUploadCompletion]
 				else if(fields.contains("coverage"))
 					value.convertTo[SpatialTimeSeriesUploadCompletion]
@@ -100,6 +96,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
+	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val dataObjectFormat = jsonFormat9(DataObject)
 
 }

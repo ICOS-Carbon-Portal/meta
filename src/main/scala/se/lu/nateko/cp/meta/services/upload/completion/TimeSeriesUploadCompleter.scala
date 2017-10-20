@@ -30,7 +30,6 @@ private class TimeSeriesUploadCompleter(
 	private val factory = vocab.factory
 	private val statementsProd = new StatementsProducer(vocab, metaVocab)
 
-	//TODO Add updates for number of bytes
 	override def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
 
 		case Some(TimeSeriesUploadCompletion(interval)) => Future{

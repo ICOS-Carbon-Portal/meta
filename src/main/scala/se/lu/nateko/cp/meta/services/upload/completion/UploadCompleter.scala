@@ -25,8 +25,9 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 			(specific, server) <- Future.fromTry(getSpecificCompleter(hash));
 			specificUpdates <- specific.getUpdates(hash, info);
 			stopTimeUpdates = getUploadStopTimeUpdates(server, hash);
+			byteSizeUpdates = getBytesSizeUpdates(server, hash, info.bytes);
 			report <- specific.finalize(hash);
-			_ <- Future.fromTry(server.applyAll(specificUpdates ++ stopTimeUpdates))
+			_ <- Future.fromTry(server.applyAll(specificUpdates ++ stopTimeUpdates ++ byteSizeUpdates))
 		) yield report
 	}
 
@@ -52,6 +53,15 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 		else {
 			val stopInfo = vocab.factory.createStatement(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(Instant.now))
 			Seq(RdfUpdate(stopInfo, true))
+		}
+	}
+
+	private def getBytesSizeUpdates(server: InstanceServer, hash: Sha256Sum, size: Long): Seq[RdfUpdate] = {
+		val dobj = vocab.getDataObject(hash)
+		if(server.hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
+		else{
+			val sizeInfo = vocab.factory.createStatement(dobj, metaVocab.hasSizeInBytes, vocab.lit(size))
+			Seq(RdfUpdate(sizeInfo, true))
 		}
 	}
 

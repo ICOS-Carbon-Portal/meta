@@ -48,6 +48,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasEncoding = getRelative("hasEncoding")
 	val hasFormatSpecificMeta = getRelative("hasFormatSpecificMetadata")
 	val hasNumberOfRows = getRelative("hasNumberOfRows")
+	val hasSizeInBytes = getRelative("hasSizeInBytes")
 	val hasTemporalResolution = getRelative("hasTemporalResolution")
 	val hasSpatialCoverage = getRelative("hasSpatialCoverage")
 	val asGeoJSON = getRelative("asGeoJSON")

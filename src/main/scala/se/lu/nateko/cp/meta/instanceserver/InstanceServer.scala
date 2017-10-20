@@ -85,6 +85,9 @@ trait InstanceServer {
 	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Int] =
 		getLiteralValues(subj, pred, XMLSchema.INTEGER, exp).map(_.toInt)
 
+	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Long] =
+		getLiteralValues(subj, pred, XMLSchema.LONG, exp).map(_.toLong)
+
 	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Double] =
 		getLiteralValues(subj, pred, XMLSchema.DOUBLE, exp).map(_.toDouble)
 

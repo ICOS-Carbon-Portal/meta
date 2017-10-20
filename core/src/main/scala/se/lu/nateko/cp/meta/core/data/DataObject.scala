@@ -83,6 +83,7 @@ case class DataObject(
 	accessUrl: Option[URI],
 	pid: Option[String],
 	fileName: String,
+	size: Option[Long],
 	submission: DataSubmission,
 	specification: DataObjectSpec,
 	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],

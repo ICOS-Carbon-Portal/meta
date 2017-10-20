@@ -37,6 +37,9 @@ trait FetchingHelper {
 	protected def getOptionalInt(subj: IRI, pred: IRI): Option[Int] =
 		server.getIntValues(subj, pred, InstanceServer.AtMostOne).headOption
 
+	protected def getOptionalLong(subj: IRI, pred: IRI): Option[Long] =
+		server.getLongValues(subj, pred, InstanceServer.AtMostOne).headOption
+
 	protected def getOptionalDouble(subj: IRI, pred: IRI): Option[Double] =
 		server.getDoubleValues(subj, pred, InstanceServer.AtMostOne).headOption
 

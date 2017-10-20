@@ -32,7 +32,6 @@ private class WdcggUploadCompleter(
 
 	private val factory = vocab.factory
 
-	//TODO Add updates for number of bytes
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
 //TODO Add support for idempotence here
 		case Some(WdcggUploadCompletion(nRows, interVal, keyValues)) => Future{

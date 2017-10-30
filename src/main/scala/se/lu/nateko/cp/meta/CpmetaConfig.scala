@@ -76,6 +76,8 @@ case class UploadServiceConfig(
 case class EmailConfig(
 	mailSendingActive: Boolean,
 	smtpServer: String,
+	username: String,
+	password: String,
 	fromAddress: String,
 	logBccAddress: Option[String]
 )
@@ -127,7 +129,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat3(EtcUploadConfig)
 	implicit val uploadServiceConfigFormat = jsonFormat4(UploadServiceConfig)
-	implicit val emailConfigFormat = jsonFormat4(EmailConfig)
+	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)

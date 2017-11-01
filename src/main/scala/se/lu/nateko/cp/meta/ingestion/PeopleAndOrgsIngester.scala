@@ -18,7 +18,10 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 
 	override def isAppendOnly = true
 
-	private val regexp = """^(.+),\ (.+):\ (.+)\ \((.+)\)$""".r
+	private val ingosRegexp = """^(.+),\ (.+):\ (.+)\ \((.+)\)$""".r
+	private val gcpRegexp = """^(.+),\ (.+)$""".r
+	private case class OrgInfo(orgName: String, orgId: String)
+	private case class Info(lname: String, fname: String, org: Option[OrgInfo])
 
 	def getStatements(factory: ValueFactory): Ingestion.Statements = {
 
@@ -31,13 +34,16 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 		val info = Source
 			.fromInputStream(getClass.getResourceAsStream(pathToTextRes), "UTF-8")
 			.getLines.map(_.trim).filter(!_.isEmpty).map{
-				case regexp(lname, fname, orgName, orgId) => (lname, fname, orgName, orgId)
+				case ingosRegexp(lname, fname, orgName, orgId) =>
+					Info(lname, fname, Some(OrgInfo(orgName, orgId)))
+				case gcpRegexp(lname, fname) =>
+					Info(lname, fname, None)
 			}.toIndexedSeq
 
 		val orgTriples = info.collect{
-			case (_, _, orgName, orgId) => (orgName, orgId)
+			case Info(_, _, Some(orgInfo)) => orgInfo
 		}.distinct.flatMap{
-			case (orgName, orgId) =>
+			case OrgInfo(orgName, orgId) =>
 				val org = vocab.getOrganization(orgId)
 				Seq[(IRI, IRI, Value)](
 					(org, RDF.TYPE, metaVocab.orgClass),
@@ -47,7 +53,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 		}
 
 		val personTriples = info.collect{
-			case (lname, fname, _, _) => (lname, fname)
+			case Info(lname, fname, _) => (lname, fname)
 		}.distinct.flatMap{
 			case (lname, fname) =>
 				val person = vocab.getPerson(fname, lname)
@@ -58,8 +64,8 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 				)
 		}
 
-		val membershipTriples = info.flatMap{
-			case (lname, fname, _, orgId) =>
+		val membershipTriples = info.collect{
+			case Info(lname, fname, Some(OrgInfo(_, orgId))) =>
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
 				val membership = vocab.getMembership(orgId, roleId, lname)
@@ -70,7 +76,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
 					(membership, metaVocab.hasRole, role),
 					(membership, metaVocab.atOrganization, org)
 				)
-		}
+		}.flatten
 		Future.successful((orgTriples ++ personTriples ++ membershipTriples).map(factory.tripleToStatement).iterator)
 	}
 }

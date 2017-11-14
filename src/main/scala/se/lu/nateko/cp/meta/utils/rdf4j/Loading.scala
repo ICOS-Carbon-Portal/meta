@@ -14,7 +14,7 @@ object Loading {
 	def fromResource(path: String, baseUri: String): Repository = fromResource(path, baseUri, RDFFormat.RDFXML)
 
 	def fromResource(path: String, baseUri: String, format: RDFFormat): Repository = {
-		val repo = empty
+		val repo = emptyInMemory
 		loadResource(repo, path, baseUri, format).get //will cast an exception if loading failed
 		repo
 	}
@@ -27,7 +27,7 @@ object Loading {
 		})
 	}
 
-	def empty: Repository = {
+	def emptyInMemory: Repository = {
 		val repo = new SailRepository(new MemoryStore)
 		repo.initialize()
 		repo
@@ -37,7 +37,7 @@ object Loading {
 
 	def fromStatements(statements: Iterator[Statement], contexts: IRI*): Repository = {
 
-		val repo = Loading.empty
+		val repo = Loading.emptyInMemory
 
 		def commitChunk(chunk: Seq[Statement]): Try[Unit] =
 			repo.transact(conn => {

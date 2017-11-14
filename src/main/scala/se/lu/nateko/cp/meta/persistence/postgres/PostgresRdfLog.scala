@@ -81,7 +81,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	def initLog(): Unit = {
 
 		val createTable =
-			s"""CREATE TABLE $logName (
+			s"""CREATE TABLE IF NOT EXISTS $logName (
 				|id serial PRIMARY KEY,
 				|tstamp timestamptz,
 				|"ASSERTION" boolean,
@@ -92,7 +92,17 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 				|"LITATTR" text
 			);""".stripMargin
 
-		execute(createTable)
+		try{
+			//This may produce duplicate-index error if concurrently initializing duplicate new rdflogs
+			//(for example on a new empty Postgres db)
+			//the reason seems to be Postgres' lame handling of concurrency during table creation
+			//see also https://www.postgresql.org/message-id/CA%2BTgmoZAdYVtwBfp1FL2sMZbiHCWT4UPrzRLNnX1Nb30Ku3-gg%40mail.gmail.com
+			execute(createTable)
+		} catch{
+			case err: org.postgresql.util.PSQLException if err.getMessage.contains(
+				"duplicate key value violates unique constraint"
+			) => //this is expected to happen sometimes, swallowing the exception
+		}
 	}
 
 	def isInitialized: Boolean = {

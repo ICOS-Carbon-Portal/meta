@@ -15,6 +15,7 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.IsolationLevel
 
 package object rdf4j {
 
@@ -51,9 +52,10 @@ package object rdf4j {
 
 	implicit class Rdf4jRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
 
-		def transact(action: RepositoryConnection => Unit): Try[Unit] = {
+		def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
+		def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] = {
 			val conn = repo.getConnection
-			conn.begin()
+			isoLevel.fold(conn.begin)(conn.begin)
 			
 			try{
 				action(conn)

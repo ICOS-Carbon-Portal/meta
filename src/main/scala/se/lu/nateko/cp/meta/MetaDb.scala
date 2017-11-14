@@ -1,14 +1,16 @@
 package se.lu.nateko.cp.meta
 
 import java.io.Closeable
+import java.nio.file.Files
+import java.nio.file.Paths
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.semanticweb.owlapi.apibinding.OWLManager
 
 import akka.actor.ActorSystem
@@ -26,17 +28,23 @@ import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
+<<<<<<< b49df1380cfd055ff7fd9498c73ca2d2b550627d
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+=======
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlServer
+>>>>>>> Switching from RDF4J's MemoryStore to NativeStore
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.UploadService
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
-import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+<<<<<<< b49df1380cfd055ff7fd9498c73ca2d2b550627d
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+=======
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+>>>>>>> Switching from RDF4J's MemoryStore to NativeStore
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -66,9 +74,27 @@ object MetaDb {
 		import system.dispatcher
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
-		val repo = Loading.empty
 		implicit val _ = config.core.envriConfigs
-		val serversFut = makeInstanceServers(repo, Ingestion.allProviders, config)
+		val repo = {
+			val storageDir = Paths.get(config.rdfStoragePath)
+
+			//remove old files to start afresh, as always
+			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
+
+			val indices = "spoc,posc,cosp"
+			val store = new NativeStore(storageDir.toFile, indices)
+			val native = new SailRepository(store)
+			native.initialize()
+			native
+		}
+
+		val serversFut = {
+			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
+			implicit val ctxt = ExecutionContext.fromExecutorService(exeServ)
+			makeInstanceServers(repo, Ingestion.allProviders, config).andThen{
+				case _ => exeServ.shutdown()
+			}
+		}
 
 		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
 			val instOntos = config.onto.instOntoServers.map{

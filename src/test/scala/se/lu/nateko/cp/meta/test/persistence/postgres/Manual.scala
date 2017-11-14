@@ -44,7 +44,7 @@ object Manual {
 	def serverFromLog: InstanceServer = {
 		val log = getLog
 		val ctxt = factory.createIRI(TestConfig.instOntUri)
-		val repo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
+		val repo = RdfUpdateLogIngester.ingestIntoMemory(log.updates, ctxt)
 		log.close()
 		new Rdf4jInstanceServer(repo, ctxt)
 	}

@@ -119,6 +119,7 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
+	rdfStoragePath: String,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -150,7 +151,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
 
-	implicit val cpmetaConfigFormat = jsonFormat10(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat11(CpmetaConfig)
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

@@ -25,7 +25,7 @@ class InstanceServerTests extends FunSpec{
 
 			val log = new InMemoryRdfLog()
 
-			val rdf4jRepo = RdfUpdateLogIngester.ingest(log.updates, ctxt)
+			val rdf4jRepo = RdfUpdateLogIngester.ingestIntoMemory(log.updates, ctxt)
 
 			val innerInstServer = new Rdf4jInstanceServer(rdf4jRepo, ctxt)
 			val loggingServer = new LoggingInstanceServer(innerInstServer, log)

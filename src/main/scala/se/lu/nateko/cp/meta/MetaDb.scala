@@ -43,10 +43,9 @@ class MetaDb private (
 	val uploadService: UploadService,
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
+	val sparql: SparqlServer,
 	repo: Repository
 ) extends Closeable{
-
-	val sparql: SparqlServer = new Rdf4jSparqlServer(repo)
 
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)
 
@@ -87,7 +86,10 @@ object MetaDb {
 				val onto = ontos(conf.ontoId)
 				new StationLabelingService(main, provisional, onto, fileService, conf)
 			}
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, repo)
+
+			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
+
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo)
 		}
 	}
 

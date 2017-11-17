@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
 	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.12.3",
+	scalaVersion := "2.12.4",
 
 	scalacOptions ++= Seq(
 		"-target:jvm-1.8",
@@ -34,8 +34,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.4.19"
-val akkaHttpVersion = "10.0.9"
+val akkaVersion = "2.4.20"
+val akkaHttpVersion = "10.0.10"
 val rdf4jVersion = "2.2.2"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
@@ -47,7 +47,7 @@ lazy val meta = (project in file("."))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.3.2",
+		version := "0.3.3",
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,

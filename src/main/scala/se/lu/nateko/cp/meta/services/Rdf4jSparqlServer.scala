@@ -1,12 +1,15 @@
 package se.lu.nateko.cp.meta.services
 
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import org.eclipse.rdf4j.query.BooleanQuery
 import org.eclipse.rdf4j.query.GraphQuery
 import org.eclipse.rdf4j.query.MalformedQueryException
-import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.query.TupleQuery
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
@@ -29,7 +32,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
-
+import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
@@ -42,7 +45,7 @@ private case class SparqlNegotiationOption(
 )
 
 
-class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
+class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
 	private val jsonType = getSparqlContentType("application/sparql-results+json", ".srj")
@@ -54,48 +57,55 @@ class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
 
 	private val xml = ContentType(MediaTypes.`application/xml`, utf8)
 
+	private val javaExe = Executors.newCachedThreadPool()
+	private val canceller = Executors.newSingleThreadScheduledExecutor()
+
+	implicit private val ctxt = ExecutionContext.fromExecutorService(javaExe)
+
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
-		implicit exeCtxt => query => Future{
+		exeCtxt => query => Future{
 			val conn = repo.getConnection
 			try{
-				conn.prepareQuery(QueryLanguage.SPARQL, query.query) match {
+				val onDone: () => Unit = () => conn.close()
+
+				conn.prepareQuery(query.query) match {
 					case tupleQuery: TupleQuery =>
 						Marshalling.WithFixedContentType(
 							jsonType,
-							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`application/json`,
-							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, jsonWriterFactory, jsonType, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							xmlSparql,
-							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							xml,
-							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, xmlWriterFactory, xmlSparql, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/csv(UTF-8)`,
-							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsCSVWriterFactory(), csvSparql, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsCSVWriterFactory(), csvSparql, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/plain(UTF-8)`,
-							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsTSVWriterFactory(), tsvSparql, () => conn.close())
+							() => getTupleQueryResponse(tupleQuery, new SPARQLResultsTSVWriterFactory(), tsvSparql, onDone)
 						) :: Nil
 					case graphQuery: GraphQuery =>
 						Marshalling.WithFixedContentType(
 							ContentTypes.`text/plain(UTF-8)`,
-							() => getGraphQueryResponse(graphQuery, new TurtleWriterFactory(), InstanceServerSerializer.turtleContType, () => conn.close())
+							() => getGraphQueryResponse(graphQuery, new TurtleWriterFactory(), InstanceServerSerializer.turtleContType, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							xml,
-							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, () => conn.close())
+							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, onDone)
 						) ::
 						Marshalling.WithFixedContentType(
 							InstanceServerSerializer.xmlContType,
-							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, () => conn.close())
+							() => getGraphQueryResponse(graphQuery, new RDFXMLWriterFactory(), InstanceServerSerializer.xmlContType, onDone)
 						) :: Nil
 					case _: BooleanQuery =>
 						Marshalling.Opaque(() => HttpResponse(
@@ -113,7 +123,7 @@ class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
 					conn.close()
 					throw err
 			}
-		}
+		}(exeCtxt)
 	)
 
 	private def getTupleQueryResponse(
@@ -121,13 +131,13 @@ class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
 		writerFactory: TupleQueryResultWriterFactory,
 		returnedType: ContentType,
 		onDone: () => Unit
-	) (implicit executor: ExecutionContext): HttpResponse = {
+	): HttpResponse = {
 
 		val entityBytes = OutputStreamWriterSource{ outStr =>
-			try{
+			runWithTimeout{
 				val resultWriter = writerFactory.getWriter(outStr)
 				query.evaluate(resultWriter)
-			}finally{
+			}{
 				outStr.close()
 				onDone()
 			}
@@ -141,19 +151,34 @@ class Rdf4jSparqlServer(repo: Repository) extends SparqlServer{
 		writerFactory: RDFWriterFactory,
 		returnedType: ContentType,
 		onDone: () => Unit
-	) (implicit executor: ExecutionContext): HttpResponse = {
+	): HttpResponse = {
 
 		val entityBytes = OutputStreamWriterSource{ outStr =>
-			try{
+			runWithTimeout{
 				val resultWriter = writerFactory.getWriter(outStr)
 				query.evaluate(resultWriter)
-			}finally{
+			}{
 				outStr.close()
 				onDone()
 			}
 		}
 
 		HttpResponse(entity = HttpEntity(returnedType, entityBytes))
+	}
+
+	private def runWithTimeout(code: => Unit)(finish: => Unit): Unit = {
+		val task: Callable[Unit] = () => code
+		val fut = javaExe.submit(task)
+
+		val cancellation: Runnable = () => if(!fut.isDone) fut.cancel(true)
+
+		canceller.schedule(cancellation, config.maxQueryRuntimeSec.toLong, TimeUnit.SECONDS)
+
+		try{
+			fut.get
+		} finally{
+			finish
+		}
 	}
 }
 

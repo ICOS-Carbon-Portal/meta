@@ -100,6 +100,8 @@ case class EpicPidConfig(
 	dryRun: Boolean
 )
 
+case class SparqlServerConfig(maxQueryRuntimeSec: Int)
+
 case class CpmetaConfig(
 	port: Int,
 	dataUploadService: UploadServiceConfig,
@@ -108,7 +110,8 @@ case class CpmetaConfig(
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
 	onto: OntoConfig,
-	auth: PublicAuthConfig
+	auth: PublicAuthConfig,
+	sparql: SparqlServerConfig
 )
 
 object ConfigLoader extends CpmetaJsonProtocol{
@@ -131,8 +134,9 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val uploadServiceConfigFormat = jsonFormat4(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
+	implicit val sparqlConfigFormat = jsonFormat1(SparqlServerConfig)
 
-	implicit val cpmetaConfigFormat = jsonFormat8(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat9(CpmetaConfig)
 
 	private val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

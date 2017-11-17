@@ -28,23 +28,16 @@ import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
-<<<<<<< b49df1380cfd055ff7fd9498c73ca2d2b550627d
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-=======
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlServer
->>>>>>> Switching from RDF4J's MemoryStore to NativeStore
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-<<<<<<< b49df1380cfd055ff7fd9498c73ca2d2b550627d
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
-=======
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
->>>>>>> Switching from RDF4J's MemoryStore to NativeStore
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -75,18 +68,7 @@ object MetaDb {
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 		implicit val _ = config.core.envriConfigs
-		val repo = {
-			val storageDir = Paths.get(config.rdfStoragePath)
-
-			//remove old files to start afresh, as always
-			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
-
-			val indices = "spoc,posc,cosp"
-			val store = new NativeStore(storageDir.toFile, indices)
-			val native = new SailRepository(store)
-			native.initialize()
-			native
-		}
+		val repo = makeInitRepo(config)
 
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
@@ -120,6 +102,21 @@ object MetaDb {
 
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo)
 		}
+	}
+
+	def makeInitRepo(config: CpmetaConfig): Repository = {
+		val storageDir = Paths.get(config.rdfStoragePath)
+
+		if(!Files.exists(storageDir)) Files.createDirectories(storageDir) else{
+			//remove old files to start afresh, as always
+			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
+		}
+
+		val indices = "spoc,posc,cpos"
+		val store = new NativeStore(storageDir.toFile, indices)
+		val native = new SailRepository(store)
+		native.initialize()
+		native
 	}
 
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {

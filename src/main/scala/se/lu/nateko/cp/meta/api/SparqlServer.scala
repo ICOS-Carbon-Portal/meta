@@ -12,6 +12,8 @@ trait SparqlServer {
 	 * Serializes the query results to one of the standard formats, depending on HTTP content negotiation
 	 */
 	def marshaller: ToResponseMarshaller[SparqlQuery]
+
+	def shutdown(): Unit
 }
 
 trait SparqlRunner{

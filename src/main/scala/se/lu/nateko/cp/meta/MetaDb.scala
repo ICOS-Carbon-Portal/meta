@@ -26,7 +26,7 @@ import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
@@ -50,6 +50,7 @@ class MetaDb private (
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)
 
 	def close(): Unit = {
+		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
 		repo.shutDown()
 	}

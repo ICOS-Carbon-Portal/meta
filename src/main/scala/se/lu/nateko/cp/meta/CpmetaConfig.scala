@@ -100,7 +100,12 @@ case class EpicPidConfig(
 	dryRun: Boolean
 )
 
-case class SparqlServerConfig(maxQueryRuntimeSec: Int)
+case class SparqlServerConfig(
+	maxQueryRuntimeSec: Int,
+	quotaPerMinute: Int,//in seconds
+	quotaPerHour: Int,  //in seconds
+	maxParallelQueries: Int
+)
 
 case class CpmetaConfig(
 	port: Int,
@@ -134,7 +139,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val uploadServiceConfigFormat = jsonFormat4(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
-	implicit val sparqlConfigFormat = jsonFormat1(SparqlServerConfig)
+	implicit val sparqlConfigFormat = jsonFormat4(SparqlServerConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat9(CpmetaConfig)
 

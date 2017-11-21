@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.routes
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
@@ -15,12 +16,16 @@ object SparqlRoute {
 		`Cache-Control`(CacheDirectives.`no-cache`, CacheDirectives.`no-store`, CacheDirectives.`must-revalidate`)
 	)
 
+	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
+
 	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery]): Route = {
 
 		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){
 				handleRejections(RejectionHandler.default){
-					complete(SparqlQuery(query))
+					getClientIp{ip =>
+						complete(SparqlQuery(query, ip))
+					}
 				}
 			}
 		}

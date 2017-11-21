@@ -39,12 +39,7 @@ import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
 import akka.http.scaladsl.model.StatusCode
-
-private case class SparqlNegotiationOption(
-	requestedType: ContentType,
-	returnedType: ContentType,
-	writerFactory: TupleQueryResultWriterFactory
-)
+import java.time.Instant
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
@@ -52,8 +47,12 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 	private val javaExe = Executors.newCachedThreadPool()
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
+	private val quoter = new QuotaManager(config)(Instant.now _)
 
 	implicit private val ctxt = ExecutionContext.fromExecutorService(javaExe)
+
+	//QuotaManager should be cleaned periodically to forget very old query runs
+	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 5, 5, TimeUnit.HOURS)
 
 	def shutdown(): Unit = {
 		javaExe.shutdown()
@@ -62,35 +61,52 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
 		exeCtxt => query => Future{
-			val conn = repo.getConnection
-			try{
-				conn.prepareQuery(query.query) match {
-					case tupleQuery: TupleQuery =>
+			val quotaExceeded = query.clientId.fold(false)(quoter.quotaExceeded)
 
-						tupleQueryProtocolOptions.map(po =>
-							getQueryMarshalling(tupleQuery, po, () => conn.close())
-						)
-
-					case graphQuery: GraphQuery =>
-
-						graphQueryProtocolOptions.map(po =>
-							getQueryMarshalling(graphQuery, po, () => conn.close())
-						)
-
-					case _: BooleanQuery =>
-						plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
-				}
-			} catch {
-				case userErr: MalformedQueryException =>
-					conn.close()
-					plainResponse(StatusCodes.BadRequest, userErr.getMessage)
-				case err: Throwable =>
-					conn.close()
-					throw err
-			}
+			if(quotaExceeded) plainResponse(
+				StatusCodes.ServiceUnavailable,
+				"You have exceeded your SPARQL endpoint usage quota. Retry in 1 minute or in 1 hour."
+			) else
+				getSparqlingMarshallings(query)
 		}(exeCtxt) //using Akka-provided ExecutionContext to handle the "outer shell" part of response marshalling
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by javaExe thread pool)
 	)
+
+	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = {
+		val conn = repo.getConnection
+		val idOpt = query.clientId.map(quoter.logNewQueryStart)
+
+		val onDone = () => {
+			conn.close()
+			for(qid <- idOpt; cid <- query.clientId) quoter.logQueryFinish(cid, qid)
+		}
+
+		try{
+			conn.prepareQuery(query.query) match {
+				case tupleQuery: TupleQuery =>
+
+					tupleQueryProtocolOptions.map(po =>
+						getQueryMarshalling(tupleQuery, po, onDone)
+					)
+
+				case graphQuery: GraphQuery =>
+
+					graphQueryProtocolOptions.map(po =>
+						getQueryMarshalling(graphQuery, po, onDone)
+					)
+
+				case _: BooleanQuery =>
+					plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
+			}
+		} catch {
+			case userErr: MalformedQueryException =>
+				onDone()
+				plainResponse(StatusCodes.BadRequest, userErr.getMessage)
+			case err: Throwable =>
+				onDone()
+				throw err
+		}
+	}
 
 	private def getQueryMarshalling[Q <: Query](
 		query: Q,

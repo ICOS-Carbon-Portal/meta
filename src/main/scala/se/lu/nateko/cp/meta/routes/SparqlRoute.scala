@@ -42,7 +42,7 @@ object SparqlRoute {
 				respondWithHeaders(
 					`Access-Control-Allow-Origin`.*,
 					`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
-					`Access-Control-Allow-Headers`("Content-Type")
+					`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
 				){
 					complete(StatusCodes.OK)
 				}

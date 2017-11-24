@@ -36,6 +36,7 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 				if(subj == acq && isProvTime(pred)) Sticky
 				else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
 				else if(subj == subm && isProvTime(pred)) Fixed
+				else if(pred === metaVocab.hasSizeInBytes) Fixed
 				else Plain
 			}
 	

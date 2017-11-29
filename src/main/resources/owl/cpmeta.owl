@@ -1,14 +1,16 @@
 <?xml version="1.0"?>
 <rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:sites="https://meta.fieldsites.se/ontology/"
      xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
      xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
+     xmlns:sitesorg="https://meta.fieldsites.se/resources/organizations/"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
-     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:dcterms="http://purl.org/dc/terms/"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
     <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
@@ -565,7 +567,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation">
-        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2003/01/geo/wgs84_pos#alt"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain>
             <owl:Class>
@@ -656,7 +657,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude">
-        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2003/01/geo/wgs84_pos#lat"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain>
             <owl:Class>
@@ -688,7 +688,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude">
-        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2003/01/geo/wgs84_pos#long"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain>
             <owl:Class>
@@ -1507,6 +1506,7 @@
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/ATC"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/ETC"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/organizations/OTC"/>
+                    <rdf:Description rdf:about="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
                 </owl:oneOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -1567,6 +1567,21 @@
     <!-- http://www.w3.org/ns/prov#Entity -->
 
     <owl:Class rdf:about="http://www.w3.org/ns/prov#Entity"/>
+    
+
+
+    <!-- https://meta.fieldsites.se/ontology/Station -->
+
+    <owl:Class rdf:about="https://meta.fieldsites.se/ontology/Station">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
+                <owl:hasValue rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES station</rdfs:label>
+    </owl:Class>
     
 
 
@@ -1775,6 +1790,7 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ATC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
         <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmosphere thematic center</hasName>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ATC</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1784,6 +1800,7 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ETC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
         <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem thematic center</hasName>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ETC</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1793,10 +1810,21 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/OTC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
         <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean thematic center</hasName>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS OTC</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://meta.fieldsites.se/resources/organizations/SITES_SLU -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/resources/organizations/SITES_SLU">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES coordination center at SLU</hasName>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES at SLU</rdfs:label>
     </owl:NamedIndividual>
 </rdf:RDF>
 
 
 
-<!-- Generated by the OWL API (version 4.2.5.20160517-0735) https://github.com/owlcs/owlapi -->
+<!-- Generated by the OWL API (version 4.2.8.20170104-2310) https://github.com/owlcs/owlapi -->
 

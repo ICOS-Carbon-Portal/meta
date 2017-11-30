@@ -4,7 +4,7 @@
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:sites="https://meta.fieldsites.se/ontology/"
+     xmlns:sites="https://meta.fieldsites.se/ontologies/sites/"
      xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
      xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
      xmlns:sitesorg="https://meta.fieldsites.se/resources/organizations/"
@@ -1570,9 +1570,9 @@
     
 
 
-    <!-- https://meta.fieldsites.se/ontology/Station -->
+    <!-- https://meta.fieldsites.se/ontologies/sites/Station -->
 
-    <owl:Class rdf:about="https://meta.fieldsites.se/ontology/Station">
+    <owl:Class rdf:about="https://meta.fieldsites.se/ontologies/sites/Station">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:subClassOf>
             <owl:Restriction>

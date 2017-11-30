@@ -68,12 +68,12 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <IRI>https://meta.fieldsites.se/ontology/Station</IRI>
+        <IRI>https://meta.fieldsites.se/ontologies/sites/Station</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <IRI>https://meta.fieldsites.se/ontology/Station</IRI>
+        <IRI>https://meta.fieldsites.se/ontologies/sites/Station</IRI>
         <IRI>https://meta.fieldsites.se/resources/stations/</IRI>
     </AnnotationAssertion>
 </Ontology>

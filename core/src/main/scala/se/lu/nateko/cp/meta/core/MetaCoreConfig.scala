@@ -1,16 +1,25 @@
 package se.lu.nateko.cp.meta.core
 
 import java.net.URI
+import se.lu.nateko.cp.meta.core.data.Envri
 
-case class MetaCoreConfig(
+case class EnvriConfig(
 	dataObjPrefix: URI,
 	landingPagePrefix: URI,
-	metaResourcePrefix: URI,
-	handleService: URI
+	metaResourcePrefix: URI
+)
+
+case class MetaCoreConfig(
+	handleService: URI,
+	envriConfigs: Map[Envri.Value, EnvriConfig]
 )
 
 object MetaCoreConfig{
 	import CommonJsonSupport._
 
-	implicit val metaCoreConfigFormat = jsonFormat4(MetaCoreConfig.apply)
+	type EnvriConfigs = Map[Envri.Value, EnvriConfig]
+
+	implicit val envriFormat = enumFormat(Envri)
+	implicit val envriConfigFormat = jsonFormat3(EnvriConfig)
+	implicit val metaCoreConfigFormat = jsonFormat2(MetaCoreConfig.apply)
 }

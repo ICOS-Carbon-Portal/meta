@@ -6,8 +6,10 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import se.lu.nateko.cp.meta.ingestion.badm.Parser._
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.test.TestConfig
 
 class RdfBadmEntriesIngesterTests extends AsyncFunSpec{
+	import TestConfig.envriConfs
 
 	it("Successfully produces RDF statements from the test BadmSchema"){
 

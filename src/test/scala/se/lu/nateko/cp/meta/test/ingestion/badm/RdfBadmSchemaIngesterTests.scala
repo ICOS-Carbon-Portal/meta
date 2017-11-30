@@ -5,8 +5,10 @@ import se.lu.nateko.cp.meta.ingestion.badm.RdfBadmSchemaIngester
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.test.TestConfig
 
 class RdfBadmSchemaIngesterTests extends AsyncFunSpec{
+	import TestConfig.envriConfs
 
 	it("Successfully produces RDF statements from the test BadmSchema"){
 		val schema = Future.successful(BadmTestHelper.getSchema)

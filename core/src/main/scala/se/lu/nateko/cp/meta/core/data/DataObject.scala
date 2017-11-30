@@ -18,6 +18,10 @@ object OrganizationClass extends Enumeration{
 	type OrganizationClass = Value
 }
 
+object Envri extends Enumeration{
+	val ICOS, SITES = Value
+}
+
 case class UriResource(uri: URI, label: Option[String])
 
 case class TimeInterval(start: Instant, stop: Instant)

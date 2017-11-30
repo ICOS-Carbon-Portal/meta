@@ -19,11 +19,13 @@ import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.ingestion.Ingestion
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
 
 class RdfBadmEntriesIngester(
 		entriesFut: => Future[Iterable[BadmEntry]],
 		schema: => Future[Schema]
-)(implicit ctxt: ExecutionContext) extends Ingester{
+)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 
 	import RdfBadmEntriesIngester._
 

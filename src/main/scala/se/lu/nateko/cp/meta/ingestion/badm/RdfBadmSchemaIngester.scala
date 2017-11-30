@@ -20,8 +20,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.CpVocab
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
-class RdfBadmSchemaIngester(schemaFut: => Future[Schema])(implicit ctxt: ExecutionContext) extends Ingester{
+class RdfBadmSchemaIngester(schemaFut: => Future[Schema])(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 
 	import BadmConsts._
 	private[this] val specialVars = Set(

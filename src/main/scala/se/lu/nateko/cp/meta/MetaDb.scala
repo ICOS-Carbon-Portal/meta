@@ -36,6 +36,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 class MetaDb private (
 	val instanceServers: Map[String, InstanceServer],
@@ -45,7 +46,7 @@ class MetaDb private (
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	repo: Repository
-) extends Closeable{
+)(implicit configs: EnvriConfigs) extends Closeable{
 
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)
 
@@ -66,6 +67,7 @@ object MetaDb {
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 		val repo = Loading.empty
+		implicit val _ = config.core.envriConfigs
 		val serversFut = makeInstanceServers(repo, Ingestion.allProviders, config)
 
 		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
@@ -131,6 +133,7 @@ object MetaDb {
 		val uploadConf = config.dataUploadService
 
 		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
+		implicit val _ = config.core.envriConfigs
 		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
 

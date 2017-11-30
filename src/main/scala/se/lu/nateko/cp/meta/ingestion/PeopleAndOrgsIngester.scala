@@ -13,8 +13,9 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
-class PeopleAndOrgsIngester(pathToTextRes: String) extends Ingester{
+class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriConfigs) extends Ingester{
 
 	override def isAppendOnly = true
 

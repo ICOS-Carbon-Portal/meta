@@ -9,9 +9,10 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import spray.json.JsObject
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 
-class BadmIngester(implicit system: ActorSystem, m: Materializer){
+class BadmIngester(implicit system: ActorSystem, m: Materializer, envriConfs: EnvriConfigs){
 	private[this] val urlPrefix = "https://static.icos-cp.eu/share/metadata/badm/"
 
 	val variablesUrl = urlPrefix + "variablesHarmonized_OTC_CP.csv"

@@ -11,6 +11,9 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
 import org.eclipse.rdf4j.rio.RDFFormat
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.EnvriConfig
+import java.net.URI
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
@@ -44,4 +47,10 @@ object TestConfig {
 
 	def getObjectProperty(localName: String): OWLObjectProperty =
 		factory.getOWLObjectProperty(localName, prefixManager)
+
+	implicit val envriConfs = Map(Envri.ICOS -> EnvriConfig(
+		dataObjPrefix = new URI("https://data.icos-cp.eu/objects/"),
+		landingPagePrefix = new URI("https://meta.icos-cp.eu/objects/"),
+		metaResourcePrefix = new URI("http://meta.icos-cp.eu/resources/")
+	))
 }

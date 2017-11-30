@@ -116,6 +116,7 @@ case class CpmetaConfig(
 	fileStoragePath: String,
 	onto: OntoConfig,
 	auth: PublicAuthConfig,
+	core: MetaCoreConfig,
 	sparql: SparqlServerConfig
 )
 
@@ -141,7 +142,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat4(SparqlServerConfig)
 
-	implicit val cpmetaConfigFormat = jsonFormat9(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat10(CpmetaConfig)
 
 	private val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
@@ -157,12 +158,6 @@ object ConfigLoader extends CpmetaJsonProtocol{
 		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
 		
 		confJson.parseJson.convertTo[CpmetaConfig]
-	}
-
-	val core: MetaCoreConfig = {
-		val default = ConfigFactory.parseResources("metacore.conf")
-		appConfig.withFallback(default).getValue("metacore").render(renderOpts)
-			.parseJson.convertTo[MetaCoreConfig]
 	}
 
 }

@@ -20,7 +20,7 @@ lazy val metaCore = (project in file("core"))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta-core",
-		version := "0.3.5-SNAPSHOT",
+		version := "0.3.6-SNAPSHOT",
 		libraryDependencies ++= Seq(
 			"io.spray" %% "spray-json" % "1.3.3"
 		),
@@ -47,7 +47,7 @@ lazy val meta = (project in file("."))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
-		version := "0.3.3",
+		version := "0.3.4",
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
@@ -62,7 +62,7 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.3.1-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.3.2-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.5-SNAPSHOT",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),

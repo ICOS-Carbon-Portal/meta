@@ -13,6 +13,7 @@ import akka.stream.Materializer
 import java.net.URI
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false
@@ -30,7 +31,7 @@ object Ingestion {
 
 	type Statements = Future[Iterator[Statement]]
 
-	def allProviders(implicit system: ActorSystem, mat: Materializer): Map[String, StatementProvider] = {
+	def allProviders(implicit system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] = {
 		import system.dispatcher
 		val (badmSchema, badm) = new BadmIngester().getSchemaAndValuesIngesters
 		Map(

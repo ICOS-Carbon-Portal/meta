@@ -12,12 +12,13 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
 	allDataObjs: InstanceServer,
 	perFormat: Map[IRI, InstanceServer]
-) extends CpmetaFetcher{
+)(implicit envriConfs: EnvriConfigs) extends CpmetaFetcher{
 	import InstanceServer.AtMostOne
 
 	val metaVocab = new CpmetaVocab(icosMeta.factory)

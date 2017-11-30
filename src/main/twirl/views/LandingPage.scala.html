@@ -1,11 +1,10 @@
 @import se.lu.nateko.cp.meta.core.data._
-@import se.lu.nateko.cp.meta.ConfigLoader.core.handleService
 @import LandingPageHelpers._
 @import java.net.URI
 @import views.CpMenu
 
-@(dobj: DataObject)
-@ServerSidePage(pageTitle, pageHeading, CpMenu.landingPage){
+@(dobj: DataObject, handleService: URI)
+@ServerSidePage(pageTitle, pageHeading, Envri.ICOS, CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">

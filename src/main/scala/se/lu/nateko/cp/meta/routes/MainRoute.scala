@@ -22,12 +22,13 @@ object MainRoute {
 	def apply(db: MetaDb, config: CpmetaConfig)(implicit mat: Materializer): Route = {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
+		implicit val _ = config.core.envriConfigs
 		val sparqlRoute = SparqlRoute()
 		val staticRoute = StaticRoute(config.onto)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)
-		val uploadRoute = UploadApiRoute(db.uploadService, authRouting)
+		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, config.core)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)

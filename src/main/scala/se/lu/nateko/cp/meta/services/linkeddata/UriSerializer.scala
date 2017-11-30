@@ -5,45 +5,50 @@ import java.net.{ URI => JavaUri }
 import scala.Left
 import scala.Right
 import scala.collection.TraversableOnce.flattenTraversableOnce
+import scala.concurrent.Future
 
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 
+import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.http.scaladsl.model.ContentType
+import akka.http.scaladsl.model.HttpCharset
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
-import akka.http.scaladsl.model.HttpCharset
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.marshalling.Marshaller
-import scala.concurrent.Future
-import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import org.eclipse.rdf4j.model.Statement
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
-class Rdf4jUriSerializer(repo: Repository) extends UriSerializer{
-	import Rdf4jUriSerializer._
+class Rdf4jUriSerializer(repo: Repository)(implicit envries: EnvriConfigs) extends UriSerializer{
 	import InstanceServerSerializer.statementIterMarshaller
+	import Rdf4jUriSerializer._
 
 	val marshaller: ToResponseMarshaller[Uri] = {
 		val htmlMarshaller: ToResponseMarshaller[Uri] = Marshaller(
-			implicit exeCtxt => uri => Future.successful(
-				WithOpenCharset(MediaTypes.`text/html`, getHtml(getViewInfo(uri, repo), _)) :: Nil
-			)
+			implicit exeCtxt => uri => Future{
+				val envri = CpVocab.inferEnvri(new java.net.URI(uri.toString))
+				val viewInfo = getViewInfo(uri, repo, envri)
+				WithOpenCharset(MediaTypes.`text/html`, getHtml(viewInfo, _)) :: Nil
+			}
 		)
 		val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 			.compose(uri => () => getStatementsIter(uri, repo))
@@ -68,7 +73,7 @@ private object Rdf4jUriSerializer{
 		own ++ about
 	}
 
-	def getViewInfo(res: Uri, repo: Repository): ResourceViewInfo = repo.accessEagerly{conn =>
+	def getViewInfo(res: Uri, repo: Repository, envri: Envri.Value): ResourceViewInfo = repo.accessEagerly{conn =>
 
 		val propInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
 
@@ -94,8 +99,9 @@ private object Rdf4jUriSerializer{
 		}.flatten.toIndexedSeq
 
 		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None), None, Nil, Nil, usageInfos)
+		val seed = ResourceViewInfo(UriResource(uri, None), envri, None, Nil, Nil, usageInfos)
 
+		//TODO Add a limit to the amount of statements that are included
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 
 			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.LABEL) =>

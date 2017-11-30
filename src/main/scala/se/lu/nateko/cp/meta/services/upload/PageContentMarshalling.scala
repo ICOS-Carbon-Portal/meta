@@ -11,14 +11,9 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import scala.concurrent.Future
 import spray.json._
 import play.twirl.api.Html
+import java.net.URI
 
-object PageContentMarshalling {
-
-	val twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
-		implicit exeCtxt => html => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
-		)
-	)
+class PageContentMarshalling(handleService: URI) {
 
 	implicit val dataObjectMarshaller: ToResponseMarshaller[() => Option[DataObject]] = Marshaller(
 		implicit exeCtxt => dataObjGetter => Future.successful(
@@ -27,19 +22,12 @@ object PageContentMarshalling {
 		)
 	)
 
-	private def getHtml(html: Html, charset: HttpCharset) = HttpResponse(
-		entity = HttpEntity(
-			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			html.body
-		)
-	)
-
 	private def getHtml(dataObjGetter: () => Option[DataObject], charset: HttpCharset) =
 		dataObjGetter() match {
 			case Some(dataObj) => HttpResponse(
 				entity = HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
-					views.html.LandingPage(dataObj).body
+					views.html.LandingPage(dataObj, handleService).body
 				)
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
@@ -53,4 +41,20 @@ object PageContentMarshalling {
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
 
+}
+
+object PageContentMarshalling{
+
+	val twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
+		implicit exeCtxt => html => Future.successful(
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
+		)
+	)
+
+	private def getHtml(html: Html, charset: HttpCharset) = HttpResponse(
+		entity = HttpEntity(
+			ContentType.WithCharset(MediaTypes.`text/html`, charset),
+			html.body
+		)
+	)
 }

@@ -3,14 +3,17 @@ package se.lu.nateko.cp.meta.services
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.net.{URI => JavaUri}
+import java.net.URI
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.ConfigLoader
 
-class CpVocab (val factory: ValueFactory) extends CustomVocab {
+class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 
-	private val config: MetaCoreConfig = ConfigLoader.core
+	//TODO Generalize to SITES and ICOS
+	private val config: EnvriConfig = envriConfigs(Envri.ICOS)
 	val baseUri = config.metaResourcePrefix.toString
 
 	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)
@@ -43,8 +46,8 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 
 	def getDataObject(hash: Sha256Sum) = factory.createIRI(config.landingPagePrefix.toString, hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: String): JavaUri =
-		new JavaUri(s"${config.dataObjPrefix + hash.id}/${urlEncode(fileName)}")
+	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: String) =
+		new URI(s"${config.dataObjPrefix + hash.id}/${urlEncode(fileName)}")
 
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
@@ -52,4 +55,16 @@ class CpVocab (val factory: ValueFactory) extends CustomVocab {
 	def getSpatialCoverate(hash: Sha256Sum) = getRelative("spcov_" + hash.id)
 
 	def getObjectSpecification(lastSegment: String) = getRelative("cpmeta/", lastSegment)
+}
+
+object CpVocab{
+
+	def inferEnvri(dobj: URI)(implicit configs: EnvriConfigs): Envri.Value = configs
+		.collectFirst{
+			case (envri, conf) if dobj.getHost == conf.landingPagePrefix.getHost => envri
+		}
+		.getOrElse(Envri.ICOS)
+
+	def inferEnvri(hostname: String)(implicit configs: EnvriConfigs): Envri.Value =
+		inferEnvri(new URI(null, hostname, null, null))
 }

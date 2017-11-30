@@ -13,6 +13,9 @@ import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 object LinkedDataRoute {
 	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller
@@ -21,22 +24,27 @@ object LinkedDataRoute {
 		config: InstanceServersConfig,
 		uriSerializer: UriSerializer,
 		instanceServers: Map[String, InstanceServer]
-	): Route = {
+	)(implicit envriConfs: EnvriConfigs): Route = {
 
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
-		val prefixUri = Uri(config.forDataObjects.uriPrefix.toString)
 		implicit val uriMarshaller = uriSerializer.marshaller
 
 		val genericRdfUriResourcePage: Route = extractUri{uri =>
+			extractHost{hostname =>
 
-			import akka.http.scaladsl.model.Uri.Path.{Segment, Slash}
+				val envri = CpVocab.inferEnvri(hostname)
 
-			val scheme = uri.path match{
-				case Slash(Segment("objects", _)) => "https" //objects have HTTPS URIs in our RDF
-				case _ => "http"
+				val scheme = if(envri == Envri.ICOS){
+					import Uri.Path.{Segment, Slash}
+
+					uri.path match{
+						case Slash(Segment("objects", _)) => "https" //objects have HTTPS URIs in our RDF
+						case _ => "http"
+					}
+				} else "https"
+
+				complete(uri.withHost(hostname).withScheme(scheme))
 			}
-
-			complete(prefixUri.withPath(uri.path).withScheme(scheme))
 		}
 
 		get{

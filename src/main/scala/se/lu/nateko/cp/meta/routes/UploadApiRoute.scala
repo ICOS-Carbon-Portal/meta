@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -35,13 +36,17 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	)
 
 	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
-	import PageContentMarshalling.dataObjectMarshaller
 	import AuthenticationRouting.ensureLocalRequest
 
 	def apply(
 		service: UploadService,
-		authRouting: AuthenticationRouting
+		authRouting: AuthenticationRouting,
+		coreConf: MetaCoreConfig
 	): Route = handleExceptions(errHandler){
+
+		val pcm = new PageContentMarshalling(coreConf.handleService)
+		import pcm.dataObjectMarshaller
+
 		pathPrefix("upload"){
 			post{
 				path(Sha256Segment){hash =>

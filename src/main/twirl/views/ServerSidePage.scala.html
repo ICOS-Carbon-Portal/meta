@@ -1,7 +1,8 @@
 @import views.CpMenuItem
+@import se.lu.nateko.cp.meta.core.data.Envri
 
-@(title: String, header: String, menu: Seq[CpMenuItem] = Nil)(body: Html)
-@CpCommonPage(title, menu){
+@(title: String, header: String, envri: Envri.Value, menu: Seq[CpMenuItem] = Nil)(body: Html)
+@template(envri){
 	<style type="text/css">
 		.col-md-12 > label::after {
 			content: ":";
@@ -19,3 +20,7 @@
 	@body
 }
 
+
+@template(envri: Envri.Value) = @{
+	if(envri == Envri.SITES) SitesPage(title) _ else CpCommonPage(title, menu) _
+}

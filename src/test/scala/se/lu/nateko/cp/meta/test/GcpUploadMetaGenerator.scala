@@ -22,6 +22,7 @@ object GcpUploadMetaGenerator extends CpmetaJsonProtocol {
 
 	def updatePackageWithContributors(inFile: String, outFile: String): Unit = {
 		implicit val factory = new MemValueFactory
+		import TestConfig.envriConfs
 		val vocab = new CpVocab(factory)
 
 		val contribs = Source.fromFile(folder + "gcpPeople.txt").getLines().map{line =>

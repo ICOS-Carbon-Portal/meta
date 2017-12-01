@@ -40,7 +40,7 @@ module.exports = function(typesStore, checkSuffixAction, createIndividualAction)
 			this.cancelAddition();
 		},
 
-		keyDownHandler: function(){
+		keyDownHandler: function(event){
 			if(event.keyCode == 27){ //Esc
 				this.cancelAddition();
 			}else if(event.keyCode == 13){ //Enter

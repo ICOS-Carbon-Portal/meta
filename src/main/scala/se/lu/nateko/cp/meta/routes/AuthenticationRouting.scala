@@ -16,6 +16,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Rejection
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.model.headers.`X-Forwarded-For`
+import spray.json.JsObject
+import spray.json.JsNull
 
 class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
@@ -53,7 +55,13 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 
 	def route = get{
 		path("whoami"){
-			mustBeLoggedIn{uid => complete(uid)}
+			user{uid => complete(uid)} ~
+			complete(JsObject(Map("email" -> JsNull)))
+		} ~
+		path("logout"){
+			deleteCookie(authConfig.authCookieName, authConfig.authCookieDomain, "/"){
+				complete(StatusCodes.OK)
+			}
 		}
 	}
 }

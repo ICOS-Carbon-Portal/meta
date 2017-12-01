@@ -130,7 +130,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dbServerFormat = jsonFormat2(DbServer)
 	implicit val dbCredentialsFormat = jsonFormat3(DbCredentials)
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
-	implicit val publicAuthConfigFormat = jsonFormat2(PublicAuthConfig)
+	implicit val publicAuthConfigFormat = jsonFormat4(PublicAuthConfig)
 	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
 	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)

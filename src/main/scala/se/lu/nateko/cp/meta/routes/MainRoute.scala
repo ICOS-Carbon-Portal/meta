@@ -24,7 +24,7 @@ object MainRoute {
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val _ = config.core.envriConfigs
 		val sparqlRoute = SparqlRoute()
-		val staticRoute = StaticRoute(config.onto)
+		val staticRoute = StaticRoute(config.onto, config.auth)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)

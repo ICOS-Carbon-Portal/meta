@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.Html
 
+import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 
@@ -18,7 +19,7 @@ object StaticRoute {
 
 	private implicit val pageMarshaller = PageContentMarshalling.twirlHtmlMarshaller
 
-	def apply(config: OntoConfig): Route = get{
+	def apply(config: OntoConfig, authConf: PublicAuthConfig): Route = get{
 
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
@@ -26,7 +27,7 @@ object StaticRoute {
 			} ~ {
 				config.instOntoServers.get(ontId) match {
 					case Some(ontConfig) => pathSingleSlash{
-							complete(views.html.MetaentryPage(ontConfig.serviceTitle))
+							complete(views.html.MetaentryPage(ontConfig.serviceTitle, authConf))
 						}
 					case None =>
 						complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))

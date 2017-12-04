@@ -50,6 +50,7 @@ case class UploadMetadataDto(
 case class StationDataMetadata(
 	station: URI,
 	instrument: Option[URI],
+	samplingHeight: Option[Float],
 	acquisitionInterval: Option[TimeInterval],
 	nRows: Option[Int],
 	production: Option[DataProductionDto]

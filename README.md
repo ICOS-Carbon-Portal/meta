@@ -48,7 +48,9 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 		"acquisitionInterval": {
 			"start": "2008-09-01T00:00:00.000Z",
 			"stop": "2008-12-31T23:59:59.999Z"
-		}
+		},
+		"instrument": "http://meta.icos-cp.eu/resources/instruments/ATC_181",
+		"samplingHeight": 54.8
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
 	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk"
@@ -62,7 +64,10 @@ Clarifications:
 - `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
 - `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
- - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
+- `acquisitionInterval` (optional) is the temporal interval during which the actual measurement was performed. Required for data objects that do not get ingested completely by CP (i.e. with parsing and internal binary representation to support previews).
+- `instrument` (optional) is the URL of the metadata entity representing the instrument used to perform the measurement resulting in this data object.
+- `samplingHeight` (optional) is the height of the sampling (e.g. height of inlets for gas collection) in meters.
+- `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 

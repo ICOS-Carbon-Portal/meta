@@ -101,6 +101,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.wasPerformedWith, meta.instrument.map(_.toRdf)) ++
+		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 

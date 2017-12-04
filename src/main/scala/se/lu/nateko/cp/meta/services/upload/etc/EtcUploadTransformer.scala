@@ -44,6 +44,7 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 				StationDataMetadata(
 					station = vocab.getEcosystemStation(meta.station).toJava,
 					instrument = Some(vocab.getEtcInstrument(meta.station, meta.logger).toJava),
+					samplingHeight = None,
 					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
 					nRows = None,
 					production = None

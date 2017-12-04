@@ -158,7 +158,9 @@ trait CpmetaFetcher extends FetchingHelper{
 			interval = for(
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
-			) yield TimeInterval(start, stop)
+			) yield TimeInterval(start, stop),
+			instrument = getOptionalUri(acqUri, metaVocab.wasPerformedWith).map(_.toJava),
+			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
 

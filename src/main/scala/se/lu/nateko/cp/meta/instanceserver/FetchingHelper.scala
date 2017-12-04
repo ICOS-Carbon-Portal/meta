@@ -43,6 +43,9 @@ trait FetchingHelper {
 	protected def getOptionalDouble(subj: IRI, pred: IRI): Option[Double] =
 		server.getDoubleValues(subj, pred, InstanceServer.AtMostOne).headOption
 
+	protected def getOptionalFloat(subj: IRI, pred: IRI): Option[Float] =
+		server.getFloatValues(subj, pred, InstanceServer.AtMostOne).headOption
+
 	protected def getSingleDouble(subj: IRI, pred: IRI): Double =
 		server.getDoubleValues(subj, pred, InstanceServer.ExactlyOne).head
 

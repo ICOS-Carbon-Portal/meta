@@ -49,7 +49,12 @@ case class DataObjectSpec(
 	datasetSpec: Option[JsValue]
 )
 
-case class DataAcquisition(station: Station, interval: Option[TimeInterval])
+case class DataAcquisition(
+	station: Station,
+	interval: Option[TimeInterval],
+	instrument: Option[URI],
+	samplingHeight: Option[Float]
+)
 
 case class DataProduction(
 	creator: Agent,

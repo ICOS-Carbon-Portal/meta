@@ -91,6 +91,9 @@ trait InstanceServer {
 	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Double] =
 		getLiteralValues(subj, pred, XMLSchema.DOUBLE, exp).map(_.toDouble)
 
+	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Float] =
+		getLiteralValues(subj, pred, XMLSchema.FLOAT, exp).map(_.toFloat)
+
 }
 
 object InstanceServer{

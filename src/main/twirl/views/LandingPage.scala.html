@@ -71,6 +71,12 @@
 						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
 						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
 					}
+					@for(instrument <- acquisition.instrument){
+						@PanelRow("Instrument", instrument.getPath.split("/").last)
+					}
+					@for(height <- acquisition.samplingHeight){
+						@PanelRow("Sampling height", height.toString)
+					}
 				}
 			}
 

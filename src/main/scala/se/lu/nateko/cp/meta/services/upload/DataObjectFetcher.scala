@@ -44,7 +44,7 @@ class DataObjectFetcher(
 
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
-			accessUrl = getAccessUrl(hash, fileName, spec),
+			accessUrl = getAccessUrl(hash, spec),
 			fileName = fileName,
 			size = getOptionalLong(dobj, metaVocab.hasSizeInBytes),
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
@@ -60,7 +60,7 @@ class DataObjectFetcher(
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory(hash))
 	}
 
-	private def getAccessUrl(hash: Sha256Sum, fileName: String, spec: DataObjectSpec): Option[URI] = {
+	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec): Option[URI] = {
 
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new URI("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
@@ -68,7 +68,7 @@ class DataObjectFetcher(
 			val dobj = vocab.getDataObject(hash)
 			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(
 				if(spec.dataLevel < 1) None
-				else Some(vocab.getDataObjectAccessUrl(hash, fileName))
+				else Some(vocab.getDataObjectAccessUrl(hash))
 			)
 		}
 	}

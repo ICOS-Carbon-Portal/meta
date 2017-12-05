@@ -46,8 +46,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getDataObject(hash: Sha256Sum) = factory.createIRI(config.landingPagePrefix.toString, hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum, fileName: String) =
-		new URI(s"${config.dataObjPrefix + hash.id}/${urlEncode(fileName)}")
+	def getDataObjectAccessUrl(hash: Sha256Sum) =
+		new URI(config.dataObjPrefix + hash.id)
 
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)

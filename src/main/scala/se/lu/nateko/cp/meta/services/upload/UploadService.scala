@@ -73,7 +73,7 @@ class UploadService(
 			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
 			_ <- Future.fromTry(server.applyAll(updates))
 		) yield{
-			vocab.getDataObjectAccessUrl(meta.hashSum, meta.fileName).toString
+			vocab.getDataObjectAccessUrl(meta.hashSum).toString
 		}
 	}
 

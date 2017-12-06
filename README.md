@@ -36,7 +36,7 @@ Naturally, instead of `curl`, one can automate this process (as well as all the 
 
 ### Registering the metadata package
 
-The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content depends on the data object's ICOS data level. For example, for L0 the metadata has the following format:
+The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content depends on the data object's ICOS data level. For example, for L0 and L1 the metadata has the following format:
 
 ```json
 {
@@ -50,7 +50,14 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 			"stop": "2008-12-31T23:59:59.999Z"
 		},
 		"instrument": "http://meta.icos-cp.eu/resources/instruments/ATC_181",
-		"samplingHeight": 54.8
+		"samplingHeight": 54.8,
+		"production": {
+			"creator": "http://meta.icos-cp.eu/resources/people/Lynn_Hazan",
+			"contributors": [],
+			"hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
+			"comment": "free text",
+			"creationDate": "2017-12-01T12:00:00.000Z"
+		}
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
 	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk"
@@ -67,6 +74,12 @@ Clarifications:
 - `acquisitionInterval` (optional) is the temporal interval during which the actual measurement was performed. Required for data objects that do not get ingested completely by CP (i.e. with parsing and internal binary representation to support previews).
 - `instrument` (optional) is the URL of the metadata entity representing the instrument used to perform the measurement resulting in this data object.
 - `samplingHeight` (optional) is the height of the sampling (e.g. height of inlets for gas collection) in meters.
+- `production` (optional) is production provenance object. It is desirable for data levels 1 and higher.
+- `creator` can be an organization or a person URL.
+- `contributors` must be present but can be empty. Can contain organization or people URLs.
+- `hostOrganization` is optional.
+- `comment` is an optional free text.
+- `creationDate` is an ISO 8601 time stamp.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:

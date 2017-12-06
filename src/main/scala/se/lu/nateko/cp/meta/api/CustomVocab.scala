@@ -13,6 +13,7 @@ trait CustomVocab {
 	def factory: ValueFactory
 
 	protected def urlEncode(s: String): String = {
+		//TODO Test this for "strange" strings (e.g. containing timestamps)
 		new java.net.URI(null, null, s, null).toASCIIString
 	}
 

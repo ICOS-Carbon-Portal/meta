@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 object Main extends App with CpmetaJsonProtocol{
 
 	implicit val system = ActorSystem("cpmeta")
+	system.log //force log initialization to avoid deadlocks at startup
 	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
 	import system.dispatcher
 

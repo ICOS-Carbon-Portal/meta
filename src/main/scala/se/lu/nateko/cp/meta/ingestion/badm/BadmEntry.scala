@@ -1,12 +1,14 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 sealed trait BadmDate
 case class BadmYear(year: Int) extends BadmDate
 case class BadmLocalDate(date: LocalDate) extends BadmDate
+case class BadmLocalDateTime(dt: LocalDateTime) extends BadmDate
 
 case class BadmRawEntry(
 	id: Int,

@@ -13,6 +13,8 @@ import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import spray.json.JsNumber
 import spray.json.JsObject
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
 
 class EtcFileMetadataProvider(implicit system: ActorSystem, m: Materializer) extends EtcFileMetadataStore{
 
@@ -32,21 +34,21 @@ class EtcFileMetadataProvider(implicit system: ActorSystem, m: Materializer) ext
 
 	system.scheduler.schedule(Duration.Zero, 5.hours)(fetchFromEtc())
 
-	private def fetchFromEtc(): Unit = EtcEntriesFetcher
-		.getJson(
-			Uri("http://www.europe-fluxdata.eu/metadata.aspx/getIcosMetadata"),
-			JsObject("site" -> JsObject("ID" -> JsNumber(70)))
-		)
+	private val serviceUri = "http://gaia.agraria.unitus.it:89/api/Values"
+
+	private def fetchFromEtc(): Unit = Http()
+		.singleRequest(HttpRequest(uri = serviceUri))
+		.flatMap(EtcEntriesFetcher.responseToJson)
 		.map(json => EtcFileMetadataStore(Parser.parseEntriesFromEtcJson(json)))
 		.onComplete{
 
 			case Success(store) =>
 				inner = Some(store)
-				system.log.info("Successfully fetched logger/file/station metadata from ETC")
+				system.log.info(s"Fetched ETC logger/file metadata from $serviceUri")
 				retryCount = 0
 
 			case Failure(err) =>
-				system.log.error(err, "Problem fetching/parsing metadata from ETC")
+				system.log.error(err, "Problem fetching/parsing ETC logger/file metadata")
 				if(retryCount < 3){
 					system.scheduler.scheduleOnce(10.minutes){
 						retryCount += 1

@@ -17,6 +17,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import spray.json.JsValue
 
 object Parser {
 
@@ -24,8 +25,8 @@ object Parser {
 		aggregateEntries(None, getCsvRows(src).map(csvRowToRawEntry).toSeq)
 	}
 
-	def parseEntriesFromEtcJson(entries: JsObject): Seq[BadmEntry] = {
-		entries.fields.get("d").toSeq.collect{
+	def parseEntriesFromEtcJson(entries: JsValue): Seq[BadmEntry] = {
+		entries match{
 			case JsArray(entries) => entries
 				.collect{
 					case obj: JsObject => etcJsonRowToSiteIdAndRawEntry(obj)
@@ -37,8 +38,11 @@ object Parser {
 						idAndRaw.map(_._2).sortBy(_.id)
 					)
 				}
-				.values
-		}.flatten.flatten
+				.values.flatten.toSeq
+			case JsObject(fields) =>
+				fields.get("d").map(parseEntriesFromEtcJson).getOrElse(Nil)
+			case _ => Nil
+		}
 	}
 
 	def getCsvRows(csvStream: String): Stream[Array[String]] = {
@@ -125,26 +129,25 @@ object Parser {
 		case _ => (qualifier, value)
 	}
 
-	def toBadmDate(badmDate: String): BadmDate = {
-		badmDate match{
-			case badmDateRegex(year, month, day) =>
-				BadmLocalDate(LocalDate.parse(s"$year-$month-$day"))
-			case badmDateAnyTimeRegex(year, month, day) =>
-				BadmLocalDate(LocalDate.parse(s"$year-$month-$day"))
-			case yearRegex(year) =>
-				BadmYear(year.toInt)
-			case _ => try{
-				val dt = LocalDateTime.parse(badmDate, americanDateTime)
-				BadmLocalDate(dt.toLocalDate)
-			}catch{
-				case _: DateTimeParseException =>
-					throw new ParseException(s"$badmDate is not a valid BADM date string", -1)
-			}
-		}
+	def toBadmDate(badmDate: String): BadmDate = badmDate match{
+
+		case badmDateTimeRegex(year, month, day, hour, minute, second_?) =>
+			val second = if(second_? == null) "" else ":" + second_?
+			BadmLocalDateTime(LocalDateTime.parse(s"$year-$month-${day}T$hour:$minute$second"))
+
+		case badmDateRegex(year, month, day) =>
+			BadmLocalDate(LocalDate.parse(s"$year-$month-$day"))
+
+		case yearRegex(year) =>
+			BadmYear(year.toInt)
+
+		case _ =>
+			throw new ParseException(s"$badmDate is not a valid BADM date string", -1)
 	}
 
 	private def toIsoDate(badmDate: String): LocalDate = toBadmDate(badmDate) match {
 		case BadmLocalDate(date) => date
+		case BadmLocalDateTime(dt) => dt.toLocalDate
 		case _ => throw new ParseException(s"$badmDate is not convertible to ISO8601 date", -1)
 	}
 

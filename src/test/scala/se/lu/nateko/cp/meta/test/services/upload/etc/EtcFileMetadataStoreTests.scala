@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.services.upload.etc.{EtcFileMeta, EtcFileMetadataSto
 class EtcFileMetadataStoreTests extends FunSpec {
 
 	def getBadmEntries: Seq[BadmEntry] = {
-		val json = BadmTestHelper.getIcosMetaJson.parseJson.asJsObject
+		val json = BadmTestHelper.getIcosMetaJson.parseJson
 		Parser.parseEntriesFromEtcJson(json)
 	}
 

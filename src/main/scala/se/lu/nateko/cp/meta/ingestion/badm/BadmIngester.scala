@@ -10,6 +10,8 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import spray.json.JsObject
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import scala.util.Success
+import scala.util.Failure
 
 
 class BadmIngester(implicit system: ActorSystem, m: Materializer, envriConfs: EnvriConfigs){
@@ -30,18 +32,22 @@ class BadmIngester(implicit system: ActorSystem, m: Materializer, envriConfs: En
 
 
 	def getSchemaAndValuesIngesters: (Ingester, Ingester) = {
-		lazy val schema = for(
-			variablesCsv <- getUrl(variablesUrl);
-			vocabsCsv <- getUrl(badmVocabsUrl)
-		) yield BadmSchema.parseSchemaFromCsv(variablesCsv, vocabsCsv)
+		lazy val schema = getUrl(variablesUrl).zip(getUrl(badmVocabsUrl)).map{
+			case (variablesCsv, vocabsCsv) => BadmSchema.parseSchemaFromCsv(variablesCsv, vocabsCsv)
+		}.andThen{
+			case Failure(err) =>
+				system.log.error(err, s"Failed importing BADM schema from $urlPrefix")
+		}
 
 		//val badmEntries = getUrl(badmEntriesUrl).map(Parser.parseEntriesFromCsv)
 		lazy val badmEntries = getEtcBadmEntriesJson.map(Parser.parseEntriesFromEtcJson)
-			.recoverWith{
-				case err : Throwable =>
+			.andThen{
+				case Success(entries) =>
+					system.log.info(s"Fetched ${entries.size} BADM entries from $etcBadmServerUrl")
+				case Failure(err) =>
 					system.log.error(err, "Failed importing BADM metadata from ETC's web service")
-				Future.successful(Seq.empty)
 			}
+			.fallbackTo(Future.successful(Seq.empty))
 
 		(new RdfBadmSchemaIngester(schema), new RdfBadmEntriesIngester(badmEntries, schema))
 	}

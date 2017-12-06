@@ -1,5 +1,4 @@
-{
-  "d": [{
+[{
     "__type": "SitefinityWebApp.MetaData",
     "Index": 1,
     "SiteName": "FA-Lso",
@@ -8,7 +7,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "8/9/2017 12:06:00 PM",
+    "SubDate": "20170809000600",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -20,7 +19,7 @@
     "QualName": "",
     "Value": "201708090000",
     "IsoDate": "",
-    "SubDate": "8/9/2017 12:06:00 PM",
+    "SubDate": "20170809000600",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -32,7 +31,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/21/2017 12:02:00 PM",
+    "SubDate": "20170621000200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -44,7 +43,7 @@
     "QualName": "",
     "Value": "x2525",
     "IsoDate": "",
-    "SubDate": "6/21/2017 12:02:00 PM",
+    "SubDate": "20170621000200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -56,7 +55,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/21/2017 12:02:00 PM",
+    "SubDate": "20170621000200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -68,7 +67,7 @@
     "QualName": "",
     "Value": "2017010100",
     "IsoDate": "",
-    "SubDate": "6/21/2017 12:02:00 PM",
+    "SubDate": "20170621000200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -80,7 +79,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -92,7 +91,7 @@
     "QualName": "",
     "Value": "e7942",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -104,7 +103,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -116,7 +115,7 @@
     "QualName": "",
     "Value": "20160101",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -128,7 +127,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -140,7 +139,7 @@
     "QualName": "",
     "Value": "e6942",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -152,7 +151,7 @@
     "QualName": "",
     "Value": "3",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -164,7 +163,7 @@
     "QualName": "",
     "Value": "20160101",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:38:00 PM",
+    "SubDate": "20170627063800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -176,7 +175,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -188,7 +187,7 @@
     "QualName": "",
     "Value": "e7803",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -200,7 +199,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -212,7 +211,7 @@
     "QualName": "",
     "Value": "20160101",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -224,7 +223,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:11:00 PM",
+    "SubDate": "20170627071100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -236,7 +235,7 @@
     "QualName": "",
     "Value": "e4225",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:11:00 PM",
+    "SubDate": "20170627071100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -248,7 +247,7 @@
     "QualName": "",
     "Value": "5",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:11:00 PM",
+    "SubDate": "20170627071100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -260,7 +259,7 @@
     "QualName": "",
     "Value": "20160101",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:11:00 PM",
+    "SubDate": "20170627071100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -272,7 +271,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -284,7 +283,7 @@
     "QualName": "",
     "Value": "e5562",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -296,7 +295,7 @@
     "QualName": "",
     "Value": "6",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -308,7 +307,7 @@
     "QualName": "",
     "Value": "20160101",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -320,7 +319,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -332,7 +331,7 @@
     "QualName": "",
     "Value": "e8575",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -344,7 +343,7 @@
     "QualName": "",
     "Value": "7",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -356,7 +355,7 @@
     "QualName": "",
     "Value": "20160102",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -368,7 +367,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -380,7 +379,7 @@
     "QualName": "",
     "Value": "e2567",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -392,7 +391,7 @@
     "QualName": "",
     "Value": "8",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -404,7 +403,7 @@
     "QualName": "",
     "Value": "20160201",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:12:00 PM",
+    "SubDate": "20170627071200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -416,7 +415,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:20:00 PM",
+    "SubDate": "20170627072000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -428,7 +427,7 @@
     "QualName": "",
     "Value": "e4560",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:20:00 PM",
+    "SubDate": "20170627072000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -440,7 +439,7 @@
     "QualName": "",
     "Value": "9",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:20:00 PM",
+    "SubDate": "20170627072000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -452,7 +451,7 @@
     "QualName": "",
     "Value": "20160203",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:20:00 PM",
+    "SubDate": "20170627072000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -464,7 +463,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -476,7 +475,7 @@
     "QualName": "",
     "Value": "e1234",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -488,7 +487,7 @@
     "QualName": "",
     "Value": "11",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -500,7 +499,7 @@
     "QualName": "",
     "Value": "20160723",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -512,7 +511,7 @@
     "QualName": "",
     "Value": "DL-CR1000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:22:00 PM",
+    "SubDate": "20170627072200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -524,7 +523,7 @@
     "QualName": "",
     "Value": "e9876",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:22:00 PM",
+    "SubDate": "20170627072200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -536,7 +535,7 @@
     "QualName": "",
     "Value": "12",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:22:00 PM",
+    "SubDate": "20170627072200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -548,7 +547,7 @@
     "QualName": "",
     "Value": "20150314",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:22:00 PM",
+    "SubDate": "20170627072200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -560,7 +559,7 @@
     "QualName": "",
     "Value": "DL-CR3000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -572,7 +571,7 @@
     "QualName": "",
     "Value": "e5678",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -584,7 +583,7 @@
     "QualName": "",
     "Value": "10",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -596,7 +595,7 @@
     "QualName": "",
     "Value": "20160325",
     "IsoDate": "",
-    "SubDate": "6/27/2017 7:21:00 PM",
+    "SubDate": "20170627072100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -608,7 +607,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -620,7 +619,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -632,7 +631,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -644,7 +643,7 @@
     "QualName": "",
     "Value": "EC",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -656,7 +655,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -668,7 +667,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -680,7 +679,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -692,7 +691,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -704,7 +703,7 @@
     "QualName": "",
     "Value": "201610120800",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:39:00 PM",
+    "SubDate": "20170627063900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -716,7 +715,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -728,7 +727,7 @@
     "QualName": "",
     "Value": "3",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -740,7 +739,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -752,7 +751,7 @@
     "QualName": "",
     "Value": "EC",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -764,7 +763,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -776,7 +775,7 @@
     "QualName": "",
     "Value": "201610120800",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -788,7 +787,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -800,7 +799,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -812,7 +811,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -824,7 +823,7 @@
     "QualName": "",
     "Value": "EC",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -836,7 +835,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -848,7 +847,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -860,7 +859,7 @@
     "QualName": "",
     "Value": "201610120800",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:41:00 PM",
+    "SubDate": "20170627064100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -872,7 +871,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -884,7 +883,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -896,7 +895,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -908,7 +907,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -920,7 +919,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -932,7 +931,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -944,7 +943,7 @@
     "QualName": "",
     "Value": "201610120800",
     "IsoDate": "",
-    "SubDate": "6/27/2017 6:53:00 PM",
+    "SubDate": "20170627065300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -956,7 +955,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -968,7 +967,7 @@
     "QualName": "",
     "Value": "3",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -980,7 +979,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -992,7 +991,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1004,7 +1003,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1016,7 +1015,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1028,7 +1027,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:47:00 AM",
+    "SubDate": "20170727114700",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1040,7 +1039,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1052,7 +1051,7 @@
     "QualName": "",
     "Value": "6",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1064,7 +1063,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1076,7 +1075,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1088,7 +1087,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1100,7 +1099,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1112,7 +1111,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1124,7 +1123,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1136,7 +1135,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:48:00 AM",
+    "SubDate": "20170727114800",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1148,7 +1147,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1160,7 +1159,7 @@
     "QualName": "",
     "Value": "8",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1172,7 +1171,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1184,7 +1183,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1196,7 +1195,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1208,7 +1207,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1220,7 +1219,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1232,7 +1231,7 @@
     "QualName": "",
     "Value": "9",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1244,7 +1243,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1256,7 +1255,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1268,7 +1267,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1280,7 +1279,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1292,7 +1291,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1304,7 +1303,7 @@
     "QualName": "",
     "Value": "7",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1316,7 +1315,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1328,7 +1327,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1340,7 +1339,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1352,7 +1351,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1364,7 +1363,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1376,7 +1375,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1388,7 +1387,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1400,7 +1399,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1412,7 +1411,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1424,7 +1423,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1436,7 +1435,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1448,7 +1447,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1460,7 +1459,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1472,7 +1471,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1484,7 +1483,7 @@
     "QualName": "",
     "Value": "5",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1496,7 +1495,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1508,7 +1507,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1520,7 +1519,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1532,7 +1531,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1544,7 +1543,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1556,7 +1555,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1568,7 +1567,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1580,7 +1579,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1592,7 +1591,7 @@
     "QualName": "",
     "Value": "11",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1604,7 +1603,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1616,7 +1615,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1628,7 +1627,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1640,7 +1639,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1652,7 +1651,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1664,7 +1663,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1676,7 +1675,7 @@
     "QualName": "",
     "Value": "12",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1688,7 +1687,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1700,7 +1699,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1712,7 +1711,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1724,7 +1723,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1736,7 +1735,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:50:00 AM",
+    "SubDate": "20170727115000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1748,7 +1747,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1760,7 +1759,7 @@
     "QualName": "",
     "Value": "10",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1772,7 +1771,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1784,7 +1783,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1796,7 +1795,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1808,7 +1807,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1820,7 +1819,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1832,7 +1831,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1844,7 +1843,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1856,7 +1855,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1868,7 +1867,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1880,7 +1879,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1892,7 +1891,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1904,7 +1903,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1916,7 +1915,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1928,7 +1927,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1940,7 +1939,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1952,7 +1951,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1964,7 +1963,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1976,7 +1975,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -1988,7 +1987,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2000,7 +1999,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2012,7 +2011,7 @@
     "QualName": "",
     "Value": "12",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2024,7 +2023,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2036,7 +2035,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2048,7 +2047,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2060,7 +2059,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2072,7 +2071,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2084,7 +2083,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2096,7 +2095,7 @@
     "QualName": "",
     "Value": "11",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2108,7 +2107,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2120,7 +2119,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2132,7 +2131,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2144,7 +2143,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2156,7 +2155,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2168,7 +2167,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2180,7 +2179,7 @@
     "QualName": "",
     "Value": "7",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2192,7 +2191,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2204,7 +2203,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2216,7 +2215,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2228,7 +2227,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2240,7 +2239,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2252,7 +2251,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2264,7 +2263,7 @@
     "QualName": "",
     "Value": "8",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2276,7 +2275,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2288,7 +2287,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2300,7 +2299,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2312,7 +2311,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2324,7 +2323,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2336,7 +2335,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2348,7 +2347,7 @@
     "QualName": "",
     "Value": "6",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2360,7 +2359,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2372,7 +2371,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2384,7 +2383,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2396,7 +2395,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2408,7 +2407,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2420,7 +2419,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2432,7 +2431,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2444,7 +2443,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2456,7 +2455,7 @@
     "QualName": "",
     "Value": "10",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2468,7 +2467,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2480,7 +2479,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2492,7 +2491,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2504,7 +2503,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2516,7 +2515,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2528,7 +2527,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2540,7 +2539,7 @@
     "QualName": "",
     "Value": "9",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2552,7 +2551,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2564,7 +2563,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2576,7 +2575,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2588,7 +2587,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2600,7 +2599,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2612,7 +2611,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2624,7 +2623,7 @@
     "QualName": "",
     "Value": "5",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2636,7 +2635,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2648,7 +2647,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2660,7 +2659,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2672,7 +2671,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2684,7 +2683,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2696,7 +2695,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2708,7 +2707,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2720,7 +2719,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2732,7 +2731,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2744,7 +2743,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2756,7 +2755,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2768,7 +2767,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2780,7 +2779,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2792,7 +2791,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2804,7 +2803,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2816,7 +2815,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2828,7 +2827,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2840,7 +2839,7 @@
     "QualName": "",
     "Value": "3",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2852,7 +2851,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2864,7 +2863,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2876,7 +2875,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2888,7 +2887,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2900,7 +2899,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2912,7 +2911,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2924,7 +2923,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2936,7 +2935,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2948,7 +2947,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2960,7 +2959,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2972,7 +2971,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2984,7 +2983,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -2996,7 +2995,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3008,7 +3007,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3020,7 +3019,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3032,7 +3031,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3044,7 +3043,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3056,7 +3055,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3068,7 +3067,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3080,7 +3079,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3092,7 +3091,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3104,7 +3103,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3116,7 +3115,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3128,7 +3127,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3140,7 +3139,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3152,7 +3151,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:55:00 AM",
+    "SubDate": "20170727115500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3164,7 +3163,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3176,7 +3175,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3188,7 +3187,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3200,7 +3199,7 @@
     "QualName": "",
     "Value": "EC",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3212,7 +3211,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3224,7 +3223,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3236,7 +3235,7 @@
     "QualName": "",
     "Value": "201610120800",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3248,7 +3247,7 @@
     "QualName": "",
     "Value": ".csv",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3260,7 +3259,7 @@
     "QualName": "",
     "Value": "\"NaN\"",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3272,7 +3271,7 @@
     "QualName": "",
     "Value": "No quotes",
     "IsoDate": "",
-    "SubDate": "9/8/2017 3:55:00 PM",
+    "SubDate": "20170908035500",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3284,7 +3283,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3296,7 +3295,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3308,7 +3307,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3320,7 +3319,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3332,7 +3331,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3344,7 +3343,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3356,7 +3355,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3368,7 +3367,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3380,7 +3379,7 @@
     "QualName": "",
     "Value": "7",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3392,7 +3391,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3404,7 +3403,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3416,7 +3415,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3428,7 +3427,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3440,7 +3439,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:53:00 AM",
+    "SubDate": "20170727115300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3452,7 +3451,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3464,7 +3463,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3476,7 +3475,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3488,7 +3487,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3500,7 +3499,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3512,7 +3511,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3524,7 +3523,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3536,7 +3535,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3548,7 +3547,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:54:00 AM",
+    "SubDate": "20170727115400",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3560,7 +3559,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3572,7 +3571,7 @@
     "QualName": "",
     "Value": "10",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3584,7 +3583,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3596,7 +3595,7 @@
     "QualName": "",
     "Value": "BM",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3608,7 +3607,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3620,7 +3619,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3632,7 +3631,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:52:00 AM",
+    "SubDate": "20170727115200",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3644,7 +3643,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3656,7 +3655,7 @@
     "QualName": "",
     "Value": "10",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3668,7 +3667,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3680,7 +3679,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3692,7 +3691,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3704,7 +3703,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3716,7 +3715,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3728,7 +3727,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3740,7 +3739,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3752,7 +3751,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3764,7 +3763,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3776,7 +3775,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3788,7 +3787,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3800,7 +3799,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:51:00 AM",
+    "SubDate": "20170727115100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3812,7 +3811,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3824,7 +3823,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3836,7 +3835,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3848,7 +3847,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3860,7 +3859,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3872,7 +3871,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3884,7 +3883,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3896,7 +3895,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3908,7 +3907,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3920,7 +3919,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3932,7 +3931,7 @@
     "QualName": "",
     "Value": "7",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3944,7 +3943,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3956,7 +3955,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3968,7 +3967,7 @@
     "QualName": "",
     "Value": "0",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3980,7 +3979,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/26/2017 11:49:00 AM",
+    "SubDate": "20170727114900",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -3992,7 +3991,7 @@
     "QualName": "",
     "Value": "3",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4004,7 +4003,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4016,7 +4015,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4028,7 +4027,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4040,7 +4039,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4052,7 +4051,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4064,7 +4063,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4076,7 +4075,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4088,7 +4087,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4100,7 +4099,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4112,7 +4111,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4124,7 +4123,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4136,7 +4135,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4148,7 +4147,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4160,7 +4159,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4172,7 +4171,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4184,7 +4183,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4196,7 +4195,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:00:00 PM",
+    "SubDate": "20170731040000",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4208,7 +4207,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4220,7 +4219,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4232,7 +4231,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4244,7 +4243,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4256,7 +4255,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4268,7 +4267,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4280,7 +4279,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4292,7 +4291,7 @@
     "QualName": "",
     "Value": "5",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4304,7 +4303,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4316,7 +4315,7 @@
     "QualName": "",
     "Value": "ASCII",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4328,7 +4327,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4340,7 +4339,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4352,7 +4351,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4364,7 +4363,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/25/2017 12:03:00 PM",
+    "SubDate": "20170725000300",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4376,7 +4375,7 @@
     "QualName": "",
     "Value": "5",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4388,7 +4387,7 @@
     "QualName": "",
     "Value": "4",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4400,7 +4399,7 @@
     "QualName": "",
     "Value": "Binary",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4412,7 +4411,7 @@
     "QualName": "",
     "Value": "ST",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4424,7 +4423,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4436,7 +4435,7 @@
     "QualName": "",
     "Value": "1",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4448,7 +4447,7 @@
     "QualName": "",
     "Value": "2",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4460,7 +4459,7 @@
     "QualName": "",
     "Value": "197001010000",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4472,7 +4471,7 @@
     "QualName": "",
     "Value": "20161012",
     "IsoDate": "",
-    "SubDate": "7/31/2017 4:01:00 PM",
+    "SubDate": "20170731040100",
     "SubName": "Super Icos",
     "SubEmail": "info@icos-etc.eu"
   }, {
@@ -4484,7 +4483,7 @@
       "QualName": "",
       "Value": "5",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4496,7 +4495,7 @@
       "QualName": "",
       "Value": "4",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4508,7 +4507,7 @@
       "QualName": "",
       "Value": "Binary",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4520,7 +4519,7 @@
       "QualName": "",
       "Value": "BLEEEEEE",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4532,7 +4531,7 @@
       "QualName": "",
       "Value": "2",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4544,7 +4543,7 @@
       "QualName": "",
       "Value": "1",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4556,7 +4555,7 @@
       "QualName": "",
       "Value": "2",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4568,7 +4567,7 @@
       "QualName": "",
       "Value": "197001010000",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }, {
@@ -4580,8 +4579,7 @@
       "QualName": "",
       "Value": "20161012",
       "IsoDate": "",
-      "SubDate": "7/31/2017 4:01:00 PM",
+      "SubDate": "20170731040100",
       "SubName": "Super Icos",
       "SubEmail": "info@icos-etc.eu"
     }]
-}

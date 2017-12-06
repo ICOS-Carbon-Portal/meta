@@ -90,10 +90,8 @@ class RdfBadmEntriesIngester(
 		val membership = vocab.getEtcMembership(siteId, roleId, lastName)
 		val person = vocab.getPerson(firstName, lastName)
 
-		val membershipStart = entry.date.map(_ match {
-			case BadmYear(year) => vocab.lit(year.toString, XMLSchema.DATE)
-			case BadmLocalDate(date) => vocab.lit(date)
-		}).getOrElse(vocab.lit(entry.submissionDate))
+		val membershipStart = entry.date.map(badmDateToRdf(_, vocab))
+			.getOrElse(vocab.lit(entry.submissionDate))
 
 		Seq[(IRI, IRI, Value)](
 			(person, RDF.TYPE, metaVocab.personClass),
@@ -111,10 +109,7 @@ class RdfBadmEntriesIngester(
 				(implicit metaVocab: CpmetaVocab, badmVocab: BadmVocab): Seq[Statement] = {
 		val submissionDate = metaVocab.lit(entry.submissionDate)
 
-		val entryInformationDate: Option[Value] = entry.date.map{
-			case BadmLocalDate(locDate) => metaVocab.lit(locDate)
-			case BadmYear(year) => metaVocab.lit(year.toString, XMLSchema.DATE)
-		}
+		val entryInformationDate: Option[Value] = entry.date.map(badmDateToRdf(_, metaVocab))
 
 		Seq[(IRI, IRI, Value)](
 			(station, metaVocab.hasAncillaryEntry, ancillEntry),
@@ -157,6 +152,12 @@ class RdfBadmEntriesIngester(
 }
 
 object RdfBadmEntriesIngester{
+
+	def badmDateToRdf(d: BadmDate, vocab: CustomVocab): Value = d match {
+		case BadmYear(year) => vocab.lit(year.toString, XMLSchema.DATE)
+		case BadmLocalDate(date) => vocab.lit(date)
+		case BadmLocalDateTime(dt) => vocab.lit(dt)
+	}
 
 	def getSiteId(siteEntry: BadmEntry): Option[StationId] =
 		siteEntry.values.collectFirst{

@@ -33,7 +33,7 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 		for(
 			utcOffset <- getUtcOffset(meta.station);
 			fileMeta <- getFileMeta(meta);
-			specUriSegment = getObjSpecUrlSegment(meta.fileName, fileMeta);
+			specUriSegment = getObjSpecUrlSegment(fileMeta);
 			objSpec = vocab.getObjectSpecification(specUriSegment)
 		) yield UploadMetadataDto(
 			hashSum = meta.hashSum,
@@ -54,7 +54,7 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 		)
 	}
 
-	private def getObjSpecUrlSegment(fileName: String, meta: EtcFileMeta): String = {
+	private def getObjSpecUrlSegment(meta: EtcFileMeta): String = {
 
 		val baseSegment = meta.dtype match {
 			case DataType.BM => config.bioMeteoObjSpecId
@@ -63,9 +63,8 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 		}
 
 		val binSuff = if(meta.isBinary) "Bin" else "Csv"
-		val zipSuff = if(fileName.endsWith("zip")) "Zip" else ""
 
-		baseSegment + binSuff + zipSuff
+		baseSegment + binSuff
 	}
 
 	private def getUtcOffset(station: StationId): Try[Int] = etcMeta

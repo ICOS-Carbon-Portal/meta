@@ -62,12 +62,9 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 			case DataType.ST => config.storageObjSpecId
 		}
 
-		val objSpecSuff = meta.dtype match {
-			case DataType.EC => ""
-			case _ => if(meta.isBinary) "Bin" else "Csv"
-		}
+		val binSuff = if(meta.isBinary) "Bin" else "Csv"
 
-		baseSegment + objSpecSuff
+		baseSegment + binSuff
 	}
 
 	private def getUtcOffset(station: StationId): Try[Int] = etcMeta

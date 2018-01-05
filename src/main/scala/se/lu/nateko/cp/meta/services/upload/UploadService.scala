@@ -73,8 +73,7 @@ class UploadService(
 			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
 			_ <- Future.fromTry(server.applyAll(updates))
 		) yield{
-			//TODO Remove the redundant segment below when Lynn from ATC is ready
-			vocab.getDataObjectAccessUrl(meta.hashSum).toString + "/redundantsegment.ext"
+			vocab.getDataObjectAccessUrl(meta.hashSum).toString
 		}
 	}
 

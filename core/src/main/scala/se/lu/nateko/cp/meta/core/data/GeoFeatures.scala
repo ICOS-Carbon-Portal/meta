@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
+import java.text.DecimalFormat
+
 sealed trait GeoFeature{
 	def geoJson: String
 	def textSpecification: String
@@ -17,8 +19,9 @@ case class Position(lat: Double, lon: Double) extends GeoFeature{
 
 	def textSpecification = s"Lat: $lat6, Lon: $lon6"
 
-	def lat6 = "%.6f".format(lat)
-	def lon6 = "%.6f".format(lon)
+	private def numForm = new DecimalFormat("###.######")
+	def lat6 = numForm.format(lat)
+	def lon6 = numForm.format(lon)
 }
 
 case class LatLonBox(min: Position, max: Position, label: Option[String]) extends GeoFeature{
@@ -45,7 +48,9 @@ case class GeoTrack(points: Seq[Position]) extends GeoFeature{
 case class Polygon(vertices: Seq[Position]) extends GeoFeature{
 	def geoJson: String = s"""{
 		|	"type": "Polygon",
-		|	"coordinates": ${(vertices ++ vertices.headOption).map(p => s"[${p.lon6}, ${p.lat6}]").mkString("[", ", ", "]")}
+		|	"coordinates": [
+		|		${(vertices ++ vertices.headOption).map(p => s"[${p.lon6}, ${p.lat6}]").mkString("[", ", ", "]")}
+		|	]
 		|}""".stripMargin
 
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")

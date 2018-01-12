@@ -22,7 +22,8 @@ lazy val metaCore = (project in file("core"))
 		name := "meta-core",
 		version := "0.3.6-SNAPSHOT",
 		libraryDependencies ++= Seq(
-			"io.spray" %% "spray-json" % "1.3.3"
+			"io.spray"              %% "spray-json"                         % "1.3.3",
+			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"

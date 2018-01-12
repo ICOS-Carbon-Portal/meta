@@ -14,6 +14,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val positionFormat = jsonFormat2(Position)
 	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
+	implicit val geoPolygonFormat = jsonFormat1(Polygon)
 	implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
 
 	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
@@ -23,12 +24,15 @@ object JsonSupport extends CommonJsonSupport{
 			case gt: GeoTrack => gt.toJson
 			case pos: Position => pos.toJson
 			case ggf: GenericGeoFeature => ggf.toJson
+			case gpoly: Polygon => gpoly.toJson
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
 			case JsObject(fields) =>
 				if(fields.contains("points"))
 					value.convertTo[GeoTrack]
+				else if(fields.contains("vertices"))
+					value.convertTo[Polygon]
 				else if(fields.contains("min") && fields.contains("max"))
 					value.convertTo[LatLonBox]
 				else if(fields.contains("lat") && fields.contains("lon"))

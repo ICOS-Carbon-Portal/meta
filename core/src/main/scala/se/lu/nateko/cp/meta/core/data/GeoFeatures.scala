@@ -41,3 +41,12 @@ case class GeoTrack(points: Seq[Position]) extends GeoFeature{
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
 }
+
+case class Polygon(vertices: Seq[Position]) extends GeoFeature{
+	def geoJson: String = s"""{
+		|	"type": "Polygon",
+		|	"coordinates": ${(vertices ++ vertices.headOption).map(p => s"[${p.lon6}, ${p.lat6}]").mkString("[", ", ", "]")}
+		|}""".stripMargin
+
+	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
+}

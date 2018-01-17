@@ -47,6 +47,14 @@ case class UploadMetadataDto(
 	isNextVersionOf: Option[Sha256Sum]
 )
 
+case class StaticCollectionDto(
+	submitterId: String,
+	members: Seq[Sha256Sum],
+	title: String,
+	description: Option[String],
+	isNextVersionOf: Option[Sha256Sum]
+)
+
 case class StationDataMetadata(
 	station: URI,
 	instrument: Option[URI],

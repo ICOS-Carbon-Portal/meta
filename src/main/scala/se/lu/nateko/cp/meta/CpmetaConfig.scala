@@ -68,6 +68,7 @@ case class EtcUploadConfig(
 
 case class UploadServiceConfig(
 	icosMetaServerId: String,
+	collectionsServerId: String,
 	submitters: Map[String, DataSubmitterConfig],
 	epicPid: EpicPidConfig,
 	etc: EtcUploadConfig
@@ -137,7 +138,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat3(EtcUploadConfig)
-	implicit val uploadServiceConfigFormat = jsonFormat4(UploadServiceConfig)
+	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat4(SparqlServerConfig)

@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
+	val collections: InstanceServer,
 	allDataObjs: InstanceServer,
 	perFormat: Map[IRI, InstanceServer]
 )(implicit envriConfs: EnvriConfigs) extends CpmetaFetcher{
@@ -32,7 +33,6 @@ class DataObjectInstanceServers(
 			case None => Failure(new UploadUserErrorException(s"Object '$objHash' is unknown or has no object specification"))
 			case Some(uri) => Success(uri)
 		}
-		
 	}
 
 	def getObjSpecificationFormat(objectSpecification: IRI): Try[IRI] = {
@@ -59,4 +59,7 @@ class DataObjectInstanceServers(
 			server <- getInstServerForFormat(format)
 		) yield server
 
+	def getCollectionCreator(coll: Sha256Sum): Option[IRI] = {
+		collections.getUriValues(vocab.getCollection(coll), metaVocab.dcterms.creator, AtMostOne).headOption
+	}
 }

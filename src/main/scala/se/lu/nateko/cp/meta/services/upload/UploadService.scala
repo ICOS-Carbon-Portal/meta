@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.StaticCollectionDto
 
 class UploadService(
 		servers: DataObjectInstanceServers,
@@ -44,7 +45,7 @@ class UploadService(
 	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Future[String] = {
 		val submitterOrgUriTry = for(
 			_ <- validator.validateUpload(meta, uploader);
-			submitterConf <- validator.getSubmitterConfig(meta)
+			submitterConf <- validator.getSubmitterConfig(meta.submitterId)
 		) yield submitterConf.submittingOrganization
 
 		for(
@@ -58,6 +59,27 @@ class UploadService(
 			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
 			response <- registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		) yield response
+	}
+
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId): Future[String] = {
+		val collHash = {
+			val sha256 = java.security.MessageDigest.getInstance("SHA-256")
+			coll.members.sortBy(_.base64Url).foreach{hash =>
+				sha256.update(hash.truncate.getBytes.toArray)
+			}
+			new Sha256Sum(sha256.digest())
+		}
+
+		val resTry = for(
+			_ <- validator.validateCollection(coll, collHash, uploader);
+			submitterConf <- validator.getSubmitterConfig(coll.submitterId);
+			submittingOrg = submitterConf.submittingOrganization;
+			collIri = vocab.getCollection(collHash);
+			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
+			//TODO Compute and apply the needed RDF updates
+		) yield collIri.toString
+
+		Future.fromTry(resTry)
 	}
 
 	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI): Future[String] = {

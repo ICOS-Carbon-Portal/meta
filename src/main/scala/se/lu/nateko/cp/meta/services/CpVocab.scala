@@ -44,10 +44,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 
-	def getDataObject(hash: Sha256Sum) = factory.createIRI(config.landingPagePrefix.toString, hash.id)
+	def getDataObject(hash: Sha256Sum) = factory.createIRI(s"${config.metaPrefix}objects/", hash.id)
+	def getCollection(hash: Sha256Sum) = factory.createIRI(s"${config.metaPrefix}collections/", hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum) =
-		new URI(config.dataObjPrefix + hash.id)
+	def getDataObjectAccessUrl(hash: Sha256Sum) = new URI(s"${config.dataPrefix}objects/${hash.id}")
 
 	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
 	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
@@ -61,7 +61,7 @@ object CpVocab{
 
 	def inferEnvri(dobj: URI)(implicit configs: EnvriConfigs): Envri.Value = configs
 		.collectFirst{
-			case (envri, conf) if dobj.getHost == conf.landingPagePrefix.getHost => envri
+			case (envri, conf) if dobj.getHost == conf.metaPrefix.getHost => envri
 		}
 		.getOrElse(Envri.ICOS)
 

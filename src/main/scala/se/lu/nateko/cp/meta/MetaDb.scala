@@ -117,6 +117,7 @@ object MetaDb {
 		instanceServers: Map[String, InstanceServer]
 	)(implicit system: ActorSystem, m: Materializer): UploadService = {
 		val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
+		val collectionsInstServer = instanceServers(config.dataUploadService.collectionsServerId)
 		val factory = icosMetaInstServer.factory
 		val dataObjServConfs = config.instanceServers.forDataObjects
 
@@ -134,7 +135,7 @@ object MetaDb {
 
 		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, allDataObjInstServ, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, collectionsInstServer, allDataObjInstServ, perFormatServers)
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)

@@ -92,6 +92,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val date = getRelative("date")
 		val title = getRelative("title")
 		val description = getRelative("description")
+		val creator = getRelative("creator")
+		val hasPart = getRelative("hasPart")
 		val dateSubmitted = getRelative("dateSubmitted")
 	}
 

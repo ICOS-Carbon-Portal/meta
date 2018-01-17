@@ -4,8 +4,8 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri
 
 case class EnvriConfig(
-	dataObjPrefix: URI,
-	landingPagePrefix: URI,
+	dataPrefix: URI,
+	metaPrefix: URI,
 	metaResourcePrefix: URI
 )
 

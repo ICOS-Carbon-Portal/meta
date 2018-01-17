@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.StaticCollectionDto
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -47,6 +48,19 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
 			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject))
+	}
+
+	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI): Seq[Statement] = {
+		val dct = metaVocab.dcterms
+		Seq(
+			makeSt(collIri, dct.title, vocab.lit(coll.title)),
+			makeSt(collIri, dct.creator, factory.createIRI(submittingOrg))
+		) ++
+			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
+			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.map(vocab.getCollection)) ++
+			coll.members.map{elem =>
+				makeSt(collIri, dct.hasPart, vocab.getDataObject(elem))
+			}
 	}
 
 	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature): Seq[Statement] = {

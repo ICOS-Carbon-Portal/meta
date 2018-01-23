@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import akka.NotUsed
@@ -32,7 +33,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- validatePreviousVersion(meta.isNextVersionOf, spec)
 	) yield NotUsed
 
-	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId): Try[NotUsed] = for(
+	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
 		submConf <- getSubmitterConfig(coll.submitterId);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
@@ -54,7 +55,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		else ok
 	}
 
-	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum): Try[NotUsed] =
+	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(implicit envri: Envri): Try[NotUsed] =
 		servers.getCollectionCreator(coll).map{creator =>
 			if(creator === submConf.submittingOrganization)
 				ok
@@ -63,11 +64,21 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}"))
 		}.getOrElse(ok)
 
-	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum): Try[NotUsed] = {
-		val collExists = servers.getCollectionCreator(hash).isDefined
-		if(!collExists && coll.members.isEmpty)
-			Failure(new UploadUserErrorException("Creating empty static collections is not allowed"))
-		else ok
+	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(implicit envri: Envri): Try[NotUsed] = {
+
+		if(!servers.collectionExists(hash) && coll.members.isEmpty)
+			Failure(
+				new UploadUserErrorException("Creating empty static collections is not allowed")
+			)
+		else
+			coll.members.find{item =>
+				!servers.collectionExists(item.toRdf) && !servers.dataObjExists(item.toRdf)
+			} match {
+				case None => ok
+				case Some(item) => Failure(
+					new UploadUserErrorException(s"Neither collection nor data object was found at $item")
+				)
+			}
 	}
 
 	private def userAuthorizedByProducer(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Try[Unit] = Try{
@@ -140,9 +151,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	private def validatePreviousCollectionVersion(prevVers: Option[Sha256Sum]): Try[NotUsed] =
+	private def validatePreviousCollectionVersion(prevVers: Option[Sha256Sum])(implicit envri: Envri): Try[NotUsed] =
 		prevVers.map{coll =>
-			if(servers.getCollectionCreator(coll).isDefined)
+			if(servers.collectionExists(coll))
 				ok
 			else
 				Failure(new UploadUserErrorException(s"Previous-version collection was not found: $coll"))

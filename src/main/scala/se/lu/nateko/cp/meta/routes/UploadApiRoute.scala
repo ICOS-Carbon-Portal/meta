@@ -18,6 +18,8 @@ import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.StaticCollectionDto
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -42,7 +44,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		service: UploadService,
 		authRouting: AuthenticationRouting,
 		coreConf: MetaCoreConfig
-	): Route = handleExceptions(errHandler){
+	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
 
 		val pcm = new PageContentMarshalling(coreConf.handleService)
 		import pcm.dataObjectMarshaller
@@ -68,6 +70,12 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						replyWithErrorOnBadContent{
 							entity(as[UploadMetadataDto]){uploadMeta =>
 								complete(service.registerUpload(uploadMeta, uploader))
+							} ~
+							entity(as[StaticCollectionDto]){collMeta =>
+								extractHost{hostname =>
+									implicit val envri = CpVocab.inferEnvri(hostname)
+									complete(service.registerStaticCollection(collMeta, uploader))
+								}
 							}
 						}
 					}
@@ -82,8 +90,16 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		} ~
-		(get & path("objects" / Sha256Segment)){ hash =>
-			complete(() => service.fetchDataObj(hash))
+		get{
+			path("objects" / Sha256Segment){ hash =>
+				complete(() => service.fetchDataObj(hash))
+			} ~
+			path("collections" / Sha256Segment){ hash =>
+				extractHost{hostname =>
+					implicit val envri = CpVocab.inferEnvri(hostname)
+					complete(service.fetchStaticColl(hash))
+				}
+			}
 		}
 	}
 }

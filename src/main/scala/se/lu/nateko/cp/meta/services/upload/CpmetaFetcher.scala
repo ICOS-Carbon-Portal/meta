@@ -60,7 +60,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		else getOrganization(uri)
 	}
 
-	private def getOrganization(org: IRI) = Organization(
+	protected def getOrganization(org: IRI) = Organization(
 		self = getLabeledResource(org),
 		name = getSingleString(org, metaVocab.hasName),
 		orgClass = getOrgClass(org)

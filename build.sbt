@@ -20,7 +20,7 @@ lazy val metaCore = (project in file("core"))
 	.settings(commonSettings: _*)
 	.settings(
 		name := "meta-core",
-		version := "0.3.6-SNAPSHOT",
+		version := "0.3.7-SNAPSHOT",
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.3",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"

@@ -14,6 +14,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	//TODO Generalize to SITES and ICOS
 	private val config: EnvriConfig = envriConfigs(Envri.ICOS)
+	def getConfig(implicit envri: Envri.Value) = envriConfigs(envri)
+
 	val baseUri = config.metaResourcePrefix.toString
 
 	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)
@@ -45,7 +47,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
 
 	def getDataObject(hash: Sha256Sum) = factory.createIRI(s"${config.metaPrefix}objects/", hash.id)
-	def getCollection(hash: Sha256Sum) = factory.createIRI(s"${config.metaPrefix}collections/", hash.id)
+	def getCollection(hash: Sha256Sum)(implicit envri: Envri.Value) = factory.createIRI(s"${getConfig.metaPrefix}collections/", hash.id)
 
 	def getDataObjectAccessUrl(hash: Sha256Sum) = new URI(s"${config.dataPrefix}objects/${hash.id}")
 

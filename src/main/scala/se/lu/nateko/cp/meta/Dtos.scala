@@ -49,7 +49,7 @@ case class UploadMetadataDto(
 
 case class StaticCollectionDto(
 	submitterId: String,
-	members: Seq[Sha256Sum],
+	members: Seq[URI],
 	title: String,
 	description: Option[String],
 	isNextVersionOf: Option[Sha256Sum]

@@ -13,10 +13,12 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
-	val collections: InstanceServer,
+	val collectionServers: Map[Envri.Value, InstanceServer],
 	allDataObjs: InstanceServer,
 	perFormat: Map[IRI, InstanceServer]
 )(implicit envriConfs: EnvriConfigs) extends CpmetaFetcher{
@@ -59,7 +61,14 @@ class DataObjectInstanceServers(
 			server <- getInstServerForFormat(format)
 		) yield server
 
-	def getCollectionCreator(coll: Sha256Sum): Option[IRI] = {
-		collections.getUriValues(vocab.getCollection(coll), metaVocab.dcterms.creator, AtMostOne).headOption
+	def getCollectionCreator(coll: Sha256Sum)(implicit envri: Envri.Value): Option[IRI] = collectionServers.get(envri).flatMap{
+		_.getUriValues(vocab.getCollection(coll), metaVocab.dcterms.creator, AtMostOne).headOption
 	}
+
+	def collectionExists(coll: Sha256Sum)(implicit envri: Envri.Value): Boolean = collectionExists(vocab.getCollection(coll))
+
+	def collectionExists(coll: IRI)(implicit envri: Envri.Value): Boolean = collectionServers.get(envri)
+		.map{_.hasStatement(coll, RDF.TYPE, metaVocab.collectionClass)}.getOrElse(false)
+
+	def dataObjExists(dobj: IRI): Boolean = allDataObjs.hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)
 }

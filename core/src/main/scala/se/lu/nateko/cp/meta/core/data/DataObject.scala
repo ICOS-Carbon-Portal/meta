@@ -19,6 +19,7 @@ object OrganizationClass extends Enumeration{
 }
 
 object Envri extends Enumeration{
+	type Envri = Value
 	val ICOS, SITES = Value
 }
 
@@ -118,4 +119,28 @@ case class DataObject(
 			).flatMap(_.host)
 			OrgAffiliation(orgOpt.getOrElse(submission.submitter))
 		}
+}
+
+sealed trait DataItem
+
+sealed trait StaticDataItem extends DataItem
+
+final case class PlainDataObject(dobj: UriResource) extends StaticDataItem
+
+sealed trait DataItemCollection extends DataItem {
+	type M <: DataItem
+	def members: Seq[M]
+	def creator: Organization
+	def title: String
+	def description: Option[String]
+}
+
+final case class StaticCollection(
+	res: URI,
+	members: Seq[StaticDataItem],
+	creator: Organization,
+	title: String,
+	description: Option[String]
+) extends DataItemCollection with StaticDataItem {
+	type M = StaticDataItem
 }

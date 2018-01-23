@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -50,16 +51,17 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject))
 	}
 
-	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI): Seq[Statement] = {
+	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms
 		Seq(
+			makeSt(collIri, RDF.TYPE, metaVocab.collectionClass),
 			makeSt(collIri, dct.title, vocab.lit(coll.title)),
-			makeSt(collIri, dct.creator, factory.createIRI(submittingOrg))
+			makeSt(collIri, dct.creator, submittingOrg.toRdf)
 		) ++
 			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
 			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.map(vocab.getCollection)) ++
 			coll.members.map{elem =>
-				makeSt(collIri, dct.hasPart, vocab.getDataObject(elem))
+				makeSt(collIri, dct.hasPart, elem.toRdf)
 			}
 	}
 
@@ -97,7 +99,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
 		getProductionStatements(hash, meta.production) ++
 		getSpatialCoverageStatements(hash, meta.spatial) ++
-		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(uri => vocab.factory.createIRI(uri)))
+		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(_.toRdf))
 	}
 
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {

@@ -17,34 +17,20 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.ValueFactory
 
-class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) {
+abstract class MetadataUpdater(vocab: CpVocab) {
 	import MetadataUpdater._
 	import StatementStability._
+
+	protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability
 
 	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement]): Seq[RdfUpdate] = {
 		if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true))
 		else {
-
-			def isProvTime(pred: IRI): Boolean = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
-	
-			val acq = vocab.getAcquisition(hash)
-			val subm = vocab.getSubmission(hash)
-			val cov = vocab.getSpatialCoverate(hash)
-	
-			def stability(sp: SubjPred): StatementStability = {
-				val (subj, pred) = sp
-				if(subj == acq && isProvTime(pred)) Sticky
-				else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
-				else if(subj == subm && isProvTime(pred)) Fixed
-				else if(pred === metaVocab.hasSizeInBytes) Fixed
-				else Plain
-			}
-	
 			val oldBySp = new BySubjPred(oldStatements)
 			val newBySp = new BySubjPred(newStatements)
 			val allSps = (oldBySp.sps ++ newBySp.sps).toSeq
 
-			allSps.flatMap(sp => stability(sp) match {
+			allSps.flatMap(sp => stability(sp, hash) match {
 				case Fixed =>
 					if(oldBySp(sp).isEmpty) newBySp(sp).map(RdfUpdate(_, true))
 					else Nil
@@ -56,6 +42,36 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
 		}
+	}
+}
+
+class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab) {
+	import MetadataUpdater._
+	import StatementStability._
+
+	override protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability = {
+		val pred = sp._2
+		if(pred === metaVocab.dcterms.hasPart) Fixed
+		else Plain
+	}
+}
+
+class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
+	import MetadataUpdater._
+	import StatementStability._
+
+	override protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability = {
+		val acq = vocab.getAcquisition(hash)
+		val subm = vocab.getSubmission(hash)
+		val cov = vocab.getSpatialCoverate(hash)
+		val (subj, pred) = sp
+		val isProvTime = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
+
+		if(subj == acq && isProvTime) Sticky
+		else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
+		else if(subj == subm && isProvTime) Fixed
+		else if(pred === metaVocab.hasSizeInBytes) Fixed
+		else Plain
 	}
 
 	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext): Future[Seq[Statement]] = {
@@ -84,12 +100,12 @@ class MetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunn
 
 object MetadataUpdater{
 
-	private object StatementStability extends Enumeration{
+	object StatementStability extends Enumeration{
 		type StatementStability = Value
 		val Plain, Sticky, Fixed = Value
 	}
 
-	private type SubjPred = (Resource, IRI)
+	type SubjPred = (Resource, IRI)
 
 	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
 

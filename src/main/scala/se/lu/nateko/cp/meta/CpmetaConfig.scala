@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -60,6 +61,7 @@ case class DataSubmitterConfig(
 	submittingOrganization: URI
 )
 
+//TODO Consider making the values of this class URIs instead of strings.
 case class EtcUploadConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,
@@ -68,7 +70,7 @@ case class EtcUploadConfig(
 
 case class UploadServiceConfig(
 	icosMetaServerId: String,
-	collectionsServerId: String,
+	collectionServers: Map[Envri, String],
 	submitters: Map[String, DataSubmitterConfig],
 	epicPid: EpicPidConfig,
 	etc: EtcUploadConfig
@@ -138,6 +140,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat3(EtcUploadConfig)
+
+	import se.lu.nateko.cp.meta.core.MetaCoreConfig.envriFormat
 	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
@@ -157,7 +161,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	val default: CpmetaConfig = {
 		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
-		
+
 		confJson.parseJson.convertTo[CpmetaConfig]
 	}
 

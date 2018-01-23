@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.upload
 import java.net.URI
 
 import scala.concurrent.Future
+import scala.util.Try
 
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.cpauth.core.UserId
@@ -18,6 +19,9 @@ import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadService(
 		servers: DataObjectInstanceServers,
@@ -33,13 +37,21 @@ class UploadService(
 	private val validator = new UploadValidator(servers, conf)
 	private val epic = new EpicPidClient(conf.epicPid)
 	private val completer = new UploadCompleter(servers, epic)
-	private val metaUpdater = new MetadataUpdater(vocab, metaVocab, sparql)
+	private val metaUpdater = new DobjMetadataUpdater(vocab, metaVocab, sparql)
+	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
 
 	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
 		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, epic.getPid)
 		objectFetcher.fetch(hash)
+	}
+
+	def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] = {
+		servers.collectionServers.get(envri).flatMap{collServer =>
+			val collFetcher = new CollectionFetcher(collServer, vocab, metaVocab)
+			collFetcher.fetchStatic(hash)
+		}
 	}
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Future[String] = {
@@ -61,22 +73,35 @@ class UploadService(
 		) yield response
 	}
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId): Future[String] = {
-		val collHash = {
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
+		val collHashTry = Try{
 			val sha256 = java.security.MessageDigest.getInstance("SHA-256")
-			coll.members.sortBy(_.base64Url).foreach{hash =>
-				sha256.update(hash.truncate.getBytes.toArray)
-			}
+			coll.members
+				.map(_.toString.split('/').last)
+				.sorted
+				.foreach{segm =>
+					val hash = Sha256Sum.fromBase64Url(segm).getOrElse{
+						throw new UploadUserErrorException(
+							"Static collection's members must be also static and therefore their URLs " +
+							"must end with base64Url-encoded SHA-256 hashsums (full or truncated)"
+						)
+					}
+					sha256.update(hash.truncate.getBytes.toArray)
+				}
 			new Sha256Sum(sha256.digest())
 		}
 
 		val resTry = for(
+			collHash <- collHashTry;
+			server <- Try{servers.collectionServers(envri)};
 			_ <- validator.validateCollection(coll, collHash, uploader);
 			submitterConf <- validator.getSubmitterConfig(coll.submitterId);
 			submittingOrg = submitterConf.submittingOrganization;
 			collIri = vocab.getCollection(collHash);
-			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
-			//TODO Compute and apply the needed RDF updates
+			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg);
+			oldStatements = server.getStatements(collIri);
+			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements);
+			_ <- server.applyAll(updates)
 		) yield collIri.toString
 
 		Future.fromTry(resTry)

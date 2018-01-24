@@ -17,6 +17,8 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def metaVocab: CpmetaVocab
 	protected def vocab: CpVocab
 
+	def getPlainDataObject(dobj: IRI) = PlainDataObject(dobj.toJava, getSingleString(dobj, metaVocab.hasName))
+
 	protected def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
 		format = getLabeledResource(spec, metaVocab.hasFormat),

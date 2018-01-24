@@ -10,12 +10,20 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
 class CollectionFetcher(
 	protected val server: InstanceServer,
+	dobjsServer: InstanceServer,
 	protected val vocab: CpVocab,
 	protected val metaVocab: CpmetaVocab
-)(implicit envri: Envri) extends CpmetaFetcher {
+)(implicit envri: Envri) extends CpmetaFetcher {collFetcher =>
+
+	private val dobjFetcher = new CpmetaFetcher{
+		val server = dobjsServer
+		val vocab = collFetcher.vocab
+		val metaVocab = collFetcher.metaVocab
+	}
 
 	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {
 		val collUri = vocab.getCollection(hash)
@@ -31,7 +39,7 @@ class CollectionFetcher(
 
 		val members = server.getUriValues(coll, dct.hasPart).map{item =>
 			if(collectionExists(item)) getExistingStaticColl(item)
-			else PlainDataObject(getLabeledResource(item))
+			else dobjFetcher.getPlainDataObject(item)
 		}
 
 		StaticCollection(

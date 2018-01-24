@@ -49,7 +49,7 @@ class UploadService(
 
 	def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] = {
 		servers.collectionServers.get(envri).flatMap{collServer =>
-			val collFetcher = new CollectionFetcher(collServer, vocab, metaVocab)
+			val collFetcher = new CollectionFetcher(collServer, servers.allDataObjs, vocab, metaVocab)
 			collFetcher.fetchStatic(hash)
 		}
 	}

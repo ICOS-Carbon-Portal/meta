@@ -19,7 +19,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
 	val collectionServers: Map[Envri.Value, InstanceServer],
-	allDataObjs: InstanceServer,
+	val allDataObjs: InstanceServer,
 	perFormat: Map[IRI, InstanceServer]
 )(implicit envriConfs: EnvriConfigs) extends CpmetaFetcher{
 	import InstanceServer.AtMostOne

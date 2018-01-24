@@ -6,6 +6,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 
 import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
 import scala.concurrent.Future
@@ -15,28 +16,34 @@ import java.net.URI
 
 class PageContentMarshalling(handleService: URI) {
 
-	implicit val dataObjectMarshaller: ToResponseMarshaller[() => Option[DataObject]] = Marshaller(
-		implicit exeCtxt => dataObjGetter => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(dataObjGetter, _)) ::
-			WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataObjGetter)) :: Nil
+	implicit val dataObjectMarshaller: ToResponseMarshaller[() => Option[DataObject]] =
+		makeMarshaller(views.html.LandingPage(_, handleService))
+
+	implicit val statCollMarshaller: ToResponseMarshaller[() => Option[StaticCollection]] =
+		makeMarshaller(views.html.CollectionLandingPage(_))
+
+	private def makeMarshaller[T: JsonFormat](template: T => Html): ToResponseMarshaller[() => Option[T]] = Marshaller(
+		implicit exeCtxt => producer => Future.successful(
+			WithOpenCharset(MediaTypes.`text/html`, getHtml(producer, template, _)) ::
+			WithFixedContentType(ContentTypes.`application/json`, () => getJson(producer)) :: Nil
 		)
 	)
 
-	private def getHtml(dataObjGetter: () => Option[DataObject], charset: HttpCharset) =
-		dataObjGetter() match {
-			case Some(dataObj) => HttpResponse(
+	private def getHtml[T](producer: () => Option[T], template: T => Html, charset: HttpCharset) =
+		producer() match {
+			case Some(obj) => HttpResponse(
 				entity = HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
-					views.html.LandingPage(dataObj, handleService).body
+					template(obj).body
 				)
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
 
-	private def getJson(dataObjGetter: () => Option[DataObject]) =
-		dataObjGetter() match {
-			case Some(dataObj) => HttpResponse(
-				entity = HttpEntity(ContentTypes.`application/json`, dataObj.toJson.prettyPrint)
+	private def getJson[T: JsonFormat](producer: () => Option[T]) =
+		producer() match {
+			case Some(obj) => HttpResponse(
+				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}

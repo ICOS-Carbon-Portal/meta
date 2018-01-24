@@ -1,0 +1,56 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import java.net.URI
+@import views.CpMenu
+
+@(coll: StaticCollection)
+@ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", Envri.ICOS, CpMenu.landingPage){
+	<div class="container-fluid">
+
+		<div class="row">
+			@Panel("Summary", 4){
+				@PanelRow("Title", coll.title)
+				@PanelHtmlRow{Collection creator}{
+					@agentLink(coll.creator)
+				}
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Content", 6){
+				@for(description <- coll.description){
+					@PanelRow("Description", description)
+				}
+				@for(item <- coll.members){
+					@PanelHtmlRow{Item}{
+						@staticDataItemLink(item)
+					}
+				}
+			}
+		</div>
+	</div>
+}
+
+@agentLink(agent: Agent) = {
+	<a href=@{agent.self.uri}>
+		@agent match {
+			case person: Person => {
+				<span>@{person.firstName + " " + person.lastName}</span>
+			}
+			case org: Organization => {
+				<span>@{org.name}</span>
+			}
+		}
+	</a>
+}
+
+
+@staticDataItemLink(item: StaticDataItem) = {
+	@item match {
+		case PlainDataObject(res, name) => {
+			<a target="_blank" href=@{res}>@{name}</a>
+		}
+		case coll: StaticCollection => {
+			<a target="_blank" href=@{coll.res}>@{coll.title}</a>
+		}
+	}
+}

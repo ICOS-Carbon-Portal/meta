@@ -82,7 +82,7 @@
 
 			@for(production <- dobj.production){
 				@Panel("Production"){
-					@agentPanelRow("Created by", production.creator)
+					@agentPanelRow("File made by", production.creator)
 					@for(contributor <- production.contributors){
 						@agentPanelRow("Contributor", contributor)
 					}

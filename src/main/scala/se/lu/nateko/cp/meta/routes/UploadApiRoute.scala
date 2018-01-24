@@ -47,7 +47,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
 
 		val pcm = new PageContentMarshalling(coreConf.handleService)
-		import pcm.dataObjectMarshaller
+		import pcm.{dataObjectMarshaller, statCollMarshaller}
 
 		pathPrefix("upload"){
 			post{
@@ -97,7 +97,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			path("collections" / Sha256Segment){ hash =>
 				extractHost{hostname =>
 					implicit val envri = CpVocab.inferEnvri(hostname)
-					complete(service.fetchStaticColl(hash))
+					complete(() => service.fetchStaticColl(hash))
 				}
 			}
 		}

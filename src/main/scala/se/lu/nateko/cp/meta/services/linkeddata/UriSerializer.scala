@@ -66,6 +66,8 @@ class Rdf4jUriSerializer(repo: Repository)(implicit envries: EnvriConfigs) exten
 
 private object Rdf4jUriSerializer{
 
+	val Limit = 500
+
 	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
 		val uri = repo.getValueFactory.createIRI(res.toString)
 		val own = repo.access(conn => conn.getStatements(uri, null, null, false))
@@ -90,18 +92,17 @@ private object Rdf4jUriSerializer{
 				case _ => None
 			}
 			propUriOpt zip propValueOpt
-		}.flatten.toIndexedSeq
+		}.flatten.take(Limit).toIndexedSeq
 
 		val usageInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate()
 
 		val usageInfos = new Rdf4jIterationIterator(usageInfo).map{bset =>
 			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
-		}.flatten.toIndexedSeq
+		}.flatten.take(Limit).toIndexedSeq
 
 		val uri = JavaUri.create(res.toString)
 		val seed = ResourceViewInfo(UriResource(uri, None), envri, None, Nil, Nil, usageInfos)
 
-		//TODO Add a limit to the amount of statements that are included
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 
 			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.LABEL) =>

@@ -7,6 +7,8 @@ import {inactivePis} from './queries/inactivePis';
 import {lastDataObjects} from './queries/lastDataObjects';
 import {labelingStatus} from './queries/labelingStatus';
 import {resubmittedFiles} from './queries/resubmittedFiles';
+import {existingCollections} from './queries/existingCollections';
+import {concaveHulls} from './queries/concaveHulls';
 
 const queries = [
 	{name:"Table of stations", query: stationsTable},
@@ -16,6 +18,8 @@ const queries = [
 	{name:"PIs of \"labelling-inactive\" stations", query: inactivePis},
 	{name:"Last 1000 data objects", query: lastDataObjects},
 	{name:"Re-submitted files", query: resubmittedFiles},
+	{name:"Collections", query: existingCollections},
+	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, class 1 and 2 PIs", query: etcClass1And2Pis},
 	{name:"ETC, labelling app form values", query: etcLabelingValues},
 	{name:"ETC, BADM ancillary values", query: badmEntries}

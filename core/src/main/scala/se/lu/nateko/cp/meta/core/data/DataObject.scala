@@ -87,6 +87,7 @@ case class DataObject(
 	hash: Sha256Sum,
 	accessUrl: Option[URI],
 	pid: Option[String],
+	doi: Option[String],
 	fileName: String,
 	size: Option[Long],
 	submission: DataSubmission,

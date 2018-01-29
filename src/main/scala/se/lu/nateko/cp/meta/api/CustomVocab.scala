@@ -10,17 +10,23 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 trait CustomVocab {
-	def baseUri: String
+	protected trait BaseUriProvider{
+		def baseUri: String
+	}
 	def factory: ValueFactory
+
+	protected def makeUriProvider(uri: String) = new BaseUriProvider{
+		def baseUri: String = uri
+	}
 
 	protected def urlEncode(s: String): String = {
 		//TODO Test this for "strange" strings (e.g. containing timestamps)
 		new java.net.URI(null, null, s, null).toASCIIString
 	}
 
-	def getRelativeRaw(local: String): IRI = factory.createIRI(baseUri, local)
-	def getRelative(local: String): IRI = getRelativeRaw(urlEncode(local))
-	def getRelative(suffix: String, local: String): IRI = getRelativeRaw(suffix + urlEncode(local))
+	def getRelativeRaw(local: String)(implicit bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
+	def getRelative(local: String)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(urlEncode(local))
+	def getRelative(suffix: String, local: String)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(suffix + urlEncode(local))
 
 	def lit(litVal: String, dtype: IRI) = factory.createLiteral(litVal, dtype)
 	def lit(litVal: String) = factory.createLiteral(litVal, XMLSchema.STRING)

@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
@@ -41,7 +42,7 @@ class UploadService(
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
 
-	def fetchDataObj(hash: Sha256Sum): Option[DataObject] = {
+	def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
 		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, epic.getPid)
 		objectFetcher.fetch(hash)
@@ -54,7 +55,7 @@ class UploadService(
 		}
 	}
 
-	def registerUpload(meta: UploadMetadataDto, uploader: UserId): Future[String] = {
+	def registerUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
 		val submitterOrgUriTry = for(
 			_ <- validator.validateUpload(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta.submitterId)
@@ -67,6 +68,7 @@ class UploadService(
 	}
 
 	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[String] = {
+		implicit val envri = Envri.ICOS
 		for(
 			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
 			response <- registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
@@ -107,7 +109,7 @@ class UploadService(
 		Future.fromTry(resTry)
 	}
 
-	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI): Future[String] = {
+	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Future[String] = {
 		val serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
@@ -129,7 +131,7 @@ class UploadService(
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo): Future[String] =
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[String] =
 		completer.completeUpload(hash, info).map(_.message)
 
 }

@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.core.data.Envri
 
 
 private class WdcggUploadCompleter(
@@ -31,6 +32,7 @@ private class WdcggUploadCompleter(
 	import WdcggUploadCompleter._
 
 	private val factory = vocab.factory
+	implicit private val envri = Envri.ICOS
 
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
 //TODO Add support for idempotence here
@@ -50,7 +52,7 @@ private class WdcggUploadCompleter(
 			}
 
 			for((key, value) <- keyValues if !specialPropKeys.contains(key)){
-				val keyProp = vocab.getRelative("wdcgg/", key)
+				val keyProp = vocab.getRelative("wdcgg/", key)(vocab.icosBup)
 
 				if(!server.hasStatement(Some(keyProp), None, None)){
 					facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))

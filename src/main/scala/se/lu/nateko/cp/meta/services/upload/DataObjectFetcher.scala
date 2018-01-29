@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.IRI
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class DataObjectFetcher(
 	protected val server: InstanceServer,
@@ -20,14 +21,14 @@ class DataObjectFetcher(
 	pidFactory: Sha256Sum => String
 ) extends CpmetaFetcher {
 
-	def fetch(hash: Sha256Sum): Option[DataObject] = {
+	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
 		val dataObjUri = vocab.getDataObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
 		else None
 	}
 
-	private def getExistingDataObject(hash: Sha256Sum): DataObject = {
+	private def getExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): DataObject = {
 		val dobj = vocab.getDataObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
@@ -60,7 +61,7 @@ class DataObjectFetcher(
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory(hash))
 	}
 
-	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec): Option[URI] = {
+	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(implicit envri: Envri): Option[URI] = {
 
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new URI("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))

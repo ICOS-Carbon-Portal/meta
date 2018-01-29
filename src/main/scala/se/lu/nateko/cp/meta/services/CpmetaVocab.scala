@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
-	val baseUri = "http://meta.icos-cp.eu/ontologies/cpmeta/"
+	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/cpmeta/")
 
 	val stationClass = getRelative("Station")
 	val atmoStationClass = getRelative("AS")
@@ -81,7 +81,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object prov extends CustomVocab {
 		val factory = top.factory
-		val baseUri = "http://www.w3.org/ns/prov#"
+		implicit val bup = makeUriProvider("http://www.w3.org/ns/prov#")
+
 		val wasAssociatedWith = getRelative("wasAssociatedWith")
 		val startedAtTime = getRelative("startedAtTime")
 		val endedAtTime = getRelative("endedAtTime")
@@ -89,7 +90,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object dcterms extends CustomVocab {
 		val factory = top.factory
-		val baseUri = "http://purl.org/dc/terms/"
+		implicit val bup = makeUriProvider("http://purl.org/dc/terms/")
+
 		val date = getRelative("date")
 		val title = getRelative("title")
 		val description = getRelative("description")

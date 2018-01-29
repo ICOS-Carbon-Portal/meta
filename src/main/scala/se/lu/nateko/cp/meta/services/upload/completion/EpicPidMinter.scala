@@ -14,8 +14,9 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.Await
 import java.util.concurrent.TimeoutException
 import se.lu.nateko.cp.meta.services.PidMintingException
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
-class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionContext) extends FormatSpecificCompleter {
+class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionContext, envri: Envri) extends FormatSpecificCompleter {
 
 	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] =
 		Future.successful(Nil)

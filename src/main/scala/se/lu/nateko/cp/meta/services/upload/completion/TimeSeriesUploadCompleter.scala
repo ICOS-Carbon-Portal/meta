@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.IRI
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 
 private class TimeSeriesUploadCompleter(
@@ -25,7 +26,7 @@ private class TimeSeriesUploadCompleter(
 	epic: EpicPidClient,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
-)(implicit ex: ExecutionContext) extends EpicPidMinter(epic, vocab) {
+)(implicit ex: ExecutionContext, envri: Envri) extends EpicPidMinter(epic, vocab) {
 
 	private val factory = vocab.factory
 	private val statementsProd = new StatementsProducer(vocab, metaVocab)

@@ -21,10 +21,13 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
 
 class RdfBadmSchemaIngester(schemaFut: => Future[Schema])(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 
 	import BadmConsts._
+	implicit private val envri = Envri.ICOS
+
 	private[this] val specialVars = Set(
 		SiteVar, SiteIdVar, SiteNameVar, TeamMemberVar, TeamMemberNameVar, TeamMemberRoleVar,
 		TeamMemberEmailVar, TeamMemberInstVar, LocationVar, LocationLatVar, LocationLonVar,

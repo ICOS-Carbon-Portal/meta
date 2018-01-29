@@ -24,7 +24,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 	private [this] val ok: Try[NotUsed] = Success(NotUsed)
 
-	def validateUpload(meta: UploadMetadataDto, uploader: UserId): Try[NotUsed] = for(
+	def validateUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
 		submConf <- getSubmitterConfig(meta.submitterId);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
@@ -137,7 +137,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		else Failure(new UploadUserErrorException(errors.mkString("\n")))
 	}
 
-	private def validatePreviousVersion(prevVers: Option[Sha256Sum], spec: DataObjectSpec): Try[NotUsed] = {
+	private def validatePreviousVersion(prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
 		prevVers match{
 			case None => ok
 			case Some(prevHash) => servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>

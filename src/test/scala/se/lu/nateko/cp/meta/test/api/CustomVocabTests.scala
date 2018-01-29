@@ -8,12 +8,14 @@ import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 class CustomVocabTests extends FunSpec{
 
 	private[this] object Vocab extends CustomVocab{
-		val baseUri = "http://test.icos-cp.eu/ontologies/test/"
+		implicit val bup = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
 		val factory: ValueFactory = new MemValueFactory
 		def encode(s: String) = urlEncode(s)
 	}
 
 	describe("getRelative and getRelativeRaw"){
+		import Vocab.bup
+
 		it("Supports non-URL-friendly characters"){
 			val nonUrl = "WITH SPACE"
 			val rel = Vocab.getRelative(nonUrl)
@@ -32,9 +34,10 @@ class CustomVocabTests extends FunSpec{
 
 		it("Works as expected even for CustomVocabs with different ValueFactories"){
 			val tempVocab = new CustomVocab{
-				val baseUri = Vocab.baseUri
+				implicit val bup = makeUriProvider(Vocab.bup.baseUri)
 				val factory: ValueFactory = new MemValueFactory
 			}
+			import tempVocab.bup
 
 			assert(Vocab.getRelative("bebe") === tempVocab.getRelative("be" + "be"))
 		}

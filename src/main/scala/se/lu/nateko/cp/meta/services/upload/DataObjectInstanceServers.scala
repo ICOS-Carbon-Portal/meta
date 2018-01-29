@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class DataObjectInstanceServers(
 	val icosMeta: InstanceServer,
@@ -28,7 +29,7 @@ class DataObjectInstanceServers(
 	val vocab = new CpVocab(icosMeta.factory)
 	protected val server = icosMeta
 
-	def getDataObjSpecification(objHash: Sha256Sum): Try[IRI] = {
+	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
 		val dataObjUri = vocab.getDataObject(objHash)
 
 		allDataObjs.getUriValues(dataObjUri, metaVocab.hasObjectSpec, AtMostOne).headOption match {
@@ -54,7 +55,7 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getInstServerForDataObj(objHash: Sha256Sum): Try[InstanceServer] =
+	def getInstServerForDataObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] =
 		for(
 			objSpec <- getDataObjSpecification(objHash);
 			format <- getObjSpecificationFormat(objSpec);

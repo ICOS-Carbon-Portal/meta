@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
 
 class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriConfigs) extends Ingester{
 
@@ -27,6 +28,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 	def getStatements(factory: ValueFactory): Ingestion.Statements = {
 
 		implicit val f = factory
+		implicit val envri = Envri.ICOS
 		val vocab = new CpVocab(factory)
 		val metaVocab = new CpmetaVocab(factory)
 		val roleId = "Researcher"

@@ -28,6 +28,7 @@ class RdfBadmEntriesIngester(
 )(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 
 	import RdfBadmEntriesIngester._
+	implicit private val envri = Envri.ICOS
 
 	private case class ScanAcc(
 		siteId: Option[StationId],

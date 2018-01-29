@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 
 class BadmVocab (val factory: ValueFactory) extends CustomVocab {
 
-	val baseUri = "http://meta.icos-cp.eu/ontologies/badm/"
+	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/badm/")
 
 	def getDataProp(variable: String) = getRelative("dprop_" + variable)
 	def getObjProp(variable: String) = getRelative("oprop_" + variable)

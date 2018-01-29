@@ -27,7 +27,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private implicit val factory = vocab.factory
 
-	def getStatements(meta: UploadMetadataDto, submittingOrg: URI): Seq[Statement] = {
+	def getStatements(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
 		import meta.{ hashSum, objectSpecification }
 
 		val objectUri = vocab.getDataObject(hashSum)
@@ -65,9 +65,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			}
 	}
 
-	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature): Seq[Statement] = {
+	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(implicit envri: Envri): Seq[Statement] = {
 		val objectUri = vocab.getDataObject(hash)
-		val covUri = vocab.getSpatialCoverate(hash)
+		val covUri = vocab.getSpatialCoverage(hash)
 
 		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
 		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(spatial.geoJson)) +:
@@ -86,7 +86,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		})
 	}
 
-	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata): Seq[Statement] = {
+	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata)(implicit envri: Envri): Seq[Statement] = {
 		val objUri = vocab.getDataObject(hash)
 		Seq(
 			makeSt(objUri, metaVocab.dcterms.title, vocab.lit(meta.title)),
@@ -102,7 +102,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(_.toRdf))
 	}
 
-	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata): Seq[Statement] = {
+	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata)(implicit envri: Envri): Seq[Statement] = {
 		val objectUri = vocab.getDataObject(hash)
 		val aquisitionUri = vocab.getAcquisition(hash)
 		val acqStart = meta.acquisitionInterval.map(_.start)
@@ -121,7 +121,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 
-	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto): Seq[Statement] = {
+	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(implicit envri: Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
 		val objectUri = vocab.getDataObject(hash)
 		Seq(
@@ -137,7 +137,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI]): Seq[Statement] = {
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(implicit envri: Envri): Seq[Statement] = {
 		spatial match{
 			case Left(feature) =>
 				getGeoFeatureStatements(hash, feature)

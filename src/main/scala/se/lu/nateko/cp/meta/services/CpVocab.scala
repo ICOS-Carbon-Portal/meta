@@ -8,55 +8,59 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
 import se.lu.nateko.cp.meta.core.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.ConfigLoader
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 
-	//TODO Generalize to SITES and ICOS
-	private val config: EnvriConfig = envriConfigs(Envri.ICOS)
-	def getConfig(implicit envri: Envri.Value) = envriConfigs(envri)
+	def getConfig(implicit envri: Envri) = envriConfigs(envri)
 
-	val baseUri = config.metaResourcePrefix.toString
+	private implicit def baseUriProviderForEnvri(implicit envri: Envri) =
+		makeUriProvider(getConfig(envri).metaResourcePrefix.toString)
 
-	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)
-	def getEcosystemStation(id: EtcStationId) = getRelative("stations/ES_", id.id)
-	def getOceanStation(siteId: String) = getRelative("stations/OS_", siteId)
+	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
-	def getPerson(firstName: String, lastName: String) = getRelativeRaw(
+	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)(icosBup)
+	def getEcosystemStation(id: EtcStationId) = getRelative("stations/ES_", id.id)(icosBup)
+	def getOceanStation(siteId: String) = getRelative("stations/OS_", siteId)(icosBup)
+
+	def getPerson(firstName: String, lastName: String)(implicit envri: Envri) = getRelativeRaw(
 		s"people/${urlEncode(firstName)}_${urlEncode(lastName)}"
 	)
 
 	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
 		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
-	)
+	)(icosBup)
 
-	def getMembership(orgId: String, roleId: String, lastName: String) = getRelative(
+	def getMembership(orgId: String, roleId: String, lastName: String)(implicit envri: Envri) = getRelative(
 		"memberships/", s"${orgId}_${roleId}_$lastName"
 	)
 
-	def getRole(roleId: String) = getRelative("roles/", roleId)
+	def getRole(roleId: String)(implicit envri: Envri) = getRelative("roles/", roleId)
 
-	def getOrganization(orgId: String) = getRelative("organizations/", orgId)
+	def getOrganization(orgId: String)(implicit envri: Envri) = getRelative("organizations/", orgId)
 
 	def getEtcInstrument(station: EtcStationId, id: Int) = getRelative(
 		"instruments/", s"ETC_${station.id}_$id"
-	)
+	)(icosBup)
 
-	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization)
+	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization(_)(Envri.ICOS))
 
-	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)
+	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)(icosBup)
 
-	def getDataObject(hash: Sha256Sum) = factory.createIRI(s"${config.metaPrefix}objects/", hash.id)
-	def getCollection(hash: Sha256Sum)(implicit envri: Envri.Value) = factory.createIRI(s"${getConfig.metaPrefix}collections/", hash.id)
+	def getDataObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}objects/", hash.id)
+	def getCollection(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}collections/", hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum) = new URI(s"${config.dataPrefix}objects/${hash.id}")
+	def getDataObjectAccessUrl(hash: Sha256Sum)(implicit envri: Envri) = new URI(s"${getConfig.dataPrefix}objects/${hash.id}")
 
-	def getAcquisition(hash: Sha256Sum) = getRelative("acq_" + hash.id)
-	def getProduction(hash: Sha256Sum) = getRelative("prod_" + hash.id)
-	def getSubmission(hash: Sha256Sum) = getRelative("subm_" + hash.id)
-	def getSpatialCoverate(hash: Sha256Sum) = getRelative("spcov_" + hash.id)
+	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelative("acq_" + hash.id)
+	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative("prod_" + hash.id)
+	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelative("subm_" + hash.id)
+	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelative("spcov_" + hash.id)
 
-	def getObjectSpecification(lastSegment: String) = getRelative("cpmeta/", lastSegment)
+	def getObjectSpecification(lastSegment: String)(implicit envri: Envri) =
+		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
+		else getRelative("objspecs/", lastSegment)
 }
 
 object CpVocab{

@@ -16,14 +16,15 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.ValueFactory
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 abstract class MetadataUpdater(vocab: CpVocab) {
 	import MetadataUpdater._
 	import StatementStability._
 
-	protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability
+	protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability
 
-	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement]): Seq[RdfUpdate] = {
+	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement])(implicit envri: Envri): Seq[RdfUpdate] = {
 		if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true))
 		else {
 			val oldBySp = new BySubjPred(oldStatements)
@@ -49,7 +50,7 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 	import MetadataUpdater._
 	import StatementStability._
 
-	override protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability = {
+	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
 		val pred = sp._2
 		if(pred === metaVocab.dcterms.hasPart) Fixed
 		else Plain
@@ -60,10 +61,10 @@ class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: Sparql
 	import MetadataUpdater._
 	import StatementStability._
 
-	override protected def stability(sp: SubjPred, hash: Sha256Sum): StatementStability = {
+	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
-		val cov = vocab.getSpatialCoverate(hash)
+		val cov = vocab.getSpatialCoverage(hash)
 		val (subj, pred) = sp
 		val isProvTime = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
 
@@ -74,7 +75,7 @@ class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: Sparql
 		else Plain
 	}
 
-	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext): Future[Seq[Statement]] = {
+	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext, envri: Envri): Future[Seq[Statement]] = {
 		val objUri = vocab.getDataObject(hash)
 		if(!server.hasStatement(Some(objUri), None, None)) Future.successful(Nil)
 		else {

@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 class StationsVocab(val factory: ValueFactory) extends CustomVocab{
-	val baseUri = "http://meta.icos-cp.eu/ontologies/stationentry/"
+	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/stationentry/")
 
 	val station = getRelative("Station")
 	val atmoStationClass = getRelative("AS")
@@ -23,12 +23,14 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasAssociatedFile = getRelative("hasAssociatedFile")
 	val hasApplicationStatus = getRelative("hasApplicationStatus")
 
+	def getProperty(fieldName: String) = getRelative(fieldName)
+
 	val files = new FilesVocab(factory)
 }
 
 
 class FilesVocab(val factory: ValueFactory) extends CustomVocab{
-	val baseUri = "http://meta.icos-cp.eu/files/"
+	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/files/")
 
 	val hasType = getRelative("hasType")
 	val hasName = getRelative("hasName")

@@ -41,7 +41,7 @@ trait StationInfoService { self: StationLabelingService =>
 		val newInfo: Seq[Statement] = for(
 			classUri <- lookupStationClass(stationUri).toSeq;
 			(fieldName, fieldValue) <- info.fields.collect{case (name, JsString(value)) => (name, value)};
-			propUri = vocab.getRelative(fieldName);
+			propUri = vocab.getProperty(fieldName);
 			dataType <- lookupDatatype(classUri.toJava, propUri.toJava).toSeq
 		) yield {
 			val lit = factory.createLiteral(fieldValue, dataType)

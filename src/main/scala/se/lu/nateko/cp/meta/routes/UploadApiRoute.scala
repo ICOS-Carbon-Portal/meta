@@ -51,13 +51,6 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 		pathPrefix("upload"){
 			post{
-				path(Sha256Segment){hash =>
-					(ensureLocalRequest & replyWithErrorOnBadContent){
-						entity(as[UploadCompletionInfo]){ completionInfo =>
-							onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
-						}
-					}
-				} ~
 				path("etc"){
 					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[EtcUploadMetadata]){ uploadMeta =>
@@ -65,15 +58,22 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						}
 					}
 				} ~
-				pathEnd{
-					authRouting.mustBeLoggedIn{uploader =>
-						replyWithErrorOnBadContent{
-							entity(as[UploadMetadataDto]){uploadMeta =>
-								complete(service.registerUpload(uploadMeta, uploader))
-							} ~
-							entity(as[StaticCollectionDto]){collMeta =>
-								extractHost{hostname =>
-									implicit val envri = CpVocab.inferEnvri(hostname)
+				extractHost{hostname =>
+					implicit val envri = CpVocab.inferEnvri(hostname)
+					path(Sha256Segment){hash =>
+						(ensureLocalRequest & replyWithErrorOnBadContent){
+							entity(as[UploadCompletionInfo]){ completionInfo =>
+								onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
+							}
+						}
+					} ~
+					pathEnd{
+						authRouting.mustBeLoggedIn{uploader =>
+							replyWithErrorOnBadContent{
+								entity(as[UploadMetadataDto]){uploadMeta =>
+									complete(service.registerUpload(uploadMeta, uploader))
+								} ~
+								entity(as[StaticCollectionDto]){collMeta =>
 									complete(service.registerStaticCollection(collMeta, uploader))
 								}
 							}
@@ -91,12 +91,12 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		get{
-			path("objects" / Sha256Segment){ hash =>
-				complete(() => service.fetchDataObj(hash))
-			} ~
-			path("collections" / Sha256Segment){ hash =>
-				extractHost{hostname =>
-					implicit val envri = CpVocab.inferEnvri(hostname)
+			extractHost{hostname =>
+				implicit val envri = CpVocab.inferEnvri(hostname)
+				path("objects" / Sha256Segment){ hash =>
+					complete(() => service.fetchDataObj(hash))
+				} ~
+				path("collections" / Sha256Segment){ hash =>
 					complete(() => service.fetchStaticColl(hash))
 				}
 			}

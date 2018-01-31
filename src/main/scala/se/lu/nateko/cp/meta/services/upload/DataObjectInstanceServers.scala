@@ -18,8 +18,8 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class DataObjectInstanceServers(
-	val icosMeta: InstanceServer,
-	val collectionServers: Map[Envri.Value, InstanceServer],
+	val metaServers: Map[Envri, InstanceServer],
+	val collectionServers: Map[Envri, InstanceServer],
 	val allDataObjs: InstanceServer,
 	perFormat: Map[IRI, InstanceServer]
 )(implicit envriConfs: EnvriConfigs) extends CpmetaFetcher{

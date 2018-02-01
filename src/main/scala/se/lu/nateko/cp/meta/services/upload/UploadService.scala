@@ -108,12 +108,13 @@ class UploadService(
 	}
 
 	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI): Future[String] = {
-		val serverTry = for(
+		def serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
 		) yield server
 
 		for(
+			_ <- Future.fromTry(validator.submitterAndFormatAreSameIfObjectNotNew(meta, submittingOrg));
 			server <- Future.fromTry(serverTry);
 			newStatements = statementProd.getStatements(meta, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(meta.hashSum, server);

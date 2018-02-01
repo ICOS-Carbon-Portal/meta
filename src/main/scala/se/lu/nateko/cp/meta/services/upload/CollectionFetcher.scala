@@ -31,7 +31,14 @@ class CollectionFetcher(
 		else None
 	}
 
-	private def collectionExists(collUri: IRI): Boolean =
+	def getCreatorIfCollExists(hash: Sha256Sum): Option[IRI] = {
+		val collUri = vocab.getCollection(hash)
+		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
+	}
+
+	def collectionExists(coll: Sha256Sum): Boolean = collectionExists(vocab.getCollection(coll))
+
+	def collectionExists(collUri: IRI): Boolean =
 		server.hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
 
 	private def getExistingStaticColl(coll: IRI): StaticCollection = {

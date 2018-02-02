@@ -5,14 +5,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ScheduledThreadPoolExecutor
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterAll
 
-class JavaTaskCancellationTests extends FunSuite with BeforeAndAfter{
+class JavaTaskCancellationTests extends FunSuite with BeforeAndAfterAll{
 
 	private val exe = new ScheduledThreadPoolExecutor(2)
 	exe.setMaximumPoolSize(10)
 
-	after{
+	override def afterAll(): Unit = {
 		exe.shutdown()
 	}
 
@@ -21,7 +21,7 @@ class JavaTaskCancellationTests extends FunSuite with BeforeAndAfter{
 		var executed = false
 
 		val task: Callable[String] = () => {
-			Thread.sleep(1)
+			Thread.sleep(100)
 			executed = true
 			"FROM TASK!"
 		}

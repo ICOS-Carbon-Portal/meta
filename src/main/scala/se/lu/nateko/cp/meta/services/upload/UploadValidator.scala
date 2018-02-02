@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import akka.NotUsed
+import java.net.URI
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.metaVocab
@@ -45,6 +46,30 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		conf.submitters.get(submitterId) match {
 			case None => Failure(new UploadUserErrorException(s"Unknown submitter: $submitterId"))
 			case Some(conf) => Success(conf)
+		}
+	}
+
+	def submitterAndFormatAreSameIfObjectNotNew(meta: UploadMetadataDto, submittingOrg: URI): Try[NotUsed] = {
+		val formatValidation: Try[NotUsed] = (
+			for(
+				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
+				oldFormat <- servers.getDataObjSpecification(meta.hashSum).flatMap(servers.getObjSpecificationFormat)
+			) yield
+				if(oldFormat === newFormat) ok else Failure{
+					new UnauthorizedUploadException(
+						s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
+					)
+				}
+		).getOrElse(ok)
+
+		formatValidation.flatMap{_ =>
+			servers.getDataObjSubmitter(meta.hashSum).map{subm =>
+				if(subm === submittingOrg) ok else Failure{
+					new UnauthorizedUploadException(
+						s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
+					)
+				}
+			}.getOrElse(ok)
 		}
 	}
 

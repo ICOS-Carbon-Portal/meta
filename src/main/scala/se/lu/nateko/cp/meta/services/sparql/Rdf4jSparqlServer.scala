@@ -96,6 +96,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 					)
 
 				case _: BooleanQuery =>
+					onDone()
 					plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
 			}
 		} catch {

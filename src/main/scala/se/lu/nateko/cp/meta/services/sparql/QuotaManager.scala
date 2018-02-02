@@ -14,7 +14,8 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 	def logNewQueryStart(clientId: ClientId): QueryId = {
 		val id = idGen.incrementAndGet()
 		val history: ClientHistory = q.getOrElseUpdate(clientId, TrieMap.empty)
-		history += id -> new QueryRun(now(), None)
+		val nownow = now()
+		history += id -> new QueryRun(nownow, nownow.plusSeconds(config.maxQueryRuntimeSec.toLong))
 		id
 	}
 
@@ -23,7 +24,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 			history <- q.get(clientId);
 			run <- history.get(queryId)
 		){
-			history += queryId -> new QueryRun(run.start, Some(now()))
+			history += queryId -> new QueryRun(run.start, now())
 		}
 
 	def quotaExceeded(clientId: ClientId): Boolean = q.get(clientId).map(hist => {
@@ -33,7 +34,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 
 		for((id, run) <- hist){
 			if(run.isLastHour){
-				if(run.stop.isEmpty) count += 1
+				if(run.isOngoing) count += 1
 				val cost = run.cost
 				hourCost += cost
 				if(run.isLastMinute) minuteCost += cost
@@ -56,16 +57,18 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 
 object QuotaManager{
 
-	class QueryRun(val start: Instant, val stop: Option[Instant])(implicit val now: () => Instant){
+	class QueryRun(val start: Instant, val stop: Instant)(implicit val now: () => Instant){
 
-		def stopOrNow = stop.getOrElse(now())
+		def isOngoing = stop.compareTo(now()) > 0
+
+		def stopOrNow = implicitly[Ordering[Instant]].min(now(), stop)
 
 		def cost: Float = (stopOrNow.toEpochMilli - start.toEpochMilli).toFloat / 1000
 
 		def isLastMinute: Boolean = isLastXmillis(60000)
 		def isLastHour: Boolean = isLastXmillis(3600000)
 
-		private def isLastXmillis(millis: Long) = stop.fold(true)(s => now().toEpochMilli - start.toEpochMilli < millis)
+		private def isLastXmillis(millis: Long) = (now().toEpochMilli - start.toEpochMilli) < millis
 	}
 
 	type ClientId = String

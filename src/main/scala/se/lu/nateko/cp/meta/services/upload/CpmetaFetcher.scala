@@ -19,13 +19,15 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	def getPlainDataObject(dobj: IRI) = PlainDataObject(dobj.toJava, getSingleString(dobj, metaVocab.hasName))
 
-	protected def getSpecification(spec: IRI) = DataObjectSpec(
+	def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
 		datasetSpec = None
 	)
+
+	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)
 
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(

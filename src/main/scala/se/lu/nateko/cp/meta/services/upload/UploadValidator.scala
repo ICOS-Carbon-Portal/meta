@@ -21,7 +21,7 @@ import java.net.URI
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.metaVocab
-	implicit val factory = servers.icosMeta.factory
+	implicit val factory = metaVocab.factory
 
 	private [this] val ok: Try[NotUsed] = Success(NotUsed)
 
@@ -49,7 +49,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	def submitterAndFormatAreSameIfObjectNotNew(meta: UploadMetadataDto, submittingOrg: URI): Try[NotUsed] = {
+	def submitterAndFormatAreSameIfObjectNotNew(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
 		val formatValidation: Try[NotUsed] = (
 			for(
 				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
@@ -106,14 +106,14 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			}
 	}
 
-	private def userAuthorizedByProducer(meta: UploadMetadataDto, submConf: DataSubmitterConfig): Try[Unit] = Try{
+	private def userAuthorizedByProducer(meta: UploadMetadataDto, submConf: DataSubmitterConfig)(implicit envri: Envri): Try[Unit] = Try{
 		val producer = meta.specificInfo.fold(
 			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
 			_.station
 		)
 
 		for(prodOrgClass <- submConf.producingOrganizationClass){
-			if(!servers.icosMeta.hasStatement(producer.toRdf, RDF.TYPE, prodOrgClass.toRdf))
+			if(!servers.metaServers(envri).hasStatement(producer.toRdf, RDF.TYPE, prodOrgClass.toRdf))
 				throw new UnauthorizedUploadException(
 					s"Data producer '$producer' does not belong to class '$prodOrgClass'"
 				)

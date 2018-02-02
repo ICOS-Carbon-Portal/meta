@@ -69,7 +69,7 @@ case class EtcUploadConfig(
 )
 
 case class UploadServiceConfig(
-	icosMetaServerId: String,
+	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	submitters: Map[String, DataSubmitterConfig],
 	epicPid: EpicPidConfig,

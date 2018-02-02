@@ -116,9 +116,9 @@ object MetaDb {
 		repo: Repository,
 		instanceServers: Map[String, InstanceServer]
 	)(implicit system: ActorSystem, m: Materializer): UploadService = {
-		val icosMetaInstServer = instanceServers(config.dataUploadService.icosMetaServerId)
+		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply)
 		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply)
-		val factory = icosMetaInstServer.factory
+		val factory = repo.getValueFactory
 		val dataObjServConfs = config.instanceServers.forDataObjects
 
 		val allDataObjInstServConf = {
@@ -135,7 +135,7 @@ object MetaDb {
 
 		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(icosMetaInstServer, collectionServers, allDataObjInstServ, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServ, perFormatServers)
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
@@ -192,7 +192,8 @@ object MetaDb {
 			if(!schemaOntIds.contains(schemaOntId))
 				throw new Exception(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
 		
-		ensureInstServerExists(config.dataUploadService.icosMetaServerId)
+		config.dataUploadService.metaServers.values.foreach(ensureInstServerExists)
+		config.dataUploadService.collectionServers.values.foreach(ensureInstServerExists)
 
 		config.onto.instOntoServers.values.foreach{ conf =>
 			ensureInstServerExists(conf.instanceServerId)

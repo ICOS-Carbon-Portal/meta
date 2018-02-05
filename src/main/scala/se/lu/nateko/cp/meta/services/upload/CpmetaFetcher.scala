@@ -14,7 +14,7 @@ import OrganizationClass.OrganizationClass
 import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
-	protected def metaVocab: CpmetaVocab
+	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 	protected def vocab: CpVocab
 
 	def getPlainDataObject(dobj: IRI) = PlainDataObject(dobj.toJava, getSingleString(dobj, metaVocab.hasName))

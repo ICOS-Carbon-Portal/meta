@@ -44,16 +44,12 @@ class UploadService(
 
 	def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
-		val objectFetcher = new DataObjectFetcher(server, vocab, metaVocab, epic.getPid)
+		val objectFetcher = new DataObjectFetcher(server, vocab, epic.getPid)
 		objectFetcher.fetch(hash)
 	}
 
-	def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] = {
-		servers.collectionServers.get(envri).flatMap{collServer =>
-			val collFetcher = new CollectionFetcher(collServer, servers.allDataObjs, vocab, metaVocab)
-			collFetcher.fetchStatic(hash)
-		}
-	}
+	def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
+		servers.collFetcher.flatMap(_.fetchStatic(hash))
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
 		val submitterOrgUriTry = for(

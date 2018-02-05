@@ -1921,6 +1921,15 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/spectralCsv -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/spectralCsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Tab-separated CSV by SITES SPECTRAL</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/resources/organizations/SITES_SLU -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/resources/organizations/SITES_SLU">

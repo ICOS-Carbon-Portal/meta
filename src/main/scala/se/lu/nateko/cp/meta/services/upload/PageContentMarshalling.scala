@@ -13,13 +13,14 @@ import scala.concurrent.Future
 import spray.json._
 import play.twirl.api.Html
 import java.net.URI
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class PageContentMarshalling(handleService: URI) {
 
-	implicit val dataObjectMarshaller: ToResponseMarshaller[() => Option[DataObject]] =
+	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
 		makeMarshaller(views.html.LandingPage(_, handleService))
 
-	implicit val statCollMarshaller: ToResponseMarshaller[() => Option[StaticCollection]] =
+	implicit def statCollMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticCollection]] =
 		makeMarshaller(views.html.CollectionLandingPage(_))
 
 	private def makeMarshaller[T: JsonFormat](template: T => Html): ToResponseMarshaller[() => Option[T]] = Marshaller(

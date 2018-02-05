@@ -76,6 +76,21 @@
         <IRI>https://meta.fieldsites.se/ontologies/sites/Station</IRI>
         <IRI>https://meta.fieldsites.se/resources/stations/</IRI>
     </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/objspecs/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/organizations/</IRI>
+    </AnnotationAssertion>
 </Ontology>
 
 

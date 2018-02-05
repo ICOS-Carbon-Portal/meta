@@ -37,7 +37,7 @@ case class DataObjectInstServersConfig(
 
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
-	forDataObjects: DataObjectInstServersConfig
+	forDataObjects: Map[Envri, DataObjectInstServersConfig]
 )
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
@@ -124,6 +124,8 @@ case class CpmetaConfig(
 )
 
 object ConfigLoader extends CpmetaJsonProtocol{
+
+	import MetaCoreConfig.envriFormat
 
 	implicit val ingestionConfigFormat = jsonFormat3(IngestionConfig)
 	implicit val instanceServerConfigFormat = jsonFormat5(InstanceServerConfig)

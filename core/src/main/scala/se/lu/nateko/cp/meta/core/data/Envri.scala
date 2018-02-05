@@ -9,10 +9,14 @@ object Envri extends Enumeration{
 
 	val ICOS, SITES = Value
 
-	def infer(metaEntity: URI)(implicit configs: EnvriConfigs): Option[Envri] = infer(metaEntity.getHost)
+	def infer(uri: URI)(implicit configs: EnvriConfigs): Option[Envri] = infer(uri.getHost)
 
-	def infer(hostname: String)(implicit configs: EnvriConfigs): Option[Envri] =
+	def infer(hostname: String)(implicit configs: EnvriConfigs): Option[Envri] = {
+
+		def matches(uri: URI) = hostname == uri.getHost
+
 		configs.collectFirst{
-			case (envri, conf) if hostname == conf.metaPrefix.getHost => envri
+			case (envri, conf) if matches(conf.metaPrefix) || matches(conf.dataPrefix) => envri
 		}
+	}
 }

@@ -15,14 +15,12 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 class CollectionFetcher(
 	protected val server: InstanceServer,
 	dobjsServer: InstanceServer,
-	protected val vocab: CpVocab,
-	protected val metaVocab: CpmetaVocab
+	protected val vocab: CpVocab
 )(implicit envri: Envri) extends CpmetaFetcher {collFetcher =>
 
 	private val dobjFetcher = new CpmetaFetcher{
 		val server = dobjsServer
 		val vocab = collFetcher.vocab
-		val metaVocab = collFetcher.metaVocab
 	}
 
 	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {

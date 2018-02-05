@@ -97,18 +97,18 @@ object MetaDb {
 	}
 
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
-		val dataObjServers = confs.forDataObjects
-
-		confs.specific ++ dataObjServers.definitions.map{ servDef =>
-			val writeCtxt = getInstServerContext(dataObjServers, servDef)
-			(servDef.label, InstanceServerConfig(
-				logName = Some(servDef.label),
-				skipLogIngestionAtStart = None,
-				readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
-				writeContexts = Seq(writeCtxt),
-				ingestion = None
-			))
-		}.toMap
+		confs.specific ++ confs.forDataObjects.values.flatMap{dataObjServers =>
+			dataObjServers.definitions.map{ servDef =>
+				val writeCtxt = getInstServerContext(dataObjServers, servDef)
+				servDef.label -> InstanceServerConfig(
+					logName = Some(servDef.label),
+					skipLogIngestionAtStart = None,
+					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
+					writeContexts = Seq(writeCtxt),
+					ingestion = None
+				)
+			}
+		}
 	}
 
 	private def makeUploadService(
@@ -118,24 +118,24 @@ object MetaDb {
 	)(implicit system: ActorSystem, m: Materializer): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply)
 		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply)
-		val factory = repo.getValueFactory
-		val dataObjServConfs = config.instanceServers.forDataObjects
+		implicit val factory = repo.getValueFactory
 
-		val allDataObjInstServConf = {
-			val readContexts = dataObjServConfs.definitions.map(getInstServerContext(dataObjServConfs, _))
-			InstanceServerConfig(Nil, None, None, Some(readContexts), None)
+		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
+			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
+			val instServConf = InstanceServerConfig(Nil, None, None, Some(readContexts), None)
+			envri -> makeInstanceServer(repo, instServConf, config.rdfLog)
 		}
-		val allDataObjInstServ = makeInstanceServer(repo, allDataObjInstServConf, config.rdfLog)
 
-		val perFormatServers: Map[IRI, InstanceServer] = dataObjServConfs.definitions.map{ servDef =>
-			(factory.createIRI(servDef.format), instanceServers(servDef.label))
-		}.toMap
+		val perFormatServers: Map[IRI, InstanceServer] = config.instanceServers.forDataObjects
+			.values.flatMap(_.definitions).map{ servDef =>
+				factory.createIRI(servDef.format) -> instanceServers(servDef.label)
+			}.toMap
 
 		val uploadConf = config.dataUploadService
 
 		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServ, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServs, perFormatServers)
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)

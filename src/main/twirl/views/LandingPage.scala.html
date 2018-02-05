@@ -3,12 +3,12 @@
 @import java.net.URI
 @import views.CpMenu
 
-@(dobj: DataObject, handleService: URI)
-@ServerSidePage(pageTitle, pageHeading, Envri.ICOS, CpMenu.landingPage){
+@(dobj: DataObject, handleService: URI)(implicit envri: Envri.Value)
+@ServerSidePage(pageTitle, pageHeading(envri), envri, CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">
-			@Panel("Summary", 4, summaryStyleContext){
+			@Panel("Summary", 12, summaryStyleContext){
 				@if(uploadComplete) {
 					@PanelRow("Status - OK", "Data and metadata are complete.")
 					@PanelHtmlRow{PID}{
@@ -34,7 +34,7 @@
 		</div>
 
 		<div class="row">
-			@Panel("Content", 6){
+			@Panel("Content", 12){
 				@PanelRow("File name", dobj.fileName)
 				@for(size <- dobj.size){
 					@PanelRow("Size in bytes", size.toString)
@@ -65,7 +65,7 @@
 		<div class="row">
 
 			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
-				@Panel("Acquisition"){
+				@Panel("Acquisition", 4){
 					@agentPanelRow("Station", station.org)
 					@for(interval <- acquisition.interval){
 						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
@@ -81,7 +81,7 @@
 			}
 
 			@for(production <- dobj.production){
-				@Panel("Production"){
+				@Panel("Production", 4){
 					@agentPanelRow("File made by", production.creator)
 					@for(contributor <- production.contributors){
 						@agentPanelRow("Contributor", contributor)
@@ -96,7 +96,7 @@
 				}
 			}
 
-			@Panel("Submission"){
+			@Panel("Submission", 4){
 				@agentPanelRow("Submitted by", dobj.submission.submitter)
 				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
 				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
@@ -104,7 +104,7 @@
 		</div>
 
 		<div class="row">
-			@Panel("Spatial coverage", 5){
+			@Panel("Spatial coverage", 6){
 				@for(covText <- coverageText){
 					@PanelRow("Coverage", covText)
 				}
@@ -126,13 +126,14 @@
 	</div>
 }
 
-@pageHeading = @{
+@pageHeading(envri: Envri.Value) = @{
 	dobj.affiliation match {
 		case Icos => {
 			"ICOS RI Data Object Landing Page"
 		}
-		case _ => {
-			"Data Object Landing Page at Carbon Portal"
+		case _ => envri match {
+			case Envri.SITES => "SITES Data Object Landing Page"
+			case _ => "Data Object Landing Page at Carbon Portal"
 		}
 	}
 }

@@ -17,7 +17,6 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 class DataObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
-	protected val metaVocab: CpmetaVocab,
 	pidFactory: Sha256Sum => String
 ) extends CpmetaFetcher {
 

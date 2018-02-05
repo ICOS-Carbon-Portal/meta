@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.StaticCollectionDto
@@ -46,6 +47,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		coreConf: MetaCoreConfig
 	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
 
+		val extractEnvri = extractHost.map(host => Envri.infer(host).get)
 		val pcm = new PageContentMarshalling(coreConf.handleService)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
 
@@ -58,8 +60,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						}
 					}
 				} ~
-				extractHost{hostname =>
-					implicit val envri = CpVocab.inferEnvri(hostname)
+				extractEnvri{implicit envri =>
 					path(Sha256Segment){hash =>
 						(ensureLocalRequest & replyWithErrorOnBadContent){
 							entity(as[UploadCompletionInfo]){ completionInfo =>
@@ -91,8 +92,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		get{
-			extractHost{hostname =>
-				implicit val envri = CpVocab.inferEnvri(hostname)
+			extractEnvri{implicit envri =>
 				path("objects" / Sha256Segment){ hash =>
 					complete(() => service.fetchDataObj(hash))
 				} ~

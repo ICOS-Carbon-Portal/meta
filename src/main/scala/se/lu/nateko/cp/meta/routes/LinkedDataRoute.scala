@@ -32,7 +32,7 @@ object LinkedDataRoute {
 		val genericRdfUriResourcePage: Route = extractUri{uri =>
 			extractHost{hostname =>
 
-				val envri = CpVocab.inferEnvri(hostname)
+				val envri = Envri.infer(hostname).get
 
 				val scheme = if(envri == Envri.ICOS){
 					import Uri.Path.{Segment, Slash}

@@ -45,7 +45,7 @@ class Rdf4jUriSerializer(repo: Repository)(implicit envries: EnvriConfigs) exten
 	val marshaller: ToResponseMarshaller[Uri] = {
 		val htmlMarshaller: ToResponseMarshaller[Uri] = Marshaller(
 			implicit exeCtxt => uri => Future{
-				val envri = CpVocab.inferEnvri(new java.net.URI(uri.toString))
+				val envri = Envri.infer(new java.net.URI(uri.toString)).get
 				val viewInfo = getViewInfo(uri, repo, envri)
 				WithOpenCharset(MediaTypes.`text/html`, getHtml(viewInfo, _)) :: Nil
 			}

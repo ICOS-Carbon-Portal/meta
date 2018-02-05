@@ -62,15 +62,3 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
 		else getRelative("objspecs/", lastSegment)
 }
-
-object CpVocab{
-
-	def inferEnvri(dobj: URI)(implicit configs: EnvriConfigs): Envri.Value = configs
-		.collectFirst{
-			case (envri, conf) if dobj.getHost == conf.metaPrefix.getHost => envri
-		}
-		.getOrElse(Envri.ICOS)
-
-	def inferEnvri(hostname: String)(implicit configs: EnvriConfigs): Envri.Value =
-		inferEnvri(new URI(null, hostname, null, null))
-}

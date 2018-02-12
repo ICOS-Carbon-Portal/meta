@@ -36,6 +36,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val country = getRelative("country")
 
 	val hasSha256sum = getRelative("hasSha256sum")
+	val hasDoi = getRelative("hasDoi")
 	val isNextVersionOf = getRelative("isNextVersionOf")
 	val wasAcquiredBy = getRelative("wasAcquiredBy")
 	val wasSubmittedBy = getRelative("wasSubmittedBy")

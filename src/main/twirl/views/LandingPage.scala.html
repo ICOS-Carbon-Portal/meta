@@ -28,6 +28,11 @@
 				@PanelHtmlRow{Data affiliation}{
 					@affiliationInfo(dobj.affiliation)
 				}
+				@for(doi <- dobj.doi){
+					@PanelHtmlRow{DOI}{
+						<span>@{doi} (<a href=@{handleService.toString + doi}>link</a>)</span>
+					}
+				}
 				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
 				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
 			}

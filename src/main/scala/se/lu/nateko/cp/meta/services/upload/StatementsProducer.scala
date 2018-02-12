@@ -48,7 +48,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
-			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject))
+			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject)) ++
+			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(vocab.lit))
 	}
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
@@ -60,6 +61,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		) ++
 			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
 			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.map(vocab.getCollection)) ++
+			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(vocab.lit)) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
 			}

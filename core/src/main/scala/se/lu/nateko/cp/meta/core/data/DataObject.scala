@@ -129,6 +129,7 @@ sealed trait DataItemCollection extends DataItem {
 	def creator: Organization
 	def title: String
 	def description: Option[String]
+	def doi: Option[String]
 }
 
 final case class StaticCollection(
@@ -136,7 +137,8 @@ final case class StaticCollection(
 	members: Seq[StaticDataItem],
 	creator: Organization,
 	title: String,
-	description: Option[String]
+	description: Option[String],
+	doi: Option[String]
 ) extends DataItemCollection with StaticDataItem {
 	type M = StaticDataItem
 }

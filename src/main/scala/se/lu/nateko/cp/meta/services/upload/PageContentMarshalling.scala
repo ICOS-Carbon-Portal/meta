@@ -21,7 +21,7 @@ class PageContentMarshalling(handleService: URI) {
 		makeMarshaller(views.html.LandingPage(_, handleService))
 
 	implicit def statCollMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticCollection]] =
-		makeMarshaller(views.html.CollectionLandingPage(_))
+		makeMarshaller(views.html.CollectionLandingPage(_, handleService))
 
 	private def makeMarshaller[T: JsonFormat](template: T => Html): ToResponseMarshaller[() => Option[T]] = Marshaller(
 		implicit exeCtxt => producer => Future.successful(

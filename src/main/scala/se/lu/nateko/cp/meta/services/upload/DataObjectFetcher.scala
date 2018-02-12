@@ -48,6 +48,7 @@ class DataObjectFetcher(
 			fileName = fileName,
 			size = getOptionalLong(dobj, metaVocab.hasSizeInBytes),
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
+			doi = getOptionalString(dobj, metaVocab.hasDoi),
 			submission = submission,
 			specification = spec,
 			specificInfo = levelSpecificInfo,

@@ -55,7 +55,8 @@ class CollectionFetcher(
 			members = members,
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
 			title = getSingleString(coll, dct.title),
-			description = getOptionalString(coll, dct.description)
+			description = getOptionalString(coll, dct.description),
+			doi = getOptionalString(coll, metaVocab.hasDoi)
 		)
 	}
 

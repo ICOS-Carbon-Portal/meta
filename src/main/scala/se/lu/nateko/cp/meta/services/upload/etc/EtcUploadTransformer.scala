@@ -52,7 +52,8 @@ class EtcUploadTransformer(config: EtcUploadConfig)(implicit system: ActorSystem
 					production = None
 				)
 			),
-			isNextVersionOf = None
+			isNextVersionOf = None,
+			preExistingDoi = None
 		)
 	}
 

@@ -2,13 +2,18 @@
 @import java.net.URI
 @import views.CpMenu
 
-@(coll: StaticCollection)(implicit envri: Envri.Value)
+@(coll: StaticCollection, handleService: URI)(implicit envri: Envri.Value)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">
 			@Panel("Summary", 4){
 				@PanelRow("Title", coll.title)
+				@for(doi <- coll.doi){
+					@PanelHtmlRow{DOI}{
+						<span>@{doi} (<a href=@{handleService.toString + doi}>link</a>)</span>
+					}
+				}
 				@PanelHtmlRow{Collection creator}{
 					@agentLink(coll.creator)
 				}

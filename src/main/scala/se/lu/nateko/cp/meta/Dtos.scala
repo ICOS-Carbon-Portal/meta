@@ -44,7 +44,8 @@ case class UploadMetadataDto(
 	objectSpecification: URI,
 	fileName: String,
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
-	isNextVersionOf: Option[Sha256Sum]
+	isNextVersionOf: Option[Sha256Sum],
+	preExistingDoi: Option[String]
 )
 
 case class StaticCollectionDto(
@@ -52,7 +53,8 @@ case class StaticCollectionDto(
 	members: Seq[URI],
 	title: String,
 	description: Option[String],
-	isNextVersionOf: Option[Sha256Sum]
+	isNextVersionOf: Option[Sha256Sum],
+	preExistingDoi: Option[String]
 )
 
 case class StationDataMetadata(

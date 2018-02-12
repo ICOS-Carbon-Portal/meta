@@ -2,7 +2,7 @@
 @import java.net.URI
 @import views.CpMenu
 
-@(coll: StaticCollection, handleService: URI)(implicit envri: Envri.Value)
+@(coll: StaticCollection, citation: Option[String], handleService: URI)(implicit envri: Envri.Value)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.landingPage){
 	<div class="container-fluid">
 

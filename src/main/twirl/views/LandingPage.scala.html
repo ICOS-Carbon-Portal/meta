@@ -3,7 +3,7 @@
 @import java.net.URI
 @import views.CpMenu
 
-@(dobj: DataObject, handleService: URI)(implicit envri: Envri.Value)
+@(dobj: DataObject, citation: Option[String], handleService: URI)(implicit envri: Envri.Value)
 @ServerSidePage(pageTitle, pageHeading(envri), envri, CpMenu.landingPage){
 	<div class="container-fluid">
 

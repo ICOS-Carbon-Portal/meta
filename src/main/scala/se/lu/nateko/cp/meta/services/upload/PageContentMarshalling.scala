@@ -5,6 +5,7 @@ import akka.http.scaladsl.marshalling.Marshalling._
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 
+import se.lu.nateko.cp.meta.api.Doi
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
@@ -14,24 +15,42 @@ import spray.json._
 import play.twirl.api.Html
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.api.CitationClient
 
-class PageContentMarshalling(handleService: URI) {
+class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 
 	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
-		makeMarshaller(views.html.LandingPage(_, handleService))
+		makeMarshaller(views.html.LandingPage(_, _, handleService), _.doi)
 
 	implicit def statCollMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticCollection]] =
-		makeMarshaller(views.html.CollectionLandingPage(_, handleService))
+		makeMarshaller(views.html.CollectionLandingPage(_, _, handleService), _.doi)
 
-	private def makeMarshaller[T: JsonFormat](template: T => Html): ToResponseMarshaller[() => Option[T]] = Marshaller(
-		implicit exeCtxt => producer => Future.successful(
-			WithOpenCharset(MediaTypes.`text/html`, getHtml(producer, template, _)) ::
-			WithFixedContentType(ContentTypes.`application/json`, () => getJson(producer)) :: Nil
-		)
-	)
+	private def makeMarshaller[T: JsonFormat](
+		template: (T, Option[String]) => Html,
+		toDoi: T => Option[String]
+	): ToResponseMarshaller[() => Option[T]] = Marshaller{ implicit exeCtxt => producer =>
 
-	private def getHtml[T](producer: () => Option[T], template: T => Html, charset: HttpCharset) =
-		producer() match {
+		Future(producer()).flatMap{dataItemOpt =>
+
+			val doiOpt: Option[Doi] = dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply)
+
+			val citationOptFut: Future[Option[String]] = doiOpt match{
+				case None => Future.successful(None)
+				case Some(doi) => citer.getCitation(doi).map(Some(_)).recover{
+					case _: Throwable =>
+						Some("Error fetching the citation from DataCite")
+				}
+			}
+
+			citationOptFut.map{citOpt =>
+				WithOpenCharset(MediaTypes.`text/html`, getHtml[T](dataItemOpt, template(_, citOpt), _)) ::
+				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt)) :: Nil
+			}
+		}
+	}
+
+	private def getHtml[T](dataItemOpt: Option[T], template: T => Html, charset: HttpCharset) =
+		dataItemOpt match {
 			case Some(obj) => HttpResponse(
 				entity = HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
@@ -41,8 +60,8 @@ class PageContentMarshalling(handleService: URI) {
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
 
-	private def getJson[T: JsonFormat](producer: () => Option[T]) =
-		producer() match {
+	private def getJson[T: JsonFormat](dataItemOpt: Option[T]) =
+		dataItemOpt match {
 			case Some(obj) => HttpResponse(
 				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
 			)

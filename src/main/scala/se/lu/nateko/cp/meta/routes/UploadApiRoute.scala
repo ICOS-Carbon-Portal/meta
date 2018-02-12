@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.api.CitationClient
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -44,11 +45,12 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting,
+		citer: CitationClient,
 		coreConf: MetaCoreConfig
 	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
 
 		val extractEnvri = extractHost.map(host => Envri.infer(host).get)
-		val pcm = new PageContentMarshalling(coreConf.handleService)
+		val pcm = new PageContentMarshalling(coreConf.handleService, citer)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
 
 		pathPrefix("upload"){
@@ -92,11 +94,13 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		} ~
 		get{
-			extractEnvri{implicit envri =>
-				path("objects" / Sha256Segment){ hash =>
+			path("objects" / Sha256Segment){ hash =>
+				extractEnvri{implicit envri =>
 					complete(() => service.fetchDataObj(hash))
-				} ~
-				path("collections" / Sha256Segment){ hash =>
+				}
+			} ~
+			path("collections" / Sha256Segment){ hash =>
+				extractEnvri{implicit envri =>
 					complete(() => service.fetchStaticColl(hash))
 				}
 			}

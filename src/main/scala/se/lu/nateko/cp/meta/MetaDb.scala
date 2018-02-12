@@ -45,7 +45,7 @@ class MetaDb private (
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	repo: Repository
+	val repo: Repository
 )(implicit configs: EnvriConfigs) extends Closeable{
 
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)

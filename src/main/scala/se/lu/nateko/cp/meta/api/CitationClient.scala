@@ -9,10 +9,11 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.MediaType
 import scala.collection.concurrent.TrieMap
 import scala.util.Success
+import akka.stream.Materializer
+import scala.concurrent.duration.DurationInt
 
 case class Doi private(val prefix: String, val suffix: String)
 object Doi{
@@ -22,14 +23,14 @@ object Doi{
 	}
 }
 
-class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem) {
+class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Materializer) {
+
 	private val cache = TrieMap.empty[Doi, Future[String]]
 
 	private val http = Http()
-	implicit private val materializer = ActorMaterializer(namePrefix = Some("citations_mat"))
 	import system.dispatcher
 
-	warmUpCache(knownDois)
+	system.scheduler.scheduleOnce(2.seconds)(warmUpCache(knownDois))
 
 	def getCitation(doi: Doi): Future[String] = cache
 		.getOrElseUpdate(doi, fetchCitation(doi))
@@ -60,11 +61,19 @@ class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem) {
 				)
 			)
 		}
+		.flatMap{citation =>
+			if(citation.trim.isEmpty)
+				Future.failed(new Exception("Got empty citation text from DataCite"))
+			else
+				Future.successful(citation)
+		}
 
-	private val biblioRange = MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> "apa"))
+	private val acceptBiblioRange = Accept(
+		MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> "apa"))
+	)
 
 	private def request(uri: Uri) = http.singleRequest{
-		HttpRequest(uri = uri, headers = Accept(biblioRange) :: Nil)
+		HttpRequest(uri = uri, headers = acceptBiblioRange :: Nil)
 	}
 
 	private def requestRedirect(doi: Doi) = request(s"https://doi.org/${doi.prefix}/${doi.suffix}")

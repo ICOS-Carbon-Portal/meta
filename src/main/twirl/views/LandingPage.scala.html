@@ -40,6 +40,9 @@
 
 		<div class="row">
 			@Panel("Content", 12){
+				@for(cit <- citation){
+					@PanelRow("Citation", cit)
+				}
 				@PanelRow("File name", dobj.fileName)
 				@for(size <- dobj.size){
 					@PanelRow("Size in bytes", size.toString)

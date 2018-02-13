@@ -22,6 +22,9 @@
 
 		<div class="row">
 			@Panel("Content", 6){
+				@for(cit <- citation){
+					@PanelRow("Citation", cit)
+				}
 				@for(description <- coll.description){
 					@PanelRow("Description", description)
 				}

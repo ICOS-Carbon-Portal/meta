@@ -37,8 +37,8 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 			val citationOptFut: Future[Option[String]] = doiOpt match{
 				case None => Future.successful(None)
 				case Some(doi) => citer.getCitation(doi).map(Some(_)).recover{
-					case _: Throwable =>
-						Some("Error fetching the citation from DataCite")
+					case err: Throwable =>
+						Some("Error fetching the citation from DataCite: " + err.getMessage)
 				}
 			}
 

@@ -6,7 +6,8 @@ var del = require('del');
 var source = require('vinyl-source-stream');
 var babel = require('babelify');
 
-['metaentry', 'labeling', 'sparqlclient'].forEach(function(project){
+var projects = ['metaentry', 'labeling', 'sparqlclient'];
+projects.forEach(function(project){
 
 	var paths = {
 		main: 'src/main/js/' + project + '/main.js',
@@ -47,4 +48,4 @@ var babel = require('babelify');
 
 });
 
-
+gulp.task('default', projects.map(function(p){return 'js' + p;}));

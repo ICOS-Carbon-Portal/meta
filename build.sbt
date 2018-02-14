@@ -42,6 +42,9 @@ val rdf4jVersion = "2.2.2"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 
+val npmPublish = taskKey[Unit]("runs 'npm run gulp'")
+npmPublish := scala.sys.process.Process("npm run gulp").!
+
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
@@ -81,6 +84,12 @@ lazy val meta = (project in file("."))
 			case x => ((assemblyMergeStrategy in assembly).value)(x)
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
+
+		assembly := (Def.taskDyn{
+			val original = assembly.taskValue
+			npmPublish.value
+			Def.task(original.value)
+		}).value,
 
 		initialCommands in console in Test := """
 			import se.lu.nateko.cp.meta.test.Playground._

@@ -60,7 +60,8 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 		}
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
-	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk"
+	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk",
+	"preExistingDoi": "10.1594/PANGAEA.865618"
 }
 ```
 
@@ -81,6 +82,7 @@ Clarifications:
 - `comment` is an optional free text.
 - `creationDate` is an ISO 8601 time stamp.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
+- `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 
@@ -93,6 +95,23 @@ Alternatively, the CPauth cookie can be supplied explicitly:
 ### Uploading the data object
 Uploading the data object itself is a simple step performed against the CP's Data service **https://data.icos-cp.eu/**.
 Proceed with the upload as instructed [here](https://github.com/ICOS-Carbon-Portal/data#instruction-for-uploading-icos-data-objects)
+
+
+### Creating a static collection
+Carbon Portal supports creation of static collections with constant lists of immutable data objects or other static collections. The process of creating a static collection is similar to step 1 of data object upload. Here are the expected contents of the metadata package for it:
+```json
+{
+	"submitterId": "ATC",
+	"title": "Test collection",
+	"description": "Optional collection description",
+	"members": ["https://meta.icos-cp.eu/objects/G6PjIjYC6Ka_nummSJ5lO8SV", "https://meta.icos-cp.eu/objects/sdfRNhhI5EN_BckuQQfGpdvE"],
+	"isNextVersionOf": "CkSE78VzQ3bmHBtkMLt4ogJy",
+	"preExistingDoi": "10.18160/VG28-H2QA"
+}
+```
+The fields are either self-explanatory, or have the same meaning as for the data object upload.
+
+As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 
 ---
 

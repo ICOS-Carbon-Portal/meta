@@ -136,7 +136,7 @@ object MetaDb {
 		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
 		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServs, perFormatServers)
-		val sparqlRunner = new Rdf4jSparqlRunner(repo)(system.dispatcher)//rdf4j is embedded, so it will not block threads idly, but use them
+		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}

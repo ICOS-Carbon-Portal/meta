@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import scala.concurrent.Future
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.query.BindingSet
 
 case class SparqlQuery(query: String, clientId: Option[String] = None)
 
@@ -18,6 +18,7 @@ trait SparqlServer {
 
 trait SparqlRunner{
 
-	def evaluateGraphQuery(q: SparqlQuery): Future[CloseableIterator[Statement]]
+	def evaluateGraphQuery(q: SparqlQuery): CloseableIterator[Statement]
+	def evaluateTupleQuery(q: SparqlQuery): CloseableIterator[BindingSet]
 
 }

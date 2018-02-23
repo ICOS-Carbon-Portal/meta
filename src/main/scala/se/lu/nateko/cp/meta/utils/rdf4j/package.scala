@@ -4,11 +4,12 @@ import java.net.{URI => JavaUri}
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
-import org.eclipse.rdf4j.repository.RepositoryResult
+//import org.eclipse.rdf4j.repository.RepositoryResult
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Statement
@@ -44,7 +45,7 @@ package object rdf4j {
 		def ===(other: JavaUri): Boolean = uri == other
 	}
 
-	implicit class IterableRepositoryResult[T](val res: RepositoryResult[T]) extends AnyVal{
+	implicit class IterableCloseableIteration[T](val res: CloseableIteration[T, _]) extends AnyVal{
 		def asScalaIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res, () => ())
 	}
 
@@ -68,9 +69,9 @@ package object rdf4j {
 			}
 		}
 
-		def access[T](accessor: RepositoryConnection => RepositoryResult[T]): CloseableIterator[T] = access(accessor, () => ())
+		def access[T](accessor: RepositoryConnection => CloseableIteration[T, _]): CloseableIterator[T] = access(accessor, () => ())
 
-		def access[T](accessor: RepositoryConnection => RepositoryResult[T], extraCleanup: () => Unit): CloseableIterator[T] = {
+		def access[T](accessor: RepositoryConnection => CloseableIteration[T, _], extraCleanup: () => Unit): CloseableIterator[T] = {
 			val conn = repo.getConnection
 
 			val finalCleanup = () => {

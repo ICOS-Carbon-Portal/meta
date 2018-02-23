@@ -93,7 +93,7 @@ class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: Sparql
 				|		?s ?p ?o
 				|	}
 				|}""".stripMargin)
-			sparql.evaluateGraphQuery(query).map(_.toIndexedSeq)
+			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		}
 	}
 

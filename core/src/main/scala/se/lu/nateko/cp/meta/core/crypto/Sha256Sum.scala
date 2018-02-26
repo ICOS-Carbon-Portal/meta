@@ -35,7 +35,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 
 	override def equals(other: Any): Boolean =
 		if(other.isInstanceOf[Sha256Sum])
-			Arrays.equals(bytes, other.asInstanceOf[Sha256Sum].bytes)
+			Arrays.equals(this.truncate.bytes, other.asInstanceOf[Sha256Sum].truncate.bytes)
 		else false
 
 	override def hashCode: Int = Arrays.hashCode(bytes)

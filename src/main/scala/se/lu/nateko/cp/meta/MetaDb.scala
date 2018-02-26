@@ -133,10 +133,10 @@ object MetaDb {
 
 		val uploadConf = config.dataUploadService
 
-		val etcHelper = new EtcUploadTransformer(uploadConf.etc)
+		val sparqlRunner = new Rdf4jSparqlRunner(repo)
+		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
 		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServs, perFormatServers)
-		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}

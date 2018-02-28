@@ -44,7 +44,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 	private def getSpecificCompleter(server: InstanceServer, format: IRI)(implicit envri: Envri): FormatSpecificCompleter = {
 		if(format === metaVocab.wdcggFormat)
 			new WdcggUploadCompleter(server, vocab, metaVocab)
-		else if(format === metaVocab.etcFormat || format === metaVocab.socatFormat)
+		else if(format === metaVocab.etcFormat || format === metaVocab.socatFormat || format === metaVocab.sites.simpleSitesCsv)
 			new TimeSeriesUploadCompleter(server, epic, vocab, metaVocab)
 		else new EpicPidMinter(epic, vocab)
 	}

@@ -101,4 +101,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val dateSubmitted = getRelative("dateSubmitted")
 	}
 
+	object sites extends CustomVocab {
+		val factory = top.factory
+		implicit val bup = makeUriProvider("https://meta.fieldsites.se/ontologies/sites/")
+		val simpleSitesCsv = getRelative("simpleSitesCsv")
+	}
 }

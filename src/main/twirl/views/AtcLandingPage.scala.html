@@ -1,0 +1,12 @@
+@import se.lu.nateko.cp.viewscore.CpMenu
+
+@(title: String)(body: Html)
+@IcosPage(title, CpMenu.landingPage, None, AtcStyleConfig){
+	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+	@LandingPageStyle()
+}{
+	<div class="page-header">
+		<h1>ICOS ATC Data Object Landing Page</h1>
+	</div>
+	@body
+}

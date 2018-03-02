@@ -42,8 +42,11 @@ val rdf4jVersion = "2.2.2"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 
-val npmPublish = taskKey[Unit]("runs 'npm run gulp'")
-npmPublish := scala.sys.process.Process("npm run gulp").!
+val frontendBuild = taskKey[Unit]("Builds the front end apps")
+frontendBuild := {
+	import scala.sys.process.Process
+	(Process("npm install") #&& Process("npm run gulp")).!
+}
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
@@ -87,7 +90,7 @@ lazy val meta = (project in file("."))
 
 		assembly := (Def.taskDyn{
 			val original = assembly.taskValue
-			npmPublish.value
+			frontendBuild.value
 			Def.task(original.value)
 		}).value,
 

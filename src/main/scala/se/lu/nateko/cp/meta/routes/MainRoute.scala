@@ -10,6 +10,7 @@ import akka.stream.Materializer
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.api.Doi
 import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 object MainRoute {
 
@@ -31,6 +32,7 @@ object MainRoute {
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)
+		val authRoute = authRouting.route
 		val citer = new CitationClient(getDois(db))
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, citer, config.core)
 
@@ -41,15 +43,21 @@ object MainRoute {
 
 		val filesRoute = FilesRoute(db.fileService)
 
+		val adminRoute = {
+			val sparqler = new Rdf4jSparqlRunner(db.repo)
+			new AdminRouting(sparqler, db.instanceServers, authRouting, config.sparql).route
+		}
+
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~
 			metaEntryRoute ~
 			uploadRoute ~
 			labelingRoute ~
 			filesRoute ~
-			authRouting.route ~
+			authRoute ~
 			staticRoute ~
 			linkedDataRoute ~
+			adminRoute ~
 			path("buildInfo"){
 				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
 			}

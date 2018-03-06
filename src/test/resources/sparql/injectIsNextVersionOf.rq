@@ -1,0 +1,30 @@
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?newObj cpmeta:isNextVersionOf ?oldObj
+}
+from <http://meta.icos-cp.eu/resources/atmcsv/>
+where{
+	{
+		select (group_concat(?dobj; separator = "|") as ?dobjs) where{
+			{
+				select distinct ?fileName ?dobj where{
+					?dobj cpmeta:hasName ?fileName .
+					?dobj2 cpmeta:hasName ?fileName .
+					filter(?dobj != ?dobj2)
+					?dobj cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd] .
+					?dobj2 cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd2] .
+					filter not exists{?dobj2 cpmeta:isNextVersionOf ?dobj}
+					filter not exists{?dobj cpmeta:isNextVersionOf ?dobj2}
+				}
+				order by ?fileName ?submEnd
+			}
+		}
+		group by ?fileName
+		order by ?fileName
+	}
+
+	bind (iri(strbefore(?dobjs, "|")) as ?oldObj)
+	bind (strafter(?dobjs, "|") as ?rest)
+	bind (iri(if(contains(?rest, "|"), strbefore(?rest, "|"), ?rest)) as ?newObj)
+}

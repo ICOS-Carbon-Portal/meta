@@ -1,11 +1,14 @@
-export const resubmittedFiles = `
-prefix prov: <http://www.w3.org/ns/prov#>
+export const resubmittedFiles = `prefix prov: <http://www.w3.org/ns/prov#>
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-select distinct ?fileName ?submEnd ?dobj1 where{
-  ?dobj1 cpmeta:hasName ?fileName .
-  ?dobj2 cpmeta:hasName ?fileName .
-  filter(?dobj1 != ?dobj2)
-  ?dobj1 cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd]
+select ?rdfGraph ?fileName ?dobj ?submEnd where{
+	graph ?rdfGraph {
+		?dobj cpmeta:hasName ?fileName .
+		?dobj2 cpmeta:hasName ?fileName .
+		filter(?dobj != ?dobj2)
+		?dobj cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd] .
+		?dobj2 cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd2] .
+		filter not exists{?dobj2 cpmeta:isNextVersionOf ?dobj}
+		filter not exists{?dobj cpmeta:isNextVersionOf ?dobj2}
+	}
 }
-order by ?fileName desc(?submEnd)
-`;
+order by ?rdfGraph ?fileName ?submEnd`;

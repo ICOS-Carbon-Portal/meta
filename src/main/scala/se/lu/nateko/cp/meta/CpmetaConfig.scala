@@ -107,7 +107,8 @@ case class SparqlServerConfig(
 	maxQueryRuntimeSec: Int,
 	quotaPerMinute: Int,//in seconds
 	quotaPerHour: Int,  //in seconds
-	maxParallelQueries: Int
+	maxParallelQueries: Int,
+	adminUsers: Seq[String]
 )
 
 case class CpmetaConfig(
@@ -147,7 +148,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
-	implicit val sparqlConfigFormat = jsonFormat4(SparqlServerConfig)
+	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat10(CpmetaConfig)
 

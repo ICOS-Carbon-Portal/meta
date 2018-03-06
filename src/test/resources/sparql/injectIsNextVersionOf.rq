@@ -14,8 +14,14 @@ where{
 					filter(?dobj != ?dobj2)
 					?dobj cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd] .
 					?dobj2 cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd2] .
-					filter not exists{?dobj2 cpmeta:isNextVersionOf ?dobj}
-					filter not exists{?dobj cpmeta:isNextVersionOf ?dobj2}
+					filter not exists{
+						[] cpmeta:isNextVersionOf ?dobj .
+						filter (?submEnd2 > ?submEnd)
+					}
+					filter not exists{
+						[] cpmeta:isNextVersionOf ?dobj2 .
+						filter (?submEnd > ?submEnd2)
+					}
 				}
 				order by ?fileName ?submEnd
 			}

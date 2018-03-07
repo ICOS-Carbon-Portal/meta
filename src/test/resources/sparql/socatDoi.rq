@@ -1,0 +1,12 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+  ?dobj cpmeta:hasDoi ?doi
+}
+from <http://meta.icos-cp.eu/resources/socat/>
+where{
+  ?dobj cpmeta:wasProducedBy/rdfs:comment ?comment .
+  bind( concat("10.1594", strafter(?comment, "10.1594")) as ?doi)
+  filter(strlen(?doi) > 0)
+}
+

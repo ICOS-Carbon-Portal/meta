@@ -1,8 +1,11 @@
 package se.lu.nateko.cp.meta.api
 
+import java.util.concurrent.TimeoutException
+
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.util.Failure
 import scala.util.Success
 
 import akka.Done
@@ -16,6 +19,7 @@ import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.utils.async.timeLimit
 
 case class Doi private(val prefix: String, val suffix: String)
 
@@ -36,9 +40,14 @@ class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Ma
 	system.scheduler.scheduleOnce(2.seconds)(warmUpCache())
 
 	def getCitation(doi: Doi): Future[String] = cache
-		.getOrElseUpdate(doi, fetchCitation(doi))
+		.getOrElseUpdate(doi, timeLimit(fetchCitation(doi), 3.seconds, system.scheduler))
 		.recoverWith{
-			case _: Throwable =>
+			case _: TimeoutException => Future.failed(
+				new Exception("Citation formatting service timed out")
+			)
+		}
+		.andThen{
+			case Failure(_) =>
 				fetchCitation(doi).andThen{
 					case Success(citation) =>
 						cache += doi -> Future.successful(citation)
@@ -50,7 +59,7 @@ class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Ma
 		def warmUp(dois: List[Doi]): Future[Done] = dois match {
 			case Nil => Future.successful(Done)
 			case head :: tail =>
-				getCitation(head).flatMap{_ => warmUp(tail)}
+				fetchCitation(head).flatMap{_ => warmUp(tail)}
 		}
 
 		warmUp(knownDois).failed.foreach{_ =>
@@ -75,6 +84,9 @@ class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Ma
 				Future.failed(new Exception("Got empty citation text from DataCite"))
 			else
 				Future.successful(citation)
+		}
+		.andThen{
+			case Failure(err) => system.log.error("Citation fetching error: " + err.getMessage)
 		}
 
 	private val acceptBiblioRange = Accept(

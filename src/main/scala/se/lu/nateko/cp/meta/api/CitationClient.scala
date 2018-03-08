@@ -30,46 +30,65 @@ object Doi{
 	}
 }
 
-class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Materializer) {
+class CitationClient(knownDois: List[Doi], warmCacheUp: Boolean)(implicit system: ActorSystem, mat: Materializer) {
 
 	private val cache = TrieMap.empty[Doi, Future[String]]
 
 	private val http = Http()
-	import system.dispatcher
+	import system.{dispatcher, scheduler, log}
 
-	system.scheduler.scheduleOnce(2.seconds)(warmUpCache())
+	if(warmCacheUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 
 	def getCitation(doi: Doi): Future[String] = cache
-		.getOrElseUpdate(doi, timeLimit(fetchCitation(doi), 3.seconds, system.scheduler))
-		.recoverWith{
+		.getOrElseUpdate(doi, fetchTimeLimited(doi))
+		.andThen{
+			case Failure(_) => scheduler.scheduleOnce(10.seconds){
+				fetchIfNeeded(doi)
+			}
+		}
+
+	private def fetchTimeLimited(doi: Doi): Future[String] =
+		timeLimit(fetchCitation(doi), 3.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
 				new Exception("Citation formatting service timed out")
 			)
 		}
-		.andThen{
-			case Failure(_) =>
-				fetchCitation(doi).andThen{
-					case Success(citation) =>
-						cache += doi -> Future.successful(citation)
-				}
+
+	private def fetchIfNeeded(doi: Doi): Future[String] = {
+
+		def recache(): Future[String] = {
+			val res = fetchCitation(doi)
+			cache += doi -> res
+			res
 		}
+
+		cache.get(doi).fold(recache()){fut =>
+			fut.value match{
+				case Some(Failure(_)) =>
+					//if this citation is a completed failure at the moment
+					recache()
+				case _ => fut
+			}
+		}
+	}
 
 	private def warmUpCache(): Unit = {
 
 		def warmUp(dois: List[Doi]): Future[Done] = dois match {
 			case Nil => Future.successful(Done)
 			case head :: tail =>
-				fetchCitation(head).flatMap{_ => warmUp(tail)}
+				fetchIfNeeded(head).flatMap(_ => warmUp(tail))
 		}
 
 		warmUp(knownDois).failed.foreach{_ =>
-			system.scheduler.scheduleOnce(1.hours)(warmUpCache())
+			scheduler.scheduleOnce(1.hours)(warmUpCache())
 		}
 	}
 
 	private def fetchCitation(doi: Doi): Future[String] = requestRedirect(doi)
-		.flatMap{
-			_.header[Location].fold{
+		.flatMap{resp =>
+			resp.discardEntityBytes()
+			resp.header[Location].fold{
 				Future.failed[Location](
 					new Exception("Error getting citation from DataCite (no Location header in response).")
 				)
@@ -86,7 +105,8 @@ class CitationClient(knownDois: List[Doi])(implicit system: ActorSystem, mat: Ma
 				Future.successful(citation)
 		}
 		.andThen{
-			case Failure(err) => system.log.error("Citation fetching error: " + err.getMessage)
+			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)
+			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
 	private val acceptBiblioRange = Accept(

@@ -152,7 +152,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	implicit val cpmetaConfigFormat = jsonFormat10(CpmetaConfig)
 
-	private val appConfig: Config = {
+	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
 		val default = ConfigFactory.load
 		if(confFile.exists)

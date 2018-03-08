@@ -33,7 +33,7 @@ object MainRoute {
 
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
-		val citer = new CitationClient(getDois(db))
+		val citer = new CitationClient(getDois(db), !config.dataUploadService.epicPid.dryRun)
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, citer, config.core)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)

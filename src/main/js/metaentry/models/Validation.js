@@ -12,6 +12,12 @@ function intValidator(s){
 	return /\-?\d+/.test(s) ? ok : error("Not a valid integer!");
 }
 
+function urlValidator(s){
+	var expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+	var regex = new RegExp(expression);
+	return (s && s.match(regex)) ? ok : error("Not a valid URL!");
+}
+
 function boolValidator(s){
 	var boolError = error("Must be 'true' or 'false'");
 	if(_.isEmpty(s)) return boolError;
@@ -61,7 +67,8 @@ var dataTypeValidators = _.object([
 	[xsd + "boolean", boolValidator],
 	[xsd + "double", doubleValidator],
 	[xsd + "float", doubleValidator],
-	[xsd + "dateTime", stringValidator] //TODO Change to proper dateTimeValidator!
+	[xsd + "dateTime", stringValidator], //TODO Change to proper dateTimeValidator!
+	[xsd + "anyURI", urlValidator]
 ]);
 
 function conditionalValidator(conditionValidator, otherValidators){

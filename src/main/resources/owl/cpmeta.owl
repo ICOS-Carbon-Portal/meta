@@ -192,6 +192,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has data theme</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding">
@@ -681,6 +692,18 @@
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">parent property for concrete format-specific metadata properties</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">format-specific metadata</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">URL link to SVG icon to be used in user interfaces</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has icon</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1203,6 +1226,12 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
@@ -1211,6 +1240,12 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data Object specification</rdfs:label>
@@ -1254,6 +1289,21 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data Theme</rdfs:label>
     </owl:Class>
     
 
@@ -1485,12 +1535,6 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset"/>
                 <owl:cardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:cardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel"/>
-                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Simple Object specification</rdfs:label>
@@ -1872,6 +1916,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/isoLikeLocalDateTime -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/isoLikeLocalDateTime">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">May use space instead of &apos;T&apos; for separator</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO-like local dateTime</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/netcdf -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/netcdf">
@@ -1937,14 +1991,23 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/simpleSitesCsv -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/simpleSitesCsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Comma-separated, single line header, SITES</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/ontologies/sites/spectralCsv -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/spectralCsv">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Tab-separated CSV by SITES SPECTRAL</rdfs:label>
     </owl:NamedIndividual>
-
     
+
 
     <!-- https://meta.fieldsites.se/resources/organizations/SITES_SLU -->
 
@@ -1953,23 +2016,9 @@
         <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES coordination center at SLU</hasName>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES at SLU</rdfs:label>
     </owl:NamedIndividual>
-
-    <!-- https://meta.fieldsites.se/ontologies/sites/simpleSitesCsv -->
-
-    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/simpleSitesCsv">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Comma-separated, single line header, SITES</rdfs:label>
-    </owl:NamedIndividual>
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/isoLikeLocalDateTime -->
-
-    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/isoLikeLocalDateTime">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">May use space instead of &apos;T&apos; for separator</rdfs:comment>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO-like local dateTime</rdfs:label>
-    </owl:NamedIndividual>
-
 </rdf:RDF>
+
+
 
 <!-- Generated by the OWL API (version 4.2.8.20170104-2310) https://github.com/owlcs/owlapi -->
 

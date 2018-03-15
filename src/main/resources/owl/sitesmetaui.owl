@@ -18,6 +18,36 @@
     <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/objspecs/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DataTheme</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:DataTheme</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/themes/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/columns/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
@@ -35,6 +65,11 @@
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/organizations/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
@@ -58,6 +93,16 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:QuantityKind</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:QuantityKind</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Role</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
@@ -68,6 +113,36 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:SimpleObjectSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:SimpleObjectSpec</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/objspecs/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:TabularDatasetSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:TabularDatasetSpec</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:ValueType</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:ValueType</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <IRI>https://meta.fieldsites.se/ontologies/sites/Station</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
@@ -75,71 +150,6 @@
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
         <IRI>https://meta.fieldsites.se/ontologies/sites/Station</IRI>
         <IRI>https://meta.fieldsites.se/resources/stations/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:DataObjectSpec</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/objspecs/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/organizations/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/columns/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:QuantityKind</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:QuantityKind</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:SimpleObjectSpec</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:SimpleObjectSpec</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/objspecs/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:TabularDatasetSpec</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:TabularDatasetSpec</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:ValueType</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:ValueType</AbbreviatedIRI>
-        <IRI>https://meta.fieldsites.se/resources/</IRI>
     </AnnotationAssertion>
 </Ontology>
 

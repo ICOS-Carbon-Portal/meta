@@ -74,6 +74,7 @@ case class UploadServiceConfig(
 	collectionServers: Map[Envri, String],
 	submitters: Map[String, DataSubmitterConfig],
 	epicPid: EpicPidConfig,
+	handle: HandleNetClientConfig,
 	etc: EtcUploadConfig
 )
 
@@ -102,6 +103,15 @@ case class EpicPidConfig(
 	prefix: String,
 	password: String,
 	dryRun: Boolean
+)
+
+case class HandleNetClientConfig(
+	prefix: String,
+	baseUrl: String,
+	serverCertPemFilePath: String,
+	clientCertPemFilePath: String,
+	clientPrivKeyPKCS8FilePath: String,
+	disableHostnameVerification: Boolean
 )
 
 case class SparqlServerConfig(
@@ -143,10 +153,11 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
+	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
 	implicit val etcUploadConfigFormat = jsonFormat4(EtcUploadConfig)
 
 	import se.lu.nateko.cp.meta.core.MetaCoreConfig.envriFormat
-	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
+	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)

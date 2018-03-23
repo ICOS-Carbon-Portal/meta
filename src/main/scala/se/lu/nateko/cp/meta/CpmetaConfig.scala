@@ -65,7 +65,8 @@ case class DataSubmitterConfig(
 case class EtcUploadConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,
-	bioMeteoObjSpecId: String
+	bioMeteoObjSpecId: String,
+	saheatObjSpecId: String
 )
 
 case class UploadServiceConfig(
@@ -142,7 +143,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
-	implicit val etcUploadConfigFormat = jsonFormat3(EtcUploadConfig)
+	implicit val etcUploadConfigFormat = jsonFormat4(EtcUploadConfig)
 
 	import se.lu.nateko.cp.meta.core.MetaCoreConfig.envriFormat
 	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)

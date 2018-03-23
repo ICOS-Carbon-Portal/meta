@@ -15,5 +15,5 @@ case class EtcUploadMetadata(
 )
 
 object DataType extends Enumeration{
-	val EC, BM, ST = Value
+	val EC, BM, ST, SAHEAT = Value
 }

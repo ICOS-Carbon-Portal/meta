@@ -22,6 +22,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import scala.util.Success
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
 
@@ -66,9 +67,13 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 			case DataType.BM => config.bioMeteoObjSpecId
 			case DataType.EC => config.eddyCovarObjSpecId
 			case DataType.ST => config.storageObjSpecId
+			case DataType.SAHEAT => config.saheatObjSpecId
 		}
 
-		val binSuff = if(meta.isBinary) "Bin" else "Csv"
+		val binSuff = meta.dtype match {
+			case DataType.SAHEAT => ""
+			case _ => if(meta.isBinary) "Bin" else "Csv"
+		}
 
 		baseSegment + binSuff
 	}
@@ -79,11 +84,16 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 			s"UTC offset info for station ${station.id} not found in ETC metadata on Carbon Portal"
 		))
 
-	private def getFileMeta(meta: EtcUploadMetadata): Try[EtcFileMeta] = etcMeta
-		.lookupFile(meta.station, meta.logger, meta.fileId, meta.dataType)
-		.toTry(new MetadataException(
-			s"Could not find ETC file metadata for $meta on Carbon Portal"
-		))
+	private def getFileMeta(meta: EtcUploadMetadata): Try[EtcFileMeta] = meta.dataType match {
+		case DataType.SAHEAT =>
+			Success(EtcFileMeta(dtype = meta.dataType, isBinary = false))
+		case _ =>
+			etcMeta
+				.lookupFile(meta.station, meta.logger, meta.fileId, meta.dataType)
+				.toTry(new MetadataException(
+					s"Could not find ETC file metadata for $meta on Carbon Portal"
+				))
+	}
 
 	private def getPrevVersion(fileName: String, thisHash: Sha256Sum): Option[Sha256Sum] = {
 		val query = s"""prefix prov: <http://www.w3.org/ns/prov#>

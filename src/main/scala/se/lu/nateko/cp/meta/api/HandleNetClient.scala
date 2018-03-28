@@ -121,16 +121,28 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 	}
 
 	def createOrRecreate(suffix: String, target: URL): Future[Done] = {
-		val payload = JsObject(Map("values" -> JsArray(
-			JsObject(Map(
+		val payload = JsObject("values" -> JsArray(
+			JsObject(
 				"index" -> JsNumber(1),
 				"type" -> JsString("URL"),
-				"data" -> JsObject(Map(
+				"data" -> JsObject(
 					"format" -> JsString("string"),
 					"value" -> JsString(target.toString)
-				))
-			))
-		)))
+				)
+			),
+			JsObject(
+				"index" -> JsNumber(100),
+				"type" -> JsString("HS_ADMIN"),
+				"data" -> JsObject(
+					"format" -> JsString("admin"),
+					"value" -> JsObject(
+						"handle" -> JsString("0.NA/" + conf.prefix),
+						"index" -> JsNumber(200),
+						"permissions" -> JsString("011111110011")
+					)
+				)
+			)
+		))
 
 		Marshal(payload).to[RequestEntity].flatMap{entity =>
 			val req = HttpRequest(

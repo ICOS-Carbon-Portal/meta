@@ -11,6 +11,7 @@ import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.api.Doi
 import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.core.data.Envri
 
 object MainRoute {
 
@@ -28,7 +29,7 @@ object MainRoute {
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val _ = config.core.envriConfigs
 		val sparqlRoute = SparqlRoute()
-		val staticRoute = StaticRoute(config.onto, config.auth)
+		val staticRoute = StaticRoute(config.onto, config.auth(Envri.ICOS))
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val authRouting = new AuthenticationRouting(config.auth)

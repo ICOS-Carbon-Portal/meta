@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directive0
+import akka.http.scaladsl.server.Directive1
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import scala.util.Success
 import scala.util.Failure
@@ -18,23 +19,30 @@ import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.model.headers.`X-Forwarded-For`
 import spray.json.JsObject
 import spray.json.JsNull
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
-class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProtocol{
+class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
 
-	private[this] val authenticator = Authenticator(authConfig).get
+	private val extractEnvri = extractEnvriDirective
+	private def authConfig(implicit envri: Envri) = authConf(envri)
+	private def authenticator(implicit envri: Envri) = Authenticator(authConfig).get
 
-	private def user(inner: UserId => Route): Route = cookie(authConfig.authCookieName)(cookie => {
-		val uidTry = for(
-			signedToken <- CookieToToken.recoverToken(cookie.value);
-			token <- authenticator.unwrapToken(signedToken)
-		) yield token.userId
+	private def user(inner: UserId => Route): Route = extractEnvri{implicit envri =>
+		cookie(authConfig.authCookieName)(cookie => {
+			val uidTry = for(
+				signedToken <- CookieToToken.recoverToken(cookie.value);
+				token <- authenticator.unwrapToken(signedToken)
+			) yield token.userId
 
-		uidTry match {
-			case Success(uid) => inner(uid)
-			case Failure(err) => reject(InvalidCpauthTokenRejection(toMessage(err)))
-		}
-	})
+			uidTry match {
+				case Success(uid) => inner(uid)
+				case Failure(err) => reject(InvalidCpauthTokenRejection(toMessage(err)))
+			}
+		})
+	}
 
 	def mustBeLoggedIn(inner: UserId => Route): Route = handleRejections(authRejectionHandler)(user(inner))
 
@@ -58,7 +66,7 @@ class AuthenticationRouting(authConfig: PublicAuthConfig) extends CpmetaJsonProt
 			user{uid => complete(uid)} ~
 			complete(JsObject(Map("email" -> JsNull)))
 		} ~
-		path("logout"){
+		(path("logout") & extractEnvri){implicit envri =>
 			deleteCookie(authConfig.authCookieName, authConfig.authCookieDomain, "/"){
 				complete(StatusCodes.OK)
 			}
@@ -81,4 +89,13 @@ object AuthenticationRouting {
 		optionalHeaderValueByType[`X-Forwarded-For`](())
 			.require(_.isEmpty)
 			.recover(_ => complete(StatusCodes.Forbidden))
+
+
+	def extractEnvriDirective(implicit configs: EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
+		Envri.infer(h) match{
+			case None => complete(StatusCodes.BadRequest -> s"Unexpected host $h, cannot find corresponding ENVRI")
+			case Some(envri) => provide(envri)
+		}
+	}
+
 }

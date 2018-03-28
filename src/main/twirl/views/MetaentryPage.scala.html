@@ -1,7 +1,7 @@
 @import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 
 @(pageTitle: String, authConf: PublicAuthConfig)
-@CpCommonPage("ICOS metadata entry service", cpauthHostOpt = Some(authConf.cpauthHost)){
+@CpCommonPage("ICOS metadata entry service", cpauthHostOpt = Some(authConf.authHost)){
 	<script src="https://static.icos-cp.eu/constant/react/0.13.3/react.min.js"></script>
 	<script src="https://static.icos-cp.eu/constant/reflux/0.2.7/reflux.min.js"></script>
 	<!--[if IE]>

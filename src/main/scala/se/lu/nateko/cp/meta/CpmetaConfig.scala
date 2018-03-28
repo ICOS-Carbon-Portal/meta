@@ -120,7 +120,7 @@ case class CpmetaConfig(
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
 	onto: OntoConfig,
-	auth: PublicAuthConfig,
+	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig
 )
@@ -145,7 +145,6 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat4(EtcUploadConfig)
 
-	import se.lu.nateko.cp.meta.core.MetaCoreConfig.envriFormat
 	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)

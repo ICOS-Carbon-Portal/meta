@@ -49,7 +49,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		coreConf: MetaCoreConfig
 	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
 
-		val extractEnvri = extractHost.map(host => Envri.infer(host).get)
+		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 		val pcm = new PageContentMarshalling(coreConf.handleService, citer)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
 

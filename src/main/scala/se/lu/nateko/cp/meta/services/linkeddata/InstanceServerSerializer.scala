@@ -1,11 +1,15 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import org.eclipse.rdf4j.model.Namespace
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.impl.SimpleNamespace
+import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
+
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -16,12 +20,9 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
-import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
-import org.eclipse.rdf4j.model.impl.SimpleNamespace
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 object InstanceServerSerializer {
 
@@ -71,8 +72,8 @@ object InstanceServerSerializer {
 		ContentType(mediaType, () => utf8)
 	}
 
-	private def getResponse(producer: StatementProducer, contType: ContentType, writerFactory: RDFWriterFactory)(implicit ctxt: ExecutionContext): HttpResponse = {
-		val entityBytes = OutputStreamWriterSource{ outStr =>
+	private def getResponse(producer: StatementProducer, contType: ContentType, writerFactory: RDFWriterFactory): HttpResponse = {
+		val entityBytes = StreamConverters.asOutputStream().mapMaterializedValue{ outStr =>
 			val statements = producer.statements
 			try{
 				val rdfWriter = writerFactory.getWriter(outStr)

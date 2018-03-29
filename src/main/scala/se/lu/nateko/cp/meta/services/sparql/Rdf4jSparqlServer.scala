@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql
 
-import java.util.concurrent.Callable
+import java.time.Instant
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 import org.eclipse.rdf4j.query.BooleanQuery
 import org.eclipse.rdf4j.query.GraphQuery
@@ -32,14 +32,12 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
+import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
-import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
-import se.lu.nateko.cp.meta.utils.streams.OutputStreamWriterSource
-import akka.http.scaladsl.model.StatusCode
-import java.time.Instant
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
@@ -48,8 +46,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 	private val javaExe = Executors.newCachedThreadPool()
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val quoter = new QuotaManager(config)(Instant.now _)
-
-	implicit private val ctxt = ExecutionContext.fromExecutorService(javaExe)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
 	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 5, 5, TimeUnit.HOURS)
@@ -116,7 +112,8 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
 		() => {
-			val entityBytes = OutputStreamWriterSource{ outStr =>
+			val timeout = (config.maxQueryRuntimeSec + 1).seconds
+			val entityBytes = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val fut = javaExe.submit[Unit](
 					() => protocolOption.evaluator.evaluate(query, outStr)
@@ -127,9 +124,12 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
-				try{ fut.get } finally{
-					outStr.close()
-					onDone()
+
+				javaExe.submit[Unit]{() =>
+					try{ fut.get } finally{
+						outStr.close()
+						onDone()
+					}
 				}
 			}
 
@@ -183,7 +183,7 @@ object Rdf4jSparqlServer{
 		ProtocolOption(tsvSparql, ContentTypes.`text/plain(UTF-8)`, tsvSparqlWriterFactory) ::
 		Nil
 
-	import InstanceServerSerializer.{xmlContType, turtleContType}
+	import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer.{ turtleContType, xmlContType }
 
 	val graphQueryProtocolOptions: List[ProtocolOption[GraphQuery]] =
 		ProtocolOption(xmlContType, xml, xmlRdfWriterFactory) ::

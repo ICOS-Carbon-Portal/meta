@@ -6,7 +6,6 @@ import scala.concurrent.Future
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.PidUpdate
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import spray.json.JsString
@@ -18,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class EpicPidMinter(epic: EpicPidClient, vocab: CpVocab)(implicit ex: ExecutionContext, envri: Envri) extends FormatSpecificCompleter {
 
-	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] =
+	def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] =
 		Future.successful(Nil)
 
 

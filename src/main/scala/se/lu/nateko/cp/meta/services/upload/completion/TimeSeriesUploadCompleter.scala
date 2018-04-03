@@ -3,26 +3,28 @@ package se.lu.nateko.cp.meta.services.upload.completion
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import org.eclipse.rdf4j.model.IRI
+
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
+import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.core.data.TimeSeriesUploadCompletion
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
-import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
-import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 
 private class TimeSeriesUploadCompleter(
 	server: InstanceServer,
+	extract: IngestionMetadataExtract,
 	epic: EpicPidClient,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
@@ -31,13 +33,13 @@ private class TimeSeriesUploadCompleter(
 	private val factory = vocab.factory
 	private val statementsProd = new StatementsProducer(vocab, metaVocab)
 
-	override def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
+	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = extract match {
 
-		case Some(TimeSeriesUploadCompletion(interval)) => Future{
+		case TimeSeriesUploadCompletion(interval) => Future{
 			acqusitionIntervalUpdates(hash, interval)
 		}
 
-		case Some(SpatialTimeSeriesUploadCompletion(interval, spatial)) => Future{
+		case SpatialTimeSeriesUploadCompletion(interval, spatial) => Future{
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
 			val objUri = vocab.getDataObject(hash)
@@ -54,10 +56,8 @@ private class TimeSeriesUploadCompleter(
 			coverageUpdates ++ intervalUpdates
 		}
 
-		case None => Future.successful(Nil)
-
 		case _ => Future.failed(new UploadCompletionException(
-			s"Encountered wrong type of upload completion info, must be (Spatial)TimeSeriesUploadCompletion, got $info"
+			s"Encountered wrong type of upload completion info, must be (Spatial)TimeSeriesUploadCompletion, got $extract"
 		))
 	}
 

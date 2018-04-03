@@ -11,20 +11,19 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
-import se.lu.nateko.cp.meta.core.data.Envri
 
 
 private class WdcggUploadCompleter(
 	val server: InstanceServer,
+	result: WdcggUploadCompletion,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
 )(implicit ctxt: ExecutionContext) extends FormatSpecificCompleter with FetchingHelper {
@@ -34,41 +33,34 @@ private class WdcggUploadCompleter(
 	private val factory = vocab.factory
 	implicit private val envri = Envri.ICOS
 
-	def getUpdates(hash: Sha256Sum, info: UploadCompletionInfo): Future[Seq[RdfUpdate]] = info.ingestionResult match {
-//TODO Add support for idempotence here
-		case Some(WdcggUploadCompletion(nRows, interVal, keyValues)) => Future{
-			val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
+	def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = Future{
+		//TODO Add support for idempotence here
+		val WdcggUploadCompletion(nRows, interVal, keyValues) = result
+		val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 
-			val objUri = vocab.getDataObject(hash)
-			facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
+		val objUri = vocab.getDataObject(hash)
+		facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
-			val acquisitionUri = vocab.getAcquisition(hash)
-			facts += ((acquisitionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
-			facts += ((acquisitionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
+		val acquisitionUri = vocab.getAcquisition(hash)
+		facts += ((acquisitionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
+		facts += ((acquisitionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
 
-			val station = getSingleUri(acquisitionUri, metaVocab.prov.wasAssociatedWith)
-			if(!server.hasStatement(Some(station), None, None)){
-				facts ++= getStationFacts(station, keyValues)
-			}
-
-			for((key, value) <- keyValues if !specialPropKeys.contains(key)){
-				val keyProp = vocab.getRelative("wdcgg/", key)(vocab.icosBup)
-
-				if(!server.hasStatement(Some(keyProp), None, None)){
-					facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))
-					facts += ((keyProp, RDFS.SUBPROPERTYOF, metaVocab.hasFormatSpecificMeta))
-					facts += ((keyProp, RDFS.LABEL, vocab.lit(key)))
-				}
-				facts += ((objUri, keyProp, vocab.lit(value)))
-			}
-			facts.map(triple => RdfUpdate(factory.tripleToStatement(triple), true))
+		val station = getSingleUri(acquisitionUri, metaVocab.prov.wasAssociatedWith)
+		if(!server.hasStatement(Some(station), None, None)){
+			facts ++= getStationFacts(station, keyValues)
 		}
 
-		case None => Future.successful(Nil)
+		for((key, value) <- keyValues if !specialPropKeys.contains(key)){
+			val keyProp = vocab.getRelative("wdcgg/", key)(vocab.icosBup)
 
-		case _ => Future.failed(new UploadCompletionException(
-			s"Encountered wrong type of upload completion info, must be WdcggUploadCompletion, got $info"
-		))
+			if(!server.hasStatement(Some(keyProp), None, None)){
+				facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))
+				facts += ((keyProp, RDFS.SUBPROPERTYOF, metaVocab.hasFormatSpecificMeta))
+				facts += ((keyProp, RDFS.LABEL, vocab.lit(key)))
+			}
+			facts += ((objUri, keyProp, vocab.lit(value)))
+		}
+		facts.map(triple => RdfUpdate(factory.tripleToStatement(triple), true))
 	}
 
 	def finalize(hash: Sha256Sum): Future[Report] = Future.successful(

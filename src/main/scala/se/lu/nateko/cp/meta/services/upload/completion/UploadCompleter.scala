@@ -5,27 +5,28 @@ import java.time.Instant
 import scala.concurrent.Future
 import scala.util.Try
 
-import org.eclipse.rdf4j.model.IRI
-
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
+import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
+import se.lu.nateko.cp.meta.core.data.TimeSeriesUploadCompletion
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.utils.rdf4j._
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(implicit system: ActorSystem) {
-	import system.dispatcher
 	import servers.{ metaVocab, vocab }
+	import system.dispatcher
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] = {
 		for(
-			(specific, server) <- Future.fromTry(getSpecificCompleter(hash));
-			specificUpdates <- specific.getUpdates(hash, info);
+			(specific, server) <- Future.fromTry(getSpecificCompleter(hash, info.ingestionResult));
+			specificUpdates <- specific.getUpdates(hash);
 			stopTimeUpdates = getUploadStopTimeUpdates(server, hash);
 			byteSizeUpdates = getBytesSizeUpdates(server, hash, info.bytes);
 			report <- specific.finalize(hash);
@@ -33,21 +34,29 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 		) yield report
 	}
 
-	private def getSpecificCompleter(hash: Sha256Sum)(implicit envri: Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
+	private def getSpecificCompleter(
+		hash: Sha256Sum,
+		ingestionResult: Option[IngestionMetadataExtract]
+	)(implicit envri: Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
 		for(
 			objSpec <- servers.getDataObjSpecification(hash);
 			format <- servers.getObjSpecificationFormat(objSpec);
 			server <- servers.getInstServerForFormat(format)
-		) yield (getSpecificCompleter(server, format), server)
+		) yield {
+			val completer = ingestionResult match{
+				case None =>
+					new EpicPidMinter(epic, vocab)
 
+				case Some(extract) => extract match {
+					case wdcgg: WdcggUploadCompletion =>
+						new WdcggUploadCompleter(server, wdcgg, vocab, metaVocab)
 
-	private def getSpecificCompleter(server: InstanceServer, format: IRI)(implicit envri: Envri): FormatSpecificCompleter = {
-		if(format === metaVocab.wdcggFormat)
-			new WdcggUploadCompleter(server, vocab, metaVocab)
-		else if(format === metaVocab.etcFormat || format === metaVocab.socatFormat || format === metaVocab.sites.simpleSitesCsv)
-			new TimeSeriesUploadCompleter(server, epic, vocab, metaVocab)
-		else new EpicPidMinter(epic, vocab)
-	}
+					case _: TimeSeriesUploadCompletion | _: SpatialTimeSeriesUploadCompletion =>
+						new TimeSeriesUploadCompleter(server, extract, epic, vocab, metaVocab)
+				}
+			}
+			(completer, server)
+		}
 
 	private def getUploadStopTimeUpdates(server: InstanceServer, hash: Sha256Sum)(implicit envri: Envri): Seq[RdfUpdate] = {
 		val submissionUri = vocab.getSubmission(hash)

@@ -36,5 +36,6 @@ object Main extends App with CpmetaJsonProtocol{
 
 	startup.failed.foreach{err =>
 		system.log.error(err, "Could not start meta service")
+		system.terminate()
 	}
 }

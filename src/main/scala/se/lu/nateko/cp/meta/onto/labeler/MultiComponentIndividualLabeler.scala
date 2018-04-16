@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.model.{IRI => OWLIRI, _}
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.eclipse.rdf4j.model.Literal
@@ -32,8 +32,8 @@ class MultiComponentIndividualLabeler(
 			super.getLabel(instUri, instServer)
 	}
 
-	private def getComponent(prop: OWLDataProperty)(instUri: IRI, instServer: InstanceServer): String = {
-		val propUri = toUri(prop, instServer)
+	private def getComponent(propIri: OWLIRI)(instUri: IRI, instServer: InstanceServer): String = {
+		val propUri = toUri(propIri, instServer)
 		val values = instServer.getValues(instUri, propUri).collect{
 			case literal: Literal => literal.getLabel
 		}
@@ -41,13 +41,13 @@ class MultiComponentIndividualLabeler(
 	}
 
 	private def getComponent(prop: OWLObjectProperty)(instUri: IRI, instServer: InstanceServer): String = {
-		val propUri = toUri(prop, instServer)
+		val propUri = toUri(prop.getIRI, instServer)
 		val values = instServer.getValues(instUri, propUri).collect{
 			case uri: IRI => inner.getLabel(uri, instServer)
 		}
 		Labeler.joinMultiValues(values)
 	}
 
-	private def toUri(prop: OWLProperty, instServer: InstanceServer): IRI =
-		instServer.factory.createIRI(prop.getIRI.toURI.toString)
+	private def toUri(prop: OWLIRI, instServer: InstanceServer): IRI =
+		instServer.factory.createIRI(prop.toURI.toString)
 }

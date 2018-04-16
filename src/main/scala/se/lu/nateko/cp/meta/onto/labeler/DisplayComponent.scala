@@ -6,7 +6,7 @@ import org.semanticweb.owlapi.model.parameters.Imports
 
 sealed trait DisplayComponent
 
-case class DataPropComponent(property: OWLDataProperty) extends DisplayComponent
+case class DataPropComponent(property: IRI) extends DisplayComponent
 
 case class ObjectPropComponent(property: OWLObjectProperty) extends DisplayComponent
 
@@ -20,13 +20,9 @@ object DisplayComponent{
 
 		if(anno.asIRI.isPresent){
 			val iri = anno.asIRI.get
-			val dataProp = factory.getOWLDataProperty(iri)
-			if(onto.isDeclared(dataProp, Imports.INCLUDED)) Some(DataPropComponent(dataProp))
-			else{
-				val objProp = factory.getOWLObjectProperty(iri)
-				if(onto.isDeclared(objProp, Imports.INCLUDED)) Some(ObjectPropComponent(objProp))
-				else None
-			}
+			val objProp = factory.getOWLObjectProperty(iri)
+			if(onto.isDeclared(objProp, Imports.INCLUDED)) Some(ObjectPropComponent(objProp))
+			else Some(DataPropComponent(iri))
 		} else if(anno.asLiteral.isPresent)
 			Some(ConstantComponent(anno.asLiteral.get.getLiteral))
 		else

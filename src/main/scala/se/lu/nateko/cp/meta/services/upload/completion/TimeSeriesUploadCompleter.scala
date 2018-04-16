@@ -35,8 +35,8 @@ private class TimeSeriesUploadCompleter(
 
 	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = extract match {
 
-		case TimeSeriesUploadCompletion(interval) => Future{
-			acqusitionIntervalUpdates(hash, interval)
+		case TimeSeriesUploadCompletion(interval, rowsInfo) => Future{
+			acqusitionIntervalUpdates(hash, interval) ++ nRowsUpdates(hash, rowsInfo)
 		}
 
 		case SpatialTimeSeriesUploadCompletion(interval, spatial) => Future{
@@ -73,5 +73,14 @@ private class TimeSeriesUploadCompleter(
 			server.getStatements(Some(acqUri), Some(metaVocab.prov.endedAtTime), None)
 
 		MetadataUpdater.diff(olds, news, factory)
+	}
+
+	private def nRowsUpdates(hash: Sha256Sum, rowsInfo: Option[Int]): Seq[RdfUpdate] = rowsInfo match {
+		case None => Nil
+		case Some(nRows) =>
+			val objUri = vocab.getDataObject(hash)
+			val news = Seq(factory.createStatement(objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows)))
+			val olds = server.getStatements(Some(objUri), Some(metaVocab.hasNumberOfRows), None).toIndexedSeq
+			MetadataUpdater.diff(olds, news, factory)
 	}
 }

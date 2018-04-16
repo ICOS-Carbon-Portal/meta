@@ -7,6 +7,6 @@ case class UploadCompletionInfo(bytes: Long, ingestionResult: Option[IngestionMe
 
 case class WdcggUploadCompletion(nRows: Int, interval: TimeInterval, customMetadata: Map[String, String]) extends IngestionMetadataExtract
 
-case class TimeSeriesUploadCompletion(interval: TimeInterval) extends IngestionMetadataExtract
+case class TimeSeriesUploadCompletion(interval: TimeInterval, nRows: Option[Int]) extends IngestionMetadataExtract
 
 case class SpatialTimeSeriesUploadCompletion(interval: TimeInterval, coverage: GeoFeature) extends IngestionMetadataExtract

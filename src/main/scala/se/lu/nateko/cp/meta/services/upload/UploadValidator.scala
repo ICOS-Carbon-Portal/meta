@@ -141,10 +141,12 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 					if(spec.dataLevel <= 1 && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'aquisitionInterval' with start and stop timestamps."
 
-					if(spec.dataLevel == 2 && stationMeta.nRows.isEmpty && !hasFormat(metaVocab.wdcggFormat))
-						errors += "Must provide 'nRows' with number of rows in the uploaded data file."
+					if(
+						spec.dataLevel == 2 && stationMeta.nRows.isEmpty &&
+						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat)
+					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
-					if(hasFormat(metaVocab.atcFormat)){
+					if(hasFormat(metaVocab.atcFormat) || hasFormat(metaVocab.atcProductFormat)){
 						stationMeta.instrument match{
 							case None =>
 								errors += "Instrument URL is expected for ATC time series"
@@ -154,6 +156,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 								if(!instrUrl.toString.startsWith(urlPrefix))
 									errors += s"Instrument URL is expected to start with '$urlPrefix'"
 						}
+						if(stationMeta.samplingHeight.isEmpty) errors += "Must provide sampling height"
 					}
 				}
 		}

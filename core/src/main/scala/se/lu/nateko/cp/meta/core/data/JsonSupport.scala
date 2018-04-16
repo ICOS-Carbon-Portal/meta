@@ -76,7 +76,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
-	implicit val ecocsvUploadCompletionFormat = jsonFormat1(TimeSeriesUploadCompletion)
+	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)
 	implicit val socatUploadCompletionFormat = jsonFormat2(SpatialTimeSeriesUploadCompletion)
 
 	implicit object ingestionMetadataExtractFormat extends JsonFormat[IngestionMetadataExtract]{

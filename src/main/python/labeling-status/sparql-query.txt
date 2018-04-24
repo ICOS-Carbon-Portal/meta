@@ -1,0 +1,1 @@
+curl -s -H "Accept: text/csv" https://meta.icos-cp.eu/sparql?query=PREFIX+cpst%3A+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fontologies%2Fstationentry%2F%3E%0ASELECT+*%0AFROM+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fstationentry%2F%3E%0AWHERE+%7B%0A%3Fs+cpst%3AhasShortName+%3Fid+.%0A%3Fs+cpst%3AhasLongName+%3Fname+.%0A%7D

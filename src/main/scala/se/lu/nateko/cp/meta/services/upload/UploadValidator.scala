@@ -156,7 +156,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 								if(!instrUrl.toString.startsWith(urlPrefix))
 									errors += s"Instrument URL is expected to start with '$urlPrefix'"
 						}
-						if(stationMeta.samplingHeight.isEmpty) errors += "Must provide sampling height"
+						if(stationMeta.samplingHeight.isEmpty && spec.dataLevel > 0) errors += "Must provide sampling height"
 					}
 				}
 		}

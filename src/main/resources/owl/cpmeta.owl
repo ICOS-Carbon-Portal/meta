@@ -1807,6 +1807,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/bmpChar -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/bmpChar">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">a character from the basic multilingual plane</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">UTF-16 character</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/etcDate -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/etcDate">

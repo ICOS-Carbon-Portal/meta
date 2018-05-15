@@ -18,9 +18,9 @@ object Main extends App with CpmetaJsonProtocol{
 	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
-
+	val metaFactory = new MetaDbFactory
 	val startup = for(
-		db <- MetaDb(config);
+		db <- metaFactory(config);
 		route = MainRoute(db, config);
 		binding <- Http().bindAndHandle(route, "localhost", config.port)
 	) yield {

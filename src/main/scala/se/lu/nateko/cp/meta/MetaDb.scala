@@ -39,7 +39,7 @@ import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 
-class MetaDb private (
+class MetaDb (
 	val instanceServers: Map[String, InstanceServer],
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
@@ -59,23 +59,54 @@ class MetaDb private (
 
 }
 
-object MetaDb {
+object MetaDb{
+	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
+		confs.specific ++ confs.forDataObjects.values.flatMap{dataObjServers =>
+			dataObjServers.definitions.map{ servDef =>
+				val writeCtxt = getInstServerContext(dataObjServers, servDef)
+				servDef.label -> InstanceServerConfig(
+					logName = Some(servDef.label),
+					skipLogIngestionAtStart = None,
+					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
+					writeContexts = Seq(writeCtxt),
+					ingestion = None
+				)
+			}
+		}
+	}
 
-	def apply(config: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer): Future[MetaDb] = {
+	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
+		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
+}
 
-		validateConfig(config)
+class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
+	import MetaDb._
+
+	private val log = system.log
+
+	def apply(config0: CpmetaConfig): Future[MetaDb] = {
+
+		validateConfig(config0)
 		import system.dispatcher
 
+		val (repo, didNotExist) = makeInitRepo(config0.rdfStorage)
+
+		val config = if(didNotExist)
+				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
+			else config0
+
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
+
 		implicit val _ = config.core.envriConfigs
-		val repo = makeInitRepo(config)
 
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
-			implicit val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen{
-				case _ => exeServ.shutdown()
-			}
+			val ctxt = ExecutionContext.fromExecutorService(exeServ)
+			makeInstanceServers(repo, Ingestion.allProviders, config)(ctxt).andThen{
+				case _ =>
+					ctxt.shutdown()
+					log.info("instance servers created")
+			}(system.dispatcher)
 		}
 
 		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
@@ -104,11 +135,14 @@ object MetaDb {
 		}
 	}
 
-	def makeInitRepo(config: CpmetaConfig): Repository = {
-		val storageDir = Paths.get(config.rdfStoragePath)
+	private def makeInitRepo(config: RdfStorageConfig): (Repository, Boolean) = {
+		val storageDir = Paths.get(config.path)
 
-		if(!Files.exists(storageDir)) Files.createDirectories(storageDir) else{
-			//remove old files to start afresh, as always
+		val didNotExist = !Files.exists(storageDir)
+		if(didNotExist)
+			Files.createDirectories(storageDir)
+		else if(config.recreateAtStartup){
+			log.info("Purging the current native RDF storage")
 			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
 		}
 
@@ -116,29 +150,14 @@ object MetaDb {
 		val store = new NativeStore(storageDir.toFile, indices)
 		val native = new SailRepository(store)
 		native.initialize()
-		native
-	}
-
-	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
-		confs.specific ++ confs.forDataObjects.values.flatMap{dataObjServers =>
-			dataObjServers.definitions.map{ servDef =>
-				val writeCtxt = getInstServerContext(dataObjServers, servDef)
-				servDef.label -> InstanceServerConfig(
-					logName = Some(servDef.label),
-					skipLogIngestionAtStart = None,
-					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
-					writeContexts = Seq(writeCtxt),
-					ingestion = None
-				)
-			}
-		}
+		(native, didNotExist)
 	}
 
 	private def makeUploadService(
 		config: CpmetaConfig,
 		repo: Repository,
 		instanceServers: Map[String, InstanceServer]
-	)(implicit system: ActorSystem, m: Materializer): UploadService = {
+	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply)
 		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply)
 		implicit val factory = repo.getValueFactory
@@ -146,7 +165,7 @@ object MetaDb {
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
 			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
 			val instServConf = InstanceServerConfig(Nil, None, None, Some(readContexts), None)
-			envri -> makeInstanceServer(repo, instServConf, config.rdfLog)
+			envri -> makeInstanceServer(repo, instServConf, config)
 		}
 
 		val perFormatServers: Map[IRI, InstanceServer] = config.instanceServers.forDataObjects
@@ -164,7 +183,7 @@ object MetaDb {
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, logConf: RdflogConfig): InstanceServer = {
+	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer = {
 
 		val factory = initRepo.getValueFactory
 
@@ -173,15 +192,19 @@ object MetaDb {
 
 		conf.logName match{
 			case Some(logName) =>
-				val log = PostgresRdfLog(logName, logConf, factory)
+				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo = if(conf.skipLogIngestionAtStart.getOrElse(false))
+				val repo = if(!globConf.rdfStorage.recreateAtStartup || conf.skipLogIngestionAtStart.getOrElse(false))
 						initRepo
-					else
-						RdfUpdateLogIngester.ingest(log.updates, initRepo, writeContexts: _*)
+					else {
+						log.info(s"Ingesting from RDF log $logName ...")
+						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, writeContexts: _*)
+						log.info(s"Ingesting from RDF log $logName done!")
+						res
+					}
 
 				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContexts)
-				new LoggingInstanceServer(rdf4jServer, log)
+				new LoggingInstanceServer(rdf4jServer, rdfLog)
 
 			case None =>
 				new Rdf4jInstanceServer(initRepo, readContexts, writeContexts)
@@ -243,7 +266,7 @@ object MetaDb {
 
 		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else {
 			val servConf: InstanceServerConfig = instServerConfs(id)
-			val basicInit = Future{makeInstanceServer(repo, servConf, config.rdfLog)}
+			val basicInit = Future{makeInstanceServer(repo, servConf, config)}
 
 			servConf.ingestion match{
 
@@ -265,10 +288,13 @@ object MetaDb {
 							case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
 							case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
 						}
-					) yield server
+					) yield {
+						log.info("all ingestion done for " + id)
+						server
+					}
 
+					log.info("ingestion scheduled for " + id)
 					withDependencies + (id -> afterIngestion)
-
 				case _ =>
 					acc + (id -> basicInit)
 			}
@@ -277,8 +303,5 @@ object MetaDb {
 		val futures: ServerFutures = instServerConfs.keys.foldLeft[ServerFutures](Map.empty)(makeNextServer)
 		Future.sequence(futures.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)
 	}
-
-	private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
-		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
 
 }

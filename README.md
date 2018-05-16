@@ -113,6 +113,20 @@ The fields are either self-explanatory, or have the same meaning as for the data
 
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 
+### Administrative API for RDF updates
+Intended for internal use at Carbon Portal.
+All the updates need to go through the RDF logs, therefore SPARQL UPDATE protocol could not be used directly. Instead, one needs to HTTP POST a SPARQL CONSTRUCT query, that will produce the triples that need to be inserted/retracted, to a URL of the form:
+
+`https://meta.icos-cp.eu/admin/<insert | delete>/<instance-server id>` ,
+
+where `instance-server id` is the id of the instance server that will be affected by the change, as specified in `meta`'s config file.
+
+To be allowed to perform the operation, one needs to be a on the `adminUsers` list in the config (`cpmeta.sparql.adminUsers`). Here is a `curl` example of the API usage:
+
+`curl --upload-file sparql.rq -H "Cookie: cpauthToken=<the token>" https://meta.icos-cp.eu/admin/delete/sitescsv?dryRun=true`
+
+The output will show the resulting changes. If `dryRun` is `true`, no actual changes are performed, only the outcome is shown.
+
 ---
 
 ## Information for developers
@@ -130,7 +144,7 @@ As with data object uploads, this metadata package must be HTTP-POSTed to `https
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure/tree/master/rdflogdb))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run sbt
-- In the sbt console, run `~re-start` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster. 
+- In the sbt console, run `~reStart` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster.
 
 ### Miscellaneous recipes
 #### Autorendering README.md to HTML for preview on file change

@@ -148,6 +148,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 		val indices = "spoc,posc,cpos"
 		val store = new NativeStore(storageDir.toFile, indices)
+		store.setForceSync(true)
 		val native = new SailRepository(store)
 		native.initialize()
 		(native, didNotExist)

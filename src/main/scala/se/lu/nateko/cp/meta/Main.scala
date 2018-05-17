@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
@@ -26,10 +27,16 @@ object Main extends App with CpmetaJsonProtocol{
 	) yield {
 		sys.addShutdownHook{
 			val exeCtxt = ExecutionContext.Implicits.global
+			val dbShutdown = Future{
+				db.close()
+				println("Metadata db has been shut down")
+			}(exeCtxt)
 			val doneFuture = binding
 				.unbind()
 				.flatMap(_ => system.terminate())(exeCtxt)
+				.zip(dbShutdown)
 			Await.result(doneFuture, 5.seconds)
+			println("meta service shutdown successful")
 		}
 		system.log.info(binding.toString)
 	}

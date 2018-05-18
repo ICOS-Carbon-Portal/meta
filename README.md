@@ -83,6 +83,7 @@ Clarifications:
 - `creationDate` is an ISO 8601 time stamp.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.
+- `nRows` is required for some specifications where the files will be parsed and ingested for preview.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 
@@ -152,4 +153,3 @@ Make sure that Python is available, and `python-markdown` and `inotify-tools` pa
 Then you can run:
 
 `$ while inotifywait -e close_write README.md; do python -m markdown README.md > README.html; done`
-

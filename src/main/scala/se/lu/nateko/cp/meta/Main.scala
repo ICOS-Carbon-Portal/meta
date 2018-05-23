@@ -26,15 +26,10 @@ object Main extends App with CpmetaJsonProtocol{
 		binding <- Http().bindAndHandle(route, "localhost", config.port)
 	) yield {
 		sys.addShutdownHook{
-			val exeCtxt = ExecutionContext.Implicits.global
-			val dbShutdown = Future{
-				db.close()
-				println("Metadata db has been shut down")
-			}(exeCtxt)
-			val doneFuture = binding
-				.unbind()
-				.flatMap(_ => system.terminate())(exeCtxt)
-				.zip(dbShutdown)
+			db.close()
+			println("Metadata db has been shut down")
+			val doneFuture = binding.unbind()
+				.flatMap(_ => system.terminate())(ExecutionContext.Implicits.global)
 			Await.result(doneFuture, 5.seconds)
 			println("meta service shutdown successful")
 		}

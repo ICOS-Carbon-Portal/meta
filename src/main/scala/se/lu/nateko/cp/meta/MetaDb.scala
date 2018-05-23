@@ -146,7 +146,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
 		}
 
-		val indices = "spoc,posc,cpos"
+//		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
+		val indices = "spoc".permutations.mkString(",") //all the possible indices
 		val store = new NativeStore(storageDir.toFile, indices)
 		store.setForceSync(true)
 		val native = new SailRepository(store)

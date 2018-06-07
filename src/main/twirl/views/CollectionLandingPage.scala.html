@@ -1,8 +1,9 @@
 @import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.EnvriConfig
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 
-@(coll: StaticCollection, citation: Option[String], handleService: URI)(implicit envri: Envri.Value)
+@(coll: StaticCollection, citation: Option[String], handleService: URI)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.landingPage){
 	<div class="container-fluid">
 
@@ -13,6 +14,9 @@
 					@PanelHtmlRow{DOI}{
 						<span>@{doi} (<a href=@{handleService.toString + doi}>link</a>)</span>
 					}
+				}
+				@PanelHtmlRow{Download URL}{
+					<span><a target="_blank" href=@{downloadLink}>@{coll.title + ".zip"}</a></span>
 				}
 				@PanelHtmlRow{Collection creator}{
 					@agentLink(coll.creator)
@@ -54,11 +58,23 @@
 
 @staticDataItemLink(item: StaticDataItem) = {
 	@item match {
-		case PlainDataObject(res, name) => {
+		case PlainDataObject(res, _, name) => {
 			<a target="_blank" href=@{res}>@{name}</a>
 		}
 		case coll: StaticCollection => {
 			<a target="_blank" href=@{coll.res}>@{coll.title}</a>
 		}
 	}
+}
+
+@downloadLink = @{
+	import akka.http.scaladsl.model.Uri
+
+	def objHashes(coll: StaticCollection): Seq[String] = coll.members.flatMap{
+		case PlainDataObject(_, hash, _) => Seq(hash.id)
+		case inner: StaticCollection => objHashes(inner)
+	}
+	val objList = objHashes(coll).mkString("[\"", "\",\"", "\"]")
+	val query = Uri.Query("ids" -> objList, "fileName" -> coll.title)
+	Uri(conf.dataPrefix + "objects").withQuery(query).toString
 }

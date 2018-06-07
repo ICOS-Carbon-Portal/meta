@@ -101,6 +101,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			path("collections" / Sha256Segment){ hash =>
 				extractEnvri{implicit envri =>
+					implicit val conf = configs(envri)
 					complete(() => service.fetchStaticColl(hash))
 				}
 			}

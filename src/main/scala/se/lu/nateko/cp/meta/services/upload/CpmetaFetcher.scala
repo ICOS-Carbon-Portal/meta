@@ -17,7 +17,11 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 	protected def vocab: CpVocab
 
-	def getPlainDataObject(dobj: IRI) = PlainDataObject(dobj.toJava, getSingleString(dobj, metaVocab.hasName))
+	def getPlainDataObject(dobj: IRI) = PlainDataObject(
+		dobj.toJava,
+		getHashsum(dobj, metaVocab.hasSha256sum),
+		getSingleString(dobj, metaVocab.hasName)
+	)
 
 	def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),

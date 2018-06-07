@@ -103,7 +103,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val dataObjectFormat = jsonFormat11(DataObject)
 
-	implicit val plainDataObjectFormat = jsonFormat2(PlainDataObject)
+	implicit val plainDataObjectFormat = jsonFormat3(PlainDataObject)
 
 	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
 		implicit val statCollFormat = jsonFormat6(StaticCollection)

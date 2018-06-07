@@ -16,16 +16,17 @@ import play.twirl.api.Html
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.core.EnvriConfig
 
 class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 
 	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
 		makeMarshaller(views.html.LandingPage(_, _, handleService), _.doi)
 
-	implicit def statCollMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticCollection]] =
+	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
 		makeMarshaller(views.html.CollectionLandingPage(_, _, handleService), _.doi)
 
-	private def makeMarshaller[T: JsonFormat](
+	private def makeMarshaller[T: JsonWriter](
 		template: (T, Option[String]) => Html,
 		toDoi: T => Option[String]
 	): ToResponseMarshaller[() => Option[T]] = Marshaller{ implicit exeCtxt => producer =>
@@ -60,7 +61,7 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
 
-	private def getJson[T: JsonFormat](dataItemOpt: Option[T]) =
+	private def getJson[T: JsonWriter](dataItemOpt: Option[T]) =
 		dataItemOpt match {
 			case Some(obj) => HttpResponse(
 				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)

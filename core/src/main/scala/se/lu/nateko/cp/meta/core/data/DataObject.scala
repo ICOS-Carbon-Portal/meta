@@ -121,7 +121,7 @@ sealed trait DataItem
 
 sealed trait StaticDataItem extends DataItem
 
-final case class PlainDataObject(res: URI, name: String) extends StaticDataItem
+final case class PlainDataObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem
 
 sealed trait DataItemCollection extends DataItem {
 	type M <: DataItem

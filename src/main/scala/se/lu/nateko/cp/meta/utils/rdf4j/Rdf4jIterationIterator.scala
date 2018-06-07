@@ -11,7 +11,7 @@ class Rdf4jIterationIterator[T](res: CloseableIteration[T, _], closer: () => Uni
 
 	private[this] var closed: Boolean = false
 
-	def close(): Unit = {
+	def close(): Unit = if(!closed){
 		closed = true;
 		res.close()
 		closer()
@@ -32,4 +32,9 @@ class Rdf4jIterationIterator[T](res: CloseableIteration[T, _], closer: () => Uni
 				close()
 				throw err
 		}
+
+	override protected def finalize(): Unit = {
+		close()
+		super.finalize()
+	}
 }

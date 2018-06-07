@@ -72,6 +72,12 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 		val conn = repo.getConnection
 		val idOpt = query.clientId.map(quoter.logNewQueryStart)
 
+		canceller.schedule(
+			() => {if(conn.isOpen) conn.close(); true},//return dummy boolean to remove compilation ambiguity
+			(config.maxQueryRuntimeSec + 10).toLong,
+			TimeUnit.SECONDS
+		)
+
 		val onDone = () => {
 			conn.close()
 			for(qid <- idOpt; cid <- query.clientId) quoter.logQueryFinish(cid, qid)

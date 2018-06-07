@@ -97,7 +97,15 @@ class CitationClient(knownDois: List[Doi], warmCacheUp: Boolean)(implicit system
 			}
 		}
 		.flatMap(requestCitation)
-		.flatMap(Unmarshal(_).to[String])
+		.flatMap{resp =>
+			Unmarshal(resp).to[String].transform{
+				case ok @ Success(payload) =>
+					if(resp.status.isSuccess) ok
+					else Failure(new Exception(payload))//the payload is the error message/page from the DataCite citation service
+				case failure => failure
+			}
+			
+		}
 		.flatMap{citation =>
 			if(citation.trim.isEmpty)
 				Future.failed(new Exception("Got empty citation text from DataCite"))

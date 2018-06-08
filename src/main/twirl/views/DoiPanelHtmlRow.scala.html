@@ -1,0 +1,9 @@
+@(doiOpt: Option[String])
+@for(doi <- doiOpt){
+	@PanelHtmlRow{DOI}{
+		<span>
+			@{doi} (<a href=@{"https://doi.org/" + doi}>target</a>,
+			<a target="_blank" href=@{"https://search.datacite.org/works/" + doi}>metadata</a>)
+		</span>
+	}
+}

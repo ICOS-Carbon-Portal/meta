@@ -12,11 +12,34 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
+class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab) extends CpmetaFetcher {
+
+	val memberProp = metaVocab.dcterms.hasPart
+
+	def getTitle(collUri: IRI): String = getSingleString(collUri, metaVocab.dcterms.title)
+
+	def collectionExists(collUri: IRI): Boolean =
+		server.hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
+
+	def fetchLite(collUri: IRI): Option[UriResource] = {
+		if(collectionExists(collUri)) Some(
+			UriResource(collUri.toJava, Some(getTitle(collUri)))
+		) else None
+	}
+
+	def getParentCollections(dobj: IRI): Seq[UriResource] =
+		server.getStatements(None, Some(memberProp), Some(dobj))
+			.map(_.getSubject)
+			.collect{case iri: IRI => fetchLite(iri)}
+			.flatten
+			.toIndexedSeq
+}
+
 class CollectionFetcher(
-	protected val server: InstanceServer,
+	server: InstanceServer,
 	dobjsServer: InstanceServer,
-	protected val vocab: CpVocab
-)(implicit envri: Envri) extends CpmetaFetcher {collFetcher =>
+	vocab: CpVocab
+)(implicit envri: Envri) extends CollectionFetcherLite(server, vocab) {collFetcher =>
 
 	private val dobjFetcher = new CpmetaFetcher{
 		val server = dobjsServer
@@ -36,13 +59,10 @@ class CollectionFetcher(
 
 	def collectionExists(coll: Sha256Sum): Boolean = collectionExists(vocab.getCollection(coll))
 
-	def collectionExists(collUri: IRI): Boolean =
-		server.hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
-
 	private def getExistingStaticColl(coll: IRI): StaticCollection = {
 		val dct = metaVocab.dcterms
 
-		val members = server.getUriValues(coll, dct.hasPart).map{item =>
+		val members = server.getUriValues(coll, memberProp).map{item =>
 			if(collectionExists(item)) getExistingStaticColl(item)
 			else dobjFetcher.getPlainDataObject(item)
 		}.sortBy(_ match{
@@ -54,7 +74,7 @@ class CollectionFetcher(
 			res = coll.toJava,
 			members = members,
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
-			title = getSingleString(coll, dct.title),
+			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
 			doi = getOptionalString(coll, metaVocab.hasDoi)
 		)

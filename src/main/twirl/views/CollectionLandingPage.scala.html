@@ -3,18 +3,14 @@
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 
-@(coll: StaticCollection, citation: Option[String], handleService: URI)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(coll: StaticCollection, citation: Option[String])(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.landingPage){
 	<div class="container-fluid">
 
 		<div class="row">
 			@Panel("Summary", 4){
 				@PanelRow("Title", coll.title)
-				@for(doi <- coll.doi){
-					@PanelHtmlRow{DOI}{
-						<span>@{doi} (<a href=@{handleService.toString + doi}>link</a>)</span>
-					}
-				}
+				@DoiPanelHtmlRow(coll.doi)
 				@PanelHtmlRow{Download URL}{
 					<span><a target="_blank" href=@{downloadLink}>@{coll.title + ".zip"}</a></span>
 				}

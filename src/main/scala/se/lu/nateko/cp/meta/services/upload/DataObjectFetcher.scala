@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 class DataObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
+	collFetcher: CollectionFetcherLite,
 	pidFactory: Sha256Sum => String
 ) extends CpmetaFetcher {
 
@@ -53,7 +54,8 @@ class DataObjectFetcher(
 			specification = spec,
 			specificInfo = levelSpecificInfo,
 			nextVersion = getNextVersion(dobj),
-			previousVersion = getPreviousVersion(dobj)
+			previousVersion = getPreviousVersion(dobj),
+			parentCollections = collFetcher.getParentCollections(dobj)
 		)
 	}
 
@@ -83,5 +85,4 @@ class DataObjectFetcher(
 
 	private def getPreviousVersion(dobj: IRI): Option[URI] =
 		getOptionalUri(dobj, metaVocab.isNextVersionOf).map(_.toJava)
-
 }

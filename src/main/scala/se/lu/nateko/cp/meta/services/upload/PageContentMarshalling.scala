@@ -24,7 +24,7 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 		makeMarshaller(views.html.LandingPage(_, _, handleService), _.doi)
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
-		makeMarshaller(views.html.CollectionLandingPage(_, _, handleService), _.doi)
+		makeMarshaller(views.html.CollectionLandingPage(_, _), _.doi)
 
 	private def makeMarshaller[T: JsonWriter](
 		template: (T, Option[String]) => Html,

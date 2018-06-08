@@ -94,7 +94,8 @@ case class DataObject(
 	specification: DataObjectSpec,
 	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],
 	previousVersion: Option[URI],
-	nextVersion: Option[URI]
+	nextVersion: Option[URI],
+	parentCollections: Seq[UriResource]
 ){
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),

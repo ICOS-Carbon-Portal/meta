@@ -44,7 +44,8 @@ class UploadService(
 
 	def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
 		val server = servers.getInstServerForDataObj(hash).get
-		val objectFetcher = new DataObjectFetcher(server, vocab, epic.getPid)
+		val collFetcher = servers.collFetcher.get
+		val objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, epic.getPid)
 		objectFetcher.fetch(hash)
 	}
 

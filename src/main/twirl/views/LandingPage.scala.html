@@ -11,6 +11,11 @@
 			@Panel("Summary", 12, summaryStyleContext){
 				@if(uploadComplete) {
 					@PanelRow("Status - OK", "Data and metadata are complete.")
+				} else {
+					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
+				}
+				@DoiPanelHtmlRow(dobj.doi)
+				@if(uploadComplete) {
 					@PanelHtmlRow{PID}{
 						@dobj.pid match{
 							case None => {
@@ -22,19 +27,15 @@
 						}
 					}
 					@accessUrlRow
-				} else {
-					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 				}
 				@PanelHtmlRow{Data affiliation}{
 					@affiliationInfo(dobj.affiliation)
 				}
-				@for(doi <- dobj.doi){
-					@PanelHtmlRow{DOI}{
-						<span>@{doi} (<a href=@{handleService.toString + doi}>link</a>)</span>
-					}
-				}
 				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
 				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
+				@for(coll <- dobj.parentCollections){
+					@resourcePanelRow("Part of", coll)
+				}
 			}
 		</div>
 

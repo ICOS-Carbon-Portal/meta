@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.geosparql;
+package se.lu.nateko.cp.meta.services.sparql;
 
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 

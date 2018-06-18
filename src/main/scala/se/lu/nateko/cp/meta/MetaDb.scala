@@ -38,6 +38,9 @@ import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
+import se.lu.nateko.cp.meta.services.sparql.magic.DummyPlugin
+
 
 class MetaDb (
 	val instanceServers: Map[String, InstanceServer],
@@ -148,11 +151,14 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 //		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
 		val indices = "spoc".permutations.mkString(",") //all the possible indices
-		val store = new NativeStore(storageDir.toFile, indices)
-		store.setForceSync(true)
-		val native = new SailRepository(store)
-		native.initialize()
-		(native, didNotExist)
+		val native = new NativeStore(storageDir.toFile, indices)
+		native.setForceSync(true)
+
+		val store = new MagicTupleFuncSail(Seq(new DummyPlugin), native)
+
+		val repo = new SailRepository(store)
+		repo.initialize()
+		(repo, didNotExist)
 	}
 
 	private def makeUploadService(

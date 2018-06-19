@@ -1,0 +1,36 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select
+	?url ?doi
+	(concat("11676/", substr(str(?url), strlen(str(?url)) - 23)) AS ?pid)
+	(if(bound(?theTitle), ?theTitle, ?fileName) as ?title)
+	(if(bound(?theDescription), ?theDescription, ?spec) as ?description)
+	?submissionTime ?tempCoverageFrom ?tempCoverageTo
+	?format ?sha256sum ?latitude ?longitude ?spatialCoverage
+where{
+	?url cpmeta:wasSubmittedBy [
+		prov:endedAtTime ?submissionTime ;
+		prov:wasAssociatedWith [a ?submitterClass]
+	] .
+	?url cpmeta:hasObjectSpec [
+		rdfs:label ?spec ;
+		cpmeta:hasDataLevel ?dataLevel;
+		cpmeta:hasFormat/rdfs:label ?format
+	] .
+	FILTER(?submitterClass = cpmeta:ThematicCenter || ?submitterClass = cpmeta:ES || ?dataLevel = "3"^^xsd:integer)
+	?url cpmeta:hasName ?fileName .
+	?url cpmeta:hasSha256sum ?sha256sum .
+	OPTIONAL{?url dcterms:title ?theTitle ; dcterms:description ?theDescription}
+	OPTIONAL{?coll dcterms:hasPart ?url ; cpmeta:hasDoi ?doi .}
+	?url cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?tempCoverageFrom .
+	?url cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?tempCoverageTo .
+	OPTIONAL{?url cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?spatialCoverage }
+	OPTIONAL{
+		?url cpmeta:wasAcquiredBy/prov:wasAssociatedWith [
+			cpmeta:hasLatitude ?latitude ;
+			cpmeta:hasLongitude ?longitude
+		]
+	 }
+}
+limit 10

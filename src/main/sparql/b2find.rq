@@ -5,18 +5,20 @@ select
 	?url ?doi
 	(concat("11676/", substr(str(?url), strlen(str(?url)) - 23)) AS ?pid)
 	(if(bound(?theTitle), ?theTitle, ?fileName) as ?title)
-	(if(bound(?theDescription), ?theDescription, ?spec) as ?description)
+	(if(bound(?theDescription), ?theDescription, ?specLabel) as ?description)
 	?submissionTime ?tempCoverageFrom ?tempCoverageTo
 	?format ?sha256sum ?latitude ?longitude ?spatialCoverage
 where{
+	graph <http://meta.icos-cp.eu/resources/cpmeta/> {
+		?spec cpmeta:hasDataLevel ?dataLevel;
+		rdfs:label ?specLabel .
+		FILTER(?dataLevel > 0)
+	}
+	?spec cpmeta:hasFormat/rdfs:label ?format .
+	?url cpmeta:hasObjectSpec ?spec .
 	?url cpmeta:wasSubmittedBy [
 		prov:endedAtTime ?submissionTime ;
 		prov:wasAssociatedWith [a ?submitterClass]
-	] .
-	?url cpmeta:hasObjectSpec [
-		rdfs:label ?spec ;
-		cpmeta:hasDataLevel ?dataLevel;
-		cpmeta:hasFormat/rdfs:label ?format
 	] .
 	FILTER(?submitterClass = cpmeta:ThematicCenter || ?submitterClass = cpmeta:ES || ?dataLevel = "3"^^xsd:integer)
 	?url cpmeta:hasName ?fileName .
@@ -33,4 +35,3 @@ where{
 		]
 	 }
 }
-limit 10

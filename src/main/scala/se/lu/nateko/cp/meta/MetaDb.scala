@@ -154,7 +154,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		val native = new NativeStore(storageDir.toFile, indices)
 		native.setForceSync(true)
 
-		val store = new MagicTupleFuncSail(Seq(new DummyPlugin), native)
+		val store = native//new MagicTupleFuncSail(Seq(new DummyPlugin), native)
 
 		val repo = new SailRepository(store)
 		repo.initialize()

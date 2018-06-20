@@ -38,6 +38,7 @@ import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
+import akka.stream.scaladsl.Sink
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
@@ -57,9 +58,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
 		exeCtxt => query => Future{
-			val quotaExceeded = query.clientId.fold(false)(quoter.quotaExceeded)
-
-			if(quotaExceeded) plainResponse(
+			if(quoter.quotaExceeded(query.clientId)) plainResponse(
 				StatusCodes.ServiceUnavailable,
 				"You have exceeded your SPARQL endpoint usage quota. Retry in 1 minute or in 1 hour."
 			) else
@@ -70,17 +69,20 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = {
 		val conn = repo.getConnection
-		val idOpt = query.clientId.map(quoter.logNewQueryStart)
+		val qquoter = quoter.logNewQueryStart(query.clientId)
 
 		canceller.schedule(
-			() => {if(conn.isOpen) conn.close(); true},//return dummy boolean to remove compilation ambiguity
+			() => {
+				if(conn.isOpen && !qquoter.isOngoing) conn.close()
+				true //return dummy boolean to remove compilation ambiguity
+			},
 			(config.maxQueryRuntimeSec + 10).toLong,
 			TimeUnit.SECONDS
 		)
 
 		val onDone = () => {
 			conn.close()
-			for(qid <- idOpt; cid <- query.clientId) quoter.logQueryFinish(cid, qid)
+			qquoter.logQueryFinish()
 		}
 
 		try{
@@ -88,13 +90,13 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 				case tupleQuery: TupleQuery =>
 
 					tupleQueryProtocolOptions.map(po =>
-						getQueryMarshalling(tupleQuery, po, onDone)
+						getQueryMarshalling(tupleQuery, po, qquoter, onDone)
 					)
 
 				case graphQuery: GraphQuery =>
 
 					graphQueryProtocolOptions.map(po =>
-						getQueryMarshalling(graphQuery, po, onDone)
+						getQueryMarshalling(graphQuery, po, qquoter, onDone)
 					)
 
 				case _: BooleanQuery =>
@@ -114,6 +116,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 	private def getQueryMarshalling[Q <: Query](
 		query: Q,
 		protocolOption: ProtocolOption[Q],
+		qquoter: quoter.QueryQuotaManager,
 		onDone: () => Unit
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
@@ -126,7 +129,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 				)
 
 				canceller.schedule(
-					() => if(!fut.isDone) fut.cancel(true),
+					() => if(!fut.isDone && !qquoter.streamingStarted) fut.cancel(true),
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
@@ -137,7 +140,12 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 						onDone()
 					}
 				}
-			}
+			}.wireTap(
+				Sink.head.mapMaterializedValue(fut => {
+					implicit val ctxt = scala.concurrent.ExecutionContext.fromExecutor(javaExe)
+					fut.foreach(_ => qquoter.logQueryStreamingStart())
+				})
+			)
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}

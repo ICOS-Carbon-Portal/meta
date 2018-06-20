@@ -12,7 +12,7 @@ where{
 	graph <http://meta.icos-cp.eu/resources/cpmeta/> {
 		?spec cpmeta:hasDataLevel ?dataLevel;
 		rdfs:label ?specLabel .
-		FILTER(?dataLevel > 0)
+		FILTER(?dataLevel > 1)
 	}
 	?spec cpmeta:hasFormat/rdfs:label ?format .
 	?url cpmeta:hasObjectSpec ?spec .

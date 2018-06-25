@@ -4,11 +4,8 @@ import java.util.Arrays
 import java.util.Base64
 
 import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
-import javax.xml.bind.DatatypeConverter
-import spray.json._
 
 class Sha256Sum(private val bytes: Array[Byte]) {
 
@@ -21,7 +18,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 
 	def base64: String = Base64.getEncoder.withoutPadding.encodeToString(bytes)
 	def base64Url: String = Base64.getUrlEncoder.withoutPadding.encodeToString(bytes)
-	def hex: String = DatatypeConverter.printHexBinary(bytes).toLowerCase
+	def hex: String = bytes.iterator.map("%02x".format(_)).mkString
 
 	/**
 	 * URL- and filename-friendly id that is sufficiently unique.
@@ -43,7 +40,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 	override def toString: String = base64
 }
 
-object Sha256Sum extends DefaultJsonProtocol{
+object Sha256Sum {
 
 	def fromBase64(hash: String): Try[Sha256Sum] = Try{
 		new Sha256Sum(Base64.getDecoder.decode(hash))
@@ -54,7 +51,8 @@ object Sha256Sum extends DefaultJsonProtocol{
 	}
 
 	def fromHex(hash: String): Try[Sha256Sum] = Try{
-		new Sha256Sum(DatatypeConverter.parseHexBinary(hash))
+		val arr = hash.sliding(2,2).map(Integer.parseInt(_, 16).toByte).toArray
+		new Sha256Sum(arr)
 	}
 
 	def fromString(hash: String): Try[Sha256Sum] = fromHex(hash).orElse(
@@ -64,18 +62,4 @@ object Sha256Sum extends DefaultJsonProtocol{
 			)))
 		)
 	)
-
-	implicit object sha256sumFormat extends RootJsonFormat[Sha256Sum]{
-
-		def write(hash: Sha256Sum) = JsString(hash.base64Url)
-
-		def read(value: JsValue): Sha256Sum = value match{
-			case JsString(s) => fromString(s) match {
-				case Success(hash) => hash
-				case Failure(err) => deserializationError(err.getMessage, err)
-			}
-			case _ => deserializationError("Expected a string representation of an SHA-256 hashsum")
-		}
-	}
-
 }

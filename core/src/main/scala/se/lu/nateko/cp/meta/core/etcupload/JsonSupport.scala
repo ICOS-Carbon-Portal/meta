@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.core.etcupload
 
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
 import spray.json._
 
 object JsonSupport extends CommonJsonSupport{

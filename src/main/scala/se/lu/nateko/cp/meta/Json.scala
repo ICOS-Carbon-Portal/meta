@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta
 import spray.json._
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
 

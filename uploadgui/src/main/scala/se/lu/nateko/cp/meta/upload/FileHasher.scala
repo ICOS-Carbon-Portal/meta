@@ -1,15 +1,18 @@
 package se.lu.nateko.cp.meta.upload
 
-import org.scalajs.dom.raw.File
-import org.scalajs.dom.crypto.crypto
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import org.scalajs.dom.raw.FileReader
 import scala.concurrent.Future
-import scala.scalajs.js.typedarray.ArrayBuffer
-import org.scalajs.dom.crypto.HashAlgorithm
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js.typedarray.Int8Array
 import scala.concurrent.Promise
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.scalajs.js.typedarray.Int8Array
+
+import org.scalajs.dom.crypto.HashAlgorithm
+import org.scalajs.dom.crypto.crypto
+import org.scalajs.dom.raw.File
+import org.scalajs.dom.raw.FileReader
+
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import scala.scalajs.js.JSON
 
 object FileHasher {
 
@@ -22,15 +25,21 @@ object FileHasher {
 
 
 	def readFile(file: File): Future[ArrayBuffer] = {
+
 		val p = Promise[ArrayBuffer]()
+
 		val reader = new FileReader()
-		reader.onload = e => {
+
+		reader.onload = _ => {
 			p.success(reader.result.asInstanceOf[ArrayBuffer])
 		}
-		reader.onerror = e => {
-			p.failure(new Exception("Failed to read file"))
+
+		reader.onerror = _ => {
+			p.failure(new Exception(reader.error.toLocaleString))
 		}
+
 		reader.readAsArrayBuffer(file)
+
 		p.future
 	}
 }

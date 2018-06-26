@@ -18,7 +18,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 
 	def base64: String = Base64.getEncoder.withoutPadding.encodeToString(bytes)
 	def base64Url: String = Base64.getUrlEncoder.withoutPadding.encodeToString(bytes)
-	def hex: String = bytes.iterator.map("%02x".format(_)).mkString
+	def hex: String = bytes.iterator.map(Sha256Sum.formatByte).mkString
 
 	/**
 	 * URL- and filename-friendly id that is sufficiently unique.
@@ -62,4 +62,6 @@ object Sha256Sum {
 			)))
 		)
 	)
+
+	val formatByte: Byte => String = b => String.format("%02x", Int.box(255 & b))
 }

@@ -101,6 +101,8 @@ lazy val meta = (project in file("."))
 			Seq(jsFile, srcMap)
 		},
 
+		watchSources ++= watchSources.in(uploadgui, Compile).value,
+
 		initialCommands in console in Test := """
 			import se.lu.nateko.cp.meta.test.Playground._
 		""",
@@ -118,7 +120,10 @@ lazy val uploadgui = (project in file("uploadgui"))
 
 		scalaJSUseMainModuleInitializer := true,
 
-		libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.6"
+		libraryDependencies ++= Seq(
+			"org.scala-js"    %%% "scalajs-dom"     % "0.9.6",
+			"org.scalatest"   %%% "scalatest"       % "3.0.4" % "test"
+		)
 	)
 
 /*

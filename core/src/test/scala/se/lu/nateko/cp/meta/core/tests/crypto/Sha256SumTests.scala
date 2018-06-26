@@ -12,4 +12,18 @@ class Sha256SumTests extends FunSuite{
 
 		assert(hex2 === hex)
 	}
+
+	test("Base64 / hex round trip"){
+		val base64Url = "dXJBtJ6YF4moFgXItQ04wOum1PJiqz8azBbhwKdtDgA"
+		val hash = Sha256Sum.fromBase64Url(base64Url).get
+		val hex = hash.hex
+		val fromHex = Sha256Sum.fromHex(hex).get
+		assert(fromHex === hash)
+	}
+
+	test("Formatting negative byte values"){
+		val n: Byte = -1
+		val hex = Sha256Sum.formatByte(n)
+		assert(hex == "ff")
+	}
 }

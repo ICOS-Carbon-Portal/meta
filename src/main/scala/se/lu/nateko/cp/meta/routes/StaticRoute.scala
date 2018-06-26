@@ -34,6 +34,12 @@ object StaticRoute {
 				}
 			}
 		} ~
+		pathPrefix("uploadgui"){
+			uploadGuiRoute(false, authConf)
+		} ~
+		pathPrefix("uploadguidev"){
+			uploadGuiRoute(true, authConf)
+		} ~
 		pathPrefix(Segment){page =>
 			if(pages.isDefinedAt(page)) {
 				pathSingleSlash{
@@ -46,6 +52,15 @@ object StaticRoute {
 					getFromResource(s"www/$page.js")
 				}
 			} else reject
+		}
+	}
+
+	private def uploadGuiRoute(devVersion: Boolean, authConf: PublicAuthConfig): Route = {
+		pathSingleSlash {
+			complete(views.html.UploadGuiPage(devVersion, authConf))
+		} ~
+		path(Segment){res =>
+			getFromResource(res)
 		}
 	}
 

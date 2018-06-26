@@ -15,8 +15,9 @@ import spray.json.JsNumber
 import spray.json.JsObject
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
+import se.lu.nateko.cp.meta.EtcUploadConfig
 
-class EtcFileMetadataProvider(implicit system: ActorSystem, m: Materializer) extends EtcFileMetadataStore{
+class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) extends EtcFileMetadataStore{
 
 	import system.dispatcher
 
@@ -32,19 +33,19 @@ class EtcFileMetadataProvider(implicit system: ActorSystem, m: Materializer) ext
 	def getUtcOffset(station: StationId) =
 		inner.flatMap(_.getUtcOffset(station))
 
-	system.scheduler.schedule(Duration.Zero, 5.hours)(fetchFromEtc())
-
-	private val serviceUri = "http://gaia.agraria.unitus.it:89/api/Values"
+	private val fetchInterval = 5.hours
+	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval
+	system.scheduler.schedule(initDelay, fetchInterval)(fetchFromEtc())
 
 	private def fetchFromEtc(): Unit = Http()
-		.singleRequest(HttpRequest(uri = serviceUri))
+		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))
 		.flatMap(EtcEntriesFetcher.responseToJson)
 		.map(json => EtcFileMetadataStore(Parser.parseEntriesFromEtcJson(json)))
 		.onComplete{
 
 			case Success(store) =>
 				inner = Some(store)
-				system.log.info(s"Fetched ETC logger/file metadata from $serviceUri")
+				system.log.info(s"Fetched ETC logger/file metadata from ${conf.fileMetaService}")
 				retryCount = 0
 
 			case Failure(err) =>

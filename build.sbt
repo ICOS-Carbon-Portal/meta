@@ -1,26 +1,24 @@
-lazy val commonSettings = Seq(
-	organization := "se.lu.nateko.cp",
-	scalaVersion := "2.12.4",
+organization in ThisBuild := "se.lu.nateko.cp"
+scalaVersion in ThisBuild := "2.12.6"
 
-	scalacOptions ++= Seq(
-		"-target:jvm-1.8",
-		"-encoding", "UTF-8",
-		"-unchecked",
-		"-feature",
-		"-deprecation",
-		"-Xfuture",
-		"-Yno-adapted-args",
-		"-Ywarn-dead-code",
-		"-Ywarn-numeric-widen",
-		"-Ywarn-unused"
-	)
+val commonScalacOptions = Seq(
+	"-target:jvm-1.8",
+	"-encoding", "UTF-8",
+	"-unchecked",
+	"-feature",
+	"-deprecation",
+	"-Xfuture",
+	"-Yno-adapted-args",
+	"-Ywarn-dead-code",
+	"-Ywarn-numeric-widen",
+	"-Ywarn-unused"
 )
 
 lazy val metaCore = (project in file("core"))
-	.settings(commonSettings: _*)
 	.settings(
 		name := "meta-core",
 		version := "0.3.9-SNAPSHOT",
+		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.3",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
@@ -51,10 +49,10 @@ frontendBuild := {
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
-	.settings(commonSettings: _*)
 	.settings(
 		name := "meta",
 		version := "0.4.0",
+		scalacOptions ++= commonScalacOptions,
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
@@ -86,15 +84,22 @@ lazy val meta = (project in file("."))
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
 			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
 			case "application.conf" => MergeStrategy.concat
+			case PathList(name) if name.contains("-fastopt.js") => MergeStrategy.discard
 			case x => ((assemblyMergeStrategy in assembly).value)(x)
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		assembly := (Def.taskDyn{
-			val original = assembly.taskValue
+		assembledMappings.in(assembly) += {
+			val finalJsFile = fullOptJS.in(uploadgui, Compile).value.data
 			frontendBuild.value
-			Def.task(original.value)
-		}).value,
+			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName))
+		},
+
+		resources.in(Compile) ++= {
+			val jsFile = fastOptJS.in(uploadgui, Compile).value.data
+			val srcMap = new java.io.File(jsFile.getAbsolutePath + ".map")
+			Seq(jsFile, srcMap)
+		},
 
 		initialCommands in console in Test := """
 			import se.lu.nateko.cp.meta.test.Playground._
@@ -105,13 +110,35 @@ lazy val meta = (project in file("."))
 		"""
 	)
 
+lazy val uploadgui = (project in file("uploadgui"))
+	.enablePlugins(ScalaJSPlugin)
+	.settings(
+		name := "uploadgui",
+		version := "0.1.0",
+
+		scalaJSUseMainModuleInitializer := true,
+
+		unmanagedSources.in(Compile) ++= {
+			val commonPath = "src/main/scala/se/lu/nateko/cp/meta"
+			val commonCorePath = s"core/$commonPath/core"
+			Seq(
+				s"$commonCorePath/crypto/Sha256Sum.scala",
+				s"$commonCorePath/data/GeoFeatures.scala",
+				s"$commonCorePath/data/TemporalFeatures.scala",
+				s"$commonPath/UploadDtos.scala"
+			).map(path => new java.io.File(path).getAbsoluteFile)
+		},
+
+		libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.6"
+	)
+
 /*
 lazy val jobAd = (project in file("jobAd"))
-	.settings(commonSettings: _*)
 	.enablePlugins(SbtTwirl)
 	.settings(
 		name := "jobAd",
 		version := "1.0",
+		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % akkaVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,

@@ -26,7 +26,7 @@ import scala.util.Success
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
 
-	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider
+	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config)
 	private implicit val envri = Envri.ICOS
 
 	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[UploadMetadataDto] = {

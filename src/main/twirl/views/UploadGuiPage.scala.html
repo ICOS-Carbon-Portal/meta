@@ -1,0 +1,17 @@
+@import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+
+@(devVersion: Boolean, authConf: PublicAuthConfig)
+@CpCommonPage("ICOS CP data object upload", cpauthHostOpt = Some(authConf.authHost)){
+}{
+	<div class="page-header">
+		<h1>ICOS CP data object upload</h1>
+	</div>
+	<div id="main">
+		<input id="fileinput" type="file" placeholder="Select file for upload">
+	</div>
+	<script src=@jspath></script>
+}
+
+@jspath = @{
+	if(devVersion) "uploadgui-fastopt.js" else "uploadgui-opt.js"
+}

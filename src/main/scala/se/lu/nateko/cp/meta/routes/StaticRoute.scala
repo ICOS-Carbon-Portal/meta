@@ -1,12 +1,15 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.Html
-
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
+import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 
 object StaticRoute {
@@ -19,7 +22,9 @@ object StaticRoute {
 
 	private implicit val pageMarshaller = PageContentMarshalling.twirlHtmlMarshaller
 
-	def apply(config: OntoConfig, authConf: PublicAuthConfig): Route = get{
+	def apply(config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = get{
+
+		val extractEnvri = extractEnvriDirective
 
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
@@ -34,11 +39,16 @@ object StaticRoute {
 				}
 			}
 		} ~
-		pathPrefix("uploadgui"){
-			uploadGuiRoute(false, authConf)
-		} ~
-		pathPrefix("uploadguidev"){
-			uploadGuiRoute(true, authConf)
+		extractEnvri{envri =>
+
+			def uploadGuiRoute(devVersion: Boolean): Route =
+				pathSingleSlash {
+					complete(views.html.UploadGuiPage(devVersion, envri, authConf))
+				} ~
+				path(Segment){getFromResource}
+
+			pathPrefix("uploadgui"){uploadGuiRoute(false)} ~
+			pathPrefix("uploadguidev"){uploadGuiRoute(true)}
 		} ~
 		pathPrefix(Segment){page =>
 			if(pages.isDefinedAt(page)) {
@@ -55,13 +65,10 @@ object StaticRoute {
 		}
 	}
 
-	private def uploadGuiRoute(devVersion: Boolean, authConf: PublicAuthConfig): Route = {
-		pathSingleSlash {
-			complete(views.html.UploadGuiPage(devVersion, authConf))
-		} ~
-		path(Segment){res =>
-			getFromResource(res)
+	def extractEnvriDirective(implicit configs: EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
+		Envri.infer(h) match{
+			case None => complete(StatusCodes.BadRequest -> s"Unexpected host $h, cannot find corresponding ENVRI")
+			case Some(envri) => provide(envri)
 		}
 	}
-
 }

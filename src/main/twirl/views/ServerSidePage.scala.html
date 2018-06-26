@@ -1,7 +1,7 @@
-@import se.lu.nateko.cp.viewscore.CpMenuItem
+@import se.lu.nateko.cp.viewscore._
 @import se.lu.nateko.cp.meta.core.data.Envri
 
-@(title: String, header: String, envri: Envri.Value, menu: Seq[CpMenuItem] = Nil)(body: Html)
+@(title: String, header: String, envri: Envri.Value, menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None)(body: Html)
 @template{
 	@LandingPageStyle()
 }{
@@ -13,5 +13,5 @@
 
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title) _ else CpCommonPage(title, menu) _
+	if(envri == Envri.SITES) SitesPage(title) _ else CpCommonPage(title, menu, cpauthHostOpt) _
 }

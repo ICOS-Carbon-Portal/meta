@@ -1,11 +1,9 @@
 @import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+@import se.lu.nateko.cp.meta.core.data.Envri
+@import Envri.Envri
 
-@(devVersion: Boolean, authConf: PublicAuthConfig)
-@CpCommonPage("ICOS CP data object upload", cpauthHostOpt = Some(authConf.authHost)){
-}{
-	<div class="page-header">
-		<h1>ICOS CP data object upload</h1>
-	</div>
+@(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
+@ServerSidePage(title, title, envri, cpauthHostOpt = Some(authConf.authHost)){
 	<div id="main">
 		<input id="fileinput" type="file" placeholder="Select file for upload">
 	</div>
@@ -14,4 +12,8 @@
 
 @jspath = @{
 	if(devVersion) "uploadgui-fastopt.js" else "uploadgui-opt.js"
+}
+
+@title = @{
+	(if(envri == Envri.SITES) "SITES" else "ICOS") + " data object upload"
 }

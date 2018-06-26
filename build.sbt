@@ -118,17 +118,6 @@ lazy val uploadgui = (project in file("uploadgui"))
 
 		scalaJSUseMainModuleInitializer := true,
 
-		unmanagedSources.in(Compile) ++= {
-			val commonPath = "src/main/scala/se/lu/nateko/cp/meta"
-			val commonCorePath = s"core/$commonPath/core"
-			Seq(
-				s"$commonCorePath/crypto/Sha256Sum.scala",
-				s"$commonCorePath/data/GeoFeatures.scala",
-				s"$commonCorePath/data/TemporalFeatures.scala",
-				s"$commonPath/UploadDtos.scala"
-			).map(path => new java.io.File(path).getAbsoluteFile)
-		},
-
 		libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.6"
 	)
 

@@ -1,43 +1,26 @@
 package se.lu.nateko.cp.meta.upload
 
-import scala.concurrent.Future
-import scala.reflect.ClassTag
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.util.Failure
-import scala.util.Success
-
-import org.scalajs.dom.Element
-import org.scalajs.dom.document
-import org.scalajs.dom.raw.HTMLInputElement
 
 object UploadApp {
+	import Utils._
+
+	val form = new Form(upload)
 
 	def main(args: Array[String]): Unit = {
 
-		val input = getElement[HTMLInputElement]("fileinput").get
+		whenDone(Backend.sitesStationInfo)(form.stationSelect.setOptions)
 
-		input.oninput = e => {
-			val file = input.files(0)
+		whenDone{
+			Backend.getSitesObjSpecs.map(_.filter(_.dataLevel == 0))
+		}(form.objSpecSelect.setOptions)
 
-			whenDone(FileHasher.hash(file)){hash =>
-				println(file.name)
-				println(hash.hex)
-				println(hash.base64Url)
-			}
-		}
-
-		whenDone(Backend.sitesStationInfo)(_ foreach println)
-		whenDone(Backend.getSitesObjSpecs)(_ foreach println)
-		whenDone(Backend.submitterIds)(_ foreach println)
+		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 	}
 
-	def getElement[T <: Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
-		case input: T => Some(input)
-		case _ => None
-	}
-
-	def whenDone[T](fut: Future[T])(cb: T => Unit): Future[T] = fut.andThen{
-		case Success(res) => cb(res)
-		case Failure(err) => println(err.getMessage)
+	def upload(): Unit = form.dto.foreach{dto =>
+		whenDone(Backend.submitMetadata(dto))(uri => {
+			println(s"Metadata uploaded, upload data to $uri")
+		})
 	}
 }

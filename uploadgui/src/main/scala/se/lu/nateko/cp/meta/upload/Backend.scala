@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
+import java.net.URI
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -7,24 +9,26 @@ import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
 
+import JsonSupport.uploadMetadataDtoWrites
 import play.api.libs.json._
+import se.lu.nateko.cp.meta.UploadMetadataDto
 
 object Backend {
 
 	import SparqlQueries._
 
-	def submitterIds: Future[Seq[String]] =
+	def submitterIds: Future[IndexedSeq[String]] =
 		Ajax.get("/upload/submitterids", withCredentials = true)
 			.recoverWith(recovery("fetch the list of available submitter ids"))
-			.map(parseTo[Seq[String]])
+			.map(parseTo[IndexedSeq[String]])
 
 	def sitesStationInfo = stationInfo(sitesStations)
-	def stationInfo(query: String): Future[Seq[Station]] = sparqlSelect(query).map(_.map(toStation))
+	def stationInfo(query: String): Future[IndexedSeq[Station]] = sparqlSelect(query).map(_.map(toStation))
 
 	def getSitesObjSpecs = getObjSpecs(sitesObjSpecs)
-	def getObjSpecs(query: String): Future[Seq[ObjSpec]] = sparqlSelect(query).map(_.map(toObjSpec))
+	def getObjSpecs(query: String): Future[IndexedSeq[ObjSpec]] = sparqlSelect(query).map(_.map(toObjSpec))
 
-	def sparqlSelect(query: String): Future[Seq[Binding]] = Ajax
+	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
 		.post("https://meta.icos-cp.eu/sparql", query, responseType = "application/json")
 		.recoverWith(recovery("execute a SPARQL query"))
 		.map(xhr =>
@@ -33,6 +37,13 @@ object Backend {
 				.map(_.value.collect(parseBinding))
 				.get
 		)
+
+	def submitMetadata(dto: UploadMetadataDto): Future[URI] = {
+		val json = Json.toJson(dto)
+		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
+			.recoverWith(recovery("Uploading data object metadata"))
+			.map(xhr => new URI(xhr.responseText))
+	}
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{

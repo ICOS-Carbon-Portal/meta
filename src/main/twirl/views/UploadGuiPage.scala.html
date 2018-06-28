@@ -5,7 +5,29 @@
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
 @ServerSidePage(title, title, envri, cpauthHostOpt = Some(authConf.authHost)){
 	<div id="main">
-		<input id="fileinput" type="file" placeholder="Select file for upload">
+		@PanelHtmlRow{File}{
+			<input id="fileinput" type="file" placeholder="Select file for upload">
+		}
+		@PanelHtmlRow{Station}{
+			<select id="stationselect"></select>
+		}
+		@PanelHtmlRow{Data type}{
+			<select id="objspecselect"></select>
+		}
+		@PanelHtmlRow{Submitter ID}{
+			<select id="submitteridselect"></select>
+		}
+		@PanelHtmlRow{Acquisition from (UTC)}{
+			<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'">
+		}
+		@PanelHtmlRow{Acquisition to (UTC)}{
+			<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'">
+		}
+		<div class="row">
+			<div class="col-md-12">
+				<button id="submitbutton" type="button" class="btn btn-primary">Upload!</button>
+			</div>
+		</div>
 	</div>
 	<script src=@jspath></script>
 }

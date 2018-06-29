@@ -5,6 +5,7 @@ import java.net.URI
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
+import org.scalajs.dom.File
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
@@ -44,6 +45,11 @@ object Backend {
 			.recoverWith(recovery("upload data object metadata"))
 			.map(xhr => new URI(xhr.responseText))
 	}
+
+	def uploadFile(file: File, path: URI): Future[String] = Ajax
+		.put(path.toString, file, headers = Map("Content-Type" -> "application/octet-stream"), withCredentials = true)
+		.recoverWith(recovery("upload data object contents"))
+		.map(_.responseText)
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{

@@ -18,9 +18,11 @@ object UploadApp {
 		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 	}
 
-	def upload(): Unit = form.dto.foreach{dto =>
-		whenDone(Backend.submitMetadata(dto))(uri => {
-			println(s"Metadata uploaded, upload data to $uri")
+	def upload(): Unit = for(dto <- form.dto; file <- form.fileInput.file){
+		whenDone{
+			Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
+		}(doi => {
+			println(s"Data object uploaded, landing page is at https://doi.org/$doi")
 		})
 	}
 }

@@ -20,7 +20,6 @@ object OrganizationClass extends Enumeration{
 
 case class UriResource(uri: URI, label: Option[String])
 
-case class TimeInterval(start: Instant, stop: Instant)
 
 sealed trait Agent{
 	val self: UriResource
@@ -60,8 +59,6 @@ case class DataProduction(
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
-
-case class TemporalCoverage(interval: TimeInterval, resolution: Option[String])
 
 case class L2OrLessSpecificMeta(
 	acquisition: DataAcquisition,

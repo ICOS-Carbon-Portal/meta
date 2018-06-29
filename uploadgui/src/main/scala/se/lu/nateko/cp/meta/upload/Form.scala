@@ -4,6 +4,7 @@ import java.time.Instant
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
@@ -19,10 +20,11 @@ import se.lu.nateko.cp.meta.core.data.TimeInterval
 class Form(onUpload: () => Unit) {
 
 	val button = new SubmitButton("submitbutton", onUpload)
-	val updateButton: () => Unit = () => if(dto.isSuccess) button.enable() else {
-		//dto.failed.foreach(println)
-		button.disable()
+	val updateButton: () => Unit = () => dto match{
+		case Success(_) => button.enable()
+		case Failure(err) => button.disable(err.getMessage)
 	}
+
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
@@ -76,10 +78,9 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 		select.innerHTML = ""
 		_values = values
 
-		values.indices.foreach{idx =>
+		values.foreach{value =>
 			val opt = document.createElement("option")
-			opt.setAttribute("value", idx.toString)
-			opt.appendChild(document.createTextNode(labeller(values(idx))))
+			opt.appendChild(document.createTextNode(labeller(value)))
 			select.appendChild(opt)
 		}
 		select.selectedIndex = -1
@@ -140,8 +141,15 @@ class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionConte
 class SubmitButton(elemId: String, onSubmit: () => Unit){
 	private[this] val button = getElement[html.Button](elemId).get
 
-	def enable(): Unit = button.disabled = false
-	def disable(): Unit = button.disabled = true
+	def enable(): Unit = {
+		button.disabled = false
+		button.title = ""
+	}
+
+	def disable(errMessage: String): Unit = {
+		button.disabled = true
+		button.title = errMessage
+	}
 
 	button.disabled = true
 

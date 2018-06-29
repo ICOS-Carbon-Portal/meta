@@ -41,7 +41,7 @@ object Backend {
 	def submitMetadata(dto: UploadMetadataDto): Future[URI] = {
 		val json = Json.toJson(dto)
 		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
-			.recoverWith(recovery("Uploading data object metadata"))
+			.recoverWith(recovery("upload data object metadata"))
 			.map(xhr => new URI(xhr.responseText))
 	}
 

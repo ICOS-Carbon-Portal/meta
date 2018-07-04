@@ -3,39 +3,89 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage(title, title, envri, cpauthHostOpt = Some(authConf.authHost)){
-	<div id="main">
-		@PanelHtmlRow{File}{
-			<input id="fileinput" type="file" placeholder="Select file for upload">
-		}
-		@PanelHtmlRow{Station}{
-			<select id="stationselect"></select>
-		}
-		@PanelHtmlRow{Data type}{
-			<select id="objspecselect"></select>
-		}
-		@PanelHtmlRow{Submitter ID}{
-			<select id="submitteridselect"></select>
-		}
-		@PanelHtmlRow{Acquisition from (UTC)}{
-			<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'">
-		}
-		@PanelHtmlRow{Acquisition to (UTC)}{
-			<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'">
-		}
-		<div class="row">
-			<div class="col-md-12">
-				<button id="submitbutton" type="button" class="btn btn-primary">Upload!</button>
-			</div>
+@ServerSidePage("Data upload", "Data upload", envri, cpauthHostOpt = Some(authConf.authHost)){
+	<style type="text/css">
+	.form {
+		display: none;
+		margin: 0 auto 2vh;
+		max-width: 400px;
+		padding: 0 2em 2em;
+	}
+	.form h2 {
+		font-size: 24px;
+		border-bottom: 1px solid #eee;
+	}
+	section {
+		margin-bottom: 2em;
+	}
+	.form-element {
+		display: block;
+	}
+	input,
+	select,
+	button {
+		width: 100%;
+	}
+	.login-block {
+		display: none;
+		text-align: center;
+		margin: 5vh 0;
+	}
+	.btn-submit {
+		margin-top: 2vh;
+	}
+	</style>
+
+	<div id="main" class="container-fluid">
+		<div id="alert-placeholder"></div>
+		<form id="form-block" class="form panel panel-default">
+			<section>
+				<h2>Data</h2>
+				<div class="form-group">
+					<label for="fileinput">File</label>
+					<input id="fileinput" type="file" placeholder="Select file for upload">
+				</div>
+				<div class="form-group">
+					<label for="objspecselect">Data type</label>
+					<select id="objspecselect" class="form-element"></select>
+				</div>
+			</section>
+			<section>
+				<h2>Submitter</h2>
+				<div class="form-group">
+					<label for="submitteridselect">Submitter ID</label>
+					<select id="submitteridselect" class="form-element"></select>
+				</div>
+			</section>
+			<section>
+				<h2>Acquisition</h2>
+				<div class="form-group">
+					<label for="stationselect">Station</label>
+					<select id="stationselect" class="form-element"></select>
+				</div>
+				<div class="form-group">
+					<label for="acqstartinput">From (UTC)</label>
+					<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element">
+				</div>
+				<div class="form-group">
+					<label for="acqstopinput">To (UTC)</label>
+					<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element">
+				</div>
+			</section>
+			<button id="submitbutton" type="button" class="btn btn-primary btn-submit">Upload</button>
+		</form>
+		<div id="login-block" class="login-block">
+			<h2>Log in to upload data</h2>
+			<p>Authorized users can upload data to the portal.</p>
+			<a id="login-button" class="btn btn-primary">Login</a>
 		</div>
+		<noscript>
+			<div id="javascript-error-block" class="javascript-error-block">Please enable javascript to use this page.</div>
+		</noscript>
 	</div>
 	<script src=@jspath></script>
 }
 
 @jspath = @{
 	if(devVersion) "uploadgui-fastopt.js" else "uploadgui-opt.js"
-}
-
-@title = @{
-	(if(envri == Envri.SITES) "SITES" else "ICOS") + " data object upload"
 }

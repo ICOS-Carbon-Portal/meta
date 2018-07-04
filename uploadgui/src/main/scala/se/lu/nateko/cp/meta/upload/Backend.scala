@@ -18,6 +18,13 @@ object Backend {
 
 	import SparqlQueries._
 
+	def whoAmI =
+		Ajax.get("/whoami", withCredentials = true)
+  	.recoverWith(recovery("fetch user information"))
+		.map(xhr =>
+			parseTo[JsObject](xhr).value("email")
+		)
+
 	def submitterIds: Future[IndexedSeq[String]] =
 		Ajax.get("/upload/submitterids", withCredentials = true)
 			.recoverWith(recovery("fetch the list of available submitter ids"))

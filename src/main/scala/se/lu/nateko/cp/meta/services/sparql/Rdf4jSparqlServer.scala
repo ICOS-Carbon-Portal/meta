@@ -49,7 +49,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 	private val quoter = new QuotaManager(config)(Instant.now _)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
-	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 5, 5, TimeUnit.HOURS)
+	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 1, 1, TimeUnit.HOURS)
 
 	def shutdown(): Unit = {
 		javaExe.shutdown()
@@ -58,11 +58,11 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
 		exeCtxt => query => Future{
-			if(quoter.quotaExceeded(query.clientId)) plainResponse(
-				StatusCodes.ServiceUnavailable,
-				"You have exceeded your SPARQL endpoint usage quota. Retry in 1 minute or in 1 hour."
-			) else
+			quoter.quotaExcess(query.clientId).fold{
 				getSparqlingMarshallings(query)
+			}{
+				plainResponse(StatusCodes.ServiceUnavailable, _)
+			}
 		}(exeCtxt) //using Akka-provided ExecutionContext to handle the "outer shell" part of response marshalling
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by javaExe thread pool)
 	)

@@ -20,7 +20,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		new QueryQuotaManager(clientId, id)
 	}
 
-	def quotaExceeded(clientId: ClientId): Boolean = if(clientId.isEmpty) false else q.get(clientId).map(hist => {
+	def quotaExcess(clientId: ClientId): Option[String] = if(clientId.isEmpty) None else q.get(clientId).flatMap(hist => {
 		var minuteCost: Float = 0
 		var hourCost: Float = 0
 		var count: Int = 0
@@ -35,10 +35,15 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 				hist -= id //forgetting old query runs
 			}
 		}
-		count >= config.maxParallelQueries ||
-			minuteCost >= config.quotaPerMinute ||
-			hourCost >= config.quotaPerHour
-	}).getOrElse(false)
+
+		if(count >= config.maxParallelQueries)
+			Some(s"You have $count unfinished queries. This may be due to a bug on the server. Please try again in 1 hour.")
+		else if(hourCost >= config.quotaPerHour)
+			Some("You have exceeded your hourly query quota. Please wait 1 hour to run more queries.")
+		else if(minuteCost >= config.quotaPerMinute)
+			Some("You have exceeded your per-minute query quota. Please wait 1 minute to run more queries.")
+		else None
+	})
 
 	def cleanup(): Unit = for((cid, hist) <- q){
 		for((qid, run) <- hist)
@@ -59,7 +64,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		def isLastDay: Boolean = age < 3600 * 24
 
 		private def age = ageAt(now())
-		private def ageAt(i: Instant): Float = (start.toEpochMilli - i.toEpochMilli).toFloat / 1000
+		private def ageAt(i: Instant): Float = (i.toEpochMilli - start.toEpochMilli).toFloat / 1000
 	}
 
 	class QueryQuotaManager(cid: ClientId, qid: QueryId){

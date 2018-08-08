@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql
 
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -34,17 +35,19 @@ import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
+import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.StreamConverters
+import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
-import akka.stream.scaladsl.Sink
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
 	private val javaExe = Executors.newCachedThreadPool()
+	private val scalaExe = scala.concurrent.ExecutionContext.fromExecutor(javaExe)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val quoter = new QuotaManager(config)(Instant.now _)
 
@@ -124,27 +127,23 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
 			val entityBytes = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
-				val fut = javaExe.submit[Unit](
-					() => protocolOption.evaluator.evaluate(query, outStr)
-				)
+				val fut = CompletableFuture.runAsync(
+					() => protocolOption.evaluator.evaluate(query, outStr),
+					javaExe
+				).whenComplete((_, _) => {
+					outStr.close()
+					onDone()
+				})
 
 				canceller.schedule(
-					() => if(!fut.isDone && !qquoter.streamingStarted) fut.cancel(true),
+					() => if(!qquoter.streamingStarted) fut.cancel(true),
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
-
-				javaExe.submit[Unit]{() =>
-					try{ fut.get } finally{
-						outStr.close()
-						onDone()
-					}
-				}
 			}.wireTap(
-				Sink.head.mapMaterializedValue(fut => {
-					implicit val ctxt = scala.concurrent.ExecutionContext.fromExecutor(javaExe)
-					fut.foreach(_ => qquoter.logQueryStreamingStart())
-				})
+				Sink.head[ByteString].mapMaterializedValue(
+					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaExe)
+				)
 			)
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))

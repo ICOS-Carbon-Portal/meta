@@ -33,8 +33,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.5.11"
-val akkaHttpVersion = "10.1.0"
+val akkaVersion = "2.5.14"
+val akkaHttpVersion = "10.1.3"
 val rdf4jVersion = "2.3.0"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")

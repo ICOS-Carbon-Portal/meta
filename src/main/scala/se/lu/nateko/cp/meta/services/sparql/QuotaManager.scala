@@ -15,8 +15,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 	def logNewQueryStart(clientId: ClientId): QueryQuotaManager = {
 		val id = idGen.incrementAndGet()
 		val history: ClientHistory = q.getOrElseUpdate(clientId, TrieMap.empty)
-		val nownow = now()
-		history += id -> QueryRun(nownow, None, None)
+		history += id -> QueryRun(now(), None, None)
 		new QueryQuotaManager(clientId, id)
 	}
 
@@ -26,18 +25,18 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		var count: Int = 0
 
 		for((id, run) <- hist){
+			if(run.isOngoing) count += 1
 			if(run.isLastHour){
-				if(run.isOngoing) count += 1
 				val cost = run.cost
 				hourCost += cost
 				if(run.isLastMinute) minuteCost += cost
-			} else {
+			} else if(!run.isOngoing){
 				hist -= id //forgetting old query runs
 			}
 		}
 
-		if(count >= config.maxParallelQueries)
-			Some(s"You have $count unfinished queries. This may be due to a bug on the server. Please try again in 1 hour.")
+		if(count > config.maxParallelQueries)
+			Some(s"You have $count running queries. Please try again in a few seconds. Contact Carbon Portal if the problem persists.")
 		else if(hourCost >= config.quotaPerHour)
 			Some("You have exceeded your hourly query quota. Please wait 1 hour to run more queries.")
 		else if(minuteCost >= config.quotaPerMinute)

@@ -69,7 +69,7 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.3.7-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.3.8-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),

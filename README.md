@@ -148,6 +148,11 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - In the sbt console, run `~reStart` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster.
 
 ### Miscellaneous recipes
+
+#### Restoring RDFLog database from pg_dump
+
+`cat dump.sqlc | docker exec -i rdflogdb_rdflogdb_1 pg_restore -c -U postgres -d postgres --format=c > /dev/null`
+
 #### Autorendering README.md to HTML for preview on file change
 Make sure that Python is available, and `python-markdown` and `inotify-tools` packages are installed on your Linux system.
 Then you can run:

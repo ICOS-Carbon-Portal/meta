@@ -91,7 +91,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 		try{
 			conn.prepareQuery(query.query) match {
 				case tupleQuery: TupleQuery =>
-
 					tupleQueryProtocolOptions.map(po =>
 						getQueryMarshalling(tupleQuery, po, qquoter, onDone)
 					)
@@ -127,24 +126,29 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
 			val entityBytes = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
-				val fut = CompletableFuture.runAsync(
+				val sparqlFut = CompletableFuture.runAsync(
 					() => protocolOption.evaluator.evaluate(query, outStr),
 					javaExe
-				).whenComplete((_, _) => {
-					outStr.close()
-					onDone()
+				)
+
+				sparqlFut.whenComplete((_, _) => {
+					try{outStr.flush(); outStr.close()}
+					finally{onDone()}
 				})
 
 				canceller.schedule(
-					() => if(!qquoter.streamingStarted) fut.cancel(true),
+					() => if(!qquoter.streamingStarted) sparqlFut.cancel(true),
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
+				sparqlFut
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaExe)
 				)
-			)
+			).watchTermination()((sparqlFut, doneFut) => {
+				doneFut.onComplete(_ => sparqlFut.cancel(true))(scalaExe)
+			})
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}

@@ -46,16 +46,17 @@ import se.lu.nateko.cp.meta.api.SparqlServer
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
-	private val javaExe = Executors.newCachedThreadPool()
-	private val scalaExe = scala.concurrent.ExecutionContext.fromExecutor(javaExe)
+	private val sparqlExe = Executors.newSingleThreadExecutor
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
+	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
 	private val quoter = new QuotaManager(config)(Instant.now _)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
 	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 1, 1, TimeUnit.HOURS)
 
 	def shutdown(): Unit = {
-		javaExe.shutdown()
+		sparqlExe.shutdown()
+		scalaCanceller.shutdown()
 		canceller.shutdown()
 	}
 
@@ -73,15 +74,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = {
 		val conn = repo.getConnection
 		val qquoter = quoter.logNewQueryStart(query.clientId)
-
-		canceller.schedule(
-			() => {
-				if(conn.isOpen && !qquoter.isOngoing) conn.close()
-				true //return dummy boolean to remove compilation ambiguity
-			},
-			(config.maxQueryRuntimeSec + 10).toLong,
-			TimeUnit.SECONDS
-		)
 
 		val onDone = () => {
 			conn.close()
@@ -128,7 +120,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 
 				val sparqlFut = CompletableFuture.runAsync(
 					() => protocolOption.evaluator.evaluate(query, outStr),
-					javaExe
+					sparqlExe
 				)
 
 				sparqlFut.whenComplete((_, _) => {
@@ -144,10 +136,10 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 				sparqlFut
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(
-					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaExe)
+					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaCanceller)
 				)
 			).watchTermination()((sparqlFut, doneFut) => {
-				doneFut.onComplete(_ => sparqlFut.cancel(true))(scalaExe)
+				doneFut.onComplete(_ => sparqlFut.cancel(true))(scalaCanceller)
 			})
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))

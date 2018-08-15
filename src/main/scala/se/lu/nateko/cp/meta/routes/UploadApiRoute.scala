@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
-
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadMetadataDto
@@ -17,11 +16,10 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 

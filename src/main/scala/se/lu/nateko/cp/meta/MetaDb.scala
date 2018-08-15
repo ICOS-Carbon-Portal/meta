@@ -6,13 +6,11 @@ import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.semanticweb.owlapi.apibinding.OWLManager
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.SparqlServer
@@ -36,7 +34,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.sparql.magic.DummyPlugin

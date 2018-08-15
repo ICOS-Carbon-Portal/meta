@@ -15,7 +15,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
-
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -27,12 +26,12 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]

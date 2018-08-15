@@ -4,15 +4,14 @@ import java.net.URI
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import org.scalajs.dom.File
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
-
 import JsonSupport.uploadMetadataDtoWrites
 import play.api.libs.json._
 import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.core.data.Envri
 
 object Backend {
 

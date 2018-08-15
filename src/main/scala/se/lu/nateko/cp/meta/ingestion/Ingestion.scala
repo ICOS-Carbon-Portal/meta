@@ -11,9 +11,10 @@ import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import java.net.URI
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false

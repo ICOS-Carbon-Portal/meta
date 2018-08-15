@@ -4,11 +4,10 @@ import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+
 import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
-import se.lu.nateko.cp.meta.core.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.ConfigLoader
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {

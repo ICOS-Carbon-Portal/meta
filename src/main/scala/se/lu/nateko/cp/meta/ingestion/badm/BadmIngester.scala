@@ -1,15 +1,15 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
 import scala.concurrent.Future
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import spray.json.JsObject
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+
 import scala.util.Success
 import scala.util.Failure
 

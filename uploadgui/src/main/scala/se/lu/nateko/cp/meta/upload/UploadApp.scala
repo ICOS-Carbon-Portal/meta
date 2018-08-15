@@ -6,10 +6,12 @@ import play.api.libs.json.JsString
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
+import se.lu.nateko.cp.meta.core.data._
 
 object UploadApp {
 	import Utils._
 
+	implicit private val envri: Envri.Envri = if (dom.window.location.host.contains("fieldsites.se")) Envri.SITES else Envri.ICOS
 	val form = new Form(upload)
 
 	def main(args: Array[String]): Unit = {
@@ -32,11 +34,12 @@ object UploadApp {
 
 	def displayLoginButton(): Unit = {
 		val url = URIUtils.encodeURI(dom.window.location.href)
-		val href = s"https://auth.fieldsites.se/login/?targetUrl=$url"
+		val authHost = if (envri == Envri.SITES) "auth.fieldsites.se" else "cpauth.icos-cp.eu"
+		val href = s"https://$authHost/login/?targetUrl=$url"
 		getElement[html.Anchor]("login-button").get.setAttribute("href", href)
 		getElement[html.Div]("login-block").get.style.display = "block"
 	}
-	
+
 	def displayForm(): Unit = {
 		getElement[html.Div]("login-block").get.style.display = "none"
 		getElement[html.Form]("form-block").get.style.display = "block"

@@ -29,11 +29,11 @@ object Backend {
 			.recoverWith(recovery("fetch the list of available submitter ids"))
 			.map(parseTo[IndexedSeq[String]])
 
-	def sitesStationInfo = stationInfo(sitesStations)
-	def stationInfo(query: String): Future[IndexedSeq[Station]] = sparqlSelect(query).map(_.map(toStation))
+	def stationInfo(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
+		sparqlSelect(stations).map(_.map(toStation))
 
-	def getSitesObjSpecs = getObjSpecs(sitesObjSpecs)
-	def getObjSpecs(query: String): Future[IndexedSeq[ObjSpec]] = sparqlSelect(query).map(_.map(toObjSpec))
+	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
+		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
 		.post("https://meta.icos-cp.eu/sparql", query, responseType = "application/json")

@@ -20,10 +20,10 @@ object UploadApp {
 			case JsString(_) =>
 				displayForm()
 
-				whenDone(Backend.sitesStationInfo)(form.stationSelect.setOptions)
+				whenDone(Backend.stationInfo)(form.stationSelect.setOptions)
 
 				whenDone {
-					Backend.getSitesObjSpecs.map(_.filter(_.dataLevel == 0))
+					Backend.getObjSpecs.map(_.filter(_.dataLevel == 0))
 				}(form.objSpecSelect.setOptions)
 
 				whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)

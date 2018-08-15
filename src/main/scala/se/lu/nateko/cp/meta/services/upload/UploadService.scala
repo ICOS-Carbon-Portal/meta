@@ -124,12 +124,12 @@ class UploadService(
 		}
 	}
 
-	def checkPermissions(submitter: URI, userId: String): Boolean =
-		conf.submitters.values
+	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
+		conf.submitters(envri).values
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def availableSubmitterIds(uploader: UserId): Seq[String] = conf.submitters.collect{
+	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[String] = conf.submitters(envri).collect{
 		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => id
 	}.toSeq
 

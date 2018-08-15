@@ -42,8 +42,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf)
 	) yield NotUsed
 
-	def getSubmitterConfig(submitterId: String): Try[DataSubmitterConfig] = {
-		conf.submitters.get(submitterId) match {
+	def getSubmitterConfig(submitterId: String)(implicit envri: Envri): Try[DataSubmitterConfig] = {
+		conf.submitters(envri).get(submitterId) match {
 			case None => Failure(new UploadUserErrorException(s"Unknown submitter: $submitterId"))
 			case Some(conf) => Success(conf)
 		}

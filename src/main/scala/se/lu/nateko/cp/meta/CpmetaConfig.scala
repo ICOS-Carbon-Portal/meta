@@ -74,7 +74,7 @@ case class EtcUploadConfig(
 case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
-	submitters: Map[String, DataSubmitterConfig],
+	submitters: Map[Envri, Map[String, DataSubmitterConfig]],
 	epicPid: EpicPidConfig,
 	etc: EtcUploadConfig
 )

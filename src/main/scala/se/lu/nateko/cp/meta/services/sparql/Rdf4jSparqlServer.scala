@@ -46,7 +46,9 @@ import se.lu.nateko.cp.meta.api.SparqlServer
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
-	private val sparqlExe = Executors.newSingleThreadExecutor
+	//TODO Change the SPARQL scheduler back to newCachedThreadPool when the updates to nativerdf have been merged
+	//private val sparqlExe = Executors.newCachedThreadPool()
+	private val sparqlExe = Executors.newFixedThreadPool(2)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
 	private val quoter = new QuotaManager(config)(Instant.now _)

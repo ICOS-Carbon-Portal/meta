@@ -150,7 +150,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		}
 
 //		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
-		val indices = "spoc".permutations.mkString(",") //all the possible indices
+//		val indices = "spoc".permutations.mkString(",") //all the possible indices
+		val indices = "spoc,posc"
 		val native = new NativeStore(storageDir.toFile, indices)
 		native.setForceSync(true)
 

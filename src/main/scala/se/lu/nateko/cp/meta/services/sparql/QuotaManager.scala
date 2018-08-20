@@ -78,13 +78,14 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		def logQueryStreamingStart(): Unit =
 			updateQueryRun{(run, time) => run.copy(streamingStart = time)}
 
-		private def updateQueryRun(update: (QueryRun, Option[Instant]) => QueryRun): Unit =
+		private def updateQueryRun(update: (QueryRun, Option[Instant]) => QueryRun): Unit = synchronized{
 			for(
 				history <- q.get(cid);
 				run <- history.get(qid)
 			){
 				history += qid -> update(run, Some(now()))
 			}
+		}
 	}
 }
 

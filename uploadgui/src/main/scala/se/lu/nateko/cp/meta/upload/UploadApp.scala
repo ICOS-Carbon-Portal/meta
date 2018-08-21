@@ -12,15 +12,13 @@ object UploadApp {
 	import Utils._
 
 	implicit private val envri: Envri.Envri = if (dom.window.location.host.contains("fieldsites.se")) Envri.SITES else Envri.ICOS
-	val form = new Form(upload)
+	val form = new Form(upload _)
 
 	def main(args: Array[String]): Unit = {
 
 		whenDone(Backend.whoAmI) {
 			case JsString(_) =>
 				displayForm()
-
-				whenDone(Backend.stationInfo)(form.stationSelect.setOptions)
 
 				whenDone {
 					Backend.getObjSpecs.map(_.filter(_.dataLevel == 0))
@@ -29,6 +27,13 @@ object UploadApp {
 				whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 
 			case _ => displayLoginButton()
+		}
+
+		getElement[html.Select]("submitteridselect").get.onchange = _ => {
+			whenDone(Backend.stationInfo(form.submitterIdSelect.value.get.producingOrganizationClass)) { values =>
+				form.stationSelect.setOptions(values)
+				getElement[html.Select]("stationselect").get.disabled = values.isEmpty
+			}
 		}
 	}
 

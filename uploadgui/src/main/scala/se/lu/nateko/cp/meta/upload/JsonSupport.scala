@@ -44,5 +44,9 @@ object JsonSupport {
 	}
 
 	implicit val uploadMetadataDtoWrites = Json.writes[UploadMetadataDto]
+	implicit val javaUriReads = new Reads[URI]{
+		def reads(js: JsValue) = js.validate[String].map(new URI(_))
+	}
+	implicit val submitterProfileReads = Json.reads[SubmitterProfile]
 
 }

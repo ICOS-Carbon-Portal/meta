@@ -8,9 +8,9 @@ import org.scalajs.dom.File
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
-import JsonSupport.uploadMetadataDtoWrites
+import JsonSupport._
 import play.api.libs.json._
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.{SubmitterProfile, UploadMetadataDto}
 import se.lu.nateko.cp.meta.core.data.Envri
 
 object Backend {
@@ -24,13 +24,13 @@ object Backend {
 			parseTo[JsObject](xhr).value("email")
 		)
 
-	def submitterIds: Future[IndexedSeq[String]] =
+	def submitterIds: Future[IndexedSeq[SubmitterProfile]] =
 		Ajax.get("/upload/submitterids", withCredentials = true)
 			.recoverWith(recovery("fetch the list of available submitter ids"))
-			.map(parseTo[IndexedSeq[String]])
+			.map(parseTo[IndexedSeq[SubmitterProfile]])
 
-	def stationInfo(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
-		sparqlSelect(stations).map(_.map(toStation))
+	def stationInfo(orgClass: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
+		sparqlSelect(stations(orgClass)).map(_.map(toStation))
 
 	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))

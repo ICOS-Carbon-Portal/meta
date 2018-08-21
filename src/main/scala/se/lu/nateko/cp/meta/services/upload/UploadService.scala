@@ -4,11 +4,9 @@ import java.net.URI
 
 import scala.concurrent.Future
 import scala.util.Try
-
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.UploadMetadataDto
-import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.{StaticCollectionDto, SubmitterProfile, UploadMetadataDto, UploadServiceConfig}
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -18,7 +16,7 @@ import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.StaticCollectionDto
+import spray.json._
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.StaticCollection
@@ -129,8 +127,8 @@ class UploadService(
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[String] = conf.submitters(envri).collect{
-		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => id
+	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[SubmitterProfile] = conf.submitters(envri).collect{
+		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => SubmitterProfile(id, submConf.producingOrganizationClass)
 	}.toSeq
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[String] =

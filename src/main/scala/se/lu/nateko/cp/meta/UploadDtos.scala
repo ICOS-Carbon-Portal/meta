@@ -51,3 +51,5 @@ case class DataProductionDto(
 	comment: Option[String],
 	creationDate: Instant
 )
+
+case class SubmitterProfile(id: String, producingOrganizationClass: Option[URI])

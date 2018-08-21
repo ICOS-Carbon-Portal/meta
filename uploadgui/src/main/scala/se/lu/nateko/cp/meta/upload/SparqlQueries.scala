@@ -9,29 +9,32 @@ object SparqlQueries {
 
 	type Binding = Map[String, String]
 
-	private val sitesStations = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	private def sitesStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|PREFIX sitesmeta: <https://meta.fieldsites.se/ontologies/sites/>
 		|SELECT *
-		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|FROM <https://meta.fieldsites.se/resources/sites/>
-		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id }""".stripMargin
+		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id; a ?stationClass
+		| $orgFilter }""".stripMargin
 
-	private val icosStations = """PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
-		|SELECT *
-		|FROM <http://meta.icos-cp.eu/resources/stationentry/>
-		|WHERE { ?station cpst:hasLongName ?name; cpst:hasShortName ?id }
-		|order by ?name""".stripMargin
+		private def icosStations(orgFilter: String) = s"""PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+			|SELECT *
+			|FROM <http://meta.icos-cp.eu/resources/stationentry/>
+			|WHERE { ?station cpst:hasLongName ?name; cpst:hasShortName ?id; a ?stationClass
+			| $orgFilter }
+			|order by ?name""".stripMargin
 
-	def stations(implicit envri: Envri): String = envri match {
-		case Envri.SITES => sitesStations
-		case Envri.ICOS => icosStations
+	def stations(orgClass: Option[URI])(implicit envri: Envri): String = {
+		val orgFilter = orgClass.fold("")(org => s"""FILTER (STR(?stationClass) = "$org")""")
+		envri match {
+			case Envri.SITES => sitesStations(orgFilter)
+			case Envri.ICOS => icosStations(orgFilter)
+		}
 	}
 
-	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"))
+	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"), b("stationClass"))
 
 	private val sitesObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
-		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|FROM <https://meta.fieldsites.se/resources/sites/>
 		|WHERE {
 		|	?spec a cpmeta:DataObjectSpec ;

@@ -16,10 +16,13 @@ object SparqlQueries {
 		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id; a ?stationClass
 		| $orgFilter }""".stripMargin
 
-		private def icosStations(orgFilter: String) = s"""PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+		private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 			|SELECT *
-			|FROM <http://meta.icos-cp.eu/resources/stationentry/>
-			|WHERE { ?station cpst:hasLongName ?name; cpst:hasShortName ?id; a ?stationClass
+			|FROM <http://meta.icos-cp.eu/resources/stations/>
+			|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			|WHERE {
+			| ?stationClass rdfs:subClassOf cpmeta:Station .
+			| ?station a ?stationClass; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
 			| $orgFilter }
 			|order by ?name""".stripMargin
 

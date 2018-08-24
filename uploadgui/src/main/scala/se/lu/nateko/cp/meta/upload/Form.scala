@@ -13,8 +13,13 @@ import scala.concurrent.ExecutionContext
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future
+import Utils._
 
-class Form(onUpload: () => Unit) {
+class Form(
+	onUpload: () => Unit,
+	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
+) {
 
 	val button = new SubmitButton("submitbutton", onUpload)
 	val updateButton: () => Unit = () => dto match{
@@ -22,12 +27,19 @@ class Form(onUpload: () => Unit) {
 		case Failure(err) => button.disable(err.getMessage)
 	}
 
+	val onSubmitterSelected: () => Unit = () =>
+		submitterIdSelect.value.foreach{submitter =>
+			whenDone(onSubmitterSelect(submitter)){stations =>
+				stationSelect.setOptions(stations)
+				updateButton()
+			}
+		}
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
-	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, updateButton)
+	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
@@ -82,17 +94,14 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 		}
 
 		// Select option if only one choice
-		if (select.childElementCount == 1) {
+		if (values.size == 1) {
 			select.selectedIndex = 0
-			// It doesn't look like there a scala.js api to fire the change event for now
-			// https://github.com/scala-js/scala-js-dom/issues/219
-			val eventInit = js.Dictionary("bubbles" -> true, "cancelable" -> false)
-			val event = js.Dynamic.newInstance(js.Dynamic.global.Event)("change", eventInit).asInstanceOf[dom.Event]
-			select.dispatchEvent(event)
+			cb()
 		} else {
 			select.selectedIndex = -1
 		}
 
+		select.disabled = values.isEmpty
 	}
 }
 

@@ -36,7 +36,7 @@ object Backend {
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
-		.post("https://meta.icos-cp.eu/sparql", query, responseType = "application/json")
+		.post("/sparql", query, responseType = "application/json")
 		.recoverWith(recovery("execute a SPARQL query"))
 		.map(xhr =>
 			(parseTo[JsObject](xhr) \ "results" \ "bindings")

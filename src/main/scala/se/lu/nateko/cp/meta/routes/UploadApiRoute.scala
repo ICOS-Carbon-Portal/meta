@@ -83,16 +83,14 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			} ~
 			get{
-				path("permissions"){
-					extractEnvri { implicit envri =>
+				extractEnvri { implicit envri =>
+					path("permissions"){
 						parameters(('submitter, 'userId))((submitter, userId) => {
 							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
 							complete(spray.json.JsBoolean(isAllowed))
 						})
-					}
-				} ~
-				path("submitterids"){
-					extractEnvri { implicit envri =>
+					} ~
+					path("submitterids"){
 						authRouting.mustBeLoggedIn { uploader =>
 							complete(service.availableSubmitterIds(uploader))
 						}

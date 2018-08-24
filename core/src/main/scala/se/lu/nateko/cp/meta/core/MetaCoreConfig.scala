@@ -15,6 +15,6 @@ object MetaCoreConfig{
 	import CommonJsonSupport._
 
 	implicit val envriFormat = enumFormat(Envri)
-	implicit val envriConfigFormat = jsonFormat3(EnvriConfig)
+	implicit val envriConfigFormat = jsonFormat4(EnvriConfig)
 	implicit val metaCoreConfigFormat = jsonFormat2(MetaCoreConfig.apply)
 }

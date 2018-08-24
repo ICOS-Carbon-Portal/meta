@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 
 case class EnvriConfig(
+	authHost: String,
 	dataPrefix: URI,
 	metaPrefix: URI,
 	metaResourcePrefix: URI
@@ -25,4 +26,5 @@ object Envri extends Enumeration{
 			case (envri, conf) if matches(conf.metaPrefix) || matches(conf.dataPrefix) => envri
 		}
 	}
+
 }

@@ -45,8 +45,9 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		authRouting: AuthenticationRouting,
 		citer: CitationClient,
 		coreConf: MetaCoreConfig
-	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
+	): Route = handleExceptions(errHandler){
 
+		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 		val pcm = new PageContentMarshalling(coreConf.handleService, citer)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
@@ -84,6 +85,10 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			get{
 				extractEnvri { implicit envri =>
+					path("envriconfigs"){
+						import MetaCoreConfig.envriConfigFormat
+						complete(coreConf.envriConfigs(envri))
+					} ~
 					path("permissions"){
 						parameters(('submitter, 'userId))((submitter, userId) => {
 							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)

@@ -6,22 +6,23 @@ import org.scalajs.dom
 import org.scalajs.dom.{document, html}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.upload.Utils._
 import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, UploadMetadataDto}
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
 
 class Form(
-	onUpload: () => Unit,
+	onUpload: (UploadMetadataDto, dom.File) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 ) {
 
-	val button = new SubmitButton("submitbutton", onUpload)
+	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file) {
+		onUpload(dto, file)
+	}
+	val button = new SubmitButton("submitbutton", submitAction)
 	val updateButton: () => Unit = () => dto match{
 		case Success(_) => button.enable()
 		case Failure(err) => button.disable(err.getMessage)

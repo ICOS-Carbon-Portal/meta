@@ -19,7 +19,6 @@ import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.api.CitationClient
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -85,8 +84,11 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			get{
 				extractEnvri { implicit envri =>
-					path("envriconfigs"){
-						import MetaCoreConfig.envriConfigFormat
+					import MetaCoreConfig.{envriConfigFormat, envriFormat}
+					path("envri"){
+						complete(envri)
+					} ~
+					path("envriconfig"){
 						complete(coreConf.envriConfigs(envri))
 					} ~
 					path("permissions"){

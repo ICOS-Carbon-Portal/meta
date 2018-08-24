@@ -2,22 +2,21 @@ package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import play.api.libs.json.JsString
+import se.lu.nateko.cp.meta.UploadMetadataDto
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
-import se.lu.nateko.cp.meta.core.data._
 
 object UploadApp {
 	import Utils._
 
-	implicit private val envri: Envri.Envri = if (dom.window.location.host.contains("fieldsites.se")) Envri.SITES else Envri.ICOS
-	val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
-
+	var form: Form = _
 	def main(args: Array[String]): Unit = {
 
-		whenDone(Backend.whoAmI) {
-			case JsString(_) =>
+		whenDone(Backend.fetchConfig) {
+			case InitAppInfo(Some(_), envri, _) =>
+				implicit val envr = envri
+				form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
 				displayForm()
 
 				whenDone {
@@ -26,13 +25,12 @@ object UploadApp {
 
 				whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 
-			case _ => displayLoginButton()
+			case InitAppInfo(None, _, envriConf) => displayLoginButton(envriConf.authHost)
 		}
 	}
 
-	def displayLoginButton(): Unit = {
+	def displayLoginButton(authHost: String): Unit = {
 		val url = URIUtils.encodeURI(dom.window.location.href)
-		val authHost = if (envri == Envri.SITES) "auth.fieldsites.se" else "cpauth.icos-cp.eu"
 		val href = s"https://$authHost/login/?targetUrl=$url"
 		getElement[html.Anchor]("login-button").get.setAttribute("href", href)
 		getElement[html.Div]("login-block").get.style.display = "block"
@@ -43,7 +41,7 @@ object UploadApp {
 		getElement[html.Form]("form-block").get.style.display = "block"
 	}
 
-	def upload(): Unit = for(dto <- form.dto; file <- form.fileInput.file){
+	def upload(dto: UploadMetadataDto, file: dom.File): Unit = {
 		whenDone{
 			Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 		}(doi => {

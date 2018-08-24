@@ -8,6 +8,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import java.net.URI
 
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+
 object JsonSupport {
 
 	implicit val positionWrites = Json.writes[Position]
@@ -48,5 +50,9 @@ object JsonSupport {
 		def reads(js: JsValue) = js.validate[String].map(new URI(_))
 	}
 	implicit val submitterProfileReads = Json.reads[SubmitterProfile]
+	implicit val envriReads = new Reads[Envri]{
+		def reads(js: JsValue) = js.validate[String].map(Envri.withName)
+	}
+	implicit val envriConfigReads = Json.reads[EnvriConfig]
 
 }

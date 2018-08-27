@@ -20,6 +20,8 @@ class DummyPlugin extends MagicTupleFuncPlugin {
 		Seq(DummyTupleFunction)
 	}
 
+	def expressionEnricher = new SimpleTupleFunctionExprEnricher(Map(DummyTupleFunction.getURI -> DummyTupleFunction))
+
 	def initialize(fromSail: Sail): Unit = {
 		val conn = fromSail.getConnection
 		try{

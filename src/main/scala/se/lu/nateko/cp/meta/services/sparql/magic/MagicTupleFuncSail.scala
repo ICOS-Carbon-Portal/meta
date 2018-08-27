@@ -19,21 +19,21 @@ import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
 
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
+import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
+import org.eclipse.rdf4j.sail.SailException
 
 trait MagicTupleFuncPlugin extends SailConnectionListener{
 	def makeFunctions: Seq[TupleFunction]
 	def initialize(fromSail: Sail): Unit
+	def expressionEnricher: QueryModelVisitor[SailException]
 }
 
 class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrMemoryStore) extends NotifyingSailWrapper(baseSail){
 
-	private val tupleFuncs: Map[String, TupleFunction] = plugins.flatMap(_.makeFunctions).map(tf => tf.getURI -> tf).toMap
-	private val expressionEnricher = new MagicTupleFunctionExprEnricher(tupleFuncs)
-
 	baseSail.setEvaluationStrategyFactory{
 		val fedResolver = baseSail.getFederatedServiceResolver
 		val tupleFunctionReg = new TupleFunctionRegistry()
-		tupleFuncs.values.foreach(tupleFunctionReg.add)
+		plugins.flatMap(_.makeFunctions).foreach(tupleFunctionReg.add)
 
 		new AbstractEvaluationStrategyFactory{
 			override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource) =
@@ -58,7 +58,7 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrM
 		): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = {
 
 			val expr: TupleExpr = TupleExprCloner.cloneExpr(tupleExpr)
-			expr.visit(expressionEnricher)
+			plugins.foreach(plugin => expr.visit(plugin.expressionEnricher))
 
 			getWrappedConnection.evaluate(expr, dataset, bindings, includeInferred)
 		}

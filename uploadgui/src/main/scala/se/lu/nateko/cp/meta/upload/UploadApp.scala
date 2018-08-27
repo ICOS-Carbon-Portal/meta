@@ -10,13 +10,12 @@ import scala.scalajs.js.URIUtils
 object UploadApp {
 	import Utils._
 
-	var form: Form = _
 	def main(args: Array[String]): Unit = {
 
 		whenDone(Backend.fetchConfig) {
 			case InitAppInfo(Some(_), envri, _) =>
 				implicit val envr = envri
-				form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
+				val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
 				displayForm()
 
 				whenDone {

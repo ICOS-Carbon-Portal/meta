@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
-
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadMetadataDto
@@ -17,9 +16,7 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.api.CitationClient
 
@@ -47,8 +44,9 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		authRouting: AuthenticationRouting,
 		citer: CitationClient,
 		coreConf: MetaCoreConfig
-	)(implicit configs: EnvriConfigs): Route = handleExceptions(errHandler){
+	): Route = handleExceptions(errHandler){
 
+		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 		val pcm = new PageContentMarshalling(coreConf.handleService, citer)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
@@ -85,15 +83,24 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			} ~
 			get{
-				path("permissions"){
-					parameters(('submitter, 'userId))((submitter, userId) => {
-						val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
-						complete(spray.json.JsBoolean(isAllowed))
-					})
-				} ~
-				path("submitterids"){
-					authRouting.mustBeLoggedIn{uploader =>
-						complete(service.availableSubmitterIds(uploader))
+				extractEnvri { implicit envri =>
+					import MetaCoreConfig.{envriConfigFormat, envriFormat}
+					path("envri"){
+						complete(envri)
+					} ~
+					path("envriconfig"){
+						complete(coreConf.envriConfigs(envri))
+					} ~
+					path("permissions"){
+						parameters(('submitter, 'userId))((submitter, userId) => {
+							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
+							complete(spray.json.JsBoolean(isAllowed))
+						})
+					} ~
+					path("submitterids"){
+						authRouting.mustBeLoggedIn { uploader =>
+							complete(service.availableSubmitterIds(uploader))
+						}
 					}
 				}
 			}

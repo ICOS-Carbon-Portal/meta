@@ -11,8 +11,7 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 import java.net.URI
 
 object TestConfig {
@@ -49,6 +48,7 @@ object TestConfig {
 		factory.getOWLObjectProperty(localName, prefixManager)
 
 	implicit val envriConfs = Map(Envri.ICOS -> EnvriConfig(
+		authHost = "cpauth.icos-cp.eu",
 		dataPrefix = new URI("https://data.icos-cp.eu/objects/"),
 		metaPrefix = new URI("https://meta.icos-cp.eu/objects/"),
 		metaResourcePrefix = new URI("http://meta.icos-cp.eu/resources/")

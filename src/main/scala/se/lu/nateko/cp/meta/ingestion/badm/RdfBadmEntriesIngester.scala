@@ -6,7 +6,6 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-
 import BadmConsts._
 import BadmSchema.PropertyInfo
 import BadmSchema.Schema
@@ -17,10 +16,11 @@ import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.ingestion.Ingestion
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 class RdfBadmEntriesIngester(
 		entriesFut: => Future[Iterable[BadmEntry]],

@@ -1,11 +1,18 @@
 package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+
+case class EnvriConfig(
+	authHost: String,
+	dataPrefix: URI,
+	metaPrefix: URI,
+	metaResourcePrefix: URI
+)
 
 object Envri extends Enumeration{
 
 	type Envri = Value
+	type EnvriConfigs = Map[Envri, EnvriConfig]
 
 	val ICOS, SITES = Value
 
@@ -19,4 +26,5 @@ object Envri extends Enumeration{
 			case (envri, conf) if matches(conf.metaPrefix) || matches(conf.dataPrefix) => envri
 		}
 	}
+
 }

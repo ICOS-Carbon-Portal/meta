@@ -2,35 +2,45 @@ package se.lu.nateko.cp.meta.upload
 
 import java.time.Instant
 
-import scala.concurrent.ExecutionContext
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
 import org.scalajs.dom
-import org.scalajs.dom.{ document, html }
-
-import Utils._
-import se.lu.nateko.cp.meta.StationDataMetadata
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import org.scalajs.dom.{document, html}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, UploadMetadataDto}
 
-class Form(onUpload: () => Unit) {
+import scala.concurrent.ExecutionContext
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future
+import Utils._
 
-	val button = new SubmitButton("submitbutton", onUpload)
+class Form(
+	onUpload: (UploadMetadataDto, dom.File) => Unit,
+	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
+) {
+
+	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file) {
+		onUpload(dto, file)
+	}
+	val button = new SubmitButton("submitbutton", submitAction)
 	val updateButton: () => Unit = () => dto match{
 		case Success(_) => button.enable()
 		case Failure(err) => button.disable(err.getMessage)
 	}
 
+	val onSubmitterSelected: () => Unit = () =>
+		submitterIdSelect.value.foreach{submitter =>
+			whenDone(onSubmitterSelect(submitter)){stations =>
+				stationSelect.setOptions(stations)
+				updateButton()
+			}
+		}
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
-	val submitterIdSelect = new Select[String]("submitteridselect", identity, updateButton)
+	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
@@ -40,12 +50,12 @@ class Form(onUpload: () => Unit) {
 		hash <- fileInput.hash;
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
-		submitterId <- submitterIdSelect.value.withErrorContext("Submitter Id");
+		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
 		acqStart <- acqStartInput.instant.withErrorContext("Acqusition start");
 		acqStop <- acqStopInput.instant.withErrorContext("Acqusition stop")
 	) yield UploadMetadataDto(
 		hashSum = hash,
-		submitterId = submitterId,
+		submitterId = submitter.id,
 		objectSpecification = objSpec.uri,
 		fileName = file.name,
 		specificInfo = Right(
@@ -83,7 +93,16 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 			opt.appendChild(document.createTextNode(labeller(value)))
 			select.appendChild(opt)
 		}
-		select.selectedIndex = -1
+
+		// Select option if only one choice
+		if (values.size == 1) {
+			select.selectedIndex = 0
+			cb()
+		} else {
+			select.selectedIndex = -1
+		}
+
+		select.disabled = values.isEmpty
 	}
 }
 

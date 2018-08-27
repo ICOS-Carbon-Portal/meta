@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.language.postfixOps
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
@@ -15,7 +14,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 object LinkedDataRoute {
 	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller

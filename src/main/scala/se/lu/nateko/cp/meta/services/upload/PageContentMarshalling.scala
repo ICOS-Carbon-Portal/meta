@@ -4,19 +4,17 @@ import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling._
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
-
 import se.lu.nateko.cp.meta.api.Doi
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 
 import scala.concurrent.Future
 import spray.json._
 import play.twirl.api.Html
 import java.net.URI
+
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.CitationClient
-import se.lu.nateko.cp.meta.core.EnvriConfig
 
 class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 

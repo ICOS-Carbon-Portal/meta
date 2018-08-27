@@ -4,40 +4,54 @@ import java.net.URI
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import org.scalajs.dom.File
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
-
-import JsonSupport.uploadMetadataDtoWrites
+import JsonSupport._
 import play.api.libs.json._
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.{SubmitterProfile, UploadMetadataDto}
+import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 object Backend {
 
 	import SparqlQueries._
 
-	def whoAmI =
+	private def whoAmI: Future[Option[String]] =
 		Ajax.get("/whoami", withCredentials = true)
   	.recoverWith(recovery("fetch user information"))
 		.map(xhr =>
-			parseTo[JsObject](xhr).value("email")
-		)
+			parseTo[JsObject](xhr).value("email") match {
+				case JsString(email) => Some(email)
+				case _ => None
+			})
 
-	def submitterIds: Future[IndexedSeq[String]] =
+	private def envri: Future[Envri] = Ajax.get("/upload/envri")
+		.recoverWith(recovery("fetch envri"))
+		.map(parseTo[Envri])
+
+	private def authHost: Future[EnvriConfig] = Ajax.get("/upload/envriconfig")
+  	.recoverWith(recovery("fetch envri config"))
+		.map(parseTo[EnvriConfig])
+
+	def fetchConfig: Future[InitAppInfo] = whoAmI.zip(envri).zip(authHost).map {
+		case ((whoAmI, envri), authHost) => InitAppInfo(whoAmI, envri, authHost)
+	}
+
+	def submitterIds: Future[IndexedSeq[SubmitterProfile]] =
 		Ajax.get("/upload/submitterids", withCredentials = true)
 			.recoverWith(recovery("fetch the list of available submitter ids"))
-			.map(parseTo[IndexedSeq[String]])
+			.map(parseTo[IndexedSeq[SubmitterProfile]])
 
-	def sitesStationInfo = stationInfo(sitesStations)
-	def stationInfo(query: String): Future[IndexedSeq[Station]] = sparqlSelect(query).map(_.map(toStation))
+	def stationInfo(orgClass: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
+		sparqlSelect(stations(orgClass)).map(_.map(toStation))
 
-	def getSitesObjSpecs = getObjSpecs(sitesObjSpecs)
-	def getObjSpecs(query: String): Future[IndexedSeq[ObjSpec]] = sparqlSelect(query).map(_.map(toObjSpec))
+	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
+		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
-		.post("https://meta.icos-cp.eu/sparql", query, responseType = "application/json")
+		.post("/sparql", query, responseType = "application/json")
 		.recoverWith(recovery("execute a SPARQL query"))
 		.map(xhr =>
 			(parseTo[JsObject](xhr) \ "results" \ "bindings")

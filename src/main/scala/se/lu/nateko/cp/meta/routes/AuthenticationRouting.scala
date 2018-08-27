@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directive1
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+
 import scala.util.Success
 import scala.util.Failure
 import akka.http.scaladsl.model.StatusCodes
@@ -20,8 +21,7 @@ import akka.http.scaladsl.model.headers.`X-Forwarded-For`
 import spray.json.JsObject
 import spray.json.JsNull
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.MetaCoreConfig.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._

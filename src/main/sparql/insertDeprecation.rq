@@ -1,0 +1,19 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+  ?dobj2 cpmeta:isNextVersionOf ?dobj1 .
+}
+FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
+where {
+	?spec cpmeta:hasDataLevel "2"^^xsd:integer .
+	?dobj1 cpmeta:hasObjectSpec ?spec .
+	?dobj2 cpmeta:hasObjectSpec ?spec .
+	FILTER(?dobj1 != ?dobj2)
+	?dobj1 cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj2 cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj1 cpmeta:hasName ?fileName1 .
+	?dobj2 cpmeta:hasName ?fileName2 .
+	FILTER(replace(?fileName1, "L2pre", "L2-") = ?fileName2)
+}
+

@@ -1,0 +1,20 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+    ?dobj ?pred ?obj .
+        ?obj ?pred2 ?obj2 .
+}
+FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
+where {
+	?dobj cpmeta:wasSubmittedBy ?subm .
+	FILTER NOT EXISTS {?subm prov:endedAtTime ?size }
+	?subm prov:startedAtTime ?submTime .
+	?dobj cpmeta:hasName ?fileName .
+	FILTER(?submTime < "2018-08-27T13:00:00Z"^^xsd:dateTime)
+	?dobj ?pred ?obj .
+	OPTIONAL{
+		?obj ?pred2 ?obj2 .
+	    FILTER(?pred != cpmeta:isNextVersionOf)
+	}
+}
+

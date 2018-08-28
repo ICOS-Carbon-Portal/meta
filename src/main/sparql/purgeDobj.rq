@@ -5,6 +5,9 @@ construct {
    bind (<https://meta.fieldsites.se/objects/LN9lolObB1apj_eE8mnnkIAr> as ?s)
    graph <https://meta.fieldsites.se/resources/dailysitescsv/> {
        ?s ?p ?o .
-       OPTIONAL{ ?o ?p2 ?o2}
+		OPTIONAL{
+			?o ?p2 ?o2 .
+			FILTER(?p != cpmeta:isNextVersionOf)
+		}
   }
 }

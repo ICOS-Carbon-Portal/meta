@@ -1,0 +1,29 @@
+package se.lu.nateko.cp.meta.utils.async
+
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
+trait ReadWriteLocking {
+
+	private[this] val (rl, wl) = {
+		val rwl = new ReentrantReadWriteLock
+		(rwl.readLock, rwl.writeLock)
+	}
+
+	protected def readLocked[T](reader: => T): T = {
+		rl.lock()
+		try{
+			reader
+		} finally {
+			rl.unlock()
+		}
+	}
+
+	protected def writeLocked(writer: => Unit): Unit = {
+		wl.lock()
+		try{
+			writer
+		} finally {
+			wl.unlock()
+		}
+	}
+}

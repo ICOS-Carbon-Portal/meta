@@ -32,10 +32,13 @@ class StatsTupleFunction(indexThunk: () => StatsIndex) extends TupleFunction{
 					valueFactory.createLiteral(entry.count)
 
 				case `hasStatSubmitter` =>
-					entry.submitter
+					entry.key.submitter
+
+				case `hasStatSpec` =>
+					entry.key.spec
 
 				case `hasStatStation` =>
-					entry.station.getOrElse(null)
+					entry.key.station.getOrElse(null)
 
 				case unknown => throw new QueryEvaluationException(
 					s"Encountered an unsupported 'magic' predicate $unknown inside 'stats' block (ICOS CP plugin)"
@@ -50,6 +53,7 @@ class StatsTupleFunction(indexThunk: () => StatsIndex) extends TupleFunction{
 object StatsTupleFunction{
 	val hasStatProps = CpmetaVocab.MetaPrefix + "hasStatProps"
 	val hasStatCount = CpmetaVocab.MetaPrefix + "hasStatCount"
+	val hasStatSpec = CpmetaVocab.MetaPrefix + "hasStatSpec"
 	val hasStatSubmitter = CpmetaVocab.MetaPrefix + "hasStatSubmitter"
 	val hasStatStation = CpmetaVocab.MetaPrefix + "hasStatStation"
 	val sameAs = OWL.SAMEAS.stringValue

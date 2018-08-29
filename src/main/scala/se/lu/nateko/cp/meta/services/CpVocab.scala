@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services
 
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -11,6 +12,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.ConfigLoader
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
+	import CpVocab._
 
 	def getConfig(implicit envri: Envri) = envriConfigs(envri)
 
@@ -52,12 +54,27 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getDataObjectAccessUrl(hash: Sha256Sum)(implicit envri: Envri) = new URI(s"${getConfig.dataPrefix}objects/${hash.id}")
 
-	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelative("acq_" + hash.id)
-	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative("prod_" + hash.id)
-	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelative("subm_" + hash.id)
-	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelative("spcov_" + hash.id)
+	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelative(AcqPrefix + hash.id)
+	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative(ProdPrefix + hash.id)
+	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SubmPrefix + hash.id)
+	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SpatCovPrefix + hash.id)
 
 	def getObjectSpecification(lastSegment: String)(implicit envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
 		else getRelative("objspecs/", lastSegment)
+}
+
+object CpVocab{
+	val AcqPrefix = "acq_"
+	val ProdPrefix = "prod_"
+	val SubmPrefix = "subm_"
+	val SpatCovPrefix = "spcov_"
+
+	def looksLikeSubmission(iri: IRI): Boolean = looksLikePrefWithHash(iri, SubmPrefix)
+	def looksLikeAcquisition(iri: IRI): Boolean = looksLikePrefWithHash(iri, AcqPrefix)
+
+	private def looksLikePrefWithHash(iri: IRI, prefix: String): Boolean = {
+		val segm = iri.getLocalName
+		segm.startsWith(prefix) && Sha256Sum.fromBase64Url(segm.stripPrefix(prefix)).isSuccess
+	}
 }

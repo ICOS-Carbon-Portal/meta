@@ -13,14 +13,24 @@ class Rdf4jIterationIterator[T](res: CloseableIteration[T, _], closer: () => Uni
 
 	def close(): Unit = if(!closed){
 		closed = true;
-		res.close()
-		closer()
+		try{
+			res.close()
+		} finally {
+			closer()
+		}
 	}
 
 	def hasNext: Boolean = !closed && {
-		val has = res.hasNext()
-		if(!has) close()
-		has
+		try{
+			val has = res.hasNext()
+			if(!has) close()
+			has
+		}
+		catch{
+			case err: Throwable =>
+				close()
+				throw err
+		}
 	}
 
 	def next(): T =

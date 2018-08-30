@@ -35,10 +35,11 @@ class DataObjectFetcher(
 			.map(getDataProduction)
 
 		val fileName = getSingleString(dobj, metaVocab.hasName)
-		val spec = getSpecification(getSingleUri(dobj, metaVocab.hasObjectSpec))
+		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
+		val spec = getSpecification(specIri)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
-		val levelSpecificInfo = if(spec.dataLevel == 3 || spec.self.uri === vocab.getObjectSpecification("ingosArchive"))
+		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))
 				Left(getL3Meta(dobj, production))
 			else
 				Right(getL2Meta(dobj, production))

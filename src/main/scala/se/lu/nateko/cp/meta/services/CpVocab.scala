@@ -70,11 +70,25 @@ object CpVocab{
 	val SubmPrefix = "subm_"
 	val SpatCovPrefix = "spcov_"
 
-	def looksLikeSubmission(iri: IRI): Boolean = looksLikePrefWithHash(iri, SubmPrefix)
-	def looksLikeAcquisition(iri: IRI): Boolean = looksLikePrefWithHash(iri, AcqPrefix)
+	object Acquisition{
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)
+	}
 
-	private def looksLikePrefWithHash(iri: IRI, prefix: String): Boolean = {
+	object Submission{
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, SubmPrefix)
+	}
+
+	object DataObject{
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, "")
+	}
+
+	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
+
+	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val segm = iri.getLocalName
-		segm.startsWith(prefix) && Sha256Sum.fromBase64Url(segm.stripPrefix(prefix)).isSuccess
+		if(segm.startsWith(prefix))
+			Sha256Sum.fromBase64Url(segm.stripPrefix(prefix)).toOption
+		else
+			None
 	}
 }

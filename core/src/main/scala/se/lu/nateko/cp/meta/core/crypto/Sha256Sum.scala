@@ -31,8 +31,13 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 	def id: String = base64Url.substring(0, 24)
 
 	override def equals(other: Any): Boolean =
-		if(other.isInstanceOf[Sha256Sum])
-			Arrays.equals(this.truncate.bytes, other.asInstanceOf[Sha256Sum].truncate.bytes)
+		if(other.isInstanceOf[Sha256Sum]){
+			val hash2 = other.asInstanceOf[Sha256Sum]
+			if(this.isTruncated == hash2.isTruncated)
+				Arrays.equals(this.bytes, hash2.bytes)
+			else
+				Arrays.equals(this.truncate.bytes, hash2.truncate.bytes)
+		}
 		else false
 
 	override def hashCode: Int = Arrays.hashCode(bytes)

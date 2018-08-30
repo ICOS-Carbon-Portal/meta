@@ -9,8 +9,11 @@ import scala.collection.mutable.HashMap
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.sail.Sail
 
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -20,102 +23,115 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
 
-//TODO Handle incomplete uploads and deprecated data objects
+object StatsIndex{
+	val UpdateQueueSize = 1024
+}
+
 class StatsIndex(sail: Sail) extends ReadWriteLocking{
 	import StatsIndex._
 
 	private val vocab = new CpmetaVocab(sail.getValueFactory)
-	private val stats = new HashMap[StatKey, Int]
-	private val addUpdater = new StatsUpdater(1)
-	private val removeUpdater = new StatsUpdater(-1)
+	private val stats = new HashMap[Sha256Sum, ObjEntry]
+	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	private val specRequiresStation: Map[IRI, Boolean] = sail.access[Statement](
 			_.getStatements(null, vocab.hasDataLevel, null, false)
 		).collect{
 			case Rdf4jStatement(subj, _, obj: Literal) =>
-				subj -> (obj.integerValue.intValue < 3)
+				subj -> (obj.integerValue.intValue < 3 && !CpVocab.isIngosArchive(subj))
 		}.toMap
 
 	//Mass-import of the statistics data
-	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(add)
+	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
 
 	def entries: Iterable[StatEntry] = readLocked{
-		val entries = for((key, count) <- stats) yield StatEntry(key, count)
-		entries.toIndexedSeq
+		val nullKey = StatKey(null, null, None)
+		stats.values
+			.groupBy(_.getKeyOrElse(nullKey))
+			.collect{
+				case (key, vals) if key.ne(nullKey) => StatEntry(key, vals.size)
+			}
+			.toIndexedSeq
 	}
 
-	def add(st: Statement): Unit = addUpdater.put(st)
-	def remove(st: Statement): Unit = removeUpdater.put(st)
+	private def getObjEntry(hash: Sha256Sum): ObjEntry = stats.getOrElseUpdate(hash, new ObjEntry)
 
-	def flush(): Unit = {
-		addUpdater.flush()
-		removeUpdater.flush()
+	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{
+		case CpVocab.DataObject(hash) => mod(getObjEntry(hash))
+		case _ =>
 	}
 
-	private class StatsUpdater(increment: Int){
+	def put(st: RdfUpdate): Unit = {
+		q.put(st)
+		if(q.remainingCapacity == 0) flush()
+	}
 
-		private val stq = new ArrayBlockingQueue[Statement](StatementQueueSize)
-		private val obj2spec = HashMap.empty[IRI, IRI]
-		private val obj2submission = HashMap.empty[IRI, IRI]
-		private val subm2submitter = HashMap.empty[IRI, IRI]
-		private val obj2acq = HashMap.empty[IRI, IRI]
-		private val acq2station = HashMap.empty[IRI, IRI]
+	def flush(): Unit = if(!q.isEmpty) writeLocked{
+		if(q.isEmpty) return
 
-		def put(st: Statement): Unit = {
-			stq.put(st)
-			if(stq.remainingCapacity == 0) flush()
-		}
+		val list = new ArrayList[RdfUpdate](UpdateQueueSize)
+		q.drainTo(list)
+		import vocab._
+		import vocab.prov.wasAssociatedWith
 
-		def flush(): Unit = if(!stq.isEmpty) writeLocked{
-			if(stq.isEmpty) return
+		list.iterator.asScala.foreach{
+			case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) => {
+				def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
-			val list = new ArrayList[Statement](StatementQueueSize)
-			stq.drainTo(list)
-			import vocab._
-			import vocab.prov.wasAssociatedWith
+				pred match{
 
-			list.iterator.asScala.foreach{
-				case Rdf4jStatement(subj, pred, obj: IRI) => pred match{
+					case `hasObjectSpec` =>
+						modForDobj(subj)(_.spec = targetUri)
 
-					case `hasObjectSpec` => obj2spec += subj -> obj
+					case `wasSubmittedBy` =>
+						modForDobj(subj)(_.hasSubmission = isAssertion)
 
-					case `wasSubmittedBy` => obj2submission += subj -> obj
+					case `wasAcquiredBy` =>
+						modForDobj(subj)(_.hasAcquisition = isAssertion)
 
-					case `wasAcquiredBy` => obj2acq += subj -> obj
+					case `wasAssociatedWith` => subj match{
+						case CpVocab.Submission(hash) =>
+							getObjEntry(hash).submitter = targetUri
+						case CpVocab.Acquisition(hash) =>
+							getObjEntry(hash).station = targetUri
+						case _ =>
+					}
 
-					case `wasAssociatedWith` =>
-						if(CpVocab.looksLikeSubmission(subj))
-							subm2submitter += subj -> obj
-						else if(CpVocab.looksLikeAcquisition(subj))
-							acq2station += subj-> obj
+					case `isNextVersionOf` =>
+						modForDobj(obj)(_.isDeprecated = isAssertion)
+
+					case `hasSizeInBytes` =>
+						modForDobj(subj)(_.isComplete = isAssertion)
+
 					case _ =>
 				}
+			}
 
-				case _ =>
-			}
-			list.clear()
-			for(
-				(obj, spec) <- obj2spec;
-				submission <- obj2submission.get(obj);
-				submitter <- subm2submitter.get(submission);
-				acqOpt = obj2acq.get(obj);
-				stationOpt = acqOpt.flatMap(acq2station.get);
-				stationRequired <- specRequiresStation.get(spec)
-				if(stationOpt.isDefined || !stationRequired)
-			){
-				val key = StatKey(spec, submitter, stationOpt)
-				val newCount: Int = stats.getOrElse(key, 0) + increment
-				stats += key -> newCount
-				obj2spec -= obj
-				obj2submission -= obj
-				subm2submitter -= submission
-				obj2acq -= obj
-				acqOpt.foreach(acq2station.remove)
-			}
+			case _ =>
 		}
+		list.clear()
 	}
-}
 
-object StatsIndex{
-	val StatementQueueSize = 1024
+	private class ObjEntry{
+		var spec: IRI = _
+		var submitter: IRI = _
+		var station: IRI = _
+		var hasSubmission: Boolean = false
+		var hasAcquisition: Boolean = false
+		var isComplete: Boolean = false
+		var isDeprecated: Boolean = false
+
+		def getKeyOrElse(default: StatKey): StatKey =
+			if(
+				spec != null && submitter != null && hasSubmission &&
+				isComplete && !isDeprecated &&
+				(!specRequiresStation.getOrElse(spec, true) || hasAcquisition && station != null)
+			) StatKey(
+				spec,
+				submitter,
+				if(station != null && hasAcquisition) Some(station) else None
+			)
+			else default
+	}
+
 }

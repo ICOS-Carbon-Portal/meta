@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.stats
 
-import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncPlugin
-import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.sail.Sail
+
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncPlugin
 
 //TODO Throttle index flushing ?
 class StatsPlugin extends MagicTupleFuncPlugin {
@@ -23,12 +23,12 @@ class StatsPlugin extends MagicTupleFuncPlugin {
 	)
 
 	def statementAdded(s: Statement): Unit = {
-		index.add(s)
+		index.put(RdfUpdate(s, true))
 		index.flush()
 	}
 
 	def statementRemoved(s: Statement): Unit = {
-		index.remove(s)
+		index.put(RdfUpdate(s, false))
 		index.flush()
 	}
 

@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.OWL
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 
@@ -29,7 +30,7 @@ class StatsTupleFunction(indexThunk: () => StatsIndex) extends TupleFunction{
 					valueFactory.createBNode("statEntry_" + entry.hashCode)
 
 				case `hasStatCount` =>
-					valueFactory.createLiteral(entry.count)
+					valueFactory.createLiteral(entry.count.toString, XMLSchema.INTEGER)
 
 				case `hasStatSubmitter` =>
 					entry.key.submitter

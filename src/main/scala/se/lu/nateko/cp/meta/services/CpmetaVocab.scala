@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
-	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/cpmeta/")
+	implicit val bup = makeUriProvider(CpmetaVocab.MetaPrefix)
 
 	val stationClass = getRelative("Station")
 	val atmoStationClass = getRelative("AS")
@@ -83,7 +83,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object prov extends CustomVocab {
 		val factory = top.factory
-		implicit val bup = makeUriProvider("http://www.w3.org/ns/prov#")
+		implicit val bup = makeUriProvider(CpmetaVocab.ProvPrefix)
 
 		val wasAssociatedWith = getRelative("wasAssociatedWith")
 		val startedAtTime = getRelative("startedAtTime")
@@ -92,7 +92,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object dcterms extends CustomVocab {
 		val factory = top.factory
-		implicit val bup = makeUriProvider("http://purl.org/dc/terms/")
+		implicit val bup = makeUriProvider(CpmetaVocab.DctermsPrefix)
 
 		val date = getRelative("date")
 		val title = getRelative("title")
@@ -107,4 +107,10 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 //		implicit val bup = makeUriProvider("https://meta.fieldsites.se/ontologies/sites/")
 //		val simpleSitesCsv = getRelative("simpleSitesCsv")
 //	}
+}
+
+object CpmetaVocab{
+	val MetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
+	val ProvPrefix = "http://www.w3.org/ns/prov#"
+	val DctermsPrefix = "http://purl.org/dc/terms/"
 }

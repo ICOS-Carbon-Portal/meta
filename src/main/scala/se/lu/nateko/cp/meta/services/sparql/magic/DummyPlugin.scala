@@ -12,6 +12,8 @@ import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.sail.Sail
 
+import se.lu.nateko.cp.meta.utils.rdf4j._
+
 class DummyPlugin extends MagicTupleFuncPlugin {
 
 	private var counter = 0
@@ -20,21 +22,10 @@ class DummyPlugin extends MagicTupleFuncPlugin {
 		Seq(DummyTupleFunction)
 	}
 
+	def expressionEnricher = new SimpleTupleFunctionExprEnricher(Map(DummyTupleFunction.getURI -> DummyTupleFunction))
+
 	def initialize(fromSail: Sail): Unit = {
-		val conn = fromSail.getConnection
-		try{
-			val all = conn.getStatements(null, null, null, false)
-			try{
-				while(all.hasNext()){
-					all.next()
-					counter += 1
-				}
-			}finally{
-				all.close()
-			}
-		}finally{
-			conn.close()
-		}
+		counter = fromSail.access[Statement](_.getStatements(null, null, null, false)).size
 	}
 
 	def statementAdded(s: Statement): Unit = {

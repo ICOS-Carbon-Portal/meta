@@ -27,4 +27,5 @@ package object async {
 
 		Future.firstCompletedOf(Iterable(future, p.future))
 	}
+
 }

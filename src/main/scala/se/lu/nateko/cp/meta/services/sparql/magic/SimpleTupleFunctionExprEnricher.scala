@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
 import org.eclipse.rdf4j.sail.SailException
 
-class MagicTupleFunctionExprEnricher(funcs: Map[String, TupleFunction]) extends AbstractQueryModelVisitor[SailException]{
+class SimpleTupleFunctionExprEnricher(funcs: Map[String, TupleFunction]) extends AbstractQueryModelVisitor[SailException]{
 
 	override def meet(sp: StatementPattern): Unit = {
 

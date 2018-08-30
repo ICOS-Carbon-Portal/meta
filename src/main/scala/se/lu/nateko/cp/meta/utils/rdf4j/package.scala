@@ -1,21 +1,25 @@
 package se.lu.nateko.cp.meta.utils
 
-import java.net.{URI => JavaUri}
+import java.net.{ URI => JavaUri }
+
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
+import org.eclipse.rdf4j.IsolationLevel
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
-//import org.eclipse.rdf4j.repository.RepositoryResult
+import org.eclipse.rdf4j.sail.Sail
+import org.eclipse.rdf4j.sail.SailConnection
+
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-import org.eclipse.rdf4j.IsolationLevel
 
 package object rdf4j {
 
@@ -99,6 +103,21 @@ package object rdf4j {
 			}
 			finally{
 				conn.close()
+			}
+		}
+	}
+
+	implicit class Rdf4jSailWithAccess(val sail: Sail) extends AnyVal{
+		def access[T](accessor: SailConnection => CloseableIteration[_ <: T, _]): CloseableIterator[T] = {
+			val conn = sail.getConnection
+			try{
+				val repRes = accessor(conn)
+				new Rdf4jIterationIterator(repRes, () => conn.close())
+			}
+			catch{
+				case err: Throwable =>
+					conn.close()
+					throw err
 			}
 		}
 	}

@@ -37,7 +37,7 @@ import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
-import se.lu.nateko.cp.meta.services.sparql.magic.DummyPlugin
+import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsPlugin
 
 
 class MetaDb (
@@ -149,11 +149,12 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 //		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
 //		val indices = "spoc".permutations.mkString(",") //all the possible indices
+		//TODO Add ospc at least, and re-create the nativerdf storage in production
 		val indices = "spoc,posc"
 		val native = new NativeStore(storageDir.toFile, indices)
 		native.setForceSync(true)
 
-		val store = native//new MagicTupleFuncSail(Seq(new DummyPlugin), native)
+		val store = new MagicTupleFuncSail(Seq(new StatsPlugin), native)
 
 		val repo = new SailRepository(store)
 		repo.initialize()

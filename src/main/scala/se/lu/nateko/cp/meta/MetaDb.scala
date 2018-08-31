@@ -149,12 +149,12 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 //		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
 //		val indices = "spoc".permutations.mkString(",") //all the possible indices
-		//TODO Add ospc at least, and re-create the nativerdf storage in production
-		val indices = "spoc,posc"
+		val indices = "spoc,posc,ospc,cpso"
 		val native = new NativeStore(storageDir.toFile, indices)
 		native.setForceSync(true)
 
-		val store = new MagicTupleFuncSail(Seq(new StatsPlugin), native)
+		val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
+		val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
 
 		val repo = new SailRepository(store)
 		repo.initialize()

@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -28,4 +29,19 @@ package object async {
 		Future.firstCompletedOf(Iterable(future, p.future))
 	}
 
+	def throttle(
+		action: () => Unit,
+		delay: FiniteDuration,
+		using: Scheduler
+	)(implicit ec: ExecutionContext): () => Unit = {
+		val ongoing = new AtomicBoolean(false)
+
+		() => {
+			val wasOngoing = ongoing.getAndSet(true)
+			if(!wasOngoing) using.scheduleOnce(delay){
+				action()
+				ongoing.set(false)
+			}
+		}
+	}
 }

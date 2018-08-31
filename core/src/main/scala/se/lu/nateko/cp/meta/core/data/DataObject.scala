@@ -136,6 +136,8 @@ final case class StaticCollection(
 	creator: Organization,
 	title: String,
 	description: Option[String],
+	previousVersion: Option[URI],
+	nextVersion: Option[URI],
 	doi: Option[String]
 ) extends DataItemCollection with StaticDataItem {
 	type M = StaticDataItem

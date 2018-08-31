@@ -76,6 +76,8 @@ class CollectionFetcher(
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
 			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
+			nextVersion = getNextVersion(coll),
+			previousVersion = getPreviousVersion(coll),
 			doi = getOptionalString(coll, metaVocab.hasDoi)
 		)
 	}

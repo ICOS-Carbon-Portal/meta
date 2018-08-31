@@ -17,6 +17,8 @@
 				@PanelHtmlRow{Collection creator}{
 					@agentLink(coll.creator)
 				}
+				@PanelHtmlRow{Previous version}{@versionLink(coll.previousVersion)}
+				@PanelHtmlRow{Next version}{@versionLink(coll.nextVersion)}
 			}
 		</div>
 
@@ -51,6 +53,16 @@
 	</a>
 }
 
+@versionLink(vers: Option[URI]) = {
+	@vers match{
+		case None => {
+			not available
+		}
+		case Some(uri) => {
+			<a href=@{uri}>available</a>
+		}
+	}
+}
 
 @staticDataItemLink(item: StaticDataItem) = {
 	@item match {

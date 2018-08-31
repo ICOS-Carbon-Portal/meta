@@ -107,7 +107,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val plainDataObjectFormat = jsonFormat3(PlainDataObject)
 
 	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
-		implicit val statCollFormat = jsonFormat6(StaticCollection)
+		implicit val statCollFormat = jsonFormat8(StaticCollection)
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
 			case pdo: PlainDataObject => pdo.toJson

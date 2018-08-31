@@ -7,12 +7,10 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class DataObjectFetcher(
 	protected val server: InstanceServer,
@@ -76,14 +74,4 @@ class DataObjectFetcher(
 			)
 		}
 	}
-
-	private def getNextVersion(dobj: IRI): Option[URI] = {
-		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
-			.toSeq.headOption.collect{
-				case Rdf4jStatement(next, _, _) => next.toJava
-			}
-	}
-
-	private def getPreviousVersion(dobj: IRI): Option[URI] =
-		getOptionalUri(dobj, metaVocab.isNextVersionOf).map(_.toJava)
 }

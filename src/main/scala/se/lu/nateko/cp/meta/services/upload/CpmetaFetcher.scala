@@ -1,17 +1,18 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.net.URI
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.DataTheme._
+import se.lu.nateko.cp.meta.core.data.OrganizationClass.OrganizationClass
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
-
-import DataTheme._
-import OrganizationClass.OrganizationClass
-import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -82,7 +83,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	private def getOrgClass(subj: IRI): OrganizationClass = {
 		val vocab = metaVocab
-		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, tcClass, stationClass }
+		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, stationClass, tcClass }
 		import OrganizationClass._
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
@@ -185,4 +186,15 @@ trait CpmetaFetcher extends FetchingHelper{
 		else
 			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
 	}
+
+	protected def getNextVersion(dobj: IRI): Option[URI] = {
+		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
+			.toSeq.headOption.collect{
+				case Rdf4jStatement(next, _, _) => next.toJava
+			}
+	}
+
+	protected def getPreviousVersion(dobj: IRI): Option[URI] =
+		getOptionalUri(dobj, metaVocab.isNextVersionOf).map(_.toJava)
+
 }

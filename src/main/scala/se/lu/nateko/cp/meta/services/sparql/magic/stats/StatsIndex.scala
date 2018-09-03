@@ -34,12 +34,18 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 	private val stats = new HashMap[Sha256Sum, ObjEntry]
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
-	private val specRequiresStation: Map[IRI, Boolean] = sail.access[Statement](
+	//Mass-import of the specification info
+	private val specRequiresStation: HashMap[IRI, Boolean] = {
+		val map = HashMap.empty[IRI, Boolean]
+		sail.access[Statement](
 			_.getStatements(null, vocab.hasDataLevel, null, false)
-		).collect{
+		).foreach{
 			case Rdf4jStatement(subj, _, obj: Literal) =>
-				subj -> (obj.integerValue.intValue < 3 && !CpVocab.isIngosArchive(subj))
-		}.toMap
+				map.update(subj, objSpecRequiresStation(subj, obj))
+			case _ =>
+		}
+		map
+	}
 
 	//Mass-import of the statistics data
 	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
@@ -53,6 +59,9 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 			}
 			.toIndexedSeq
 	}
+
+	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =
+		dataLevel.intValue < 3 && !CpVocab.isIngosArchive(spec)
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = stats.getOrElseUpdate(hash, new ObjEntry)
 
@@ -102,6 +111,12 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 
 					case `hasSizeInBytes` =>
 						modForDobj(subj)(_.isComplete = isAssertion)
+
+					case `hasDataLevel` => if(isAssertion) obj match{
+						case lit: Literal =>
+							specRequiresStation.update(subj, objSpecRequiresStation(subj, lit))
+						case _ =>
+					}
 
 					case _ =>
 				}

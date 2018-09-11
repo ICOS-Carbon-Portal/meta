@@ -29,7 +29,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
-		datasetSpec = None
+		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map{iri =>
+				import se.lu.nateko.cp.meta.core.data.JsonSupport.uriResourceFormat
+				import spray.json._
+				getLabeledResource(iri).toJson
+			}
 	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)

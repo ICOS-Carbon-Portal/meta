@@ -43,7 +43,7 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 
 			citationOptFut.map{citOpt =>
 				WithOpenCharset(MediaTypes.`text/html`, getHtml[T](dataItemOpt, template(_, citOpt), _)) ::
-				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt)) :: Nil
+				WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(dataItemOpt)) :: Nil
 			}
 		}
 	}
@@ -55,14 +55,6 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
 					template(obj).body
 				)
-			)
-			case None => HttpResponse(StatusCodes.NotFound)
-		}
-
-	private def getJson[T: JsonWriter](dataItemOpt: Option[T]) =
-		dataItemOpt match {
-			case Some(obj) => HttpResponse(
-				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
@@ -83,4 +75,12 @@ object PageContentMarshalling{
 			html.body
 		)
 	)
+
+	def getJson[T: JsonWriter](dataItemOpt: Option[T]) =
+		dataItemOpt match {
+			case Some(obj) => HttpResponse(
+				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
+			)
+			case None => HttpResponse(StatusCodes.NotFound)
+		}
 }

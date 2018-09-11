@@ -50,7 +50,7 @@ class MetaDb (
 	val repo: Repository
 )(implicit configs: EnvriConfigs) extends Closeable{
 
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo)
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers)
 
 	def close(): Unit = {
 		sparql.shutdown()

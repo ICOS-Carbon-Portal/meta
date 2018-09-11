@@ -5,6 +5,7 @@ import java.net.{ URI => JavaUri }
 import scala.Left
 import scala.Right
 import scala.collection.TraversableOnce.flattenTraversableOnce
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import org.eclipse.rdf4j.model.IRI
@@ -15,10 +16,13 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
+
 import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
 import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.ContentType
+import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpCharset
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
@@ -28,7 +32,8 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.UriResource
-import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
@@ -37,31 +42,50 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
-class Rdf4jUriSerializer(repo: Repository)(implicit envries: EnvriConfigs) extends UriSerializer{
+class Rdf4jUriSerializer(repo: Repository, servers: DataObjectInstanceServers)(implicit envries: EnvriConfigs) extends UriSerializer{
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer._
 
 	val marshaller: ToResponseMarshaller[Uri] = {
-		val htmlMarshaller: ToResponseMarshaller[Uri] = Marshaller(
-			implicit exeCtxt => uri => Future{
-				val envri = Envri.infer(new java.net.URI(uri.toString)).get
-				val viewInfo = getViewInfo(uri, repo, envri)
-				WithOpenCharset(MediaTypes.`text/html`, getHtml(viewInfo, _)) :: Nil
+
+		val htmlOrJsonMarshaller: ToResponseMarshaller[Uri] = Marshaller(
+			implicit exeCtxt => uri => getJsonFetcher(uri).map{jsonFetcherOpt =>
+				WithOpenCharset(MediaTypes.`text/html`, getHtml(uri)) ::
+				jsonFetcherOpt.toList.map(WithFixedContentType(ContentTypes.`application/json`, _))
 			}
 		)
 		val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 			.compose(uri => () => getStatementsIter(uri, repo))
 
-		Marshaller.oneOf(htmlMarshaller, rdfMarshaller)
+		Marshaller.oneOf(htmlOrJsonMarshaller, rdfMarshaller)
 	}
 
-	private def getHtml(viewInfo: ResourceViewInfo, charset: HttpCharset) = HttpResponse(
+	private def inferEnvri(uri: Uri) = Envri.infer(new java.net.URI(uri.toString)).getOrElse(
+		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
+	)
+
+	private def getHtml(uri: Uri)(charset: HttpCharset) = HttpResponse(
 		entity = HttpEntity(
 			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			views.html.UriResourcePage(viewInfo).body
+			views.html.UriResourcePage(getViewInfo(uri, repo, inferEnvri(uri))).body
 		)
 	)
+
+	private def getJsonFetcher(uri: Uri)(implicit ctxt: ExecutionContext): Future[Option[() => HttpResponse]] = Future{
+		import servers.metaVocab
+		val subj = metaVocab.factory.createIRI(uri.toString)
+		val isObjSpec = repo.accessEagerly(_.hasStatement(null, metaVocab.hasObjectSpec, subj, false))
+		if(isObjSpec){
+			implicit val envri = inferEnvri(uri)
+			import se.lu.nateko.cp.meta.core.data.JsonSupport.dataObjectSpecFormat
+			import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.getJson
+			Some(() => getJson(servers.getDataObjSpecification(subj).toOption))
+		}else
+			None
+	}
 }
+
+
 
 private object Rdf4jUriSerializer{
 

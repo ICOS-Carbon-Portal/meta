@@ -46,6 +46,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wasParticipatedInBy = getRelative("wasParticipatedInBy")
 	val wasHostedBy = getRelative("wasHostedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
+	val containsDataset = getRelative("containsDataset")
 	val hasObjectSpec = getRelative("hasObjectSpec")
 	val hasFormat = getRelative("hasFormat")
 	val hasEncoding = getRelative("hasEncoding")

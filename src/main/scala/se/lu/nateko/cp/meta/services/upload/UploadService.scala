@@ -23,7 +23,7 @@ import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadService(
-		servers: DataObjectInstanceServers,
+		val servers: DataObjectInstanceServers,
 		sparql: SparqlRunner,
 		etcHelper: EtcUploadTransformer,
 		conf: UploadServiceConfig

@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import org.eclipse.rdf4j.model.Namespace
@@ -72,19 +73,26 @@ object InstanceServerSerializer {
 		ContentType(mediaType, () => utf8)
 	}
 
-	private def getResponse(producer: StatementProducer, contType: ContentType, writerFactory: RDFWriterFactory): HttpResponse = {
+	private def getResponse(
+		producer: StatementProducer,
+		contType: ContentType,
+		writerFactory: RDFWriterFactory
+	)(implicit ctxt: ExecutionContext): HttpResponse = {
+
 		val entityBytes = StreamConverters.asOutputStream().mapMaterializedValue{ outStr =>
-			val statements = producer.statements
-			try{
-				val rdfWriter = writerFactory.getWriter(outStr)
-				rdfWriter.startRDF()
-				producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
-				statements.foreach(rdfWriter.handleStatement)
-				rdfWriter.endRDF()
-			}finally{
-				outStr.close()
-				statements.close()
-			}
+			ctxt.execute(() => {
+				val statements = producer.statements
+				try{
+					val rdfWriter = writerFactory.getWriter(outStr)
+					rdfWriter.startRDF()
+					producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
+					statements.foreach(rdfWriter.handleStatement)
+					rdfWriter.endRDF()
+				}finally{
+					outStr.close()
+					statements.close()
+				}
+			})
 		}
 		HttpResponse(entity = HttpEntity(contType, entityBytes))
 	}

@@ -60,9 +60,11 @@ function oneOfValueValidator(allowedStrings){
 }
 
 var xsd = "http://www.w3.org/2001/XMLSchema#";
+var rdfs = "http://www.w3.org/2000/01/rdf-schema#";
 
 var dataTypeValidators = _.object([
 	[xsd + "string", stringValidator],
+	[rdfs + "Literal", stringValidator],
 	[xsd + "integer", intValidator],
 	[xsd + "boolean", boolValidator],
 	[xsd + "double", doubleValidator],

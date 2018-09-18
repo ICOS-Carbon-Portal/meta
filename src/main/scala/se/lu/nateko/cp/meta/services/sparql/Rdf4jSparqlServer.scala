@@ -41,14 +41,15 @@ import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
+import akka.event.LoggingAdapter
 
 
-class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends SparqlServer{
+class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
 	//TODO Change the SPARQL scheduler back to newCachedThreadPool when the updates to nativerdf have been merged
 	//private val sparqlExe = Executors.newCachedThreadPool()
-	private val sparqlExe = Executors.newFixedThreadPool(2)
+	private val sparqlExe = Executors.newFixedThreadPool(3)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
 	private val quoter = new QuotaManager(config)(Instant.now _)
@@ -70,7 +71,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 				plainResponse(StatusCodes.ServiceUnavailable, _)
 			}
 		}(exeCtxt) //using Akka-provided ExecutionContext to handle the "outer shell" part of response marshalling
-		           //(that is, everything except the actual SPARQL query evaluation, which is done by javaExe thread pool)
+		           //(that is, everything except the actual SPARQL query evaluation, which is done by sparqlExe thread pool)
 	)
 
 	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = {
@@ -131,7 +132,9 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig) extends Sp
 				})
 
 				canceller.schedule(
-					() => if(!qquoter.streamingStarted) sparqlFut.cancel(true),
+					() => if(qquoter.keepRunningIndefinitely)
+							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
+						else sparqlFut.cancel(true),
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)

@@ -11,6 +11,7 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 	private[this] val idGen = new AtomicLong(0)
 	private type ClientHistory = TrieMap[QueryId, QueryRun]
 	private[this] val q = TrieMap.empty[ClientId, ClientHistory]
+	private[this] val longRunning = new AtomicLong(-1)
 
 	def logNewQueryStart(clientId: ClientId): QueryQuotaManager = {
 		val id = idGen.incrementAndGet()
@@ -66,14 +67,18 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		private def ageAt(i: Instant): Float = (i.toEpochMilli - start.toEpochMilli).toFloat / 1000
 	}
 
-	class QueryQuotaManager(cid: ClientId, qid: QueryId){
+	class QueryQuotaManager(val cid: ClientId, val qid: QueryId){
 		private def runInfo = q.get(cid).flatMap(_.get(qid))
 
-		def isOngoing = runInfo.fold(false)(_.isOngoing)
-		def streamingStarted = runInfo.fold(false)(_.streamingStarted)
+		private def isOngoing = runInfo.fold(false)(_.isOngoing)
+		private def streamingStarted = runInfo.fold(false)(_.streamingStarted)
 
-		def logQueryFinish(): Unit =
+		def keepRunningIndefinitely: Boolean = isOngoing && streamingStarted && longRunning.compareAndSet(-1, qid)
+
+		def logQueryFinish(): Unit = {
+			longRunning.compareAndSet(qid, -1)
 			updateQueryRun{(run, time) => run.copy(stop = time)}
+		}
 
 		def logQueryStreamingStart(): Unit =
 			updateQueryRun{(run, time) => run.copy(streamingStart = time)}

@@ -38,6 +38,8 @@ class Form(
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
+	val previousVersionInput = new HashInput("previoushash", updateButton)
+
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
@@ -48,6 +50,7 @@ class Form(
 	def dto: Try[UploadMetadataDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
+		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
@@ -68,7 +71,7 @@ class Form(
 				production = None
 			)
 		),
-		isNextVersionOf = None,
+		isNextVersionOf = previousVersion,
 		preExistingDoi = None
 	)
 }
@@ -131,7 +134,7 @@ class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext)
 	}
 }
 
-class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext){
+class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) {
 	private[this] val input = getElement[html.Input](elemId).get
 	private[this] var _instant: Try[Instant] = fail("no timestamp provided")
 
@@ -141,18 +144,44 @@ class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionConte
 		val oldInstant = _instant
 		_instant = Try(Instant.parse(input.value))
 
-		if(_instant.isSuccess || input.value.isEmpty){
-			input.style.backgroundColor = null
+		if (_instant.isSuccess || input.value.isEmpty) {
 			input.title = ""
+			input.parentElement.classList.remove("has-error")
 		} else {
-			input.style.backgroundColor = "lightcoral"
 			input.title = _instant.failed.map(_.getMessage).getOrElse("")
+			input.parentElement.classList.add("has-error")
 		}
 
 		if(oldInstant.isSuccess != _instant.isSuccess) cb()
 	}
 
 	if(!input.value.isEmpty){
+		ctxt.execute(() => input.oninput(null))
+	}
+}
+
+class HashInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) {
+	private[this] val input = getElement[html.Input](elemId).get
+	private[this] var _value: Try[Option[Sha256Sum]] = fail("incorect hashsum provided")
+
+	def value: Try[Option[Sha256Sum]] = {
+		if (input.value == null || input.value.trim.isEmpty) Success(None)
+		else Sha256Sum.fromString(input.value).map(Some(_))
+	}
+
+	input.oninput = _ => {
+		_value = value
+
+		if (input.value.isEmpty || value.isSuccess) {
+			input.parentElement.classList.remove("has-error")
+		} else {
+			input.parentElement.classList.add("has-error")
+		}
+
+		cb()
+	}
+
+	if (!input.value.isEmpty) {
 		ctxt.execute(() => input.oninput(null))
 	}
 }

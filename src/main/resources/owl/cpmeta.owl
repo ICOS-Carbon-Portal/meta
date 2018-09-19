@@ -707,6 +707,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasPolicy"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon">
@@ -1264,6 +1274,12 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme"/>

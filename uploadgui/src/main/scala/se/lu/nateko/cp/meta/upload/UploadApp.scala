@@ -44,7 +44,7 @@ object UploadApp {
 		whenDone{
 			Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 		}(doi => {
-			showAlert(s"Data uploaded! View metadata: https://doi.org/$doi", "alert alert-success")
+			showAlert(s"Data uploaded! <a class='alert-link' href='https://doi.org/$doi'>View metadata</a>", "alert alert-success")
 		})
 	}
 }

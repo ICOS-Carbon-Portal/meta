@@ -31,7 +31,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec);
-		_ <- validatePreviousVersion(meta.isNextVersionOf, spec)
+		_ <- validatePreviousVersion(meta.hashSum, meta.isNextVersionOf, spec)
 	) yield NotUsed
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
@@ -44,7 +44,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 	def getSubmitterConfig(submitterId: String)(implicit envri: Envri): Try[DataSubmitterConfig] = {
 		conf.submitters(envri).get(submitterId) match {
-			case None => Failure(new UploadUserErrorException(s"Unknown submitter: $submitterId"))
+			case None => userFail(s"Unknown submitter: $submitterId")
 			case Some(conf) => Success(conf)
 		}
 	}
@@ -55,20 +55,16 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 				oldFormat <- servers.getDataObjSpecification(meta.hashSum).flatMap(servers.getObjSpecificationFormat)
 			) yield
-				if(oldFormat === newFormat) ok else Failure{
-					new UnauthorizedUploadException(
-						s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
-					)
-				}
+				if(oldFormat === newFormat) ok else authFail(
+					s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
+				)
 		).getOrElse(ok)
 
 		formatValidation.flatMap{_ =>
 			servers.getDataObjSubmitter(meta.hashSum).map{subm =>
-				if(subm === submittingOrg) ok else Failure{
-					new UnauthorizedUploadException(
-						s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
-					)
-				}
+				if(subm === submittingOrg) ok else authFail(
+					s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
+				)
 			}.getOrElse(ok)
 		}
 	}
@@ -76,7 +72,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[NotUsed] = {
 		val userId = uploader.email
 		if(!submConf.authorizedUserIds.contains(userId))
-			Failure(new UnauthorizedUploadException(s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'"))
+			authFail(s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'")
 		else ok
 	}
 
@@ -85,24 +81,20 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			if(creator === submConf.submittingOrganization)
 				ok
 			else
-				Failure(new UnauthorizedUploadException(s"Collection already exists and was submitted by $creator, " +
-					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}"))
+				authFail(s"Collection already exists and was submitted by $creator, " +
+					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}")
 		}.getOrElse(ok)
 
 	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(implicit envri: Envri): Try[NotUsed] = {
 
 		if(!servers.collectionExists(hash) && coll.members.isEmpty)
-			Failure(
-				new UploadUserErrorException("Creating empty static collections is not allowed")
-			)
+			userFail("Creating empty static collections is not allowed")
 		else
 			coll.members.find{item =>
 				!servers.collectionExists(item.toRdf) && !servers.dataObjExists(item.toRdf)
 			} match {
 				case None => ok
-				case Some(item) => Failure(
-					new UploadUserErrorException(s"Neither collection nor data object was found at $item")
-				)
+				case Some(item) => userFail(s"Neither collection nor data object was found at $item")
 			}
 	}
 
@@ -161,20 +153,20 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				}
 		}
 
-		if(errors.isEmpty) ok
-		else Failure(new UploadUserErrorException(errors.mkString("\n")))
+		if(errors.isEmpty) ok else userFail(errors.mkString("\n"))
 	}
 
-	private def validatePreviousVersion(prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
+	private def validatePreviousVersion(self: Sha256Sum, prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
 		prevVers match{
 			case None => ok
 			case Some(prevHash) => servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>
 				val dobj = servers.vocab.getDataObject(prevHash)
-
-				if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
+				if(prevHash == self)
+					userFail("Data object cannot be a next version of itself")
+				else if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
 					ok
 				else
-					Failure(new UploadUserErrorException(s"Previous-version data object was not found: $dobj"))
+					userFail(s"Previous-version data object was not found: $dobj")
 			}
 		}
 	}
@@ -184,6 +176,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			if(servers.collectionExists(coll))
 				ok
 			else
-				Failure(new UploadUserErrorException(s"Previous-version collection was not found: $coll"))
+				userFail(s"Previous-version collection was not found: $coll")
 		}.getOrElse(ok)
+
+		private def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
+		private def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 }

@@ -22,7 +22,7 @@ class Form(
 	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file) {
 		onUpload(dto, file)
 	}
-	val button = new SubmitButton("submitbutton", submitAction)
+	val button = new SubmitButton("submitbutton", () => submitAction())
 	val updateButton: () => Unit = () => dto match{
 		case Success(_) => button.enable()
 		case Failure(err) => button.disable(err.getMessage)
@@ -38,6 +38,8 @@ class Form(
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
+	val previousVersionInput = new HashInput("previoushash", updateButton)
+
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
@@ -48,11 +50,12 @@ class Form(
 	def dto: Try[UploadMetadataDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
+		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
-		acqStart <- acqStartInput.instant.withErrorContext("Acqusition start");
-		acqStop <- acqStopInput.instant.withErrorContext("Acqusition stop")
+		acqStart <- acqStartInput.value.withErrorContext("Acqusition start");
+		acqStop <- acqStopInput.value.withErrorContext("Acqusition stop")
 	) yield UploadMetadataDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -68,7 +71,7 @@ class Form(
 				production = None
 			)
 		),
-		isNextVersionOf = None,
+		isNextVersionOf = previousVersion,
 		preExistingDoi = None
 	)
 }
@@ -131,29 +134,42 @@ class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext)
 	}
 }
 
-class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext){
-	private[this] val input = getElement[html.Input](elemId).get
-	private[this] var _instant: Try[Instant] = fail("no timestamp provided")
+abstract class GenericInput[T](elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) {
+	protected[this] val input: html.Input = getElement[html.Input](elemId).get
+	protected[this] var _value: Try[T]
 
-	def instant = _instant
+	def value: Try[T]
 
 	input.oninput = _ => {
-		val oldInstant = _instant
-		_instant = Try(Instant.parse(input.value))
+		val oldValue = _value
+		_value = value
 
-		if(_instant.isSuccess || input.value.isEmpty){
-			input.style.backgroundColor = null
+		if (_value.isSuccess || input.value.isEmpty) {
 			input.title = ""
+			input.parentElement.classList.remove("has-error")
 		} else {
-			input.style.backgroundColor = "lightcoral"
-			input.title = _instant.failed.map(_.getMessage).getOrElse("")
+			input.title = _value.failed.map(_.getMessage).getOrElse("")
+			input.parentElement.classList.add("has-error")
 		}
 
-		if(oldInstant.isSuccess != _instant.isSuccess) cb()
+		if(oldValue.isSuccess != _value.isSuccess) cb()
 	}
 
 	if(!input.value.isEmpty){
 		ctxt.execute(() => input.oninput(null))
+	}
+}
+
+class InstantInput(elemId: String, cb: () => Unit) extends GenericInput[Instant](elemId: String, cb: () => Unit) {
+	override protected var _value: Try[Instant] = fail("no timestamp provided")
+	override def value: Try[Instant] = Try(Instant.parse(input.value))
+}
+
+class HashInput(elemId: String, cb: () => Unit) extends GenericInput[Option[Sha256Sum]](elemId: String, cb: () => Unit) {
+	override protected var _value: Try[Option[Sha256Sum]] = Success(None)
+	override def value: Try[Option[Sha256Sum]] = {
+		if (input.value == null || input.value.trim.isEmpty) Success(None)
+		else Sha256Sum.fromString(input.value).map(Some(_))
 	}
 }
 

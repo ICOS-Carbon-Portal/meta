@@ -1,8 +1,11 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.language.postfixOps
+
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.headers.`Content-Disposition`
 import akka.http.scaladsl.server.Directives._
@@ -15,6 +18,8 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.ConfigLoader.dObjGraphInfoFormat
+import spray.json.DefaultJsonProtocol._
 
 object LinkedDataRoute {
 	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller
@@ -68,6 +73,11 @@ object LinkedDataRoute {
 			} ~
 			pathPrefix("ontologies" | "resources" | "objects" | "files"){
 				genericRdfUriResourcePage
+			} ~
+			path("config" / "dataObjectGraphInfos"){
+				respondWithHeader(`Access-Control-Allow-Origin`.*){
+					complete(MetaDb.getDobjGraphInfos(config))
+				}
 			}
 		}
 	}

@@ -25,6 +25,15 @@ object StaticRoute {
 
 		val extractEnvri = extractEnvriDirective
 
+		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = pathPrefix(pathPref){
+			extractEnvri{envri =>
+				pathSingleSlash {
+					complete(views.html.UploadGuiPage(devVersion, envri, authConf))
+				} ~
+				path(Segment){getFromResource}
+			}
+		}
+
 		pathPrefix("edit" / Segment){ontId =>
 			path("metaentry.js"){
 				getFromResource("www/metaentry.js")
@@ -38,17 +47,8 @@ object StaticRoute {
 				}
 			}
 		} ~
-		extractEnvri{envri =>
-
-			def uploadGuiRoute(devVersion: Boolean): Route =
-				pathSingleSlash {
-					complete(views.html.UploadGuiPage(devVersion, envri, authConf))
-				} ~
-				path(Segment){getFromResource}
-
-			pathPrefix("uploadgui"){uploadGuiRoute(false)} ~
-			pathPrefix("uploadguidev"){uploadGuiRoute(true)}
-		} ~
+		uploadGuiRoute("uploadgui", false) ~
+		uploadGuiRoute("uploadguidev", true) ~
 		pathPrefix(Segment){page =>
 			if(pages.isDefinedAt(page)) {
 				pathSingleSlash{

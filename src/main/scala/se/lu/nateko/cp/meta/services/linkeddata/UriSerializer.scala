@@ -10,12 +10,15 @@ import scala.concurrent.Future
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.RepositoryConnection
 
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
@@ -74,7 +77,13 @@ class Rdf4jUriSerializer(repo: Repository, servers: DataObjectInstanceServers)(i
 	private def getJsonFetcher(uri: Uri)(implicit ctxt: ExecutionContext): Future[Option[() => HttpResponse]] = Future{
 		import servers.metaVocab
 		val subj = metaVocab.factory.createIRI(uri.toString)
-		val isObjSpec = repo.accessEagerly(_.hasStatement(null, metaVocab.hasObjectSpec, subj, false))
+
+		val isObjSpec = repo.accessEagerly{ implicit conn =>
+			conn.getStatements(subj, RDF.TYPE, null, false).asScalaIterator.exists{st =>
+				isA(st.getObject, metaVocab.dataObjectSpecClass)
+			}
+		}
+
 		if(isObjSpec){
 			implicit val envri = inferEnvri(uri)
 			import se.lu.nateko.cp.meta.core.data.JsonSupport.dataObjectSpecFormat
@@ -82,6 +91,14 @@ class Rdf4jUriSerializer(repo: Repository, servers: DataObjectInstanceServers)(i
 			Some(() => getJson(servers.getDataObjSpecification(subj).toOption))
 		}else
 			None
+	}
+
+	private def isA(subClass: Value, superClass: IRI)(implicit conn: RepositoryConnection): Boolean = subClass match {
+		case sub: Resource =>
+			superClass == sub || conn.getStatements(sub, RDFS.SUBCLASSOF, null, false).asScalaIterator.exists{
+				st => isA(st.getObject, superClass)
+			}
+		case _ => false
 	}
 }
 

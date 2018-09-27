@@ -10,8 +10,13 @@ import org.scalajs.dom.{document, html}
 
 object Utils {
 
-	def getElement[T <: html.Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
+	def getElementById[T <: html.Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
 		case input: T => Some(input)
+		case _ => None
+	}
+
+	def querySelector[T <: html.Element : ClassTag](parent: html.Element, selector: String): Option[T] = parent.querySelector(selector) match {
+		case element: T => Some(element)
 		case _ => None
 	}
 
@@ -22,7 +27,7 @@ object Utils {
 	}
 
 	def showAlert(message: String, alertType: String): Unit = {
-		val element = getElement[html.Div]("alert-placeholder").get
+		val element = getElementById[html.Div]("alert-placeholder").get
 		element.setAttribute("class", alertType)
 		element.innerHTML = message
 	}

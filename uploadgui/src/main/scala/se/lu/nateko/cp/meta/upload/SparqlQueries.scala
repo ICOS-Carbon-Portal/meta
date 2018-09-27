@@ -39,8 +39,9 @@ object SparqlQueries {
 	private val sitesObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
 		|FROM <https://meta.fieldsites.se/resources/sites/>
+		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|WHERE {
-		|	?spec a cpmeta:DataObjectSpec ;
+		|	?spec a/rdfs:subClassOf* cpmeta:DataObjectSpec ;
 		|		rdfs:label ?name ;
 		|		cpmeta:hasDataLevel ?dataLevel .
 		|} order by ?name""".stripMargin
@@ -48,8 +49,9 @@ object SparqlQueries {
 	private val icosObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
 		|FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|WHERE {
-		|	?spec a cpmeta:DataObjectSpec ;
+		|	?spec a/rdfs:subClassOf* cpmeta:DataObjectSpec ;
 		|		rdfs:label ?name ;
 		|		cpmeta:hasDataLevel ?dataLevel .
 		|} order by ?name""".stripMargin

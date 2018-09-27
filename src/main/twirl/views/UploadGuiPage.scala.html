@@ -21,7 +21,6 @@
 	.form-element {
 		display: block;
 	}
-	input,
 	select {
 		width: 100%;
 	}
@@ -45,12 +44,35 @@
 					<input id="fileinput" type="file" placeholder="Select file for upload">
 				</div>
 				<div class="form-group">
+					<label for="level-radio">Level</label>
+					<div>
+						<div id="level-radio">
+							<label class="radio-inline">
+								<input type="radio" name="level" value="0" class="js-level">
+								0
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="level" value="1" class="js-level">
+								1
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="level" value="2" class="js-level">
+								2
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
 					<label>Previous version of this file <em class="text-muted">- optional</em></label>
 					<input type="text" id="previoushash" class="form-element form-control" placeholder="hashsum">
 				</div>
 				<div class="form-group">
 					<label for="objspecselect">Data type</label>
-					<select id="objspecselect" class="form-element"></select>
+					<select id="objspecselect" class="form-element" disabled></select>
+				</div>
+				<div class="form-group">
+					<label>Number of rows <em class="text-muted">- optional</em></label>
+					<input type="number" id="nrows" class="form-element form-control" min="0" disabled>
 				</div>
 			</section>
 			<section>
@@ -68,11 +90,11 @@
 				</div>
 				<div class="form-group">
 					<label for="acqstartinput">From (UTC)</label>
-					<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
+					<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
 				</div>
 				<div class="form-group">
 					<label for="acqstopinput">To (UTC)</label>
-					<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
+					<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
 				</div>
 			</section>
 			<button id="submitbutton" type="button" class="btn btn-primary btn-submit form-control">Upload</button>

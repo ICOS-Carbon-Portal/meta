@@ -3,6 +3,8 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
@@ -13,31 +15,30 @@ object UploadApp {
 	def main(args: Array[String]): Unit = {
 
 		whenDone(Backend.fetchConfig) {
-			case InitAppInfo(Some(_), envri, _) =>
-				implicit val envr = envri
-				val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
-				displayForm()
-
-				whenDone {
-					Backend.getObjSpecs.map(_.filter(_.dataLevel == 0))
-				}(form.objSpecSelect.setOptions)
-
-				whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
-
+			case InitAppInfo(Some(_), envri, envriConf) => setupForm(envri, envriConf)
 			case InitAppInfo(None, _, envriConf) => displayLoginButton(envriConf.authHost)
 		}
+	}
+
+	private def setupForm(envri: Envri, envriConf: EnvriConfig) = {
+		implicit val envr = envri
+		implicit val envrConf = envriConf
+		val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
+		displayForm()
+
+		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 	}
 
 	def displayLoginButton(authHost: String): Unit = {
 		val url = URIUtils.encodeURI(dom.window.location.href)
 		val href = s"https://$authHost/login/?targetUrl=$url"
-		getElement[html.Anchor]("login-button").get.setAttribute("href", href)
-		getElement[html.Div]("login-block").get.style.display = "block"
+		getElementById[html.Anchor]("login-button").get.setAttribute("href", href)
+		getElementById[html.Div]("login-block").get.style.display = "block"
 	}
 
 	def displayForm(): Unit = {
-		getElement[html.Div]("login-block").get.style.display = "none"
-		getElement[html.Form]("form-block").get.style.display = "block"
+		getElementById[html.Div]("login-block").get.style.display = "none"
+		getElementById[html.Form]("form-block").get.style.display = "block"
 	}
 
 	def upload(dto: UploadMetadataDto, file: dom.File): Unit = {

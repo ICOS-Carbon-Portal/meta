@@ -5,7 +5,8 @@ import java.time.Instant
 import org.scalajs.dom
 import org.scalajs.dom.{document, html}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.data.{Envri, TimeInterval}
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, UploadMetadataDto}
 
 import scala.concurrent.ExecutionContext
@@ -17,15 +18,36 @@ import Utils._
 class Form(
 	onUpload: (UploadMetadataDto, dom.File) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
-) {
+)(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
-	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file) {
-		onUpload(dto, file)
+	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file; nRows <- nRowsInput.value) {
+		whenDone(Backend.tryIngestion(file, dto.objectSpecification, nRows)){ msg =>
+			if (msg.isEmpty) {
+				onUpload(dto, file)
+			} else {
+				showAlert(msg, "alert alert-error")
+			}
+		}
 	}
 	val button = new SubmitButton("submitbutton", () => submitAction())
 	val updateButton: () => Unit = () => dto match{
 		case Success(_) => button.enable()
 		case Failure(err) => button.disable(err.getMessage)
+	}
+
+	val onLevelSelected: Int => Unit = (level: Int) => {
+		whenDone{
+			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
+		}(objSpecSelect.setOptions)
+		if (level == 0) {
+			nRowsInput.disable()
+			acqStartInput.enable()
+			acqStopInput.enable()
+		} else {
+			nRowsInput.enable()
+			acqStartInput.disable()
+			acqStopInput.disable()
+		}
 	}
 
 	val onSubmitterSelected: () => Unit = () =>
@@ -39,14 +61,17 @@ class Form(
 	val fileInput = new FileInput("fileinput", updateButton)
 
 	val previousVersionInput = new HashInput("previoushash", updateButton)
-
+	val levelControl = new Radio("level-radio", onLevelSelected)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
+	val nRowsInput = new NRowsInput("nrows", updateButton)
+
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
 
+	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput, levelControl)
 	def dto: Try[UploadMetadataDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
@@ -54,8 +79,8 @@ class Form(
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
-		acqStart <- acqStartInput.value.withErrorContext("Acqusition start");
-		acqStop <- acqStopInput.value.withErrorContext("Acqusition stop")
+		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interfal");
+		nRows <- nRowsInput.value.withErrorContext("Number of rows")
 	) yield UploadMetadataDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -66,8 +91,8 @@ class Form(
 				station = station.uri,
 				instrument = None,
 				samplingHeight = None,
-				acquisitionInterval = Some(TimeInterval(acqStart, acqStop)),
-				nRows = None,
+				acquisitionInterval = acqInterval,
+				nRows = nRows,
 				production = None
 			)
 		),
@@ -77,7 +102,7 @@ class Form(
 }
 
 class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
-	private val select = getElement[html.Select](elemId).get
+	private val select = getElementById[html.Select](elemId).get
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
 
 	select.onchange = _ => cb()
@@ -110,7 +135,7 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 }
 
 class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext){
-	private val fileInput = getElement[html.Input](elemId).get
+	private val fileInput = getElementById[html.Input](elemId).get
 	private var _hash: Try[Sha256Sum] = file.flatMap(_ => fail("hashsum computing has not started yet"))
 
 	def file: Try[dom.File] = if(fileInput.files.length > 0) Success(fileInput.files(0)) else fail("no file chosen")
@@ -134,8 +159,35 @@ class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext)
 	}
 }
 
+class Radio(elemId: String, cb: Int => Unit)(implicit ctxt: ExecutionContext) {
+	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
+	protected[this] var _value: Option[Int] = None
+
+	def value: Option[Int] = _value
+
+	inputBlock.onchange = _ => {
+		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value.toInt)
+		_value.foreach(cb)
+	}
+
+	if(querySelector[html.Input](inputBlock, "input[type=radio]:checked").isDefined){
+		ctxt.execute(() => inputBlock.onchange(null))
+	}
+}
+
+class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput, level: Radio){
+	def value: Try[Option[TimeInterval]] = level.value match {
+		case Some(0) =>
+			for(
+				from <- fromInput.value.withErrorContext("Acqusition start");
+				to <- toInput.value.withErrorContext("Acqusition stop")
+			) yield Some(TimeInterval(from, to))
+		case _ => Success(None)
+	}
+}
+
 abstract class GenericInput[T](elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) {
-	protected[this] val input: html.Input = getElement[html.Input](elemId).get
+	protected[this] val input: html.Input = getElementById[html.Input](elemId).get
 	protected[this] var _value: Try[T]
 
 	def value: Try[T]
@@ -153,6 +205,14 @@ abstract class GenericInput[T](elemId: String, cb: () => Unit)(implicit ctxt: Ex
 		}
 
 		if(oldValue.isSuccess != _value.isSuccess) cb()
+	}
+
+	def enable(): Unit = {
+		input.disabled = false
+	}
+
+	def disable(): Unit = {
+		input.disabled = true
 	}
 
 	if(!input.value.isEmpty){
@@ -173,8 +233,16 @@ class HashInput(elemId: String, cb: () => Unit) extends GenericInput[Option[Sha2
 	}
 }
 
+class NRowsInput(elemId: String, cb: () => Unit) extends GenericInput[Option[Int]](elemId: String, cb: () => Unit) {
+	override protected[this] var _value: Try[Option[Int]] = Success(None)
+	override def value: Try[Option[Int]] = {
+		if (input.value == null || input.value.trim.isEmpty) Success(None)
+		else Try(Some(input.value.toInt))
+	}
+}
+
 class SubmitButton(elemId: String, onSubmit: () => Unit){
-	private[this] val button = getElement[html.Button](elemId).get
+	private[this] val button = getElementById[html.Button](elemId).get
 
 	def enable(): Unit = {
 		button.disabled = false

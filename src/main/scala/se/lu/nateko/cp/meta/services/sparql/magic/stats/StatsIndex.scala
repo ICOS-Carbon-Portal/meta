@@ -91,6 +91,7 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 
 					case `hasObjectSpec` =>
 						modForDobj(subj)(_.spec = targetUri)
+						//modForDobj(subj){e => if(isAssertion || e.spec == obj) e.spec = targetUri}//double spec possible temporarily
 
 					case `wasSubmittedBy` =>
 						modForDobj(subj)(_.hasSubmission = isAssertion)

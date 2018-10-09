@@ -12,7 +12,6 @@ import org.scalajs.dom.raw.File
 import org.scalajs.dom.raw.FileReader
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import scala.scalajs.js.JSON
 
 object FileHasher {
 

@@ -6,7 +6,8 @@ import java.time.LocalDate
 import java.util.Locale
 
 import BadmConsts._
-import com.opencsv.CSVReader
+import com.opencsv.CSVParserBuilder
+import com.opencsv.CSVReaderBuilder
 
 import spray.json.JsArray
 import spray.json.JsNumber
@@ -47,7 +48,8 @@ object Parser {
 
 	def getCsvRows(csvStream: String): Stream[Array[String]] = {
 		val reader = new StringReader(csvStream)
-		val csvReader = new CSVReader(reader, ',', '"')
+		val csvParser = new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build
+		val csvReader = new CSVReaderBuilder(reader).withCSVParser(csvParser).build
 		val iter = csvReader.iterator()
 
 		def getStream: Stream[Array[String]] = {

@@ -64,7 +64,7 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient) {
 object PageContentMarshalling{
 
 	val twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
-		implicit exeCtxt => html => Future.successful(
+		_ => html => Future.successful(
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)
 	)

@@ -14,7 +14,7 @@ class MultiComponentIndividualLabeler(
 	private val compMakers = components.map{
 		case DataPropComponent(prop) => getComponent(prop) _
 		case ObjectPropComponent(prop) => getComponent(prop) _
-		case ConstantComponent(value) => (instUri: IRI, instServer: InstanceServer) => value
+		case ConstantComponent(value) => (_: IRI, _: InstanceServer) => value
 	}
 
 	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {

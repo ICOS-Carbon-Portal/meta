@@ -92,7 +92,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 					complete(service.getLabelingUserInfo(user))
 				}
 			} ~
-			path("filepack" / Segment){ fileName =>
+			path("filepack" / Segment){ _ =>
 				parameter("stationId".as[URI]){stationId =>
 					complete(service.getFilePack(stationId))
 				}

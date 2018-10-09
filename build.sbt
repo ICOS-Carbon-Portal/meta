@@ -1,5 +1,5 @@
 organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.12.6"
+scalaVersion in ThisBuild := "2.12.7"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -33,9 +33,9 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.5.14"
-val akkaHttpVersion = "10.1.3"
-val rdf4jVersion = "2.3.0"
+val akkaVersion = "2.5.17"
+val akkaHttpVersion = "10.1.5"
+val rdf4jVersion = "2.4.0"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
@@ -51,7 +51,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.4.1",
+		version := "0.4.2",
 		scalacOptions ++= jvmScalacOptions,
 
 		libraryDependencies ++= Seq(

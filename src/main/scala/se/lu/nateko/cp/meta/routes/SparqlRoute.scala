@@ -1,5 +1,8 @@
 package se.lu.nateko.cp.meta.routes
 
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletionException
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -15,6 +18,7 @@ import akka.http.scaladsl.server.RouteResult.Complete
 import akka.http.scaladsl.server.RouteResult.Rejected
 import akka.stream.Materializer
 import akka.stream.scaladsl.Concat
+import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -78,12 +82,24 @@ object SparqlRoute {
 			implicit mat: Materializer, exe: ExecutionContext
 	): Future[HttpResponse] = {
 
-		val queue = resp.entity.dataBytes.runWith(Sink.queue[ByteString])
+		val (respMat, queue) = resp.entity.dataBytes.toMat(Sink.queue[ByteString])(Keep.both).run()
+
+		def respondWith(data: Source[ByteString, Any]) = resp.withEntity(HttpEntity(resp.entity.contentType, data))
 
 		queue.pull().map{
 
 			case None => //empty original entity
-				HttpResponse(StatusCodes.ServiceUnavailable, entity = "Empty query result, probably due to execution timeout")
+				val sparqlErr: Option[Throwable] = respMat match{
+					case fut: Future[Any] => fut.value.flatMap(_.failed.toOption)
+					case _ => None
+				}
+
+				sparqlErr.fold(respondWith(Source.empty)){
+					case cexc: CompletionException if(cexc.getCause.isInstanceOf[CancellationException]) =>
+						HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
+					case err: Throwable =>
+						HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage)
+				}
 
 			case Some(first) =>
 				val restSrc = Source.unfoldAsync(queue)(q => q.pull().map(_.map(q -> _)))
@@ -93,7 +109,7 @@ object SparqlRoute {
 						done.onComplete(_ => queue.cancel())
 					})
 
-				resp.withEntity(HttpEntity(resp.entity.contentType, data))
+				respondWith(data)
 		}
 	}
 }

@@ -23,6 +23,7 @@ import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
 
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -36,20 +37,18 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
 import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
-import akka.event.LoggingAdapter
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
 	import Rdf4jSparqlServer._
 
-	//TODO Change the SPARQL scheduler back to newCachedThreadPool when the updates to nativerdf have been merged
-	//private val sparqlExe = Executors.newCachedThreadPool()
-	private val sparqlExe = Executors.newFixedThreadPool(3)
+	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
 	private val quoter = new QuotaManager(config)(Instant.now _)
@@ -79,8 +78,8 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		val qquoter = quoter.logNewQueryStart(query.clientId)
 
 		val onDone = () => {
-			conn.close()
 			qquoter.logQueryFinish()
+			conn.close()
 		}
 
 		try{
@@ -119,17 +118,12 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
-			val entityBytes = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
+			val entityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val sparqlFut = CompletableFuture.runAsync(
 					() => protocolOption.evaluator.evaluate(query, outStr),
 					sparqlExe
 				)
-
-				sparqlFut.whenComplete((_, _) => {
-					try{outStr.flush(); outStr.close()}
-					finally{onDone()}
-				})
 
 				canceller.schedule(
 					() => if(qquoter.keepRunningIndefinitely)
@@ -138,14 +132,19 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
-				sparqlFut
+
+				sparqlFut.whenComplete((_, _) =>
+					try{outStr.flush(); outStr.close()}
+					finally{onDone()}
+				)
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaCanceller)
 				)
-			).watchTermination()((sparqlFut, doneFut) => {
+			).watchTermination(){(sparqlFut, doneFut) =>
 				doneFut.onComplete(_ => sparqlFut.cancel(true))(scalaCanceller)
-			})
+				scala.compat.java8.FutureConverters.toScala(sparqlFut)
+			}
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}

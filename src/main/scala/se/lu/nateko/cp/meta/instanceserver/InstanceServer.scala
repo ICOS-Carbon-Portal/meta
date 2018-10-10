@@ -66,7 +66,7 @@ trait InstanceServer {
 	}
 
 	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[IRI] = {
-		val values = getValues(subj, pred).collect{case uri: IRI => uri}
+		val values = getValues(subj, pred).collect{case uri: IRI => uri}.distinct
 		assertCardinality(values.size, exp, s"IRI value(s) of $pred for $subj")
 		values
 	}
@@ -74,7 +74,7 @@ trait InstanceServer {
 	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): Seq[String] = {
 		val values = getValues(subj, pred).collect{
 			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
-		}
+		}.distinct
 		assertCardinality(values.size, exp, s"${dType.getLocalName} value(s) of $pred for $subj")
 		values
 	}

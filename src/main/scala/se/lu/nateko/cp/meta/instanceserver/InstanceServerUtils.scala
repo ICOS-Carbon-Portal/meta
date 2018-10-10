@@ -12,11 +12,10 @@ object InstanceServerUtils {
 	 * The type owl:NamedIndividual is disregarded.
 	 */
 	def getSingleTypeIfAny(instUri: IRI, instServer: InstanceServer): Option[IRI] = {
-		val namedIndivid = instServer.factory.createIRI(OWL.NAMESPACE, "NamedIndividual")
 
 		val types = instServer.getValues(instUri, RDF.TYPE).collect{
-			case classUri: IRI if classUri != namedIndivid => classUri
-		}
+			case classUri: IRI if classUri != OWL.NAMEDINDIVIDUAL => classUri
+		}.distinct
 
 		assert(types.size <= 1, s"Expected individual $instUri to have at most one type, but it had ${types.size}")
 		types.headOption
@@ -26,14 +25,6 @@ object InstanceServerUtils {
 		val typeIfAny = getSingleTypeIfAny(instUri, instServer)
 		assert(typeIfAny.isDefined, s"Instance $instUri has no type")
 		typeIfAny.get
-	}
-
-	def getSingleLitValue(instUri: IRI, prop: IRI, instServer: InstanceServer): Literal = {
-		val lits = instServer.getValues(instUri, prop).collect{case lit: Literal => lit}
-
-		assert(lits.size == 1, s"Expected exactly one literal value of $prop for $instUri, but got ${lits.size}")
-
-		lits.head
 	}
 
 }

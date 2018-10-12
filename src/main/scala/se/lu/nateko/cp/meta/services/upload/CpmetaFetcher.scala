@@ -87,7 +87,8 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	private def getOrgClass(subj: IRI): OrganizationClass = {
 		val vocab = metaVocab
-		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, stationClass, tcClass }
+		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass}
+		import vocab.{stationClass, ingosStationClass, wdcggStationClass, tcClass }
 		import OrganizationClass._
 
 		val themes = server.getValues(subj, RDF.TYPE).collect{
@@ -96,7 +97,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			case `oceStationClass` => OS
 			case `tcClass` => TC
 			case `cfClass` => CF
-			case `stationClass` => Station
+			case `wdcggStationClass` | `ingosStationClass` | `stationClass` => Station
 			case `orgClass` => Org
 		}
 		themes.headOption.getOrElse(Org)

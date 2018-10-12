@@ -8,6 +8,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	implicit val bup = makeUriProvider(CpmetaVocab.MetaPrefix)
 
 	val stationClass = getRelative("Station")
+	val ingosStationClass = getRelative("IngosStation")
+	val wdcggStationClass = getRelative("WdcggStation")
 	val atmoStationClass = getRelative("AS")
 	val ecoStationClass = getRelative("ES")
 	val oceStationClass = getRelative("OS")
@@ -25,6 +27,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val spatialCoverageClass = getRelative("SpatialCoverage")
 	val latLonBoxClass = getRelative("LatLonBox")
 
+	val hasElevation = getRelative("hasElevation")
 	val hasLatitude = getRelative("hasLatitude")
 	val hasNothernBound = getRelative("hasNothernBound")
 	val hasSouthernBound = getRelative("hasSouthernBound")
@@ -34,7 +37,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasSamplingHeight = getRelative("hasSamplingHeight")
 	val hasName = getRelative("hasName")
 	val hasStationId = getRelative("hasStationId")
-	val country = getRelative("country")
+	val countryCode = getRelative("countryCode")
 
 	val hasSha256sum = getRelative("hasSha256sum")
 	val hasDoi = getRelative("hasDoi")

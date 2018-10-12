@@ -72,9 +72,9 @@ private class WdcggUploadCompleter(
 			Try(v.toDouble).toOption
 		}
 		Seq[Option[(IRI, IRI, Value)]](
-			Some((station, RDF.TYPE, metaVocab.stationClass)),
+			Some((station, RDF.TYPE, metaVocab.wdcggStationClass)),
 			keyValues.get(StationName).map(stName => (station, metaVocab.hasName, vocab.lit(stName))),
-			keyValues.get(Country).map(country => (station, metaVocab.country, vocab.lit(country))),
+			keyValues.get(Country).map(country => (station, metaVocab.countryCode, vocab.lit(country))),
 			doubleOpt(Lat).map(lat => (station, metaVocab.hasLatitude, vocab.lit(lat))),
 			doubleOpt(Lon).map(lon => (station, metaVocab.hasLongitude, vocab.lit(lon)))
 		).flatten

@@ -40,7 +40,7 @@ object Ingestion {
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,
 			"badmSchema" -> badmSchema,
-			"pisAndStations" -> new SparqlConstructExtractor("/sparql/labelingToCpOnto.txt"),
+			"pisAndStations" -> new IcosStationsIngester("/sparql/labelingToCpOnto.txt", "/extraStations.csv"),
 			"cpMetaInstances" -> new RemoteRdfGraphIngester(
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("http://meta.icos-cp.eu/resources/cpmeta/")

@@ -21,9 +21,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
-	def getAtmosphericStation(siteId: String) = getRelative("stations/AS_", siteId)(icosBup)
-	def getEcosystemStation(id: EtcStationId) = getRelative("stations/ES_", id.id)(icosBup)
-	def getOceanStation(siteId: String) = getRelative("stations/OS_", siteId)(icosBup)
+	def getTcStation(tcId: String, stationId: String) = getRelative(s"stations/${tcId}_", stationId)(icosBup)
+	def getAtmosphericStation(stationId: String) = getTcStation("AS", stationId)
+	def getEcosystemStation(id: EtcStationId) = getTcStation("ES", id.id)
+	def getOceanStation(stationId: String) = getTcStation("OS", stationId)
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri) = getRelativeRaw(
 		s"people/${urlEncode(firstName)}_${urlEncode(lastName)}"

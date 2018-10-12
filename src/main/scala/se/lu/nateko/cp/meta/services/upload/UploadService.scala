@@ -10,16 +10,12 @@ import se.lu.nateko.cp.meta.{StaticCollectionDto, SubmitterProfile, UploadMetada
 import se.lu.nateko.cp.meta.api.EpicPidClient
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import spray.json._
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadService(
@@ -39,16 +35,6 @@ class UploadService(
 	private val metaUpdater = new DobjMetadataUpdater(vocab, metaVocab, sparql)
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
-
-	def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
-		val server = servers.getInstServerForDataObj(hash).get
-		val collFetcher = servers.collFetcher.get
-		val objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, epic.getPid)
-		objectFetcher.fetch(hash)
-	}
-
-	def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
-		servers.collFetcher.flatMap(_.fetchStatic(hash))
 
 	def registerUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
 		val submitterOrgUriTry = for(

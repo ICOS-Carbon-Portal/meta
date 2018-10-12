@@ -134,7 +134,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	private def getStation(stat: IRI) = Station(
+	def getStation(stat: IRI) = Station(
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),

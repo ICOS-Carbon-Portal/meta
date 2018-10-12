@@ -13,7 +13,7 @@ import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.semanticweb.owlapi.apibinding.OWLManager
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.api.SparqlServer
+import se.lu.nateko.cp.meta.api.{CitationClient, Doi, SparqlServer}
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
@@ -31,8 +31,7 @@ import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, PageContentMarshalling, UploadService}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
@@ -47,15 +46,32 @@ class MetaDb (
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: Repository
-)(implicit configs: EnvriConfigs) extends Closeable{
+	val repo: Repository,
+	val config: CpmetaConfig
+)(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends Closeable{
 
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers)
+	val citer = new CitationClient(getDois(repo), !config.dataUploadService.epicPid.dryRun)
+	val pcm = new PageContentMarshalling(config.core.handleService, citer)
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, config, pcm)
 
 	def close(): Unit = {
 		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
 		repo.shutDown()
+	}
+
+	private def getDois(repo: Repository): List[Doi] = {
+		import se.lu.nateko.cp.meta.services.CpmetaVocab
+		import se.lu.nateko.cp.meta.utils.rdf4j._
+		val meta = new CpmetaVocab(repo.getValueFactory)
+		repo
+			.access{conn =>
+				conn.getStatements(null, meta.hasDoi, null)
+			}
+			.map(_.getObject.stringValue)
+			.toList.distinct.collect{
+				case Doi(doi) => doi
+			}
 	}
 
 }
@@ -139,7 +155,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, config)
 		}
 	}
 

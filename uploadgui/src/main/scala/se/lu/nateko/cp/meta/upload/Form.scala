@@ -55,16 +55,18 @@ class Form(
 
 	val fileInput = new FileInput("fileinput", updateButton)
 
-	val previousVersionInput = new HashInput("previoushash", updateButton)
+	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
-	val nRowsInput = new NRowsInput("nrows", updateButton)
+	val nRowsInput = new IntOptInput("nrows", updateButton)
 
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
+	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
+	val instrUriInput = new UriOptInput("instrumenturi", updateButton)
 
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput, levelControl)
 	def dto: Try[UploadMetadataDto] = for(
@@ -75,7 +77,9 @@ class Form(
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interfal");
-		nRows <- nRowsInput.value.withErrorContext("Number of rows")
+		nRows <- nRowsInput.value.withErrorContext("Number of rows");
+		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
+		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI")
 	) yield UploadMetadataDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -84,8 +88,8 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
-				instrument = None,
-				samplingHeight = None,
+				instrument = instrumentUri,
+				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
 				production = None

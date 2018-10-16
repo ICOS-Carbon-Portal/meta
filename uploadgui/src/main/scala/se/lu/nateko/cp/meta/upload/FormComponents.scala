@@ -1,16 +1,18 @@
 package se.lu.nateko.cp.meta.upload
 
+import java.net.URI
 import java.time.Instant
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.util.{ Success, Try }
+import scala.util.Failure
+
 import org.scalajs.dom
-import org.scalajs.dom.{document, html}
+import org.scalajs.dom.{ document, html }
+
+import Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.upload.Utils.{fail, getElementById, querySelector, whenDone}
-
-import scala.concurrent.ExecutionContext
-import scala.util.{Success, Try}
-import Utils._
 
 class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 	private val select = getElementById[html.Select](elemId).get
@@ -45,7 +47,7 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 	}
 }
 
-class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext){
+class FileInput(elemId: String, cb: () => Unit){
 	private val fileInput = getElementById[html.Input](elemId).get
 	private var _hash: Try[Sha256Sum] = file.flatMap(_ => fail("hashsum computing has not started yet"))
 
@@ -66,11 +68,11 @@ class FileInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext)
 	}
 
 	if(file.isSuccess){//pre-chosen file, e.g. due to browser page reload
-		ctxt.execute(() => fileInput.oninput(null))// no need to do this eagerly, just scheduling
+		queue.execute(() => fileInput.oninput(null))// no need to do this eagerly, just scheduling
 	}
 }
 
-class Radio(elemId: String, cb: Int => Unit)(implicit ctxt: ExecutionContext) {
+class Radio(elemId: String, cb: Int => Unit) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
 	protected[this] var _value: Option[Int] = None
 
@@ -82,7 +84,7 @@ class Radio(elemId: String, cb: Int => Unit)(implicit ctxt: ExecutionContext) {
 	}
 
 	if(querySelector[html.Input](inputBlock, "input[type=radio]:checked").isDefined){
-		ctxt.execute(() => inputBlock.onchange(null))
+		queue.execute(() => inputBlock.onchange(null))
 	}
 }
 
@@ -97,15 +99,15 @@ class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput, level: Ra
 	}
 }
 
-abstract class GenericInput[T](elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) {
+abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
 	protected[this] val input: html.Input = getElementById[html.Input](elemId).get
-	protected[this] var _value: Try[T]
+	private[this] var _value: Try[T] = init
 
-	def value: Try[T]
+	def value: Try[T] = _value
 
 	input.oninput = _ => {
 		val oldValue = _value
-		_value = value
+		_value = parser(input.value)
 
 		if (_value.isSuccess || input.value.isEmpty) {
 			input.title = ""
@@ -127,30 +129,28 @@ abstract class GenericInput[T](elemId: String, cb: () => Unit)(implicit ctxt: Ex
 	}
 
 	if(!input.value.isEmpty){
-		ctxt.execute(() => input.oninput(null))
+		queue.execute(() => input.oninput(null))
 	}
 }
 
-class InstantInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) extends GenericInput[Instant](elemId: String, cb: () => Unit) {
-	override protected var _value: Try[Instant] = fail("no timestamp provided")
-	override def value: Try[Instant] = Try(Instant.parse(input.value))
-}
+class InstantInput(elemId: String, cb: () => Unit) extends GenericInput[Instant](elemId, cb, fail("no timestamp provided"))(
+	s => Try(Instant.parse(s))
+)
 
-class HashInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) extends GenericInput[Option[Sha256Sum]](elemId: String, cb: () => Unit) {
-	override protected var _value: Try[Option[Sha256Sum]] = Success(None)
-	override def value: Try[Option[Sha256Sum]] = {
-		if (input.value == null || input.value.trim.isEmpty) Success(None)
-		else Sha256Sum.fromString(input.value).map(Some(_))
-	}
-}
+class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
+		extends GenericInput[Option[T]](elemId, cb, Success(None))(
+	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim)
+)
 
-class NRowsInput(elemId: String, cb: () => Unit)(implicit ctxt: ExecutionContext) extends GenericInput[Option[Int]](elemId: String, cb: () => Unit) {
-	override protected[this] var _value: Try[Option[Int]] = Success(None)
-	override def value: Try[Option[Int]] = {
-		if (input.value == null || input.value.trim.isEmpty) Success(None)
-		else Try(Some(input.value.toInt))
-	}
-}
+class HashOptInput(elemId: String, cb: () => Unit)
+	extends GenericOptionalInput[Sha256Sum](elemId, cb)(s => Sha256Sum.fromString(s).map(Some(_)))
+
+class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)))
+class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)))
+class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(s => {
+	if(s.startsWith("https://") || s.startsWith("http://")) Try(Some(new URI(s)))
+	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
+})
 
 class SubmitButton(elemId: String, onSubmit: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get

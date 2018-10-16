@@ -13,28 +13,27 @@ object SparqlQueries {
 		|PREFIX sitesmeta: <https://meta.fieldsites.se/ontologies/sites/>
 		|SELECT *
 		|FROM <https://meta.fieldsites.se/resources/sites/>
-		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id; a ?stationClass
+		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
 		| $orgFilter }""".stripMargin
 
-		private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-			|SELECT *
-			|FROM <http://meta.icos-cp.eu/resources/stations/>
-			|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
-			|WHERE {
-			| ?stationClass rdfs:subClassOf cpmeta:Station .
-			| ?station a ?stationClass; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
-			| $orgFilter }
-			|order by ?name""".stripMargin
+	private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|SELECT *
+		|FROM <http://meta.icos-cp.eu/resources/stations/>
+		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|WHERE {
+		| ?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		| $orgFilter }
+		|order by ?name""".stripMargin
 
 	def stations(orgClass: Option[URI])(implicit envri: Envri): String = {
-		val orgFilter = orgClass.fold("")(org => s"""FILTER (STR(?stationClass) = "$org")""")
+		val orgFilter = orgClass.fold("")(org => s"?station a/rdfs:subClassOf* <$org> .")
 		envri match {
 			case Envri.SITES => sitesStations(orgFilter)
 			case Envri.ICOS => icosStations(orgFilter)
 		}
 	}
 
-	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"), b("stationClass"))
+	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"))
 
 	private val sitesObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *

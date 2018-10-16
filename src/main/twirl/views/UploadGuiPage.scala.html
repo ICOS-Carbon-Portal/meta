@@ -29,8 +29,9 @@
 		text-align: center;
 		margin: 5vh 0;
 	}
-	.btn-submit {
+	#submitbutton {
 		margin-top: 2vh;
+		pointer-events: auto;
 	}
 	</style>
 
@@ -72,7 +73,7 @@
 				</div>
 				<div class="form-group">
 					<label>Number of rows <em class="text-muted">- optional</em></label>
-					<input type="number" id="nrows" class="form-element form-control" min="0" disabled>
+					<input id="nrows" type="text" class="form-element form-control" min="0" disabled>
 				</div>
 			</section>
 			<section>
@@ -95,6 +96,14 @@
 				<div class="form-group">
 					<label for="acqstopinput">To (UTC)</label>
 					<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+				</div>
+				<div class="form-group">
+					<label for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>
+					<input id="sampleheight" type="text" class="form-element form-control">
+				</div>
+				<div class="form-group">
+					<label for="instrumenturi">Instrument (URL) <em class="text-muted">- optional</em></label>
+					<input id="instrumenturi" type="text" class="form-element form-control">
 				</div>
 			</section>
 			<button id="submitbutton" type="button" class="btn btn-primary btn-submit form-control">Upload</button>

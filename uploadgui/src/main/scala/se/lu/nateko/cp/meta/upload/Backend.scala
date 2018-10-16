@@ -20,7 +20,7 @@ object Backend {
 
 	private def whoAmI: Future[Option[String]] =
 		Ajax.get("/whoami", withCredentials = true)
-  	.recoverWith(recovery("fetch user information"))
+		.recoverWith(recovery("fetch user information"))
 		.map(xhr =>
 			parseTo[JsObject](xhr).value("email") match {
 				case JsString(email) => Some(email)
@@ -32,7 +32,7 @@ object Backend {
 		.map(parseTo[Envri])
 
 	private def authHost: Future[EnvriConfig] = Ajax.get("/upload/envriconfig")
-  	.recoverWith(recovery("fetch envri config"))
+		.recoverWith(recovery("fetch envri config"))
 		.map(parseTo[EnvriConfig])
 
 	def fetchConfig: Future[InitAppInfo] = whoAmI.zip(envri).zip(authHost).map {

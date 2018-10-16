@@ -20,7 +20,7 @@ import akka.NotUsed
 import java.net.URI
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
-	import servers.metaVocab
+	import servers.{metaVocab, vocab}
 	implicit val factory = metaVocab.factory
 
 	private [this] val ok: Try[NotUsed] = Success(NotUsed)
@@ -30,7 +30,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
-		_ <- validateForFormat(meta, spec);
+		_ <- validateForFormat(meta, spec, submConf);
 		_ <- validatePreviousVersion(meta.hashSum, meta.isNextVersionOf, spec)
 	) yield NotUsed
 
@@ -118,7 +118,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec): Try[NotUsed] = {
+	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec, subm: DataSubmitterConfig): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
@@ -130,15 +130,15 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			case Right(stationMeta) =>
 				if(spec.dataLevel > 2) errors += "The data level for this kind of metadata package must have been 2 or less"
 				else{
-					if(spec.dataLevel <= 1 && stationMeta.acquisitionInterval.isEmpty)
+					if(spec.dataLevel == 0 && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'aquisitionInterval' with start and stop timestamps."
 
 					if(
-						spec.dataLevel == 2 && stationMeta.nRows.isEmpty &&
+						(spec.dataLevel == 1 || spec.dataLevel == 2) && stationMeta.nRows.isEmpty &&
 						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat)
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
-					if(hasFormat(metaVocab.atcFormat) || hasFormat(metaVocab.atcProductFormat)){
+					if(subm.submittingOrganization === vocab.atc){
 						stationMeta.instrument match{
 							case None =>
 								errors += "Instrument URL is expected for ATC time series"

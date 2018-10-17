@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.instanceserver
 
+import java.net.URI
 import java.time.Instant
 
 import org.eclipse.rdf4j.model.IRI
@@ -9,6 +10,7 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.utils.rdf4j._
+
 
 trait FetchingHelper {
 	protected def server: InstanceServer
@@ -54,6 +56,12 @@ trait FetchingHelper {
 
 	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
 		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(Instant.parse).head
+
+	protected def getSingleUriLiteral(subj: IRI, pred: IRI): URI =
+		server.getUriLiteralValues(subj, pred, InstanceServer.ExactlyOne).head
+
+	protected def getOptionalUriLiteral(subj: IRI, pred: IRI): Option[URI] =
+		server.getUriLiteralValues(subj, pred, InstanceServer.AtMostOne).headOption
 
 	protected def getHashsum(dataObjUri: IRI, pred: IRI): Sha256Sum = {
 		val hash: String = server.getLiteralValues(dataObjUri, pred, XMLSchema.BASE64BINARY, InstanceServer.ExactlyOne).head

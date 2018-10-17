@@ -48,6 +48,9 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization(_)(Envri.ICOS))
 
+	val icosProject = getRelative("projects/", "icos")(icosBup)
+	val atmoTheme = getRelative("themes/", "atmosphere")(icosBup)
+
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)(icosBup)
 
 	def getDataObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}objects/", hash.id)

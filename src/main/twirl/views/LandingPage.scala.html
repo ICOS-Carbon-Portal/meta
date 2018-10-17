@@ -2,8 +2,10 @@
 @import LandingPageHelpers._
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.meta.services.CpVocab
+@import se.lu.nateko.cp.meta.utils.rdf4j._
 
-@(dobj: DataObject, citation: Option[String], handleService: URI)(implicit envri: Envri.Value)
+@(dobj: DataObject, citation: Option[String], handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
 @template{
 	<div class="container-fluid">
 
@@ -28,9 +30,7 @@
 					}
 					@accessUrlRow
 				}
-				@PanelHtmlRow{Data affiliation}{
-					@affiliationInfo(dobj.affiliation)
-				}
+				@resourcePanelRow("Data affiliation", dobj.specification.project)
 				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
 				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
 				@for(coll <- dobj.parentCollections){
@@ -119,7 +119,7 @@
 				}
 
 				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
-					<iframe src="/station/?theme=@theme&coverage=@geoJson"></iframe>
+					<iframe src="/station/?icon=@icon&coverage=@geoJson"></iframe>
 				}
 			}
 		</div>
@@ -136,11 +136,11 @@
 }
 
 @pageHeading(envri: Envri.Value) = @{
-	dobj.affiliation match {
-		case Icos => {
-			"ICOS RI Data Object Landing Page"
-		}
-		case _ => envri match {
+	if(dobj.specification.project.uri === vocab.icosProject) {
+		"ICOS RI Data Object Landing Page"
+	}
+	else {
+		envri match {
 			case Envri.SITES => "SITES Data Object Landing Page"
 			case _ => "Data Object Landing Page at Carbon Portal"
 		}
@@ -150,17 +150,6 @@
 @pageTitle = @{
 	dobj.specificInfo.left.toOption.map(_.title)
 		.getOrElse(dobj.fileName)
-}
-
-@affiliationInfo(aff: DataAffiliation) = {
-	@aff match {
-		case Icos => {
-			<span><strong>Official ICOS data</strong></span>
-		}
-		case OrgAffiliation(org) => {
-			@agentLink(org)
-		}
-	}
 }
 
 @resourceLink(res: UriResource) = {
@@ -203,7 +192,7 @@
 	}
 }
 
-@theme = @{dobj.theme.toString}
+@icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
@@ -231,7 +220,8 @@
 }
 
 @template = @{
-	if(dobj.theme == DataTheme.Atmosphere && dobj.affiliation == Icos && dobj.specification.dataLevel == 1)
+	val spec = dobj.specification
+	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.uri === vocab.icosProject && spec.dataLevel == 1)
 		AtcLandingPage(pageTitle) _
 	else
 		ServerSidePage(pageTitle, pageHeading(envri), envri) _

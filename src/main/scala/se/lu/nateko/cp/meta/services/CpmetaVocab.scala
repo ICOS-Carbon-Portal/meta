@@ -7,14 +7,14 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	implicit val bup = makeUriProvider(CpmetaVocab.MetaPrefix)
 
-	val stationClass = getRelative("Station")
+//	val stationClass = getRelative("Station")
 	val ingosStationClass = getRelative("IngosStation")
 	val wdcggStationClass = getRelative("WdcggStation")
-	val atmoStationClass = getRelative("AS")
-	val ecoStationClass = getRelative("ES")
-	val oceStationClass = getRelative("OS")
-	val tcClass = getRelative("ThematicCenter")
-	val cfClass = getRelative("CentralFacility")
+//	val atmoStationClass = getRelative("AS")
+//	val ecoStationClass = getRelative("ES")
+//	val oceStationClass = getRelative("OS")
+//	val tcClass = getRelative("ThematicCenter")
+//	val cfClass = getRelative("CentralFacility")
 	val orgClass = getRelative("Organization")
 	val membershipClass = getRelative("Membership")
 
@@ -50,6 +50,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wasParticipatedInBy = getRelative("wasParticipatedInBy")
 	val wasHostedBy = getRelative("wasHostedBy")
 	val hasDataLevel = getRelative("hasDataLevel")
+	val hasDataTheme = getRelative("hasDataTheme")
+	val hasAssociatedProject = getRelative("hasAssociatedProject")
 	val containsDataset = getRelative("containsDataset")
 	val hasObjectSpec = getRelative("hasObjectSpec")
 	val hasFormat = getRelative("hasFormat")
@@ -72,6 +74,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val atOrganization = getRelative("atOrganization")
 	val hasStartTime = getRelative("hasStartTime")
 	val hasEndTime = getRelative("hasEndTime")
+	val hasIcon = getRelative("hasIcon")
+	val hasMarkerIcon = getRelative("hasMarkerIcon")
 
 	val ancillaryValueClass = getRelative("AncillaryValue")
 	val ancillaryEntryClass = getRelative("AncillaryEntry")

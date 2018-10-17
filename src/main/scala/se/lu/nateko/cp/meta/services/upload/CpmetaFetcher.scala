@@ -8,7 +8,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.DataTheme._
-import se.lu.nateko.cp.meta.core.data.OrganizationClass.OrganizationClass
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -26,6 +25,8 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
+		project = getLabeledResource(spec, metaVocab.hasAssociatedProject),
+		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
@@ -75,8 +76,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getOrganization(org: IRI) = Organization(
 		self = getLabeledResource(org),
-		name = getSingleString(org, metaVocab.hasName),
-		orgClass = getOrgClass(org)
+		name = getSingleString(org, metaVocab.hasName)
 	)
 
 	private def getPerson(pers: IRI) = Person(
@@ -85,47 +85,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		lastName = getSingleString(pers, metaVocab.hasLastName)
 	)
 
-	private def getOrgClass(subj: IRI): OrganizationClass = {
-		val vocab = metaVocab
-		import vocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass}
-		import vocab.{stationClass, ingosStationClass, wdcggStationClass, tcClass }
-		import OrganizationClass._
-
-		val themes = server.getValues(subj, RDF.TYPE).collect{
-			case `atmoStationClass` => AS
-			case `ecoStationClass` => ES
-			case `oceStationClass` => OS
-			case `tcClass` => TC
-			case `cfClass` => CF
-			case `wdcggStationClass` | `ingosStationClass` | `stationClass` => Station
-			case `orgClass` => Org
-		}
-		themes.headOption.getOrElse(Org)
-	}
-
-	private def getDataTheme(subj: IRI): DataTheme = {
-		val metavocab = metaVocab
-		val cpvocab = vocab
-		import metavocab.{ atmoStationClass, cfClass, ecoStationClass, oceStationClass, orgClass, tcClass }
-		import cpvocab.{ atc, cal, cp, etc, otc }
-
-		val themes = server.getValues(subj, RDF.TYPE).collect{
-			case `atmoStationClass` => Atmosphere
-			case `ecoStationClass` => Ecosystem
-			case `oceStationClass` => Ocean
-			case `tcClass` => subj match{
-				case `atc` => Atmosphere
-				case `etc` => Ecosystem
-				case `otc` => Ocean
-			}
-			case `cfClass` => subj match{
-				case `cp` => CP
-				case `cal` => CAL
-			}
-			case `orgClass` => Other
-		}
-		themes.headOption.getOrElse(Other)
-	}
+	private def getDataTheme(theme: IRI) = DataTheme(
+		self = getLabeledResource(theme),
+		icon = getSingleUriLiteral(theme, metaVocab.hasIcon),
+		markerIcon = getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
+	)
 
 	private def getTemporalCoverage(dobj: IRI) = TemporalCoverage(
 		interval = TimeInterval(
@@ -139,7 +103,6 @@ trait CpmetaFetcher extends FetchingHelper{
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
-		theme = getDataTheme(stat),
 		//TODO: Add support for geoJson from station info (OTC)
 		coverage = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
@@ -148,7 +111,6 @@ trait CpmetaFetcher extends FetchingHelper{
 	)
 
 	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
-		implicit val factory = metaVocab.factory
 
 		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
 		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
@@ -159,8 +121,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			description = getOptionalString(dobj, metaVocab.dcterms.description),
 			spatial = getLatLonBox(cov),
 			temporal = getTemporalCoverage(dobj),
-			productionInfo = prod,
-			theme = getDataTheme(prod.host.map(_.self).getOrElse(prod.creator.self).uri.toRdf)
+			productionInfo = prod
 		)
 	}
 

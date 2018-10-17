@@ -7,6 +7,7 @@ import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.api.Doi
 import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.services.CpVocab
 
 import scala.concurrent.Future
 import spray.json._
@@ -16,10 +17,10 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.CitationClient
 
-class PageContentMarshalling(handleService: URI, citer: CitationClient) {
+class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab) {
 
 	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
-		makeMarshaller(views.html.LandingPage(_, _, handleService), _.doi)
+		makeMarshaller(views.html.LandingPage(_, _, handleService, vocab), _.doi)
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
 		makeMarshaller(views.html.CollectionLandingPage(_, _), _.doi)

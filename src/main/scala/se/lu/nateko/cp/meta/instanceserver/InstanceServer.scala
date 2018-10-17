@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.instanceserver
 
+import java.net.{URI => JavaUri}
 import org.eclipse.rdf4j.model._
 import org.eclipse.rdf4j.model.vocabulary.{RDF, XMLSchema}
 import scala.util.Try
@@ -94,6 +95,8 @@ trait InstanceServer {
 	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Float] =
 		getLiteralValues(subj, pred, XMLSchema.FLOAT, exp).map(_.toFloat)
 
+	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[JavaUri] =
+		getLiteralValues(subj, pred, XMLSchema.ANYURI, exp).map(new JavaUri(_))
 }
 
 object InstanceServer{

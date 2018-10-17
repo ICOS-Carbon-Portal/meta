@@ -4,27 +4,14 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
 
-import DataTheme.DataTheme
-import OrganizationClass.OrganizationClass
 import spray.json.JsValue
 
-object DataTheme extends Enumeration{
-	val Atmosphere, Ecosystem, Ocean, CP, CAL, Other = Value
-	type DataTheme = Value
-}
-
-object OrganizationClass extends Enumeration{
-	val Org, CF, TC, Station, AS, ES, OS = Value
-	type OrganizationClass = Value
-}
-
 case class UriResource(uri: URI, label: Option[String])
-
 
 sealed trait Agent{
 	val self: UriResource
 }
-case class Organization(self: UriResource, name: String, orgClass: OrganizationClass) extends Agent
+case class Organization(self: UriResource, name: String) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String) extends Agent
 
 
@@ -32,12 +19,15 @@ case class Station(
 	org: Organization,
 	id: String,
 	name: String,
-	theme: DataTheme,
 	coverage: Option[GeoFeature]
 )
 
+case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
+
 case class DataObjectSpec(
 	self: UriResource,
+	project: UriResource,
+	theme: DataTheme,
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
@@ -72,8 +62,7 @@ case class L3SpecificMeta(
 	description: Option[String],
 	spatial: LatLonBox,
 	temporal: TemporalCoverage,
-	productionInfo: DataProduction,
-	theme: DataTheme
+	productionInfo: DataProduction
 )
 
 sealed trait DataAffiliation
@@ -98,21 +87,11 @@ case class DataObject(
 		l3 => Some(l3.productionInfo),
 		l2 => l2.productionInfo
 	)
+
 	def coverage: Option[GeoFeature] = specificInfo.fold(
 		l3 => Some(l3.spatial),
 		l2 => l2.coverage.orElse(l2.acquisition.station.coverage)
 	)
-	def theme: DataTheme = specificInfo.fold(_.theme, _.acquisition.station.theme)
-
-	def affiliation: DataAffiliation =
-		if(submission.submitter.orgClass == OrganizationClass.TC) Icos
-		else {
-			val orgOpt = specificInfo.fold(
-				l3 => Some(l3.productionInfo),
-				l2 => l2.productionInfo
-			).flatMap(_.host)
-			OrgAffiliation(orgOpt.getOrElse(submission.submitter))
-		}
 }
 
 sealed trait DataItem

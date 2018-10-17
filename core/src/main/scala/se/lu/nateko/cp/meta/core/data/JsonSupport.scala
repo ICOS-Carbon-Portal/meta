@@ -7,10 +7,8 @@ import spray.json._
 object JsonSupport extends CommonJsonSupport{
 
 	implicit val uriResourceFormat = jsonFormat2(UriResource)
-	implicit val dataObjectSpecFormat = jsonFormat5(DataObjectSpec)
-
-	implicit val dataThemeFormat = enumFormat(DataTheme)
-	implicit val orgClassFormat = enumFormat(OrganizationClass)
+	implicit val dataThemeFormat = jsonFormat3(DataTheme)
+	implicit val dataObjectSpecFormat = jsonFormat7(DataObjectSpec)
 
 	implicit val positionFormat = jsonFormat2(Position)
 	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
@@ -45,9 +43,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val orgFormat = jsonFormat3(Organization)
+	implicit val orgFormat = jsonFormat2(Organization)
 	implicit val personFormat = jsonFormat3(Person)
-	implicit val objectProducerFormat = jsonFormat5(Station)
+	implicit val objectProducerFormat = jsonFormat4(Station)
 
 	implicit object agentFormat extends JsonFormat[Agent]{
 
@@ -74,7 +72,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
 
 	implicit val l2SpecificMetaFormat = jsonFormat4(L2OrLessSpecificMeta)
-	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
+	implicit val l3SpecificMetaFormat = jsonFormat5(L3SpecificMeta)
 
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
 	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)

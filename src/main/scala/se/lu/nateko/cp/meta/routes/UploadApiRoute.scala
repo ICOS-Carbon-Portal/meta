@@ -48,7 +48,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
-		val pcm = new PageContentMarshalling(coreConf.handleService, citer)
+		val pcm = new PageContentMarshalling(coreConf.handleService, citer, service.servers.vocab)
 		import pcm.{dataObjectMarshaller, statCollMarshaller}
 
 		pathPrefix("upload"){

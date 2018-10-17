@@ -1,6 +1,6 @@
 var queryParams = processQuery(window.location.search);
 
-if (queryParams.theme && queryParams.coverage){
+if (queryParams.coverage){
 	initMap(queryParams);
 }
 
@@ -51,8 +51,7 @@ function initMap(queryParams) {
 
 		} else {
 			var fg = new L.FeatureGroup();
-			var icon = getIcon(queryParams.theme);
-			// var marker = getMarker(queryParams.theme);
+			var icon = getIcon(queryParams.icon);
 
 			fg.addLayer(L.geoJson(geoJson, {
 				pointToLayer: function (feature, latlng) {
@@ -101,78 +100,20 @@ function getMask(geoJson){
 	return latLngs;
 }
 
-function getIcon(theme){
-	switch(theme){
-		case 'NonICOS':
-			return L.icon({
-				iconUrl: 'https://static.icos-cp.eu/images/tmp/wdcgg.svg',
-				iconSize:     [23, 28],
-				iconAnchor:   [12, 28],
-				popupAnchor:  [0, -23]
-			});
-
-		case 'Atmosphere':
-			return L.icon({
-				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/as.png',
-				iconSize:     [23, 28],
-				iconAnchor:   [12, 28],
-				popupAnchor:  [0, -23]
-			});
-
-		case 'Ecosystem':
-			return L.icon({
-				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/es.png',
-				iconSize:     [23, 28],
-				iconAnchor:   [12, 28],
-				popupAnchor:  [0, -23]
-			});
-
-		case 'Ocean':
-			return L.icon({
-				iconUrl: 'https://static.icos-cp.eu/share/stations/icons/os.png',
-				iconSize:     [23, 28],
-				iconAnchor:   [12, 28],
-				popupAnchor:  [0, -23]
-			});
-
-		default:
-			return L.icon({
-				iconUrl: 'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-icon.png',
-				shadowUrl: 'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-shadow.png',
-				iconSize:     [25, 41],
-				iconAnchor:   [13, 41]
-			});
-	}
-}
-
-function getMarker(theme){
-	var marker = {
-		radius: 5,
-		weight: 2,
-		color: 'black',
-		fillColor: 'rgb(255,50,50)',
-		fillOpacity: 1
-	};
-
-	switch(theme){
-		case 'NonICOS':
-			marker.fillColor = 'red';
-			break;
-
-		case 'Atmosphere':
-			marker.fillColor = 'blue';
-			break;
-
-		case 'Ecosystem':
-			marker.fillColor = 'green';
-			break;
-
-		case 'Ocean':
-			marker.fillColor = 'blue';
-			break;
-	}
-
-	return marker;
+function getIcon(iconUrl){
+	return iconUrl
+		? L.icon({
+			iconUrl,
+			iconSize:     [23, 28],
+			iconAnchor:   [12, 28],
+			popupAnchor:  [0, -23]
+		})
+		: L.icon({
+			iconUrl:      'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-icon.png',
+			shadowUrl:    'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-shadow.png',
+			iconSize:     [25, 41],
+			iconAnchor:   [13, 41]
+		});
 }
 
 function getBaseMaps(maxZoom){

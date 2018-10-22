@@ -2,42 +2,31 @@ package se.lu.nateko.cp.meta.services.linkeddata
 
 import java.net.{URI => JavaUri}
 
-import scala.collection.TraversableOnce.flattenTraversableOnce
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
-import org.eclipse.rdf4j.repository.Repository
-import akka.http.scaladsl.marshalling.{Marshal, Marshaller, Marshalling, ToResponseMarshaller}
-import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
-import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharset
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.Uri
 import akka.actor.ActorSystem
+import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
+import akka.http.scaladsl.model.{HttpResponse, _}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
+import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api.{CloseableIterator, EpicPidClient}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data._
-import se.lu.nateko.cp.meta.core.data.JsonSupport.stationFormat
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.stationFormat
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.{DataObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json.JsonWriter
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
+
+import scala.collection.TraversableOnce.flattenTraversableOnce
+import scala.concurrent.{ExecutionContext, Future}
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -80,7 +69,7 @@ class Rdf4jUriSerializer(
 	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
 		servers.collFetcher.flatMap(_.fetchStatic(hash))
 
-	private def fetchStation(name: IRI)(implicit  envri: Envri): Option[Station] = Some(servers.getStation(name))
+	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[Station] = servers.getStation(iri)
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
 		HttpResponse(
@@ -99,7 +88,7 @@ class Rdf4jUriSerializer(
 		case Slash(Segment("resources", Slash(Segment("stations", _)))) =>
 			new FullCustomization[Station](
 				() => fetchStation(JavaUri.create(uri.toString()).toRdf(repo.getValueFactory)),
-				station => views.html.StationLandingPage(station)
+				views.html.StationLandingPage(_)
 			)
 		case _ =>
 			new DefaultReprOptions(uri)
@@ -115,9 +104,14 @@ class Rdf4jUriSerializer(
 			WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto())) :: Nil
 		}
 	}
-	private class FullCustomization[T : JsonWriter](fetchDto: () => Option[T], pageTemplate: Option[T] => Html) extends WithJson[T](fetchDto) {
+	private class FullCustomization[T : JsonWriter](fetchDto: () => Option[T], pageTemplate: T => Html)(implicit envri: Envri) extends WithJson[T](fetchDto) {
 		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = {
-			super.marshal.zip(PageContentMarshalling.twirlHtmlMarshaller(pageTemplate(fetchDto()))).map{
+			super.marshal.zip(
+				fetchDto() match {
+					case Some(value) => PageContentMarshalling.twirlHtmlMarshaller(pageTemplate(value))
+					case None => PageContentMarshalling.notFoundMarshaller
+				}
+			).map{
 				case (json, html) => json ++ html
 			}
 		}

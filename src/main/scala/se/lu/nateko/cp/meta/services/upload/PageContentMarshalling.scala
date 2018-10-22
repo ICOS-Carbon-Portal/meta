@@ -1,8 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.marshalling.Marshalling._
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.api.Doi
 import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
@@ -68,6 +67,22 @@ object PageContentMarshalling{
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)
 	)
+
+	def notFoundMarshaller(implicit envri: Envri): Future[List[Marshalling[HttpResponse]]] = {
+		Future.successful {
+			WithFixedContentType(
+				ContentTypes.`text/html(UTF-8)`,
+				() =>
+					HttpResponse(
+						StatusCodes.NotFound,
+						entity = HttpEntity(
+							ContentType.WithCharset(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
+							views.html.NotFoundPage().body
+						)
+					)
+			) :: Nil
+		}
+	}
 
 	private def getHtml(html: Html, charset: HttpCharset) = HttpResponse(
 		entity = HttpEntity(

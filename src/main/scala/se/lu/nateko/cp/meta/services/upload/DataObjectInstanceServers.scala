@@ -31,8 +31,8 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getStation(station: IRI)(implicit envri: Envri): Station = {
-		metaFetchers(envri).getStation(station)
+	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = {
+		metaFetchers(envri).getOptionalStation(station)
 	}
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {

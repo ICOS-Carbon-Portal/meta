@@ -3,23 +3,13 @@
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 
-@(stationOpt: Option[Station])(implicit envri: Envri.Value)
-@{
-	stationOpt match {
-		case Some(station) => {
-			stationTemplate(station)
-		}
-		case None => {
-			<div>No such station!</div>
-		}
-	}
-}
-
-@stationTemplate(station: Station) = {
-	@ServerSidePage(station.name, station.name, envri, CpMenu.landingPage){
-		<div class="container-fluid">
-			<div class="row">
-			</div>
+@(station: Station)(implicit envri: Envri.Value)
+@ServerSidePage(station.name, station.name, envri, CpMenu.landingPage){
+	<div class="container-fluid">
+		<div class="row">
+			@for(coverage <- station.coverage; geoJson = coverage.geoJson) {
+			<iframe src="/station/?theme=Other&coverage=@geoJson"></iframe>
+			}
 		</div>
-	}
+	</div>
 }

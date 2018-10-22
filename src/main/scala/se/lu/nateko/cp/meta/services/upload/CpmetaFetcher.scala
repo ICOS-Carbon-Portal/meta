@@ -5,7 +5,6 @@ import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.DataTheme._
 import se.lu.nateko.cp.meta.core.data.OrganizationClass.OrganizationClass
@@ -13,6 +12,8 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+
+import scala.util.Try
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -134,7 +135,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	def getStation(stat: IRI) = Station(
+	private def getStation(stat: IRI) = Station(
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
@@ -145,6 +146,8 @@ trait CpmetaFetcher extends FetchingHelper{
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
 		) yield Position(posLat, posLon)
 	)
+
+	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
 
 	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
 		implicit val factory = metaVocab.factory

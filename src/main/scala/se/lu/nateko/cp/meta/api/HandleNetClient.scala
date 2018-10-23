@@ -15,6 +15,8 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.util.Success
 
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 
@@ -22,16 +24,17 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.HttpsConnectionContext
+import akka.http.scaladsl.UseHttp2
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
 import akka.stream.Materializer
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
@@ -40,8 +43,8 @@ import se.lu.nateko.cp.meta.HandleNetClientConfig
 import spray.json._
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer) extends DefaultJsonProtocol{
+	import HandleNetClient.{ getCertificate, ok, readPrivateKey }
 	import system.dispatcher
-	import HandleNetClient.{readPrivateKey, getCertificate, ok}
 	private val http = Http()
 
 	private val httpsCtxt = {
@@ -79,7 +82,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			}
 		) else d.sslConfig
 
-		new HttpsConnectionContext(sslCtxt, akkaSslConf, d.enabledCipherSuites, d.enabledProtocols, d.clientAuth, d.sslParameters)
+		new HttpsConnectionContext(sslCtxt, akkaSslConf, d.enabledCipherSuites, d.enabledProtocols, d.clientAuth, d.sslParameters, UseHttp2.Negotiated)
 	}
 
 	private val authHeaders = RawHeader("Authorization", "Handle clientCert=\"true\"") :: Nil
@@ -98,9 +101,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 							_.asInstanceOf[JsString].value
 						}
 					}
-				case _ =>
-					resp.discardEntityBytes()
-					Future.failed(new Exception(s"Got ${resp.status} from the server"))
+				case _ => errorFromResp(resp)
 			}
 		)
 	}
@@ -117,9 +118,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 						val uriStr = hdlVal.fields("data").asJsObject.fields("value").asInstanceOf[JsString].value
 						new URL(uriStr)
 					}
-				case _ =>
-					resp.discardEntityBytes()
-					Future.failed(new Exception(s"Got ${resp.status} from the server"))
+				case _ => errorFromResp(resp)
 			}
 		)
 	}
@@ -156,12 +155,11 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 				entity = entity
 			)
 			http.singleRequest(req, httpsCtxt).flatMap{resp =>
-				resp.discardEntityBytes()
 				resp.status match {
 					case StatusCodes.OK | StatusCodes.Created =>
+						resp.discardEntityBytes()
 						ok
-					case _ =>
-						Future.failed(new Exception(s"Got ${resp.status} from the server"))
+					case _ => errorFromResp(resp)
 				}
 			}
 		}
@@ -174,15 +172,22 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			method = HttpMethods.DELETE
 		)
 		http.singleRequest(req, httpsCtxt).flatMap{resp =>
-			resp.discardEntityBytes()
 			resp.status match {
 				case StatusCodes.OK =>
+					resp.discardEntityBytes()
 					ok
-				case _ =>
-					Future.failed(new Exception(s"Got ${resp.status} from the server"))
+				case _ => errorFromResp(resp)
 			}
 		}
 	}
+
+	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.toStrict(2.seconds)
+		.transform{
+			case Success(payload) => Success(Some(":\n" + payload))
+			case _ => Success(None)
+		}.flatMap{msg =>
+			Future.failed(new Exception(s"Got ${resp.status} from the server$msg"))
+		}
 
 	private def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${conf.prefix}/$suffix"
 

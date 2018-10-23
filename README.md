@@ -147,6 +147,29 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - Run sbt
 - In the sbt console, run `~reStart` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster.
 
+
+### Setting up authentication/authorization for the Handle.net client HandleNetClient
+Handle.net servers use two-way TLS.
+
+#### Client side
+- Generate a public/private key pair:
+`$ openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:4096`
+- Convert the private key to PKCS8 binary format:
+`$ openssl pkcs8 -topk8 -outform DER -in private_key.pem -out private_key.der -nocrypt`
+- Extract the public key from the key pair (output to X.509 binary format):
+`$ openssl rsa -pubout -in private_key.pem -outform DER -out public_key.der`
+- Convert the public key from X.509 format to the format used by Handle.net server software. This can be accomplished with the help of `HandleNetClient.getHandleNetKeyBytes` method, from Scala REPL. The obtained byte array should simply be written to a file, for example `handleClientPubKey.bin`.
+- Make sure the contents of `handleClientPubKey.bin` file are published as the value of `HS_PUBKEY` type at an index that is claimed to describe an administrator of your Handle prefix. For example, it could be record 300 of [0.NA/11676](https://hdl.handle.net/0.NA/11676) or record 300 of [11676/ADMIN](https://hdl.handle.net/11676/ADMIN). This operation must be done by someone who already has the admin rights for the prefix.
+- Generate a self-signed certificate using the private key from the previous steps. Only `CN` value should be provided, and it must identify the `HS_PUBKEY` record in the Handle system, for example as `300:11676/ADMIN`:
+`$ openssl req -keyform DER -key private_key.der -new -x509 -days 15000 -out handleClientCert.pem`
+
+#### Server side
+By default, Handle.net server software comes with self-signed SSL certificates with `CN=/anonymous`. This does not work for Java, therefore it is necessary to get the administrators of the Handle server (which you are going to use) to replace the default with a self-signed certificate with a `CN` equal to the actual domain name of the server. After that the server certificate needs to be fetched (to be used later as a trusted cert), for example:
+`$ openssl s_client -showcerts -connect u-ip-81-124.hpc2n.umu.se:8000 < /dev/null 2> /dev/null | openssl x509 -outform PEM > server_cert.pem`
+
+#### Deployment
+- When deploying `meta`, make sure that the client private key, certificate, and the server certificate files are copied to the production environment, and that the config parameters for the Handle client provide correct paths to them.
+
 ### Miscellaneous recipes
 
 #### Restoring RDFLog database from pg_dump

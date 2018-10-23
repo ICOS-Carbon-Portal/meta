@@ -78,6 +78,7 @@ case class UploadServiceConfig(
 	collectionServers: Map[Envri, String],
 	submitters: Map[Envri, Map[String, DataSubmitterConfig]],
 	epicPid: EpicPidConfig,
+	handle: HandleNetClientConfig,
 	etc: EtcUploadConfig
 )
 
@@ -105,6 +106,16 @@ case class EpicPidConfig(
 	url: String,
 	prefix: String,
 	password: String,
+	dryRun: Boolean
+)
+
+case class HandleNetClientConfig(
+	prefix: String,
+	baseUrl: String,
+	serverCertPemFilePath: String,
+	clientCertPemFilePath: String,
+	clientPrivKeyPKCS8FilePath: String,
+	disableHostnameVerification: Boolean,
 	dryRun: Boolean
 )
 
@@ -152,8 +163,9 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat6(EtcUploadConfig)
+	implicit val handleClientFormat = jsonFormat7(HandleNetClientConfig)
 
-	implicit val uploadServiceConfigFormat = jsonFormat5(UploadServiceConfig)
+	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)

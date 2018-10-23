@@ -3,12 +3,16 @@ package se.lu.nateko.cp.meta.api
 import java.io.FileInputStream
 import java.net.URL
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.KeyFactory
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.CertificateFactory
+import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 
 import scala.concurrent.Future
 
@@ -37,12 +41,12 @@ import spray.json._
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer) extends DefaultJsonProtocol{
 	import system.dispatcher
+	import HandleNetClient.{readPrivateKey, getCertificate, ok}
 	private val http = Http()
 
 	private val httpsCtxt = {
-		import HandleNetClient.{getPrivateKey, getCertificate}
 
-		val privKey = getPrivateKey(conf.clientPrivKeyPKCS8FilePath)
+		val privKey = readPrivateKey(Paths.get(conf.clientPrivKeyPKCS8FilePath))
 		val clientCert = getCertificate(conf.clientCertPemFilePath)
 		val pkEntry = new KeyStore.PrivateKeyEntry(privKey, Array(clientCert))
 
@@ -120,7 +124,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		)
 	}
 
-	def createOrRecreate(suffix: String, target: URL): Future[Done] = {
+	def createOrRecreate(suffix: String, target: URL): Future[Done] = if(conf.dryRun) ok else {
 		val payload = JsObject("values" -> JsArray(
 			JsObject(
 				"index" -> JsNumber(1),
@@ -155,7 +159,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 				resp.discardEntityBytes()
 				resp.status match {
 					case StatusCodes.OK | StatusCodes.Created =>
-						Future.successful(Done)
+						ok
 					case _ =>
 						Future.failed(new Exception(s"Got ${resp.status} from the server"))
 				}
@@ -163,7 +167,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}
 	}
 
-	def delete(suffix: String): Future[Done] = {
+	def delete(suffix: String): Future[Done] = if(conf.dryRun) ok else {
 		val req = HttpRequest(
 			uri = Uri(pidUrlStr(suffix)),
 			headers = authHeaders,
@@ -173,7 +177,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			resp.discardEntityBytes()
 			resp.status match {
 				case StatusCodes.OK =>
-					Future.successful(Done)
+					ok
 				case _ =>
 					Future.failed(new Exception(s"Got ${resp.status} from the server"))
 			}
@@ -205,11 +209,29 @@ object HandleNetClient{
 		cert
 	}
 
-	def getPrivateKey(path: String) = {
-		val bytes = Files.readAllBytes(Paths.get(path))
-		val spec = new PKCS8EncodedKeySpec(bytes)
-		val keyFact = KeyFactory.getInstance("RSA")
-		keyFact.generatePrivate(spec)
+	def readPrivateKey(pkcs8DerFilePath: Path): RSAPrivateKey = {
+		val spec = new PKCS8EncodedKeySpec(Files.readAllBytes(pkcs8DerFilePath))
+		KeyFactory.getInstance("RSA").generatePrivate(spec).asInstanceOf[RSAPrivateKey]
 	}
 
+	def readPublicKey(x509DerFilePath: Path): RSAPublicKey = {
+		val spec = new X509EncodedKeySpec(Files.readAllBytes(x509DerFilePath))
+		KeyFactory.getInstance("RSA").generatePublic(spec).asInstanceOf[RSAPublicKey]
+	}
+
+	def getHandleNetKeyBytes(key: RSAPublicKey): Array[Byte] = {
+		def sizeArr(size: Int): Array[Byte] = Array(24, 16, 8, 0).map(shift => (0xff & (size >> shift)).toByte)
+		def withSize(arr: Array[Byte]): Seq[Array[Byte]] = Array(sizeArr(arr.size), arr)
+
+		val arraySeq: Seq[Seq[Array[Byte]]] = Seq(
+			withSize("RSA_PUB_KEY".getBytes("UTF8")),
+			Seq(Array.fill(2)(0)), //2 bytes of flags, reserved for future use
+			withSize(key.getPublicExponent.toByteArray),
+			withSize(key.getModulus.toByteArray),
+			Seq(Array.fill(4)(0)) //handle.net code makes a too large array (forgets that the flags are written without size)
+		)
+		Array.concat[Byte](arraySeq.flatten: _*)
+	}
+
+	def ok = Future.successful(Done)
 }

@@ -111,7 +111,8 @@ case class HandleNetClientConfig(
 	serverCertPemFilePath: String,
 	clientCertPemFilePath: String,
 	clientPrivKeyPKCS8FilePath: String,
-	disableHostnameVerification: Boolean
+	disableHostnameVerification: Boolean,
+	dryRun: Boolean
 )
 
 case class SparqlServerConfig(
@@ -153,7 +154,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
-	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
+	implicit val handleClientFormat = jsonFormat7(HandleNetClientConfig)
 	implicit val etcUploadConfigFormat = jsonFormat4(EtcUploadConfig)
 
 	import se.lu.nateko.cp.meta.core.MetaCoreConfig.envriFormat

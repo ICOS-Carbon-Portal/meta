@@ -183,8 +183,8 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.toStrict(2.seconds)
 		.transform{
-			case Success(payload) => Success(Some(":\n" + payload))
-			case _ => Success(None)
+			case Success(payload) => Success(":\n" + payload)
+			case _ => Success("")
 		}.flatMap{msg =>
 			Future.failed(new Exception(s"Got ${resp.status} from the server$msg"))
 		}

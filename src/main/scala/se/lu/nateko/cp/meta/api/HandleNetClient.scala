@@ -40,10 +40,10 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import se.lu.nateko.cp.meta.HandleNetClientConfig
-import spray.json._
+import se.lu.nateko.cp.meta.utils.async._
 
-class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer) extends DefaultJsonProtocol{
-	import HandleNetClient.{ getCertificate, ok, readPrivateKey }
+class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
+	import HandleNetClient.{ getCertificate, readPrivateKey }
 	import system.dispatcher
 	private val http = Http()
 
@@ -60,13 +60,17 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		val keyManFact = KeyManagerFactory.getInstance("PKIX")
 		keyManFact.init(keyStore, Array.empty)
 
-		val trustKeyStore = KeyStore.getInstance("JKS")
-		trustKeyStore.load(null, null)
-		val serverCert = getCertificate(conf.serverCertPemFilePath)
-		trustKeyStore.setCertificateEntry("server", serverCert)
 
 		val trustManFact = TrustManagerFactory.getInstance("PKIX")
-		trustManFact.init(trustKeyStore)
+
+		val trustKeyStoreOpt = conf.serverCertPemFilePath.map { serverCertPath =>
+			val trustKeyStore = KeyStore.getInstance("JKS")
+			trustKeyStore.load(null, null)
+			val serverCert = getCertificate(serverCertPath)
+			trustKeyStore.setCertificateEntry("server", serverCert)
+			trustKeyStore
+		}
+		trustManFact.init(trustKeyStoreOpt.getOrElse(null))
 
 		val rnd = SecureRandom.getInstance("NativePRNGNonBlocking")
 		val sslCtxt = SSLContext.getInstance("TLSv1.2")
@@ -96,11 +100,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		).flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK =>
-					Unmarshal(resp.entity).to[JsObject].map{resp =>
-						resp.fields("handles").asInstanceOf[JsArray].elements.map{
-							_.asInstanceOf[JsString].value
-						}
-					}
+					Unmarshal(resp.entity).to[HandleList].map{_.handles}
 				case _ => errorFromResp(resp)
 			}
 		)
@@ -113,10 +113,12 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		).flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK =>
-					Unmarshal(resp.entity).to[JsObject].map{resp =>
-						val hdlVal = resp.fields("values").asInstanceOf[JsArray].elements.head.asJsObject
-						val uriStr = hdlVal.fields("data").asJsObject.fields("value").asInstanceOf[JsString].value
-						new URL(uriStr)
+					Unmarshal(resp.entity).to[HandleValues].flatMap{resp =>
+						resp.values.collectFirst{
+							case UrlHandleValue(_, url) => Future.successful(url)
+						}.getOrElse(
+							error(s"Could not find URL value for $suffix")
+						)
 					}
 				case _ => errorFromResp(resp)
 			}
@@ -124,28 +126,17 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 	}
 
 	def createOrRecreate(suffix: String, target: URL): Future[Done] = if(conf.dryRun) ok else {
-		val payload = JsObject("values" -> JsArray(
-			JsObject(
-				"index" -> JsNumber(1),
-				"type" -> JsString("URL"),
-				"data" -> JsObject(
-					"format" -> JsString("string"),
-					"value" -> JsString(target.toString)
+		val payload = HandleValues(
+			UrlHandleValue(1, target) ::
+			AdminHandleValue(
+				index = 100,
+				admin = AdminValue(
+					handle = "0.NA/" + conf.prefix,
+					index = 200,
+					permissions = "011111110011"
 				)
-			),
-			JsObject(
-				"index" -> JsNumber(100),
-				"type" -> JsString("HS_ADMIN"),
-				"data" -> JsObject(
-					"format" -> JsString("admin"),
-					"value" -> JsObject(
-						"handle" -> JsString("0.NA/" + conf.prefix),
-						"index" -> JsNumber(200),
-						"permissions" -> JsString("011111110011")
-					)
-				)
-			)
-		))
+			) :: Nil
+		)
 
 		Marshal(payload).to[RequestEntity].flatMap{entity =>
 			val req = HttpRequest(
@@ -181,12 +172,12 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}
 	}
 
-	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.toStrict(2.seconds)
+	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.entity.toStrict(2.seconds)
 		.transform{
-			case Success(payload) => Success(":\n" + payload)
+			case Success(entity) => Success(":\n" + entity.data.utf8String)
 			case _ => Success("")
 		}.flatMap{msg =>
-			Future.failed(new Exception(s"Got ${resp.status} from the server$msg"))
+			error(s"Got ${resp.status} from the server$msg")
 		}
 
 	private def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${conf.prefix}/$suffix"
@@ -237,6 +228,4 @@ object HandleNetClient{
 		)
 		Array.concat[Byte](arraySeq.flatten: _*)
 	}
-
-	def ok = Future.successful(Done)
 }

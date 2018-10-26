@@ -112,7 +112,7 @@ case class EpicPidConfig(
 case class HandleNetClientConfig(
 	prefix: String,
 	baseUrl: String,
-	serverCertPemFilePath: String,
+	serverCertPemFilePath: Option[String],
 	clientCertPemFilePath: String,
 	clientPrivKeyPKCS8FilePath: String,
 	disableHostnameVerification: Boolean,

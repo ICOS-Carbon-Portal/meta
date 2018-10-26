@@ -9,8 +9,13 @@ import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
 
 import akka.actor.Scheduler
+import akka.Done
 
 package object async {
+
+	def ok = Future.successful(Done)
+
+	def error[T](msg: String): Future[T] = Future.failed(new Exception(msg))
 
 	def timeLimit[T](
 		future: Future[T],

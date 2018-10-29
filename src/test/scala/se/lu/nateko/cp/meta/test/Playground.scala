@@ -1,52 +1,59 @@
 package se.lu.nateko.cp.meta.test
 
-import akka.actor.ActorSystem
-import se.lu.nateko.cp.meta.api.EpicPidClient
-import se.lu.nateko.cp.meta.api.PidUpdate
-import spray.json.JsString
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.Future
 import java.net.URL
-import se.lu.nateko.cp.meta.test.utils.SparqlClient
+
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+
+import akka.Done
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
+import se.lu.nateko.cp.meta.test.utils.SparqlClient
 
 object Playground {
 
 	implicit val system = ActorSystem("playground")
 	import system.dispatcher
+	implicit val mat = ActorMaterializer()
 
-	val epic = EpicPidClient.default
+	val handles = {
+		val conf = se.lu.nateko.cp.meta.ConfigLoader.default.dataUploadService.handle
+		new HandleNetClient(conf)
+	}
+
 	val sparql = new SparqlClient(new URL("https://meta.icos-cp.eu/sparql"))
 
 	def stop() = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
-		epic.createNew(postfix, Seq(PidUpdate("URL", JsString(targetUrl))))
+		handles.createOrRecreate(postfix, new java.net.URL(targetUrl))
 	}
 
-	def create(targetUrl: String): String = wait{
-		epic.createRandom(Seq(PidUpdate("URL", JsString(targetUrl))))
-	}
+//	def create(targetUrl: String): String = wait{
+//		epic.createRandom(Seq(PidUpdate("URL", JsString(targetUrl))))
+//	}
 
-	def addHash(postfix: String, hash: String): Unit = wait{
-		for(
-			entries <- epic.get(postfix);
-			oldEntries = entries.reverse.tail.map(EpicPidClient.toUpdate);
-			res <- epic.update(postfix, PidUpdate("SHA256", JsString(hash)) +: oldEntries)
-		) yield res
-	}
+//	def addHash(postfix: String, hash: String): Unit = wait{
+//		for(
+//			entries <- handles.get(postfix);
+//			oldEntries = entries.reverse.tail.map(EpicPidClient.toUpdate);
+//			res <- epic.update(postfix, PidUpdate("SHA256", JsString(hash)) +: oldEntries)
+//		) yield res
+//	}
 
 	def delete(postfix: String): Unit = wait{
-		epic.delete(postfix)
+		handles.delete(postfix)
 	}
 
-	def list(): Unit = wait(epic.list) foreach println
+	def list(): Unit = wait(handles.list) foreach println
 	def listOrphans(): Unit = wait(getOrphans) foreach println
 
-	def print(suffix: String): Unit = wait(epic.get(suffix)) foreach println
+	def print(suffix: String): Unit = handles.get(suffix) foreach println
 
-	def getOrphans: Future[Seq[String]] = epic.list.flatMap{allPids =>
+	def getOrphans: Future[Seq[String]] = handles.list.flatMap{allPids =>
 		val query = orphanPidFilteringQuery(allPids)
 
 		sparql.select(query).map{res =>
@@ -56,10 +63,10 @@ object Playground {
 		}
 	}
 
-	def deleteAllOrphans(): Unit = wait{
+	def deleteAllOrphans(): Done = wait{
 		getOrphans.flatMap{orphanPids =>
-			val seed = Future.successful(())
-			orphanPids.foldLeft(seed)((fut, suff) => fut.flatMap(_ => epic.delete(suff)))
+			val seed = Future.successful(Done)
+			orphanPids.foldLeft[Future[Done]](seed)((fut, suff) => fut.flatMap(_ => handles.delete(suff)))
 		}
 	}
 

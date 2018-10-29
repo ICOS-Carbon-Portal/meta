@@ -40,6 +40,7 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import se.lu.nateko.cp.meta.HandleNetClientConfig
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.async._
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
@@ -172,6 +173,10 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}
 	}
 
+	def getPid(suffix: String) = s"${conf.prefix}/$suffix"
+	def getSuffix(hash: Sha256Sum): String = hash.id
+	def getPid(hash: Sha256Sum): String = getPid(getSuffix(hash))
+
 	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.entity.toStrict(2.seconds)
 		.transform{
 			case Success(entity) => Success(":\n" + entity.data.utf8String)
@@ -180,7 +185,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			error(s"Got ${resp.status} from the server$msg")
 		}
 
-	private def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${conf.prefix}/$suffix"
+	private def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
 
 }
 

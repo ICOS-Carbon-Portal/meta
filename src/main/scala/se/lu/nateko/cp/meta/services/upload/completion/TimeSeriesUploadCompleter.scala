@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import org.eclipse.rdf4j.model.IRI
 
-import se.lu.nateko.cp.meta.api.EpicPidClient
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
@@ -25,10 +25,10 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 private class TimeSeriesUploadCompleter(
 	server: InstanceServer,
 	extract: IngestionMetadataExtract,
-	epic: EpicPidClient,
+	handles: HandleNetClient,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
-)(implicit ex: ExecutionContext, envri: Envri) extends EpicPidMinter(epic, vocab) {
+)(implicit ex: ExecutionContext, envri: Envri) extends PidMinter(handles, vocab) {
 
 	private val factory = vocab.factory
 	private val statementsProd = new StatementsProducer(vocab, metaVocab)

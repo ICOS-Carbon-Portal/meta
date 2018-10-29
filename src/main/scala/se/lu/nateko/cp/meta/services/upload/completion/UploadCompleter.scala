@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scala.util.Try
 
 import akka.actor.ActorSystem
-import se.lu.nateko.cp.meta.api.EpicPidClient
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 
 
-class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(implicit system: ActorSystem) {
+class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(implicit system: ActorSystem) {
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher
 
@@ -45,14 +45,14 @@ class UploadCompleter(servers: DataObjectInstanceServers, epic: EpicPidClient)(i
 		) yield {
 			val completer = ingestionResult match{
 				case None =>
-					new EpicPidMinter(epic, vocab)
+					new PidMinter(handles, vocab)
 
 				case Some(extract) => extract match {
 					case wdcgg: WdcggUploadCompletion =>
 						new WdcggUploadCompleter(server, wdcgg, vocab, metaVocab)
 
 					case _: TimeSeriesUploadCompletion | _: SpatialTimeSeriesUploadCompletion =>
-						new TimeSeriesUploadCompleter(server, extract, epic, vocab, metaVocab)
+						new TimeSeriesUploadCompleter(server, extract, handles, vocab, metaVocab)
 				}
 			}
 			(completer, server)

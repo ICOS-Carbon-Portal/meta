@@ -21,7 +21,7 @@ object Playground {
 
 	val handles = {
 		val conf = se.lu.nateko.cp.meta.ConfigLoader.default.dataUploadService.handle
-		new HandleNetClient(conf)
+		new HandleNetClient(conf.copy(prefix = "11676", dryRun = false))
 	}
 
 	val sparql = new SparqlClient(new URL("https://meta.icos-cp.eu/sparql"))

@@ -20,6 +20,7 @@ import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.timeLimit
+import se.lu.nateko.cp.meta.CitationConfig
 
 case class Doi private(val prefix: String, val suffix: String)
 
@@ -30,14 +31,14 @@ object Doi{
 	}
 }
 
-class CitationClient(knownDois: List[Doi], warmCacheUp: Boolean)(implicit system: ActorSystem, mat: Materializer) {
+class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit system: ActorSystem, mat: Materializer) {
 
 	private val cache = TrieMap.empty[Doi, Future[String]]
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
 
-	if(warmCacheUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
+	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 
 	def getCitation(doi: Doi): Future[String] = cache
 		.getOrElseUpdate(doi, fetchTimeLimited(doi))
@@ -118,7 +119,7 @@ class CitationClient(knownDois: List[Doi], warmCacheUp: Boolean)(implicit system
 		}
 
 	private val acceptBiblioRange = Accept(
-		MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> "apa"))
+		MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> config.style))
 	)
 
 	private def request(uri: Uri) = http.singleRequest{

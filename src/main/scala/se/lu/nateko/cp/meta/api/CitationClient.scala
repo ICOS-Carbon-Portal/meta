@@ -86,19 +86,12 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 		}
 	}
 
-	private def fetchCitation(doi: Doi): Future[String] = requestRedirect(doi)
-		.flatMap{resp =>
-			resp.discardEntityBytes()
-			resp.header[Location].fold{
-				Future.failed[Location](
-					new Exception("Error getting citation from DataCite (no Location header in response).")
-				)
-			}{
-				Future.successful
-			}
-		}
-		.flatMap(requestCitation)
-		.flatMap{resp =>
+	private def fetchCitation(doi: Doi): Future[String] = http.singleRequest(
+			HttpRequest(
+				uri = s"https://api.datacite.org/${doi.prefix}/${doi.suffix}?style=${config.style}",
+				headers = acceptBiblioRange :: Nil
+			)
+		).flatMap{resp =>
 			Unmarshal(resp).to[String].transform{
 				case ok @ Success(payload) =>
 					if(resp.status.isSuccess) ok
@@ -122,10 +115,4 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 		MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> config.style))
 	)
 
-	private def request(uri: Uri) = http.singleRequest{
-		HttpRequest(uri = uri, headers = acceptBiblioRange :: Nil)
-	}
-
-	private def requestRedirect(doi: Doi) = request(s"https://doi.org/${doi.prefix}/${doi.suffix}")
-	private def requestCitation(location: Location) = request(location.uri)
 }

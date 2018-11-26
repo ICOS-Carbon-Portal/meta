@@ -1,8 +1,8 @@
 @import se.lu.nateko.cp.meta.core.data.UriResource
-@import se.lu.nateko.cp.viewscore.CpMenu.{item, cpHome}
+@import se.lu.nateko.cp.viewscore.CpMenu
 
 @(info: ResourceViewInfo)
-@ServerSidePage("ICOS Metadata Entity Page", info.res.uri.toString, info.infrastructure, Seq(item("Home", cpHome))){
+@ServerSidePage("ICOS Metadata Entity Page", info.res.uri.toString, info.infrastructure, CpMenu.default){
 	<div class="container-fluid">
 
 		<div class="row">

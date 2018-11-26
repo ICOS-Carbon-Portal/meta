@@ -4,7 +4,7 @@
 @import se.lu.nateko.cp.viewscore.CpMenu
 
 @(coll: StaticCollection, citation: Option[String])(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.landingPage){
+@ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.default){
 	<div class="container-fluid">
 
 		<div class="row">

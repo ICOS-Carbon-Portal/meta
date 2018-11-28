@@ -12,7 +12,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataThemeFormat = enumFormat(DataTheme)
 	implicit val orgClassFormat = enumFormat(OrganizationClass)
 
-	implicit val positionFormat = jsonFormat2(Position)
+	implicit val positionFormat = jsonFormat3(Position)
 	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
 	implicit val geoPolygonFormat = jsonFormat1(Polygon)
@@ -36,7 +36,7 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[Polygon]
 				else if(fields.contains("min") && fields.contains("max"))
 					value.convertTo[LatLonBox]
-				else if(fields.contains("lat") && fields.contains("lon"))
+				else if(fields.contains("lat") && fields.contains("lon") && fields.contains("alt"))
 					value.convertTo[Position]
 				else
 					value.convertTo[GenericGeoFeature]

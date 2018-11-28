@@ -42,11 +42,13 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
+			lon = getSingleDouble(cov, metaVocab.hasWesternBound),
+			Option.empty
 		),
 		max = Position(
 			lat = getSingleDouble(cov, metaVocab.hasNothernBound),
-			lon = getSingleDouble(cov, metaVocab.hasEasternBound)
+			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
+			Option.empty
 		),
 		label = getOptionalString(cov, RDFS.LABEL)
 	)
@@ -144,7 +146,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		coverage = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon)
+		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation))
 	)
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption

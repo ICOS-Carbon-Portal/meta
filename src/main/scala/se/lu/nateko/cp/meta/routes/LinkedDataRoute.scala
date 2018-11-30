@@ -71,7 +71,7 @@ object LinkedDataRoute {
 					}
 				}
 			} ~
-			pathPrefix("ontologies" | "resources" | "objects" | "files"){
+			pathPrefix("ontologies" | "resources" | "objects" | "files" | "collections"){
 				genericRdfUriResourcePage
 			} ~
 			path("config" / "dataObjectGraphInfos"){

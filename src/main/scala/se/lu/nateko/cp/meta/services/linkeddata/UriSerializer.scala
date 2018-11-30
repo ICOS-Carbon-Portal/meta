@@ -1,104 +1,143 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
-import java.net.{ URI => JavaUri }
+import java.net.{URI => JavaUri}
 
-import scala.Left
-import scala.Right
-import scala.collection.TraversableOnce.flattenTraversableOnce
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
+import akka.actor.ActorSystem
+import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
+import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
+import akka.http.scaladsl.model.{HttpResponse, _}
+import akka.stream.Materializer
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.RepositoryConnection
-
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
-import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharset
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.Uri
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.UriResource
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import play.twirl.api.Html
+import se.lu.nateko.cp.meta.{CpmetaConfig, api}
+import se.lu.nateko.cp.meta.api._
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.stationFormat
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
+import se.lu.nateko.cp.meta.services.upload.{DataObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import spray.json.JsonWriter
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
+
+import scala.collection.TraversableOnce.flattenTraversableOnce
+import scala.concurrent.{ExecutionContext, Future}
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
-class Rdf4jUriSerializer(repo: Repository, servers: DataObjectInstanceServers)(implicit envries: EnvriConfigs) extends UriSerializer{
+class Rdf4jUriSerializer(
+	repo: Repository,
+	servers: DataObjectInstanceServers,
+	config: CpmetaConfig
+)(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
+
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer._
 
-	val marshaller: ToResponseMarshaller[Uri] = {
+	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
+	val citer = new CitationClient(getDois, config.citations)
+	val pcm = new PageContentMarshalling(config.core.handleService, citer, new CpVocab(repo.getValueFactory))
 
-		val htmlOrJsonMarshaller: ToResponseMarshaller[Uri] = Marshaller(
-			implicit exeCtxt => uri => getJsonFetcher(uri).map{jsonFetcherOpt =>
-				WithOpenCharset(MediaTypes.`text/html`, getHtml(uri)) ::
-				jsonFetcherOpt.toList.map(WithFixedContentType(ContentTypes.`application/json`, _))
-			}
-		)
-		val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
-			.compose(uri => () => getStatementsIter(uri, repo))
+	import pcm.{dataObjectMarshaller, statCollMarshaller}
 
-		Marshaller.oneOf(htmlOrJsonMarshaller, rdfMarshaller)
-	}
+	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
+		.compose(uri => () => getStatementsIter(uri, repo))
 
+	val marshaller: ToResponseMarshaller[Uri] = Marshaller(
+		implicit exeCtxt => uri => {
+			implicit val envri = inferEnvri(uri)
+			implicit val envriConfig = envries(envri)
+			getReprOptions(uri).marshal
+		}
+	)
 	private def inferEnvri(uri: Uri) = Envri.infer(new java.net.URI(uri.toString)).getOrElse(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
 
-	private def getHtml(uri: Uri)(charset: HttpCharset) = HttpResponse(
-		entity = HttpEntity(
-			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			views.html.UriResourcePage(getViewInfo(uri, repo, inferEnvri(uri))).body
-		)
-	)
-
-	private def getJsonFetcher(uri: Uri)(implicit ctxt: ExecutionContext): Future[Option[() => HttpResponse]] = Future{
-		import servers.metaVocab
-		val subj = metaVocab.factory.createIRI(uri.toString)
-
-		val isObjSpec = repo.accessEagerly{ implicit conn =>
-			conn.getStatements(subj, RDF.TYPE, null, false).asScalaIterator.exists{st =>
-				isA(st.getObject, metaVocab.dataObjectSpecClass)
-			}
-		}
-
-		if(isObjSpec){
-			implicit val envri = inferEnvri(uri)
-			import se.lu.nateko.cp.meta.core.data.JsonSupport.dataObjectSpecFormat
-			import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.getJson
-			Some(() => getJson(servers.getDataObjSpecification(subj).toOption))
-		}else
-			None
+	private def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
+		import servers.vocab
+		val server = servers.getInstServerForDataObj(hash).get
+		val collFetcher = servers.collFetcher.get
+		val objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, pidFactory)
+		objectFetcher.fetch(hash)
 	}
 
-	private def isA(subClass: Value, superClass: IRI)(implicit conn: RepositoryConnection): Boolean = subClass match {
-		case sub: Resource =>
-			superClass == sub || conn.getStatements(sub, RDFS.SUBCLASSOF, null, false).asScalaIterator.exists{
-				st => isA(st.getObject, superClass)
+	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
+		servers.collFetcher.flatMap(_.fetchStatic(hash))
+
+	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[Station] = servers.getStation(iri)
+
+	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
+		HttpResponse(
+			entity = HttpEntity(
+				ContentType.WithCharset(MediaTypes.`text/html`, charset),
+				views.html.UriResourcePage(getViewInfo(uri, repo, inferEnvri(uri))).body
+			)
+		)
+	}
+
+	private def getReprOptions(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig): RepresentationOptions = uri.path match {
+		case Hash.Object(hash) =>
+			new DelegatingRepr(() => fetchDataObj(hash))
+		case Hash.Collection(hash) =>
+			new DelegatingRepr(() => fetchStaticColl(hash))
+		case Slash(Segment("resources", Slash(Segment("stations", _)))) =>
+			new FullCustomization[Station](
+				() => fetchStation(JavaUri.create(uri.toString()).toRdf(repo.getValueFactory)),
+				views.html.StationLandingPage(_)
+			)
+		case _ =>
+			new DefaultReprOptions(uri)
+	}
+	private sealed trait RepresentationOptions{
+		def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]]
+	}
+	private class DelegatingRepr[T](fetchDto: () => Option[T])(implicit trm: ToResponseMarshaller[() => Option[T]]) extends RepresentationOptions {
+		override def marshal(implicit ctxt: ExecutionContext) = trm(fetchDto)
+	}
+	private class WithJson[T : JsonWriter](fetchDto: () => Option[T]) extends RepresentationOptions {
+		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = Future.successful{
+			WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto())) :: Nil
+		}
+	}
+	private class FullCustomization[T : JsonWriter](fetchDto: () => Option[T], pageTemplate: T => Html)(implicit envri: Envri) extends WithJson[T](fetchDto) {
+		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = {
+			super.marshal.zip(
+				fetchDto() match {
+					case Some(value) => PageContentMarshalling.twirlHtmlMarshaller(pageTemplate(value))
+					case None => PageContentMarshalling.notFoundMarshaller
+				}
+			).map{
+				case (json, html) => json ++ html
 			}
-		case _ => false
+		}
+	}
+	private class DefaultReprOptions(uri: Uri) extends RepresentationOptions {
+		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = rdfMarshaller(uri).map{
+			WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri)) :: _
+		}
+	}
+
+	private def getDois: List[Doi] = {
+		import se.lu.nateko.cp.meta.services.CpmetaVocab
+		import se.lu.nateko.cp.meta.utils.rdf4j._
+		val meta = new CpmetaVocab(repo.getValueFactory)
+		repo
+			.access{conn =>
+				conn.getStatements(null, meta.hasDoi, null)
+			}
+			.map(_.getObject.stringValue)
+			.toList.distinct.collect{
+			case Doi(doi) => doi
+		}
 	}
 }
 
@@ -106,6 +145,19 @@ class Rdf4jUriSerializer(repo: Repository, servers: DataObjectInstanceServers)(i
 
 private object Rdf4jUriSerializer{
 
+	object Hash {
+		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
+
+		object Object extends HashExtractor("objects")
+		object Collection extends HashExtractor("collections")
+
+		abstract class HashExtractor(segment: String) {
+			def unapply(arg: Uri.Path): Option[Sha256Sum] = arg match {
+				case Slash(Segment(`segment`, Slash(Segment(Hash(hash), Empty)))) => Some(hash)
+				case _ => None
+			}
+		}
+	}
 	val Limit = 500
 
 	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {

@@ -10,7 +10,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataThemeFormat = jsonFormat3(DataTheme)
 	implicit val dataObjectSpecFormat = jsonFormat7(DataObjectSpec)
 
-	implicit val positionFormat = jsonFormat2(Position)
+	implicit val positionFormat = jsonFormat3(Position)
 	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
 	implicit val geoPolygonFormat = jsonFormat1(Polygon)
@@ -45,7 +45,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val orgFormat = jsonFormat2(Organization)
 	implicit val personFormat = jsonFormat3(Person)
-	implicit val objectProducerFormat = jsonFormat4(Station)
+	implicit val stationFormat = jsonFormat4(Station)
 
 	implicit object agentFormat extends JsonFormat[Agent]{
 

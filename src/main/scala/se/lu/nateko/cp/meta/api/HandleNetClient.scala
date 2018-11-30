@@ -17,9 +17,7 @@ import java.security.spec.X509EncodedKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Success
-
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -44,10 +42,10 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.async._
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
-	import HandleNetClient.{ getCertificate, readPrivateKey }
+	import HandleNetClient._
 	import system.dispatcher
 	private val http = Http()
-
+	val pidFactory = new PidFactory(conf)
 	private val httpsCtxt = {
 
 		val privKey = readPrivateKey(Paths.get(conf.clientPrivKeyPKCS8FilePath))
@@ -109,7 +107,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 	def get(suffix: String): Future[URL] = {
 		http.singleRequest(
-			HttpRequest(uri = Uri(pidUrlStr(suffix)), headers = authHeaders),
+			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix)), headers = authHeaders),
 			httpsCtxt
 		).flatMap(
 			resp => resp.status match {
@@ -141,7 +139,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 		Marshal(payload).to[RequestEntity].flatMap{entity =>
 			val req = HttpRequest(
-				uri = Uri(pidUrlStr(suffix) + "?overwrite=true"),
+				uri = Uri(pidFactory.pidUrlStr(suffix) + "?overwrite=true"),
 				headers = authHeaders,
 				method = HttpMethods.PUT,
 				entity = entity
@@ -159,7 +157,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 	def delete(suffix: String): Future[Done] = if(conf.dryRun) ok else {
 		val req = HttpRequest(
-			uri = Uri(pidUrlStr(suffix)),
+			uri = Uri(pidFactory.pidUrlStr(suffix)),
 			headers = authHeaders,
 			method = HttpMethods.DELETE
 		)
@@ -173,9 +171,6 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}
 	}
 
-	def getPid(suffix: String) = s"${conf.prefix}/$suffix"
-	def getSuffix(hash: Sha256Sum): String = hash.id
-	def getPid(hash: Sha256Sum): String = getPid(getSuffix(hash))
 
 	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.entity.toStrict(2.seconds)
 		.transform{
@@ -184,13 +179,16 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}.flatMap{msg =>
 			error(s"Got ${resp.status} from the server$msg")
 		}
-
-	private def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
-
 }
 
 object HandleNetClient{
 
+	class PidFactory(conf: HandleNetClientConfig){
+		def getPid(suffix: String) = s"${conf.prefix}/$suffix"
+		def getSuffix(hash: Sha256Sum): String = hash.id
+		def getPid(hash: Sha256Sum): String = getPid(getSuffix(hash))
+		def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
+	}
 //	implicit val system = ActorSystem()
 //	implicit val mat = ActorMaterializer()
 //	import system.dispatcher

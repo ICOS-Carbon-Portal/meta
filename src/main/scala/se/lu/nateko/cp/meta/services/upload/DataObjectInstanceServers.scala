@@ -4,7 +4,7 @@ import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, Station}
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer.AtMostOne
@@ -29,6 +29,10 @@ class DataObjectInstanceServers(
 			protected val server = instServer
 			val vocab = top.vocab
 		}
+	}
+
+	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = {
+		metaFetchers(envri).getOptionalStation(station)
 	}
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {

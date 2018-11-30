@@ -11,7 +11,7 @@ case class GenericGeoFeature(val geoJson: String) extends GeoFeature{
 	def textSpecification = geoJson
 }
 
-case class Position(lat: Double, lon: Double) extends GeoFeature{
+case class Position(lat: Double, lon: Double, alt: Option[Float]) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Point",
 	|	"coordinates": [$lon6, $lat6]

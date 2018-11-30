@@ -31,8 +31,7 @@ import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, UploadService}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
@@ -47,10 +46,11 @@ class MetaDb (
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: Repository
-)(implicit configs: EnvriConfigs) extends Closeable{
+	val repo: Repository,
+	val config: CpmetaConfig
+)(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends Closeable{
 
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers)
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, config)
 
 	def close(): Unit = {
 		sparql.shutdown()
@@ -139,7 +139,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, config)
 		}
 	}
 

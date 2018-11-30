@@ -5,13 +5,14 @@ import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.DataTheme._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+
+import scala.util.Try
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -42,11 +43,13 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
+			lon = getSingleDouble(cov, metaVocab.hasWesternBound),
+			Option.empty
 		),
 		max = Position(
 			lat = getSingleDouble(cov, metaVocab.hasNothernBound),
-			lon = getSingleDouble(cov, metaVocab.hasEasternBound)
+			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
+			Option.empty
 		),
 		label = getOptionalString(cov, RDFS.LABEL)
 	)
@@ -107,8 +110,10 @@ trait CpmetaFetcher extends FetchingHelper{
 		coverage = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon)
+		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation))
 	)
+
+	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
 
 	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
 

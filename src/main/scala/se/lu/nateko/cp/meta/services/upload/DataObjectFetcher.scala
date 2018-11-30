@@ -4,7 +4,7 @@ import java.net.URI
 
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
@@ -16,7 +16,7 @@ class DataObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,
-	pidFactory: Sha256Sum => String
+	pidFactory: HandleNetClient.PidFactory
 ) extends CpmetaFetcher {
 
 	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
@@ -59,7 +59,7 @@ class DataObjectFetcher(
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
-		if(metaVocab.wdcggFormat === format) None else Some(pidFactory(hash))
+		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 	}
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(implicit envri: Envri): Option[URI] = {

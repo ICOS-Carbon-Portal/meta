@@ -42,14 +42,11 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting,
-		citer: CitationClient,
 		coreConf: MetaCoreConfig
 	): Route = handleExceptions(errHandler){
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
-		val pcm = new PageContentMarshalling(coreConf.handleService, citer, service.servers.vocab)
-		import pcm.{dataObjectMarshaller, statCollMarshaller}
 
 		pathPrefix("upload"){
 			post{
@@ -102,19 +99,6 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 							complete(service.availableSubmitterIds(uploader))
 						}
 					}
-				}
-			}
-		} ~
-		get{
-			path("objects" / Sha256Segment){ hash =>
-				extractEnvri{implicit envri =>
-					complete(() => service.fetchDataObj(hash))
-				}
-			} ~
-			path("collections" / Sha256Segment){ hash =>
-				extractEnvri{implicit envri =>
-					implicit val conf = configs(envri)
-					complete(() => service.fetchStaticColl(hash))
 				}
 			}
 		}

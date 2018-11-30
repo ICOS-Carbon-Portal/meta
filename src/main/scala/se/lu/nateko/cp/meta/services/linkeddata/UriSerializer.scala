@@ -51,12 +51,15 @@ class Rdf4jUriSerializer(
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
 
-	val marshaller: ToResponseMarshaller[Uri] = Marshaller(
-		implicit exeCtxt => uri => {
-			implicit val envri = inferEnvri(uri)
-			implicit val envriConfig = envries(envri)
-			getReprOptions(uri).marshal
-		}
+	val marshaller: ToResponseMarshaller[Uri] = Marshaller.oneOf(
+			Marshaller(
+			implicit exeCtxt => uri => {
+				implicit val envri = inferEnvri(uri)
+				implicit val envriConfig = envries(envri)
+				getReprOptions(uri).marshal
+			}
+		),
+		rdfMarshaller
 	)
 	private def inferEnvri(uri: Uri) = Envri.infer(new java.net.URI(uri.toString)).getOrElse(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)

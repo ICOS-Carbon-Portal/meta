@@ -5,7 +5,6 @@ import java.util.concurrent.CompletionException
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
@@ -23,6 +22,7 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 
 object SparqlRoute {
 
@@ -33,7 +33,7 @@ object SparqlRoute {
 
 	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
 
-	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery]): Route = {
+	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs): Route = {
 
 		val makeResponse: String => Route = query => setSparqlHeaders {
 			handleExceptions(MainRoute.exceptionHandler){

@@ -79,10 +79,13 @@ class Rdf4jUriSerializer(
 	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[Station] = servers.getStation(iri)
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
+		implicit val envri = inferEnvri(uri)
+		val viewInfo = getViewInfo(uri, repo, envri)
 		HttpResponse(
+			status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
 			entity = HttpEntity(
 				ContentType.WithCharset(MediaTypes.`text/html`, charset),
-				views.html.UriResourcePage(getViewInfo(uri, repo, inferEnvri(uri))).body
+				if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "").body else views.html.UriResourcePage(viewInfo).body
 			)
 		)
 	}
@@ -116,7 +119,7 @@ class Rdf4jUriSerializer(
 			super.marshal.zip(
 				fetchDto() match {
 					case Some(value) => PageContentMarshalling.twirlHtmlMarshaller(pageTemplate(value))
-					case None => PageContentMarshalling.notFoundMarshaller
+					case None => PageContentMarshalling.notFoundMarshalling
 				}
 			).map{
 				case (json, html) => json ++ html

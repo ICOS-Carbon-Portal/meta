@@ -11,7 +11,9 @@ case class ResourceViewInfo(
 	types: List[UriResource],
 	propValues: List[(UriResource, PropValue)],
 	usage: Seq[(UriResource, UriResource)]
-)
+){
+	def isEmpty: Boolean = propValues.isEmpty && usage.isEmpty && types.isEmpty && comment.isEmpty
+}
 
 object ResourceViewInfo{
 	type PropValue = Either[UriResource, String]

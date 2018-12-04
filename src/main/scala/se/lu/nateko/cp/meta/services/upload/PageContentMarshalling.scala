@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller, ToEntityMarshaller}
 import akka.http.scaladsl.marshalling.Marshalling._
 import akka.http.scaladsl.model._
 import se.lu.nateko.cp.meta.api.Doi
@@ -63,13 +63,14 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: C
 
 object PageContentMarshalling{
 
-	val twirlHtmlMarshaller: ToResponseMarshaller[Html] = Marshaller(
+	implicit val twirlHtmlEntityMarshaller: ToEntityMarshaller[Html] = Marshaller(
 		_ => html => Future.successful(
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)
 	)
+	val twirlHtmlMarshaller = implicitly[ToResponseMarshaller[Html]]
 
-	def notFoundMarshaller(implicit envri: Envri): Future[List[Marshalling[HttpResponse]]] = {
+	def notFoundMarshalling(implicit envri: Envri): Future[List[Marshalling[HttpResponse]]] = {
 		Future.successful {
 			WithFixedContentType(
 				ContentTypes.`text/html(UTF-8)`,
@@ -78,18 +79,16 @@ object PageContentMarshalling{
 						StatusCodes.NotFound,
 						entity = HttpEntity(
 							ContentType.WithCharset(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
-							views.html.NotFoundPage().body
+							views.html.MessagePage("Page not found", "").body
 						)
 					)
 			) :: Nil
 		}
 	}
 
-	private def getHtml(html: Html, charset: HttpCharset) = HttpResponse(
-		entity = HttpEntity(
-			ContentType.WithCharset(MediaTypes.`text/html`, charset),
-			html.body
-		)
+	private def getHtml(html: Html, charset: HttpCharset) = HttpEntity(
+		ContentType.WithCharset(MediaTypes.`text/html`, charset),
+		html.body
 	)
 
 	def getJson[T: JsonWriter](dataItemOpt: Option[T]) =

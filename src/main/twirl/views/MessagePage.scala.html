@@ -3,10 +3,13 @@
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 
-@()(implicit envri: Envri.Value)
-@ServerSidePage("Page not found", "Page not found", envri, CpMenu.default){
+@(title: String, message: String)(implicit envri: Envri.Value)
+@ServerSidePage(title, title, envri, CpMenu.default){
 <div class="container-fluid">
     <div class="row">
+        @for(line <- message.lines) {
+        <p>@line</p>
+        }
     </div>
 </div>
 }

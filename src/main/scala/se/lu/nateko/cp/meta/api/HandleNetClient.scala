@@ -46,7 +46,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 	import system.dispatcher
 	private val http = Http()
 	val pidFactory = new PidFactory(conf)
-	private val httpsCtxt = {
+	private lazy val httpsCtxt = {
 
 		val privKey = readPrivateKey(Paths.get(conf.clientPrivKeyPKCS8FilePath))
 		val clientCert = getCertificate(conf.clientCertPemFilePath)

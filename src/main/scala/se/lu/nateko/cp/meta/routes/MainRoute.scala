@@ -10,19 +10,16 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.twirlHtmlEntityMarshaller
+import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 
 object MainRoute {
 
 	def exceptionHandler(implicit envriConfigs: EnvriConfigs) = ExceptionHandler{
 		case ex =>
-			val traceWriter = new java.io.StringWriter()
-			ex.printStackTrace(new java.io.PrintWriter(traceWriter))
-			val trace = traceWriter.toString
-			val msg = if(ex.getMessage == null) "" else ex.getMessage
 			val extractEnvri = AuthenticationRouting.extractEnvriDirective
 			extractEnvri { implicit envri =>
-				complete(StatusCodes.InternalServerError -> views.html.MessagePage("Server error", s"$msg\n$trace"))
+				implicit val errMarsh = errorMarshaller
+				complete(StatusCodes.InternalServerError -> ex)
 			}
 	}
 

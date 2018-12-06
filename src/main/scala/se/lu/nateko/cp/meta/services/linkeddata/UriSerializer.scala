@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
-import akka.http.scaladsl.model.{HttpResponse, _}
+import akka.http.scaladsl.model._
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
@@ -26,7 +26,6 @@ import spray.json.JsonWriter
 import views.html.ResourceViewInfo
 import views.html.ResourceViewInfo.PropValue
 
-import scala.collection.TraversableOnce.flattenTraversableOnce
 import scala.concurrent.{ExecutionContext, Future}
 
 trait UriSerializer {
@@ -67,10 +66,12 @@ class Rdf4jUriSerializer(
 
 	private def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
 		import servers.vocab
-		val server = servers.getInstServerForDataObj(hash).get
-		val collFetcher = servers.collFetcher.get
-		val objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, pidFactory)
-		objectFetcher.fetch(hash)
+		for(
+			server <- servers.getInstServerForDataObj(hash).toOption;
+			collFetcher <- servers.collFetcher;
+			objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, pidFactory);
+			dobj <- objectFetcher.fetch(hash)
+		) yield dobj
 	}
 
 	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
@@ -95,40 +96,48 @@ class Rdf4jUriSerializer(
 			new DelegatingRepr(() => fetchDataObj(hash))
 		case Hash.Collection(hash) =>
 			new DelegatingRepr(() => fetchStaticColl(hash))
-		case Slash(Segment("resources", Slash(Segment("stations", _)))) =>
+		case Slash(Segment("resources", Slash(Segment("stations", stId)))) =>
 			new FullCustomization[Station](
-				() => fetchStation(JavaUri.create(uri.toString()).toRdf(repo.getValueFactory)),
-				views.html.StationLandingPage(_)
+				() => fetchStation(JavaUri.create(uri.toString).toRdf(repo.getValueFactory)),
+				views.html.StationLandingPage(_),
+				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId")
 			)
 		case _ =>
 			new DefaultReprOptions(uri)
 	}
+
 	private sealed trait RepresentationOptions{
 		def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]]
 	}
+
 	private class DelegatingRepr[T](fetchDto: () => Option[T])(implicit trm: ToResponseMarshaller[() => Option[T]]) extends RepresentationOptions {
 		override def marshal(implicit ctxt: ExecutionContext) = trm(fetchDto)
 	}
+
 	private class WithJson[T : JsonWriter](fetchDto: () => Option[T]) extends RepresentationOptions {
 		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = Future.successful{
 			WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto())) :: Nil
 		}
 	}
-	private class FullCustomization[T : JsonWriter](fetchDto: () => Option[T], pageTemplate: T => Html)(implicit envri: Envri) extends WithJson[T](fetchDto) {
-		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = {
-			super.marshal.zip(
-				fetchDto() match {
-					case Some(value) => PageContentMarshalling.twirlHtmlMarshaller(pageTemplate(value))
-					case None => PageContentMarshalling.notFoundMarshalling
-				}
-			).map{
-				case (json, html) => json ++ html
+
+	private class FullCustomization[T : JsonWriter](
+			fetchDto: () => Option[T],
+			pageTemplate: T => Html,
+			notFoundPage: => Html
+	) extends WithJson[T](fetchDto) {
+		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
+			super.marshal.map{json =>
+				PageContentMarshalling.twirlStatusHtmlMarshalling{
+					() => fetchDto() match {
+						case Some(value) => StatusCodes.OK -> pageTemplate(value)
+						case None => StatusCodes.NotFound -> notFoundPage
+					}
+				} :: json
 			}
-		}
 	}
 	private class DefaultReprOptions(uri: Uri) extends RepresentationOptions {
-		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = rdfMarshaller(uri).map{
-			WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri)) :: _
+		override def marshal(implicit ctxt: ExecutionContext) = Future.successful{
+			WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri)) :: Nil
 		}
 	}
 

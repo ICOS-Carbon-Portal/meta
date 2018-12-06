@@ -15,17 +15,29 @@ import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.CitationClient
+import views.html.{LandingPage, MessagePage, CollectionLandingPage}
 
 class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab) {
 
+	import PageContentMarshalling.{getHtml, getJson}
+
 	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
-		makeMarshaller(views.html.LandingPage(_, _, handleService, vocab), _.doi)
+		makeMarshaller(
+			LandingPage(_, _, handleService, vocab),
+			MessagePage("Data object not found", ""),
+			_.doi
+		)
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
-		makeMarshaller(views.html.CollectionLandingPage(_, _), _.doi)
+		makeMarshaller(
+			CollectionLandingPage(_, _),
+			MessagePage("Collection not found", ""),
+			_.doi
+		)
 
 	private def makeMarshaller[T: JsonWriter](
 		template: (T, Option[String]) => Html,
+		notFoundPage: => Html,
 		toDoi: T => Option[String]
 	): ToResponseMarshaller[() => Option[T]] = Marshaller{ implicit exeCtxt => producer =>
 
@@ -42,22 +54,20 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: C
 			}
 
 			citationOptFut.map{citOpt =>
-				WithOpenCharset(MediaTypes.`text/html`, getHtml[T](dataItemOpt, template(_, citOpt), _)) ::
-				WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(dataItemOpt)) :: Nil
+
+				val makeHtml: HttpCharset => HttpResponse = charset => dataItemOpt match {
+					case Some(obj) =>
+						HttpResponse(entity = getHtml(template(obj, citOpt), charset))
+					case None =>
+						HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage, charset))
+				}
+
+				WithOpenCharset(MediaTypes.`text/html`, makeHtml) ::
+				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt)) ::
+				Nil
 			}
 		}
 	}
-
-	private def getHtml[T](dataItemOpt: Option[T], template: T => Html, charset: HttpCharset) =
-		dataItemOpt match {
-			case Some(obj) => HttpResponse(
-				entity = HttpEntity(
-					ContentType.WithCharset(MediaTypes.`text/html`, charset),
-					template(obj).body
-				)
-			)
-			case None => HttpResponse(StatusCodes.NotFound)
-		}
 
 }
 
@@ -68,27 +78,24 @@ object PageContentMarshalling{
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)
 	)
-	val twirlHtmlMarshaller = implicitly[ToResponseMarshaller[Html]]
 
-	def notFoundMarshalling(implicit envri: Envri): Future[List[Marshalling[HttpResponse]]] = {
-		Future.successful {
-			WithFixedContentType(
-				ContentTypes.`text/html(UTF-8)`,
-				() =>
-					HttpResponse(
-						StatusCodes.NotFound,
-						entity = HttpEntity(
-							ContentType.WithCharset(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
-							views.html.MessagePage("Page not found", "").body
-						)
-					)
-			) :: Nil
-		}
-	}
+	def twirlStatusHtmlMarshalling(fetcher: () => (StatusCode, Html)): Marshalling[HttpResponse] =
+		WithOpenCharset(
+			MediaTypes.`text/html`,
+			charset => {
+				val (status, html) = fetcher()
+				HttpResponse(status, entity = getHtml(html, charset))
+			}
+		)
 
 	private def getHtml(html: Html, charset: HttpCharset) = HttpEntity(
 		ContentType.WithCharset(MediaTypes.`text/html`, charset),
 		html.body
+	)
+
+	private def getText(content: String, charset: HttpCharset) = HttpEntity(
+		ContentType.WithCharset(MediaTypes.`text/plain`, charset),
+		content
 	)
 
 	def getJson[T: JsonWriter](dataItemOpt: Option[T]) =
@@ -98,4 +105,24 @@ object PageContentMarshalling{
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
+
+	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
+		_ => err => {
+
+			val msg = {
+				val traceWriter = new java.io.StringWriter()
+				err.printStackTrace(new java.io.PrintWriter(traceWriter))
+				(if(err.getMessage == null) "" else err.getMessage) + "\n" + traceWriter.toString
+			}
+
+			val getErrorPage: HttpCharset => MessageEntity = getHtml(MessagePage("Server error", msg), _)
+
+			Future.successful(
+				WithOpenCharset(MediaTypes.`text/plain`, getText(msg, _)) ::
+				WithOpenCharset(MediaTypes.`text/html`, getErrorPage) ::
+				Opaque(() => getText(msg, HttpCharsets.`UTF-8`)) ::
+				Nil
+			)
+		}
+	)
 }

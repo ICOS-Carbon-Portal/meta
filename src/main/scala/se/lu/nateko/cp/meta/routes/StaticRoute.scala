@@ -19,7 +19,7 @@ object StaticRoute {
 		case "station" => views.html.StationPage()
 	}
 
-	private implicit val pageMarshaller = PageContentMarshalling.twirlHtmlMarshaller
+	import PageContentMarshalling.twirlHtmlEntityMarshaller
 
 	def apply(config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = get{
 

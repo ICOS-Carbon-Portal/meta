@@ -8,6 +8,7 @@ object BadmConsts {
 	val varCodeRegex = "(.+)_\\d+_\\d+_\\d+".r
 	val standardNameRegex = """\s*(\w+)\s+(\w+)\s*""".r
 	val withMiddleNameRegex = """(\w\.\s\w+)\s(\w+)\s*""".r
+	val universalNameRegex = """(.*?)\s+([^\s]+)""".r
 
 	val SiteVar = "SITE_ID"
 	val SiteIdVar = "SITE_ID"

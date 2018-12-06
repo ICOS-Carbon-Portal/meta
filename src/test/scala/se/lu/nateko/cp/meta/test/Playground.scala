@@ -12,6 +12,10 @@ import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
+import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
+import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 
 object Playground {
 
@@ -81,5 +85,26 @@ object Playground {
 				|FILTER(LCASE(STR(?dobj)) = LCASE(STR(?dobjReal)))
 			|}
 		}""".stripMargin
+	}
+
+	def fetchFromEtc(): Future[Seq[BadmEntry]] = Http()
+		.singleRequest(HttpRequest(uri = "http://gaia.agraria.unitus.it:89/api/values"))
+		.flatMap(EtcEntriesFetcher.responseToJson)
+		.map(json => se.lu.nateko.cp.meta.ingestion.badm.Parser.parseEntriesFromEtcJson(json))
+
+	def etcStationTable(badms: Seq[BadmEntry]): Seq[Seq[String]] = {
+		def toByVarLookup(bs: Seq[BadmEntry]): Map[String, String] =
+			bs.flatMap(b => b.values.map(v => (b.variable + "/" + v.variable) -> v.valueStr)).toMap
+
+		val tableVars = List("GRP_HEADER/SITE_ID", "GRP_HEADER/SITE_NAME")
+
+		badms.groupBy(_.stationId).toSeq.map{case (stIdOpt, badms) =>
+			val lookup = toByVarLookup(badms)
+			stIdOpt.map(_.id).getOrElse("") :: tableVars.map(v => lookup.get(v).getOrElse(""))
+		}
+	}
+
+	def printEtcStationsTable(): Unit = fetchFromEtc().map(etcStationTable).foreach{rows =>
+		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)
 	}
 }

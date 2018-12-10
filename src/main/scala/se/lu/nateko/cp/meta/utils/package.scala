@@ -8,4 +8,5 @@ package object utils {
 		def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 			.getOrElse(Failure(error))
 	}
+
 }

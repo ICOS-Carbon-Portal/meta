@@ -63,7 +63,6 @@ case class DataSubmitterConfig(
 	submittingOrganization: URI
 )
 
-//TODO Consider making the values of this class URIs instead of strings.
 case class EtcUploadConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,

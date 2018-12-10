@@ -16,6 +16,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
+import se.lu.nateko.cp.meta.icos.EtcMetaSource
 
 object Playground {
 
@@ -23,8 +24,10 @@ object Playground {
 	import system.dispatcher
 	implicit val mat = ActorMaterializer()
 
+	val config = se.lu.nateko.cp.meta.ConfigLoader.default
+
 	val handles = {
-		val conf = se.lu.nateko.cp.meta.ConfigLoader.default.dataUploadService.handle
+		val conf = config.dataUploadService.handle
 		new HandleNetClient(conf.copy(prefix = "11676", dryRun = false))
 	}
 
@@ -87,10 +90,7 @@ object Playground {
 		}""".stripMargin
 	}
 
-	def fetchFromEtc(): Future[Seq[BadmEntry]] = Http()
-		.singleRequest(HttpRequest(uri = "http://gaia.agraria.unitus.it:89/api/values"))
-		.flatMap(EtcEntriesFetcher.responseToJson)
-		.map(json => se.lu.nateko.cp.meta.ingestion.badm.Parser.parseEntriesFromEtcJson(json))
+	val etcMetaSrc = new EtcMetaSource(config.dataUploadService.etc)
 
 	def etcStationTable(badms: Seq[BadmEntry]): Seq[Seq[String]] = {
 		def toByVarLookup(bs: Seq[BadmEntry]): Map[String, String] =
@@ -104,7 +104,7 @@ object Playground {
 		}
 	}
 
-	def printEtcStationsTable(): Unit = fetchFromEtc().map(etcStationTable).foreach{rows =>
-		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)
-	}
+//	def printEtcStationsTable(): Unit = etcMetaSrc.fetchFromEtc().map(etcStationTable).foreach{rows =>
+//		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)
+//	}
 }

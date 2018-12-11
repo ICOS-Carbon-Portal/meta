@@ -19,10 +19,7 @@ trait CustomVocab {
 		def baseUri: String = uri
 	}
 
-	protected def urlEncode(s: String): String = {
-		//TODO Test this for "strange" strings (e.g. containing timestamps)
-		new java.net.URI(null, null, s, null).toASCIIString
-	}
+	protected def urlEncode(s: String): String = se.lu.nateko.cp.meta.utils.urlEncode(s)
 
 	def getRelativeRaw(local: String)(implicit bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
 	def getRelative(local: String)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(urlEncode(local))

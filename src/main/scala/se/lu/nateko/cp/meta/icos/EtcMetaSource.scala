@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmNumericValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmStringValue
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.urlEncode
 
 class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource {
 	import system.dispatcher
@@ -35,13 +36,19 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 		.map(getState)
 
 	def getState(badms: Seq[BadmEntry]): Validated[TcState] = {
-		val stations = badms.groupBy(_.stationId).toSeq.collect{
-			case (Some(id), badms) => getStation(id, badms)
+		val stationBadms = badms.groupBy(_.stationId).toSeq.collect{
+			case (Some(id), badms) if id != falso => id -> badms
 		}
-		Validated.sequence(stations).map(new TcState(_, Nil))
+		val stationsV = stationBadms.map{case (id, badms) => getStation(id, badms)}
+		val instrumentsV = stationBadms.flatMap{case (id, badms) => getInstruments(id, badms)}
+		for(
+			stations <- Validated.sequence(stationsV);
+			instruments <- Validated.sequence(instrumentsV)
+		) yield new TcState(stations, Nil, instruments)
 	}
 
-	def getStation(id: StationId, badms: Seq[BadmEntry]): Validated[TcStation] = {
+	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[TcStation] = {
+		val id = stId.id
 		val (roleEntries, nonRoleEntries) = badms.partition(_.variable == "GRP_TEAM")
 
 		val (piEntries, nonPiEntries) = roleEntries.partition(be =>
@@ -70,7 +77,21 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 
 object EtcMetaSource{
 
+	val StationId(falso) = "FA-Lso"
 	type Lookup = Map[String, BadmValue]
+
+	def getInstruments(stId: StationId, badms: Seq[BadmEntry]): Seq[Validated[Instrument]] = {
+		val sid = stId.id
+		badms.filter(_.variable == "GRP_LOGGER").map{badm =>
+			implicit val lookup = toLookup(Seq(badm))
+			for(
+				lid <- getNumber("GRP_LOGGER/LOGGER_ID").require(s"a logger at $sid has no id");
+				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
+				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number")
+			) yield
+				Instrument(s"ETC_${sid}_$lid", model, Some(sn.valueStr))
+		}
+	}
 
 	def lookUp(varName: String)(implicit lookup: Lookup): Validated[BadmValue] =
 		new Validated(lookup.get(varName))
@@ -101,7 +122,7 @@ object EtcMetaSource{
 			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional;
 			(fname, lname) <- parseName(name)
 		) yield
-			Person(fname, lname, email)
+			Person(urlEncode(fname + "_" + lname), "", fname, lname, email)
 
 
 	def parseName(name: String): Validated[(String, String)] = {

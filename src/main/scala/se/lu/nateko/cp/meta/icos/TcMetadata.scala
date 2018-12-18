@@ -5,19 +5,28 @@ import java.time.Instant
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.core.data.Position
 
-sealed trait Entity{
-	def cpId: String
-	def tcId: String
+sealed trait TcId[+T <: TC]{
+	def id: String
 }
 
-case class Person(cpId: String, tcId: String, fname: String, lastName: String, email: Option[String]) extends Entity
+case class AtcId(id: String) extends TcId[ATC.type]
+case class EtcId(id: String) extends TcId[ETC.type]
+case class OtcId(id: String) extends TcId[OTC.type]
 
-sealed trait OneOrMorePis
+sealed trait Entity[+T <: TC]{
+	def cpId: String
+	def tcId: TcId[T]
+	def withCpId(id: String): this.type = ???
+}
 
-final case class SinglePi(one: Person) extends OneOrMorePis
+case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lName: String, email: Option[String]) extends Entity[T]
 
-final case class MoreThanOnePi(first: Person, second: Person, rest: Person*) extends OneOrMorePis{
-	def all = first :: second :: rest.toList
+sealed trait NumberOfPis
+
+final case class SinglePi[+T <: TC](one: Person[T]) extends NumberOfPis
+
+final case class OneOrMorePis[+T <: TC](first: Person[T], rest: Person[T]*) extends NumberOfPis{
+	def all = first :: rest.toList
 }
 
 sealed trait Role{
@@ -27,46 +36,58 @@ sealed trait Role{
 sealed abstract class NonPiRole(val name: String) extends Role
 
 case object PI extends Role{def name = "PI"}
-case object ResearcherAt extends NonPiRole("is researcher at")
+case object Researcher extends NonPiRole("Researcher")
 
-sealed trait Organization extends Entity{
-	def name: String
+sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
+
+sealed trait CpStation[+T <: TC] extends Organization[T]
+class CpStationaryStation[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String, val pos: Position) extends CpStation[T]
+//TODO Add optional geojson description of the route example (for ships)
+class CpMobileStation(val cpId: String, val tcId: TcId[OTC.type], val name: String) extends CpStation[OTC.type]
+
+case class TcStation[+T <: TC](station: CpStation[T], pi: T#Pis) extends Organization[T]{
+	def cpId = station.cpId
+	def tcId = station.tcId
+	def name = station.name
 }
 
-trait Station extends Organization{
-	def pos: Position
-	def pi: OneOrMorePis
-}
+class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String) extends Organization[T]
 
-case class Institution(cpId: String, tcId: String, name: String) extends Organization
-case class Manufacturer(cpId: String, tcId: String, name: String) extends Entity
-
-case class Instrument(
-	id: String,
+case class Instrument[+T <: TC](
+	cpId: String,
+	tcId: TcId[T],
 	model: String,
-	sn: Option[String] = None,
-	vendor: Option[Manufacturer] = None,
-	owner: Option[Institution] = None,
-	parts: Seq[Instrument] = Nil
-)
+	sn: String,
+	name: Option[String] = None,
+	vendor: Option[Organization[T]] = None,
+	owner: Option[Organization[T]] = None,
+	parts: Seq[Instrument[T]] = Nil
+) extends Entity[T]
 
-trait AssumedRole{
+trait AssumedRole[+T <: TC]{
 	def role: Role
-	def holder: Person
-	def org: Organization
+	def holder: Person[T]
+	def org: Organization[T]
 }
-case class TcAssumedRole(role: NonPiRole, holder: Person, org: Organization) extends AssumedRole
-case class Membership(role: AssumedRole, start: Option[Instant], stop: Option[Instant])
 
-class State(val stations: Seq[Station], val roles: Seq[Membership])
+case class TcAssumedRole[+T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole[T]
+case class Membership[+T <: TC](role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-trait TcMetaSource {
+class CpTcState[+T <: TC](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]])
+class TcState[+T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
 
-	type Pis <: OneOrMorePis
+class AllTcStates(val atc: CpTcState[ATC.type], val etc: CpTcState[ETC.type], val otc: CpTcState[OTC.type])
 
-	case class TcStation(cpId: String, tcId: String, name: String, pos: Position, pi: Pis) extends Station
+sealed trait TC {
+	type Pis <: NumberOfPis
+}
 
-	class TcState(val stations: Seq[TcStation], val roles: Seq[TcAssumedRole], val instruments: Seq[Instrument])
+object ATC extends TC{type Pis = OneOrMorePis[ATC.type]}
+object ETC extends TC{type Pis = SinglePi[ETC.type]}
+object OTC extends TC{type Pis = OneOrMorePis[OTC.type]}
 
-	def state: Source[TcState, Any]
+abstract class TcMetaSource[T <: TC]{
+	type State = TcState[T]
+	type Station = TcStation[T]
+	def state: Source[State, Any]
 }

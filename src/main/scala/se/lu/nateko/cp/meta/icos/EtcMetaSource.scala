@@ -19,23 +19,21 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 
-class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource {
+class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import system.dispatcher
 	import EtcMetaSource._
 
-	type Pis = SinglePi
-
-	def state: Source[TcState, Any] = {
+	def state: Source[State, Any] = {
 		???
 	}
 
-	def fetchFromEtc(): Future[Validated[TcState]] = Http()
+	def fetchFromEtc(): Future[Validated[State]] = Http()
 		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))
 		.flatMap(EtcEntriesFetcher.responseToJson)
 		.map(Parser.parseEntriesFromEtcJson)
 		.map(getState)
 
-	def getState(badms: Seq[BadmEntry]): Validated[TcState] = {
+	def getState(badms: Seq[BadmEntry]): Validated[State] = {
 		val stationBadms = badms.groupBy(_.stationId).toSeq.collect{
 			case (Some(id), badms) if id != falso => id -> badms
 		}
@@ -47,7 +45,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 		) yield new TcState(stations, Nil, instruments)
 	}
 
-	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[TcStation] = {
+	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[Station] = {
 		val id = stId.id
 		val (roleEntries, nonRoleEntries) = badms.partition(_.variable == "GRP_TEAM")
 
@@ -69,9 +67,13 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 			siteId <- getString("GRP_HEADER/SITE_ID").require(s"Station $id had no value for SITE_ID");
 			siteName <- getString("GRP_HEADER/SITE_NAME").require(s"Station $id had no value for SITE_NAME");
 			pos <- getPosition.require(s"Station $id had no properly specified geo-position");
-			pi <- getPerson(toLookup(piEntries)).require(s"Station $id had no properly specified PI")
-		) yield
-			TcStation("ES_" + siteId, siteId, siteName, pos, SinglePi(pi))
+			pi <- getPerson(toLookup(piEntries))
+				.require(s"Station $id had no properly specified PI")
+				.require(_.email.isDefined, s"PI of station $id had no email")
+		) yield {
+			val cpStation = new CpStationaryStation("ES_" + siteId, EtcId(siteId), siteName, pos)
+			TcStation[ETC.type](cpStation, SinglePi(pi))
+		}
 	}
 }
 
@@ -79,8 +81,10 @@ object EtcMetaSource{
 
 	val StationId(falso) = "FA-Lso"
 	type Lookup = Map[String, BadmValue]
+	type EtcInstrument = Instrument[ETC.type]
+	type EtcPerson = Person[ETC.type]
 
-	def getInstruments(stId: StationId, badms: Seq[BadmEntry]): Seq[Validated[Instrument]] = {
+	def getInstruments(stId: StationId, badms: Seq[BadmEntry]): Seq[Validated[EtcInstrument]] = {
 		val sid = stId.id
 		badms.filter(_.variable == "GRP_LOGGER").map{badm =>
 			implicit val lookup = toLookup(Seq(badm))
@@ -89,7 +93,7 @@ object EtcMetaSource{
 				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
 				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number")
 			) yield
-				Instrument(s"ETC_${sid}_$lid", model, Some(sn.valueStr))
+				Instrument(s"ETC_${sid}_$lid", EtcId(s"${sid}_$lid"), model, sn.valueStr)
 		}
 	}
 
@@ -116,13 +120,13 @@ object EtcMetaSource{
 	def toLookup(badms: Seq[BadmEntry]): Lookup =
 		badms.flatMap(be => be.values.map(bv => (be.variable + "/" + bv.variable) -> bv)).toMap
 
-	def getPerson(implicit lookup: Map[String, BadmValue]): Validated[Person] =
+	def getPerson(implicit lookup: Map[String, BadmValue]): Validated[EtcPerson] =
 		for(
-			name <- getString("GRP_TEAM/TEAM_MEMBER_NAME");
+			name <- getString("GRP_TEAM/TEAM_MEMBER_NAME").require("person must have name");
 			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional;
 			(fname, lname) <- parseName(name)
 		) yield
-			Person(urlEncode(fname + "_" + lname), "", fname, lname, email)
+			Person(urlEncode(fname + "_" + lname), EtcId(""), fname, lname, email)
 
 
 	def parseName(name: String): Validated[(String, String)] = {

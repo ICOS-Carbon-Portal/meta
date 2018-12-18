@@ -7,6 +7,9 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 	def require(errMsg: String) = if(result.isDefined) this else
 		new Validated(result, errors :+ errMsg)
 
+	def require(test: T => Boolean, errMsg: String) = if(result.map(test).getOrElse(true)) this else
+		new Validated(result, errors :+ errMsg)
+
 	def optional = new Validated(Some(result), errors)
 
 	def map[U](f: T => U): Validated[U] = tryTransform(new Validated(result.map(f), errors))

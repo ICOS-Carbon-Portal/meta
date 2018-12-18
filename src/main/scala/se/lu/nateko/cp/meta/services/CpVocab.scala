@@ -26,9 +26,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getEcosystemStation(id: EtcStationId) = getTcStation("ES", id.id)
 	def getOceanStation(stationId: String) = getTcStation("OS", stationId)
 
-	def getPerson(firstName: String, lastName: String)(implicit envri: Envri) = getRelativeRaw(
-		s"people/${urlEncode(firstName)}_${urlEncode(lastName)}"
+	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(
+		s"${urlEncode(firstName)}_${urlEncode(lastName)}"
 	)
+	def getPerson(cpId: String)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
 
 	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
 		"memberships/", s"ES_${station.id}_${roleId}_$lastName"

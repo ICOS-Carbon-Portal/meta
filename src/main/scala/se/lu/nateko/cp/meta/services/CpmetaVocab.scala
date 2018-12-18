@@ -78,6 +78,10 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasIcon = getRelative("hasIcon")
 	val hasMarkerIcon = getRelative("hasMarkerIcon")
 
+	val hasAtcId = getRelative("hasAtcId")
+	val hasEtcId = getRelative("hasEtcId")
+	val hasOtcId = getRelative("hasOtcId")
+
 	val ancillaryValueClass = getRelative("AncillaryValue")
 	val ancillaryEntryClass = getRelative("AncillaryEntry")
 

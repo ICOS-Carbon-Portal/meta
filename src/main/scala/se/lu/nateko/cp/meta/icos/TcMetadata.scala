@@ -40,15 +40,30 @@ case object Researcher extends NonPiRole("Researcher")
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
-sealed trait CpStation[+T <: TC] extends Organization[T]
-class CpStationaryStation[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String, val pos: Position) extends CpStation[T]
-//TODO Add optional geojson description of the route example (for ships)
-class CpMobileStation(val cpId: String, val tcId: TcId[OTC.type], val name: String) extends CpStation[OTC.type]
+sealed trait Station[+T <: TC] extends Organization[T]{ def id: String }
+sealed trait CpStation[+T <: TC] extends Station[T]
 
-case class TcStation[+T <: TC](station: CpStation[T], pi: T#Pis) extends Organization[T]{
+class CpStationaryStation[+T <: TC](
+	val cpId: String,
+	val tcId: TcId[T],
+	val name: String,
+	val id: String,
+	val pos: Position
+) extends CpStation[T]
+
+class CpMobileStation(
+	val cpId: String,
+	val tcId: TcId[OTC.type],
+	val name: String,
+	val id: String,
+	val geoJson: Option[String]
+) extends CpStation[OTC.type]
+
+case class TcStation[+T <: TC](station: CpStation[T], pi: T#Pis) extends Station[T]{
 	def cpId = station.cpId
 	def tcId = station.tcId
 	def name = station.name
+	def id = station.id
 }
 
 class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String) extends Organization[T]

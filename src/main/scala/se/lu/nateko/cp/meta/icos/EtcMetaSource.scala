@@ -64,14 +64,18 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 		for(
 			_ <- nPisValidation;
 			_ <- nonPiRolesValidation;
-			siteId <- getString("GRP_HEADER/SITE_ID").require(s"Station $id had no value for SITE_ID");
-			siteName <- getString("GRP_HEADER/SITE_NAME").require(s"Station $id had no value for SITE_NAME");
-			pos <- getPosition.require(s"Station $id had no properly specified geo-position");
+			siteId <- getString("GRP_HEADER/SITE_ID")
+				.require(s"Station $id had no value for SITE_ID");
+			siteName <- getString("GRP_HEADER/SITE_NAME")
+				.require(s"Station $id had no value for SITE_NAME");
+			pos <- getPosition
+				.require(s"Station $id had no properly specified geo-position");
 			pi <- getPerson(toLookup(piEntries))
 				.require(s"Station $id had no properly specified PI")
 				.require(_.email.isDefined, s"PI of station $id had no email")
 		) yield {
-			val cpStation = new CpStationaryStation("ES_" + siteId, EtcId(siteId), siteName, pos)
+			//TODO Use an actual guaranteed-stable id as tcId here
+			val cpStation = new CpStationaryStation(siteId, EtcId(siteId), siteName, siteId, pos)
 			TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}

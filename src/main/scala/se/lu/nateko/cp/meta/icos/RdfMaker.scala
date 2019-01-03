@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
@@ -16,19 +17,13 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 	private implicit val envri = Envri.ICOS
 
 	def getStatements[T <: TC](e: Entity[T]): Seq[Statement] = {
-		val tcIdPredicate = e.tcId match{
-			case _: AtcId => meta.hasAtcId
-			case _: EtcId => meta.hasEtcId
-			case _: OtcId => meta.hasOtcId
-		}
-
 
 		def getTriples(e: Entity[T]): Seq[(IRI, IRI, Value)] = e match{
 
 			case p: Person[T] =>
 				val uri = vocab.getPerson(p.cpId)
 				(uri, RDF.TYPE, meta.personClass) +:
-				(uri, tcIdPredicate, vocab.lit(p.tcId.id)) +:
+				tcIdTriple(p, uri) +:
 				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
 				(uri, meta.hasLastName, vocab.lit(p.lName)) +:
 				p.email.map{email =>
@@ -52,12 +47,40 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				stationTriples(s)
 
 			case ci: CompanyOrInstitution[T] =>
-				???
+				val uri = vocab.getOrganization(ci.cpId)
+				(uri, RDF.TYPE, meta.orgClass) ::
+				(uri, meta.hasName, vocab.lit(ci.name)) ::
+				tcIdTriple(ci, uri) ::
+				ci.label.toList.map{label =>
+					(uri, RDFS.LABEL, vocab.lit(label))
+				}
 
 			case instr: Instrument[T] =>
-				???
+				val uri = vocab.getIcosInstrument(instr.cpId)
+				(uri, RDF.TYPE, meta.instrumentClass) +:
+				tcIdTriple(instr, uri) +:
+				(uri, meta.hasModel, vocab.lit(instr.model)) +:
+				(uri, meta.hasSerialNumber, vocab.lit(instr.sn)) +:
+				instr.name.toSeq.map{name =>
+					(uri, meta.hasName, vocab.lit(name))
+				} ++:
+				instr.owner.toSeq.map{owner =>
+					(uri, meta.hasInstrumentOwner, vocab.getOrganization(owner.cpId))
+				} ++:
+				instr.parts.map{part =>
+					(uri, meta.dcterms.hasPart, vocab.getIcosInstrument(part.cpId))
+				}
 		}
 		getTriples(e).map(vocab.factory.tripleToStatement)
+	}
+
+	private def tcIdTriple[T <: TC](e: Entity[T], subj: IRI): (IRI, IRI, Value) = {
+		val tcIdPredicate: IRI = e.tcId match{
+			case _: AtcId => meta.hasAtcId
+			case _: EtcId => meta.hasEtcId
+			case _: OtcId => meta.hasOtcId
+		}
+		(subj, tcIdPredicate, vocab.lit(e.tcId.id))
 	}
 
 	private def stationTriples[T <: TC](s: CpStation[T]): List[(IRI, IRI, Value)] = {
@@ -72,6 +95,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		}
 		(uri, RDF.TYPE, stationClass) +:
 		(uri, meta.hasStationId, vocab.lit(s.id)) +:
+		tcIdTriple(s, uri) +:
 		(uri, meta.hasName, vocab.lit(s.name)) +: 
 		Nil
 	}

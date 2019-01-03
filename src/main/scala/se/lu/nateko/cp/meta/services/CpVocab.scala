@@ -43,9 +43,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getOrganization(orgId: String)(implicit envri: Envri) = getRelative("organizations/", orgId)
 
-	def getEtcInstrument(station: EtcStationId, id: Int) = getRelative(
-		"instruments/", s"ETC_${station.id}_$id"
-	)(icosBup)
+	def getIcosInstrument(id: String) = getRelative("instruments/", id)(icosBup)
+	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(s"ETC_${station.id}_$id")
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization(_)(Envri.ICOS))
 

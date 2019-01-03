@@ -17,7 +17,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
 
-		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org)
+		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org) ++ newSnapshot.stations
 		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org)
 		val cpOwnOrgs = rdfReader.getCpOwnOrgs[T]
 

@@ -66,7 +66,7 @@ case class TcStation[+T <: TC](station: CpStation[T], pi: T#Pis) extends Station
 	def id = station.id
 }
 
-class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String) extends Organization[T]
+class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String, val label: Option[String]) extends Organization[T]
 
 case class Instrument[+T <: TC](
 	cpId: String,

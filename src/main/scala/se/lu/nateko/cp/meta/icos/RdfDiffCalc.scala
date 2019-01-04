@@ -5,6 +5,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import java.time.Instant
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
@@ -17,8 +18,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
 
-		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org) ++ newSnapshot.stations
-		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org)
+		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org) ++ newSnapshot.stations.map(_.station)
+		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations
 		val cpOwnOrgs = rdfReader.getCpOwnOrgs[T]
 
 		val orgsDiff = diff[T, Organization[T]](cpOrgs, tcOrgs, cpOwnOrgs)
@@ -34,7 +35,24 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val instrDiff = diff[T, Instrument[T]](cpInstrs, tcInstrs, Nil)
 
-		orgsDiff.rdfDiff ++ instrDiff.rdfDiff
+		val tcPeople = newSnapshot.stations.flatMap(_.pi.all) ++ newSnapshot.roles.map(_.holder)
+		val cpPeople = current.roles.map(_.role.holder)
+		val cpOwnPeople = rdfReader.getCpOwnPeople[T]
+
+		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
+
+		def updateRole(role: AssumedRole[T]) = role.update(
+			peopleDiff.ensureIdPreservation(role.holder),
+			orgsDiff.ensureIdPreservation(role.org)
+		)
+
+		val tcRoles = newSnapshot.roles.map(updateRole) ++ newSnapshot.stations.flatMap{station =>
+			station.pi.all.map(pi => new AssumedRole(PI, pi, station.station))
+		}
+		val cpRoles = current.roles.map(memb => memb.copy(role = updateRole(memb.role)))
+		val rolesRdfDiff = rolesDiff[T](cpRoles, tcRoles)
+
+		orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
 	}
 
 	def diff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
@@ -92,6 +110,20 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, newButPresentInCp, existingAppearedInCp).join
 	}
 
+	def rolesDiff[T <: TC](cp: Seq[Membership[T]], tc: Seq[AssumedRole[T]]): Seq[RdfUpdate] = {
+		val membMap = cp.filter(_.stop.isEmpty).map(m => m.role.id -> m).toMap
+		val roleMap = tc.map(role => role.id -> role).toMap
+
+		val finishedIds = membMap.keySet.diff(roleMap.keySet).toSeq
+		val newIds = roleMap.keySet.diff(membMap.keySet).toSeq
+
+		val newStart: Option[Instant] = if(cp.isEmpty) None else Some(Instant.now)
+		val newMembs = newIds.map{id =>
+			new Membership(???, roleMap(id), newStart, None)
+		}
+		//TODO Finish the implementation
+		???
+	}
 }
 
 object RdfDiffCalc{

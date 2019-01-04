@@ -21,11 +21,13 @@ sealed trait Entity[+T <: TC]{
 
 case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lName: String, email: Option[String]) extends Entity[T]
 
-sealed trait NumberOfPis
+sealed trait NumberOfPis[+T <: TC]{ def all: List[Person[T]]}
 
-final case class SinglePi[+T <: TC](one: Person[T]) extends NumberOfPis
+final case class SinglePi[+T <: TC](one: Person[T]) extends NumberOfPis[T]{
+	def all = one :: Nil
+}
 
-final case class OneOrMorePis[+T <: TC](first: Person[T], rest: Person[T]*) extends NumberOfPis{
+final case class OneOrMorePis[+T <: TC](first: Person[T], rest: Person[T]*) extends NumberOfPis[T]{
 	def all = first :: rest.toList
 }
 
@@ -59,12 +61,7 @@ class CpMobileStation(
 	val geoJson: Option[String]
 ) extends CpStation[OTC.type]
 
-case class TcStation[+T <: TC](station: CpStation[T], pi: T#Pis) extends Station[T]{
-	def cpId = station.cpId
-	def tcId = station.tcId
-	def name = station.name
-	def id = station.id
-}
+class TcStation[+T <: TC](val station: CpStation[T], val pi: T#Pis)
 
 class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String, val label: Option[String]) extends Organization[T]
 
@@ -79,22 +76,19 @@ case class Instrument[+T <: TC](
 	parts: Seq[Instrument[T]] = Nil
 ) extends Entity[T]
 
-trait AssumedRole[+T <: TC]{
-	def role: Role
-	def holder: Person[T]
-	def org: Organization[T]
+class AssumedRole[T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){
+	def id = (role.name, holder.tcId, org.tcId)
+	def update(newHolder: Person[T], newOrg: Organization[T]) = new AssumedRole(role, newHolder, newOrg)
 }
 
-case class TcAssumedRole[+T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole[T]
-case class Membership[+T <: TC](role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
+class TcAssumedRole[T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole(role, holder, org)
+case class Membership[T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class CpTcState[+T <: TC](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]])
-class TcState[+T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
-
-class AllTcStates(val atc: CpTcState[ATC.type], val etc: CpTcState[ETC.type], val otc: CpTcState[OTC.type])
+class CpTcState[T <: TC](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]])
+class TcState[T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
 
 sealed trait TC {
-	type Pis <: NumberOfPis
+	type Pis <: NumberOfPis[this.type]
 }
 
 object ATC extends TC{type Pis = OneOrMorePis[ATC.type]}

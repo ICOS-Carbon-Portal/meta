@@ -76,7 +76,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 		) yield {
 			//TODO Use an actual guaranteed-stable id as tcId here
 			val cpStation = new CpStationaryStation(siteId, EtcId(siteId), siteName, siteId, pos)
-			TcStation[ETC.type](cpStation, SinglePi(pi))
+			new TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}
 }

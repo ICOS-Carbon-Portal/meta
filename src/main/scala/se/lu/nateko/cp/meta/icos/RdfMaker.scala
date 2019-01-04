@@ -30,9 +30,6 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 					(uri, meta.hasEmail, vocab.lit(email))
 				}.toList
 
-			case s: TcStation[T] =>
-				getTriples(s.station)
-
 			case s: CpStationaryStation[T] =>
 				val baseTriples = stationTriples(s)
 				val uri = baseTriples.head._1

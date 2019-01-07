@@ -88,14 +88,14 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 
 	private def fetchCitation(doi: Doi): Future[String] = http.singleRequest(
 			HttpRequest(
-				uri = s"https://api.datacite.org/${doi.prefix}/${doi.suffix}?style=${config.style}",
-				headers = acceptBiblioRange :: Nil
+				uri = s"https://data.datacite.org/text/x-bibliography%3Bstyle%3D${config.style}/${doi.prefix}/${doi.suffix}"
 			)
 		).flatMap{resp =>
 			Unmarshal(resp).to[String].transform{
 				case ok @ Success(payload) =>
 					if(resp.status.isSuccess) ok
-					else Failure(new Exception(payload))//the payload is the error message/page from the DataCite citation service
+					//the payload is the error message/page from the DataCite citation service
+					else Failure(new Exception(resp.status.defaultMessage + " " + payload))
 				case failure => failure
 			}
 			
@@ -110,9 +110,5 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
-
-	private val acceptBiblioRange = Accept(
-		MediaRange(MediaType.text("x-bibliography")).withParams(Map("style" -> config.style))
-	)
 
 }

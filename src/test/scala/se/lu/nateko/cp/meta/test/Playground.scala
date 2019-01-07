@@ -12,6 +12,7 @@ import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
+import se.lu.nateko.cp.meta.api.CitationClient
 
 object Playground {
 
@@ -19,12 +20,14 @@ object Playground {
 	import system.dispatcher
 	implicit val mat = ActorMaterializer()
 
-	val handles = {
-		val conf = se.lu.nateko.cp.meta.ConfigLoader.default.dataUploadService.handle
-		new HandleNetClient(conf.copy(prefix = "11676", dryRun = false))
-	}
+	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+
+	val handles = new HandleNetClient(
+		metaConf.dataUploadService.handle.copy(prefix = "11676", dryRun = false)
+	)
 
 	val sparql = new SparqlClient(new URL("https://meta.icos-cp.eu/sparql"))
+	val citer = new CitationClient(Nil, metaConf.citations)
 
 	def stop() = system.terminate()
 

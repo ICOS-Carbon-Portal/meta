@@ -1,26 +1,30 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.net.URI
+
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
+
+import akka.NotUsed
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.DataSubmitterConfig
+import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import akka.NotUsed
-import java.net.URI
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
-	import servers.{metaVocab, vocab}
+	import servers.{ metaVocab, vocab }
 	implicit val factory = metaVocab.factory
 
 	private [this] val ok: Try[NotUsed] = Success(NotUsed)
@@ -157,18 +161,39 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	}
 
 	private def validatePreviousVersion(self: Sha256Sum, prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
+
 		prevVers match{
 			case None => ok
-			case Some(prevHash) => servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>
-				val dobj = servers.vocab.getDataObject(prevHash)
+			case Some(prevHash) =>
 				if(prevHash == self)
 					userFail("Data object cannot be a next version of itself")
-				else if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
-					ok
-				else
-					userFail(s"Previous-version data object was not found: $dobj")
-			}
+
+				else servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>
+					val dobj = servers.vocab.getDataObject(prevHash)
+
+					hasCompletedDeprecator(server, dobj) match{
+						case Some(depr) =>
+							userFail(s"Data object $dobj has already been deprecated by $depr; deprecate the latter instead.")
+						case None =>
+							if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
+								ok
+							else
+								userFail(s"Previous-version data object was not found: $dobj")
+					}
+				}
 		}
+	}
+
+	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Option[IRI] = {
+
+		val deprs = server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
+			.map(_.getSubject).collect{case iri: IRI => iri}
+
+		def isCompleted(depr: IRI) = !server
+			.getUriValues(depr, metaVocab.wasSubmittedBy)
+			.flatMap(subm => server.getValues(subm, metaVocab.prov.endedAtTime))
+			.isEmpty
+		deprs.filter(isCompleted).toTraversable.headOption
 	}
 
 	private def validatePreviousCollectionVersion(prevVers: Option[Sha256Sum])(implicit envri: Envri): Try[NotUsed] =
@@ -182,3 +207,4 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		private def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
 		private def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 }
+

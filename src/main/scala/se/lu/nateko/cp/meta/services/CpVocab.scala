@@ -35,9 +35,9 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
 	)(icosBup)
 
-	def getMembership(orgId: String, roleId: String, lastName: String)(implicit envri: Envri) = getRelative(
-		"memberships/", s"${orgId}_${roleId}_$lastName"
-	)
+	def getMembership(membId: String)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
+	def getMembership(orgId: String, roleId: String, lastName: String)(implicit envri: Envri): IRI =
+		getMembership(s"${orgId}_${roleId}_$lastName")
 
 	def getRole(roleId: String)(implicit envri: Envri) = getRelative("roles/", roleId)
 

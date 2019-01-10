@@ -16,7 +16,34 @@ case class OtcId(id: String) extends TcId[OTC.type]
 sealed trait Entity[+T <: TC]{
 	def cpId: String
 	def tcId: TcId[T]
-	def withCpId(id: String): this.type = ???
+}
+
+trait CpIdSwapper[E]{
+	def withCpId(e: E, id: String): E
+}
+
+object Entity{
+
+	implicit class IdSwapOps[E](e: E)(implicit swapper: CpIdSwapper[E]){
+		def withCpId(id: String): E = swapper.withCpId(e, id)
+	}
+
+	implicit def persCpIdSwapper[T <: TC] = new CpIdSwapper[Person[T]]{
+		def withCpId(p: Person[T], id: String) = p.copy(cpId = id)
+	}
+
+	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
+		def withCpId(org: Organization[T], id: String) = org match{
+			case ss: CpStationaryStation[T] => ss.copy(cpId = id)
+			case ms: CpMobileStation => ms.copy(cpId = id)
+			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
+		}
+	}
+
+	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[Instrument[T]]{
+		def withCpId(instr: Instrument[T], id: String) = instr.copy(cpId = id)
+	}
+
 }
 
 case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lName: String, email: Option[String]) extends Entity[T]
@@ -39,31 +66,32 @@ sealed abstract class NonPiRole(val name: String) extends Role
 
 case object PI extends Role{def name = "PI"}
 case object Researcher extends NonPiRole("Researcher")
+case object DataManager extends NonPiRole("DataManager")
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
 sealed trait Station[+T <: TC] extends Organization[T]{ def id: String }
 sealed trait CpStation[+T <: TC] extends Station[T]
 
-class CpStationaryStation[+T <: TC](
-	val cpId: String,
-	val tcId: TcId[T],
-	val name: String,
-	val id: String,
-	val pos: Position
+case class CpStationaryStation[+T <: TC](
+	cpId: String,
+	tcId: TcId[T],
+	name: String,
+	id: String,
+	pos: Position
 ) extends CpStation[T]
 
-class CpMobileStation(
-	val cpId: String,
-	val tcId: TcId[OTC.type],
-	val name: String,
-	val id: String,
-	val geoJson: Option[String]
+case class CpMobileStation(
+	cpId: String,
+	tcId: TcId[OTC.type],
+	name: String,
+	id: String,
+	geoJson: Option[String]
 ) extends CpStation[OTC.type]
 
 class TcStation[+T <: TC](val station: CpStation[T], val pi: T#Pis)
 
-class CompanyOrInstitution[+T <: TC](val cpId: String, val tcId: TcId[T], val name: String, val label: Option[String]) extends Organization[T]
+case class CompanyOrInstitution[+T <: TC](cpId: String, tcId: TcId[T], name: String, label: Option[String]) extends Organization[T]
 
 case class Instrument[+T <: TC](
 	cpId: String,

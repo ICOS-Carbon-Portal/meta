@@ -5,13 +5,6 @@ import java.time.Instant
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.core.data.Position
 
-sealed trait TcId[+T <: TC]{
-	def id: String
-}
-
-case class AtcId(id: String) extends TcId[ATC.type]
-case class EtcId(id: String) extends TcId[ETC.type]
-case class OtcId(id: String) extends TcId[OTC.type]
 
 sealed trait Entity[+T <: TC]{
 	def cpId: String
@@ -35,7 +28,7 @@ object Entity{
 	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
 		def withCpId(org: Organization[T], id: String) = org match{
 			case ss: CpStationaryStation[T] => ss.copy(cpId = id)
-			case ms: CpMobileStation => ms.copy(cpId = id)
+			case ms: CpMobileStation[T] => ms.copy(cpId = id)
 			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
 		}
 	}
@@ -81,13 +74,13 @@ case class CpStationaryStation[+T <: TC](
 	pos: Position
 ) extends CpStation[T]
 
-case class CpMobileStation(
+case class CpMobileStation[+T <: TC](
 	cpId: String,
-	tcId: TcId[OTC.type],
+	tcId: TcId[T],
 	name: String,
 	id: String,
 	geoJson: Option[String]
-) extends CpStation[OTC.type]
+) extends CpStation[T]
 
 class TcStation[+T <: TC](val station: CpStation[T], val pi: T#Pis)
 
@@ -115,7 +108,7 @@ case class Membership[T <: TC](cpId: String, role: AssumedRole[T], start: Option
 class CpTcState[T <: TC](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]])
 class TcState[T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
 
-sealed trait TC {
+sealed trait TC{
 	type Pis <: NumberOfPis[this.type]
 }
 

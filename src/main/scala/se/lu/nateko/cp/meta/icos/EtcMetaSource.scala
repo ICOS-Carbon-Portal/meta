@@ -19,7 +19,9 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 
-class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcUploadConfig)(
+	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
+) extends TcMetaSource[ETC.type] {
 	import system.dispatcher
 	import EtcMetaSource._
 
@@ -70,12 +72,12 @@ class EtcMetaSource(conf: EtcUploadConfig)(implicit system: ActorSystem, mat: Ma
 				.require(s"Station $id had no value for SITE_NAME");
 			pos <- getPosition
 				.require(s"Station $id had no properly specified geo-position");
-			pi <- getPerson(toLookup(piEntries))
+			pi <- getPerson(toLookup(piEntries), tcConf)
 				.require(s"Station $id had no properly specified PI")
 				.require(_.email.isDefined, s"PI of station $id had no email")
 		) yield {
 			//TODO Use an actual guaranteed-stable id as tcId here
-			val cpStation = new CpStationaryStation(siteId, EtcId(siteId), siteName, siteId, pos)
+			val cpStation = new CpStationaryStation(siteId, tcConf.makeId(siteId), siteName, siteId, pos)
 			new TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}
@@ -88,7 +90,7 @@ object EtcMetaSource{
 	type EtcInstrument = Instrument[ETC.type]
 	type EtcPerson = Person[ETC.type]
 
-	def getInstruments(stId: StationId, badms: Seq[BadmEntry]): Seq[Validated[EtcInstrument]] = {
+	def getInstruments(stId: StationId, badms: Seq[BadmEntry])(implicit tcConf: TcConf[ETC.type]): Seq[Validated[EtcInstrument]] = {
 		val sid = stId.id
 		badms.filter(_.variable == "GRP_LOGGER").map{badm =>
 			implicit val lookup = toLookup(Seq(badm))
@@ -97,7 +99,7 @@ object EtcMetaSource{
 				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
 				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number")
 			) yield
-				Instrument(s"ETC_${sid}_$lid", EtcId(s"${sid}_$lid"), model, sn.valueStr)
+				Instrument(s"ETC_${sid}_$lid", tcConf.makeId(s"${sid}_$lid"), model, sn.valueStr)
 		}
 	}
 
@@ -124,13 +126,14 @@ object EtcMetaSource{
 	def toLookup(badms: Seq[BadmEntry]): Lookup =
 		badms.flatMap(be => be.values.map(bv => (be.variable + "/" + bv.variable) -> bv)).toMap
 
-	def getPerson(implicit lookup: Map[String, BadmValue]): Validated[EtcPerson] =
+	def getPerson(implicit lookup: Map[String, BadmValue], tcConf: TcConf[ETC.type]): Validated[EtcPerson] =
 		for(
 			name <- getString("GRP_TEAM/TEAM_MEMBER_NAME").require("person must have name");
 			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional;
 			(fname, lname) <- parseName(name)
 		) yield
-			Person(urlEncode(fname + "_" + lname), EtcId(""), fname, lname, email)
+			//TODO Use proper stable TC id for the person here
+			Person(urlEncode(fname + "_" + lname), tcConf.makeId(fname + "_" + lname), fname, lname, email)
 
 
 	def parseName(name: String): Validated[(String, String)] = {

@@ -17,7 +17,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 
 	private implicit val envri = Envri.ICOS
 
-	def getStatements[T <: TC](memb: Membership[T]): Seq[Statement] = {
+	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 
 		val triples: Seq[(IRI, IRI, Value)] = {
@@ -40,7 +40,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		vocab.factory.createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
 	}
 
-	def getStatements[T <: TC](e: Entity[T]): Seq[Statement] = {
+	def getStatements[T <: TC : TcConf](e: Entity[T]): Seq[Statement] = {
 
 		val uri = getIri(e)
 
@@ -62,7 +62,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				} ++:
 				stationTriples(s)
 
-			case s: CpMobileStation =>
+			case s: CpMobileStation[T] =>
 				stationTriples(s)
 
 			case ci: CompanyOrInstitution[T] =>
@@ -87,30 +87,18 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				}
 		}
 
-		val tcIdPredicate: IRI = e.tcId match{
-			case _: AtcId => meta.hasAtcId
-			case _: EtcId => meta.hasEtcId
-			case _: OtcId => meta.hasOtcId
-		}
+		val tcIdPredicate: IRI = implicitly[TcConf[T]].tcIdPredicate(meta)
 
 		val tcIdTriple = (uri, tcIdPredicate, vocab.lit(e.tcId.id))
 		(triples :+ tcIdTriple).map(vocab.factory.tripleToStatement)
 	}
 
-	private def getIri[T <: TC](e: Entity[T]): IRI =  e match{
+	private def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
 
 		case p: Person[T] =>
 			vocab.getPerson(p.cpId)
 
-		case s: CpStation[T] => s.tcId match{
-			case _: AtcId =>
-				vocab.getAtmosphericStation(s.cpId)
-			case _: EtcId =>
-				val EtcStationId(stId) = s.cpId
-				vocab.getEcosystemStation(stId)
-			case _: OtcId =>
-				vocab.getOceanStation(s.cpId)
-		}
+		case s: CpStation[T] => implicitly[TcConf[T]].makeStation(vocab, s)
 
 		case ci: CompanyOrInstitution[T] =>
 			vocab.getOrganization(ci.cpId)
@@ -119,13 +107,9 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			vocab.getIcosInstrument(instr.cpId)
 	}
 
-	private def stationTriples[T <: TC](s: CpStation[T]): List[(IRI, IRI, Value)] = {
+	private def stationTriples[T <: TC : TcConf](s: CpStation[T]): List[(IRI, IRI, Value)] = {
 		val uri = getIri(s)
-		val stationClass = s.tcId match{
-			case _: AtcId => meta.atmoStationClass
-			case _: EtcId => meta.ecoStationClass
-			case _: OtcId => meta.oceStationClass
-		}
+		val stationClass = implicitly[TcConf[T]].stationClass(meta)
 		(uri, RDF.TYPE, stationClass) +:
 		(uri, meta.hasStationId, vocab.lit(s.id)) +:
 		(uri, meta.hasName, vocab.lit(s.name)) +: 

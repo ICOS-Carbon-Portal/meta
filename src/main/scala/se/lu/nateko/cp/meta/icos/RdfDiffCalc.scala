@@ -12,7 +12,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	import RdfDiffCalc._
 	import SequenceDiff._
 
-	def calcDiff[T <: TC](newSnapshot: TcState[T]): Seq[RdfUpdate] = {
+	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Seq[RdfUpdate] = {
 
 		val current: CpTcState[T] = rdfReader.getCurrentState[T]
 
@@ -64,7 +64,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		toRemove ++ toAdd
 	}
 
-	def diff[T <: TC, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T, E] = {
+	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T, E] = {
 
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
@@ -77,8 +77,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			val (from, to) = (fromMap(key), toMap(key))
 
 			val rdfDiff = diff(
-				rdfMaker.getStatements(from),
-				rdfMaker.getStatements(to.withCpId(from.cpId))
+				rdfMaker.getStatements[T](from),
+				rdfMaker.getStatements[T](to.withCpId(from.cpId))
 			)
 
 			val map: Map[TcId[T], String] =
@@ -111,7 +111,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, newButPresentInCp, existingAppearedInCp).join
 	}
 
-	def rolesDiff[T <: TC](cp: Seq[Membership[T]], tc: Seq[AssumedRole[T]]): Seq[RdfUpdate] = {
+	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[AssumedRole[T]]): Seq[RdfUpdate] = {
 		val membMap = cp.filter(_.stop.isEmpty).map(m => m.role.id -> m).toMap
 		val roleMap = tc.map(role => role.id -> role).toMap
 

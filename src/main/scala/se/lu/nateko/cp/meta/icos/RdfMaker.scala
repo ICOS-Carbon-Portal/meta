@@ -63,6 +63,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				stationTriples(s)
 
 			case s: CpMobileStation[T] =>
+				//TODO Add the json value triple
 				stationTriples(s)
 
 			case ci: CompanyOrInstitution[T] =>
@@ -80,10 +81,13 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 					(uri, meta.hasName, vocab.lit(name))
 				} ++:
 				instr.owner.toSeq.map{owner =>
-					(uri, meta.hasInstrumentOwner, vocab.getOrganization(owner.cpId))
+					(uri, meta.hasInstrumentOwner, getIri(owner))
 				} ++:
-				instr.parts.map{part =>
-					(uri, meta.dcterms.hasPart, vocab.getIcosInstrument(part.cpId))
+				instr.vendor.toSeq.map{vendor =>
+					(uri, meta.hasVendor, getIri(vendor))
+				} ++:
+				instr.partsCpIds.map{cpId =>
+					(uri, meta.dcterms.hasPart, vocab.getIcosInstrument(cpId))
 				}
 		}
 

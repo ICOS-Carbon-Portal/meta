@@ -63,8 +63,7 @@ case object DataManager extends NonPiRole("DataManager")
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
-sealed trait Station[+T <: TC] extends Organization[T]{ def id: String }
-sealed trait CpStation[+T <: TC] extends Station[T]
+sealed trait CpStation[+T <: TC] extends Organization[T]{ def id: String }
 
 case class CpStationaryStation[+T <: TC](
 	cpId: String,
@@ -94,7 +93,7 @@ case class Instrument[+T <: TC](
 	name: Option[String] = None,
 	vendor: Option[Organization[T]] = None,
 	owner: Option[Organization[T]] = None,
-	parts: Seq[Instrument[T]] = Nil
+	partsCpIds: Seq[String] = Nil
 ) extends Entity[T]
 
 class AssumedRole[T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){

@@ -26,14 +26,12 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		def updateInstr(instr: Instrument[T]): Instrument[T] = instr.copy(
 			vendor = instr.vendor.map(orgsDiff.ensureIdPreservation),
-			owner = instr.owner.map(orgsDiff.ensureIdPreservation),
-			parts = instr.parts.map(updateInstr)
+			owner = instr.owner.map(orgsDiff.ensureIdPreservation)
 		)
 
 		val tcInstrs = newSnapshot.instruments.map(updateInstr)
-		val cpInstrs = current.instruments.map(updateInstr)
 
-		val instrDiff = diff[T, Instrument[T]](cpInstrs, tcInstrs, Nil)
+		val instrDiff = diff[T, Instrument[T]](current.instruments, tcInstrs, Nil)
 
 		val tcPeople = newSnapshot.stations.flatMap(_.pi.all) ++ newSnapshot.roles.map(_.holder)
 		val cpPeople = current.roles.map(_.role.holder)
@@ -50,8 +48,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			station.pi.all.map(pi => new AssumedRole(PI, pi, station.station))
 		}).map(updateRole)
 
-		val cpRoles = current.roles.map(memb => memb.copy(role = updateRole(memb.role)))
-		val rolesRdfDiff = rolesDiff[T](cpRoles, tcRoles)
+		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
 		orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
 	}

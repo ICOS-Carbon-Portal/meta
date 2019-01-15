@@ -1,14 +1,16 @@
 package se.lu.nateko.cp.meta.icos
 
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
-import se.lu.nateko.cp.meta.core.data
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.IRI
-import scala.reflect.ClassTag
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.RDF
+
+import se.lu.nateko.cp.meta.core.data
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
@@ -26,9 +28,30 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
 	val vocab = new CpVocab(server.factory)
 
-	def getCurrentState[T <: TC : TcConf]: CpTcState[T] = {
-		???
-	}
+	def getCurrentState[T <: TC : TcConf] = new CpTcState(getStations, getMemberships, getInstruments)
+
+
+	def getMemberships[T <: TC : TcConf]: Seq[Membership[T]] = getDirectClassMembers(metaVocab.membershipClass).flatMap{uri =>
+		for(
+			orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
+			org <- getOrganization(orgUri);
+			roleId: String = getSingleUri(uri, metaVocab.hasRole).getLocalName;
+			role <- Role.all.find(_.name == roleId);
+			person <- {
+				val persons = getPropValueHolders(metaVocab.hasMembership, uri).flatMap{persUri =>
+					getTcId[T](persUri).map(getPerson(_, persUri))
+				}.toIndexedSeq
+				assert(persons.size <= 1, s"Membership object $uri is assosiated with ${persons.size} people, which is illegal")
+				persons.headOption
+			}
+		) yield{
+			val startOpt = getOptionalInstant(uri, metaVocab.hasStartTime)
+			val endOpt = getOptionalInstant(uri, metaVocab.hasEndTime)
+			val assumedRole = new AssumedRole(role, person, org)
+			Membership(uri.getLocalName, assumedRole, startOpt, endOpt)
+		}
+	}.toIndexedSeq
+
 
 	def getInstruments[T <: TC : TcConf]: Seq[Instrument[T]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
 		(tcId, uri) => Instrument[T](
@@ -37,16 +60,19 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
 			name = getOptionalString(uri, metaVocab.hasName),
-			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).map(uri => getOrganization(uri)),
-			vendor = getOptionalUri(uri, metaVocab.hasVendor).map(uri => getOrganization(uri)),
+			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(uri => getOrganization(uri)),
+			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(uri => getOrganization(uri)),
 			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(_.getLocalName)
 		)
 	}
 
+
 	def getStations[T <: TC](implicit conf: TcConf[T]): Seq[CpStation[T]] =
 		getEntities[T, CpStation[T]](conf.stationClass(metaVocab))(getStation)
 
+
 	private def getStation[T <: TC : TcConf](tcId: TcId[T], uri: IRI): CpStation[T] = {
+
 		val id = getSingleString(uri, metaVocab.hasStationId)
 		val name = getSingleString(uri, metaVocab.hasName)
 
@@ -62,32 +88,59 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		stationaryOpt.getOrElse(CpMobileStation(uri.getLocalName, tcId, name, id, None))
 	}
 
-	def getOrganization[T <: TC : TcConf](uri: IRI): Organization[T] = ???
 
-	def getPeople[T <: TC : TcConf]: Seq[Person[T]] = getEntities[T, Person[T]](metaVocab.personClass){
-		(tcId, uri) =>
-			val core: data.Person = getPerson(uri)
-			val email = getOptionalString(uri, metaVocab.hasEmail)
-			Person[T](uri.getLocalName, tcId, core.firstName, core.lastName, email)
+	private def getCompOrInst[T <: TC](tcId: TcId[T], uri: IRI): CompanyOrInstitution[T] = {
+		val core: data.Organization = getOrganization(uri)
+		CompanyOrInstitution[T](uri.getLocalName, tcId, core.name, core.self.label)
 	}
 
-	def getOrgs[T <: TC : TcConf]: Seq[CompanyOrInstitution[T]] = getEntities[T, CompanyOrInstitution[T]](metaVocab.orgClass){
-		(tcId, uri) =>
-			val core: data.Organization = getOrganization(uri)
-			CompanyOrInstitution[T](uri.getLocalName, tcId, core.name, core.self.label)
+
+	private def getPerson[T <: TC](tcId: TcId[T], uri: IRI): Person[T] = {
+		val core: data.Person = getPerson(uri)
+		val email = getOptionalString(uri, metaVocab.hasEmail)
+		Person[T](uri.getLocalName, tcId, core.firstName, core.lastName, email)
 	}
+
+	def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] = getTcId(uri).map{tcId =>
+
+		if(server.hasStatement(uri, RDF.TYPE, stationClass))
+			getStation(tcId, uri)
+		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
+			getCompOrInst(tcId, uri)
+		else
+			throw new MetadataException(s"$uri is neither a station nor a plain organization")
+	}
+
+
+	def getPeople[T <: TC : TcConf]: Seq[Person[T]] = getEntities[T, Person[T]](metaVocab.personClass)(getPerson)
+
+
+	def getOrgs[T <: TC : TcConf]: Seq[CompanyOrInstitution[T]] =
+		getEntities[T, CompanyOrInstitution[T]](metaVocab.orgClass)(getCompOrInst)
+
 
 	private def getEntities[T <: TC : TcConf, E](cls: IRI)(make: (TcId[T], IRI) => E): Seq[E] = {
+		for(
+			uri <- getDirectClassMembers(cls);
+			tcId <- getTcId(uri)
+		) yield make(tcId, uri)
+	}.toIndexedSeq
 
-		val tcConf = implicitly[TcConf[T]]
+
+	private def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
 		val tcIdPred = tcConf.tcIdPredicate(metaVocab)
-
-		server
-			.getStatements(None, Some(RDF.TYPE), Some(cls))
-			.map(_.getObject)
-			.collect{case iri: IRI => iri}
-			.flatMap{uri =>
-				for(tcid <- getOptionalString(uri, tcIdPred)) yield make(tcConf.makeId(tcid), uri)
-			}.toIndexedSeq
+		getOptionalString(uri, tcIdPred).map(tcConf.makeId)
 	}
+
+
+	private def stationClass[T <: TC](implicit tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
+
+
+	private def getDirectClassMembers(cls: IRI): Iterator[IRI] = getPropValueHolders(RDF.TYPE, cls)
+
+	private def getPropValueHolders(prop: IRI, v: Value): Iterator[IRI] = server
+		.getStatements(None, Some(prop), Some(v))
+		.map(_.getSubject)
+		.collect{case iri: IRI => iri}
+
 }

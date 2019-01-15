@@ -24,6 +24,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			(uri, RDF.TYPE, meta.membershipClass) +:
 			(uri, meta.atOrganization, getIri(memb.role.org)) +:
 			(uri, meta.hasRole, vocab.getRole(memb.role.role.name)) +:
+			(getIri(memb.role.holder), meta.hasMembership, uri) +:
 			memb.start.toSeq.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))
 			} ++:

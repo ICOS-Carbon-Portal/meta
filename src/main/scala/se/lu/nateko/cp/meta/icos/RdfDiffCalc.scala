@@ -39,7 +39,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 
-		def updateRole(role: AssumedRole[T]) = role.update(
+		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
+			role.role,
 			peopleDiff.ensureIdPreservation(role.holder),
 			orgsDiff.ensureIdPreservation(role.org)
 		)

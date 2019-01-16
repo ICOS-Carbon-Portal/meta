@@ -74,6 +74,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	private def getStation[T <: TC : TcConf](tcId: TcId[T], uri: IRI): CpStation[T] = {
 
 		val id = getSingleString(uri, metaVocab.hasStationId)
+		val cpId = vocab.getStationId(uri)
 		val name = getSingleString(uri, metaVocab.hasName)
 
 		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)
@@ -81,17 +82,17 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 		val stationaryOpt = for(lat <- latOpt; lon <- lonOpt) yield {
 			val altOpt = getOptionalFloat(uri, metaVocab.hasElevation)
-			CpStationaryStation(uri.getLocalName, tcId, name, id, Position(lat, lon, altOpt))
+			CpStationaryStation(cpId, tcId, name, id, Position(lat, lon, altOpt))
 		}
 
 		//TODO Add json reading
-		stationaryOpt.getOrElse(CpMobileStation(uri.getLocalName, tcId, name, id, None))
+		stationaryOpt.getOrElse(CpMobileStation(cpId, tcId, name, id, None))
 	}
 
 
 	private def getCompOrInst[T <: TC](tcId: TcId[T], uri: IRI): CompanyOrInstitution[T] = {
 		val core: data.Organization = getOrganization(uri)
-		CompanyOrInstitution[T](uri.getLocalName, tcId, core.name, core.self.label)
+		CompanyOrInstitution[T](vocab.getOrganizationId(uri), tcId, core.name, core.self.label)
 	}
 
 

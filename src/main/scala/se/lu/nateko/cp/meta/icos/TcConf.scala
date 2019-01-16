@@ -11,13 +11,13 @@ sealed trait TcId[+T <: TC]{
 	def id: String
 }
 
-trait TcConf[T <: TC]{
+trait TcConf[+T <: TC]{
 	private case class Id(val id: String) extends TcId[T]
 	def makeId(id: String): TcId[T] = new Id(id)
 	def tc: T
 	def stationClass(meta: CpmetaVocab): IRI
 	def tcIdPredicate(meta: CpmetaVocab): IRI
-	def makeStation(vocab: CpVocab, station: CpStation[T]): IRI
+	def makeStation(vocab: CpVocab, stationId: String): IRI
 }
 
 object TcConf{
@@ -30,7 +30,7 @@ object TcConf{
 
 		def tcIdPredicate(meta: CpmetaVocab) = meta.hasAtcId
 
-		def makeStation(vocab: CpVocab, station: CpStation[ATC.type]) = vocab.getAtmosphericStation(station.cpId)
+		def makeStation(vocab: CpVocab, stationId: String) = vocab.getAtmosphericStation(stationId)
 	}
 
 	implicit object EtcConf extends TcConf[ETC.type]{
@@ -41,8 +41,8 @@ object TcConf{
 
 		def tcIdPredicate(meta: CpmetaVocab) = meta.hasEtcId
 
-		def makeStation(vocab: CpVocab, station: CpStation[ETC.type]) = {
-			val EtcStationId(id) = station.cpId
+		def makeStation(vocab: CpVocab, stationId: String) = {
+			val EtcStationId(id) = stationId
 			vocab.getEcosystemStation(id)
 		}
 	}
@@ -55,6 +55,8 @@ object TcConf{
 
 		def tcIdPredicate(meta: CpmetaVocab) = meta.hasOtcId
 
-		def makeStation(vocab: CpVocab, station: CpStation[OTC.type]) = vocab.getOceanStation(station.cpId)
+		def makeStation(vocab: CpVocab, stationId: String) = vocab.getOceanStation(stationId)
 	}
+
+	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
 }

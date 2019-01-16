@@ -100,16 +100,18 @@ case class Instrument[+T <: TC](
 	partsCpIds: Seq[String] = Nil
 ) extends Entity[T]
 
-class AssumedRole[T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){
+class AssumedRole[+T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){
 	def id = (role.name, holder.tcId, org.tcId)
-	def update(newHolder: Person[T], newOrg: Organization[T]) = new AssumedRole(role, newHolder, newOrg)
 }
 
-class TcAssumedRole[T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole(role, holder, org)
-case class Membership[T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
+class TcAssumedRole[+T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole(role, holder, org)
+case class Membership[+T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class CpTcState[T <: TC](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]])
-class TcState[T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
+class CpTcState[+T <: TC : TcConf](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
+	def tcConf: TcConf[T] = implicitly[TcConf[T]]
+}
+
+class TcState[+T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
 
 sealed trait TC{
 	type Pis <: NumberOfPis[this.type]

@@ -110,12 +110,13 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 
 	}
 
-	describe("CP takes over a definition of a metadata entity"){
+	describe("CP takes over a description of a PI person"){
 
 		Given("starting with a single station with single PI and no own CP statements")
 
 		val state = init(Nil, _ => Nil)
 		val initSnap = atcInitSnap(jane)
+
 		state.tcServer.applyAll(state.calc.calcDiff(initSnap))
 
 		When("CP creates a new person metadata and associates it with the exising TC person metadata")
@@ -123,19 +124,31 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		val cpJane = Person[A]("Jane_CP", jane.tcId, "Jane", "CP", Some("jane.cp@icos-cp.eu"))
 		state.cpServer.addAll(state.maker.getStatements(cpJane))
 
-		val updates = state.calc.calcDiff(initSnap).toIndexedSeq //no change in the TC picture
-		state.tcServer.applyAll(updates)
+		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
 
-		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's statements"){
-			val nOfPersonStats = state.maker.getStatements(jane).size
-			assert(updates.forall(!_.isAssertion))
-			assert(updates.size === nOfPersonStats)
+			val updates = state.calc.calcDiff(initSnap).toIndexedSeq //no change in the TC picture
+			state.tcServer.applyAll(updates)
+
+			val personStats = state.maker.getStatements(jane)
+			val deleted = updates.filter(!_.isAssertion).map(_.statement).toSet
+			assert(personStats.forall(deleted.contains))
 		}
 
 		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
 			val updates2 = state.calc.calcDiff(initSnap).toIndexedSeq
 			updates2 foreach println
 			assert(updates2.isEmpty)
+		}
+	}
+
+	describe("CP takes over a description of an organization (not station) where a person has a role"){
+		Given("starting with a single org with a single researcher and no own CP statements")
+		When("CP creates a new org metadata and associates it with the exising TC org metadata")
+		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
+			pending
+		}
+		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
+			pending
 		}
 	}
 
@@ -148,7 +161,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 
 		val tcGraphUri = factory.createIRI("http://test.icos.eu/tcState")
 		val cpGraphUri = factory.createIRI("http://test.icos.eu/cpOwnMetaInstances")
-		val tcServer = new Rdf4jInstanceServer(repo, tcGraphUri)
+		val tcServer = new Rdf4jInstanceServer(repo, Seq(tcGraphUri, cpGraphUri), Seq(tcGraphUri))
 		val cpServer = new Rdf4jInstanceServer(repo, cpGraphUri)
 
 		cpServer.addAll(cpOwn(rdfMaker))

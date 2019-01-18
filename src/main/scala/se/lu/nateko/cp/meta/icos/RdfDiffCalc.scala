@@ -54,13 +54,20 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
 	}
 
-	def diff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
+	private def diff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
 		val fromSet = from.toSet
 		val toSet = to.toSet
 		val toAdd = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
 		val toRemove = fromSet.diff(toSet).toSeq.map(RdfUpdate(_, false))
 		toRemove ++ toAdd
 	}
+
+	private def swapSubject(subj: IRI)(stat: Statement): Statement =
+		rdfMaker.createStatement(subj, stat.getPredicate, stat.getObject)
+
+	private def swapObject(obj: IRI)(stat: Statement): Statement =
+		rdfMaker.createStatement(stat.getSubject, stat.getPredicate, obj)
+
 
 	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T, E] = {
 
@@ -99,7 +106,30 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val existingAppearedInCp = {
 			val keys = cpKeys.intersect(fromKeys).toSeq
-			val rdfDiff = keys.flatMap(key => rdfMaker.getStatements(fromMap(key)).map(RdfUpdate(_, false)))
+
+			val rdfDiff = keys.flatMap{key =>
+
+				val toDelete = fromMap(key)
+				val deletedIri = rdfMaker.getIri(toDelete)
+				val replacementIri = rdfMaker.getIri(cpMap(key))
+
+				val basicEntityStatements = rdfMaker.getStatements(toDelete).toSet
+
+				val (redundantBasicStatements, extraStatements) = rdfReader.getTcOnlyStatements(deletedIri)
+					.partition(basicEntityStatements.contains)
+
+				val redundantExtraStatements = if(deletedIri != replacementIri) extraStatements else Nil
+				val replacementExtraStatements = redundantExtraStatements.map(swapSubject(replacementIri))
+
+				val usagesToRemove = if(deletedIri != replacementIri)
+						rdfReader.getTcOnlyUsages(deletedIri)
+					else Nil
+
+				val replacementUsages = usagesToRemove.map(swapObject(replacementIri))
+
+				(redundantBasicStatements ++ redundantExtraStatements ++ usagesToRemove).map(RdfUpdate(_, false)) ++
+				(replacementExtraStatements ++ replacementUsages).map(RdfUpdate(_, true))
+			}
 			val lookup = keys.collect{
 				case key if fromMap(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
 			}.toMap

@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
+import org.eclipse.rdf4j.model.Statement
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
@@ -23,6 +24,21 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 
 	def getCurrentState[T <: TC : TcConf]: CpTcState[T] = tcMetasFetcher.getCurrentState[T]
 
+	def getTcOnlyUsages(iri: IRI): IndexedSeq[Statement] = minus(
+		tcInsts.getStatements(None, None, Some(iri)).map(stripContext),
+		cpInsts.getStatements(None, None, Some(iri)).map(stripContext)
+	)
+
+	def getTcOnlyStatements(iri: IRI): IndexedSeq[Statement] = minus(
+		tcInsts.getStatements(Some(iri), None, None).map(stripContext),
+		cpInsts.getStatements(Some(iri), None, None).map(stripContext)
+	)
+
+	private def minus(takeFrom: Iterator[Statement], takeAway: Iterator[Statement]): IndexedSeq[Statement] =
+		takeFrom.toSet.diff(takeAway.toSet).toIndexedSeq
+
+	private def stripContext(s: Statement) = tcInsts.factory
+		.createStatement(s.getSubject, s.getPredicate, s.getObject)
 }
 
 private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
@@ -30,7 +46,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 	def getCurrentState[T <: TC : TcConf] = new CpTcState(getStations, getMemberships, getInstruments)
 
-
+	//TODO Read only non-ended memberships
 	def getMemberships[T <: TC : TcConf]: Seq[Membership[T]] = getDirectClassMembers(metaVocab.membershipClass).flatMap{uri =>
 		for(
 			orgUri <- getOptionalUri(uri, metaVocab.atOrganization);

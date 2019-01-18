@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -16,6 +17,9 @@ import java.time.Instant
 class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 
 	private implicit val envri = Envri.ICOS
+
+	def createStatement(subj: Resource, pred: IRI, v: Value): Statement =
+		vocab.factory.createStatement(subj, pred, v)
 
 	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
@@ -38,7 +42,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 
 	def getMembershipEnd(membId: String): Statement = {
 		val uri = vocab.getMembership(membId)
-		vocab.factory.createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
+		createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
 	}
 
 	def getStatements[T <: TC : TcConf](e: Entity[T]): Seq[Statement] = {
@@ -98,7 +102,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		(triples :+ tcIdTriple).map(vocab.factory.tripleToStatement)
 	}
 
-	private def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
+	def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
 
 		case p: Person[T] =>
 			vocab.getPerson(p.cpId)

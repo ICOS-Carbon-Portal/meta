@@ -102,6 +102,7 @@ case class Instrument[+T <: TC](
 
 class AssumedRole[+T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){
 	def id = (role.name, holder.tcId, org.tcId)
+	override def toString = s"AssumedRole($role , $holder , $org )"
 }
 
 class TcAssumedRole[+T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole(role, holder, org)

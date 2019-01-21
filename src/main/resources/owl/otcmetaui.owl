@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://meta.icos-cp.eu/ontologies/otcmetaui/"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     ontologyIRI="http://meta.icos-cp.eu/ontologies/otcmetaui/">
+    <Prefix name="" IRI="http://meta.icos-cp.eu/ontologies/otcmetaui/"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Import>http://meta.icos-cp.eu/ontologies/otcmeta/</Import>
+    <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Instrument</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <Literal> (</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty4"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <Literal>)</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Organization</IRI>
+        <IRI>rdfs:label</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Organization</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
+        <Literal>, </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <Literal> is </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasRole</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty4"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <Literal> at </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty5"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.6.2018-09-06T00:27:41Z) https://github.com/owlcs/owlapi -->
+

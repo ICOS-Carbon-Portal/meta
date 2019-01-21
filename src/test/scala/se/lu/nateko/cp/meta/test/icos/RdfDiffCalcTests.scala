@@ -136,19 +136,42 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 
 		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
 			val updates2 = state.calc.calcDiff(initSnap).toIndexedSeq
-			updates2 foreach println
 			assert(updates2.isEmpty)
 		}
 	}
 
 	describe("CP takes over a description of an organization (not station) where a person has a role"){
+
 		Given("starting with a single org with a single researcher and no own CP statements")
+
+		val uni = CompanyOrInstitution("uni", aId("uni0"), "Just Some Uni", None)
+		val janeAtUni = new TcAssumedRole[A](Researcher, jane, uni)
+		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
+		val state = init(Nil, _ => Nil)
+		state.tcServer.applyAll(state.calc.calcDiff(initSnap))
+
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
-		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
-			pending
+
+		val cpUni = CompanyOrInstitution("cpuni", aId("uni0"), "Properly named Uni", None)
+		state.cpServer.addAll(state.maker.getStatements(cpUni))
+
+		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){
+			val updates = state.calc.calcDiff(initSnap).toIndexedSeq //no change in the TC picture
+			state.tcServer.applyAll(updates)
+			val tcUri = state.maker.getIri(uni)
+			val cpUri = state.maker.getIri(cpUni)
+			assert(updates.filter(_.statement.getSubject == tcUri).forall(_.isAssertion == false))
+
+			val meta = new CpmetaVocab(state.cpServer.factory)
+			val atOrgStats = updates.filter(_.statement.getPredicate == meta.atOrganization)
+				.map(u => u.statement.getObject -> u.isAssertion)
+				.toMap
+			assert(atOrgStats === Map(tcUri -> false, cpUri -> true))
 		}
+
 		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
-			pending
+			val updates2 = state.calc.calcDiff(initSnap).toIndexedSeq
+			assert(updates2.isEmpty)
 		}
 	}
 

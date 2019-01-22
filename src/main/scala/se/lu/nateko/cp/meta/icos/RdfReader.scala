@@ -51,8 +51,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		for(
 			orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
 			org <- getOrganization(orgUri);
-			roleId: String = getSingleUri(uri, metaVocab.hasRole).getLocalName;
-			role <- Role.all.find(_.name == roleId);
+			role <- getRole(getSingleUri(uri, metaVocab.hasRole));
 			person <- {
 				val persons = getPropValueHolders(metaVocab.hasMembership, uri).flatMap{persUri =>
 					getTcId[T](persUri).map(getPerson(_, persUri))
@@ -111,8 +110,12 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		CompanyOrInstitution[T](vocab.getOrganizationId(uri), tcId, core.name, core.self.label)
 	}
 
+	protected def getRole(iri: IRI): Option[Role] = {
+		val roleId = iri.getLocalName
+		Role.all.find(_.name == roleId)
+	}
 
-	private def getPerson[T <: TC](tcId: TcId[T], uri: IRI): Person[T] = {
+	protected def getPerson[T <: TC](tcId: TcId[T], uri: IRI): Person[T] = {
 		val core: data.Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
 		Person[T](uri.getLocalName, tcId, core.firstName, core.lastName, email)
@@ -144,7 +147,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	}.toIndexedSeq
 
 
-	private def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
+	protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
 		val tcIdPred = tcConf.tcIdPredicate(metaVocab)
 		getOptionalString(uri, tcIdPred).map(tcConf.makeId)
 	}
@@ -153,7 +156,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	private def stationClass[T <: TC](implicit tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
 
 
-	private def getDirectClassMembers(cls: IRI): Iterator[IRI] = getPropValueHolders(RDF.TYPE, cls)
+	protected def getDirectClassMembers(cls: IRI): Iterator[IRI] = getPropValueHolders(RDF.TYPE, cls)
 
 	private def getPropValueHolders(prop: IRI, v: Value): Iterator[IRI] = server
 		.getStatements(None, Some(prop), Some(v))

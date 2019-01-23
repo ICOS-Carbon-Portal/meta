@@ -143,15 +143,11 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
 					if(subm.submittingOrganization === vocab.atc){
-						stationMeta.instrument match{
-							case None =>
-								errors += "Instrument URL is expected for ATC time series"
-
-							case Some(instrUrl) =>
-								val urlPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
-								if(!instrUrl.toString.startsWith(urlPrefix))
-									errors += s"Instrument URL is expected to start with '$urlPrefix'"
-						}
+						val instruments = stationMeta.instruments
+						if(instruments.exists(uri => !isAtcInstrument(uri)))
+							errors += s"Instrument URL is expected to start with '$atcInstrumentPrefix'"
+						if(instruments.isEmpty)
+							errors += "Instrument URL(s) expected for ATC time series"
 						if(stationMeta.samplingHeight.isEmpty && spec.dataLevel > 0) errors += "Must provide sampling height"
 					}
 				}
@@ -159,6 +155,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 		if(errors.isEmpty) ok else userFail(errors.mkString("\n"))
 	}
+
+	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
+	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
 	private def validatePreviousVersion(self: Sha256Sum, prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
 

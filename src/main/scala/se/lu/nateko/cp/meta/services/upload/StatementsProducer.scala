@@ -27,6 +27,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private implicit val factory = vocab.factory
 
+	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
 	def getStatements(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
 		import meta.{ hashSum, objectSpecification }
 
@@ -118,8 +119,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
-		makeSt(aquisitionUri, metaVocab.wasPerformedWith, meta.instrument.map(_.toRdf)) ++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
+		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 

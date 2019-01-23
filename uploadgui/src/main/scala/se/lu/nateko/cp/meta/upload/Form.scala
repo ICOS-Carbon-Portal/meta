@@ -88,7 +88,7 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
-				instrument = instrumentUri,
+				instrument = instrumentUri.map(Left(_)),
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,

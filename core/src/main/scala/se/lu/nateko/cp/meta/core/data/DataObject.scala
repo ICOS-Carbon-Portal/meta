@@ -37,9 +37,11 @@ case class DataObjectSpec(
 case class DataAcquisition(
 	station: Station,
 	interval: Option[TimeInterval],
-	instrument: Option[URI],
+	instrument: Option[Either[URI, Seq[URI]]],
 	samplingHeight: Option[Float]
-)
+){
+	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
+}
 
 case class DataProduction(
 	creator: Agent,

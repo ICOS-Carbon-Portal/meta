@@ -139,7 +139,11 @@ trait CpmetaFetcher extends FetchingHelper{
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
 			) yield TimeInterval(start, stop),
-			instrument = getOptionalUri(acqUri, metaVocab.wasPerformedWith).map(_.toJava),
+			instrument = server.getUriValues(acqUri, metaVocab.wasPerformedWith).map(_.toJava).toList match{
+				case Nil => None
+				case single :: Nil => Some(Left(single))
+				case many => Some(Right(many))
+			},
 			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)

@@ -28,12 +28,14 @@ case class StaticCollectionDto(
 
 case class StationDataMetadata(
 	station: URI,
-	instrument: Option[URI],
+	instrument: Option[Either[URI, Seq[URI]]],
 	samplingHeight: Option[Float],
 	acquisitionInterval: Option[TimeInterval],
 	nRows: Option[Int],
 	production: Option[DataProductionDto]
-)
+){
+	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
+}
 
 case class ElaboratedProductMetadata(
 	title: String,

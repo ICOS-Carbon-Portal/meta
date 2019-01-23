@@ -32,6 +32,10 @@ object JsonSupport {
 		def writes(spatial: Either[LatLonBox, URI]) = spatial.fold(Json.toJson(_), Json.toJson(_))
 	}
 
+	implicit val instrumentWrites = new Writes[Either[URI, Seq[URI]]]{
+		def writes(instr: Either[URI, Seq[URI]]) = instr.fold(Json.toJson(_), Json.toJson(_))
+	}
+
 	implicit val elaboratedProductMetadataWrites = Json.writes[ElaboratedProductMetadata]
 	implicit val stationDataMetadataWrites = Json.writes[StationDataMetadata]
 

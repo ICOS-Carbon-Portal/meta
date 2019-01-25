@@ -2,24 +2,36 @@ package se.lu.nateko.cp.meta.icos
 
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import org.reactivestreams.Publisher
 import se.lu.nateko.cp.meta.api.CustomVocab
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import org.eclipse.rdf4j.model.IRI
 import scala.util.Try
+import scala.concurrent.duration.DurationInt
+import akka.stream.OverflowStrategy
+import akka.event.LoggingAdapter
+import scala.collection.immutable
 
 class OtcMetaSource(
-	server: InstanceServer, notifier: Publisher[Any]
+	server: InstanceServer, updateEvents: Source[Any, Any], log: LoggingAdapter
 )(implicit envriConfigs: EnvriConfigs) extends TcMetaSource[OTC.type] {
 
 	private type O = OTC.type
 	private val otcVocab = new OtcMetaVocab(server.factory)
 	private def makeId(iri: IRI): TcId[O] = implicitly[TcConf[O]].makeId(iri.getLocalName)
 
-	def state: Source[TcState[O], Any] = {
-		???
-	}
+	def state: Source[TcState[O], Any] = updateEvents
+		.buffer(1, OverflowStrategy.dropHead)
+		.throttle(1, 1.minute)
+		.mapConcat[TcState[O]]{_ =>
+			try{
+				immutable.Iterable(readState)
+			}catch{
+				case err: Throwable =>
+					log.error(err, "Error while reading OTC metadata")
+					Nil
+			}
+		}
 
 	def readState: TcState[O] = {
 		val instruments = reader.getInstruments[O]

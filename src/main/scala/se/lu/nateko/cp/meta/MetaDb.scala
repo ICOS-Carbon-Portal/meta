@@ -37,6 +37,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsPlugin
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 
 
 class MetaDb (
@@ -281,7 +282,14 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else {
 			val servConf: InstanceServerConfig = instServerConfs(id)
-			val basicInit = Future{makeInstanceServer(repo, servConf, config)}
+
+			val basicInit = {
+				val init = Future{makeInstanceServer(repo, servConf, config)}
+
+				if(id == config.instanceServers.otcMetaInstanceServerId)
+					init.map(new WriteNotifyingInstanceServer(_))
+				else init
+			}
 
 			servConf.ingestion match{
 

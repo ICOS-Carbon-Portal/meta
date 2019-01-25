@@ -8,6 +8,7 @@ import scala.concurrent.duration.DurationInt
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
 
 
@@ -22,6 +23,7 @@ object Main extends App with CpmetaJsonProtocol{
 	val metaFactory = new MetaDbFactory
 	val startup = for(
 		db <- metaFactory(config);
+		_ <- Future.fromTry(MetaFlow.initiate(db, config));
 		route = MainRoute(db, config);
 		binding <- Http().bindAndHandle(route, "localhost", config.port)
 	) yield {

@@ -39,7 +39,10 @@ case class DObjGraphInfo(graph: URI, format: URI)
 
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
-	forDataObjects: Map[Envri, DataObjectInstServersConfig]
+	forDataObjects: Map[Envri, DataObjectInstServersConfig],
+	cpMetaInstanceServerId: String,
+	icosMetaInstanceServerId: String,
+	otcMetaInstanceServerId: String
 )
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
@@ -154,7 +157,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val instanceServerConfigFormat = jsonFormat5(InstanceServerConfig)
 	implicit val dataObjectInstServerDefinitionFormat = jsonFormat2(DataObjectInstServerDefinition)
 	implicit val dataObjectInstServersConfigFormat = jsonFormat3(DataObjectInstServersConfig)
-	implicit val instanceServersConfigFormat = jsonFormat2(InstanceServersConfig)
+	implicit val instanceServersConfigFormat = jsonFormat5(InstanceServersConfig)
 	implicit val dbServerFormat = jsonFormat2(DbServer)
 	implicit val dbCredentialsFormat = jsonFormat3(DbCredentials)
 	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)

@@ -1,33 +1,51 @@
 package se.lu.nateko.cp.meta.icos
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.util.Failure
 
+import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.actor.Cancellable
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
+import akka.stream.ActorAttributes
 import akka.stream.Materializer
+import akka.stream.Supervision
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
+import se.lu.nateko.cp.meta.ingestion.badm.BadmNumericValue
+import se.lu.nateko.cp.meta.ingestion.badm.BadmStringValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
-import se.lu.nateko.cp.meta.ingestion.badm.BadmNumericValue
-import se.lu.nateko.cp.meta.ingestion.badm.BadmStringValue
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 
 class EtcMetaSource(conf: EtcUploadConfig)(
 	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
 ) extends TcMetaSource[ETC.type] {
-	import system.dispatcher
 	import EtcMetaSource._
+	import system.dispatcher
 
-	def state: Source[State, Any] = {
-		???
-	}
+	def state: Source[State, Cancellable] = Source
+		//TODO Set reasonable times on the next line, this is just for testing
+		.tick(5.seconds, 5.hours, NotUsed)
+		.mapAsync(1){_ =>
+			fetchFromEtc().andThen{
+				case Failure(err) =>
+					system.log.error(err, "ETC metadata fetching/parsing error")
+			}
+		}
+		.withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
+		.mapConcat{validated =>
+			if(!validated.errors.isEmpty) system.log.warning("ETC metadata problem(s): " + validated.errors.mkString("\n"))
+			validated.result.toList
+		}
+
 
 	def fetchFromEtc(): Future[Validated[State]] = Http()
 		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))

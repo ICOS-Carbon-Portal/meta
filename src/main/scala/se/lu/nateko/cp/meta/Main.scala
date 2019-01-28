@@ -23,11 +23,12 @@ object Main extends App with CpmetaJsonProtocol{
 	val metaFactory = new MetaDbFactory
 	val startup = for(
 		db <- metaFactory(config);
-		_ <- Future.fromTry(MetaFlow.initiate(db, config));
+		cancelMetaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		route = MainRoute(db, config);
 		binding <- Http().bindAndHandle(route, "localhost", config.port)
 	) yield {
 		sys.addShutdownHook{
+			cancelMetaflow()
 			db.close()
 			println("Metadata db has been shut down")
 			val doneFuture = binding.unbind()

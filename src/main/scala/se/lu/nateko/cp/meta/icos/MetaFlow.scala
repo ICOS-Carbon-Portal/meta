@@ -1,22 +1,20 @@
 package se.lu.nateko.cp.meta.icos
 
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.CpmetaConfig
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import scala.util.Try
-import akka.NotUsed
+
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.scaladsl.Sink
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
-import akka.actor.ActorSystem
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Sink
 
 
 object MetaFlow {
 
-	def initiate(db: MetaDb, conf: CpmetaConfig)(implicit mat: Materializer, system: ActorSystem): Try[NotUsed] = Try{
+	def initiate(db: MetaDb, conf: CpmetaConfig)(implicit mat: Materializer, system: ActorSystem): Try[() => Unit] = Try{
 
 		implicit val envriConfs = conf.core.envriConfigs
 		
@@ -42,13 +40,24 @@ object MetaFlow {
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-		val otcUpdates: Source[Any, Any] = Source.actorRef(1, OverflowStrategy.dropHead).mapMaterializedValue{actor =>
-			otcServer.setSubscriber(() => actor ! NotUsed)
-		}
-		val otcSource = new OtcMetaSource(otcServer.inner, otcUpdates, system.log)
+		val otcSource = new OtcMetaSource(otcServer, system.log)
+		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
 
-		//TODO Make sure the stream is restarted upon failures
-		otcSource.state.map(s => icosServer.applyAll(diffCalc.calcDiff(s))).runWith(Sink.ignore)
-		NotUsed
+		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
+			try{
+				val diff = diffCalc.calcDiff(state)
+				diff foreach println
+				icosServer.applyAll(diff)
+			} catch{
+				case err: Throwable =>
+					system.log.error(err, s"Error calculating RDF diff for $tip metadata")
+			}
+		}
+		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
+		() => {
+			stopOtc()
+			stopEtc.cancel()
+		}
 	}
 }

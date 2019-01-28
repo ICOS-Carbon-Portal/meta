@@ -1,28 +1,39 @@
 package se.lu.nateko.cp.meta.icos
 
-import akka.stream.scaladsl.Source
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.api.CustomVocab
-import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import org.eclipse.rdf4j.model.IRI
-import scala.util.Try
-import scala.concurrent.duration.DurationInt
-import akka.stream.OverflowStrategy
-import akka.event.LoggingAdapter
 import scala.collection.immutable
+import scala.concurrent.duration.DurationInt
+import scala.util.Try
+
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+
+import akka.actor.Status
+import akka.event.LoggingAdapter
+import akka.stream.OverflowStrategy
+import akka.stream.ThrottleMode
+import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl.Source
+import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 
 class OtcMetaSource(
-	server: InstanceServer, updateEvents: Source[Any, Any], log: LoggingAdapter
+	server: WriteNotifyingInstanceServer, log: LoggingAdapter
 )(implicit envriConfigs: EnvriConfigs) extends TcMetaSource[OTC.type] {
 
 	private type O = OTC.type
 	private val otcVocab = new OtcMetaVocab(server.factory)
 	private def makeId(iri: IRI): TcId[O] = implicitly[TcConf[O]].makeId(iri.getLocalName)
 
-	def state: Source[TcState[O], Any] = updateEvents
-		.buffer(1, OverflowStrategy.dropHead)
-		.throttle(1, 1.minute)
+	def state: Source[TcState[O], () => Unit] = Source
+		.actorRef(1, OverflowStrategy.dropHead)
+		.mapMaterializedValue{actor =>
+			server.setSubscriber(() => actor ! 2) //cost of single update is 2 units
+			() => actor ! Status.Success
+		}
+		.prepend(Source.single(2)) //triggering initial state reading at the stream startup
+		.conflate(Keep.right) //swallow throttle's back-pressure
+		.throttle(2, 1.minute, 1, identity, ThrottleMode.Shaping) //2 units of cost per minute
 		.mapConcat[TcState[O]]{_ =>
 			try{
 				immutable.Iterable(readState)
@@ -38,7 +49,7 @@ class OtcMetaSource(
 		val allRoles = reader.getAssumedRoles
 		val tcRoles = allRoles.flatMap(toTcRole)
 		val tcStations = allRoles.flatMap(toPiInfo).groupBy(_._1).toSeq.collect{
-			case (station, tuples) if tuples.length > 1 =>
+			case (station, tuples) if !tuples.isEmpty =>
 				val piSeq: Seq[Person[O]] = tuples.map(_._2)
 				val pis = OneOrMorePis(piSeq.head, piSeq.tail: _*)
 				new TcStation[O](station, pis)
@@ -46,7 +57,7 @@ class OtcMetaSource(
 		new TcState(tcStations, tcRoles, instruments)
 	}
 
-	private object reader extends IcosMetaInstancesFetcher(server){
+	private object reader extends IcosMetaInstancesFetcher(server.inner){
 
 		override protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
 			Some(tcConf.makeId(uri.getLocalName))
@@ -70,7 +81,7 @@ class OtcMetaSource(
 	}
 
 	private def toPiInfo(ar: AssumedRole[O]): Option[(CpStation[O], Person[O])] = ar.org match{
-		case s: CpStation[O] if ar.role != PI => Some(s -> ar.holder)
+		case s: CpStation[O] if ar.role == PI => Some(s -> ar.holder)
 		case _ => None
 	}
 }

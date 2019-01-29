@@ -32,8 +32,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 	import system.dispatcher
 
 	def state: Source[State, Cancellable] = Source
-		//TODO Set reasonable times on the next line, this is just for testing
-		.tick(5.seconds, 5.hours, NotUsed)
+		.tick(25.seconds, 5.hours, NotUsed)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
 				case Failure(err) =>
@@ -84,8 +83,8 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 		for(
 			_ <- nPisValidation;
 			_ <- nonPiRolesValidation;
-			siteId <- getString("GRP_HEADER/SITE_ID")
-				.require(s"Station $id had no value for SITE_ID");
+//			siteId <- getString("GRP_HEADER/SITE_ID")
+//				.require(s"Station $id had no value for SITE_ID");
 			siteName <- getString("GRP_HEADER/SITE_NAME")
 				.require(s"Station $id had no value for SITE_NAME");
 			pos <- getPosition
@@ -95,7 +94,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 				.require(_.email.isDefined, s"PI of station $id had no email")
 		) yield {
 			//TODO Use an actual guaranteed-stable id as tcId here
-			val cpStation = new CpStationaryStation(siteId, tcConf.makeId(siteId), siteName, siteId, pos)
+			val cpStation = new CpStationaryStation(id, tcConf.makeId(id), siteName, id, pos)
 			new TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}
@@ -117,6 +116,7 @@ object EtcMetaSource{
 				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
 				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number")
 			) yield
+				//TODO Use TC-stable station id as component of tcId
 				Instrument(s"ETC_${sid}_$lid", tcConf.makeId(s"${sid}_$lid"), model, sn.valueStr)
 		}
 	}

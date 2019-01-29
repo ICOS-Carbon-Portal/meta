@@ -46,11 +46,11 @@ object MetaFlow {
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			try{
 				val diff = diffCalc.calcDiff(state)
-				diff foreach println
+				//diff foreach println
 				icosServer.applyAll(diff)
 			} catch{
 				case err: Throwable =>
-					system.log.error(err, s"Error calculating RDF diff for $tip metadata")
+					system.log.error(err, s"Error calculating/applying RDF diff for $tip metadata")
 			}
 		}
 		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()

@@ -51,7 +51,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
-		orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
+		rdfReader.keepMeaningful(
+			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
+		)
 	}
 
 	private def diff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {

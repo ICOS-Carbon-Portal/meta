@@ -57,17 +57,17 @@
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
         <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
         <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <Literal>, </Literal>
+        <Literal> </Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
         <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>

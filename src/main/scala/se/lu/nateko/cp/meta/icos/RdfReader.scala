@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import org.eclipse.rdf4j.model.Statement
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
@@ -33,6 +34,15 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 		tcInsts.getStatements(Some(iri), None, None).map(stripContext),
 		cpInsts.getStatements(Some(iri), None, None).map(stripContext)
 	)
+
+	def keepMeaningful(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
+		val (adds, dels) = updates.partition(_.isAssertion)
+		val meaningfulAdds = tcInsts.filterNotContainedStatements(adds.map(_.statement)).map(RdfUpdate(_, true))
+		val delStats = dels.map(_.statement)
+		val uselessDelStats = tcInsts.writeContextsView.filterNotContainedStatements(delStats)
+		val meaningfulDels = minus(delStats.iterator, uselessDelStats.iterator).map(RdfUpdate(_, false))
+		meaningfulDels ++ meaningfulAdds
+	}
 
 	private def minus(takeFrom: Iterator[Statement], takeAway: Iterator[Statement]): IndexedSeq[Statement] =
 		takeFrom.toSet.diff(takeAway.toSet).toIndexedSeq

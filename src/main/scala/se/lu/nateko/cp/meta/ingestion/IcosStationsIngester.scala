@@ -42,7 +42,7 @@ class IcosStationsIngester(
 		)
 
 		station => {
-			val stUri = vocab.getTcStation(station.project.toString, station.id)
+			val stUri = vocab.getIcosLikeStation(station.project.toString, station.id)
 
 			Iterator(
 				(stUri, RDF.TYPE, projToClass(station.project)),

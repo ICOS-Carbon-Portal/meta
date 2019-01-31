@@ -1,15 +1,18 @@
 package se.lu.nateko.cp.meta.services
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.api.CustomVocab
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.etcupload.{StationId => EtcStationId}
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+
+import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
+import se.lu.nateko.cp.meta.icos.ETC
+import se.lu.nateko.cp.meta.icos.TC
+import se.lu.nateko.cp.meta.icos.TcConf
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab._
@@ -21,11 +24,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
-	def getTcStation(tc: String, stationId: String) = getRelative(s"stations/${tc}_", stationId)(icosBup)
-	def getStationId(station: IRI): String = station.getLocalName.substring(3)
-	def getAtmosphericStation(stationId: String) = getTcStation("AS", stationId)
-	def getEcosystemStation(id: EtcStationId) = getTcStation("ES", id.id)
-	def getOceanStation(stationId: String) = getTcStation("OS", stationId)
+	def getIcosLikeStation[T <: TC](cfId: String, stationId: String) = getRelative(s"stations/${cfId}_", stationId)(icosBup)
+	def getTcStation[T <: TC](stationId: String)(implicit tc: TcConf[T]) = getIcosLikeStation(tc.stationPrefix, stationId)
+	def getEcosystemStation(id: EtcStationId) = getTcStation[ETC.type](id.id)
+	def getTcStationId[T <: TC](station: IRI)(implicit tc: TcConf[T]): String = station.getLocalName.stripPrefix(tc.stationPrefix + "_")
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(
 		s"${urlEncode(firstName)}_${urlEncode(lastName)}"

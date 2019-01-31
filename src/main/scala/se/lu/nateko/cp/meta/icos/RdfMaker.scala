@@ -112,7 +112,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		case p: Person[T] =>
 			vocab.getPerson(p.cpId)
 
-		case s: CpStation[T] => implicitly[TcConf[T]].makeStation(vocab, s.cpId)
+		case s: CpStation[T] => vocab.getTcStation[T](s.cpId)
 
 		case ci: CompanyOrInstitution[T] =>
 			vocab.getOrganization(ci.cpId)

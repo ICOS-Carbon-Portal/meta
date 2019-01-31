@@ -45,6 +45,11 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/newInstanceBaseUri"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
+        <IRI>http://meta.icos-cp.eu/resources/otcentry/stations/OS_</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
         <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Organization</IRI>
         <IRI>rdfs:label</IRI>

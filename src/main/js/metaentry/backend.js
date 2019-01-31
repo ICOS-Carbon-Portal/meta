@@ -2,11 +2,6 @@
 
 import ajax from '../common/ajax.js';
 
-function stripSlash(s){
-	if(s.endsWith('/')) return stripSlash(s.substr(0, s.length - 1));
-	else return s;
-}
-
 export default {
 	listClasses(){
 		return ajax.getJson('getExposedClasses');
@@ -23,7 +18,7 @@ export default {
 	},
 
 	checkSuffix(baseClass, suffix){
-		var uri = stripSlash(baseClass) + '/' + encodeURI(suffix);
+		var uri = baseClass + encodeURI(suffix);
 		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
 
 		return ajax.getJson(url).then(function(isAvailable){

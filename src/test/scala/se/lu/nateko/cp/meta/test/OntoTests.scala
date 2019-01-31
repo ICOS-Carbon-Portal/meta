@@ -12,29 +12,29 @@ class OntoTests extends FunSpec{
 		val classUri = TestConfig.getOWLClass(localName).getIRI.toURI
 		onto.getClassInfo(classUri)
 	}
-	
+
 	describe("getClassInfo"){
-		
+
 		describe("for Station class"){
 			val props = getClassInfo("Station").properties
 
-			val expected = 15
+			val expected = 19
 
 			it(s"should find $expected properties"){
 				assert(props.size === expected)
 			}
 		}
-		
+
 		describe("for Site class"){
 			val classInfo = getClassInfo("Site")
-			
+
 			it("should find correct value restrictions for latitude"){
 				val latitudeRestrictions = classInfo.properties.collect{
 					case p: DataPropertyDto if p.resource.displayName == "Latitude" => p.range.restrictions
 				}.flatten
-				
+
 				val expectedRestrs = Set(MinRestrictionDto(-90), MaxRestrictionDto(90))
-				
+
 				assert(latitudeRestrictions.toSet === expectedRestrs)
 			}
 		}

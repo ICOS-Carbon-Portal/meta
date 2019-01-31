@@ -8,4 +8,9 @@ package object utils {
 		def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 			.getOrElse(Failure(error))
 	}
+
+	def urlEncode(s: String): String = {
+		//TODO Test this for "strange" strings (e.g. containing timestamps)
+		new java.net.URI(null, null, s, null).toASCIIString
+	}
 }

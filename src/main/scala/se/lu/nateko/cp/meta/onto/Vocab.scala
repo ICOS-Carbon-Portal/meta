@@ -24,5 +24,5 @@ object Vocab {
 	val newInstanceBaseUriAnno: OWLAnnotationProperty = getAnnotationProperty("newInstanceBaseUri")
 	val displayPropAnno: OWLAnnotationProperty = getAnnotationProperty("displayProperty")
 	val displayPropAnnos: IndexedSeq[OWLAnnotationProperty] =
-		(1 to 4).map(i => getAnnotationProperty(s"displayProperty$i"))
+		(1 to 5).map(i => getAnnotationProperty(s"displayProperty$i"))
 }

@@ -13,6 +13,11 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.api.CitationClient
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
+import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
+import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
+import se.lu.nateko.cp.meta.icos.EtcMetaSource
 
 object Playground {
 
@@ -85,4 +90,22 @@ object Playground {
 			|}
 		}""".stripMargin
 	}
+
+	val etcMetaSrc = new EtcMetaSource(metaConf.dataUploadService.etc)
+
+	def etcStationTable(badms: Seq[BadmEntry]): Seq[Seq[String]] = {
+		def toByVarLookup(bs: Seq[BadmEntry]): Map[String, String] =
+			bs.flatMap(b => b.values.map(v => (b.variable + "/" + v.variable) -> v.valueStr)).toMap
+
+		val tableVars = List("GRP_HEADER/SITE_ID", "GRP_HEADER/SITE_NAME")
+
+		badms.groupBy(_.stationId).toSeq.map{case (stIdOpt, badms) =>
+			val lookup = toByVarLookup(badms)
+			stIdOpt.map(_.id).getOrElse("") :: tableVars.map(v => lookup.get(v).getOrElse(""))
+		}
+	}
+
+//	def printEtcStationsTable(): Unit = etcMetaSrc.fetchFromEtc().map(etcStationTable).foreach{rows =>
+//		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)
+//	}
 }

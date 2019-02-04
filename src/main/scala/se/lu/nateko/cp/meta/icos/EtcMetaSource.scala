@@ -91,10 +91,11 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 				.require(s"Station $id had no properly specified geo-position");
 			pi <- getPerson(toLookup(piEntries), tcConf)
 				.require(s"Station $id had no properly specified PI")
-				.require(_.email.isDefined, s"PI of station $id had no email")
+				.require(_.email.isDefined, s"PI of station $id had no email");
+			country <- getCountryCode(stId)
 		) yield {
 			//TODO Use an actual guaranteed-stable id as tcId here
-			val cpStation = new CpStationaryStation(id, tcConf.makeId(id), siteName, id, pos)
+			val cpStation = new CpStationaryStation(id, tcConf.makeId(id), siteName, id, Some(country), pos)
 			new TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}
@@ -158,5 +159,12 @@ object EtcMetaSource{
 		val comps = name.trim.split("\\s+")
 		if(comps.size <= 1) Validated.error("Names are expected to have more than one component")
 		else Validated((comps(0), comps.drop(1).mkString(" ")))
+	}
+
+	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
+
+	def getCountryCode(s: String): Validated[CountryCode] = s match{
+		case CountryCode(cc) => Validated(cc)
+		case _ => Validated.error(s + " is not a valid country code")
 	}
 }

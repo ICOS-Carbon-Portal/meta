@@ -124,9 +124,11 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 	private def stationTriples[T <: TC : TcConf](s: CpStation[T]): List[(IRI, IRI, Value)] = {
 		val uri = getIri(s)
 		val stationClass = implicitly[TcConf[T]].stationClass(meta)
-		(uri, RDF.TYPE, stationClass) +:
-		(uri, meta.hasStationId, vocab.lit(s.id)) +:
-		(uri, meta.hasName, vocab.lit(s.name)) +: 
-		Nil
+		(uri, RDF.TYPE, stationClass) ::
+		(uri, meta.hasStationId, vocab.lit(s.id)) ::
+		(uri, meta.hasName, vocab.lit(s.name)) ::
+		s.country.toList.map{cc =>
+			(uri, meta.countryCode, vocab.lit(cc.code))
+		}
 	}
 }

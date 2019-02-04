@@ -26,7 +26,8 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 	import TcConf.AtcConf.{makeId => aId}
 
 	val jane = Person[A]("Jane_Doe", aId("pers_0"), "Jane", "Doe", Some("jane.doe@icos-ri.eu"))
-	val airCpStation = CpMobileStation[A]("AIR1", aId("43"), "Airplane 1", "AIR1", None)
+	val CountryCode(se) = "SE"
+	val airCpStation = CpMobileStation[A]("AIR1", aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
 		val airTcStation = new TcStation[A](airCpStation, OneOrMorePis(pi))

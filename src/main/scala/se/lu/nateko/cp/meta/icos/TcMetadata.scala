@@ -41,39 +41,19 @@ object Entity{
 
 case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lName: String, email: Option[String]) extends Entity[T]
 
-sealed trait NumberOfPis[+T <: TC]{ def all: List[Person[T]]}
-
-final case class SinglePi[+T <: TC](one: Person[T]) extends NumberOfPis[T]{
-	def all = one :: Nil
-}
-
-final case class OneOrMorePis[+T <: TC](first: Person[T], rest: Person[T]*) extends NumberOfPis[T]{
-	def all = first :: rest.toList
-}
-
-sealed trait Role{
-	def name: String
-}
-
-object Role{
-	val all: Seq[Role] = Seq(PI, Researcher, DataManager)
-}
-
-sealed abstract class NonPiRole(val name: String) extends Role
-
-case object PI extends Role{def name = "PI"}
-case object Researcher extends NonPiRole("Researcher")
-case object DataManager extends NonPiRole("DataManager")
-
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
-sealed trait CpStation[+T <: TC] extends Organization[T]{ def id: String }
+sealed trait CpStation[+T <: TC] extends Organization[T]{
+	def id: String
+	def country: Option[CountryCode]
+}
 
 case class CpStationaryStation[+T <: TC](
 	cpId: String,
 	tcId: TcId[T],
 	name: String,
 	id: String,
+	country: Option[CountryCode],
 	pos: Position
 ) extends CpStation[T]
 
@@ -82,6 +62,7 @@ case class CpMobileStation[+T <: TC](
 	tcId: TcId[T],
 	name: String,
 	id: String,
+	country: Option[CountryCode],
 	geoJson: Option[String]
 ) extends CpStation[T]
 
@@ -113,14 +94,6 @@ class CpTcState[+T <: TC : TcConf](val stations: Seq[CpStation[T]], val roles: S
 }
 
 class TcState[+T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
-
-sealed trait TC{
-	type Pis <: NumberOfPis[this.type]
-}
-
-object ATC extends TC{type Pis = OneOrMorePis[ATC.type]}
-object ETC extends TC{type Pis = SinglePi[ETC.type]}
-object OTC extends TC{type Pis = OneOrMorePis[OTC.type]}
 
 abstract class TcMetaSource[T <: TC]{
 	type State = TcState[T]

@@ -550,7 +550,16 @@
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^[A-Z]{2}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO 3166-1 alpha-2 country code</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">country code</rdfs:label>
         <rdfs:seeAlso rdf:resource="https://en.wikipedia.org/wiki/ISO_3166-1"/>
@@ -1526,6 +1535,12 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/countryCode"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS station</rdfs:label>
     </owl:Class>
     

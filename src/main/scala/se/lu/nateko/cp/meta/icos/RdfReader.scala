@@ -105,13 +105,15 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)
 		val lonOpt = getOptionalDouble(uri, metaVocab.hasLongitude)
 
+		val countryOpt = getOptionalString(uri, metaVocab.countryCode).flatMap(CountryCode.unapply)
+
 		val stationaryOpt = for(lat <- latOpt; lon <- lonOpt) yield {
 			val altOpt = getOptionalFloat(uri, metaVocab.hasElevation)
-			CpStationaryStation(cpId, tcId, name, id, Position(lat, lon, altOpt))
+			CpStationaryStation(cpId, tcId, name, id, countryOpt, Position(lat, lon, altOpt))
 		}
 
 		//TODO Add json reading
-		stationaryOpt.getOrElse(CpMobileStation(cpId, tcId, name, id, None))
+		stationaryOpt.getOrElse(CpMobileStation(cpId, tcId, name, id, countryOpt, None))
 	}
 
 

@@ -70,9 +70,16 @@ class OtcMetaSource(
 				roleIri <- getOptionalUri(arIri, otcVocab.hasRole);
 				role <- getRole(roleIri);
 				orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
-				org <- getOrganization[O](orgIri)
+				org0 <- getOrganization[O](orgIri);
+				org = addJsonIfMobileStation(org0, orgIri)
 			) yield new AssumedRole(role, person, org)
 		}.toIndexedSeq
+
+		private def addJsonIfMobileStation(org: Organization[O], iri: IRI): Organization[O] = org match {
+			case ms: CpMobileStation[O] =>
+				ms.copy(geoJson = getOptionalString(iri, otcVocab.spatialReference))
+			case other => other
+		}
 	}
 
 	private def toTcRole(ar: AssumedRole[O]): Option[TcAssumedRole[O]] = ar.role match{
@@ -94,6 +101,8 @@ class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasHolder = getRelative("hasHolder")
 	val hasRole = getRelative("hasRole")
 	val atOrganization = getRelative("atOrganization")
+
+	val spatialReference = getRelative("hasSpatialReference")
 
 	val assumedRoleClass = getRelative("AssumedRole")
 

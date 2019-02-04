@@ -73,8 +73,13 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				stationTriples(s)
 
 			case s: CpMobileStation[T] =>
-				//TODO Add the json value triple
-				stationTriples(s)
+				stationTriples(s) ++ s.geoJson.toList.flatMap{json =>
+					val spcovUri = vocab.factory.createIRI(uri.stringValue + "_spcov")
+					(uri, meta.hasSpatialCoverage, spcovUri) ::
+					(spcovUri, meta.asGeoJSON, vocab.lit(json)) ::
+					Nil
+				}
+
 
 			case ci: CompanyOrInstitution[T] =>
 				(uri, RDF.TYPE, meta.orgClass) ::

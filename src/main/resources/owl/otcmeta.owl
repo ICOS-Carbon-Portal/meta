@@ -25,6 +25,9 @@
     <Declaration>
         <ObjectProperty IRI="hasRole"/>
     </Declaration>
+    <Declaration>
+        <DataProperty IRI="hasSpatialReference"/>
+    </Declaration>
     <SubClassOf>
         <Class IRI="AssumedRole"/>
         <ObjectSomeValuesFrom>
@@ -79,6 +82,17 @@
         <ObjectProperty IRI="hasRole"/>
         <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
     </ObjectPropertyRange>
+    <FunctionalDataProperty>
+        <DataProperty IRI="hasSpatialReference"/>
+    </FunctionalDataProperty>
+    <DataPropertyDomain>
+        <DataProperty IRI="hasSpatialReference"/>
+        <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/OS"/>
+    </DataPropertyDomain>
+    <DataPropertyRange>
+        <DataProperty IRI="hasSpatialReference"/>
+        <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
         <IRI>AssumedRole</IRI>
@@ -98,6 +112,16 @@
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
         <IRI>hasRole</IRI>
         <Literal>role kind</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+        <IRI>hasSpatialReference</IRI>
+        <Literal>spatial reference in GeoJSON (any feature except points; encoded as plain string)</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>hasSpatialReference</IRI>
+        <Literal>spatial reference</Literal>
     </AnnotationAssertion>
 </Ontology>
 

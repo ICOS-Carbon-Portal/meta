@@ -112,8 +112,11 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 			CpStationaryStation(cpId, tcId, name, id, countryOpt, Position(lat, lon, altOpt))
 		}
 
-		//TODO Add json reading
-		stationaryOpt.getOrElse(CpMobileStation(cpId, tcId, name, id, countryOpt, None))
+		stationaryOpt.getOrElse{
+			val jsonOpt = getOptionalUri(uri, metaVocab.hasSpatialCoverage)
+				.flatMap(getOptionalString(_, metaVocab.asGeoJSON))
+			CpMobileStation(cpId, tcId, name, id, countryOpt, jsonOpt)
+		}
 	}
 
 

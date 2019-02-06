@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="269.75253mm"
+   height="78.193459mm"
+   viewBox="0 0 955.81606 277.06343"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="labelingOntoStack.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="522.40268"
+     inkscape:cy="239.02323"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1855"
+     inkscape:window-height="1176"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-top="5"
+     fit-margin-left="5"
+     fit-margin-right="5"
+     fit-margin-bottom="5" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-36.114477,-755.21511)">
+    <rect
+       style="fill:#fff3d2;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800"
+       width="919.06104"
+       height="59.642803"
+       x="54.342567"
+       y="954.41919"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="303.33047"
+       y="994.73383"
+       id="text4236"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="303.33047"
+         y="994.73383"
+         id="tspan4238"><tspan
+           x="303.33047"
+           y="994.73383"
+           style="font-size:30px"
+           id="tspan4240">provisional stations ontology</tspan></tspan></text>
+    <rect
+       style="fill:#fcdbff;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-3"
+       width="524.02704"
+       height="60.748657"
+       x="293.72803"
+       y="893.659"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:25px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="390.5029"
+       y="933.20483"
+       id="text4248"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="390.5029"
+         y="933.20483"
+         id="tspan4250"><tspan
+           x="390.5029"
+           y="933.20483"
+           id="tspan4252">provisional station instances</tspan></tspan></text>
+    <rect
+       style="fill:#fcdbff;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-3-5"
+       width="336.84039"
+       height="60.101448"
+       x="480.91037"
+       y="833.51929"
+       ry="0"
+       rx="0" />
+    <rect
+       style="fill:#fff3d2;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-2-0-8"
+       width="239.42781"
+       height="60.925426"
+       x="54.331013"
+       y="893.46423"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:20px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="102.0578"
+       y="917.81635"
+       id="text4242"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="102.0578"
+         y="917.81635"
+         id="tspan4171"><tspan
+           x="102.0578"
+           y="917.81635"
+           style="font-size:20px"
+           id="tspan4246">Stations entry</tspan></tspan></text>
+    <rect
+       style="fill:#d2e9ff;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-2-2"
+       width="426.3624"
+       height="60.089226"
+       x="54.542042"
+       y="833.52295"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:27.5px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="134.35622"
+       y="872.91455"
+       id="text4230"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="134.35622"
+         y="872.91455"
+         id="tspan4232"><tspan
+           x="134.35622"
+           y="872.91455"
+           style="font-size:27.5px"
+           id="tspan4234">Stations entry app</tspan></tspan></text>
+    <rect
+       style="fill:#ffdbd2;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-2-2-2"
+       width="224.26169"
+       height="59.999573"
+       x="480.9053"
+       y="773.43164"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:27.5px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="507.3468"
+       y="813.32373"
+       id="text4214"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="507.3468"
+         y="813.32373"
+         id="tspan4216"><tspan
+           x="507.3468"
+           y="813.32373"
+           style="font-size:27.5px"
+           id="tspan4218">Labeling app</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:20px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="112.61448"
+       y="943.27856"
+       id="text4182"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4184"
+         x="112.61448"
+         y="943.27856">UI ontology</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:25px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="562.87311"
+       y="871.00543"
+       id="text4248-5"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="562.87311"
+         y="871.00543"
+         id="tspan4250-3">labeling facts<tspan
+   x="562.87311"
+   y="871.00543"
+   id="tspan4252-5" /></tspan></text>
+    <rect
+       style="fill:#fff3d2;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-2-0-8-6"
+       width="155.46161"
+       height="120.85364"
+       x="817.78217"
+       y="833.53601"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:20px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="862.32349"
+       y="882.065"
+       id="text4242-2"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="862.32349"
+         y="882.065"
+         id="tspan4171-9">Admin<tspan
+   x="862.32349"
+   y="882.065"
+   style="font-size:20px"
+   id="tspan4246-1" /></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:20px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="836.88013"
+       y="913.52722"
+       id="text4182-2"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4184-7"
+         x="836.88013"
+         y="913.52722">UI ontology</tspan></text>
+    <rect
+       style="fill:#d2e9ff;fill-opacity:1;stroke:#000000;stroke-opacity:1"
+       id="rect4800-2-2-2-0"
+       width="268.06982"
+       height="60.021545"
+       x="705.16614"
+       y="773.50543"
+       ry="0"
+       rx="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:25px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="715.36627"
+       y="813.28705"
+       id="text4214-9"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="715.36627"
+         y="813.28705"
+         id="tspan4216-3"><tspan
+           x="715.36627"
+           y="813.28705"
+           style="font-size:25px"
+           id="tspan4218-6">Labeling admin app</tspan></tspan></text>
+  </g>
+</svg>

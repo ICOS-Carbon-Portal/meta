@@ -6,7 +6,10 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 
 - [/labeling/](https://meta.icos-cp.eu/labeling/): ICOS Station Labeling Step 1 web application
 - [/edit/stationentry/](https://meta.icos-cp.eu/edit/stationentry/): provisional station information entry app for ICOS Head Office
+- [/edit/labeling/](https://meta.icos-cp.eu/edit/labeling/): administrative interface for station labeling metadata
 - [/edit/cpmeta/](https://meta.icos-cp.eu/edit/cpmeta/): editing app for Carbon Portal's metadata
+- [/edit/otcentry/](https://meta.icos-cp.eu/edit/otcentry/): editing app for OTC's metadata (used for ICOS metadata flow, testing mode for now)
+- [/edit/icosmeta/](https://meta.icos-cp.eu/edit/icosmeta/): viewing app for the test ICOS metadata produced by the metadata flow machinery
 - [/sparqlclient/](https://meta.icos-cp.eu/sparqlclient/): GUI for running SPARQL queries against Carbon Portal's metadata database (RDF store)
 - (example) [/objects/OPun_V09Pcat5jomRRF-5o0H](https://meta.icos-cp.eu/objects/OPun_V09Pcat5jomRRF-5o0H): landing pages for data objects registered with Carbon Portal
 - (example) [/ontologies/cpmeta/DataObjectSpec](https://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec): "landing pages" for metadata-schema concepts from Carbon Portal's ontologies

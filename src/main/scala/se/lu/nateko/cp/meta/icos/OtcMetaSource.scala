@@ -45,7 +45,7 @@ class OtcMetaSource(
 		}
 
 	def readState: TcState[O] = {
-		val instruments = reader.getInstruments[O]
+		val instruments = reader.getOtcInstruments
 		val allRoles = reader.getAssumedRoles
 		val tcRoles = allRoles.flatMap(toTcRole)
 		val tcStations = allRoles.flatMap(toPiInfo).groupBy(_._1).toSeq.collect{
@@ -59,8 +59,15 @@ class OtcMetaSource(
 
 	private object reader extends IcosMetaInstancesFetcher(server.inner){
 
+		/**
+		 * important override changing the default behaviour of RdfReader
+		 */
 		override protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
 			Some(tcConf.makeId(uri.getLocalName))
+		}
+
+		def getOtcInstruments: Seq[Instrument[O]] = getInstruments[O].map{instr =>
+			instr.copy(cpId = TcConf.tcScopedId[O](instr.cpId))
 		}
 
 		def getAssumedRoles: IndexedSeq[AssumedRole[O]] = getDirectClassMembers(otcVocab.assumedRoleClass).flatMap{arIri =>
@@ -71,7 +78,7 @@ class OtcMetaSource(
 				role <- getRole(roleIri);
 				orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
 				org0 <- getOrganization[O](orgIri);
-				org = addJsonIfMobileStation(org0, orgIri)
+				org = makeCpIdOtcSpecific(addJsonIfMobileStation(org0, orgIri))
 			) yield new AssumedRole(role, person, org)
 		}.toIndexedSeq
 
@@ -79,6 +86,11 @@ class OtcMetaSource(
 			case ms: CpMobileStation[O] =>
 				ms.copy(geoJson = getOptionalString(iri, otcVocab.spatialReference))
 			case other => other
+		}
+
+		private def makeCpIdOtcSpecific(org: Organization[O]): Organization[O] = org match {
+			case _: CpStation[O] => org.withCpId(TcConf.stationId[O](org.cpId))
+			case _ => org
 		}
 	}
 

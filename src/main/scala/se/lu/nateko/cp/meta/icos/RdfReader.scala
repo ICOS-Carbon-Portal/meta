@@ -99,7 +99,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	private def getStation[T <: TC : TcConf](tcId: TcId[T], uri: IRI): CpStation[T] = {
 
 		val id = getSingleString(uri, metaVocab.hasStationId)
-		val cpId = vocab.getTcStationId(uri)
+		val cpId = uri.getLocalName
 		val name = getSingleString(uri, metaVocab.hasName)
 
 		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)

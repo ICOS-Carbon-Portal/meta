@@ -11,11 +11,12 @@ sealed trait TcId[+T <: TC]{
 	def id: String
 }
 
-trait TcConf[+T <: TC]{
+sealed trait TcConf[+T <: TC]{
 	private case class Id(val id: String) extends TcId[T]
 	def makeId(id: String): TcId[T] = new Id(id)
 	def tc: T
 	def stationPrefix: String
+	def tcPrefix: String
 	def stationClass(meta: CpmetaVocab): IRI
 	def tcIdPredicate(meta: CpmetaVocab): IRI
 }
@@ -26,6 +27,7 @@ object TcConf{
 
 		val tc = ATC
 		val stationPrefix = "AS"
+		val tcPrefix = "ATC"
 
 		def stationClass(meta: CpmetaVocab) = meta.atmoStationClass
 
@@ -36,6 +38,7 @@ object TcConf{
 
 		val tc = ETC
 		val stationPrefix = "ES"
+		val tcPrefix = "ETC"
 
 		def stationClass(meta: CpmetaVocab) = meta.ecoStationClass
 
@@ -47,6 +50,7 @@ object TcConf{
 
 		val tc = OTC
 		val stationPrefix = "OS"
+		val tcPrefix = "OTC"
 
 		def stationClass(meta: CpmetaVocab) = meta.oceStationClass
 
@@ -54,4 +58,6 @@ object TcConf{
 	}
 
 	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
+	def stationId[T <: TC](baseId: String)(implicit tc: TcConf[T]): String = s"${tc.stationPrefix}_$baseId"
+	def tcScopedId[T <: TC](baseId: String)(implicit tc: TcConf[T]): String = s"${tc.tcPrefix}_$baseId"
 }

@@ -24,6 +24,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
+import se.lu.nateko.cp.meta.services.CpVocab
 
 class EtcMetaSource(conf: EtcUploadConfig)(
 	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
@@ -94,8 +95,9 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 				.require(_.email.isDefined, s"PI of station $id had no email");
 			country <- getCountryCode(stId)
 		) yield {
+			val cpId = TcConf.stationId[ETC.type](id)
 			//TODO Use an actual guaranteed-stable id as tcId here
-			val cpStation = new CpStationaryStation(id, tcConf.makeId(id), siteName, id, Some(country), pos)
+			val cpStation = new CpStationaryStation(cpId, tcConf.makeId(id), siteName, id, Some(country), pos)
 			new TcStation[ETC.type](cpStation, SinglePi(pi))
 		}
 	}
@@ -115,10 +117,11 @@ object EtcMetaSource{
 			for(
 				lid <- getNumber("GRP_LOGGER/LOGGER_ID").require(s"a logger at $sid has no id");
 				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
-				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number")
+				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number");
+				cpId = CpVocab.getEtcInstrId(stId, lid.intValue)
 			) yield
 				//TODO Use TC-stable station id as component of tcId
-				Instrument(s"ETC_${sid}_$lid", tcConf.makeId(s"${sid}_$lid"), model, sn.valueStr)
+				Instrument(cpId, tcConf.makeId(s"${sid}_$lid"), model, sn.valueStr)
 		}
 	}
 

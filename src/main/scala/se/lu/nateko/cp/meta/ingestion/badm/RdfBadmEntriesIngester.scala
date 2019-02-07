@@ -55,8 +55,8 @@ class RdfBadmEntriesIngester(
 						acc.copy(statements = Seq.empty)
 
 					case TeamMemberVar =>
-						val siteId = acc.siteId.get //will throw here if no site id
-						acc.copy(statements = getTeamMemberStatements(siteId, entry))
+						//val siteId = acc.siteId.get //will throw here if no site id
+						acc.copy(statements = getTeamMemberStatements(/*siteId, */entry))
 
 					case variable =>
 						val siteId = acc.siteId.get //will throw here if no site id
@@ -75,7 +75,7 @@ class RdfBadmEntriesIngester(
 		}
 	}
 
-	private def getTeamMemberStatements(siteId: StationId, entry: BadmEntry)
+	private def getTeamMemberStatements(/*siteId: StationId, */entry: BadmEntry)
 				(implicit vocab: CpVocab, metaVocab: CpmetaVocab): Seq[Statement] = {
 
 		val varToVal: Map[String, String] = entry.values.map(bv => (bv.variable, bv.valueStr)).toMap
@@ -87,22 +87,22 @@ class RdfBadmEntriesIngester(
 		}
 
 		val email = varToVal(TeamMemberEmailVar).toLowerCase
-		val roleId = varToVal(TeamMemberRoleVar)
-		val membership = vocab.getEtcMembership(siteId, roleId, lastName)
+//		val roleId = varToVal(TeamMemberRoleVar)
+//		val membership = vocab.getEtcMembership(siteId, roleId, lastName)
 		val person = vocab.getPerson(firstName, lastName)
 
-		val membershipStart = entry.date.map(badmDateToRdf(_, vocab))
-			.getOrElse(vocab.lit(entry.submissionDate))
+//		val membershipStart = entry.date.map(badmDateToRdf(_, vocab))
+//			.getOrElse(vocab.lit(entry.submissionDate))
 
 		Seq[(IRI, IRI, Value)](
 			(person, RDF.TYPE, metaVocab.personClass),
 			(person, metaVocab.hasFirstName, vocab.lit(firstName)),
 			(person, metaVocab.hasLastName, vocab.lit(lastName)),
 			(person, metaVocab.hasEmail, vocab.lit(email)),
-			(person, metaVocab.hasMembership, membership),
-			(membership, metaVocab.atOrganization, vocab.getEcosystemStation(siteId)),
-			(membership, metaVocab.hasRole, vocab.getRole(roleId)),
-			(membership, metaVocab.hasStartTime, membershipStart)
+//			(person, metaVocab.hasMembership, membership),
+//			(membership, metaVocab.atOrganization, vocab.getEcosystemStation(siteId)),
+//			(membership, metaVocab.hasRole, vocab.getRole(roleId)),
+//			(membership, metaVocab.hasStartTime, membershipStart)
 		) map metaVocab.factory.tripleToStatement
 	}
 

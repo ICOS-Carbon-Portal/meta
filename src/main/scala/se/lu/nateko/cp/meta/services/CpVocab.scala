@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.ETC
-import se.lu.nateko.cp.meta.icos.TC
 import se.lu.nateko.cp.meta.icos.TcConf
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
@@ -24,19 +23,17 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
-	def getIcosLikeStation[T <: TC](cfId: String, stationId: String) = getRelative(s"stations/${cfId}_", stationId)(icosBup)
-	def getTcStation[T <: TC](stationId: String)(implicit tc: TcConf[T]) = getIcosLikeStation(tc.stationPrefix, stationId)
-	def getEcosystemStation(id: EtcStationId) = getTcStation[ETC.type](id.id)
-	def getTcStationId[T <: TC](station: IRI)(implicit tc: TcConf[T]): String = station.getLocalName.stripPrefix(tc.stationPrefix + "_")
+	def getIcosLikeStation(stationId: String) = getRelative(s"stations/", stationId)(icosBup)
+	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](id.id))
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(
 		s"${urlEncode(firstName)}_${urlEncode(lastName)}"
 	)
 	def getPerson(cpId: String)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
 
-	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
-		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
-	)(icosBup)
+//	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
+//		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
+//	)(icosBup)
 
 	def getMembership(membId: String)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
 	def getMembership(orgId: String, roleId: String, lastName: String)(implicit envri: Envri): IRI =
@@ -48,7 +45,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getOrganizationId(org: IRI): String = org.getLocalName
 
 	def getIcosInstrument(id: String) = getRelative("instruments/", id)(icosBup)
-	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(s"ETC_${station.id}_$id")
+	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(getEtcInstrId(station, id))
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization(_)(Envri.ICOS))
 
@@ -91,6 +88,8 @@ object CpVocab{
 	}
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
+
+	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](s"${station.id}_$id")
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val segm = iri.getLocalName

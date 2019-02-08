@@ -13,17 +13,18 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.utils.Validated
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
 	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts)
 	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts)
 
-	def getCpOwnOrgs[T <: TC : TcConf]: Seq[CompanyOrInstitution[T]] = cpOwnMetasFetcher.getOrgs[T]
+	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[CompanyOrInstitution[T]]] = cpOwnMetasFetcher.getOrgs[T]
 
-	def getCpOwnPeople[T <: TC : TcConf]: Seq[Person[T]] = cpOwnMetasFetcher.getPeople[T]
+	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = cpOwnMetasFetcher.getPeople[T]
 
-	def getCurrentState[T <: TC : TcConf]: CpTcState[T] = tcMetasFetcher.getCurrentState[T]
+	def getCurrentState[T <: TC : TcConf]: Validated[CpTcState[T]] = tcMetasFetcher.getCurrentState[T]
 
 	def getTcOnlyUsages(iri: IRI): IndexedSeq[Statement] = minus(
 		tcInsts.getStatements(None, None, Some(iri)).map(stripContext),
@@ -54,31 +55,38 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
 	val vocab = new CpVocab(server.factory)
 
-	def getCurrentState[T <: TC : TcConf] = new CpTcState(getStations, getMemberships, getInstruments)
+	def getCurrentState[T <: TC : TcConf]: Validated[CpTcState[T]] = for(
+		stations <- getStations[T];
+		memberships <- getMemberships;
+		instruments <- getInstruments
+	) yield
+		new CpTcState(stations, memberships, instruments)
 
-	//TODO Read only non-ended memberships
-	def getMemberships[T <: TC : TcConf]: Seq[Membership[T]] = getDirectClassMembers(metaVocab.membershipClass).flatMap{uri =>
-		for(
-			orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
-			org <- getOrganization(orgUri);
-			role <- getRole(getSingleUri(uri, metaVocab.hasRole));
-			person <- {
-				val persons = getPropValueHolders(metaVocab.hasMembership, uri).flatMap{persUri =>
-					getTcId[T](persUri).map(getPerson(_, persUri))
-				}.toIndexedSeq
-				assert(persons.size <= 1, s"Membership object $uri is assosiated with ${persons.size} people, which is illegal")
-				persons.headOption
-			}
-		) yield{
-			val startOpt = getOptionalInstant(uri, metaVocab.hasStartTime)
-			val endOpt = getOptionalInstant(uri, metaVocab.hasEndTime)
-			val assumedRole = new AssumedRole(role, person, org)
-			Membership(uri.getLocalName, assumedRole, startOpt, endOpt)
+	def getMemberships[T <: TC : TcConf]: Validated[Seq[Membership[T]]] = {
+		val membOptSeqV = getDirectClassMembers(metaVocab.membershipClass).map{uri =>
+			Validated(for(
+				orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
+				org <- getOrganization(orgUri);
+				role <- getRole(getSingleUri(uri, metaVocab.hasRole));
+				person <- {
+					val persons = getPropValueHolders(metaVocab.hasMembership, uri).flatMap{persUri =>
+						getTcId[T](persUri).map(getPerson(_, persUri))
+					}.toIndexedSeq
+					assert(persons.size <= 1, s"Membership object $uri is assosiated with ${persons.size} people, which is illegal")
+					persons.headOption
+				}
+			) yield{
+				val startOpt = getOptionalInstant(uri, metaVocab.hasStartTime)
+				val endOpt = getOptionalInstant(uri, metaVocab.hasEndTime)
+				val assumedRole = new AssumedRole(role, person, org)
+				Membership(uri.getLocalName, assumedRole, startOpt, endOpt)
+			})
 		}
-	}.toIndexedSeq
+		Validated.sequence(membOptSeqV).map(_.flatten)
+	}
 
 
-	def getInstruments[T <: TC : TcConf]: Seq[Instrument[T]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
+	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
 		(tcId, uri) => Instrument[T](
 			cpId = uri.getLocalName,
 			tcId = tcId,
@@ -92,7 +100,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	}
 
 
-	def getStations[T <: TC](implicit conf: TcConf[T]): Seq[CpStation[T]] =
+	def getStations[T <: TC](implicit conf: TcConf[T]): Validated[Seq[CpStation[T]]] =
 		getEntities[T, CpStation[T]](conf.stationClass(metaVocab))(getStation)
 
 
@@ -147,19 +155,20 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	}
 
 
-	def getPeople[T <: TC : TcConf]: Seq[Person[T]] = getEntities[T, Person[T]](metaVocab.personClass)(getPerson)
+	def getPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = getEntities[T, Person[T]](metaVocab.personClass)(getPerson)
 
 
-	def getOrgs[T <: TC : TcConf]: Seq[CompanyOrInstitution[T]] =
+	def getOrgs[T <: TC : TcConf]: Validated[Seq[CompanyOrInstitution[T]]] =
 		getEntities[T, CompanyOrInstitution[T]](metaVocab.orgClass)(getCompOrInst)
 
 
-	private def getEntities[T <: TC : TcConf, E](cls: IRI)(make: (TcId[T], IRI) => E): Seq[E] = {
-		for(
+	private def getEntities[T <: TC : TcConf, E](cls: IRI)(make: (TcId[T], IRI) => E): Validated[Seq[E]] = {
+		val seqV = for(
 			uri <- getDirectClassMembers(cls);
 			tcId <- getTcId(uri)
-		) yield make(tcId, uri)
-	}.toIndexedSeq
+		) yield Validated(make(tcId, uri))
+		Validated.sequence(seqV)
+	}
 
 
 	protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {

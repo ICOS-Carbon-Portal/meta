@@ -16,6 +16,7 @@ import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.utils.Validated
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, log: LoggingAdapter
@@ -35,27 +36,26 @@ class OtcMetaSource(
 		.conflate(Keep.right) //swallow throttle's back-pressure
 		.throttle(2, 1.minute, 1, identity, ThrottleMode.Shaping) //2 units of cost per minute
 		.mapConcat[TcState[O]]{_ =>
-			try{
-				immutable.Iterable(readState)
-			}catch{
-				case err: Throwable =>
-					log.error(err, "Error while reading OTC metadata")
-					Nil
+			val stateV = Validated(readState).flatMap(identity)
+
+			if(!stateV.errors.isEmpty){
+				val errKind = if(stateV.result.isEmpty) "Hard error" else "Problems"
+				log.warning(s"$errKind while reading OTC metadata:\n${stateV.errors.mkString("\n")}")
 			}
+			stateV.result.toList
 		}
 
-	def readState: TcState[O] = {
-		val instruments = reader.getOtcInstruments
-		val allRoles = reader.getAssumedRoles
-		val tcRoles = allRoles.flatMap(toTcRole)
-		val tcStations = allRoles.flatMap(toPiInfo).groupBy(_._1).toSeq.collect{
-			case (station, tuples) if !tuples.isEmpty =>
+	def readState: Validated[TcState[O]] = for(
+		instruments <- reader.getOtcInstruments;
+		allRoles <- reader.getAssumedRoles;
+		tcRoles = allRoles.flatMap(toTcRole);
+		tcStations = allRoles.flatMap(toPiInfo).groupBy(_._1).toSeq.map{
+			case (station, tuples) =>
 				val piSeq: Seq[Person[O]] = tuples.map(_._2)
 				val pis = OneOrMorePis(piSeq.head, piSeq.tail: _*)
 				new TcStation[O](station, pis)
 		}
-		new TcState(tcStations, tcRoles, instruments)
-	}
+	) yield new TcState(tcStations, tcRoles, instruments)
 
 	private object reader extends IcosMetaInstancesFetcher(server.inner){
 
@@ -66,21 +66,26 @@ class OtcMetaSource(
 			Some(tcConf.makeId(uri.getLocalName))
 		}
 
-		def getOtcInstruments: Seq[Instrument[O]] = getInstruments[O].map{instr =>
+		def getOtcInstruments: Validated[Seq[Instrument[O]]] = getInstruments[O].map(_.map{instr =>
 			instr.copy(cpId = TcConf.tcScopedId[O](instr.cpId))
-		}
+		})
 
-		def getAssumedRoles: IndexedSeq[AssumedRole[O]] = getDirectClassMembers(otcVocab.assumedRoleClass).flatMap{arIri =>
-			for(
-				persIri <- getOptionalUri(arIri, otcVocab.hasHolder);
-				person <- Try(getPerson(makeId(persIri), persIri)).toOption;
-				roleIri <- getOptionalUri(arIri, otcVocab.hasRole);
-				role <- getRole(roleIri);
-				orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
-				org0 <- getOrganization[O](orgIri);
-				org = makeCpIdOtcSpecific(addJsonIfMobileStation(org0, orgIri))
-			) yield new AssumedRole(role, person, org)
-		}.toIndexedSeq
+		def getAssumedRoles: Validated[IndexedSeq[AssumedRole[O]]] = {
+			val rolesOptSeqV = getDirectClassMembers(otcVocab.assumedRoleClass).map{arIri =>
+				Validated(
+					for(
+						persIri <- getOptionalUri(arIri, otcVocab.hasHolder);
+						person <- Try(getPerson(makeId(persIri), persIri)).toOption;
+						roleIri <- getOptionalUri(arIri, otcVocab.hasRole);
+						role <- getRole(roleIri);
+						orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
+						org0 <- getOrganization[O](orgIri);
+						org = makeCpIdOtcSpecific(addJsonIfMobileStation(org0, orgIri))
+					) yield new AssumedRole(role, person, org)
+				)
+			}
+			Validated.sequence(rolesOptSeqV).map(_.flatten.toIndexedSeq)
+		}
 
 		private def addJsonIfMobileStation(org: Organization[O], iri: IRI): Organization[O] = org match {
 			case ms: CpMobileStation[O] =>

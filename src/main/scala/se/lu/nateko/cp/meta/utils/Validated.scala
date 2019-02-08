@@ -45,7 +45,15 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 }
 
 object Validated{
-	def apply[T](v: T) = new Validated(Some(v))
+
+	def apply[T](v: => T) = try{
+			new Validated(Some(v))
+		}catch {
+			case err: Throwable =>
+				new Validated(None, Seq(err.getMessage))
+		}
+
+	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
 
 	def sequence[T](valids: TraversableOnce[Validated[T]]): Validated[Seq[T]] = {

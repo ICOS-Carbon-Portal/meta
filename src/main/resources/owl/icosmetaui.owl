@@ -110,7 +110,7 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
         <AbbreviatedIRI>cpmeta:Station</AbbreviatedIRI>
-        <Literal>(</Literal>
+        <Literal> (</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>

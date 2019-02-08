@@ -73,10 +73,10 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 			be.values.exists(bv => bv.variable == "TEAM_MEMBER_ROLE" && bv.valueStr == "PI")
 		)
 
-		val nPisValidation = if(piEntries.size <= 1) Validated(())
+		val nPisValidation = if(piEntries.size <= 1) Validated.ok(())
 			else Validated.error(s"ETC stations must have exactly one PI but $id had ${piEntries.size}").optional
 
-		val nonPiRolesValidation = if(nonPiEntries.isEmpty) Validated(())
+		val nonPiRolesValidation = if(nonPiEntries.isEmpty) Validated.ok(())
 			else Validated.error(s"Encountered non-PI ETC role(s) for $id." +
 				" They were ignored for now (support must be added by CP)").optional
 
@@ -129,12 +129,12 @@ object EtcMetaSource{
 		new Validated(lookup.get(varName))
 
 	def getNumber(varName: String)(implicit lookup: Lookup): Validated[Number] = lookUp(varName).flatMap{
-		case BadmNumericValue(_, _, v) => Validated(v)
+		case BadmNumericValue(_, _, v) => Validated.ok(v)
 		case _ => Validated.error(s"$varName must have been a number")
 	}
 
 	def getString(varName: String)(implicit lookup: Lookup): Validated[String] = lookUp(varName).flatMap{
-		case BadmStringValue(_, v) => Validated(v)
+		case BadmStringValue(_, v) => Validated.ok(v)
 		case _ => Validated.error(s"$varName must have been a string")
 	}
 
@@ -161,13 +161,13 @@ object EtcMetaSource{
 	def parseName(name: String): Validated[(String, String)] = {
 		val comps = name.trim.split("\\s+")
 		if(comps.size <= 1) Validated.error("Names are expected to have more than one component")
-		else Validated((comps(0), comps.drop(1).mkString(" ")))
+		else Validated.ok((comps(0), comps.drop(1).mkString(" ")))
 	}
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 
 	def getCountryCode(s: String): Validated[CountryCode] = s match{
-		case CountryCode(cc) => Validated(cc)
+		case CountryCode(cc) => Validated.ok(cc)
 		case _ => Validated.error(s + " is not a valid country code")
 	}
 }

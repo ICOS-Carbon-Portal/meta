@@ -24,7 +24,7 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 
 	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = cpOwnMetasFetcher.getPeople[T]
 
-	def getCurrentState[T <: TC : TcConf]: Validated[CpTcState[T]] = tcMetasFetcher.getCurrentState[T]
+	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = tcMetasFetcher.getCurrentState[T]
 
 	def getTcOnlyUsages(iri: IRI): IndexedSeq[Statement] = minus(
 		tcInsts.getStatements(None, None, Some(iri)).map(stripContext),
@@ -55,12 +55,12 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
 	val vocab = new CpVocab(server.factory)
 
-	def getCurrentState[T <: TC : TcConf]: Validated[CpTcState[T]] = for(
+	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(
 		stations <- getStations[T];
 		memberships <- getMemberships;
 		instruments <- getInstruments
 	) yield
-		new CpTcState(stations, memberships, instruments)
+		new TcState(stations, memberships, instruments)
 
 	def getMemberships[T <: TC : TcConf]: Validated[Seq[Membership[T]]] = {
 		val membOptSeqV = getDirectClassMembers(metaVocab.membershipClass).map{uri =>

@@ -27,8 +27,10 @@ sealed trait BadmValue{
 case class BadmStringValue(variable: String, value: String) extends BadmValue{
 	def valueStr = value
 }
+
 case class BadmNumericValue(variable: String, valueStr: String, value: Number) extends BadmValue
 
+case class BadmDateValue(variable: String, valueStr: String, value: BadmDate) extends BadmValue
 
 case class BadmEntry(
 	variable: String,
@@ -37,4 +39,3 @@ case class BadmEntry(
 	stationId: Option[StationId],
 	submissionDate: LocalDate
 )
-

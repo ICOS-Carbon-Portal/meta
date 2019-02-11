@@ -168,6 +168,8 @@ object RdfBadmEntriesIngester{
 	def getPlainValue(badmValue: BadmValue)(implicit vocab: CustomVocab): Value = badmValue match {
 		case BadmStringValue(_, value) => vocab.lit(value)
 		case BadmNumericValue(_, value, _) => vocab.lit(value, XMLSchema.DOUBLE)
+		//TODO See if there is a need to handle different kinds of BADM date values separately
+		case BadmDateValue(_, value, _) => vocab.lit(value, XMLSchema.DATETIME)
 	}
 
 }

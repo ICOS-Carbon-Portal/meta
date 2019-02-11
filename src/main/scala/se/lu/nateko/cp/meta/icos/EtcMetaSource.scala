@@ -1,5 +1,11 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
+
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
@@ -16,15 +22,17 @@ import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.ingestion.badm.BadmDateValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
+import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmNumericValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmStringValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
-import se.lu.nateko.cp.meta.services.CpVocab
 
 class EtcMetaSource(conf: EtcUploadConfig)(
 	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
@@ -62,10 +70,17 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 		for(
 			stations <- Validated.sequence(stationsV);
 			instruments <- Validated.sequence(instrumentsV)
-		) yield new TcState(stations, Nil, instruments)
+		) yield {
+			val cpStations = stations.map(_.station)
+			val membs = stations.map{s =>
+				val role = new AssumedRole[E](PI, s.pi, s.station)
+				Membership[E]("", role, s.piStart, None)
+			}
+			new TcState(cpStations, membs, instruments)
+		}
 	}
 
-	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[Station] = {
+	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[EtcStation] = {
 		val id = stId.id
 		val (roleEntries, nonRoleEntries) = badms.partition(_.variable == "GRP_TEAM")
 
@@ -81,24 +96,24 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 				" They were ignored for now (support must be added by CP)").optional
 
 		implicit val lookup = toLookup(nonRoleEntries)
+		val piLookup = toLookup(piEntries)
 		for(
 			_ <- nPisValidation;
 			_ <- nonPiRolesValidation;
-//			siteId <- getString("GRP_HEADER/SITE_ID")
-//				.require(s"Station $id had no value for SITE_ID");
 			siteName <- getString("GRP_HEADER/SITE_NAME")
 				.require(s"Station $id had no value for SITE_NAME");
 			pos <- getPosition
 				.require(s"Station $id had no properly specified geo-position");
-			pi <- getPerson(toLookup(piEntries), tcConf)
+			pi <- getPerson(piLookup, tcConf)
 				.require(s"Station $id had no properly specified PI")
 				.require(_.email.isDefined, s"PI of station $id had no email");
+			piStart <- getLocalDate("GRP_TEAM/TEAM_MEMBER_DATE")(piLookup).optional;
 			country <- getCountryCode(stId)
 		) yield {
-			val cpId = TcConf.stationId[ETC.type](id)
+			val cpId = TcConf.stationId[E](id)
 			//TODO Use an actual guaranteed-stable id as tcId here
 			val cpStation = new CpStationaryStation(cpId, tcConf.makeId(id), siteName, id, Some(country), pos)
-			new TcStation[ETC.type](cpStation, SinglePi(pi))
+			new EtcStation(cpStation, pi, piStart.map(toUtcNoon))
 		}
 	}
 }
@@ -107,8 +122,11 @@ object EtcMetaSource{
 
 	val StationId(falso) = "FA-Lso"
 	type Lookup = Map[String, BadmValue]
-	type EtcInstrument = Instrument[ETC.type]
-	type EtcPerson = Person[ETC.type]
+	type E = ETC.type
+	type EtcInstrument = Instrument[E]
+	type EtcPerson = Person[E]
+
+	class EtcStation(val station: CpStation[E], val pi: EtcPerson, val piStart: Option[Instant])
 
 	def getInstruments(stId: StationId, badms: Seq[BadmEntry])(implicit tcConf: TcConf[ETC.type]): Seq[Validated[EtcInstrument]] = {
 		val sid = stId.id
@@ -136,6 +154,11 @@ object EtcMetaSource{
 	def getString(varName: String)(implicit lookup: Lookup): Validated[String] = lookUp(varName).flatMap{
 		case BadmStringValue(_, v) => Validated.ok(v)
 		case _ => Validated.error(s"$varName must have been a string")
+	}
+
+	def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] = lookUp(varName).flatMap{
+		case BadmDateValue(_, _, BadmLocalDate(date)) => Validated.ok(date)
+		case _ => Validated.error(s"$varName must have been a local date")
 	}
 
 	def getPosition(implicit lookup: Lookup): Validated[Position] =
@@ -169,5 +192,9 @@ object EtcMetaSource{
 	def getCountryCode(s: String): Validated[CountryCode] = s match{
 		case CountryCode(cc) => Validated.ok(cc)
 		case _ => Validated.error(s + " is not a valid country code")
+	}
+
+	def toUtcNoon(ld: LocalDate): Instant = {
+		LocalDateTime.of(ld, LocalTime.of(12, 0)).atOffset(ZoneOffset.UTC).toInstant
 	}
 }

@@ -30,8 +30,8 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 	val airCpStation = CpMobileStation[A]("AIR1", aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
-		val airTcStation = new TcStation[A](airCpStation, OneOrMorePis(pi))
-		new TcState[A](stations = Seq(airTcStation), roles = Nil, instruments = Nil)
+		val piMemb = Membership[A]("", new AssumedRole(PI, pi, airCpStation), None, None)
+		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
 	describe("person name change"){
@@ -62,7 +62,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 			val memb = s.roles.head
 			assert(memb.start.isEmpty) //init state was empty, so cannot know when the role was assumed first
 			assert(memb.stop.isEmpty) //just created, so cannot have ended
-			assert(memb.role.role === PI)
+			assert(memb.role.kind === PI)
 			assert(memb.role.org === airCpStation)
 			assert(memb.role.holder === jane)
 		}
@@ -146,7 +146,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		Given("starting with a single org with a single researcher and no own CP statements")
 
 		val uni = CompanyOrInstitution("uni", aId("uni0"), "Just Some Uni", None)
-		val janeAtUni = new TcAssumedRole[A](Researcher, jane, uni)
+		val janeAtUni = Membership[A]("", new AssumedRole[A](Researcher, jane, uni), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
 		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)
@@ -176,7 +176,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		}
 	}
 
-	def init(initTcState: Seq[CpTcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
+	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
 		val repo = Loading.emptyInMemory
 		val factory = repo.getValueFactory
 		val vocab = new CpVocab(factory)
@@ -195,7 +195,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		new TestState(new RdfDiffCalc(rdfMaker, rdfReader), rdfReader, rdfMaker, tcServer, cpServer)
 	}
 
-	def getStatements[T <: TC](rdfMaker: RdfMaker, state: CpTcState[T]): Seq[Statement] = {
+	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] = {
 		implicit val tcConf = state.tcConf
 		state.stations.flatMap(rdfMaker.getStatements[T]) ++
 		state.roles.flatMap(rdfMaker.getStatements[T]) ++

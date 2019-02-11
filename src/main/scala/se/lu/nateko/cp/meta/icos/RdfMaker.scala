@@ -24,7 +24,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 		val holder = memb.role.holder
-		val roleId = memb.role.role.name
+		val roleId = memb.role.kind.name
 		val org = memb.role.org
 		val label = s"${holder.lName} as $roleId at ${org.cpId}"
 

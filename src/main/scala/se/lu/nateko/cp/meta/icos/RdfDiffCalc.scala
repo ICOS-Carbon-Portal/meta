@@ -21,7 +21,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
 
-		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org) ++ newSnapshot.stations.map(_.station)
+		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.role.org) ++ newSnapshot.stations
 		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations
 
 		val orgsDiff = diff[T, Organization[T]](cpOrgs, tcOrgs, cpOwnOrgs)
@@ -35,20 +35,18 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val instrDiff = diff[T, Instrument[T]](current.instruments, tcInstrs, Nil)
 
-		val tcPeople = newSnapshot.stations.flatMap(_.pi.all) ++ newSnapshot.roles.map(_.holder)
+		val tcPeople = newSnapshot.roles.map(_.role.holder)
 		val cpPeople = current.roles.map(_.role.holder)
 
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
-			role.role,
+			role.kind,
 			peopleDiff.ensureIdPreservation(role.holder),
 			orgsDiff.ensureIdPreservation(role.org)
 		)
 
-		val tcRoles = (newSnapshot.roles ++ newSnapshot.stations.flatMap{station =>
-			station.pi.all.map(pi => new AssumedRole(PI, pi, station.station))
-		}).map(updateRole)
+		val tcRoles = newSnapshot.roles.map(memb => memb.copy(role = updateRole(memb.role)))
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
@@ -142,26 +140,27 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, newButPresentInCp, existingAppearedInCp).join
 	}
 
-	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[AssumedRole[T]]): Seq[RdfUpdate] = {
-		val membMap = cp.filter(_.stop.isEmpty).map(m => m.role.id -> m).toMap
-		val roleMap = tc.map(role => role.id -> role).toMap
+	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
+		val cpMap = cp.groupBy(m => m.role.id)
+		val tcMap = tc.groupBy(m => m.role.id)
 
-		val finishedIds = membMap.keySet.diff(roleMap.keySet).toSeq
-		val newIds = roleMap.keySet.diff(membMap.keySet).toSeq
+		val finishedIds = cpMap.keySet.diff(tcMap.keySet).toSeq
+		val newIds = tcMap.keySet.diff(cpMap.keySet).toSeq
 
 		val newStart: Option[Instant] = if(cp.isEmpty) None else Some(Instant.now)
 
-		val newMembs = newIds.flatMap{id =>
+		val newMembs = newIds.flatMap(tcMap.apply).flatMap{memb =>
 			val membId = scala.util.Random.alphanumeric.take(24).mkString
-			val memb = new Membership(membId, roleMap(id), newStart, None)
-			rdfMaker.getStatements[T](memb).map(RdfUpdate(_, true))
+			val theStart = memb.start.orElse(if(memb.stop.isEmpty) newStart else None)
+			val newMemb = memb.copy(cpId = membId, start = theStart)
+			rdfMaker.getStatements[T](newMemb).map(RdfUpdate(_, true))
 		}
 
-		val endedMembs = finishedIds.map{id =>
-			val membId = membMap(id).cpId
-			val stat = rdfMaker.getMembershipEnd(membId)
+		val endedMembs = finishedIds.flatMap(cpMap.apply).filter(_.stop.isEmpty).map{memb =>
+			val stat = rdfMaker.getMembershipEnd(memb.cpId)
 			RdfUpdate(stat, true)
 		}
+		//TODO Add handling of intersecting roles (could mean a noop or, in some cases, retraction of stop times)
 		newMembs ++ endedMembs
 	}
 }

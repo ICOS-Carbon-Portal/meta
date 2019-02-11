@@ -66,8 +66,6 @@ case class CpMobileStation[+T <: TC](
 	geoJson: Option[String]
 ) extends CpStation[T]
 
-class TcStation[+T <: TC](val station: CpStation[T], val pi: T#Pis)
-
 case class CompanyOrInstitution[+T <: TC](cpId: String, tcId: TcId[T], name: String, label: Option[String]) extends Organization[T]
 
 case class Instrument[+T <: TC](
@@ -81,22 +79,18 @@ case class Instrument[+T <: TC](
 	partsCpIds: Seq[String] = Nil
 ) extends Entity[T]
 
-class AssumedRole[+T <: TC](val role: Role, val holder: Person[T], val org: Organization[T]){
-	def id = (role.name, holder.tcId, org.tcId)
-	override def toString = s"AssumedRole($role , $holder , $org )"
+class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T]){
+	def id = (kind.name, holder.tcId, org.tcId)
+	override def toString = s"AssumedRole($kind , $holder , $org )"
 }
 
-class TcAssumedRole[+T <: TC](role: NonPiRole, holder: Person[T], org: Organization[T]) extends AssumedRole(role, holder, org)
 case class Membership[+T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class CpTcState[+T <: TC : TcConf](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
-	def tcConf: TcConf[T] = implicitly[TcConf[T]]
+class TcState[+T <: TC : TcConf](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
+	def tcConf = implicitly[TcConf[T]]
 }
-
-class TcState[+T <: TC](val stations: Seq[TcStation[T]], val roles: Seq[TcAssumedRole[T]], val instruments: Seq[Instrument[T]])
 
 abstract class TcMetaSource[T <: TC]{
 	type State = TcState[T]
-	type Station = TcStation[T]
 	def state: Source[State, Any]
 }

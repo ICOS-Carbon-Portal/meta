@@ -19,6 +19,7 @@ import java.time.format.DateTimeParseException
 
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import spray.json.JsValue
+import scala.util.control.NoStackTrace
 
 object Parser {
 
@@ -69,10 +70,15 @@ object Parser {
 		def fromSameId(raw: Seq[BadmRawEntry]): BadmEntry = {
 			val values = raw.map{re =>
 				try{
-					BadmNumericValue(re.qualifier, re.value, parser.parse(re.value))
+					BadmDateValue(re.qualifier, re.value, Parser.toBadmDate(re.value))
 				}catch{
 					case _: ParseException =>
-						BadmStringValue(re.qualifier, re.value)
+						try{
+							BadmNumericValue(re.qualifier, re.value, parser.parse(re.value))
+						}catch{
+							case _: ParseException =>
+								BadmStringValue(re.qualifier, re.value)
+						}
 				}
 			}.toIndexedSeq
 			val firstRaw = raw.head
@@ -144,13 +150,13 @@ object Parser {
 			BadmYear(year.toInt)
 
 		case _ =>
-			throw new ParseException(s"$badmDate is not a valid BADM date string", -1)
+			throw new ParseException(s"$badmDate is not a valid BADM date string", -1) with NoStackTrace
 	}
 
 	private def toIsoDate(badmDate: String): LocalDate = toBadmDate(badmDate) match {
 		case BadmLocalDate(date) => date
 		case BadmLocalDateTime(dt) => dt.toLocalDate
-		case _ => throw new ParseException(s"$badmDate is not convertible to ISO8601 date", -1)
+		case _ => throw new ParseException(s"$badmDate is not convertible to ISO8601 date", -1) with NoStackTrace
 	}
 
 	private def toValueDate(valueDate: String): Option[BadmDate] =

@@ -44,15 +44,13 @@ object MetaFlow {
 		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
-			try{
-				val diff = diffCalc.calcDiff(state)
-				//diff foreach println
-				icosServer.applyAll(diff)
-			} catch{
-				case err: Throwable =>
-					system.log.error(err, s"Error calculating/applying RDF diff for $tip metadata")
+			val diffV = diffCalc.calcDiff(state)
+			if(diffV.errors.isEmpty) diffV.foreach(icosServer.applyAll)
+			else{
+				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
 			}
 		}
+
 		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
 		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
 		() => {

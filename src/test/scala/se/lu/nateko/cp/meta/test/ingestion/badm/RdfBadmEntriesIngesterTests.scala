@@ -24,7 +24,7 @@ class RdfBadmEntriesIngesterTests extends AsyncFunSpec{
 		val factory: ValueFactory = new MemValueFactory
 
 		ingester.getStatements(factory).map{statements =>
-			assert(statements.length === 423)
+			assert(statements.length === (423 - 4)) //creation of 4 triples has been commented out
 		}
 	}
 }

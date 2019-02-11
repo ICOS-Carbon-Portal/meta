@@ -6,21 +6,23 @@ import org.eclipse.rdf4j.model.Value
 
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
+import se.lu.nateko.cp.meta.utils.Validated
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	import RdfDiffCalc._
 	import SequenceDiff._
 
-	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Seq[RdfUpdate] = {
-
-		val current: CpTcState[T] = rdfReader.getCurrentState[T]
+	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
+		current <- rdfReader.getCurrentState[T];
+		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T];
+		cpOwnPeople <- rdfReader.getCpOwnPeople[T]
+	) yield {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
 
 		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.org) ++ newSnapshot.stations.map(_.station)
 		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations
-		val cpOwnOrgs = rdfReader.getCpOwnOrgs[T]
 
 		val orgsDiff = diff[T, Organization[T]](cpOrgs, tcOrgs, cpOwnOrgs)
 
@@ -35,7 +37,6 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val tcPeople = newSnapshot.stations.flatMap(_.pi.all) ++ newSnapshot.roles.map(_.holder)
 		val cpPeople = current.roles.map(_.role.holder)
-		val cpOwnPeople = rdfReader.getCpOwnPeople[T]
 
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 

@@ -26,7 +26,13 @@
         <ObjectProperty IRI="hasRole"/>
     </Declaration>
     <Declaration>
+        <DataProperty IRI="hasEndTime"/>
+    </Declaration>
+    <Declaration>
         <DataProperty IRI="hasSpatialReference"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="hasStartTime"/>
     </Declaration>
     <SubClassOf>
         <Class IRI="AssumedRole"/>
@@ -83,15 +89,37 @@
         <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
     </ObjectPropertyRange>
     <FunctionalDataProperty>
+        <DataProperty IRI="hasEndTime"/>
+    </FunctionalDataProperty>
+    <FunctionalDataProperty>
         <DataProperty IRI="hasSpatialReference"/>
     </FunctionalDataProperty>
+    <FunctionalDataProperty>
+        <DataProperty IRI="hasStartTime"/>
+    </FunctionalDataProperty>
+    <DataPropertyDomain>
+        <DataProperty IRI="hasEndTime"/>
+        <Class IRI="AssumedRole"/>
+    </DataPropertyDomain>
     <DataPropertyDomain>
         <DataProperty IRI="hasSpatialReference"/>
         <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/OS"/>
     </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="hasStartTime"/>
+        <Class IRI="AssumedRole"/>
+    </DataPropertyDomain>
+    <DataPropertyRange>
+        <DataProperty IRI="hasEndTime"/>
+        <Datatype abbreviatedIRI="xsd:dateTime"/>
+    </DataPropertyRange>
     <DataPropertyRange>
         <DataProperty IRI="hasSpatialReference"/>
         <Datatype abbreviatedIRI="xsd:string"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="hasStartTime"/>
+        <Datatype abbreviatedIRI="xsd:dateTime"/>
     </DataPropertyRange>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
@@ -102,6 +130,11 @@
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
         <IRI>atOrganization</IRI>
         <Literal>role&apos;s organization</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>hasEndTime</IRI>
+        <Literal>end time</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
@@ -122,6 +155,11 @@
         <AnnotationProperty abbreviatedIRI="rdfs:label"/>
         <IRI>hasSpatialReference</IRI>
         <Literal>spatial reference</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>hasStartTime</IRI>
+        <Literal>start time</Literal>
     </AnnotationAssertion>
 </Ontology>
 

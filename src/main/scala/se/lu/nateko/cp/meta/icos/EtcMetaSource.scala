@@ -22,17 +22,16 @@ import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.ingestion.badm.BadmDateValue
+import se.lu.nateko.cp.meta.ingestion.badm.Badm
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
-import se.lu.nateko.cp.meta.ingestion.badm.BadmNumericValue
-import se.lu.nateko.cp.meta.ingestion.badm.BadmStringValue
 import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
+import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 
 class EtcMetaSource(conf: EtcUploadConfig)(
 	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
@@ -113,7 +112,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 			val cpId = TcConf.stationId[E](id)
 			//TODO Use an actual guaranteed-stable id as tcId here
 			val cpStation = new CpStationaryStation(cpId, tcConf.makeId(id), siteName, id, Some(country), pos)
-			new EtcStation(cpStation, pi, piStart.map(toUtcNoon))
+			new EtcStation(cpStation, pi, piStart)
 		}
 	}
 }
@@ -147,18 +146,18 @@ object EtcMetaSource{
 		new Validated(lookup.get(varName))
 
 	def getNumber(varName: String)(implicit lookup: Lookup): Validated[Number] = lookUp(varName).flatMap{
-		case BadmNumericValue(_, _, v) => Validated.ok(v)
-		case _ => Validated.error(s"$varName must have been a number")
+		case BadmValue(_, Badm.Numeric(v)) => Validated.ok(v)
+		case bv => Validated.error(s"$varName must have been a number (was ${bv.valueStr})")
 	}
 
 	def getString(varName: String)(implicit lookup: Lookup): Validated[String] = lookUp(varName).flatMap{
-		case BadmStringValue(_, v) => Validated.ok(v)
-		case _ => Validated.error(s"$varName must have been a string")
+		bv => Validated.ok(bv.valueStr)
 	}
 
-	def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] = lookUp(varName).flatMap{
-		case BadmDateValue(_, _, BadmLocalDate(date)) => Validated.ok(date)
-		case _ => Validated.error(s"$varName must have been a local date")
+	def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[Instant] = lookUp(varName).flatMap{
+		case BadmValue(_, Badm.Date(BadmLocalDateTime(dt))) => Validated.ok(toCET(dt))
+		case BadmValue(_, Badm.Date(BadmLocalDate(date))) => Validated.ok(toCETnoon(date))
+		case bv => Validated.error(s"$varName must have been a local date(Time) (was ${bv.valueStr})")
 	}
 
 	def getPosition(implicit lookup: Lookup): Validated[Position] =
@@ -194,7 +193,6 @@ object EtcMetaSource{
 		case _ => Validated.error(s + " is not a valid country code")
 	}
 
-	def toUtcNoon(ld: LocalDate): Instant = {
-		LocalDateTime.of(ld, LocalTime.of(12, 0)).atOffset(ZoneOffset.UTC).toInstant
-	}
+	def toCET(ldt: LocalDateTime): Instant = ldt.atOffset(ZoneOffset.ofHours(1)).toInstant
+	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
 }

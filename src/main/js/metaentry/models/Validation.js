@@ -18,6 +18,12 @@ function urlValidator(s){
 	return (s && s.match(regex)) ? ok : error("Not a valid URL!");
 }
 
+function isoDateTimeValidator(s){
+	var expression = /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z|[+-][01][0-8]:[03]0)$/g;
+	var regex = new RegExp(expression);
+	return (s && s.match(regex)) ? ok : error(["Not a valid dateTime!", "Valid examples: 2017-06-01T18:43:26+01:00 or 2017-06-01T17:43:26Z"]);
+}
+
 function boolValidator(s){
 	var boolError = error("Must be 'true' or 'false'");
 	if(_.isEmpty(s)) return boolError;
@@ -69,7 +75,7 @@ var dataTypeValidators = _.object([
 	[xsd + "boolean", boolValidator],
 	[xsd + "double", doubleValidator],
 	[xsd + "float", doubleValidator],
-	[xsd + "dateTime", stringValidator], //TODO Change to proper dateTimeValidator!
+	[xsd + "dateTime", isoDateTimeValidator],
 	[xsd + "anyURI", urlValidator]
 ]);
 

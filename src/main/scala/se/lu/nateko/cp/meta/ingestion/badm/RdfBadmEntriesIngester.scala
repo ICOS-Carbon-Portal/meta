@@ -162,14 +162,14 @@ object RdfBadmEntriesIngester{
 
 	def getSiteId(siteEntry: BadmEntry): Option[StationId] =
 		siteEntry.values.collectFirst{
-			case BadmStringValue(SiteIdVar, StationId(id)) => id
+			case BadmValue(SiteIdVar, StationId(id)) => id
 		}
 
 	def getPlainValue(badmValue: BadmValue)(implicit vocab: CustomVocab): Value = badmValue match {
-		case BadmStringValue(_, value) => vocab.lit(value)
-		case BadmNumericValue(_, value, _) => vocab.lit(value, XMLSchema.DOUBLE)
 		//TODO See if there is a need to handle different kinds of BADM date values separately
-		case BadmDateValue(_, value, _) => vocab.lit(value, XMLSchema.DATETIME)
+		//case bv @ BadmValue(_, Badm.Date(_)) => vocab.lit(bv.valueStr, XMLSchema.DATETIME)
+		case bv @ BadmValue(_, Badm.Numeric(_)) => vocab.lit(bv.valueStr, XMLSchema.DOUBLE)
+		case BadmValue(_, value) => vocab.lit(value)
 	}
 
 }

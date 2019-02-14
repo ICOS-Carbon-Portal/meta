@@ -4,6 +4,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import java.text.NumberFormat
+import java.util.Locale
+import java.text.ParseException
 
 sealed trait BadmDate
 case class BadmYear(year: Int) extends BadmDate
@@ -19,18 +22,32 @@ case class BadmRawEntry(
 	submissionDate: LocalDate
 )
 
-sealed trait BadmValue{
-	def variable: String
-	def valueStr: String
+case class BadmValue(variable: String, valueStr: String)
+
+object Badm{
+
+	sealed trait Extractor[T]{
+		def unapply(v: String): Option[T]
+	}
+
+	private val numParser = NumberFormat.getNumberInstance(Locale.ROOT)
+
+	object Numeric extends Extractor[Number]{
+		override def unapply(v: String): Option[Number] = try{
+			Some(numParser.parse(v))
+		}catch{
+			case _: ParseException => None
+		}
+	}
+
+	object Date extends Extractor[BadmDate]{
+		override def unapply(v: String): Option[BadmDate] = try{
+			Some(Parser.toBadmDate(v))
+		}catch{
+			case _: ParseException => None
+		}
+	}
 }
-
-case class BadmStringValue(variable: String, value: String) extends BadmValue{
-	def valueStr = value
-}
-
-case class BadmNumericValue(variable: String, valueStr: String, value: Number) extends BadmValue
-
-case class BadmDateValue(variable: String, valueStr: String, value: BadmDate) extends BadmValue
 
 case class BadmEntry(
 	variable: String,

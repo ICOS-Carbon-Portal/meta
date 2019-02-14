@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta
 
+import java.time.Instant
+import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import scala.util.{Try, Success, Failure}
 
 package object utils {
@@ -13,4 +15,7 @@ package object utils {
 		//TODO Test this for "strange" strings (e.g. containing timestamps)
 		new java.net.URI(null, null, s, null).toASCIIString
 	}
+
+	def parseInstant(dateTimeIso: String): Instant = Instant.from(ISO_DATE_TIME.parse(dateTimeIso))
+
 }

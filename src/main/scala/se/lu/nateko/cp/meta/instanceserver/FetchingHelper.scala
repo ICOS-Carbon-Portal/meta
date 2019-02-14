@@ -9,6 +9,7 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.utils.parseInstant
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 
@@ -52,10 +53,10 @@ trait FetchingHelper {
 		server.getDoubleValues(subj, pred, InstanceServer.ExactlyOne).head
 
 	protected def getOptionalInstant(subj: IRI, pred: IRI): Option[Instant] =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(Instant.parse)
+		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(parseInstant)
 
 	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(Instant.parse).head
+		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(parseInstant).head
 
 	protected def getSingleUriLiteral(subj: IRI, pred: IRI): URI =
 		server.getUriLiteralValues(subj, pred, InstanceServer.ExactlyOne).head

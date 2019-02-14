@@ -53,25 +53,61 @@ class OtcMetaSource(
 
 	private object reader extends IcosMetaInstancesFetcher(server.inner){
 
+		private val otcVocab = new OtcMetaVocab(server.factory)
+		private def makeId(iri: IRI): TcId[O] = TcConf.OtcConf.makeId(iri.getLocalName)
+
 		/**
 		 * important override changing the default behaviour of RdfReader
 		 */
-		override protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] = {
+		override protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] =
 			Some(tcConf.makeId(uri.getLocalName))
-		}
 
 		def getOtcInstruments: Validated[Seq[Instrument[O]]] = getInstruments[O].map(_.map{instr =>
 			instr.copy(cpId = TcConf.tcScopedId[O](instr.cpId))
 		})
 
-		def getOtcMemberships: Validated[IndexedSeq[Membership[O]]] = getMemberships[O].map(_.map{memb =>
-			val r = memb.role
-			memb.copy(role = new AssumedRole[O](r.kind, r.holder, makeCpIdOtcSpecific(r.org)))
-		}.toIndexedSeq)
+		def getOtcMemberships: Validated[IndexedSeq[Membership[O]]] = {
+			val rolesOptSeqV = getDirectClassMembers(otcVocab.assumedRoleClass).map{arIri =>
+				Validated(
+					for(
+						persIri <- getOptionalUri(arIri, otcVocab.hasHolder);
+						person <- Try(getPerson(makeId(persIri), persIri)).toOption;
+						roleIri <- getOptionalUri(arIri, otcVocab.hasRole);
+						roleKind <- getRole(roleIri);
+						orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
+						org0 <- getOrganization[O](orgIri)
+					) yield {
+						val org = makeStationCpIdOtcSpecific(org0);
+						val start = getOptionalInstant(arIri, otcVocab.hasStartTime);
+						val end = getOptionalInstant(arIri, otcVocab.hasEndTime)
+						val role = new AssumedRole(roleKind, person, org)
+						Membership[O](arIri.getLocalName, role, start, end)
+					}
+				)
+			}
+			Validated.sequence(rolesOptSeqV).map(_.flatten.toIndexedSeq)
+		}
 
-		private def makeCpIdOtcSpecific(org: Organization[O]): Organization[O] = org match {
+		private def makeStationCpIdOtcSpecific(org: Organization[O]): Organization[O] = org match {
 			case _: CpStation[O] => org.withCpId(TcConf.stationId[O](org.cpId))
 			case _ => org
 		}
 	}
 }
+
+class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
+
+	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
+
+	val hasHolder = getRelative("hasHolder")
+	val hasRole = getRelative("hasRole")
+	val atOrganization = getRelative("atOrganization")
+
+	val spatialReference = getRelative("hasSpatialReference")
+	val hasStartTime = getRelative("hasStartTime")
+	val hasEndTime = getRelative("hasEndTime")
+
+	val assumedRoleClass = getRelative("AssumedRole")
+
+}
+

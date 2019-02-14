@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.upload.etc
 
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.ingestion.badm.{BadmEntry, BadmNumericValue, BadmStringValue}
+import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmEntry, BadmValue}
 
 case class EtcFileMeta(dtype: DataType.Value, isBinary: Boolean)
 case class EtcLoggerMeta(serial: String, model: String)
@@ -19,7 +19,7 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 			if entry.variable == "GRP_UTC_OFFSET"
 			id <- entry.stationId
 			utcOffset <- entry.values.collectFirst{
-				case BadmNumericValue("UTC_OFFSET", _, utc) => utc.intValue
+				case BadmValue("UTC_OFFSET", Badm.Numeric(utc)) => utc.intValue
 			}
 		} yield id -> new EtcStation(id, utcOffset)
 
@@ -32,14 +32,14 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 			if logger.variable == "GRP_LOGGER"
 			stationId <- logger.stationId
 			loggerId <- logger.values.collectFirst{
-				case BadmNumericValue("LOGGER_ID", _, id) => id.intValue
+				case BadmValue("LOGGER_ID", Badm.Numeric(id)) => id.intValue
 			}
 			loggerKey = (stationId, loggerId)
 			loggerSN <- logger.values.collectFirst{
-				case BadmStringValue("LOGGER_SN", sn) => sn
+				case BadmValue("LOGGER_SN", sn) => sn
 			}
 			loggerModel <- logger.values.collectFirst{
-				case BadmStringValue("LOGGER_MODEL", sn) => sn
+				case BadmValue("LOGGER_MODEL", sn) => sn
 			}
 		} yield (loggerKey, EtcLoggerMeta(loggerSN, loggerModel))
 		seq.toMap
@@ -52,18 +52,18 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 			file = entry
 			stationId <- file.stationId
 			loggerId <- file.values.collectFirst {
-				case BadmNumericValue("FILE_LOGGER_ID", _, id) => id.intValue
+				case BadmValue("FILE_LOGGER_ID", Badm.Numeric(id)) => id.intValue
 			}
 			fileId <- file.values.collectFirst {
-				case BadmNumericValue("FILE_ID", _, id) => id.intValue
+				case BadmValue("FILE_ID", Badm.Numeric(id)) => id.intValue
 			}
 			dtype <- file.values.collectFirst {
-				case BadmStringValue("FILE_TYPE", ft) =>
+				case BadmValue("FILE_TYPE", ft) =>
 					DataType.values.find(_.toString == ft.trim)
 			}.flatten
 			fileKey = (stationId, loggerId, fileId, dtype)
 			isBinary <- file.values.collectFirst {
-				case BadmStringValue("FILE_FORMAT", ff) => ff == "Binary"
+				case BadmValue("FILE_FORMAT", ff) => ff == "Binary"
 			}
 		} yield (fileKey, EtcFileMeta(dtype, isBinary))
 

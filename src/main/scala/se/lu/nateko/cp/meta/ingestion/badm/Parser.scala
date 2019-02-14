@@ -65,21 +65,9 @@ object Parser {
 
 	private def aggregateEntries(station: Option[StationId], raw: Seq[BadmRawEntry]): Seq[BadmEntry] = {
 
-		val parser = NumberFormat.getNumberInstance(Locale.ROOT)
-
 		def fromSameId(raw: Seq[BadmRawEntry]): BadmEntry = {
 			val values = raw.map{re =>
-				try{
-					BadmDateValue(re.qualifier, re.value, Parser.toBadmDate(re.value))
-				}catch{
-					case _: ParseException =>
-						try{
-							BadmNumericValue(re.qualifier, re.value, parser.parse(re.value))
-						}catch{
-							case _: ParseException =>
-								BadmStringValue(re.qualifier, re.value)
-						}
-				}
+				BadmValue(re.qualifier, re.value)
 			}.toIndexedSeq
 			val firstRaw = raw.head
 			import firstRaw._

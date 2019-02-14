@@ -112,7 +112,8 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 			case owlClass: OWLClass => rdfsLabeling(owlClass)
 		}
 
-		assert(ranges.size == 1, "Only single object property ranges, of the simple OWLClass kind, are supported at the moment")
+		assert(ranges.size == 1, "Only single object property ranges, of the simple OWLClass kind, are supported at the moment.\n" +
+			s"Property ${prop.getIRI} had ${ranges.size} ranges on values of class ${ctxt.getIRI}")
 
 		ObjectPropertyDto(
 			resource = rdfsLabeling(prop),

@@ -1,4 +1,4 @@
-package views.html
+package se.lu.nateko.cp.meta.views
 
 import se.lu.nateko.cp.viewscore.IcosStyleConfig
 import java.net.URI

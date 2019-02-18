@@ -23,8 +23,8 @@ import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{DataObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json.JsonWriter
-import views.html.ResourceViewInfo
-import views.html.ResourceViewInfo.PropValue
+import se.lu.nateko.cp.meta.views.ResourceViewInfo
+import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
 
 import scala.concurrent.{ExecutionContext, Future}
 

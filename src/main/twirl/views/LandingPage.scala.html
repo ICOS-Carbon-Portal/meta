@@ -1,5 +1,5 @@
 @import se.lu.nateko.cp.meta.core.data._
-@import LandingPageHelpers._
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.services.CpVocab
@@ -41,7 +41,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- citation){
+				@for(cit <- citation.orElse(icosCitation(dobj, vocab, handleService))){
 					@PanelRow("Citation", cit)
 				}
 				@PanelRow("File name", dobj.fileName)
@@ -59,7 +59,7 @@
 						@PanelRow("Temporal resolution", resolution)
 					}
 				}
-				@resourcePanelRow("Specification", dobj.specification.self)
+				@resourcePanelRow("Data type", dobj.specification.self)
 				@PanelRow("Data level", dobj.specification.dataLevel.toString)
 				@resourcePanelRow("Format", dobj.specification.format)
 				@resourcePanelRow("Encoding", dobj.specification.encoding)
@@ -124,14 +124,14 @@
 			}
 		</div>
 
-<!--
+@*** uncomment for debug ****
 		<div class="row">
 			<div class="col-md-12">
 				<label>Debug</label>
 				<pre>@printToJson(dobj)</pre>
 			</div>
 		</div>
--->
+****************************@
 	</div>
 }
 

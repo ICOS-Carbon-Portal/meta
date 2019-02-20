@@ -10,7 +10,7 @@
 	<div class="container-fluid">
 
 		<div class="row">
-			@Panel("Summary", 12, summaryStyleContext){
+			@Panel("Summary", 6, summaryStyleContext){
 				@if(uploadComplete) {
 					@PanelRow("Status - OK", "Data and metadata are complete.")
 				} else {
@@ -36,6 +36,11 @@
 				@for(coll <- dobj.parentCollections){
 					@resourcePanelRow("Part of", coll)
 				}
+			}
+			@Panel("Metadata", 6, "success"){
+				@metaDownloadButton("JSON", "metadljson")
+				@metaDownloadButton("RDF/XML", "metadlxml")
+				@metaDownloadButton("RDF/Turtle", "metadlttl")
 			}
 		</div>
 
@@ -216,6 +221,12 @@
 		case None => None
 		case Some(_: GeoTrack) | Some(_: GenericGeoFeature) => None
 		case Some(geo) => Some(geo.textSpecification)
+	}
+}
+
+@metaDownloadButton(title: String, htmlId: String) = {
+	@PanelHtmlRow{Download as}{
+		<button id=@htmlId type="button" class="btn btn-info" style="margin-bottom: 5px">@title</button>
 	}
 }
 

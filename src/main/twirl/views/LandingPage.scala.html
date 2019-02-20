@@ -38,9 +38,9 @@
 				}
 			}
 			@Panel("Metadata", 6, "success"){
-				@metaDownloadButton("JSON", "metadljson")
-				@metaDownloadButton("RDF/XML", "metadlxml")
-				@metaDownloadButton("RDF/Turtle", "metadlttl")
+				@metaDownloadButton("JSON", "json")
+				@metaDownloadButton("RDF/XML", "xml")
+				@metaDownloadButton("RDF/Turtle", "ttl")
 			}
 		</div>
 
@@ -224,9 +224,11 @@
 	}
 }
 
-@metaDownloadButton(title: String, htmlId: String) = {
-	@PanelHtmlRow{Download as}{
-		<button id=@htmlId type="button" class="btn btn-info" style="margin-bottom: 5px">@title</button>
+@metaDownloadButton(title: String, ext: String) = {
+	@PanelHtmlRow{Get as}{
+		<a href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
+			<button type="button" class="btn btn-info" style="margin-bottom: 5px">@title</button>
+		</a>
 	}
 }
 

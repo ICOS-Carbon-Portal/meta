@@ -65,33 +65,33 @@ object LandingPageHelpers{
 					s"$spec, $station$height, $time"
 				}
 		)
-		val productionInstantOpt = dobj.production.map(_.dateTime).orElse{
-			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
-		}
+
 		for(
 			_ <- isIcos;
 			title <- titleOpt;
 			pid <- dobj.doi.orElse(dobj.pid);
-			instant <- productionInstantOpt
+			productionInstant <- dobj.production.map(_.dateTime).orElse{
+				dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
+			}
 		) yield {
 
-			val station = dobj.specificInfo.fold(
-				_ => None, //L3 data
-				l2 => if(dobj.specification.dataLevel > 1) None else{
-					Some(l2.acquisition.station.name)
-				}
-			).fold("")(_ + ", ")
+//			val station = dobj.specificInfo.fold(
+//				_ => None, //L3 data
+//				l2 => if(dobj.specification.dataLevel > 1) None else{
+//					Some(l2.acquisition.station.name)
+//				}
+//			).fold("")(_ + ", ")
 
-			val producerOrg = dobj.production.flatMap(_.creator match{
-				case Organization(_, name) => Some(name)
-				case _ => None
-			}).fold("")(_ + ", ")
+//			val producerOrg = dobj.production.flatMap(_.creator match{
+//				case Organization(_, name) => Some(name)
+//				case _ => None
+//			}).fold("")(_ + ", ")
 
-			val icos = if(dobj.specification.dataLevel == 2) "ICOS ERIC, " else ""
+//			val icos = if(dobj.specification.dataLevel == 2) "ICOS ERIC, " else ""
 
-			val authors = s"$icos$producerOrg$station"
-			val year = formatDate(instant).take(4)
-			s"$authors$title, $handleService$pid, $year"
+			//val authors = s"$icos$producerOrg$station"
+			val year = formatDate(productionInstant).take(4)
+			s"ICOS RI, $year. $title, $handleService$pid"
 		}
 	}
 }

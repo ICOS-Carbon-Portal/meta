@@ -204,3 +204,6 @@ Make sure that Python is available, and `python-markdown` and `inotify-tools` pa
 Then you can run:
 
 `$ while inotifywait -e close_write README.md; do python -m markdown README.md > README.html; done`
+
+#### SHA-256 sum in base64
+`$ sha256sum <filename> | awk '{print $1;}' | xxd -r -p | base64`

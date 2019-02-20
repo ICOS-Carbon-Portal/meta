@@ -68,5 +68,7 @@ object Sha256Sum {
 		)
 	)
 
+	def unapply(hash: String): Option[Sha256Sum] = fromString(hash).toOption
+
 	val formatByte: Byte => String = b => String.format("%02x", Int.box(255 & b))
 }

@@ -3,23 +3,29 @@ package se.lu.nateko.cp.meta.routes
 import scala.language.postfixOps
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.MediaType
+import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
-import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.headers.`Content-Disposition`
+import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import se.lu.nateko.cp.meta.ConfigLoader.dObjGraphInfoFormat
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.ConfigLoader.dObjGraphInfoFormat
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
+import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import spray.json.DefaultJsonProtocol._
+import akka.http.scaladsl.server.StandardRoute
 
 object LinkedDataRoute {
 	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller
@@ -36,7 +42,9 @@ object LinkedDataRoute {
 		val genericRdfUriResourcePage: Route = extractUri{uri =>
 			extractHost{hostname =>
 
-				val envri = Envri.infer(hostname).get
+				val envri = Envri.infer(hostname).getOrElse(
+					throw new Exception(s"Could not infer ENVRI for hostname '$hostname'")
+				)
 
 				val scheme = if(envri == Envri.ICOS){
 					import Uri.Path.{Segment, Slash}
@@ -63,15 +71,33 @@ object LinkedDataRoute {
 					}.flatten
 
 					serverOpt match{
-						case None => complete(StatusCodes.NotFound)
+						case None =>
+							complete(StatusCodes.NotFound)
 						case Some((id, instServer)) =>
-							import ContentDispositionTypes._
-							val header = `Content-Disposition`(attachment, Map("filename" -> (id + ".rdf")))
-							respondWithHeader(header){ complete(instServer) }
+							respondWithHeader(attachmentHeader(id + ".rdf")){
+								complete(instServer)
+							}
 					}
 				}
 			} ~
-			pathPrefix("ontologies" | "resources" | "objects" | "files" | "collections"){
+			pathPrefix("objects" / Sha256Segment){_ =>
+				pathEnd{
+					genericRdfUriResourcePage
+				} ~
+				path(Segment){
+					case fileName @ FileNameWithExtension(_, ext) =>
+						extToMime.get(ext).fold[Route](reject){mime =>
+							mapRequest(rewriteObjRequest(mime)){
+								respondWithHeader(attachmentHeader(fileName)){
+									genericRdfUriResourcePage
+								}
+							}
+						}
+					case _ =>
+						reject
+				}
+			} ~
+			pathPrefix("ontologies" | "resources" | "files" | "collections"){
 				genericRdfUriResourcePage
 			} ~
 			path("config" / "dataObjectGraphInfos"){
@@ -80,5 +106,25 @@ object LinkedDataRoute {
 				}
 			}
 		}
+	}
+
+	private val FileNameWithExtension = "^(.+)(\\.[a-z]+)$".r
+
+	private val extToMime: Map[String, MediaType] = Map(
+		".json" -> MediaTypes.`application/json`,
+		".ttl" -> MediaTypes.`text/plain`,
+		".xml" -> MediaTypes.`application/xml`
+	)
+
+	private def rewriteObjRequest(mime: MediaType)(req: HttpRequest): HttpRequest = {
+		val newPath = req.uri.path.reverse.tail.tail.reverse
+		val newUri = req.uri.withPath(newPath)
+		val accept = Accept(mime)
+		req.removeHeader(accept.name).addHeader(accept).withUri(newUri)
+	}
+
+	def attachmentHeader(fileName: String) = {
+		import ContentDispositionTypes.attachment
+		`Content-Disposition`(attachment, Map("filename" -> fileName))
 	}
 }

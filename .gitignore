@@ -28,6 +28,9 @@ npm-debug.log
 .classpath
 .cache-tests
 .cache-main
+/.metals
+/.bloop
+/project/.bloop
 /.idea
 /bin/
 /core/bin/

@@ -35,15 +35,15 @@ private class WdcggUploadCompleter(
 
 	def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = Future{
 		//TODO Add support for idempotence here
-		val WdcggUploadCompletion(nRows, interVal, keyValues) = result
+		val WdcggUploadCompletion(ingestionExtract, nRows, keyValues) = result
 		val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 
 		val objUri = vocab.getDataObject(hash)
 		facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
 		val acquisitionUri = vocab.getAcquisition(hash)
-		facts += ((acquisitionUri, metaVocab.prov.startedAtTime, vocab.lit(interVal.start)))
-		facts += ((acquisitionUri, metaVocab.prov.endedAtTime, vocab.lit(interVal.stop)))
+		facts += ((acquisitionUri, metaVocab.prov.startedAtTime, vocab.lit(ingestionExtract.interval.start)))
+		facts += ((acquisitionUri, metaVocab.prov.endedAtTime, vocab.lit(ingestionExtract.interval.stop)))
 
 		val station = getSingleUri(acquisitionUri, metaVocab.prov.wasAssociatedWith)
 		if(!server.hasStatement(Some(station), None, None)){

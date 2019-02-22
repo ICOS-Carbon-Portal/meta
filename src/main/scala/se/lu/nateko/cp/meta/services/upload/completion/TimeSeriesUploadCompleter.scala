@@ -2,16 +2,11 @@ package se.lu.nateko.cp.meta.services.upload.completion
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.eclipse.rdf4j.model.IRI
-
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
-import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.core.data.TimeSeriesUploadCompletion
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -20,6 +15,7 @@ import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import spray.json.{JsArray, JsString}
 
 
 private class TimeSeriesUploadCompleter(
@@ -35,11 +31,11 @@ private class TimeSeriesUploadCompleter(
 
 	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = extract match {
 
-		case TimeSeriesUploadCompletion(interval, rowsInfo) => Future{
-			acqusitionIntervalUpdates(hash, interval) ++ nRowsUpdates(hash, rowsInfo)
+		case TimeSeriesUploadCompletion(ingestionExtract, rowsInfo) => Future{
+			tabularExtractUpdates(hash, ingestionExtract) ++ nRowsUpdates(hash, rowsInfo)
 		}
 
-		case SpatialTimeSeriesUploadCompletion(interval, spatial) => Future{
+		case SpatialTimeSeriesUploadCompletion(ingestionExtract, spatial) => Future{
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
 			val objUri = vocab.getDataObject(hash)
@@ -51,7 +47,7 @@ private class TimeSeriesUploadCompleter(
 			}.flatten
 
 			val coverageUpdates = MetadataUpdater.diff(olds, news, factory)
-			val intervalUpdates = acqusitionIntervalUpdates(hash, interval)
+			val intervalUpdates = tabularExtractUpdates(hash, ingestionExtract)
 
 			coverageUpdates ++ intervalUpdates
 		}
@@ -59,6 +55,18 @@ private class TimeSeriesUploadCompleter(
 		case _ => Future.failed(new UploadCompletionException(
 			s"Encountered wrong type of upload completion info, must be (Spatial)TimeSeriesUploadCompletion, got $extract"
 		))
+	}
+
+	private def tabularExtractUpdates(hash: Sha256Sum, extract: TabularIngestionExtract): Seq[RdfUpdate] = {
+		val objUri = vocab.getDataObject(hash)
+
+		val olds = server.getStatements(Some(objUri), Some(metaVocab.hasActualColumnNames), None).toIndexedSeq
+
+		val news = extract.actualColumns.toIndexedSeq.map { cols =>
+			val json = JsArray(cols.map(cn => JsString(cn)).toVector)
+			factory.createStatement(objUri, metaVocab.hasActualColumnNames, vocab.lit(json.compactPrint))
+		}
+		MetadataUpdater.diff(olds, news, factory) ++ acqusitionIntervalUpdates(hash, extract.interval)
 	}
 
 	private def acqusitionIntervalUpdates(hash: Sha256Sum, interval: TimeInterval): Seq[RdfUpdate] = {

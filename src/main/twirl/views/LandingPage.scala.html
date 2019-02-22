@@ -10,7 +10,7 @@
 	<div class="container-fluid">
 
 		<div class="row">
-			@Panel("Summary", 6, summaryStyleContext){
+			@Panel("Summary", 8, summaryStyleContext){
 				@if(uploadComplete) {
 					@PanelRow("Status - OK", "Data and metadata are complete.")
 				} else {
@@ -37,7 +37,7 @@
 					@resourcePanelRow("Part of", coll)
 				}
 			}
-			@Panel("Metadata", 6, "success"){
+			@Panel("Metadata download", 4){
 				@metaDownloadButton("JSON", "json")
 				@metaDownloadButton("RDF/XML", "xml")
 				@metaDownloadButton("RDF/Turtle", "ttl")
@@ -225,11 +225,9 @@
 }
 
 @metaDownloadButton(title: String, ext: String) = {
-	@PanelHtmlRow{Get as}{
-		<a href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
-			<button type="button" class="btn btn-info" style="margin-bottom: 5px">@title</button>
-		</a>
-	}
+	<a class="btn btn-default" style="margin-right: 15px;" href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
+		@title
+	</a>
 }
 
 @template = @{

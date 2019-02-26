@@ -1,11 +1,12 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
+@import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j._
 
-@(dobj: DataObject, citation: Option[String], handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
+@(dobj: DataObject, extras: LandingPageExtras, handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
 @template{
 	<div class="container-fluid">
 
@@ -42,11 +43,17 @@
 				@metaDownloadButton("RDF/XML", "xml")
 				@metaDownloadButton("RDF/Turtle", "ttl")
 			}
+			@Panel("Download count", 2){
+				@extras.downloadStats.getOrElse("Not available")
+			}
+			@Panel("Preview count", 2){
+				@extras.previewStats.getOrElse("Not available")
+			}
 		</div>
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- citation.orElse(icosCitation(dobj, vocab, handleService))){
+				@for(cit <- extras.citation.orElse(icosCitation(dobj, vocab, handleService))){
 					@PanelRow("Citation", cit)
 				}
 				@PanelRow("File name", dobj.fileName)
@@ -225,7 +232,7 @@
 }
 
 @metaDownloadButton(title: String, ext: String) = {
-	<a class="btn btn-default" style="margin-right: 15px;" href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
+	<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
 		@title
 	</a>
 }

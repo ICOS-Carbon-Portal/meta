@@ -133,6 +133,10 @@ case class RdfStorageConfig(path: String, recreateAtStartup: Boolean)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean)
 
+case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
+	def dbName(implicit envri: Envri): String = dbNames(envri)
+}
+
 case class CpmetaConfig(
 	port: Int,
 	dataUploadService: UploadServiceConfig,
@@ -145,7 +149,8 @@ case class CpmetaConfig(
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig,
-	citations: CitationConfig
+	citations: CitationConfig,
+	restheart: RestheartConfig
 )
 
 object ConfigLoader extends CpmetaJsonProtocol{
@@ -176,8 +181,9 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
 	implicit val rdfStorageConfigFormat = jsonFormat2(RdfStorageConfig)
 	implicit val citationConfigFormat = jsonFormat2(CitationConfig)
+	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)
 
-	implicit val cpmetaConfigFormat = jsonFormat12(CpmetaConfig)
+	implicit val cpmetaConfigFormat = jsonFormat13(CpmetaConfig)
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

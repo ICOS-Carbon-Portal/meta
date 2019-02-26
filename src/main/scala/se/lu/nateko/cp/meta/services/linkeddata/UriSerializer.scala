@@ -43,7 +43,8 @@ class Rdf4jUriSerializer(
 
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	val citer = new CitationClient(getDois, config.citations)
-	val pcm = new PageContentMarshalling(config.core.handleService, citer, new CpVocab(repo.getValueFactory))
+	val stats = new StatisticsClient(config.restheart)
+	val pcm = new PageContentMarshalling(config.core.handleService, citer, new CpVocab(repo.getValueFactory), stats)
 
 	import pcm.{dataObjectMarshaller, statCollMarshaller}
 

@@ -1,74 +1,85 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller, ToEntityMarshaller}
-import akka.http.scaladsl.marshalling.Marshalling._
-import akka.http.scaladsl.model._
-import se.lu.nateko.cp.meta.api.Doi
-import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
-import se.lu.nateko.cp.meta.services.CpVocab
-
-import scala.concurrent.Future
-import spray.json._
-import play.twirl.api.Html
 import java.net.URI
 
+import akka.http.scaladsl.marshalling.Marshalling._
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
+import akka.http.scaladsl.model._
+import play.twirl.api.Html
+import se.lu.nateko.cp.meta.api.{CitationClient, Doi, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.api.CitationClient
-import views.html.{LandingPage, MessagePage, CollectionLandingPage}
+import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.views.LandingPageExtras
+import spray.json._
+import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
-class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab) {
+import scala.concurrent.{ExecutionContext, Future}
+
+class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
 	import PageContentMarshalling.{getHtml, getJson}
 
-	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] =
-		makeMarshaller(
-			LandingPage(_, _, handleService, vocab),
-			MessagePage("Data object not found", ""),
-			_.doi
-		)
+	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] = {
+		import statisticsClient.executionContext
+		val template: DataObject => Future[Option[String] => Html] = dobj =>
+			for(
+				dlCount <- statisticsClient.getDownloadCount(dobj.hash);
+				previewCount <- statisticsClient.getPreviewCount(dobj.hash)
+			) yield (citOpt: Option[String]) => {
+				val extras = LandingPageExtras(citOpt, dlCount, previewCount)
+				LandingPage(dobj, extras, handleService, vocab)
+			}
+		makeMarshaller(template, MessagePage("Data object not found", ""), _.doi)
+	}
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
 		makeMarshaller(
-			CollectionLandingPage(_, _),
+			coll => Future.successful(CollectionLandingPage(coll, _)),
 			MessagePage("Collection not found", ""),
 			_.doi
 		)
 
 	private def makeMarshaller[T: JsonWriter](
-		template: (T, Option[String]) => Html,
+		templateFetcher: T => Future[Option[String] => Html],
 		notFoundPage: => Html,
 		toDoi: T => Option[String]
-	): ToResponseMarshaller[() => Option[T]] = Marshaller{ implicit exeCtxt => producer =>
+	): ToResponseMarshaller[() => Option[T]] = {
 
-		Future(producer()).flatMap{dataItemOpt =>
-
-			val doiOpt: Option[Doi] = dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply)
-
-			val citationOptFut: Future[Option[String]] = doiOpt match{
+		def fetchCitationOpt(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[Option[String]] =
+			dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply) match {
 				case None => Future.successful(None)
-				case Some(doi) => citer.getCitation(doi).map(Some(_)).recover{
+				case Some(doi) => citer.getCitation(doi).map(Some(_)).recover {
 					case err: Throwable =>
 						Some("Error fetching the citation from DataCite: " + err.getMessage)
 				}
 			}
 
-			citationOptFut.map{citOpt =>
-
-				val makeHtml: HttpCharset => HttpResponse = charset => dataItemOpt match {
-					case Some(obj) =>
-						HttpResponse(entity = getHtml(template(obj, citOpt), charset))
-					case None =>
-						HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage, charset))
+		def fetchHtmlMaker(citOpt: Option[String])(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
+			case Some(obj) =>
+				templateFetcher(obj).map { template =>
+					val html = template(citOpt)
+					charset => HttpResponse(entity = getHtml(html, charset))
 				}
 
-				WithOpenCharset(MediaTypes.`text/html`, makeHtml) ::
-				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt)) ::
-				Nil
-			}
+			case None =>
+				Future.successful(
+					charset => HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage, charset))
+				)
+		}
+
+		Marshaller {implicit exeCtxt => producer =>
+			implicit val dataItemOpt: Option[T] = producer()
+			for (
+				citOpt <- fetchCitationOpt;
+				htmlMaker <- fetchHtmlMaker(citOpt)
+			) yield List(
+				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
+				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt))
+			)
 		}
 	}
-
 }
 
 object PageContentMarshalling{

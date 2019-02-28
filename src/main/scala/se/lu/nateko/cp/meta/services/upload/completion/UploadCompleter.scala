@@ -68,7 +68,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 	}
 
 	private def getBytesSizeUpdates(server: InstanceServer, hash: Sha256Sum, size: Long)(implicit envri: Envri): Seq[RdfUpdate] = {
-		val dobj = vocab.getDataObject(hash)
+		val dobj = vocab.getStaticObject(hash)
 		if(server.hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
 		else{
 			val sizeInfo = vocab.factory.createStatement(dobj, metaVocab.hasSizeInBytes, vocab.lit(size))

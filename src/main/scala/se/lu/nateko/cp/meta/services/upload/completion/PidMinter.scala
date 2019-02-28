@@ -22,7 +22,7 @@ class PidMinter(handles: HandleNetClient, vocab: CpVocab)(implicit ex: Execution
 
 	final def finalize(hash: Sha256Sum): Future[Report] = {
 
-		val targetUri = vocab.getDataObject(hash)
+		val targetUri = vocab.getStaticObject(hash)
 		val suffix = handles.pidFactory.getSuffix(hash)
 
 		handles.createOrRecreate(suffix, new java.net.URL(targetUri.stringValue))

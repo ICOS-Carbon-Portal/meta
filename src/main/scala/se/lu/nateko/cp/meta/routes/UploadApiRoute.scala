@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
@@ -68,7 +68,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					pathEnd{
 						authRouting.mustBeLoggedIn{uploader =>
 							replyWithErrorOnBadContent{
-								entity(as[UploadMetadataDto]){uploadMeta =>
+								entity(as[ObjectUploadDto]){uploadMeta =>
 									complete(service.registerUpload(uploadMeta, uploader))
 								} ~
 								entity(as[StaticCollectionDto]){collMeta =>

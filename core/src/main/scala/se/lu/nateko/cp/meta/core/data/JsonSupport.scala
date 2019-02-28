@@ -103,22 +103,22 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val dataObjectFormat = jsonFormat12(DataObject)
 
-	implicit val plainDataObjectFormat = jsonFormat3(PlainDataObject)
+	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
 
 	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
 		implicit val statCollFormat = jsonFormat8(StaticCollection)
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
-			case pdo: PlainDataObject => pdo.toJson
+			case pdo: PlainStaticObject => pdo.toJson
 			case sc: StaticCollection => sc.toJson
 		}
 
 		def read(value: JsValue): StaticDataItem = value match {
 			case JsObject(fields) =>
-				if(fields.contains("dobj"))
+				if(fields.contains("title"))
 					value.convertTo[StaticCollection]
 				else
-					value.convertTo[PlainDataObject]
+					value.convertTo[PlainStaticObject]
 			case _ =>
 				deserializationError("Expected JS object representing static collection or a plain data object")
 		}

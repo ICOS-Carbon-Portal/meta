@@ -1,22 +1,28 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import scala.util.Try
+
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
+
+import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DocObjectDto
+import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, Station}
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{ DataObjectSpec, Station }
+import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer.AtMostOne
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils._
-import org.eclipse.rdf4j.model.ValueFactory
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],
 	val collectionServers: Map[Envri, InstanceServer],
+	docServers: Map[Envri, InstanceServer],
 	val allDataObjs: Map[Envri, InstanceServer],
 	perFormat: Map[IRI, InstanceServer]
 )(implicit envriConfs: EnvriConfigs, factory: ValueFactory){top =>
@@ -36,7 +42,7 @@ class DataObjectInstanceServers(
 	}
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
-		val dataObjUri = vocab.getDataObject(objHash)
+		val dataObjUri = vocab.getStaticObject(objHash)
 
 		allDataObjs(envri).getUriValues(dataObjUri, metaVocab.hasObjectSpec, AtMostOne).headOption.toTry{
 			new UploadUserErrorException(s"Object '$objHash' is unknown or has no object specification")
@@ -64,6 +70,10 @@ class DataObjectInstanceServers(
 			server <- getInstServerForFormat(format)
 		) yield server
 
+	def getDocInstServer(implicit envri: Envri): Try[InstanceServer] = docServers.get(envri).toTry{
+		new UploadUserErrorException(s"ENVRI '$envri' has no document instance server configured for it")
+	}
+
 	def getCollectionCreator(coll: Sha256Sum)(implicit envri: Envri): Option[IRI] =
 		collFetcher.flatMap(_.getCreatorIfCollExists(coll))
 
@@ -80,10 +90,13 @@ class DataObjectInstanceServers(
 	def dataObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)
 
-	def getDataObjSubmitter(dobj: Sha256Sum)(implicit envri: Envri): Option[IRI] = {
-		val dataObjUri = vocab.getDataObject(dobj)
-		val server = allDataObjs(envri)
-		server.getUriValues(dataObjUri, metaVocab.wasSubmittedBy).flatMap{subm =>
+	def getObjSubmitter(obj: ObjectUploadDto)(implicit envri: Envri): Option[IRI] = {
+		val objUri = vocab.getStaticObject(obj.hashSum)
+		val server = obj match{
+			case _: DataObjectDto => allDataObjs(envri)
+			case _: DocObjectDto => getDocInstServer.get
+		}
+		server.getUriValues(objUri, metaVocab.wasSubmittedBy).flatMap{subm =>
 			server.getUriValues(subm, metaVocab.prov.wasAssociatedWith)
 		}.headOption
 	}

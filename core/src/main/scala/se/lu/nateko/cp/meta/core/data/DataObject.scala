@@ -67,9 +67,17 @@ case class L3SpecificMeta(
 	productionInfo: DataProduction
 )
 
-sealed trait DataAffiliation
-case object Icos extends DataAffiliation
-case class OrgAffiliation(org: Organization) extends DataAffiliation
+sealed trait StaticObject{
+	def hash: Sha256Sum
+	def accessUrl: Option[URI]
+	def pid: Option[String]
+	def doi: Option[String]
+	def fileName: String
+	def submission: DataSubmission
+	def previousVersion: Option[URI]
+	def nextVersion: Option[URI]
+	def parentCollections: Seq[UriResource]
+}
 
 case class DataObject(
 	hash: Sha256Sum,
@@ -84,7 +92,7 @@ case class DataObject(
 	previousVersion: Option[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource]
-){
+) extends StaticObject{
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),
 		l2 => l2.productionInfo
@@ -96,30 +104,15 @@ case class DataObject(
 	)
 }
 
-sealed trait DataItem
-
-sealed trait StaticDataItem extends DataItem
-
-final case class PlainDataObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem
-
-sealed trait DataItemCollection extends DataItem {
-	type M <: DataItem
-	def members: Seq[M]
-	def creator: Organization
-	def title: String
-	def description: Option[String]
-	def doi: Option[String]
-}
-
-final case class StaticCollection(
-	res: URI,
-	members: Seq[StaticDataItem],
-	creator: Organization,
-	title: String,
-	description: Option[String],
+case class DocObject(
+	hash: Sha256Sum,
+	accessUrl: Option[URI],
+	pid: Option[String],
+	doi: Option[String],
+	fileName: String,
+	size: Option[Long],
+	submission: DataSubmission,
 	previousVersion: Option[URI],
 	nextVersion: Option[URI],
-	doi: Option[String]
-) extends DataItemCollection with StaticDataItem {
-	type M = StaticDataItem
-}
+	parentCollections: Seq[UriResource]
+) extends StaticObject

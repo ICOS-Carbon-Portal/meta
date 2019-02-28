@@ -20,14 +20,16 @@ class DataObjectFetcher(
 ) extends CpmetaFetcher {
 
 	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
-		val dataObjUri = vocab.getDataObject(hash)
+		val dataObjUri = vocab.getStaticObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
+//		else if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
+//			Some(getExistingDocumentObject(hash))
 		else None
 	}
 
 	private def getExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): DataObject = {
-		val dobj = vocab.getDataObject(hash)
+		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
 			.map(getDataProduction)
@@ -58,6 +60,10 @@ class DataObjectFetcher(
 		)
 	}
 
+//	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
+//		???
+//	}
+
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 	}
@@ -67,10 +73,10 @@ class DataObjectFetcher(
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new URI("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
 		else {
-			val dobj = vocab.getDataObject(hash)
+			val dobj = vocab.getStaticObject(hash)
 			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(
 				if(spec.dataLevel < 1) None
-				else Some(vocab.getDataObjectAccessUrl(hash))
+				else Some(vocab.getStaticObjectAccessUrl(hash))
 			)
 		}
 	}

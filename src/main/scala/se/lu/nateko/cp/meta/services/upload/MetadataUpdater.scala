@@ -57,7 +57,7 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 	}
 }
 
-class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
+class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
 	import MetadataUpdater._
 	import StatementStability._
 
@@ -76,7 +76,7 @@ class DobjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: Sparql
 	}
 
 	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext, envri: Envri): Future[Seq[Statement]] = {
-		val objUri = vocab.getDataObject(hash)
+		val objUri = vocab.getStaticObject(hash)
 		if(!server.hasStatement(Some(objUri), None, None)) Future.successful(Nil)
 		else {
 			val fromClauses = server.writeContexts.map(graph => s"FROM <$graph>").mkString("\n")

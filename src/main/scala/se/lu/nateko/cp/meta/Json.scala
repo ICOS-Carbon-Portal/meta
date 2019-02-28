@@ -69,7 +69,21 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val dataProductionDtoFormat = jsonFormat5(DataProductionDto)
 	implicit val stationDataMetadataFormat = jsonFormat6(StationDataMetadata)
 	implicit val elaboratedProductMetadataFormat = jsonFormat6(ElaboratedProductMetadata)
-	implicit val uploadMetadataDtoFormat = jsonFormat7(UploadMetadataDto)
+	implicit val dataObjectDtoFormat = jsonFormat7(DataObjectDto)
+	implicit val docObjectDtoFormat = jsonFormat5(DocObjectDto)
+
+	implicit object objectUploadDtoFormat extends RootJsonFormat[ObjectUploadDto]{
+		override def write(umd: ObjectUploadDto) = umd match{
+			case data: DataObjectDto => data.toJson
+			case doc: DocObjectDto => doc.toJson
+		}
+		override def read(value: JsValue): ObjectUploadDto = {
+			val obj = value.asJsObject("Expected UploadMetadataDto to be a JSON object")
+			if(obj.fields.contains("objectSpecification")) obj.convertTo[DataObjectDto]
+			else obj.convertTo[DocObjectDto]
+		}
+	}
+
 	implicit val staticCollDtoFormat = jsonFormat6(StaticCollectionDto)
 
 	implicit val userIdFormat = jsonFormat1(UserId)

@@ -65,7 +65,7 @@ class Rdf4jUriSerializer(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
 
-	private def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
+	private def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		import servers.vocab
 		for(
 			server <- servers.getInstServerForDataObj(hash).toOption;

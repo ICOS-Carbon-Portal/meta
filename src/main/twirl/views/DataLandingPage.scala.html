@@ -1,0 +1,246 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers._
+@import se.lu.nateko.cp.meta.views.LandingPageExtras
+@import java.net.URI
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.meta.services.CpVocab
+@import se.lu.nateko.cp.meta.utils.rdf4j._
+
+@(dobj: DataObject, extras: LandingPageExtras, handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
+@template{
+	<div class="container-fluid">
+
+		<div class="row">
+			@Panel("Summary", 8, summaryStyleContext){
+				@if(uploadComplete) {
+					@PanelRow("Status - OK", "Data and metadata are complete.")
+				} else {
+					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
+				}
+				@DoiPanelHtmlRow(dobj.doi)
+				@if(uploadComplete) {
+					@PanelHtmlRow{PID}{
+						@dobj.pid match{
+							case None => {
+								<span>Not assigned</span>
+							}
+							case Some(pid) => {
+								<span>@{pid} (<a href=@{handleService.toString + pid}>link</a>)</span>
+							}
+						}
+					}
+					@accessUrlRow
+				}
+				@resourcePanelRow("Data affiliation", dobj.specification.project)
+				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
+				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
+				@for(coll <- dobj.parentCollections){
+					@resourcePanelRow("Part of", coll)
+				}
+			}
+			@Panel("Metadata download", 4){
+				@metaDownloadButton("JSON", "json")
+				@metaDownloadButton("RDF/XML", "xml")
+				@metaDownloadButton("RDF/Turtle", "ttl")
+			}
+			@Panel("Download count", 2){
+				@extras.downloadStats.getOrElse("Not available")
+			}
+			@Panel("Preview count", 2){
+				@extras.previewStats.getOrElse("Not available")
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Content", 12){
+				@for(cit <- extras.citation.orElse(icosCitation(dobj, vocab, handleService))){
+					@PanelRow("Citation", cit)
+				}
+				@PanelRow("File name", dobj.fileName)
+				@for(size <- dobj.size){
+					@PanelRow("Size in bytes", size.toString)
+				}
+				@for(l3meta <- dobj.specificInfo.left.toOption){
+					@PanelRow("Title", l3meta.title)
+					@for(description <- l3meta.description){
+						@PanelRow("Description", description)
+					}
+					@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
+					@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
+					@for(resolution <- l3meta.temporal.resolution){
+						@PanelRow("Temporal resolution", resolution)
+					}
+				}
+				@resourcePanelRow("Data type", dobj.specification.self)
+				@PanelRow("Data level", dobj.specification.dataLevel.toString)
+				@resourcePanelRow("Format", dobj.specification.format)
+				@resourcePanelRow("Encoding", dobj.specification.encoding)
+				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+				@if(uploadComplete) {
+					@accessUrlRow
+				}
+			}
+		</div>
+
+		<div class="row">
+
+			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
+				@Panel("Acquisition", 4){
+					@agentPanelRow("Station", station.org)
+					@for(interval <- acquisition.interval){
+						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
+						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
+					}
+					@for(instrument <- acquisition.instruments){
+						@PanelRow("Instrument", instrument.getPath.split("/").last)
+					}
+					@for(height <- acquisition.samplingHeight){
+						@PanelRow("Sampling height", height.toString)
+					}
+				}
+			}
+
+			@for(production <- dobj.production){
+				@Panel("Production", 4){
+					@agentPanelRow("File made by", production.creator)
+					@for(contributor <- production.contributors){
+						@agentPanelRow("Contributor", contributor)
+					}
+					@for(host <- production.host){
+						@agentPanelRow("Host organization", host)
+					}
+					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
+					@for(comment <- production.comment){
+						@PanelRow("Comment", comment)
+					}
+				}
+			}
+
+			@Panel("Submission", 4){
+				@agentPanelRow("Submitted by", dobj.submission.submitter)
+				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
+				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Spatial coverage", 6){
+				@for(covText <- coverageText){
+					@PanelRow("Coverage", covText)
+				}
+
+				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+					<iframe src="/station/?icon=@icon&coverage=@geoJson"></iframe>
+				}
+			}
+		</div>
+
+@*** uncomment for debug ****
+		<div class="row">
+			<div class="col-md-12">
+				<label>Debug</label>
+				<pre>@printToJson(dobj)</pre>
+			</div>
+		</div>
+****************************@
+	</div>
+}
+
+@pageHeading(envri: Envri.Value) = @{
+	if(dobj.specification.project.uri === vocab.icosProject) {
+		"ICOS RI Data Object Landing Page"
+	}
+	else {
+		envri match {
+			case Envri.SITES => "SITES Data Object Landing Page"
+			case _ => "Data Object Landing Page at Carbon Portal"
+		}
+	}
+}
+
+@pageTitle = @{
+	dobj.specificInfo.left.toOption.map(_.title)
+		.getOrElse(dobj.fileName)
+}
+
+@resourceLink(res: UriResource) = {
+	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@versionLink(vers: Option[URI]) = {
+	@vers match{
+		case None => {
+			not available
+		}
+		case Some(uri) => {
+			<a href=@{uri}>available</a>
+		}
+	}
+}
+
+@resourcePanelRow(label: String, res: UriResource) = {
+	@PanelHtmlRow{@label}{
+		@resourceLink(res)
+	}
+}
+
+@agentLink(agent: Agent) = {
+	<a href=@{agent.self.uri.toString}>
+		@agent match {
+			case person: Person => {
+				<span>@{person.firstName + " " + person.lastName}</span>
+			}
+			case org: Organization => {
+				<span>@{org.name}</span>
+			}
+		}
+	</a>
+}
+
+@agentPanelRow(label: String, agent: Agent) = {
+	@PanelHtmlRow{@label}{
+		@agentLink(agent)
+	}
+}
+
+@icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
+@uploadComplete = @{dobj.submission.stop.isDefined}
+@summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
+
+@accessUrlRow = {
+	@PanelHtmlRow{Access URL}{
+		<span>
+			@dobj.accessUrl match {
+				case Some(url) => {
+					<a target="_blank" href="@url">@{dobj.fileName}</a>
+				}
+				case None => {
+					<span>Available on request</span>
+				}
+			}
+		</span>
+	}
+}
+
+@coverageText = @{
+	dobj.coverage match{
+		case None => None
+		case Some(_: GeoTrack) | Some(_: GenericGeoFeature) => None
+		case Some(geo) => Some(geo.textSpecification)
+	}
+}
+
+@metaDownloadButton(title: String, ext: String) = {
+	<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
+		@title
+	</a>
+}
+
+@template = @{
+	val spec = dobj.specification
+	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.uri === vocab.icosProject && spec.dataLevel == 1)
+		AtcLandingPage(pageTitle) _
+	else
+		ServerSidePage(pageTitle, pageHeading(envri), envri) _
+}

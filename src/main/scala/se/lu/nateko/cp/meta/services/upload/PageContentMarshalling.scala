@@ -16,20 +16,21 @@ import spray.json._
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
 import scala.concurrent.{ExecutionContext, Future}
+import se.lu.nateko.cp.meta.core.data.StaticObject
 
 class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
 	import PageContentMarshalling.{getHtml, getJson}
 
-	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[DataObject]] = {
+	implicit def dataObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticObject]] = {
 		import statisticsClient.executionContext
-		val template: DataObject => Future[Option[String] => Html] = dobj =>
+		val template: StaticObject => Future[Option[String] => Html] = obj =>
 			for(
-				dlCount <- statisticsClient.getDownloadCount(dobj.hash);
-				previewCount <- statisticsClient.getPreviewCount(dobj.hash)
+				dlCount <- statisticsClient.getDownloadCount(obj.hash);
+				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield (citOpt: Option[String]) => {
 				val extras = LandingPageExtras(citOpt, dlCount, previewCount)
-				LandingPage(dobj, extras, handleService, vocab)
+				LandingPage(obj, extras, handleService, vocab)
 			}
 		makeMarshaller(template, MessagePage("Data object not found", ""), _.doi)
 	}

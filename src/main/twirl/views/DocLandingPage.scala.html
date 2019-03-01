@@ -1,0 +1,145 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers._
+@import se.lu.nateko.cp.meta.views.LandingPageExtras
+@import java.net.URI
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.meta.utils.rdf4j._
+
+@(doc: DocObject, extras: LandingPageExtras, handleService: URI)(implicit envri: Envri.Value)
+@ServerSidePage(doc.fileName, pageHeading(envri), envri){
+	<div class="container-fluid">
+
+		<div class="row">
+			@Panel("Summary", 8, summaryStyleContext){
+				@if(uploadComplete) {
+					@PanelRow("Status - OK", "Upload complete.")
+				} else {
+					@PanelRow("Status - Not complete", "Metadata uploaded. Document not uploaded. No PID assigned.")
+				}
+				@DoiPanelHtmlRow(doc.doi)
+				@if(uploadComplete) {
+					@PanelHtmlRow{PID}{
+						@doc.pid match{
+							case None => {
+								<span>Not assigned</span>
+							}
+							case Some(pid) => {
+								<span>@{pid} (<a href=@{handleService.toString + pid}>link</a>)</span>
+							}
+						}
+					}
+					@accessUrlRow
+				}
+				@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion)}
+				@PanelHtmlRow{Next version}{@versionLink(doc.nextVersion)}
+				@for(coll <- doc.parentCollections){
+					@PanelHtmlRow{Part of}{
+						@resourceLink(coll)
+					}
+				}
+			}
+			@Panel("Metadata download", 4){
+				@metaDownloadButton("JSON", "json")
+				@metaDownloadButton("RDF/XML", "xml")
+				@metaDownloadButton("RDF/Turtle", "ttl")
+			}
+			@Panel("Download count", 2){
+				@extras.downloadStats.getOrElse("Not available")
+			}
+			@Panel("Preview count", 2){
+				Not applicable
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Content", 12){
+				@for(cit <- extras.citation){
+					@PanelRow("Citation", cit)
+				}
+				@PanelRow("File name", doc.fileName)
+				@for(size <- doc.size){
+					@PanelRow("Size in bytes", size.toString)
+				}
+				@PanelRow("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
+				@PanelRow("SHA-256 hashsum (base64)", doc.hash.base64)
+				@if(uploadComplete) {
+					@accessUrlRow
+				}
+			}
+		</div>
+
+		<div class="row">
+			@Panel("Submission", 4){
+				@agentPanelRow("Submitted by", doc.submission.submitter)
+				@PanelRow("Submission started (UTC)", doc.submission.start.getDateTimeStr)
+				@PanelRow("Submission ended (UTC)", doc.submission.stop.getDateTimeStr)
+			}
+		</div>
+
+	</div>
+}
+
+@pageHeading(envri: Envri.Value) = @{
+	envri match {
+		case Envri.SITES => "SITES Document Landing Page"
+		case _ => "Document Landing Page at Carbon Portal"
+	}
+}
+
+@resourceLink(res: UriResource) = {
+	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
+}
+
+@versionLink(vers: Option[URI]) = {
+	@vers match{
+		case None => {
+			not available
+		}
+		case Some(uri) => {
+			<a href=@{uri}>available</a>
+		}
+	}
+}
+
+@agentLink(agent: Agent) = {
+	<a href=@{agent.self.uri.toString}>
+		@agent match {
+			case person: Person => {
+				<span>@{person.firstName + " " + person.lastName}</span>
+			}
+			case org: Organization => {
+				<span>@{org.name}</span>
+			}
+		}
+	</a>
+}
+
+@agentPanelRow(label: String, agent: Agent) = {
+	@PanelHtmlRow{@label}{
+		@agentLink(agent)
+	}
+}
+
+@uploadComplete = @{doc.submission.stop.isDefined}
+@summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
+
+@accessUrlRow = {
+	@PanelHtmlRow{Access URL}{
+		<span>
+			@doc.accessUrl match {
+				case Some(url) => {
+					<a target="_blank" href="@url">@{doc.fileName}</a>
+				}
+				case None => {
+					<span>Not available (yet)</span>
+				}
+			}
+		</span>
+	}
+}
+
+@metaDownloadButton(title: String, ext: String) = {
+	<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${doc.hash.id}/${doc.fileName}.$ext"}>
+		@title
+	</a>
+}

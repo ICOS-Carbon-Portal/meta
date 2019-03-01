@@ -19,12 +19,12 @@ class DataObjectFetcher(
 	pidFactory: HandleNetClient.PidFactory
 ) extends CpmetaFetcher {
 
-	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
+	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		val dataObjUri = vocab.getStaticObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
-//		else if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
-//			Some(getExistingDocumentObject(hash))
+		else if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
+			Some(getExistingDocumentObject(hash))
 		else None
 	}
 
@@ -60,9 +60,9 @@ class DataObjectFetcher(
 		)
 	}
 
-//	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
-//		???
-//	}
+	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
+		???
+	}
 
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))

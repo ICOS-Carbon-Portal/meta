@@ -102,6 +102,23 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val dataObjectFormat = jsonFormat12(DataObject)
+	implicit val docObjectFormat = jsonFormat10(DocObject)
+
+	implicit object staticObjectFormat extends RootJsonFormat[StaticObject]{
+		override def read(value: JsValue): StaticObject = value match {
+			case JsObject(fields)  =>
+				if(fields.contains("specification"))
+					value.convertTo[DataObject]
+				else
+					value.convertTo[DocObject]
+			case _ =>
+				deserializationError("Expected JS object representing a data/doc object")
+		}
+		override def write(so: StaticObject): JsValue = so match{
+			case dobj: DataObject => dobj.toJson
+			case doc: DocObject => doc.toJson
+		}
+	}
 
 	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
 

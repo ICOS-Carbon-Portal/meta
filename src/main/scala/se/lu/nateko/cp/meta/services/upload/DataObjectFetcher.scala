@@ -34,7 +34,6 @@ class DataObjectFetcher(
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
 			.map(getDataProduction)
 
-		val fileName = getSingleString(dobj, metaVocab.hasName)
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
 		val spec = getSpecification(specIri)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
@@ -47,7 +46,7 @@ class DataObjectFetcher(
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
 			accessUrl = getAccessUrl(hash, spec),
-			fileName = fileName,
+			fileName = getSingleString(dobj, metaVocab.hasName),
 			size = getOptionalLong(dobj, metaVocab.hasSizeInBytes),
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
 			doi = getOptionalString(dobj, metaVocab.hasDoi),
@@ -61,7 +60,20 @@ class DataObjectFetcher(
 	}
 
 	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
-		???
+		val doc = vocab.getStaticObject(hash)
+		val submission = getSubmission(getSingleUri(doc, metaVocab.wasSubmittedBy))
+		DocObject(
+			hash = getHashsum(doc, metaVocab.hasSha256sum),
+			accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
+			fileName = getSingleString(doc, metaVocab.hasName),
+			size = getOptionalLong(doc, metaVocab.hasSizeInBytes),
+			pid = submission.stop.map(_ => pidFactory.getPid(hash)),
+			doi = getOptionalString(doc, metaVocab.hasDoi),
+			submission = submission,
+			nextVersion = getNextVersion(doc),
+			previousVersion = getPreviousVersion(doc),
+			parentCollections = collFetcher.getParentCollections(doc)
+		)
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {

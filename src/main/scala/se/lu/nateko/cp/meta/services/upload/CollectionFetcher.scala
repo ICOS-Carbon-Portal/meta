@@ -64,10 +64,10 @@ class CollectionFetcher(
 
 		val members = server.getUriValues(coll, memberProp).map{item =>
 			if(collectionExists(item)) getExistingStaticColl(item)
-			else dobjFetcher.getPlainDataObject(item)
+			else dobjFetcher.getPlainStaticObject(item)
 		}.sortBy(_ match{
 			case coll: StaticCollection => coll.title
-			case dobj: PlainDataObject => dobj.name
+			case dobj: PlainStaticObject => dobj.name
 		})
 
 		StaticCollection(

@@ -8,29 +8,28 @@ import scala.util.Try
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.{ StaticCollectionDto, SubmitterProfile, UploadMetadataDto, UploadServiceConfig }
+import se.lu.nateko.cp.meta.{ ObjectUploadDto, StaticCollectionDto, SubmitterProfile, UploadServiceConfig }
+import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
 
 class UploadService(
-		val servers: DataObjectInstanceServers,
-		sparql: SparqlRunner,
-		etcHelper: EtcUploadTransformer,
-		conf: UploadServiceConfig
+	val servers: DataObjectInstanceServers,
+	sparql: SparqlRunner,
+	etcHelper: EtcUploadTransformer,
+	conf: UploadServiceConfig
 )(implicit system: ActorSystem, mat: Materializer) {
 
 	import servers.{ metaVocab, vocab }
@@ -40,28 +39,33 @@ class UploadService(
 	private val validator = new UploadValidator(servers, conf)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
-	private val metaUpdater = new DobjMetadataUpdater(vocab, metaVocab, sparql)
+	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab, sparql)
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
 
-	def registerUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
+	def registerUpload(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Future[URI] = {
 		val submitterOrgUriTry = for(
-			_ <- validator.validateUpload(meta, uploader);
-			submitterConf <- validator.getSubmitterConfig(meta.submitterId)
+			_ <- validator.validateObject(meta, uploader);
+			submitterConf <- validator.getSubmitterConfig(meta)
 		) yield submitterConf.submittingOrganization
 
 		for(
 			submitterOrg <- Future.fromTry(submitterOrgUriTry);
-			res <- registerUpload(meta, submitterOrg)
-		) yield res
+			accessUri <- meta match {
+				case dobj: DataObjectDto =>
+					registerDataObjUpload(dobj, submitterOrg)
+				case _: DocObjectDto =>
+					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
+			}
+		) yield accessUri
 	}
 
-	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[String] = {
+	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[URI] = {
 		implicit val envri = Envri.ICOS
 		for(
 			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
-			response <- registerUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
-		) yield response
+			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
+		) yield accessUri
 	}
 
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
@@ -86,7 +90,7 @@ class UploadService(
 			collHash <- collHashTry;
 			server <- Try{servers.collectionServers(envri)};
 			_ <- validator.validateCollection(coll, collHash, uploader);
-			submitterConf <- validator.getSubmitterConfig(coll.submitterId);
+			submitterConf <- validator.getSubmitterConfig(coll);
 			submittingOrg = submitterConf.submittingOrganization;
 			collIri = vocab.getCollection(collHash);
 			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg);
@@ -98,23 +102,25 @@ class UploadService(
 		Future.fromTry(resTry)
 	}
 
-	private def registerUpload(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Future[String] = {
-		def serverTry = for(
+	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[URI] = {
+		val serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
 		) yield server
 
-		for(
-			_ <- Future.fromTry(validator.submitterAndFormatAreSameIfObjectNotNew(meta, submittingOrg));
-			server <- Future.fromTry(serverTry);
-			newStatements = statementProd.getStatements(meta, submittingOrg);
-			currentStatements <- metaUpdater.getCurrentStatements(meta.hashSum, server);
-			updates = metaUpdater.calculateUpdates(meta.hashSum, currentStatements, newStatements);
-			_ <- Future.fromTry(server.applyAll(updates))
-		) yield{
-			vocab.getDataObjectAccessUrl(meta.hashSum).toString
-		}
+		registerObjUpload(meta, serverTry, submittingOrg)
 	}
+
+	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(implicit envri: Envri): Future[URI] =
+		for(
+			server <- Future.fromTry(serverTry);
+			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
+			newStatements = statementProd.getObjStatements(dto, submittingOrg);
+			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
+			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements);
+			_ <- Future.fromTry(server.applyAll(updates))
+		) yield
+			vocab.getStaticObjectAccessUrl(dto.hashSum)
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
 		conf.submitters(envri).values

@@ -38,7 +38,7 @@ private class TimeSeriesUploadCompleter(
 		case SpatialTimeSeriesUploadCompletion(ingestionExtract, spatial) => Future{
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
-			val objUri = vocab.getDataObject(hash)
+			val objUri = vocab.getStaticObject(hash)
 			val oldCovs = server.getStatements(Some(objUri), Some(metaVocab.hasSpatialCoverage), None).toIndexedSeq
 
 			val olds = oldCovs ++ oldCovs.collect{
@@ -58,7 +58,7 @@ private class TimeSeriesUploadCompleter(
 	}
 
 	private def tabularExtractUpdates(hash: Sha256Sum, extract: TabularIngestionExtract): Seq[RdfUpdate] = {
-		val objUri = vocab.getDataObject(hash)
+		val objUri = vocab.getStaticObject(hash)
 
 		val olds = server.getStatements(Some(objUri), Some(metaVocab.hasActualColumnNames), None).toIndexedSeq
 
@@ -86,7 +86,7 @@ private class TimeSeriesUploadCompleter(
 	private def nRowsUpdates(hash: Sha256Sum, rowsInfo: Option[Int]): Seq[RdfUpdate] = rowsInfo match {
 		case None => Nil
 		case Some(nRows) =>
-			val objUri = vocab.getDataObject(hash)
+			val objUri = vocab.getStaticObject(hash)
 			val news = Seq(factory.createStatement(objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows)))
 			val olds = server.getStatements(Some(objUri), Some(metaVocab.hasNumberOfRows), None).toIndexedSeq
 			MetadataUpdater.diff(olds, news, factory)

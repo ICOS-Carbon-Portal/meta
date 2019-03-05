@@ -189,12 +189,16 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 				factory.createIRI(servDef.format) -> instanceServers(servDef.label)
 			}.toMap
 
+		val docInstServs = config.dataUploadService.documentServers.map{case (envri, servId) =>
+			envri -> instanceServers(servId)
+		}
+
 		val uploadConf = config.dataUploadService
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc)
 		implicit val _ = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, allDataObjInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}

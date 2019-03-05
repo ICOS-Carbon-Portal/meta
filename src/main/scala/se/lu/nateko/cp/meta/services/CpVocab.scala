@@ -54,10 +54,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)(icosBup)
 
-	def getDataObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}objects/", hash.id)
+	def getStaticObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}objects/", hash.id)
 	def getCollection(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}collections/", hash.id)
 
-	def getDataObjectAccessUrl(hash: Sha256Sum)(implicit envri: Envri) = new URI(s"${getConfig.dataPrefix}objects/${hash.id}")
+	def getStaticObjectAccessUrl(hash: Sha256Sum)(implicit envri: Envri) = new URI(s"${getConfig.dataPrefix}objects/${hash.id}")
 
 	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelative(AcqPrefix + hash.id)
 	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative(ProdPrefix + hash.id)

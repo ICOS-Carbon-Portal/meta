@@ -6,8 +6,18 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data._
 
+sealed trait UploadDto{
+	def submitterId: String
+	def isNextVersionOf: Option[Sha256Sum]
+	def preExistingDoi: Option[String]
+}
 
-case class UploadMetadataDto(
+sealed trait ObjectUploadDto extends UploadDto {
+	def hashSum: Sha256Sum
+	def fileName: String
+}
+
+case class DataObjectDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	objectSpecification: URI,
@@ -15,7 +25,16 @@ case class UploadMetadataDto(
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
 	isNextVersionOf: Option[Sha256Sum],
 	preExistingDoi: Option[String]
-)
+) extends ObjectUploadDto
+
+case class DocObjectDto(
+	hashSum: Sha256Sum,
+	submitterId: String,
+	fileName: String,
+	isNextVersionOf: Option[Sha256Sum],
+	preExistingDoi: Option[String]
+) extends ObjectUploadDto
+
 
 case class StaticCollectionDto(
 	submitterId: String,
@@ -24,7 +43,7 @@ case class StaticCollectionDto(
 	description: Option[String],
 	isNextVersionOf: Option[Sha256Sum],
 	preExistingDoi: Option[String]
-)
+) extends UploadDto
 
 case class StationDataMetadata(
 	station: URI,

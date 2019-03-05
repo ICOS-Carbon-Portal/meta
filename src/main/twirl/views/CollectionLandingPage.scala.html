@@ -1,7 +1,7 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
-@import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import landpagesnips._
 
 @(coll: StaticCollection, citation: Option[String])(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.default){
@@ -40,33 +40,9 @@
 	</div>
 }
 
-@agentLink(agent: Agent) = {
-	<a href=@{agent.self.uri}>
-		@agent match {
-			case person: Person => {
-				<span>@{person.firstName + " " + person.lastName}</span>
-			}
-			case org: Organization => {
-				<span>@{org.name}</span>
-			}
-		}
-	</a>
-}
-
-@versionLink(vers: Option[URI]) = {
-	@vers match{
-		case None => {
-			not available
-		}
-		case Some(uri) => {
-			<a href=@{uri}>available</a>
-		}
-	}
-}
-
 @staticDataItemLink(item: StaticDataItem) = {
 	@item match {
-		case PlainDataObject(res, _, name) => {
+		case PlainStaticObject(res, _, name) => {
 			<a target="_blank" href=@{res}>@{name}</a>
 		}
 		case coll: StaticCollection => {
@@ -79,7 +55,7 @@
 	import akka.http.scaladsl.model.Uri
 
 	def objHashes(coll: StaticCollection): Seq[String] = coll.members.flatMap{
-		case PlainDataObject(_, hash, _) => Seq(hash.id)
+		case PlainStaticObject(_, hash, _) => Seq(hash.id)
 		case inner: StaticCollection => objHashes(inner)
 	}
 	val objList = objHashes(coll).mkString("[\"", "\",\"", "\"]")

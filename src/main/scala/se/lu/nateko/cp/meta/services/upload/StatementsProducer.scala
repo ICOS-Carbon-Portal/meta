@@ -10,29 +10,55 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
+import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DataProductionDto
+import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import se.lu.nateko.cp.meta.ObjectUploadDto
+import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationDataMetadata
-import se.lu.nateko.cp.meta.UploadMetadataDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private implicit val factory = vocab.factory
 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
-	def getStatements(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
+	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
+		import meta.hashSum
+
+		val objectUri = vocab.getStaticObject(hashSum)
+		val submissionUri = vocab.getSubmission(hashSum)
+
+		val specificStatements = meta match {
+			case dobj: DataObjectDto => getDobjStatements(dobj)
+			case _: DocObjectDto => Seq(
+				makeSt(objectUri, RDF.TYPE, metaVocab.docObjectClass)
+			)
+		}
+
+		specificStatements ++ Seq(
+			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
+			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XMLSchema.BASE64BINARY)),
+			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
+			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
+			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
+			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
+		) ++
+			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getStaticObject)) ++
+			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(vocab.lit))
+	}
+
+	private def getDobjStatements(meta: DataObjectDto)(implicit envri: Envri): Seq[Statement] = {
 		import meta.{ hashSum, objectSpecification }
 
-		val objectUri = vocab.getDataObject(hashSum)
-		val submissionUri = vocab.getSubmission(hashSum)
+		val objectUri = vocab.getStaticObject(hashSum)
 
 		val specificStatements = meta.specificInfo.fold(
 			elProd => getElaboratedProductStatements(hashSum, elProd),
@@ -40,17 +66,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		)
 
 		specificStatements ++ Seq(
-			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
-			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XMLSchema.BASE64BINARY)),
 			makeSt(objectUri, metaVocab.hasObjectSpec, objectSpecification.toRdf),
-			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
-			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
-			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
-			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
-		) ++
-			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getDataObject)) ++
-			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(vocab.lit))
+		)
 	}
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
@@ -69,7 +87,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	}
 
 	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(implicit envri: Envri): Seq[Statement] = {
-		val objectUri = vocab.getDataObject(hash)
+		val objectUri = vocab.getStaticObject(hash)
 		val covUri = vocab.getSpatialCoverage(hash)
 
 		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
@@ -90,7 +108,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	}
 
 	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata)(implicit envri: Envri): Seq[Statement] = {
-		val objUri = vocab.getDataObject(hash)
+		val objUri = vocab.getStaticObject(hash)
 		Seq(
 			makeSt(objUri, metaVocab.dcterms.title, vocab.lit(meta.title)),
 			makeSt(objUri, metaVocab.hasStartTime, vocab.lit(meta.temporal.interval.start)),
@@ -106,7 +124,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	}
 
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata)(implicit envri: Envri): Seq[Statement] = {
-		val objectUri = vocab.getDataObject(hash)
+		val objectUri = vocab.getStaticObject(hash)
 		val aquisitionUri = vocab.getAcquisition(hash)
 		val acqStart = meta.acquisitionInterval.map(_.start)
 		val acqStop = meta.acquisitionInterval.map(_.stop)
@@ -126,7 +144,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(implicit envri: Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
-		val objectUri = vocab.getDataObject(hash)
+		val objectUri = vocab.getStaticObject(hash)
 		Seq(
 			makeSt(objectUri, metaVocab.wasProducedBy, productionUri),
 			makeSt(productionUri, RDF.TYPE, metaVocab.productionClass),
@@ -150,7 +168,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
 				 *  by this object any more; it may be needed by others)
 				 */
-				val objectUri = vocab.getDataObject(hash)
+				val objectUri = vocab.getStaticObject(hash)
 				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing.toRdf))
 		}
 	}

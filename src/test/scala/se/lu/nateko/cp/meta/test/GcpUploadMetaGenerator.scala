@@ -9,7 +9,7 @@ import scala.io.Source
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
 import se.lu.nateko.cp.meta.core.data.Envri
@@ -35,7 +35,7 @@ object GcpUploadMetaGenerator extends CpmetaJsonProtocol {
 		val inJsonText = Source.fromFile(folder + inFile).getLines().mkString("\n")
 		import spray.json._
 
-		val oldMeta = inJsonText.parseJson.convertTo[UploadMetadataDto]
+		val oldMeta = inJsonText.parseJson.convertTo[DataObjectDto]
 
 		val newMeta = oldMeta.copy(
 			specificInfo = oldMeta.specificInfo.left.map(

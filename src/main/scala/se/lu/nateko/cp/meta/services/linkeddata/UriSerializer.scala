@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.core.data.JsonSupport.stationFormat
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
-import se.lu.nateko.cp.meta.services.upload.{DataObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
+import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -65,12 +65,12 @@ class Rdf4jUriSerializer(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
 
-	private def fetchDataObj(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
+	private def fetchStaticObj(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		import servers.vocab
 		for(
-			server <- servers.getInstServerForDataObj(hash).toOption;
+			server <- servers.getInstServerForStaticObj(hash).toOption;
 			collFetcher <- servers.collFetcher;
-			objectFetcher = new DataObjectFetcher(server, vocab, collFetcher, pidFactory);
+			objectFetcher = new StaticObjectFetcher(server, vocab, collFetcher, pidFactory);
 			dobj <- objectFetcher.fetch(hash)
 		) yield dobj
 	}
@@ -94,7 +94,7 @@ class Rdf4jUriSerializer(
 
 	private def getReprOptions(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig): RepresentationOptions = uri.path match {
 		case Hash.Object(hash) =>
-			new DelegatingRepr(() => fetchDataObj(hash))
+			new DelegatingRepr(() => fetchStaticObj(hash))
 		case Hash.Collection(hash) =>
 			new DelegatingRepr(() => fetchStaticColl(hash))
 		case Slash(Segment("resources", Slash(Segment("stations", stId)))) =>

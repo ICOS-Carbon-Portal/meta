@@ -9,7 +9,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -23,13 +23,14 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Success
+import se.lu.nateko.cp.meta.DataObjectDto
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config)
 	private implicit val envri = Envri.ICOS
 
-	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[UploadMetadataDto] = {
+	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[DataObjectDto] = {
 
 		def getAcquisitionInterval(offset: Int) = {
 			def getInstant(dt: LocalDateTime) = dt.atOffset(ZoneOffset.ofHours(offset)).toInstant
@@ -41,7 +42,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 			fileMeta <- getFileMeta(meta);
 			specUriSegment = getObjSpecUrlSegment(fileMeta);
 			objSpec = vocab.getObjectSpecification(specUriSegment)
-		) yield UploadMetadataDto(
+		) yield DataObjectDto(
 			hashSum = meta.hashSum,
 			submitterId = "dummy", //will not be used
 			objectSpecification = objSpec.toJava,

@@ -38,7 +38,7 @@ private class WdcggUploadCompleter(
 		val WdcggUploadCompletion(ingestionExtract, nRows, keyValues) = result
 		val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 
-		val objUri = vocab.getDataObject(hash)
+		val objUri = vocab.getStaticObject(hash)
 		facts += ((objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows.toLong)))
 
 		val acquisitionUri = vocab.getAcquisition(hash)
@@ -64,7 +64,7 @@ private class WdcggUploadCompleter(
 	}
 
 	def finalize(hash: Sha256Sum): Future[Report] = Future.successful(
-		Report(vocab.getDataObject(hash).stringValue)
+		Report(vocab.getStaticObject(hash).stringValue)
 	)
 
 	private def getStationFacts(station: IRI, keyValues: Map[String, String]): Seq[(IRI, IRI, Value)] = {

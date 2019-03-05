@@ -11,9 +11,12 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import akka.NotUsed
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DataSubmitterConfig
+import se.lu.nateko.cp.meta.DocObjectDto
+import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.UploadMetadataDto
+import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
@@ -29,31 +32,59 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 	private [this] val ok: Try[NotUsed] = Success(NotUsed)
 
-	def validateUpload(meta: UploadMetadataDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
-		submConf <- getSubmitterConfig(meta.submitterId);
+	def validateObject(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = meta match {
+		case dobj: DataObjectDto => validateDobj(dobj, uploader)
+		case doc: DocObjectDto => validateDoc(doc, uploader)
+	}
+
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
+		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec, submConf);
-		_ <- validatePreviousVersion(meta.hashSum, meta.isNextVersionOf, spec)
+		_ <- validatePrevVers(meta, servers.getInstServerForFormat(spec.format.uri.toRdf))
+	) yield NotUsed
+
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
+		submConf <- getSubmitterConfig(meta);
+		_ <- userAuthorizedBySubmitter(submConf, uploader);
+		_ <- validatePrevVers(meta, servers.getDocInstServer)
 	) yield NotUsed
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
-		submConf <- getSubmitterConfig(coll.submitterId);
+		submConf <- getSubmitterConfig(coll);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- submitterAuthorizedByCollectionCreator(submConf, hash);
 		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf)
 	) yield NotUsed
 
-	def getSubmitterConfig(submitterId: String)(implicit envri: Envri): Try[DataSubmitterConfig] = {
-		conf.submitters(envri).get(submitterId) match {
-			case None => userFail(s"Unknown submitter: $submitterId")
+	def getSubmitterConfig(dto: UploadDto)(implicit envri: Envri): Try[DataSubmitterConfig] = {
+		conf.submitters(envri).get(dto.submitterId) match {
+			case None => userFail(s"Unknown submitter: ${dto.submitterId}")
 			case Some(conf) => Success(conf)
 		}
 	}
 
-	def submitterAndFormatAreSameIfObjectNotNew(meta: UploadMetadataDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
+	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+		objectKindSameIfNotNew(dto).flatMap(_ => dto match {
+			case dobj: DataObjectDto => submitterAndFormatAreSameIfObjectNotNew(dobj, submittingOrg)
+			case _: DocObjectDto => submitterIsSameIfObjNotNew(dto, submittingOrg)
+		})
+
+	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(implicit envri: Envri): Try[NotUsed] = dto match{
+		case _: DataObjectDto =>
+			if(servers.isExistingDocument(dto.hashSum))
+				userFail("Cannot accept data object upload as there is already a document object with id " + dto.hashSum.id)
+			else Success(NotUsed)
+		case _: DocObjectDto =>
+			if(servers.isExistingDataObject(dto.hashSum))
+				userFail("Cannot accept document object upload as there is already a data object with id " + dto.hashSum.id)
+			else Success(NotUsed)
+	}
+
+	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
 		val formatValidation: Try[NotUsed] = (
 			for(
 				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
@@ -64,14 +95,15 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				)
 		).getOrElse(ok)
 
-		formatValidation.flatMap{_ =>
-			servers.getDataObjSubmitter(meta.hashSum).map{subm =>
-				if(subm === submittingOrg) ok else authFail(
-					s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
-				)
-			}.getOrElse(ok)
-		}
+		formatValidation.flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
 	}
+
+	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+		servers.getObjSubmitter(dto).map{subm =>
+			if(subm === submittingOrg) ok else authFail(
+				s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
+			)
+		}.getOrElse(ok)
 
 	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[NotUsed] = {
 		val userId = uploader.email
@@ -102,7 +134,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			}
 	}
 
-	private def userAuthorizedByProducer(meta: UploadMetadataDto, submConf: DataSubmitterConfig)(implicit envri: Envri): Try[Unit] = Try{
+	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig)(implicit envri: Envri): Try[Unit] = Try{
 		val producer = meta.specificInfo.fold(
 			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
 			_.station
@@ -122,7 +154,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	private def validateForFormat(meta: UploadMetadataDto, spec: DataObjectSpec, subm: DataSubmitterConfig): Try[NotUsed] = {
+	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
@@ -159,29 +191,27 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
-	private def validatePreviousVersion(self: Sha256Sum, prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri): Try[NotUsed] = {
-
-		prevVers match{
+	private def validatePrevVers(dto: ObjectUploadDto, getInstServ: => Try[InstanceServer])(implicit envri: Envri): Try[NotUsed] =
+		dto.isNextVersionOf match{
 			case None => ok
 			case Some(prevHash) =>
-				if(prevHash == self)
-					userFail("Data object cannot be a next version of itself")
+				if(prevHash == dto.hashSum)
+					userFail("Data/doc object cannot be a next version of itself")
 
-				else servers.getInstServerForFormat(spec.format.uri.toRdf).flatMap{ server =>
-					val dobj = servers.vocab.getDataObject(prevHash)
+				else getInstServ.flatMap{ server =>
+					val dobj = servers.vocab.getStaticObject(prevHash)
 
 					hasCompletedDeprecator(server, dobj) match{
 						case Some(depr) =>
-							userFail(s"Data object $dobj has already been deprecated by $depr; deprecate the latter instead.")
+							userFail(s"Data/doc object $dobj has already been deprecated by $depr; deprecate the latter instead.")
 						case None =>
 							if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
 								ok
 							else
-								userFail(s"Previous-version data object was not found: $dobj")
+								userFail(s"Previous-version data/doc object was not found: $dobj")
 					}
 				}
 		}
-	}
 
 	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Option[IRI] = {
 
@@ -203,7 +233,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				userFail(s"Previous-version collection was not found: $coll")
 		}.getOrElse(ok)
 
-		private def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
-		private def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
+	private def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
+	private def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 }
 

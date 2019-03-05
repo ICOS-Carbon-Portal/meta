@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, UploadMetadataDto}
+import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import Utils._
 
 class Form(
-	onUpload: (UploadMetadataDto, dom.File) => Unit,
+	onUpload: (DataObjectDto, dom.File) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
@@ -69,7 +69,7 @@ class Form(
 	val instrUriInput = new UriOptInput("instrumenturi", updateButton)
 
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput, levelControl)
-	def dto: Try[UploadMetadataDto] = for(
+	def dto: Try[DataObjectDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
@@ -80,7 +80,7 @@ class Form(
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
 		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI")
-	) yield UploadMetadataDto(
+	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
 		objectSpecification = objSpec.uri,

@@ -102,23 +102,40 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val dataObjectFormat = jsonFormat12(DataObject)
+	implicit val docObjectFormat = jsonFormat10(DocObject)
 
-	implicit val plainDataObjectFormat = jsonFormat3(PlainDataObject)
+	implicit object staticObjectFormat extends RootJsonFormat[StaticObject]{
+		override def read(value: JsValue): StaticObject = value match {
+			case JsObject(fields)  =>
+				if(fields.contains("specification"))
+					value.convertTo[DataObject]
+				else
+					value.convertTo[DocObject]
+			case _ =>
+				deserializationError("Expected JS object representing a data/doc object")
+		}
+		override def write(so: StaticObject): JsValue = so match{
+			case dobj: DataObject => dobj.toJson
+			case doc: DocObject => doc.toJson
+		}
+	}
+
+	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
 
 	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
 		implicit val statCollFormat = jsonFormat8(StaticCollection)
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
-			case pdo: PlainDataObject => pdo.toJson
+			case pdo: PlainStaticObject => pdo.toJson
 			case sc: StaticCollection => sc.toJson
 		}
 
 		def read(value: JsValue): StaticDataItem = value match {
 			case JsObject(fields) =>
-				if(fields.contains("dobj"))
+				if(fields.contains("title"))
 					value.convertTo[StaticCollection]
 				else
-					value.convertTo[PlainDataObject]
+					value.convertTo[PlainStaticObject]
 			case _ =>
 				deserializationError("Expected JS object representing static collection or a plain data object")
 		}

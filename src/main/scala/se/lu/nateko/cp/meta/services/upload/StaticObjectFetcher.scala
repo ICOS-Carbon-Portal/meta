@@ -12,27 +12,28 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
-class DataObjectFetcher(
+class StaticObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,
 	pidFactory: HandleNetClient.PidFactory
 ) extends CpmetaFetcher {
 
-	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[DataObject] = {
-		val dataObjUri = vocab.getDataObject(hash)
+	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
+		val dataObjUri = vocab.getStaticObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
+		else if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
+			Some(getExistingDocumentObject(hash))
 		else None
 	}
 
 	private def getExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): DataObject = {
-		val dobj = vocab.getDataObject(hash)
+		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
 			.map(getDataProduction)
 
-		val fileName = getSingleString(dobj, metaVocab.hasName)
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
 		val spec = getSpecification(specIri)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
@@ -45,7 +46,7 @@ class DataObjectFetcher(
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
 			accessUrl = getAccessUrl(hash, spec),
-			fileName = fileName,
+			fileName = getSingleString(dobj, metaVocab.hasName),
 			size = getOptionalLong(dobj, metaVocab.hasSizeInBytes),
 			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
 			doi = getOptionalString(dobj, metaVocab.hasDoi),
@@ -58,6 +59,23 @@ class DataObjectFetcher(
 		)
 	}
 
+	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
+		val doc = vocab.getStaticObject(hash)
+		val submission = getSubmission(getSingleUri(doc, metaVocab.wasSubmittedBy))
+		DocObject(
+			hash = getHashsum(doc, metaVocab.hasSha256sum),
+			accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
+			fileName = getSingleString(doc, metaVocab.hasName),
+			size = getOptionalLong(doc, metaVocab.hasSizeInBytes),
+			pid = submission.stop.map(_ => pidFactory.getPid(hash)),
+			doi = getOptionalString(doc, metaVocab.hasDoi),
+			submission = submission,
+			nextVersion = getNextVersion(doc),
+			previousVersion = getPreviousVersion(doc),
+			parentCollections = collFetcher.getParentCollections(doc)
+		)
+	}
+
 	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 	}
@@ -67,10 +85,10 @@ class DataObjectFetcher(
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new URI("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
 		else {
-			val dobj = vocab.getDataObject(hash)
+			val dobj = vocab.getStaticObject(hash)
 			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(
 				if(spec.dataLevel < 1) None
-				else Some(vocab.getDataObjectAccessUrl(hash))
+				else Some(vocab.getStaticObjectAccessUrl(hash))
 			)
 		}
 	}

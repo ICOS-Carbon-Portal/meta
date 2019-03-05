@@ -1,0 +1,16 @@
+@import se.lu.nateko.cp.meta.core.data.StaticObject
+@import views.html.PanelHtmlRow
+
+@(obj: StaticObject)
+@PanelHtmlRow{Access URL}{
+	<span>
+		@obj.accessUrl match {
+			case Some(url) => {
+				<a target="_blank" href="@url">@{obj.fileName}</a>
+			}
+			case None => {
+				<span>Available on request</span>
+			}
+		}
+	</span>
+}

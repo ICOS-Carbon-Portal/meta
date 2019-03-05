@@ -1,0 +1,11 @@
+@import java.net.URI
+
+@(vers: Option[URI])
+@vers match{
+	case None => {
+		not available
+	}
+	case Some(uri) => {
+		<a href=@{uri}>available</a>
+	}
+}

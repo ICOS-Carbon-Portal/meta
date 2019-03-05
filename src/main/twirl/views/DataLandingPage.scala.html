@@ -1,10 +1,11 @@
+@import java.net.URI
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
-@import java.net.URI
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j._
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import landpagesnips._
 
 @(dobj: DataObject, extras: LandingPageExtras, handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
 @template{
@@ -29,7 +30,7 @@
 							}
 						}
 					}
-					@accessUrlRow
+					@accessUrlRow(dobj)
 				}
 				@resourcePanelRow("Data affiliation", dobj.specification.project)
 				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
@@ -39,9 +40,9 @@
 				}
 			}
 			@Panel("Metadata download", 4){
-				@metaDownloadButton("JSON", "json")
-				@metaDownloadButton("RDF/XML", "xml")
-				@metaDownloadButton("RDF/Turtle", "ttl")
+				@metaDownloadButton(dobj, "JSON", "json")
+				@metaDownloadButton(dobj, "RDF/XML", "xml")
+				@metaDownloadButton(dobj, "RDF/Turtle", "ttl")
 			}
 			@Panel("Download count", 2){
 				@extras.downloadStats.getOrElse("Not available")
@@ -78,7 +79,7 @@
 				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
 				@if(uploadComplete) {
-					@accessUrlRow
+					@accessUrlRow(dobj)
 				}
 			}
 		</div>
@@ -147,7 +148,7 @@
 	</div>
 }
 
-@pageHeading(envri: Envri.Value) = @{
+@pageHeading = @{
 	if(dobj.specification.project.uri === vocab.icosProject) {
 		"ICOS RI Data Object Landing Page"
 	}
@@ -164,38 +165,10 @@
 		.getOrElse(dobj.fileName)
 }
 
-@resourceLink(res: UriResource) = {
-	<a href=@{res.uri.toString}>@{res.label.getOrElse(res.uri.toString)}</a>
-}
-
-@versionLink(vers: Option[URI]) = {
-	@vers match{
-		case None => {
-			not available
-		}
-		case Some(uri) => {
-			<a href=@{uri}>available</a>
-		}
-	}
-}
-
 @resourcePanelRow(label: String, res: UriResource) = {
 	@PanelHtmlRow{@label}{
 		@resourceLink(res)
 	}
-}
-
-@agentLink(agent: Agent) = {
-	<a href=@{agent.self.uri.toString}>
-		@agent match {
-			case person: Person => {
-				<span>@{person.firstName + " " + person.lastName}</span>
-			}
-			case org: Organization => {
-				<span>@{org.name}</span>
-			}
-		}
-	</a>
 }
 
 @agentPanelRow(label: String, agent: Agent) = {
@@ -208,21 +181,6 @@
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
-@accessUrlRow = {
-	@PanelHtmlRow{Access URL}{
-		<span>
-			@dobj.accessUrl match {
-				case Some(url) => {
-					<a target="_blank" href="@url">@{dobj.fileName}</a>
-				}
-				case None => {
-					<span>Available on request</span>
-				}
-			}
-		</span>
-	}
-}
-
 @coverageText = @{
 	dobj.coverage match{
 		case None => None
@@ -231,16 +189,10 @@
 	}
 }
 
-@metaDownloadButton(title: String, ext: String) = {
-	<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${dobj.hash.id}/${dobj.fileName}.$ext"}>
-		@title
-	</a>
-}
-
 @template = @{
 	val spec = dobj.specification
 	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.uri === vocab.icosProject && spec.dataLevel == 1)
 		AtcLandingPage(pageTitle) _
 	else
-		ServerSidePage(pageTitle, pageHeading(envri), envri) _
+		ServerSidePage(pageTitle, pageHeading, envri) _
 }

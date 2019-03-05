@@ -1,0 +1,13 @@
+@import se.lu.nateko.cp.meta.core.data.{Agent, Organization, Person}
+
+@(agent: Agent)
+<a href=@{agent.self.uri.toString}>
+	@agent match {
+		case person: Person => {
+			<span>@{person.firstName + " " + person.lastName}</span>
+		}
+		case org: Organization => {
+			<span>@{org.name}</span>
+		}
+	}
+</a>

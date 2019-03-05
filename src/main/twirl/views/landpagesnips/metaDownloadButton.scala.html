@@ -1,0 +1,6 @@
+@import se.lu.nateko.cp.meta.core.data.StaticObject
+
+@(obj: StaticObject, title: String, ext: String)
+<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${obj.hash.id}/${obj.fileName}.$ext"}>
+	@title
+</a>

@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
-class DataObjectFetcher(
+class StaticObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,

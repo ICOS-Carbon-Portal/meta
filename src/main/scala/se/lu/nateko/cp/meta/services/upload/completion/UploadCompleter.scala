@@ -38,11 +38,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 		hash: Sha256Sum,
 		ingestionResult: Option[IngestionMetadataExtract]
 	)(implicit envri: Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
-		for(
-			objSpec <- servers.getDataObjSpecification(hash);
-			format <- servers.getObjSpecificationFormat(objSpec);
-			server <- servers.getInstServerForFormat(format)
-		) yield {
+		servers.getInstServerForStaticObj(hash).map{server =>
 			val completer = ingestionResult match{
 				case None =>
 					new PidMinter(handles, vocab)

@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils._
+import scala.util.Success
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],
@@ -63,7 +64,30 @@ class DataObjectInstanceServers(
 		new UploadUserErrorException(s"Format '$format' has no instance server configured for it")
 	}
 
-	def getInstServerForDataObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] =
+	def getInstServerForStaticObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] = docServers
+		.get(envri)
+		.filter{
+			_.hasStatement(
+				vocab.getStaticObject(objHash), RDF.TYPE, metaVocab.docObjectClass
+			)
+		}
+		.fold(getInstServerForDataObj(objHash: Sha256Sum))(Success(_))
+
+	def isExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): Boolean =
+		getInstServerForDataObj(hash).map{
+			_.hasStatement(
+				vocab.getStaticObject(hash), RDF.TYPE, metaVocab.dataObjectClass
+			)
+		}.getOrElse(false)
+
+	def isExistingDocument(hash: Sha256Sum)(implicit envri: Envri): Boolean =
+		docServers.get(envri).map{
+			_.hasStatement(
+				vocab.getStaticObject(hash), RDF.TYPE, metaVocab.docObjectClass
+			)
+		}.getOrElse(false)
+
+	private def getInstServerForDataObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] =
 		for(
 			objSpec <- getDataObjSpecification(objHash);
 			format <- getObjSpecificationFormat(objSpec);

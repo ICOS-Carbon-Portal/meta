@@ -77,6 +77,11 @@ sealed trait StaticObject{
 	def previousVersion: Option[URI]
 	def nextVersion: Option[URI]
 	def parentCollections: Seq[UriResource]
+
+	def asDataObject: Option[DataObject] = this match{
+		case dobj: DataObject => Some(dobj)
+		case _ => None
+	}
 }
 
 case class DataObject(

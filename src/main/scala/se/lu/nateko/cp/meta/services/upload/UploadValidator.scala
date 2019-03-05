@@ -43,13 +43,13 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec, submConf);
-		_ <- validatePreviousDobjVersion(meta.hashSum, meta.isNextVersionOf, spec)
+		_ <- validatePrevVers(meta, servers.getInstServerForFormat(spec.format.uri.toRdf))
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
-		_ <- validatePreviousDocVersion(meta.hashSum, meta.isNextVersionOf)
+		_ <- validatePrevVers(meta, servers.getDocInstServer)
 	) yield NotUsed
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
@@ -67,7 +67,24 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
+	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+		objectKindSameIfNotNew(dto).flatMap(_ => dto match {
+			case dobj: DataObjectDto => submitterAndFormatAreSameIfObjectNotNew(dobj, submittingOrg)
+			case _: DocObjectDto => submitterIsSameIfObjNotNew(dto, submittingOrg)
+		})
+
+	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(implicit envri: Envri): Try[NotUsed] = dto match{
+		case _: DataObjectDto =>
+			if(servers.isExistingDocument(dto.hashSum))
+				userFail("Cannot accept data object upload as there is already a document object with id " + dto.hashSum.id)
+			else Success(NotUsed)
+		case _: DocObjectDto =>
+			if(servers.isExistingDataObject(dto.hashSum))
+				userFail("Cannot accept document object upload as there is already a data object with id " + dto.hashSum.id)
+			else Success(NotUsed)
+	}
+
+	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
 		val formatValidation: Try[NotUsed] = (
 			for(
 				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
@@ -81,7 +98,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		formatValidation.flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
 	}
 
-	def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
 		servers.getObjSubmitter(dto).map{subm =>
 			if(subm === submittingOrg) ok else authFail(
 				s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
@@ -174,22 +191,11 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
-	private def validatePreviousDobjVersion(self: Sha256Sum, prevVers: Option[Sha256Sum], spec: DataObjectSpec)(implicit envri: Envri) =
-		validatePrevVers(self, prevVers, servers.getInstServerForFormat(spec.format.uri.toRdf))
-
-	private def validatePreviousDocVersion(self: Sha256Sum, prevVers: Option[Sha256Sum])(implicit envri: Envri) =
-		validatePrevVers(self, prevVers, servers.getDocInstServer)
-
-	private def validatePrevVers(
-		self: Sha256Sum,
-		prevVers: Option[Sha256Sum],
-		getInstServ: => Try[InstanceServer]
-	)(implicit envri: Envri): Try[NotUsed] = {
-
-		prevVers match{
+	private def validatePrevVers(dto: ObjectUploadDto, getInstServ: => Try[InstanceServer])(implicit envri: Envri): Try[NotUsed] =
+		dto.isNextVersionOf match{
 			case None => ok
 			case Some(prevHash) =>
-				if(prevHash == self)
+				if(prevHash == dto.hashSum)
 					userFail("Data/doc object cannot be a next version of itself")
 
 				else getInstServ.flatMap{ server =>
@@ -202,11 +208,10 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 							if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
 								ok
 							else
-								userFail(s"Previous-version data object was not found: $dobj")
+								userFail(s"Previous-version data/doc object was not found: $dobj")
 					}
 				}
 		}
-	}
 
 	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Option[IRI] = {
 

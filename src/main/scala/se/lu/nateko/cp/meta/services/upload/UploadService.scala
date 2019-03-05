@@ -52,8 +52,10 @@ class UploadService(
 		for(
 			submitterOrg <- Future.fromTry(submitterOrgUriTry);
 			accessUri <- meta match {
-				case dobj: DataObjectDto => registerDataObjUpload(dobj, submitterOrg)
-				case doc: DocObjectDto => registerDocObjUpload(doc, submitterOrg)
+				case dobj: DataObjectDto =>
+					registerDataObjUpload(dobj, submitterOrg)
+				case _: DocObjectDto =>
+					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
 			}
 		) yield accessUri
 	}
@@ -101,26 +103,18 @@ class UploadService(
 	}
 
 	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[URI] = {
-		def serverTry = for(
+		val serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
 		) yield server
 
-		for(
-			_ <- Future.fromTry(validator.submitterAndFormatAreSameIfObjectNotNew(meta, submittingOrg));
-			accessUri <- registerObjUpload(meta, serverTry, submittingOrg)
-		) yield accessUri
+		registerObjUpload(meta, serverTry, submittingOrg)
 	}
-
-	private def registerDocObjUpload(meta: DocObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[URI] =
-		for(
-			_ <- Future.fromTry(validator.submitterIsSameIfObjNotNew(meta, submittingOrg));
-			accessUri <- registerObjUpload(meta, servers.getDocInstServer, submittingOrg)
-		) yield accessUri
 
 	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(implicit envri: Envri): Future[URI] =
 		for(
 			server <- Future.fromTry(serverTry);
+			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
 			newStatements = statementProd.getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements);

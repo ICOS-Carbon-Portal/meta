@@ -8,6 +8,7 @@ import {lastDataObjects} from './queries/lastDataObjects';
 import {labelingStatus} from './queries/labelingStatus';
 import {resubmittedFiles} from './queries/resubmittedFiles';
 import {existingCollections} from './queries/existingCollections';
+import {existingDocuments} from './queries/existingDocuments';
 import {concaveHulls} from './queries/concaveHulls';
 
 const queries = [
@@ -19,6 +20,7 @@ const queries = [
 	{name:"Last 1000 data objects", query: lastDataObjects},
 	{name:"Re-submitted files", query: resubmittedFiles},
 	{name:"Collections", query: existingCollections},
+	{name:"Documents", query: existingDocuments},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, class 1 and 2 PIs", query: etcClass1And2Pis},
 	{name:"ETC, labelling app form values", query: etcLabelingValues},

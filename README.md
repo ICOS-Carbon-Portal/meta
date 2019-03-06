@@ -101,6 +101,10 @@ Alternatively, the CPauth cookie can be supplied explicitly:
 Uploading the data object itself is a simple step performed against the CP's Data service **https://data.icos-cp.eu/**.
 Proceed with the upload as instructed [here](https://github.com/ICOS-Carbon-Portal/data#instruction-for-uploading-icos-data-objects)
 
+### Uploading documents
+In addition to data objects who have properties as data level, data object specification, acquisition and production provenance, there is a use case for uploading supplementary materials like pdf documents with hardware specifications, methodology descriptions, policies and other reference information.
+To provide for this, CP supports upload of document objects.
+The upload procedure is completely analogous to data object uploads, the only difference being the absence of `specificInfo` and `objectSpecification` properties in the metadata package.
 
 ### Creating a static collection
 Carbon Portal supports creation of static collections with constant lists of immutable data objects or other static collections. The process of creating a static collection is similar to step 1 of data object upload. Here are the expected contents of the metadata package for it:

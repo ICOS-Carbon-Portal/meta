@@ -1,0 +1,10 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?dobj cpmeta:hasObjectSpec ?spec
+}
+from <http://meta.icos-cp.eu/resources/socat/>
+where{
+	?dobj a cpmeta:DataObject .
+	?dobj cpmeta:hasObjectSpec ?spec .
+	FILTER(?spec != <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject>)
+}

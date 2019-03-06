@@ -1,6 +1,9 @@
 @import se.lu.nateko.cp.meta.core.data.StaticObject
+@import se.lu.nateko.cp.meta.utils.urlEncode
 
 @(obj: StaticObject, title: String, ext: String)
-<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${obj.hash.id}/${obj.fileName}.$ext"}>
+<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${obj.hash.id}/${fnameEncoded}.$ext"}>
 	@title
 </a>
+
+@fnameEncoded = @{urlEncode(obj.fileName)}

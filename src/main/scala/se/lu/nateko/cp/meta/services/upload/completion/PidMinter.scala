@@ -26,7 +26,7 @@ class PidMinter(handles: HandleNetClient, vocab: CpVocab)(implicit ex: Execution
 		val suffix = handles.pidFactory.getSuffix(hash)
 
 		handles.createOrRecreate(suffix, new java.net.URL(targetUri.stringValue))
-			.map(_ => Report(handles.pidFactory.getPid(suffix)))
+			.map(_ => new Report(handles.pidFactory.getPid(suffix)))
 
 	}
 }

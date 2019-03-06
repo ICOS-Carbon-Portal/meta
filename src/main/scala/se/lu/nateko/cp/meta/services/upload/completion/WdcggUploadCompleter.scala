@@ -64,7 +64,7 @@ private class WdcggUploadCompleter(
 	}
 
 	def finalize(hash: Sha256Sum): Future[Report] = Future.successful(
-		Report(vocab.getStaticObject(hash).stringValue)
+		new Report(vocab.getStaticObject(hash).stringValue)
 	)
 
 	private def getStationFacts(station: IRI, keyValues: Map[String, String]): Seq[(IRI, IRI, Value)] = {

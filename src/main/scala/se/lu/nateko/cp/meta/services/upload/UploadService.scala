@@ -24,6 +24,9 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.services.upload.completion.Report
+
+class AccessUri(val uri: URI)
 
 class UploadService(
 	val servers: DataObjectInstanceServers,
@@ -43,7 +46,7 @@ class UploadService(
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
 
-	def registerUpload(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Future[URI] = {
+	def registerUpload(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
 		val submitterOrgUriTry = for(
 			_ <- validator.validateObject(meta, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta)
@@ -60,7 +63,7 @@ class UploadService(
 		) yield accessUri
 	}
 
-	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[URI] = {
+	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[AccessUri] = {
 		implicit val envri = Envri.ICOS
 		for(
 			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
@@ -68,7 +71,7 @@ class UploadService(
 		) yield accessUri
 	}
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[String] = {
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
 		val collHashTry = Try{
 			val sha256 = java.security.MessageDigest.getInstance("SHA-256")
 			coll.members
@@ -97,12 +100,12 @@ class UploadService(
 			oldStatements = server.getStatements(collIri);
 			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements);
 			_ <- server.applyAll(updates)
-		) yield collIri.toString
+		) yield new AccessUri(collIri.toJava)
 
 		Future.fromTry(resTry)
 	}
 
-	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[URI] = {
+	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[AccessUri] = {
 		val serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
@@ -111,7 +114,11 @@ class UploadService(
 		registerObjUpload(meta, serverTry, submittingOrg)
 	}
 
-	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(implicit envri: Envri): Future[URI] =
+	private def registerObjUpload(
+		dto: ObjectUploadDto,
+		serverTry: Try[InstanceServer],
+		submittingOrg: URI
+	)(implicit envri: Envri): Future[AccessUri] =
 		for(
 			server <- Future.fromTry(serverTry);
 			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
@@ -120,7 +127,7 @@ class UploadService(
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements);
 			_ <- Future.fromTry(server.applyAll(updates))
 		) yield
-			vocab.getStaticObjectAccessUrl(dto.hashSum)
+			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
 		conf.submitters(envri).values
@@ -131,7 +138,7 @@ class UploadService(
 		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => SubmitterProfile(id, submConf.producingOrganizationClass)
 	}.toSeq
 
-	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[String] =
-		completer.completeUpload(hash, info).map(_.message)
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] =
+		completer.completeUpload(hash, info)
 
 }

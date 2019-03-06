@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.api.CitationClient
+import scala.concurrent.Future
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -53,7 +54,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				path("etc"){
 					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[EtcUploadMetadata]){ uploadMeta =>
-							complete(service.registerEtcUpload(uploadMeta))
+							reportAccessUri(service.registerEtcUpload(uploadMeta))
 						}
 					}
 				} ~
@@ -61,7 +62,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					path(Sha256Segment){hash =>
 						(ensureLocalRequest & replyWithErrorOnBadContent){
 							entity(as[UploadCompletionInfo]){ completionInfo =>
-								onSuccess(service.completeUpload(hash, completionInfo)){complete(_)}
+								onSuccess(service.completeUpload(hash, completionInfo)){r => complete(r.message)}
 							}
 						}
 					} ~
@@ -69,10 +70,10 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						authRouting.mustBeLoggedIn{uploader =>
 							replyWithErrorOnBadContent{
 								entity(as[ObjectUploadDto]){uploadMeta =>
-									complete(service.registerUpload(uploadMeta, uploader))
+									reportAccessUri(service.registerUpload(uploadMeta, uploader))
 								} ~
 								entity(as[StaticCollectionDto]){collMeta =>
-									complete(service.registerStaticCollection(collMeta, uploader))
+									reportAccessUri(service.registerStaticCollection(collMeta, uploader))
 								}
 							}
 						}
@@ -103,4 +104,6 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			}
 		}
 	}
+
+	def reportAccessUri(fut: Future[AccessUri]): Route = onSuccess(fut){au => complete(au.uri.toString)}
 }

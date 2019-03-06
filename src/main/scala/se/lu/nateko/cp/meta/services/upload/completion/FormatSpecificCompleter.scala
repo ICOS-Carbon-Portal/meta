@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
-case class Report(message: String)
+class Report(val message: String)
 
 trait FormatSpecificCompleter {
 

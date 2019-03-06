@@ -12,8 +12,7 @@ package object utils {
 	}
 
 	def urlEncode(s: String): String = {
-		//TODO Test this for "strange" strings (e.g. containing timestamps)
-		new java.net.URI(null, null, s, null).toASCIIString
+		new java.net.URI(null, null, "/" + s, null).toASCIIString.substring(1)
 	}
 
 	def parseInstant(dateTimeIso: String): Instant = Instant.from(ISO_DATE_TIME.parse(dateTimeIso))

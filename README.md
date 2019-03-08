@@ -89,9 +89,9 @@ Clarifications:
 	- `title` is a required string.
 	- `description` is an optional string.
 	- `spatial` is the spacial coverage or a url to another spacial coverage.
-		- `min` containing `lat` and `long`.
-		- `max` containing `lat` and `long`.
-		- `label` is a string to describe the spacial coverage.
+		- `min` containing numeric `lat` and `lon` (WGS84).
+		- `max` containing numeric `lat` and `lon` (WGS84).
+		- `label` is a optional string to describe the spacial coverage.
 	- `temporal` is the time coverage.
 		- `interval` containing `start` and `stop` timestamps.
 		- `resolution` is a string indicating the resolution of the dataset.

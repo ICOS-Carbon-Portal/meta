@@ -73,7 +73,7 @@ Clarifications:
 - `submitterId` will be provided by the CP's technical people. This is not the same as username for logging in with CPauth.
 - `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems.
 - `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
-- `specificInfo`
+- `specificInfo` for level 0, 1 or 2
 	- `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
 	- `acquisitionInterval` (optional) is the temporal interval during which the actual measurement was performed. Required for data objects that do not get ingested completely by CP (i.e. with parsing and internal binary representation to support previews).
 	- `instrument` (optional) is the URL of the metadata entity representing the instrument used to perform the measurement resulting in this data object.
@@ -85,6 +85,18 @@ Clarifications:
 		- `comment` is an optional free text.
 		- `creationDate` is an ISO 8601 time stamp.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
+- `specificInfo` for level 3
+	- `title` is a required string.
+	- `description` is an optional string.
+	- `spatial` is the spacial coverage or a url to another spacial coverage.
+		- `min` containing `lat` and `long`.
+		- `max` containing `lat` and `long`.
+		- `label` is a string to describe the spacial coverage.
+	- `temporal` is the time coverage.
+		- `interval` containing `start` and `stop` timestamps.
+		- `resolution` is a string indicating the resolution of the dataset.
+	- `production` is similar to `production` for levels 0, 1 and 2.
+	- `customLandingPage` is an optional url linking to the data hosted somewhere else.
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.

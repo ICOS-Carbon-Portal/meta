@@ -214,11 +214,11 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo = if(!globConf.rdfStorage.recreateAtStartup || conf.skipLogIngestionAtStart.getOrElse(false))
+				val repo = if(conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup))
 						initRepo
 					else {
 						log.info(s"Ingesting from RDF log $logName ...")
-						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, writeContexts: _*)
+						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts: _*)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
 					}

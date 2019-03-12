@@ -40,7 +40,7 @@ object MetaFlow {
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-		val otcSource = new OtcMetaSource(otcServer, system.log)
+//		val otcSource = new OtcMetaSource(otcServer, system.log)
 		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
@@ -51,10 +51,10 @@ object MetaFlow {
 			}
 		}
 
-		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+//		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
 		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
 		() => {
-			stopOtc()
+//			stopOtc()
 			stopEtc.cancel()
 		}
 	}

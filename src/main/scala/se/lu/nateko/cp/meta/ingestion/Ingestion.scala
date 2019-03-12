@@ -37,6 +37,7 @@ object Ingestion {
 		val (badmSchema, badm) = new BadmIngester().getSchemaAndValuesIngesters
 		Map(
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
+			"otcMetaOnto" -> new RdfXmlFileIngester("/owl/otcmeta.owl"),
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,
 			"badmSchema" -> badmSchema,

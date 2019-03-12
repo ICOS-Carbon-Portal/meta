@@ -1,167 +1,894 @@
 <?xml version="1.0"?>
-<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+<rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/otcmeta/"
      xml:base="http://meta.icos-cp.eu/ontologies/otcmeta/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     ontologyIRI="http://meta.icos-cp.eu/ontologies/otcmeta/">
-    <Prefix name="" IRI="http://meta.icos-cp.eu/ontologies/otcmeta/"/>
-    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
-    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
-    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
-    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
-    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
-    <Import>http://meta.icos-cp.eu/ontologies/cpmeta/</Import>
-    <Declaration>
-        <Class IRI="AssumedRole"/>
-    </Declaration>
-    <Declaration>
-        <ObjectProperty IRI="atOrganization"/>
-    </Declaration>
-    <Declaration>
-        <ObjectProperty IRI="hasHolder"/>
-    </Declaration>
-    <Declaration>
-        <ObjectProperty IRI="hasRole"/>
-    </Declaration>
-    <Declaration>
-        <DataProperty IRI="hasEndTime"/>
-    </Declaration>
-    <Declaration>
-        <DataProperty IRI="hasSpatialReference"/>
-    </Declaration>
-    <Declaration>
-        <DataProperty IRI="hasStartTime"/>
-    </Declaration>
-    <SubClassOf>
-        <Class IRI="AssumedRole"/>
-        <ObjectSomeValuesFrom>
-            <ObjectProperty IRI="atOrganization"/>
-            <Class abbreviatedIRI="owl:Thing"/>
-        </ObjectSomeValuesFrom>
-    </SubClassOf>
-    <SubClassOf>
-        <Class IRI="AssumedRole"/>
-        <ObjectSomeValuesFrom>
-            <ObjectProperty IRI="hasHolder"/>
-            <Class abbreviatedIRI="owl:Thing"/>
-        </ObjectSomeValuesFrom>
-    </SubClassOf>
-    <SubClassOf>
-        <Class IRI="AssumedRole"/>
-        <ObjectSomeValuesFrom>
-            <ObjectProperty IRI="hasRole"/>
-            <Class abbreviatedIRI="owl:Thing"/>
-        </ObjectSomeValuesFrom>
-    </SubClassOf>
-    <FunctionalObjectProperty>
-        <ObjectProperty IRI="atOrganization"/>
-    </FunctionalObjectProperty>
-    <FunctionalObjectProperty>
-        <ObjectProperty IRI="hasHolder"/>
-    </FunctionalObjectProperty>
-    <FunctionalObjectProperty>
-        <ObjectProperty IRI="hasRole"/>
-    </FunctionalObjectProperty>
-    <ObjectPropertyDomain>
-        <ObjectProperty IRI="atOrganization"/>
-        <Class IRI="AssumedRole"/>
-    </ObjectPropertyDomain>
-    <ObjectPropertyDomain>
-        <ObjectProperty IRI="hasHolder"/>
-        <Class IRI="AssumedRole"/>
-    </ObjectPropertyDomain>
-    <ObjectPropertyDomain>
-        <ObjectProperty IRI="hasRole"/>
-        <Class IRI="AssumedRole"/>
-    </ObjectPropertyDomain>
-    <ObjectPropertyRange>
-        <ObjectProperty IRI="atOrganization"/>
-        <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
-    </ObjectPropertyRange>
-    <ObjectPropertyRange>
-        <ObjectProperty IRI="hasHolder"/>
-        <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
-    </ObjectPropertyRange>
-    <ObjectPropertyRange>
-        <ObjectProperty IRI="hasRole"/>
-        <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
-    </ObjectPropertyRange>
-    <FunctionalDataProperty>
-        <DataProperty IRI="hasEndTime"/>
-    </FunctionalDataProperty>
-    <FunctionalDataProperty>
-        <DataProperty IRI="hasSpatialReference"/>
-    </FunctionalDataProperty>
-    <FunctionalDataProperty>
-        <DataProperty IRI="hasStartTime"/>
-    </FunctionalDataProperty>
-    <DataPropertyDomain>
-        <DataProperty IRI="hasEndTime"/>
-        <Class IRI="AssumedRole"/>
-    </DataPropertyDomain>
-    <DataPropertyDomain>
-        <DataProperty IRI="hasSpatialReference"/>
-        <Class IRI="http://meta.icos-cp.eu/ontologies/cpmeta/OS"/>
-    </DataPropertyDomain>
-    <DataPropertyDomain>
-        <DataProperty IRI="hasStartTime"/>
-        <Class IRI="AssumedRole"/>
-    </DataPropertyDomain>
-    <DataPropertyRange>
-        <DataProperty IRI="hasEndTime"/>
-        <Datatype abbreviatedIRI="xsd:dateTime"/>
-    </DataPropertyRange>
-    <DataPropertyRange>
-        <DataProperty IRI="hasSpatialReference"/>
-        <Datatype abbreviatedIRI="xsd:string"/>
-    </DataPropertyRange>
-    <DataPropertyRange>
-        <DataProperty IRI="hasStartTime"/>
-        <Datatype abbreviatedIRI="xsd:dateTime"/>
-    </DataPropertyRange>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>AssumedRole</IRI>
-        <Literal>Assumed Role</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>atOrganization</IRI>
-        <Literal>role&apos;s organization</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>hasEndTime</IRI>
-        <Literal>end time</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>hasHolder</IRI>
-        <Literal>role holder</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>hasRole</IRI>
-        <Literal>role kind</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
-        <IRI>hasSpatialReference</IRI>
-        <Literal>spatial reference in GeoJSON (any feature except points; encoded as plain string)</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>hasSpatialReference</IRI>
-        <Literal>spatial reference</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
-        <IRI>hasStartTime</IRI>
-        <Literal>start time</Literal>
-    </AnnotationAssertion>
-</Ontology>
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/appliedToSensor -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/appliedToSensor">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">applied to</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:label>role&apos;s organization</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:label>role holder</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">manufacturer</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasRole -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasRole">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+        <rdfs:label>role kind</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/ofInstrument -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/ofInstrument">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of instrument</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/ofPlatform -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/ofPlatform">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of platform</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/ofSensor -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/ofSensor">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of sensor</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/toInstrument -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/toInstrument">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to instrument</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/toPlatform -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/toPlatform">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to platform</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/toStation -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/toStation">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to station</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">air intake position</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/countryCode -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/countryCode">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^[A-Z]{2}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">country code</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/exhaustPosition -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/exhaustPosition">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">exhaust position</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDateTime -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDateTime">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">date/time</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDeploymentSchedule -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDeploymentSchedule">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">deployment schedule</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDiscreteSamplingSchedule -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDiscreteSamplingSchedule">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">discrete sampling schedule</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationComment -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationComment">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">documentation comment</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationReference -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationReference">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">URL link to a PID/DOI landing page of a document</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">documentation reference</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasEmail -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasEmail">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">E-mail</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasEndTime -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasEndTime">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label>end time</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">first name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasIcesPlatformCode -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasIcesPlatformCode">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICES platform code</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasInstrumentSetup -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasInstrumentSetup">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">instrument setup</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">last name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasLatitude -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasLatitude">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-90.0</xsd:minInclusive>
+                    </rdf:Description>
+                    <rdf:Description>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">90.0</xsd:maxInclusive>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">latitude</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasLongitude -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasLongitude">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-180.0</xsd:minInclusive>
+                    </rdf:Description>
+                    <rdf:Description>
+                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#double">180.0</xsd:maxInclusive>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">longitude</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasMiddleName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasMiddleName">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">middle name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">model</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasName -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasName">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasOrcidId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasOrcidId">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+                <owl:withRestrictions rdf:parseType="Collection">
+                    <rdf:Description>
+                        <xsd:pattern>^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$</xsd:pattern>
+                    </rdf:Description>
+                </owl:withRestrictions>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Orcid ID</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasPersonTitle -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasPersonTitle">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">title</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasPortOfCall -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasPortOfCall">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">port of call</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasRetrievalMethod -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasRetrievalMethod">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">retrieval method</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>serial number</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasSpatialReference -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasSpatialReference">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>spatial reference in GeoJSON (any feature except points; encoded as plain string)</rdfs:comment>
+        <rdfs:label>spatial reference (GeoJSON)</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasStartTime -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasStartTime">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label>start time</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">water intake depth</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Academic Institution</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasRole"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label>Assumed Role</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Calibration -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/appliedToSensor"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasDateTime"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Calibration</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Commercial Company</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Deployment -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Drifting Buoy</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Instrument -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ofInstrument"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/toPlatform"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Instrument Deployment</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Mooring -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Organization -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Organization">
+        <owl:disjointUnionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
+            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
+        </owl:disjointUnionOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Organization</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Person -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Person">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Person</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Platform -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Platform">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasIcesPlatformCode"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ofPlatform"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/toStation"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Platform Deployment</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Role -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Sensor -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer"/>
+                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sensor</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Deployment"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ofSensor"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/toInstrument"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sensor Deployment</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Ship -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Ship">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Station -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Station">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/dataSubmitter -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/dataSubmitter">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data submitter</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/engineer -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/engineer">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Engineer</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/pi -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/pi">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Principal investigator</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/researcher -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/researcher">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Researcher</rdfs:label>
+    </owl:NamedIndividual>
+</rdf:RDF>
 
 
 

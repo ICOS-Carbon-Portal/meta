@@ -16,62 +16,7 @@
     <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Instrument</IRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasName</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
-        <Literal> (</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty4"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
-        <Literal>)</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/OS</IRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Organization</IRI>
-        <IRI>rdfs:label</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Organization</IRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <Literal> </Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/cpmeta/Person</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
@@ -102,6 +47,101 @@
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Calibration</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Instrument</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Instrument</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Mooring</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Organization</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Person</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Person</IRI>
+        <Literal> </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Person</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Person</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Platform</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Sensor</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Sensor</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Ship</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Station</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
 </Ontology>

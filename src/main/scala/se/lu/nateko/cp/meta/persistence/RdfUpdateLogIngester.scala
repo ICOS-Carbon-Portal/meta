@@ -16,9 +16,9 @@ object RdfUpdateLogIngester{
 	private val chunkSize = 5000
 
 	def ingestIntoMemory(updates: Iterator[RdfUpdate], contexts: IRI*): Repository =
-		ingest(updates, Loading.emptyInMemory, contexts: _*)
+		ingest(updates, Loading.emptyInMemory, false, contexts: _*)
 
-	def ingest(updates: Iterator[RdfUpdate], repo: Repository, contexts: IRI*): Repository = {
+	def ingest(updates: Iterator[RdfUpdate], repo: Repository, cleanFirst: Boolean, contexts: IRI*): Repository = {
 
 		def commitChunk(chunk: Seq[RdfUpdate]): Try[Unit] = {
 			val res = repo.transact(conn => {
@@ -31,6 +31,10 @@ object RdfUpdateLogIngester{
 			}, Some(IsolationLevels.NONE))
 			res
 		}
+
+		if(cleanFirst) repo
+			.transact(_.remove(null, null, null, contexts: _*), Some(IsolationLevels.NONE))
+			.get //throw exception if failed to clean
 
 		updates.sliding(chunkSize, chunkSize)
 			.map(commitChunk)

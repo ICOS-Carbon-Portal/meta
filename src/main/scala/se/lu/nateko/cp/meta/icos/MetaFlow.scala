@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+//import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
@@ -29,12 +29,12 @@ object MetaFlow {
 		val cpServer = db.instanceServers(isConf.cpMetaInstanceServerId)
 		val icosServer = db.instanceServers(isConf.icosMetaInstanceServerId)
 
-		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
-			case wnis: WriteNotifyingInstanceServer => wnis
-			case _ => throw new Exception(
-				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-			)
-		}
+//		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
+//			case wnis: WriteNotifyingInstanceServer => wnis
+//			case _ => throw new Exception(
+//				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+//			)
+//		}
 
 		val rdfReader = new RdfReader(cpServer, icosServer)
 

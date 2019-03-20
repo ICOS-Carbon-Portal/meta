@@ -33,6 +33,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, UploadService}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
@@ -184,10 +185,11 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 			envri -> makeInstanceServer(repo, instServConf, config)
 		}
 
-		val perFormatServers: Map[IRI, InstanceServer] = config.instanceServers.forDataObjects
-			.values.flatMap(_.definitions).map{ servDef =>
+		val perFormatServers: Map[Envri, Map[IRI, InstanceServer]] = config.instanceServers.forDataObjects.map{
+			case (envri, dobjServConfs) => envri -> dobjServConfs.definitions.map{ servDef =>
 				factory.createIRI(servDef.format) -> instanceServers(servDef.label)
 			}.toMap
+		}
 
 		val docInstServs = config.dataUploadService.documentServers.map{case (envri, servId) =>
 			envri -> instanceServers(servId)

@@ -25,7 +25,7 @@ class DataObjectInstanceServers(
 	val collectionServers: Map[Envri, InstanceServer],
 	docServers: Map[Envri, InstanceServer],
 	val allDataObjs: Map[Envri, InstanceServer],
-	perFormat: Map[IRI, InstanceServer]
+	perFormat: Map[Envri, Map[IRI, InstanceServer]]
 )(implicit envriConfs: EnvriConfigs, factory: ValueFactory){top =>
 
 	val metaVocab = new CpmetaVocab(factory)
@@ -60,9 +60,10 @@ class DataObjectInstanceServers(
 		metaFetchers(envri).getSpecification(spec)
 	}
 
-	def getInstServerForFormat(format: IRI): Try[InstanceServer] = perFormat.get(format).toTry{
-		new UploadUserErrorException(s"Format '$format' has no instance server configured for it")
-	}
+	def getInstServerForFormat(format: IRI)(implicit envri: Envri): Try[InstanceServer] =
+		perFormat.get(envri).flatMap(_.get(format)).toTry{
+			new UploadUserErrorException(s"ENVRI $envri unknown or has no instance server configured for format '$format'")
+		}
 
 	def getInstServerForStaticObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] = docServers
 		.get(envri)

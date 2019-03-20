@@ -6,14 +6,18 @@ import java.nio.file.Paths
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.semanticweb.owlapi.apibinding.OWLManager
+
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.SparqlServer
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
@@ -21,24 +25,23 @@ import se.lu.nateko.cp.meta.ingestion.StatementProvider
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
-import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.services.ServiceException
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, UploadService}
-import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsPlugin
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
+import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 
 
 class MetaDb (
@@ -249,16 +252,25 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 	private def validateConfig(config: CpmetaConfig): Unit = {
 
+		val dobjInstServKeys = (
+			config.instanceServers.forDataObjects.values.flatMap(_.definitions.map(_.label)) ++
+			config.instanceServers.specific.keys
+		).toList
+
+		val dups = dobjInstServKeys.groupBy(identity).collect{ case (s, l) if l.lengthCompare(1) > 0 => s}
+		if(!dups.isEmpty){
+			throw new ServiceException(s"Duplicate instance server key(s) in the config: ${dups.mkString(", ")}")
+		}
 		val instServerIds = config.instanceServers.specific.keys.toSet
 		val schemaOntIds = config.onto.ontologies.map(_.ontoId).flatten.toSet
 
 		def ensureInstServerExists(instanceServerId: String): Unit =
 			if(!instServerIds.contains(instanceServerId))
-				throw new Exception(s"Missing instance server with id '$instanceServerId'. Check your config.")
+				throw new ServiceException(s"Missing instance server with id '$instanceServerId'. Check your config.")
 
 		def ensureSchemaOntExists(schemaOntId: String): Unit =
 			if(!schemaOntIds.contains(schemaOntId))
-				throw new Exception(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
+				throw new ServiceException(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
 		
 		config.dataUploadService.metaServers.values.foreach(ensureInstServerExists)
 		config.dataUploadService.collectionServers.values.foreach(ensureInstServerExists)

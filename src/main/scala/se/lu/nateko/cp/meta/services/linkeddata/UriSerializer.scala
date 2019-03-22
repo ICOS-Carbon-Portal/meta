@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, api}
 import se.lu.nateko.cp.meta.api._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.core.data.JsonSupport.stationFormat
+import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat}
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
@@ -52,11 +52,11 @@ class Rdf4jUriSerializer(
 		.compose(uri => () => getStatementsIter(uri, repo))
 
 	val marshaller: ToResponseMarshaller[Uri] = Marshaller.oneOf(
-			Marshaller(
+		Marshaller(
 			implicit exeCtxt => uri => {
 				implicit val envri = inferEnvri(uri)
 				implicit val envriConfig = envries(envri)
-				getReprOptions(uri).marshal
+				getMarshallings(uri)
 			}
 		),
 		rdfMarshaller
@@ -92,55 +92,57 @@ class Rdf4jUriSerializer(
 		)
 	}
 
-	private def getReprOptions(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig): RepresentationOptions = uri.path match {
+	private def makeIri(uri: Uri) = JavaUri.create(uri.toString).toRdf(repo.getValueFactory)
+
+	private def isObjSpec(uri: Uri)(implicit envri: Envri): Boolean = {
+		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(servers.metaVocab.hasDataLevel), None)
+	}
+
+	private def getMarshallings(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig, ctxt: ExecutionContext): FLMHR = uri.path match {
+
 		case Hash.Object(hash) =>
-			new DelegatingRepr(() => fetchStaticObj(hash))
+			delegatedRepr(() => fetchStaticObj(hash))
+
 		case Hash.Collection(hash) =>
-			new DelegatingRepr(() => fetchStaticColl(hash))
-		case Slash(Segment("resources", Slash(Segment("stations", stId)))) =>
-			new FullCustomization[Station](
-				() => fetchStation(JavaUri.create(uri.toString).toRdf(repo.getValueFactory)),
+			delegatedRepr(() => fetchStaticColl(hash))
+
+		case Slash(Segment("resources", Slash(Segment("stations", stId)))) => oneOf(
+			customHtml[Station](
+				() => fetchStation(makeIri(uri)),
 				views.html.StationLandingPage(_),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId")
-			)
+			),
+			customJson(() => fetchStation(makeIri(uri)))
+		)
+
+		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
+			customJson(() => servers.getDataObjSpecification(makeIri(uri)).toOption),
+			defaultHtml(uri)
+		)
+
 		case _ =>
-			new DefaultReprOptions(uri)
+			oneOf(defaultHtml(uri))
 	}
 
-	private sealed trait RepresentationOptions{
-		def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]]
-	}
+	private def oneOf(opts: Marshalling[HttpResponse]*): FLMHR  = Future.successful(opts.toList)
 
-	private class DelegatingRepr[T](fetchDto: () => Option[T])(implicit trm: ToResponseMarshaller[() => Option[T]]) extends RepresentationOptions {
-		override def marshal(implicit ctxt: ExecutionContext) = trm(fetchDto)
-	}
+	private def delegatedRepr[T](fetchDto: () => Option[T])(
+		implicit trm: ToResponseMarshaller[() => Option[T]], ctxt: ExecutionContext
+	): FLMHR = trm(fetchDto)
 
-	private class WithJson[T : JsonWriter](fetchDto: () => Option[T]) extends RepresentationOptions {
-		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] = Future.successful{
-			WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto())) :: Nil
-		}
-	}
+	private def customJson[T : JsonWriter](fetchDto: () => Option[T]): Marshalling[HttpResponse] =
+		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
-	private class FullCustomization[T : JsonWriter](
-			fetchDto: () => Option[T],
-			pageTemplate: T => Html,
-			notFoundPage: => Html
-	) extends WithJson[T](fetchDto) {
-		override def marshal(implicit ctxt: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
-			super.marshal.map{json =>
-				PageContentMarshalling.twirlStatusHtmlMarshalling{
-					() => fetchDto() match {
-						case Some(value) => StatusCodes.OK -> pageTemplate(value)
-						case None => StatusCodes.NotFound -> notFoundPage
-					}
-				} :: json
+	private def customHtml[T](fetchDto: () => Option[T], pageTemplate: T => Html, notFoundPage: => Html): Marshalling[HttpResponse] =
+		PageContentMarshalling.twirlStatusHtmlMarshalling{
+			() => fetchDto() match {
+				case Some(value) => StatusCodes.OK -> pageTemplate(value)
+				case None => StatusCodes.NotFound -> notFoundPage
 			}
-	}
-	private class DefaultReprOptions(uri: Uri) extends RepresentationOptions {
-		override def marshal(implicit ctxt: ExecutionContext) = Future.successful{
-			WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri)) :: Nil
 		}
-	}
+
+	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
+		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
 
 	private def getDois: List[Doi] = {
 		import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -160,6 +162,8 @@ class Rdf4jUriSerializer(
 
 
 private object Rdf4jUriSerializer{
+
+	type FLMHR = Future[List[Marshalling[HttpResponse]]]
 
 	object Hash {
 		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption

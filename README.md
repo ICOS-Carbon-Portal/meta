@@ -134,7 +134,16 @@ The fields are either self-explanatory, or have the same meaning as for the data
 
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 
-### Administrative API for RDF updates
+## Metadata flow (for ATC only)
+The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form
+
+`https://metalocal.icos-cp.eu/upload/atcmeta/<tableName>`
+
+where `<tableName>` is a name used to distinguish different tables, for example "roles", "stations", "instruments", "instrumentsLifecycle", etc.
+
+Authentication with a pre-configured CP account is required. The authentication mechanism is the same as for data object upload.
+
+## Administrative API for RDF updates
 Intended for internal use at Carbon Portal.
 All the updates need to go through the RDF logs, therefore SPARQL UPDATE protocol could not be used directly. Instead, one needs to HTTP POST a SPARQL CONSTRUCT query, that will produce the triples that need to be inserted/retracted, to a URL of the form:
 

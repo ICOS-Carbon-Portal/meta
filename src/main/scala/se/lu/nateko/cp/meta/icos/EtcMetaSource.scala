@@ -172,19 +172,12 @@ object EtcMetaSource{
 
 	def getPerson(implicit lookup: Map[String, BadmValue], tcConf: TcConf[ETC.type]): Validated[EtcPerson] =
 		for(
-			name <- getString("GRP_TEAM/TEAM_MEMBER_NAME").require("person must have name");
-			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional;
-			(fname, lname) <- parseName(name)
+			fname <- getString("GRP_TEAM/TEAM_MEMBER_FIRSTNAME").require("person must have first name");
+			lname <- getString("GRP_TEAM/TEAM_MEMBER_LASTNAME").require("person must have last name");
+			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional
 		) yield
 			//TODO Use proper stable TC id for the person here
 			Person(urlEncode(fname + "_" + lname), tcConf.makeId(fname + "_" + lname), fname, lname, email)
-
-
-	def parseName(name: String): Validated[(String, String)] = {
-		val comps = name.trim.split("\\s+")
-		if(comps.size <= 1) Validated.error("Names are expected to have more than one component")
-		else Validated.ok((comps(0), comps.drop(1).mkString(" ")))
-	}
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 

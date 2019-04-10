@@ -35,7 +35,7 @@ lazy val metaCore = (project in file("core"))
 
 val akkaVersion = "2.5.17"
 val akkaHttpVersion = "10.1.5"
-val rdf4jVersion = "2.4.0"
+val rdf4jVersion = "2.4.6"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
@@ -69,7 +69,7 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.0-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),

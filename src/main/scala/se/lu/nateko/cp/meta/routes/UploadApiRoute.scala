@@ -7,19 +7,22 @@ import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
+import akka.stream.Materializer
+import akka.stream.scaladsl.Keep
+import scala.concurrent.Future
+import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.api.CitationClient
-import scala.concurrent.Future
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -43,8 +46,9 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting,
+		atcMetaSource: AtcMetaSource,
 		coreConf: MetaCoreConfig
-	): Route = handleExceptions(errHandler){
+	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
@@ -55,6 +59,18 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[EtcUploadMetadata]){ uploadMeta =>
 							reportAccessUri(service.registerEtcUpload(uploadMeta))
+						}
+					}
+				} ~
+				path("atcmeta" / Segment){tblKind =>
+					authRouting.mustBeLoggedIn{uploader =>
+						onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
+							extractDataBytes{data =>
+								onSuccess(data.toMat(sink)(Keep.right).run()){iores =>
+									iores.status.get
+									complete(StatusCodes.OK)
+								}
+							}
 						}
 					}
 				} ~

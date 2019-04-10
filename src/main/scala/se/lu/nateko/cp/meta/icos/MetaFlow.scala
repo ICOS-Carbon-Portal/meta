@@ -12,9 +12,11 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 
+class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
+
 object MetaFlow {
 
-	def initiate(db: MetaDb, conf: CpmetaConfig)(implicit mat: Materializer, system: ActorSystem): Try[() => Unit] = Try{
+	def initiate(db: MetaDb, conf: CpmetaConfig)(implicit mat: Materializer, system: ActorSystem): Try[MetaFlow] = Try{
 
 		implicit val envriConfs = conf.core.envriConfigs
 		
@@ -53,9 +55,11 @@ object MetaFlow {
 
 //		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
 		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
-		() => {
-//			stopOtc()
-			stopEtc.cancel()
-		}
+		new MetaFlow(new AtcMetaSource,
+			() => {
+//				stopOtc()
+				stopEtc.cancel()
+			}
+		)
 	}
 }

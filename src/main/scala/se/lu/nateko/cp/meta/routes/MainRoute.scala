@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
+import se.lu.nateko.cp.meta.icos.MetaFlow
 
 object MainRoute {
 
@@ -23,7 +24,7 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, config: CpmetaConfig)(implicit mat: Materializer): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit mat: Materializer): Route = {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val envriConfigs = config.core.envriConfigs
@@ -32,7 +33,7 @@ object MainRoute {
 		val staticRoute = StaticRoute(config.onto, config.auth(Envri.ICOS))
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
-		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, config.core)
+		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)

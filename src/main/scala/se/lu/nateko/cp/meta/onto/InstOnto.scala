@@ -38,6 +38,12 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		DataRangeDto(XMLSchema.STRING.toJava, Nil)
 	)
 
+	private val rdfsSeeAlsoInfo = DataPropertyDto(
+		ResourceDto("seeAlso", RDFS.SEEALSO.toJava, None),
+		CardinalityDto(None, None),
+		DataRangeDto(XMLSchema.ANYURI.toJava, Nil)
+	)
+
 	def getWriteContext: URI = {
 		val writeContexts = instServer.writeContexts
 		val nCtxts = writeContexts.length
@@ -64,7 +70,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		val classInfo: ClassDto = {
 			val theType = InstanceServerUtils.getSingleType(iri, instServer)
 			val mainInfo = onto.getClassInfo(theType.toJava)
-			val extraProps: Seq[PropertyDto] = Seq(rdfsLabelInfo, rdfsCommentInfo)
+			val extraProps: Seq[PropertyDto] = Seq(rdfsLabelInfo, rdfsCommentInfo, rdfsSeeAlsoInfo)
 			mainInfo.copy(properties = extraProps ++ mainInfo.properties)
 		}
 
@@ -151,6 +157,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		propUri.toRdf match {
 			case RDFS.LABEL => rdfsLabelInfo
 			case RDFS.COMMENT => rdfsCommentInfo
+			case RDFS.SEEALSO => rdfsSeeAlsoInfo
 			case _ => onto.getPropInfo(propUri, classUri)
 		}
 

@@ -163,10 +163,14 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 //		val indices = "spoc".permutations.mkString(",") //all the possible indices
 		val indices = "spoc,posc,ospc,cspo,cpos,cosp"
 		val native = new NativeStore(storageDir.toFile, indices)
-		native.setForceSync(true)
+		native.setForceSync(!didNotExist) //faster rebuilding
 
-		val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
-		val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
+		import se.lu.nateko.cp.meta.services.sparql.magic.CpMagicSail
+		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+
+		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher))
+		//val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
+		//val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
 
 		val repo = new SailRepository(store)
 		repo.initialize()

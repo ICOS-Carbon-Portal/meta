@@ -20,35 +20,29 @@ import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
 import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
 import org.eclipse.rdf4j.sail.SailException
 
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchPatternSearch
+import se.lu.nateko.cp.meta.services.sparql.magic.stats._
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 
-trait MagicTupleFuncPlugin extends SailConnectionListener{
-	def makeFunctions: Seq[TupleFunction]
-	def initialize(fromSail: Sail): Unit
-	def expressionEnricher: QueryModelVisitor[SailException]
-}
+class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler) extends NotifyingSailWrapper(baseSail){
 
-class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrMemoryStore) extends NotifyingSailWrapper(baseSail){
+	private var indexh: IndexHandler = _
 
 	baseSail.setEvaluationStrategyFactory{
-		val fedResolver = baseSail.getFederatedServiceResolver
 		val tupleFunctionReg = new TupleFunctionRegistry()
-		plugins.flatMap(_.makeFunctions).foreach(tupleFunctionReg.add)
-
-		new AbstractEvaluationStrategyFactory{
-			override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource) =
-				new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, tupleFunctionReg)
-		}
+		tupleFunctionReg.add(new StatsTupleFunction(() => indexh.index))
+		new CpEvaluationStrategyFactory(tupleFunctionReg, baseSail.getFederatedServiceResolver)
 	}
 
 	override def initialize(): Unit = {
 		super.initialize()
-		plugins.foreach(_.initialize(baseSail))
+		indexh = init(baseSail)
 	}
 
 	override def getConnection(): NotifyingSailConnection = new NotifyingSailConnectionWrapper(baseSail.getConnection){
 
-		plugins.foreach(getWrappedConnection.addConnectionListener)
+		getWrappedConnection.addConnectionListener(indexh)
 
 		override def evaluate(
 			tupleExpr: TupleExpr,
@@ -58,7 +52,10 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrM
 		): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = {
 
 			val expr: TupleExpr = TupleExprCloner.cloneExpr(tupleExpr)
-			plugins.foreach(plugin => expr.visit(plugin.expressionEnricher))
+			expr.visit(new StatsQueryModelVisitor)
+
+			val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(baseSail.getValueFactory))
+			dofps.search(expr).foreach(_.fuse())
 
 			getWrappedConnection.evaluate(expr, dataset, bindings, includeInferred)
 		}

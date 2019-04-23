@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
+import java.sql.BatchUpdateException
 import java.sql.PreparedStatement
 import java.sql.Timestamp
 import org.eclipse.rdf4j.model.Literal
@@ -54,6 +55,9 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 				appendPs.addBatch()
 			}
 			appendPs.executeBatch()
+		} catch{
+			case bue: BatchUpdateException =>
+				throw new Exception(bue.getMessage, bue.getNextException)
 		} finally{
 			appendPs.getConnection.close()
 		}

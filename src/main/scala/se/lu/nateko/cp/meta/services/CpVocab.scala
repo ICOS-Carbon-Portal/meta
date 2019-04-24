@@ -84,7 +84,8 @@ object CpVocab{
 	}
 
 	object DataObject{
-		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, "")
+		def unapply(iri: IRI): Option[(Sha256Sum, String)] = asPrefWithHash(iri, "")
+			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))
 	}
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"

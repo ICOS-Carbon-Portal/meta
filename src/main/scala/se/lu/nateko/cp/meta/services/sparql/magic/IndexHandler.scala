@@ -9,12 +9,11 @@ import org.eclipse.rdf4j.sail.Sail
 import akka.actor.Scheduler
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.async.throttle
-import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsIndex
 import org.eclipse.rdf4j.sail.SailConnectionListener
 
 class IndexHandler(fromSail: Sail, scheduler: Scheduler)(implicit ctxt: ExecutionContext) extends SailConnectionListener {
 
-	val index = new StatsIndex(fromSail)
+	val index = new CpIndex(fromSail)
 	index.flush()
 
 	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)

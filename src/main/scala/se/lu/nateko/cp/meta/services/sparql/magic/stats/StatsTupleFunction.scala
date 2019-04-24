@@ -12,8 +12,9 @@ import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 
-class StatsTupleFunction(indexThunk: () => StatsIndex) extends TupleFunction{
+class StatsTupleFunction(indexThunk: () => CpIndex) extends TupleFunction{
 
 	import StatsTupleFunction._
 
@@ -22,7 +23,7 @@ class StatsTupleFunction(indexThunk: () => StatsIndex) extends TupleFunction{
 	override def evaluate(valueFactory: ValueFactory, args: Value*):
 			CloseableIteration[_ <: java.util.List[_ <: Value], QueryEvaluationException] = {
 
-		val iter = indexThunk().entries.iterator.map(entry =>
+		val iter = indexThunk().statEntries.iterator.map(entry =>
 
 			args.map(_.stringValue match{
 

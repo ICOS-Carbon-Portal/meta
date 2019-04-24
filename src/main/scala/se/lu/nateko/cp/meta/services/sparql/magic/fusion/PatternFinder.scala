@@ -36,6 +36,8 @@ object PatternFinder{
 			case _ => None
 		}
 
+		def filter(pred: O => Boolean): NodeSearch[I, O] = test.andThen(_.filter(pred))
+
 		def ifFound[O2](other: O => Option[O2]): NodeSearch[I, O] = node => test(node).filter(t => other(t).isDefined)
 	}
 
@@ -43,10 +45,9 @@ object PatternFinder{
 
 		var result: Option[T] = None
 
-		override def meetNode(node: QueryModelNode): Unit = {
-			val res = test(node)
-			if(res.isDefined) result = res
-			else node.visitChildren(this)
+		override def meetNode(node: QueryModelNode): Unit = if(!result.isDefined){
+			result = test(node)
+			if(!result.isDefined) node.visitChildren(this)
 		}
 	}
 }

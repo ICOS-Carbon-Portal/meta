@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.magic.stats
+package se.lu.nateko.cp.meta.services.sparql.magic
 
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
@@ -23,15 +23,34 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
 
-object StatsIndex{
+trait ObjSpecific{
+	def hash: Sha256Sum
+	def uri: IRI
+}
+
+trait ObjInfo extends ObjSpecific{
+	def spec: IRI
+	def submitter: IRI
+	def station: IRI
+	def hasSubmission: Boolean
+	def hasAcquisition: Boolean
+	def isComplete: Boolean
+	def isDeprecated: Boolean
+	def getKeyOrElse(default: StatKey): StatKey
+}
+
+object CpIndex{
 	val UpdateQueueSize = 1024
 }
 
-class StatsIndex(sail: Sail) extends ReadWriteLocking{
-	import StatsIndex._
+class CpIndex(sail: Sail) extends ReadWriteLocking{
+	import CpIndex._
 
-	private val vocab = new CpmetaVocab(sail.getValueFactory)
+	private val factory = sail.getValueFactory
+	private val vocab = new CpmetaVocab(factory)
 	private val stats = new HashMap[Sha256Sum, ObjEntry]
+	def objInfo: scala.collection.Map[Sha256Sum, ObjInfo] = stats
+
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	//Mass-import of the specification info
@@ -50,7 +69,7 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 	//Mass-import of the statistics data
 	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
 
-	def entries: Iterable[StatEntry] = readLocked{
+	def statEntries: Iterable[StatEntry] = readLocked{
 		val nullKey = StatKey(null, null, None)
 		stats.values
 			.groupBy(_.getKeyOrElse(nullKey))
@@ -63,10 +82,14 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =
 		dataLevel.intValue < 3 && !CpVocab.isIngosArchive(spec)
 
-	private def getObjEntry(hash: Sha256Sum): ObjEntry = stats.getOrElseUpdate(hash, new ObjEntry)
+	private def getObjEntry(hash: Sha256Sum): ObjEntry = stats.getOrElseUpdate(hash, new ObjEntry(hash, ""))
 
 	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{
-		case CpVocab.DataObject(hash) => mod(getObjEntry(hash))
+		case CpVocab.DataObject(hash, prefix) =>
+			val entry = getObjEntry(hash)
+			if(entry.prefix == "") entry.prefix = prefix.intern()
+			mod(entry)
+
 		case _ =>
 	}
 
@@ -128,7 +151,7 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 		list.clear()
 	}
 
-	private class ObjEntry{
+	private class ObjEntry(val hash: Sha256Sum, var prefix: String) extends ObjInfo{
 		var spec: IRI = _
 		var submitter: IRI = _
 		var station: IRI = _
@@ -148,6 +171,8 @@ class StatsIndex(sail: Sail) extends ReadWriteLocking{
 				if(station != null && hasAcquisition) Some(station) else None
 			)
 			else default
+
+		def uri: IRI = factory.createIRI(prefix + hash.base64Url)
 	}
 
 }

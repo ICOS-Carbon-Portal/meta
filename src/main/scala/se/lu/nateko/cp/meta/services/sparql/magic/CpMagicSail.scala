@@ -31,8 +31,9 @@ class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler) ext
 
 	baseSail.setEvaluationStrategyFactory{
 		val tupleFunctionReg = new TupleFunctionRegistry()
-		tupleFunctionReg.add(new StatsTupleFunction(() => indexh.index))
-		new CpEvaluationStrategyFactory(tupleFunctionReg, baseSail.getFederatedServiceResolver)
+		val indexThunk = () => indexh.index
+		tupleFunctionReg.add(new StatsTupleFunction(indexThunk))
+		new CpEvaluationStrategyFactory(tupleFunctionReg, baseSail.getFederatedServiceResolver, indexThunk)
 	}
 
 	override def initialize(): Unit = {
@@ -57,7 +58,13 @@ class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler) ext
 			val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(baseSail.getValueFactory))
 			dofps.search(expr).foreach(_.fuse())
 
-			getWrappedConnection.evaluate(expr, dataset, bindings, includeInferred)
+			try{
+				getWrappedConnection.evaluate(expr, dataset, bindings, includeInferred)
+			} catch{
+				case iae: IllegalArgumentException =>
+					iae.printStackTrace()
+					throw iae
+			}
 		}
 	}
 }

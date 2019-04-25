@@ -6,6 +6,8 @@ import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 
+import PatternFinder._
+
 class DataObjectFetchPatternSearchTests extends FunSpec{
 	private val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
 	private val parser = new SPARQLParser
@@ -13,29 +15,33 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 	private def parseQuery(q: String): TupleExpr = parser.parseQuery(q, "http://dummy.org").getTupleExpr
 
 	describe("Optimizing data object list fetching query"){
-		val query = parseQuery(TestQs.fetchDobjList)
+		def getQuery = parseQuery(TestQs.fetchDobjList)
 
 		describe("Locating the pattern"){
-			val patternOpt = dofps.search(query)
 
-			assert(patternOpt.isDefined)
+			val fetch: DataObjectFetch = {
+				val query = getQuery
+				val patternOpt = dofps.search(query)
 
-			val pattern = patternOpt.get
+				val pattern = patternOpt.getOrElse(fail("Pattern was not found!"))
+				pattern.fuse()
 
-			it("correctly finds the variable names"){
-				val (s, _, o) = splitTriple(pattern.objSpec)
-				assert(s.getName == "dobj" && o.getName == "spec")
+				val fetchOpt = takeNode.ifIs[DataObjectFetch].recursive(query)
+				fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
+			}
+
+			it("correctly finds data object and object spec variable names"){
+				assert(fetch.dobjVar == "dobj" && fetch.specVar == Some("spec"))
+			}
+
+			it("correctly finds temporal coverage variable names"){
+				assert(fetch.dataStartTimeVar == Some("timeStart") && fetch.dataEndTimeVar == Some("timeEnd"))
 			}
 
 			it("identifies the no-deprecated-objects filter"){
-				assert(pattern.noDeprecated.isDefined)
+				assert(fetch.excludeDeprecated)
 			}
 
-			it("can successfully fuse the pattern"){
-				pattern.fuse()
-				println(query)
-				//pattern.noDeprecated.map(_.getParentNode) foreach println
-			}
 		}
 	}
 

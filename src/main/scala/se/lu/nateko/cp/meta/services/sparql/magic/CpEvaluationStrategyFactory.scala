@@ -41,7 +41,7 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetch, bindings: BindingSet): Iterator[BindingSet] = {
 
-		val infos1: Iterator[ObjInfo] = bindings.getValue(doFetch.dobjVarName) match {
+		val infos1: Iterator[ObjInfo] = bindings.getValue(doFetch.dobjVar) match {
 			case null =>
 				indexThunk().objInfo.valuesIterator
 			case dobjUri @ CpVocab.DataObject(hash, _) =>
@@ -52,18 +52,17 @@ class CpEvaluationStrategyFactory(
 
 		val infos2 = if(doFetch.excludeDeprecated) infos1.filterNot(_.isDeprecated) else infos1
 
-		val infos3 = bindings.getValue(doFetch.specVarName) match {
-			case null =>
-				infos2
+		val infos3 = doFetch.specVar.flatMap(spec => Option(bindings.getValue(spec))).fold(infos2){
 			case spec: IRI =>
-//println(s"Filtering for $spec")
 				infos2.filter(_.spec === spec)
+			case _ =>
+				infos2
 		}
 
 		infos3.map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
-			bs.setBinding(doFetch.dobjVarName, oinfo.uri)
-			bs.setBinding(doFetch.specVarName, oinfo.spec)
+			bs.setBinding(doFetch.dobjVar, oinfo.uri)
+			doFetch.specVar.foreach(bs.setBinding(_, oinfo.spec))
 			bs
 		}.zipWithIndex.collect{
 			case (bs, i) =>

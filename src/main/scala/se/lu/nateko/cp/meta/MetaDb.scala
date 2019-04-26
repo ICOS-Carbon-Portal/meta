@@ -167,7 +167,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		import se.lu.nateko.cp.meta.services.sparql.magic.CpMagicSail
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher))
+		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher), log)
 		//val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
 		//val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
 

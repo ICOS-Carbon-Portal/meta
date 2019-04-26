@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import akka.event.LoggingAdapter
+
 import scala.language.reflectiveCalls
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
@@ -25,7 +27,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.stats._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 
-class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler) extends NotifyingSailWrapper(baseSail){
+class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler, log: LoggingAdapter) extends NotifyingSailWrapper(baseSail){
 
 	private var indexh: IndexHandler = _
 
@@ -37,8 +39,11 @@ class CpMagicSail(baseSail: NativeOrMemoryStore, init: Sail => IndexHandler) ext
 	}
 
 	override def initialize(): Unit = {
+		log.info("Initializing triple store...")
 		super.initialize()
+		log.info("Triple store initialized, initializing Carbon Portal index...")
 		indexh = init(baseSail)
+		log.info(s"Carbon Portal index initialized with info on ${indexh.index.objInfo.size} data objects")
 	}
 
 	override def getConnection(): NotifyingSailConnection = new NotifyingSailConnectionWrapper(baseSail.getConnection){

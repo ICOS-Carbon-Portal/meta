@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.AbstractEvaluationStrategyFactory
@@ -41,34 +42,38 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetch, bindings: BindingSet): Iterator[BindingSet] = {
 
+		val specBinding: Option[Value] = doFetch.specVar.flatMap(spec => Option(bindings.getValue(spec)))
+
 		val infos1: Iterator[ObjInfo] = bindings.getValue(doFetch.dobjVar) match {
 			case null =>
-				indexThunk().objInfo.valuesIterator
+				specBinding.fold(indexThunk().objInfo.valuesIterator){
+					case spec: IRI =>
+						indexThunk().getObjsForSpec(spec)
+					case _ => Iterator.empty
+				}
 			case dobjUri @ CpVocab.DataObject(hash, _) =>
-				indexThunk().objInfo.get(hash).filter(_.uri === dobjUri).iterator
+				indexThunk().objInfo.get(hash).filter(
+					oinfo => oinfo.uri === dobjUri && specBinding.forall(oinfo.spec == _)
+				).iterator
 			case _ =>
 				Iterator.empty
 		}
 
 		val infos2 = if(doFetch.excludeDeprecated) infos1.filterNot(_.isDeprecated) else infos1
 
-		val infos3 = doFetch.specVar.flatMap(spec => Option(bindings.getValue(spec))).fold(infos2){
-			case spec: IRI =>
-				infos2.filter(_.spec === spec)
-			case _ =>
-				infos2
-		}
-
-		infos3.map{oinfo =>
+		infos2.map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
 			bs.setBinding(doFetch.dobjVar, oinfo.uri)
 			doFetch.specVar.foreach(bs.setBinding(_, oinfo.spec))
+			for(name <- doFetch.dataStartTimeVar; value <- oinfo.dataStartTime) bs.setBinding(name, value)
+			for(name <- doFetch.dataEndTimeVar; value <- oinfo.dataEndTime) bs.setBinding(name, value)
 			bs
-		}.zipWithIndex.collect{
-			case (bs, i) =>
-				if(i < 3 || i == 10 || i == 100 || i == 1000 || i == 10000) println(s"binding $i : $bs")
-				if(i == 3) println("...")
-				bs
 		}
+		// .zipWithIndex.collect{
+		// 	case (bs, i) =>
+		// 		if(i < 3 || i == 10 || i == 100 || i == 1000 || i == 10000) println(s"binding $i : $bs")
+		// 		if(i == 3) println("...")
+		// 		bs
+		// }
 	}
 }

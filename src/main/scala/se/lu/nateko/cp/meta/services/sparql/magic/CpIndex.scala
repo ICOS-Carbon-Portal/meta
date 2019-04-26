@@ -1,15 +1,18 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.HashSet
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.sail.Sail
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -34,6 +37,8 @@ trait ObjInfo extends ObjSpecific{
 	def station: IRI
 	def hasSubmission: Boolean
 	def hasAcquisition: Boolean
+	def dataStartTime: Option[Literal]
+	def dataEndTime: Option[Literal]
 	def isComplete: Boolean
 	def isDeprecated: Boolean
 	def getKeyOrElse(default: StatKey): StatKey
@@ -49,6 +54,7 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 	private val factory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
 	private val stats = new HashMap[Sha256Sum, ObjEntry]
+	private val perSpec = new HashMap[IRI, HashSet[ObjEntry]]
 	def objInfo: scala.collection.Map[Sha256Sum, ObjInfo] = stats
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
@@ -79,10 +85,13 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 			.toIndexedSeq
 	}
 
+	def getObjsForSpec(spec: IRI): Iterator[ObjInfo] = perSpec.get(spec).iterator.flatten
+
 	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =
 		dataLevel.intValue < 3 && !CpVocab.isIngosArchive(spec)
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = stats.getOrElseUpdate(hash, new ObjEntry(hash, ""))
+	private def getObjSetForSpec(spec: IRI): HashSet[ObjEntry] = perSpec.getOrElseUpdate(spec, HashSet.empty)
 
 	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{
 		case CpVocab.DataObject(hash, prefix) =>
@@ -91,6 +100,15 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 			mod(entry)
 
 		case _ =>
+	}
+
+	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match{
+		case lit: Literal if lit.getDatatype === XMLSchema.DATETIME =>
+			try{
+				mod(Instant.parse(lit.stringValue).getEpochSecond)
+			}catch{
+				case _: Throwable => //ignoring wrong dateTimes
+			}
 	}
 
 	def put(st: RdfUpdate): Unit = {
@@ -104,7 +122,7 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 		val list = new ArrayList[RdfUpdate](UpdateQueueSize)
 		q.drainTo(list)
 		import vocab._
-		import vocab.prov.wasAssociatedWith
+		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 
 		list.iterator.asScala.foreach{
 			case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) => {
@@ -112,9 +130,22 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 
 				pred match{
 
-					case `hasObjectSpec` =>
-						modForDobj(subj)(_.spec = targetUri)
-						//modForDobj(subj){e => if(isAssertion || e.spec == obj) e.spec = targetUri}//double spec possible temporarily
+					case `hasObjectSpec` => obj match{
+						case spec: IRI =>
+							modForDobj(subj){oinfo =>
+								val set = getObjSetForSpec(spec)
+								if(isAssertion) {
+									if(oinfo.spec != null && oinfo.spec != spec){//obj spec is changing
+										getObjSetForSpec(oinfo.spec).remove(oinfo)
+									}
+									oinfo.spec = spec
+									set.add(oinfo)
+								} else if(spec === oinfo.spec) {
+									oinfo.spec = null
+									set.remove(oinfo)
+								}
+							}
+					}
 
 					case `wasSubmittedBy` =>
 						modForDobj(subj)(_.hasSubmission = isAssertion)
@@ -128,6 +159,30 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 						case CpVocab.Acquisition(hash) =>
 							getObjEntry(hash).station = targetUri
 						case _ =>
+					}
+
+					case `hasStartTime` => ifDateTime(obj){ dt =>
+						modForDobj(subj)(_.dataStart = dt)
+					}
+
+					case `hasEndTime` => ifDateTime(obj){ dt =>
+						modForDobj(subj)(_.dataEnd = dt)
+					}
+
+					case `startedAtTime` => ifDateTime(obj){ dt =>
+						subj match{
+							case CpVocab.Acquisition(hash) =>
+								getObjEntry(hash).dataStart = dt
+							case _ =>
+						}
+					}
+
+					case `endedAtTime` => ifDateTime(obj){ dt =>
+						subj match{
+							case CpVocab.Acquisition(hash) =>
+								getObjEntry(hash).dataEnd = dt
+							case _ =>
+						}
 					}
 
 					case `isNextVersionOf` =>
@@ -157,6 +212,8 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 		var station: IRI = _
 		var hasSubmission: Boolean = false
 		var hasAcquisition: Boolean = false
+		var dataStart: Long = Long.MinValue
+		var dataEnd: Long = Long.MinValue
 		var isComplete: Boolean = false
 		var isDeprecated: Boolean = false
 
@@ -171,6 +228,15 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 				if(station != null && hasAcquisition) Some(station) else None
 			)
 			else default
+
+		private def dataTime(dt: Long): Option[Literal] =
+			if((!specRequiresStation.getOrElse(spec, true) || hasAcquisition) && dt != Long.MinValue)
+				Some(factory.createLiteral(Instant.ofEpochSecond(dt)))
+			else
+				None
+
+		def dataStartTime: Option[Literal] = dataTime(dataStart)
+		def dataEndTime: Option[Literal] = dataTime(dataEnd)
 
 		def uri: IRI = factory.createIRI(prefix + hash.base64Url)
 	}

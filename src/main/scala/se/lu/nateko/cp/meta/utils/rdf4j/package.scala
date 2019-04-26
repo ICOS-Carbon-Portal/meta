@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
 import java.net.{ URI => JavaUri }
+import java.time.Instant
 
 import scala.util.Failure
 import scala.util.Success
@@ -28,6 +29,7 @@ package object rdf4j {
 		def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 		def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
 		def createLiteral(label: String, dtype: JavaUri) = factory.createLiteral(label, createIRI(dtype))
+		def createLiteral(dt: Instant) = factory.createLiteral(dt.toString, XMLSchema.DATETIME)
 		def createStringLiteral(label: String) = factory.createLiteral(label, XMLSchema.STRING)
 
 		def tripleToStatement(triple: (IRI, IRI, Value)): Statement =

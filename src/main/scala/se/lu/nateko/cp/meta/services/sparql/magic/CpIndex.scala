@@ -85,6 +85,7 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 			.toIndexedSeq
 	}
 
+	//stats.valuesIterator.filter(_.spec === spec)
 	def getObjsForSpec(spec: IRI): Iterator[ObjInfo] = perSpec.get(spec).iterator.flatten
 
 	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =

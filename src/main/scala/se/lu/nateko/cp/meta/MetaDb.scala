@@ -40,7 +40,12 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.services.CitationProviderFactory
+import se.lu.nateko.cp.meta.services.CitationProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import _root_.views.html.landpagesnips.metaDownloadButton
+import se.lu.nateko.cp.meta.api.CitationClient
 
 
 class MetaDb (
@@ -51,10 +56,11 @@ class MetaDb (
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	val repo: Repository,
+	val dataCiter: CitationClient,
 	val config: CpmetaConfig
 )(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends Closeable{
 
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, config)
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, dataCiter,config)
 
 	def close(): Unit = {
 		sparql.shutdown()
@@ -101,7 +107,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		validateConfig(config0)
 		import system.dispatcher
 
-		val (repo, didNotExist) = makeInitRepo(config0.rdfStorage)
+	val citerFactory = new CitationProviderFactory(config0)
+	val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
 
 		val config = if(didNotExist)
 				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
@@ -143,17 +150,17 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, config)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		}
 	}
 
-	private def makeInitRepo(config: RdfStorageConfig): (Repository, Boolean) = {
-		val storageDir = Paths.get(config.path)
+	private def makeInitRepo(config: CpmetaConfig, citationFactory: CitationProviderFactory): (Repository, Boolean, CitationClient) = {
+		val storageDir = Paths.get(config.rdfStorage.path)
 
 		val didNotExist = !Files.exists(storageDir)
 		if(didNotExist)
 			Files.createDirectories(storageDir)
-		else if(config.recreateAtStartup){
+		else if(config.rdfStorage.recreateAtStartup){
 			log.info("Purging the current native RDF storage")
 			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
 		}
@@ -167,13 +174,13 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		import se.lu.nateko.cp.meta.services.sparql.magic.CpMagicSail
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher), log)
+		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher), citationFactory, log)
 		//val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
 		//val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
 
 		val repo = new SailRepository(store)
 		repo.initialize()
-		(repo, didNotExist)
+		(repo, didNotExist, store.getCitationClient)
 	}
 
 	private def makeUploadService(

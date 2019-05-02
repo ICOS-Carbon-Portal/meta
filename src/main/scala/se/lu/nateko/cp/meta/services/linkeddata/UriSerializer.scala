@@ -35,6 +35,7 @@ trait UriSerializer {
 class Rdf4jUriSerializer(
 	repo: Repository,
 	servers: DataObjectInstanceServers,
+	citer: CitationClient,
 	config: CpmetaConfig
 )(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
 
@@ -42,7 +43,6 @@ class Rdf4jUriSerializer(
 	import Rdf4jUriSerializer._
 
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	val citer = new CitationClient(getDois, config.citations)
 	val stats = new StatisticsClient(config.restheart)
 	val pcm = new PageContentMarshalling(config.core.handleService, citer, new CpVocab(repo.getValueFactory), stats)
 
@@ -143,20 +143,6 @@ class Rdf4jUriSerializer(
 
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
-
-	private def getDois: List[Doi] = {
-		import se.lu.nateko.cp.meta.services.CpmetaVocab
-		import se.lu.nateko.cp.meta.utils.rdf4j._
-		val meta = new CpmetaVocab(repo.getValueFactory)
-		repo
-			.access{conn =>
-				conn.getStatements(null, meta.hasDoi, null)
-			}
-			.map(_.getObject.stringValue)
-			.toList.distinct.collect{
-			case Doi(doi) => doi
-		}
-	}
 }
 
 

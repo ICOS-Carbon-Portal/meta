@@ -55,7 +55,8 @@ class StaticObjectFetcher(
 			specificInfo = levelSpecificInfo,
 			nextVersion = getNextVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
-			parentCollections = collFetcher.getParentCollections(dobj)
+			parentCollections = collFetcher.getParentCollections(dobj),
+			citationString = getOptionalString(dobj, metaVocab.hasCitationString)
 		)
 	}
 

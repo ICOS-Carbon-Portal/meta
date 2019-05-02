@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
 import java.net.{ URI => JavaUri }
+import java.time.Instant
 
 import scala.util.Failure
 import scala.util.Success
@@ -28,6 +29,7 @@ package object rdf4j {
 		def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 		def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
 		def createLiteral(label: String, dtype: JavaUri) = factory.createLiteral(label, createIRI(dtype))
+		def createLiteral(dt: Instant) = factory.createLiteral(dt.toString, XMLSchema.DATETIME)
 		def createStringLiteral(label: String) = factory.createLiteral(label, XMLSchema.STRING)
 
 		def tripleToStatement(triple: (IRI, IRI, Value)): Statement =
@@ -108,6 +110,7 @@ package object rdf4j {
 	}
 
 	implicit class Rdf4jSailWithAccess(val sail: Sail) extends AnyVal{
+
 		def access[T](accessor: SailConnection => CloseableIteration[_ <: T, _]): CloseableIterator[T] = {
 			val conn = sail.getConnection
 			try{
@@ -118,6 +121,16 @@ package object rdf4j {
 				case err: Throwable =>
 					conn.close()
 					throw err
+			}
+		}
+
+		def accessEagerly[T](accessor: SailConnection => T): T = {
+			val conn = sail.getConnection
+			try{
+				accessor(conn)
+			}
+			finally{
+				conn.close()
 			}
 		}
 	}

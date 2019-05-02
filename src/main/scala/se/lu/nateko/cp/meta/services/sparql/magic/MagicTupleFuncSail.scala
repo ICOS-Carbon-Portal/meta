@@ -17,10 +17,10 @@ import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnectionListener
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
-
-import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
 import org.eclipse.rdf4j.sail.SailException
+
+import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 
 trait MagicTupleFuncPlugin extends SailConnectionListener{
 	def makeFunctions: Seq[TupleFunction]

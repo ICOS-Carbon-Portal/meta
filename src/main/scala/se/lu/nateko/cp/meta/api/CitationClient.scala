@@ -40,13 +40,15 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 
 	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 
-	def getCitation(doi: Doi): Future[String] = cache
-		.getOrElseUpdate(doi, fetchTimeLimited(doi))
-		.andThen{
-			case Failure(_) => scheduler.scheduleOnce(10.seconds){
+	def getCitation(doi: Doi): Future[String] = {
+		val fut = cache.getOrElseUpdate(doi, fetchTimeLimited(doi))
+		fut.failed.foreach{_ =>
+			scheduler.scheduleOnce(10.seconds){
 				fetchIfNeeded(doi)
 			}
 		}
+		fut
+	}
 
 	private def fetchTimeLimited(doi: Doi): Future[String] =
 		timeLimit(fetchCitation(doi), 3.seconds, scheduler).recoverWith{

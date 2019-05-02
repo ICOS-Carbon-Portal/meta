@@ -79,9 +79,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	def getDataCiteCitation(dobj: DataObject): Option[String] = for(
 		doiStr <- dobj.doi;
 		doi <- Doi.unapply(doiStr);
-		//_ = println("looking up DataCite citation for " + doiStr);
-		citFut = dataCiter.getCitation(doi);
-		cit <- citFut.value.flatMap(_.toOption)
+		cit <- dataCiter.getCitation(doi).value.flatMap(_.toOption)
 	) yield cit
 
 	def getIcosCitation(dobj: DataObject): Option[String] =

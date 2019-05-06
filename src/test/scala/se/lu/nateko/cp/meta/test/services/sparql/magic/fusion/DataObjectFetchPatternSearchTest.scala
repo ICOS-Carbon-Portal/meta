@@ -19,7 +19,7 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 		describe("Locating the pattern"){
 
-			val fetch: DataObjectFetch = {
+			def getFetch: DataObjectFetch = {
 				val query = getQuery
 				val patternOpt = dofps.search(query)
 
@@ -31,15 +31,23 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 			}
 
 			it("correctly finds data object and object spec variable names"){
+				val fetch = getFetch
 				assert(fetch.dobjVar == "dobj" && fetch.specVar == Some("spec"))
 			}
 
 			it("correctly finds temporal coverage variable names"){
+				val fetch = getFetch
 				assert(fetch.dataStartTimeVar == Some("timeStart") && fetch.dataEndTimeVar == Some("timeEnd"))
 			}
 
 			it("identifies the no-deprecated-objects filter"){
+				val fetch = getFetch
 				assert(fetch.excludeDeprecated)
+			}
+
+			it("detects and fuses the station property path pattern"){
+				val fetch = getFetch
+				assert(fetch.stationVar === Some("station"))
 			}
 
 		}
@@ -60,6 +68,7 @@ private object TestQs{
 			}
 			?dobj cpmeta:hasObjectSpec ?spec .
 			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 			?dobj cpmeta:hasSizeInBytes ?size .
 			?dobj cpmeta:hasName ?fileName .
 			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .

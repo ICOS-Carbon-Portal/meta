@@ -17,26 +17,37 @@ class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends Do
 	override def removeExpr(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
 }
 
+class TwoStepPropPathPattern(val path: StatementPatternSearch.TwoStepPropPath) extends DobjPattern{
+	def dobjVar: String =  path.subjVariable
+	def expr = path.step2
+	override def removeExpr(): Unit = {
+		path.step1.replaceWith(new SingletonSet)
+		path.step2.replaceWith(new SingletonSet)
+	}
+}
+
 case class TimePatternVars(val dobjVar: String, val timeVar: String)
 
 class DataObjectFetchPattern(
 	spec: Option[ObjSpecPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern],
 	dataStart: Option[TempCoveragePattern],
-	dataStop: Option[TempCoveragePattern]
+	dataStop: Option[TempCoveragePattern],
+	station: Option[TwoStepPropPathPattern]
 ){
 
-	val allPatterns: Seq[DobjPattern] = spec.toSeq ++ noDeprecated ++ dataStart ++ dataStop
+	val allPatterns: Seq[DobjPattern] = spec.toSeq ++ noDeprecated ++ dataStart ++ dataStop ++ station
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
-		val deepest = allPatterns.maxBy(p => depth(p.expr))
+		val deepest = allPatterns.maxBy(p => nodeDepth(p.expr))
 
 		val fetchExpr = new DataObjectFetch(
 			deepest.dobjVar,
 			spec.map(_.specVar),
 			dataStart.map(_.timeVar),
 			dataStop.map(_.timeVar),
+			station.map(_.path.objVariable),
 			noDeprecated.isDefined
 		)
 		deepest.expr.replaceWith(fetchExpr)
@@ -44,13 +55,4 @@ class DataObjectFetchPattern(
 		for(patt <- allPatterns if patt ne deepest) patt.removeExpr()
 	}
 
-	def depth(expr: TupleExpr): Int = {
-		var res = -1
-		var ancestor: QueryModelNode = expr
-		while(ancestor != null){
-			ancestor = ancestor.getParentNode
-			res += 1
-		}
-		res
-	}
 }

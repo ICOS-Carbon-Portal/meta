@@ -47,6 +47,9 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		})
 		.recursive
 
+	val stationPatternSearch = StatementPatternSearch.twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
+		.thenGet(new TwoStepPropPathPattern(_))
+
 	val search: TopNodeSearch[DataObjectFetchPattern] = node => {
 		val tempCoverage = new TempCoveragePatternSearch(meta)
 
@@ -54,10 +57,12 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		val specOpt = dataObjSpecPatternSearch(node)
 		val dataStartOpt = tempCoverage.startTimePattern(node)
 		val dataEndOpt = tempCoverage.endTimePattern(node)
+		val stationOpt = stationPatternSearch(node)
 
-		val res = new DataObjectFetchPattern(specOpt, noDeprecatedOpt, dataStartOpt, dataEndOpt)
+		val res = new DataObjectFetchPattern(specOpt, noDeprecatedOpt, dataStartOpt, dataEndOpt, stationOpt)
 		val dobjVarNameVersions = res.allPatterns.map(_.dobjVar).distinct
+		val inSameJoin = areWithinCommonJoin(res.allPatterns.map(_.expr))
 
-		if(dobjVarNameVersions.length == 1) Some(res) else None
+		if(inSameJoin && dobjVarNameVersions.length == 1) Some(res) else None
 	}
 }

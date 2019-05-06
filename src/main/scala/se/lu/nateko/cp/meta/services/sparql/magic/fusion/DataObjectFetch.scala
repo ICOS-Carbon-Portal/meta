@@ -9,12 +9,13 @@ class DataObjectFetch(
 	val specVar: Option[String],
 	val dataStartTimeVar: Option[String],
 	val dataEndTimeVar: Option[String],
+	val stationVar: Option[String],
 	val excludeDeprecated: Boolean
 ) extends AbstractQueryModelNode with TupleExpr{
 
-	private val allVars = Seq(dobjVar) ++ specVar ++ dataStartTimeVar ++ dataEndTimeVar
+	private val allVars = Seq(dobjVar) ++ specVar ++ dataStartTimeVar ++ dataEndTimeVar ++ stationVar
 
-	override def clone() = new DataObjectFetch(dobjVar, specVar, dataStartTimeVar, dataEndTimeVar, excludeDeprecated)
+	override def clone() = new DataObjectFetch(dobjVar, specVar, dataStartTimeVar, dataEndTimeVar, stationVar, excludeDeprecated)
 
 	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
 		case _: EvaluationStatistics.CardinalityCalculator => //this visitor crashes on 'alien' query nodes

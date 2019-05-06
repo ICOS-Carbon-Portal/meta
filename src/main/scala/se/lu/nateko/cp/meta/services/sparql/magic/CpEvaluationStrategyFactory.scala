@@ -61,10 +61,20 @@ class CpEvaluationStrategyFactory(
 
 		val infos2 = if(doFetch.excludeDeprecated) infos1.filterNot(_.isDeprecated) else infos1
 
-		infos2.map{oinfo =>
+		val infos3 = doFetch.stationVar.fold(infos2){stationVar =>
+			val stationBinding: Option[Value] = Option(bindings.getValue(stationVar))
+			stationBinding.fold(
+				infos2.filter(_.station != null) //station variable needs to be set, but has not been set yet
+			){
+				station => infos2.filter(station == _.station)
+			}
+		}
+
+		infos3.map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
 			bs.setBinding(doFetch.dobjVar, oinfo.uri)
 			doFetch.specVar.foreach(bs.setBinding(_, oinfo.spec))
+			doFetch.stationVar.foreach(bs.setBinding(_, oinfo.station))
 			for(name <- doFetch.dataStartTimeVar; value <- oinfo.dataStartTime) bs.setBinding(name, value)
 			for(name <- doFetch.dataEndTimeVar; value <- oinfo.dataEndTime) bs.setBinding(name, value)
 			bs

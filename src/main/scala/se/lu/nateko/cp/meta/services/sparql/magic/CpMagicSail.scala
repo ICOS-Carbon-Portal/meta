@@ -95,8 +95,8 @@ class CpMagicSail(
 			val expr: TupleExpr = TupleExprCloner.cloneExpr(tupleExpr)
 			expr.visit(new StatsQueryModelVisitor)
 
-			// val dofps = new DataObjectFetchPatternSearch(metaVocab)
-			// dofps.search(expr).foreach(_.fuse())
+			val dofps = new DataObjectFetchPatternSearch(metaVocab)
+			dofps.search(expr).foreach(_.fuse())
 
 			try{
 				getWrappedConnection.evaluate(expr, dataset, bindings, includeInferred)

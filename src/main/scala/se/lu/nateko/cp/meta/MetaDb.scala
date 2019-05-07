@@ -37,6 +37,7 @@ import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -165,22 +166,14 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
 		}
 
-//		val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
-//		val indices = "spoc".permutations.mkString(",") //all the possible indices
-		val indices = "spoc,posc,ospc,cspo,cpos,cosp"
-		val native = new NativeStore(storageDir.toFile, indices)
-		native.setForceSync(!didNotExist) //faster rebuilding
-
-		import se.lu.nateko.cp.meta.services.sparql.magic.CpMagicSail
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val store = new CpMagicSail(native, new IndexHandler(_, system.scheduler)(system.dispatcher), citationFactory, log)
-		//val statsPlugin = new StatsPlugin(system.scheduler)(system.dispatcher)
-		//val store = new MagicTupleFuncSail(Seq(statsPlugin), native)
+		val native = new CpNativeStore(storageDir.toFile, new IndexHandler(_, system.scheduler)(system.dispatcher), citationFactory, log)
+		native.setForceSync(!didNotExist) //faster rebuilding
 
-		val repo = new SailRepository(store)
+		val repo = new SailRepository(native)
 		repo.initialize()
-		(repo, didNotExist, store.getCitationClient)
+		(repo, didNotExist, native.getCitationClient)
 	}
 
 	private def makeUploadService(

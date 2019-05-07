@@ -41,7 +41,6 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 		new CitationProvider(dataCiter, sail, conf.core, conf.dataUploadService)
 	}
 
-
 }
 
 class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){

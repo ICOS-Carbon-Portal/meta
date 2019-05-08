@@ -54,7 +54,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- extras.citation.orElse(icosCitation(dobj, vocab, handleService))){
+				@for(cit <- dobj.citationString.orElse(extras.citation)){
 					@PanelRow("Citation", cit)
 				}
 				@PanelRow("File name", dobj.fileName)

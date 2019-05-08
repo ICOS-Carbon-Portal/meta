@@ -46,7 +46,7 @@ class Rdf4jUriSerializer(
 	val stats = new StatisticsClient(config.restheart)
 	val pcm = new PageContentMarshalling(config.core.handleService, citer, new CpVocab(repo.getValueFactory), stats)
 
-	import pcm.{dataObjectMarshaller, statCollMarshaller}
+	import pcm.{staticObjectMarshaller, statCollMarshaller}
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))

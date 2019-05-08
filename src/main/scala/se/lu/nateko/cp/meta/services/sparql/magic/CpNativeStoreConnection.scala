@@ -40,15 +40,14 @@ class CpNativeStoreConnection(
 	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = try{
 
 		val tupleExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-		logger.info("Original query model:\n{}", tupleExpr)
+		logger.trace("Original query model:\n{}", tupleExpr)
 		tupleExpr.visit(new StatsQueryModelVisitor)
 
 		val dofps = new DataObjectFetchPatternSearch(metaVocab)
 		dofps.search(tupleExpr).foreach(_.fuse())
 
-		logger.info("Fused query model:\n{}", tupleExpr)
-
 		if(naiveMode){
+			logger.trace("Fused query model:\n{}", tupleExpr)
 			val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
 			val strategy = getEvaluationStrategy(dataset, tripleSource)
 			strategy.evaluate(tupleExpr, EmptyBindingSet.getInstance)

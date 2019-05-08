@@ -13,29 +13,40 @@ import se.lu.nateko.cp.meta.services.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.CitationProvider
 import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsTupleFunction
+import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
-import java.util.concurrent.locks.ReentrantReadWriteLock
 
 class CpNativeStore(
 	storageFolder: File,
-	init: Sail => IndexHandler,
+	indexInit: Sail => IndexHandler,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
 ) extends SailWrapper{ cpsail =>
 
-	private var indexh: IndexHandler = _
-	private var citer: CitationProvider = _
+	private[this] var indexh: IndexHandler = _
+	private[this] var citer: CitationProvider = _
 
-	private var useCpConnection: Boolean = false
+	private object nativeSail extends NativeStore(storageFolder, CpNativeStore.indices) with ReadWriteLocking{
 
-	private val nativeSail: NativeStore = new NativeStore(storageFolder, CpNativeStore.indices){
+		private[this] var useCpConnection: Boolean = false
+
+		setEvaluationStrategyFactory{
+			val tupleFunctionReg = new TupleFunctionRegistry()
+			val indexThunk = () => indexh.index
+			tupleFunctionReg.add(new StatsTupleFunction(indexThunk))
+			new CpEvaluationStrategyFactory(tupleFunctionReg, getFederatedServiceResolver, indexThunk)
+		}
+
+		def getSpecificConnection(cpSpecific: Boolean): SailConnection = writeLocked{
+			useCpConnection = cpSpecific
+			getConnection()
+		}
+
 		override def getConnectionInternal(): NotifyingSailConnection =
-			if(!useCpConnection)
-				super.getConnectionInternal()
-			else
+			if(useCpConnection)
 				try {
-					val conn = new CpNativeStoreConnection(nativeSail, citer)
+					val conn = new CpNativeStoreConnection(this, citer)
 					conn.addConnectionListener(indexh)
 					conn
 				}
@@ -43,46 +54,30 @@ class CpNativeStore(
 					case e: IOException =>
 						throw new SailException(e)
 				}
+			else
+				super.getConnectionInternal()
 	}
+
 	setBaseSail(nativeSail)
-
-	private val connLock = new ReentrantReadWriteLock()
-	private def getSpecificConnection(cpSpecific: Boolean): SailConnection = {
-		val lock = connLock.writeLock()
-		lock.lock()
-		try{
-			useCpConnection = cpSpecific
-			nativeSail.getConnection()
-		}finally{
-			lock.unlock()
-		}
-	}
-
-	nativeSail.setEvaluationStrategyFactory{
-		val tupleFunctionReg = new TupleFunctionRegistry()
-		val indexThunk = () => indexh.index
-		tupleFunctionReg.add(new StatsTupleFunction(indexThunk))
-		new CpEvaluationStrategyFactory(tupleFunctionReg, nativeSail.getFederatedServiceResolver, indexThunk)
-	}
 
 	def getCitationClient: CitationClient = citer.dataCiter
 	def setForceSync(forceSync: Boolean): Unit = nativeSail.setForceSync(forceSync)
 
-	private val originalSail = new SailWrapper(nativeSail){
-		override	def getConnection(): SailConnection = getSpecificConnection(false)
+	private val originalSail: Sail = new SailWrapper(nativeSail){
+		override	def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)
 	}
 
 	override def initialize(): Unit = {
 		log.info("Initializing triple store...")
 		nativeSail.initialize()
 		log.info("Triple store initialized, initializing Carbon Portal index...")
-		indexh = init(originalSail)
+		indexh = indexInit(originalSail)
 		log.info(s"Carbon Portal index initialized with info on ${indexh.index.objInfo.size} data objects")
 		citer = citationFactory.getProvider(originalSail)
 		log.info("Initialized citation provider")
 	}
 
-	override	def getConnection(): SailConnection = getSpecificConnection(true)
+	override	def getConnection(): SailConnection = nativeSail.getSpecificConnection(true)
 }
 
 object CpNativeStore{

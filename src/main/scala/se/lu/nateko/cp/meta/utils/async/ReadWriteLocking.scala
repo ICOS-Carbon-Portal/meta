@@ -18,7 +18,7 @@ trait ReadWriteLocking {
 		}
 	}
 
-	protected def writeLocked(writer: => Unit): Unit = {
+	protected def writeLocked[T](writer: => T): T = {
 		wl.lock()
 		try{
 			writer

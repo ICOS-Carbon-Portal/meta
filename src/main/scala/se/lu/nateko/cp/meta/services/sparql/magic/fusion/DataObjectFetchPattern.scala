@@ -32,11 +32,13 @@ class DataObjectFetchPattern(
 	spec: Option[ObjSpecPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern],
 	dataStart: Option[TempCoveragePattern],
-	dataStop: Option[TempCoveragePattern],
+	dataEnd: Option[TempCoveragePattern],
+	submStart: Option[TwoStepPropPathPattern],
+	submEnd: Option[TwoStepPropPathPattern],
 	station: Option[TwoStepPropPathPattern]
 ){
 
-	val allPatterns: Seq[DobjPattern] = spec.toSeq ++ noDeprecated ++ dataStart ++ dataStop ++ station
+	val allPatterns: Seq[DobjPattern] = spec.toSeq ++ noDeprecated ++ dataStart ++ dataEnd ++ submStart ++ submEnd ++ station
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
@@ -46,7 +48,9 @@ class DataObjectFetchPattern(
 			deepest.dobjVar,
 			spec.map(_.specVar),
 			dataStart.map(_.timeVar),
-			dataStop.map(_.timeVar),
+			dataEnd.map(_.timeVar),
+			submStart.map(_.path.objVariable),
+			submEnd.map(_.path.objVariable),
 			station.map(_.path.objVariable),
 			noDeprecated.isDefined
 		)

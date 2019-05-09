@@ -26,7 +26,7 @@ import se.lu.nateko.cp.meta.services.CitationProvider
 class CpNativeStoreConnection(
 	sail: NativeStore,
 	citer: CitationProvider,
-	naiveMode: Boolean = true
+	naiveMode: Boolean = false
 ) extends NativeStoreConnection(sail){
 
 	private val valueFactory = sail.getValueFactory

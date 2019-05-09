@@ -77,6 +77,8 @@ class CpEvaluationStrategyFactory(
 			doFetch.stationVar.foreach(bs.setBinding(_, oinfo.station))
 			for(name <- doFetch.dataStartTimeVar; value <- oinfo.dataStartTime) bs.setBinding(name, value)
 			for(name <- doFetch.dataEndTimeVar; value <- oinfo.dataEndTime) bs.setBinding(name, value)
+			for(name <- doFetch.submStartTimeVar; value <- oinfo.submissionStartTime) bs.setBinding(name, value)
+			for(name <- doFetch.submEndTimeVar; value <- oinfo.submissionEndTime) bs.setBinding(name, value)
 			bs
 		}
 		// .zipWithIndex.collect{

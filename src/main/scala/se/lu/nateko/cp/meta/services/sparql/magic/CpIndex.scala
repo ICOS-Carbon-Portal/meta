@@ -39,6 +39,8 @@ trait ObjInfo extends ObjSpecific{
 	def hasAcquisition: Boolean
 	def dataStartTime: Option[Literal]
 	def dataEndTime: Option[Literal]
+	def submissionStartTime: Option[Literal]
+	def submissionEndTime: Option[Literal]
 	def isComplete: Boolean
 	def isDeprecated: Boolean
 	def getKeyOrElse(default: StatKey): StatKey
@@ -174,6 +176,8 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 						subj match{
 							case CpVocab.Acquisition(hash) =>
 								getObjEntry(hash).dataStart = dt
+							case CpVocab.Submission(hash) =>
+								getObjEntry(hash).submissionStart = dt
 							case _ =>
 						}
 					}
@@ -182,6 +186,8 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 						subj match{
 							case CpVocab.Acquisition(hash) =>
 								getObjEntry(hash).dataEnd = dt
+							case CpVocab.Submission(hash) =>
+								getObjEntry(hash).submissionEnd = dt
 							case _ =>
 						}
 					}
@@ -215,6 +221,8 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 		var hasAcquisition: Boolean = false
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue
+		var submissionStart: Long = Long.MinValue
+		var submissionEnd: Long = Long.MinValue
 		var isComplete: Boolean = false
 		var isDeprecated: Boolean = false
 
@@ -230,14 +238,22 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 			)
 			else default
 
-		private def dataTime(dt: Long): Option[Literal] =
-			if((!specRequiresStation.getOrElse(spec, true) || hasAcquisition) && dt != Long.MinValue)
-				Some(factory.createLiteral(Instant.ofEpochSecond(dt)))
-			else
-				None
+		private def dataTime(dt: Long): Option[Literal] = if(
+			hasAcquisition ||
+			!specRequiresStation.getOrElse(spec, true)
+		) dateTimeFromLong(dt) else None
+
+		private def submTime(dt: Long): Option[Literal] =
+			if(hasSubmission) dateTimeFromLong(dt) else None
+
+		private def dateTimeFromLong(dt: Long): Option[Literal] =
+			if(dt == Long.MinValue) None
+			else Some(factory.createLiteral(Instant.ofEpochSecond(dt)))
 
 		def dataStartTime: Option[Literal] = dataTime(dataStart)
 		def dataEndTime: Option[Literal] = dataTime(dataEnd)
+		def submissionStartTime: Option[Literal] = submTime(submissionStart)
+		def submissionEndTime: Option[Literal] = submTime(submissionEnd)
 
 		def uri: IRI = factory.createIRI(prefix + hash.base64Url)
 	}

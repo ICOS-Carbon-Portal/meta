@@ -29,7 +29,7 @@ class CpNativeStore(
 
 	private object nativeSail extends NativeStore(storageFolder, CpNativeStore.indices) with ReadWriteLocking{
 
-		private[this] var useCpConnection: Boolean = false
+		private[this] var useCpConnection: Boolean = true
 
 		setEvaluationStrategyFactory{
 			val tupleFunctionReg = new TupleFunctionRegistry()
@@ -40,7 +40,9 @@ class CpNativeStore(
 
 		def getSpecificConnection(cpSpecific: Boolean): SailConnection = writeLocked{
 			useCpConnection = cpSpecific
-			getConnection()
+			val conn = getConnection()
+			useCpConnection = true
+			conn
 		}
 
 		override def getConnectionInternal(): NotifyingSailConnection =

@@ -22,11 +22,11 @@ import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import se.lu.nateko.cp.meta.services.CitationProvider
+import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
-	citer: CitationProvider,
-	naiveMode: Boolean = false
+	citer: CitationProvider
 ) extends NativeStoreConnection(sail){
 
 	private val valueFactory = sail.getValueFactory
@@ -46,13 +46,28 @@ class CpNativeStoreConnection(
 		val dofps = new DataObjectFetchPatternSearch(metaVocab)
 		dofps.search(tupleExpr).foreach(_.fuse())
 
-		if(naiveMode){
-			logger.trace("Fused query model:\n{}", tupleExpr)
-			val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
-			val strategy = getEvaluationStrategy(dataset, tripleSource)
-			strategy.evaluate(tupleExpr, EmptyBindingSet.getInstance)
-		} else
-			super.evaluateInternal(tupleExpr, dataset, bindings, includeInferred)
+		logger.trace("Fused query model:\n{}", tupleExpr)
+
+		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
+		val strategy = getEvaluationStrategy(dataset, tripleSource)
+
+		Seq( //taken from SailSourceConnection.evaluateInternal
+			new BindingAssigner,
+			new ConstantOptimizer(strategy),
+			new CompareOptimizer(),
+			new ConjunctiveConstraintSplitter(),
+			new DisjunctiveConstraintOptimizer(),
+			new SameTermFilterOptimizer(),
+			new QueryModelNormalizer(),
+			//new QueryJoinOptimizer(sail.getEvaluationStatistics()),
+			new IterativeEvaluationOptimizer(),
+			new FilterOptimizer(),
+			new OrderLimitOptimizer()
+		).foreach(_.optimize(tupleExpr, dataset, bindings))
+
+		logger.trace("Fully optimized final query model:\n{}", tupleExpr)
+
+		strategy.evaluate(tupleExpr, EmptyBindingSet.getInstance)
 	}
 	catch {
 		case iae: IllegalArgumentException =>

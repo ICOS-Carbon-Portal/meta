@@ -70,6 +70,6 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		val dobjVarNameVersions = res.allPatterns.map(_.dobjVar).distinct
 		val inSameJoin = areWithinCommonJoin(res.allPatterns.map(_.expr))
 
-		if(inSameJoin && dobjVarNameVersions.length == 1) Some(res) else None
+		if(inSameJoin && dobjVarNameVersions.length == 1 && res.allPatterns.length > 1) Some(res) else None
 	}
 }

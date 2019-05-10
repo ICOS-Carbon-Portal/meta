@@ -1,6 +1,5 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package org.eclipse.rdf4j.sail.nativerdf
 
-import org.eclipse.rdf4j.sail.nativerdf.NativeStoreConnection
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsQueryModelVisitor
@@ -20,7 +19,6 @@ import org.eclipse.rdf4j.sail.base.SailDataset
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
-import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 
@@ -31,6 +29,7 @@ class CpNativeStoreConnection(
 
 	private val valueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
+	private val sailStore = sail.getSailStore
 
 	override def evaluateInternal(
 		expr: TupleExpr,
@@ -40,14 +39,16 @@ class CpNativeStoreConnection(
 	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = try{
 
 		val tupleExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-		logger.trace("Original query model:\n{}", tupleExpr)
+		logger.debug("Original query model:\n{}", tupleExpr)
 		tupleExpr.visit(new StatsQueryModelVisitor)
 
 		val dofps = new DataObjectFetchPatternSearch(metaVocab)
 		dofps.search(tupleExpr).foreach(_.fuse())
 
-		logger.trace("Fused query model:\n{}", tupleExpr)
+		logger.debug("Fused query model:\n{}", tupleExpr)
 
+
+		flush()
 		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
 		val strategy = getEvaluationStrategy(dataset, tripleSource)
 
@@ -59,15 +60,17 @@ class CpNativeStoreConnection(
 			new DisjunctiveConstraintOptimizer(),
 			new SameTermFilterOptimizer(),
 			new QueryModelNormalizer(),
-			//new QueryJoinOptimizer(sail.getEvaluationStatistics()),
+			new QueryJoinOptimizer(sailStore.getEvaluationStatistics()),
 			new IterativeEvaluationOptimizer(),
-			new FilterOptimizer(),
-			new OrderLimitOptimizer()
+			new FilterOptimizer()
+			//new OrderLimitOptimizer()
 		).foreach(_.optimize(tupleExpr, dataset, bindings))
 
-		logger.trace("Fully optimized final query model:\n{}", tupleExpr)
+		logger.debug("Fully optimized final query model:\n{}", tupleExpr)
 
 		strategy.evaluate(tupleExpr, EmptyBindingSet.getInstance)
+
+		//super.evaluateInternal(tupleExpr, dataset, bindings, includeInferred)
 	}
 	catch {
 		case iae: IllegalArgumentException =>

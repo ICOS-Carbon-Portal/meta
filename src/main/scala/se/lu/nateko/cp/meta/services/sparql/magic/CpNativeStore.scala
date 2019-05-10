@@ -5,7 +5,7 @@ import java.io.IOException
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
-import org.eclipse.rdf4j.sail.nativerdf.NativeStoreConnection
+import org.eclipse.rdf4j.sail.nativerdf.CpNativeStoreConnection
 import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailException

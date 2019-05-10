@@ -23,6 +23,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.utils.getStackTrace
 
 object SparqlRoute {
 
@@ -98,7 +99,7 @@ object SparqlRoute {
 					case cexc: CompletionException if(cexc.getCause.isInstanceOf[CancellationException]) =>
 						HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
 					case err: Throwable =>
-						HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage)
+						HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
 				}
 
 			case Some(first) =>

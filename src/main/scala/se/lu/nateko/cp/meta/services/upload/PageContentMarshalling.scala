@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
+import se.lu.nateko.cp.meta.utils.getStackTrace
 import spray.json._
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
@@ -121,11 +122,7 @@ object PageContentMarshalling{
 	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {
 
-			val msg = {
-				val traceWriter = new java.io.StringWriter()
-				err.printStackTrace(new java.io.PrintWriter(traceWriter))
-				(if(err.getMessage == null) "" else err.getMessage) + "\n" + traceWriter.toString
-			}
+			val msg = (if(err.getMessage == null) "" else err.getMessage) + "\n" + getStackTrace(err)
 
 			val getErrorPage: HttpCharset => MessageEntity = getHtml(MessagePage("Server error", msg), _)
 

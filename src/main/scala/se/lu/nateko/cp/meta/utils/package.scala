@@ -17,4 +17,9 @@ package object utils {
 
 	def parseInstant(dateTimeIso: String): Instant = Instant.from(ISO_DATE_TIME.parse(dateTimeIso))
 
+	def getStackTrace(err: Throwable): String = {
+		val traceWriter = new java.io.StringWriter()
+		err.printStackTrace(new java.io.PrintWriter(traceWriter))
+		traceWriter.toString
+	}
 }

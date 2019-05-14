@@ -10,6 +10,7 @@ import {resubmittedFiles} from './queries/resubmittedFiles';
 import {existingCollections} from './queries/existingCollections';
 import {existingDocuments} from './queries/existingDocuments';
 import {concaveHulls} from './queries/concaveHulls';
+import {perFormatStats} from './queries/perFormatStats';
 
 const queries = [
 	{name:"Table of stations", query: stationsTable},
@@ -21,6 +22,7 @@ const queries = [
 	{name:"Re-submitted files", query: resubmittedFiles},
 	{name:"Collections", query: existingCollections},
 	{name:"Documents", query: existingDocuments},
+	{name:"Data object counts per format", query: perFormatStats},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, class 1 and 2 PIs", query: etcClass1And2Pis},
 	{name:"ETC, labelling app form values", query: etcLabelingValues},

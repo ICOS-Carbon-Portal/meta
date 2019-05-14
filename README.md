@@ -137,7 +137,7 @@ As with data object uploads, this metadata package must be HTTP-POSTed to `https
 ## Metadata flow (for ATC only)
 The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form
 
-`https://metalocal.icos-cp.eu/upload/atcmeta/<tableName>`
+`https://meta.icos-cp.eu/upload/atcmeta/<tableName>`
 
 where `<tableName>` is a name used to distinguish different tables, for example "roles", "stations", "instruments", "instrumentsLifecycle", etc.
 

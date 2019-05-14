@@ -101,8 +101,20 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
-	implicit val dataObjectFormat = jsonFormat13(DataObject)
 	implicit val docObjectFormat = jsonFormat10(DocObject)
+
+	implicit object dataObjectFormat extends RootJsonFormat[DataObject] {
+		private val defFormat = jsonFormat13(DataObject)
+
+		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
+
+		def write(dobj: DataObject): JsValue = {
+			val plain = dobj.toJson(defFormat).asJsObject
+			dobj.coverage.fold(plain) { geo =>
+				JsObject(plain.fields + ("coverageGeoJson" -> JsString(geo.geoJson)))
+			}
+		}
+	}
 
 	implicit object staticObjectFormat extends RootJsonFormat[StaticObject]{
 		override def read(value: JsValue): StaticObject = value match {

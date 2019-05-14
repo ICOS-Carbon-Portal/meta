@@ -1,17 +1,9 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.language.postfixOps
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
-import akka.http.scaladsl.model.headers.`Content-Disposition`
-import akka.http.scaladsl.model.headers.ContentDispositionTypes
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.ConfigLoader.dObjGraphInfoFormat
@@ -82,7 +74,9 @@ object LinkedDataRoute {
 			} ~
 			pathPrefix("objects" / Sha256Segment){_ =>
 				pathEnd{
-					genericRdfUriResourcePage
+					respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+						genericRdfUriResourcePage
+					}
 				} ~
 				path(Segment){
 					case fileName @ FileNameWithExtension(_, ext) =>
@@ -103,6 +97,17 @@ object LinkedDataRoute {
 			path("config" / "dataObjectGraphInfos"){
 				respondWithHeader(`Access-Control-Allow-Origin`.*){
 					complete(MetaDb.getDobjGraphInfos(config))
+				}
+			}
+		} ~
+		options{
+			pathPrefix("objects" / Sha256Segment) { _ =>
+				respondWithHeaders(
+					`Access-Control-Allow-Origin`.*,
+					`Access-Control-Allow-Methods`(HttpMethods.GET),
+					`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
+				) {
+					complete(StatusCodes.OK)
 				}
 			}
 		}

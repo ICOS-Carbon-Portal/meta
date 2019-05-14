@@ -104,7 +104,7 @@ object LinkedDataRoute {
 			pathPrefix("objects" / Sha256Segment) { _ =>
 				respondWithHeaders(
 					`Access-Control-Allow-Origin`.*,
-					`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
+					`Access-Control-Allow-Methods`(HttpMethods.GET),
 					`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
 				) {
 					complete(StatusCodes.OK)

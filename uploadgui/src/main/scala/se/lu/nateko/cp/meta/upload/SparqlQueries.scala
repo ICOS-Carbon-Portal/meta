@@ -35,30 +35,18 @@ object SparqlQueries {
 
 	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"))
 
-	private val sitesObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	private def objSpecsTempl(from: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
-		|FROM <https://meta.fieldsites.se/resources/sites/>
-		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|FROM <${from}>
 		|WHERE {
-		|	?spec a/rdfs:subClassOf* cpmeta:DataObjectSpec ;
-		|		rdfs:label ?name ;
-		|		cpmeta:hasDataLevel ?dataLevel .
-		|} order by ?name""".stripMargin
-
-	private val icosObjSpecs = """PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|SELECT *
-		|FROM <http://meta.icos-cp.eu/resources/cpmeta/>
-		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|WHERE {
-		|	?spec a/rdfs:subClassOf* cpmeta:DataObjectSpec ;
-		|		rdfs:label ?name ;
-		|		cpmeta:hasDataLevel ?dataLevel .
+		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name .
+		|	OPTIONAL{?spec cpmeta:containsDataset ?dataset}
 		|} order by ?name""".stripMargin
 
 	def objSpecs(implicit envri: Envri): String = envri match {
-		case Envri.SITES => sitesObjSpecs
-		case Envri.ICOS => icosObjSpecs
+		case Envri.SITES => objSpecsTempl("https://meta.fieldsites.se/resources/sites/")
+		case Envri.ICOS => objSpecsTempl("http://meta.icos-cp.eu/resources/cpmeta/")
 	}
 
-	def toObjSpec(b: Binding) = ObjSpec(new URI(b("spec")), b("name"), b("dataLevel").toInt)
+	def toObjSpec(b: Binding) = ObjSpec(new URI(b("spec")), b("name"), b("dataLevel").toInt, b.contains("dataset"))
 }

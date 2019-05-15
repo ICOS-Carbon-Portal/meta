@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
 
@@ -97,6 +98,16 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			} ~
 			get{
+				import spray.json._
+				path("etc" / "utcOffset"){
+					parameter("stationId"){
+						case StationId(stationId) =>
+							val offsetJs = service.etcHelper.etcMeta.getUtcOffset(stationId).fold[JsValue](JsNull)(JsNumber(_))
+							complete(offsetJs)
+						case notStation =>
+							complete(StatusCodes.BadRequest -> s"$notStation is not a proper ICOS ETC station id")
+					}
+				} ~
 				extractEnvri { implicit envri =>
 					import MetaCoreConfig.{envriConfigFormat, envriFormat}
 					path("envri"){
@@ -108,7 +119,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					path("permissions"){
 						parameters(('submitter, 'userId))((submitter, userId) => {
 							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
-							complete(spray.json.JsBoolean(isAllowed))
+							complete(JsBoolean(isAllowed))
 						})
 					} ~
 					path("submitterids"){

@@ -30,20 +30,10 @@ class Form(
 		case Failure(err) => button.disable(err.getMessage)
 	}
 
-	val onLevelSelected: Int => Unit = (level: Int) => {
+	val onLevelSelected: Int => Unit = (level: Int) =>
 		whenDone{
 			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
 		}(objSpecSelect.setOptions)
-		if (level == 0) {
-			nRowsInput.disable()
-			acqStartInput.enable()
-			acqStopInput.enable()
-		} else {
-			nRowsInput.enable()
-			acqStartInput.disable()
-			acqStopInput.disable()
-		}
-	}
 
 	val onSubmitterSelected: () => Unit = () =>
 		submitterIdSelect.value.foreach{submitter =>
@@ -53,12 +43,27 @@ class Form(
 			}
 		}
 
+	private val onSpecSelected: () => Unit = () => {
+		objSpecSelect.value.foreach{ objSpec =>
+			if(objSpec.hasDataset){
+				nRowsInput.enable()
+				acqStartInput.disable()
+				acqStopInput.disable()
+			} else{
+				nRowsInput.disable()
+				acqStartInput.enable()
+				acqStopInput.enable()
+			}
+		}
+		updateButton()
+	}
+
 	val fileInput = new FileInput("fileinput", updateButton)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
-	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, updateButton)
+	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
@@ -68,7 +73,7 @@ class Form(
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
 	val instrUriInput = new UriOptInput("instrumenturi", updateButton)
 
-	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput, levelControl)
+	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 	def dto: Try[DataObjectDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
@@ -76,7 +81,7 @@ class Form(
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
-		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interfal");
+		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
 		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI")

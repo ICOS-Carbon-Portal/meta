@@ -51,7 +51,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.4.3",
+		version := "0.4.4",
 		scalacOptions ++= jvmScalacOptions,
 
 		libraryDependencies ++= Seq(
@@ -116,7 +116,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 	.enablePlugins(ScalaJSPlugin)
 	.settings(
 		name := "uploadgui",
-		version := "0.1.0",
+		version := "0.1.1",
 		scalacOptions ++= commonScalacOptions,
 
 		scalaJSUseMainModuleInitializer := true,

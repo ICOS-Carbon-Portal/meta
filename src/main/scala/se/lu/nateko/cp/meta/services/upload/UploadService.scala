@@ -31,7 +31,7 @@ class AccessUri(val uri: URI)
 class UploadService(
 	val servers: DataObjectInstanceServers,
 	sparql: SparqlRunner,
-	etcHelper: EtcUploadTransformer,
+	val etcHelper: EtcUploadTransformer,
 	conf: UploadServiceConfig
 )(implicit system: ActorSystem, mat: Materializer) {
 

@@ -88,15 +88,13 @@ class Radio(elemId: String, cb: Int => Unit) {
 	}
 }
 
-class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput, level: Radio){
-	def value: Try[Option[TimeInterval]] = level.value match {
-		case Some(0) =>
+class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
+	def value: Try[Option[TimeInterval]] =
+		if(fromInput.isDisabled && toInput.isDisabled) Success(None) else
 			for(
 				from <- fromInput.value.withErrorContext("Acqusition start");
 				to <- toInput.value.withErrorContext("Acqusition stop")
 			) yield Some(TimeInterval(from, to))
-		case _ => Success(None)
-	}
 }
 
 abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
@@ -127,6 +125,8 @@ abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(par
 	def disable(): Unit = {
 		input.disabled = true
 	}
+
+	def isDisabled: Boolean = input.disabled
 
 	if(!input.value.isEmpty){
 		queue.execute(() => input.oninput(null))

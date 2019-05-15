@@ -166,11 +166,11 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			case Right(stationMeta) =>
 				if(spec.dataLevel > 2) errors += "The data level for this kind of metadata package must have been 2 or less"
 				else{
-					if(spec.dataLevel == 0 && stationMeta.acquisitionInterval.isEmpty)
+					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'aquisitionInterval' with start and stop timestamps."
 
 					if(
-						(spec.dataLevel == 1 || spec.dataLevel == 2) && stationMeta.nRows.isEmpty &&
+						(spec.datasetSpec.isDefined) && stationMeta.nRows.isEmpty &&
 						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat)
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 

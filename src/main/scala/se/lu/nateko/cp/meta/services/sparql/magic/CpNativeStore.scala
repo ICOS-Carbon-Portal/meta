@@ -85,5 +85,6 @@ class CpNativeStore(
 object CpNativeStore{
 //	val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
 //	val indices = "spoc".permutations.mkString(",") //all the possible indices
-	val indices = "spoc,posc,ospc,cspo,cpos,cosp"
+//	val indices = "spoc,posc,ospc,cspo,cpos,cosp"
+	val indices = "spoc,posc,cspo,cpos"
 }

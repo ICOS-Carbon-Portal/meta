@@ -50,17 +50,20 @@ object Backend {
 	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
-	def tryIngestion(file: File, spec: URI, nRows: Option[Int])(implicit envriConfig: EnvriConfig): Future[String] = {
+	def tryIngestion(
+		file: File, spec: ObjSpec, nRows: Option[Int]
+	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){
+
 		val nRowsQuery = nRows.map(nRows => s"&nRows=$nRows").getOrElse("")
-		val url = s"${envriConfig.dataPrefix}tryingest?specUri=$spec$nRowsQuery"
+		val url = s"${envriConfig.dataPrefix}tryingest?specUri=${spec.uri}$nRowsQuery"
 		Ajax
 			.put(url, file)
 			.recoverWith(recovery("upload data object contents"))
-			.map(xhr => xhr.status match {
-				case 200 => ""
-				case _ => xhr.responseText
+			.flatMap(xhr => xhr.status match {
+				case 200 => Future.successful(())
+				case _ => Future.failed(new Exception(xhr.responseText))
 			})
-	}
+	} else Future.successful(())
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
 		.post("/sparql", query, responseType = "application/json")

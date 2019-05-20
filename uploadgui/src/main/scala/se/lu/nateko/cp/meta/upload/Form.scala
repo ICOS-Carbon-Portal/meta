@@ -15,13 +15,9 @@ class Form(
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
-	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file; nRows <- nRowsInput.value) {
-		whenDone(Backend.tryIngestion(file, dto.objectSpecification, nRows)){ msg =>
-			if (msg.isEmpty) {
-				onUpload(dto, file)
-			} else {
-				showAlert(msg, "alert alert-error")
-			}
+	def submitAction(): Unit = for(dto <- dto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+		whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+			onUpload(dto, file)
 		}
 	}
 	val button = new SubmitButton("submitbutton", () => submitAction())

@@ -90,12 +90,12 @@ object MetaDb{
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
 
-	def getDobjGraphInfos(confs: InstanceServersConfig): Seq[DObjGraphInfo] = confs
-		.forDataObjects.values.flatMap{doisc =>
+	def getDobjGraphInfos(confs: InstanceServersConfig)(implicit envri: Envri): Seq[DObjGraphInfo] = confs
+		.forDataObjects.get(envri).toSeq.flatMap{doisc =>
 			doisc.definitions.map{doisd =>
 				DObjGraphInfo(graph = getInstServerContext(doisc, doisd), doisd.format)
 			}
-		}.toSeq
+		}
 }
 
 class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {

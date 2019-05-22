@@ -30,14 +30,10 @@ object LinkedDataRoute {
 
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
 		implicit val uriMarshaller = uriSerializer.marshaller
+		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
-		val genericRdfUriResourcePage: Route = extractUri{uri =>
+		val genericRdfUriResourcePage: Route = (extractUri & extractEnvri){(uri, envri) =>
 			extractHost{hostname =>
-
-				val envri = Envri.infer(hostname).getOrElse(
-					throw new Exception(s"Could not infer ENVRI for hostname '$hostname'")
-				)
-
 				val scheme = if(envri == Envri.ICOS){
 					import Uri.Path.{Segment, Slash}
 
@@ -95,8 +91,10 @@ object LinkedDataRoute {
 				genericRdfUriResourcePage
 			} ~
 			path("config" / "dataObjectGraphInfos"){
-				respondWithHeader(`Access-Control-Allow-Origin`.*){
-					complete(MetaDb.getDobjGraphInfos(config))
+				extractEnvri{implicit envri =>
+					respondWithHeader(`Access-Control-Allow-Origin`.*){
+						complete(MetaDb.getDobjGraphInfos(config))
+					}
 				}
 			}
 		} ~

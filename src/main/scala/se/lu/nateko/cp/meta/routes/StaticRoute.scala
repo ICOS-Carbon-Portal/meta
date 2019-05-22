@@ -23,7 +23,7 @@ object StaticRoute {
 
 	def apply(config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = get{
 
-		val extractEnvri = extractEnvriDirective
+		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
 		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = pathPrefix(pathPref){
 			extractEnvri{envri =>
@@ -61,13 +61,6 @@ object StaticRoute {
 					getFromResource(s"www/$page.js")
 				}
 			} else reject
-		}
-	}
-
-	def extractEnvriDirective(implicit configs: EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
-		Envri.infer(h) match{
-			case None => complete(StatusCodes.BadRequest -> s"Unexpected host $h, cannot find corresponding ENVRI")
-			case Some(envri) => provide(envri)
 		}
 	}
 }

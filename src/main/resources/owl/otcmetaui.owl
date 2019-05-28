@@ -145,9 +145,9 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
-        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
-        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Variable</IRI>
-        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/ValueType</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>

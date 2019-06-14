@@ -6,7 +6,13 @@ import spray.json._
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.LocalDateTime
 
-trait CommonJsonSupport extends DefaultJsonProtocol{
+trait CommonJsonSupport extends DefaultJsonProtocol{common =>
+
+	//Working around issue https://github.com/spray/spray-json/issues/109
+	implicit object CorrectedFloatJsonFormat extends JsonFormat[Float] {
+		def write(x: Float) = JsNumber(x.toString.toDouble)
+		def read(value: JsValue) = common.FloatJsonFormat.read(value)
+	 }
 
 	implicit object urlFormat extends RootJsonFormat[URI] {
 		def write(uri: URI): JsValue = JsString(uri.toString)

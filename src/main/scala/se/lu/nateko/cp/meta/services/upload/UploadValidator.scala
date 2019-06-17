@@ -25,6 +25,10 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import java.time.Instant
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.{ metaVocab, vocab }
@@ -43,7 +47,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec, submConf);
-		_ <- validatePrevVers(meta, servers.getInstServerForFormat(spec.format.uri.toRdf))
+		_ <- validatePrevVers(meta, getInstServer(spec))
+//		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
@@ -51,6 +56,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- validatePrevVers(meta, servers.getDocInstServer)
 	) yield NotUsed
+
+	private def getInstServer(spec: DataObjectSpec)(implicit envri: Envri): Try[InstanceServer] =
+		servers.getInstServerForFormat(spec.format.uri.toRdf)
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
@@ -199,21 +207,12 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 					userFail("Data/doc object cannot be a next version of itself")
 
 				else getInstServ.flatMap{ server =>
-					val dobj = servers.vocab.getStaticObject(prevHash)
-
-					hasCompletedDeprecator(server, dobj) match{
-						case Some(depr) =>
-							userFail(s"Data/doc object $dobj has already been deprecated by $depr; deprecate the latter instead.")
-						case None =>
-							if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
-								ok
-							else
-								userFail(s"Previous-version data/doc object was not found: $dobj")
-					}
+					val prevDobj = vocab.getStaticObject(prevHash)
+					hasCompletedDeprecator(server, prevDobj)
 				}
 		}
 
-	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Option[IRI] = {
+	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Try[NotUsed] = {
 
 		val deprs = server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
 			.map(_.getSubject).collect{case iri: IRI => iri}
@@ -222,8 +221,43 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			.getUriValues(depr, metaVocab.wasSubmittedBy)
 			.flatMap(subm => server.getValues(subm, metaVocab.prov.endedAtTime))
 			.isEmpty
-		deprs.filter(isCompleted).toTraversable.headOption
+
+		deprs.filter(isCompleted).toTraversable.headOption match{
+			case Some(depr) =>
+				userFail(s"Data/doc object $dobj has already been deprecated by $depr; deprecate the latter instead.")
+			case None =>
+				if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
+					ok
+				else
+					userFail(s"Previous-version data/doc object was not found: $dobj")
+		}
 	}
+
+	private def growingIsGrowing(
+		dto: ObjectUploadDto,
+		spec: DataObjectSpec,
+		server:  => Try[InstanceServer],
+		subm: DataSubmitterConfig
+	)(implicit envri: Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
+		case DataObjectDto(
+			_, _, _, _,
+			Right(StationDataMetadata(_, _, _, Some(TimeInterval(_, acqStop)), _, _)),
+			Some(prevHash), _
+		) =>
+			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat){
+				val prevDobj = vocab.getStaticObject(prevHash)
+				server.flatMap{instServer =>
+					val prevAcqStop = instServer.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
+						FetchingHelper(instServer).getOptionalInstant(acq, metaVocab.prov.endedAtTime)
+					}
+					if(prevAcqStop.exists(_ == acqStop)) userFail(
+						"The supposedly NRT growing data object you intend to upload " +
+						"has not grown in comparison with its older version"
+					) else ok
+				}
+			} else ok
+		case _ => ok
+	} else ok
 
 	private def validatePreviousCollectionVersion(prevVers: Option[Sha256Sum])(implicit envri: Envri): Try[NotUsed] =
 		prevVers.map{coll =>

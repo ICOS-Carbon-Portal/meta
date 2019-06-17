@@ -52,7 +52,7 @@ trait FetchingHelper {
 	protected def getSingleDouble(subj: IRI, pred: IRI): Double =
 		server.getDoubleValues(subj, pred, InstanceServer.ExactlyOne).head
 
-	protected def getOptionalInstant(subj: IRI, pred: IRI): Option[Instant] =
+	def getOptionalInstant(subj: IRI, pred: IRI): Option[Instant] =
 		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(parseInstant)
 
 	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
@@ -69,4 +69,10 @@ trait FetchingHelper {
 		Sha256Sum.fromBase64(hash).get
 	}
 
+}
+
+object FetchingHelper{
+	def apply(instServer: InstanceServer): FetchingHelper = new FetchingHelper{
+		override def server = instServer
+	}
 }

@@ -85,8 +85,8 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 		ClassDto(
 			resource = rdfsLabeling(owlClass),
 			properties = reasoner.getPropertiesWhoseDomainIncludes(owlClass).collect{
-				case op: OWLObjectProperty => getPropInfo(op, owlClass)
-				case dp: OWLDataProperty => getPropInfo(dp, owlClass)
+				case op: OWLObjectProperty => getObjPropInfo(op, owlClass)
+				case dp: OWLDataProperty => getDataPropInfo(dp, owlClass)
 			}
 		)
 	)
@@ -97,32 +97,45 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 			val owlClass = factory.getOWLClass(IRI.create(classUri))
 
 			if(owlOntology.containsDataPropertyInSignature(iri, Imports.INCLUDED))
-				getPropInfo(factory.getOWLDataProperty(iri), owlClass)
+				getDataPropInfo(factory.getOWLDataProperty(iri), owlClass)
 
 			else if(owlOntology.containsObjectPropertyInSignature(iri, Imports.INCLUDED))
-				getPropInfo(factory.getOWLObjectProperty(iri), owlClass)
+				getObjPropInfo(factory.getOWLObjectProperty(iri), owlClass)
 
 			else throw new OWLRuntimeException(s"No object- or data property has URI $propUri")
 		}
 	)
 
 	//TODO Take property restrictions into account for range calculations
-	private def getPropInfo(prop: OWLObjectProperty, ctxt: OWLClass): ObjectPropertyDto = {
-		val ranges = EntitySearcher.getRanges(prop, ontologies).toIndexedSeq.collect{
-			case owlClass: OWLClass => rdfsLabeling(owlClass)
+	def getObjPropRangeClassUnion(propUri: URI): Seq[URI] = {
+		val iri = IRI.create(propUri)
+
+		if(!owlOntology.containsObjectPropertyInSignature(iri, Imports.INCLUDED))
+			throw new OWLRuntimeException(s"No object property has URI $propUri")
+
+		val prop = factory.getOWLObjectProperty(iri)
+
+		def unfoldUnionRange(expr: OWLClassExpression): Seq[OWLClass] = expr match {
+			case cls: OWLClass =>
+				cls +: reasoner.getSubClasses(cls, false)
+			case union: OWLObjectUnionOf =>
+				union.operands.toIndexedSeq.flatMap(unfoldUnionRange)
+			case _ =>
+				throw new OWLRuntimeException(s"Property $propUri has unsupported range. Only plain classes and class unions are supported.")
 		}
 
-		assert(ranges.size == 1, "Only single object property ranges, of the simple OWLClass kind, are supported at the moment.\n" +
-			s"Property ${prop.getIRI} had ${ranges.size} ranges on values of class ${ctxt.getIRI}")
-
-		ObjectPropertyDto(
-			resource = rdfsLabeling(prop),
-			cardinality = getCardinalityInfo(prop, ctxt),
-			range = ranges.head
-		)
+		EntitySearcher.getRanges(prop, ontologies).toIndexedSeq
+			.flatMap(unfoldUnionRange)
+			.map(_.getIRI.toURI)
 	}
+
+	private def getObjPropInfo(prop: OWLObjectProperty, ctxt: OWLClass) = ObjectPropertyDto(
+		resource = rdfsLabeling(prop),
+		cardinality = getCardinalityInfo(prop, ctxt)
+	)
+
 	
-	private def getPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
+	private def getDataPropInfo(prop: OWLDataProperty, ctxt: OWLClass): DataPropertyDto = {
 		val ranges: Seq[DataRangeDto] = EntitySearcher.getRanges(prop, ontologies).toIndexedSeq.collect{
 			case dt: OWLDatatype => DataRangeDto(dt.getIRI.toURI, Nil)
 

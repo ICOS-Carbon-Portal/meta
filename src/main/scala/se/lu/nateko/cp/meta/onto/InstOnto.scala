@@ -57,10 +57,10 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	}
 
 	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
-		val propInfo = onto.getPropInfo(propUri, individClassUri).asInstanceOf[ObjectPropertyDto]
-		val rangeClassUri = propInfo.range.uri
-		val rangeClassUris = rangeClassUri +: onto.getSubClasses(rangeClassUri, false).map(_.getIRI.toURI)
-		return rangeClassUris.flatMap(getIndividuals)
+		assert(individClassUri != null)//just to silence the not-used warning;
+		//class uri will be needed in the future for better class-specific range calculation
+		val rangeClassUris = onto.getObjPropRangeClassUnion(propUri)
+		rangeClassUris.flatMap(getIndividuals)
 	}
 
 	def getIndividual(uri: URI): IndividualDto = {

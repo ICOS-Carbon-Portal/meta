@@ -50,7 +50,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val dataRangeDtoFormat = jsonFormat2(DataRangeDto)
 	implicit val cardinalityDtoFormat = jsonFormat2(CardinalityDto)
 	implicit val dataPropertyDtoFormat = jsonFormat3(DataPropertyDto)
-	implicit val objectPropertyDtoFormat = jsonFormat3(ObjectPropertyDto)
+	implicit val objectPropertyDtoFormat = jsonFormat2(ObjectPropertyDto)
 
 	implicit object PropertyDtoFormat extends JsonFormat[PropertyDto]{
 		override def write(dto: PropertyDto) = dto match{

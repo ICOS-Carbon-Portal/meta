@@ -19,7 +19,7 @@ case class CardinalityDto(min: Option[Int], max: Option[Int])
 
 sealed trait PropertyDto
 case class DataPropertyDto(resource: ResourceDto, cardinality: CardinalityDto, range: DataRangeDto) extends PropertyDto
-case class ObjectPropertyDto(resource: ResourceDto, cardinality: CardinalityDto, range: ResourceDto) extends PropertyDto
+case class ObjectPropertyDto(resource: ResourceDto, cardinality: CardinalityDto) extends PropertyDto
 
 case class ClassDto(resource: ResourceDto, properties: Seq[PropertyDto])
 case class ClassInfoDto(displayName: String, uri: URI, newInstanceBaseUri: Option[URI]){

@@ -24,6 +24,12 @@ function isoDateTimeValidator(s){
 	return (s && s.match(regex)) ? ok : error(["Not a valid dateTime!", "Valid examples: 2017-06-01T18:43:26+01:00 or 2017-06-01T17:43:26Z"]);
 }
 
+function isoDateValidator(s){
+	var expression = /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])$/g;
+	var regex = new RegExp(expression);
+	return (s && s.match(regex)) ? ok : error(["Not a valid date!", "Valid examples: 2017-06-01 or 2017-06-01"]);
+}
+
 function boolValidator(s){
 	var boolError = error("Must be 'true' or 'false'");
 	if(_.isEmpty(s)) return boolError;
@@ -76,6 +82,7 @@ var dataTypeValidators = _.object([
 	[xsd + "double", doubleValidator],
 	[xsd + "float", doubleValidator],
 	[xsd + "dateTime", isoDateTimeValidator],
+	[xsd + "date", isoDateValidator],
 	[xsd + "anyURI", urlValidator]
 ]);
 

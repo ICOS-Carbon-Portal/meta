@@ -1,9 +1,10 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
 ?s ?p ?o .
 ?o ?p2 ?o2 .
 } where{
-   bind (<https://meta.fieldsites.se/objects/LN9lolObB1apj_eE8mnnkIAr> as ?s)
-   graph <https://meta.fieldsites.se/resources/dailysitescsv/> {
+   bind (<https://meta.icos-cp.eu/objects/IN90ApSzMJbs8E_ADp-T_ivD> as ?s)
+   graph <http://meta.icos-cp.eu/resources/atmprodcsv/> {
        ?s ?p ?o .
 		OPTIONAL{
 			?o ?p2 ?o2 .
@@ -11,3 +12,4 @@ construct {
 		}
   }
 }
+

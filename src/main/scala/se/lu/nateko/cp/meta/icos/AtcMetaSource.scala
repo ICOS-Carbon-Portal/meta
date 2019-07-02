@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.icos
 
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 import scala.concurrent.Future
@@ -26,11 +27,15 @@ class AtcMetaSource extends TcMetaSource[ATC.type] {
 		val allowedUser = "uploader@ATC"
 
 		if(user.email == allowedUser) Try{
-			val dir = Paths.get("atcmeta").toAbsolutePath
-			Files.createDirectories(dir)
+			val dir = getDirectory()
 			val file = dir.resolve(tableId)
 			FileIO.toPath(file)
 		} else
 			Failure(new UnauthorizedUploadException(s"Only $allowedUser is allowed to upload ATC metadata to CP"))
+	}
+
+	def getDirectory(): Path = {
+		val dir = Paths.get("atcmeta").toAbsolutePath
+		Files.createDirectories(dir)
 	}
 }

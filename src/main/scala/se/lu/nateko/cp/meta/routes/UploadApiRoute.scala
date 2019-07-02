@@ -55,23 +55,28 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
 		pathPrefix("upload"){
+			pathPrefix("atcmeta"){
+				post{
+					path(Segment){tblKind =>
+						authRouting.mustBeLoggedIn{uploader =>
+							onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
+								extractDataBytes{data =>
+									onSuccess(data.toMat(sink)(Keep.right).run()){iores =>
+										iores.status.get
+										complete(StatusCodes.OK)
+									}
+								}
+							}
+						}
+					}
+				} ~
+				getFromBrowseableDirectory(atcMetaSource.getDirectory().toString)
+			} ~
 			post{
 				path("etc"){
 					(ensureLocalRequest & replyWithErrorOnBadContent){
 						entity(as[EtcUploadMetadata]){ uploadMeta =>
 							reportAccessUri(service.registerEtcUpload(uploadMeta))
-						}
-					}
-				} ~
-				path("atcmeta" / Segment){tblKind =>
-					authRouting.mustBeLoggedIn{uploader =>
-						onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
-							extractDataBytes{data =>
-								onSuccess(data.toMat(sink)(Keep.right).run()){iores =>
-									iores.status.get
-									complete(StatusCodes.OK)
-								}
-							}
 						}
 					}
 				} ~

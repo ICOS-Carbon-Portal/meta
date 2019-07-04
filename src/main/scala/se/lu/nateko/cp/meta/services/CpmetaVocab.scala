@@ -10,6 +10,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 //	val stationClass = getRelative("Station")
 	val ingosStationClass = getRelative("IngosStation")
 	val wdcggStationClass = getRelative("WdcggStation")
+	val fluxnetStationClass = getRelative("FluxnetStation")
 	val atmoStationClass = getRelative("AS")
 	val ecoStationClass = getRelative("ES")
 	val oceStationClass = getRelative("OS")

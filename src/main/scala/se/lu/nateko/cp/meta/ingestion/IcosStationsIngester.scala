@@ -38,7 +38,8 @@ class IcosStationsIngester(
 		val metaVocab = new CpmetaVocab(vf)
 		val projToClass = Map(
 			Project.INGOS -> metaVocab.ingosStationClass,
-			Project.WDCGG -> metaVocab.wdcggStationClass
+			Project.WDCGG -> metaVocab.wdcggStationClass,
+			Project.FLUXNET -> metaVocab.fluxnetStationClass
 		)
 
 		station => {
@@ -61,7 +62,7 @@ class IcosStationsIngester(
 private object IcosStationsIngester{
 
 	object Project extends Enumeration{
-		val INGOS, WDCGG = Value
+		val INGOS, WDCGG, FLUXNET = Value
 	}
 
 	case class Station(project: Project.Value, id: String, name: String, country: String, lat: Double, lon: Double, elevation: Double)

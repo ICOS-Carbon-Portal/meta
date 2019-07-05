@@ -65,12 +65,12 @@ private object IcosStationsIngester{
 		val INGOS, WDCGG, FLUXNET = Value
 	}
 
-	case class Station(project: Project.Value, id: String, name: String, country: String, lat: Double, lon: Double, elevation: Double)
+	case class Station(project: Project.Value, id: String, name: String, country: String, lat: Double, lon: Double, elevation: Float)
 
 	object Station{
 		def parse(line: String): Station = {
 			val Seq(projStr, id, name, country, latStr, lonStr, elevStr) = line.trim.split('\t').toSeq
-			Station(Project.withName(projStr), id, name, country, latStr.toDouble, lonStr.toDouble, elevStr.toDouble)
+			Station(Project.withName(projStr), id, name, country, latStr.toDouble, lonStr.toDouble, elevStr.toFloat)
 		}
 	}
 }

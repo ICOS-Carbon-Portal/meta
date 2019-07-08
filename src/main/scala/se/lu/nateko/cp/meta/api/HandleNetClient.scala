@@ -40,6 +40,7 @@ import javax.net.ssl.TrustManagerFactory
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.async._
+import se.lu.nateko.cp.meta.utils.akkahttp._
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
 	import HandleNetClient._
@@ -144,14 +145,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 				method = HttpMethods.PUT,
 				entity = entity
 			)
-			http.singleRequest(req, httpsCtxt).flatMap{resp =>
-				resp.status match {
-					case StatusCodes.OK | StatusCodes.Created =>
-						resp.discardEntityBytes()
-						ok
-					case _ => errorFromResp(resp)
-				}
-			}
+			http.singleRequest(req, httpsCtxt).flatMap(responseToDone)
 		}
 	}
 
@@ -161,24 +155,9 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			headers = authHeaders,
 			method = HttpMethods.DELETE
 		)
-		http.singleRequest(req, httpsCtxt).flatMap{resp =>
-			resp.status match {
-				case StatusCodes.OK =>
-					resp.discardEntityBytes()
-					ok
-				case _ => errorFromResp(resp)
-			}
-		}
+		http.singleRequest(req, httpsCtxt).flatMap(responseToDone)
 	}
 
-
-	private def errorFromResp[T](resp: HttpResponse): Future[T] = resp.entity.toStrict(2.seconds)
-		.transform{
-			case Success(entity) => Success(":\n" + entity.data.utf8String)
-			case _ => Success("")
-		}.flatMap{msg =>
-			error(s"Got ${resp.status} from the server$msg")
-		}
 }
 
 object HandleNetClient{

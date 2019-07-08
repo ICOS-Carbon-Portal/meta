@@ -104,10 +104,12 @@ lazy val meta = (project in file("."))
 		watchSources ++= watchSources.in(uploadgui, Compile).value,
 
 		initialCommands in console in Test := """
-			import se.lu.nateko.cp.meta.Draught2018._
+			import se.lu.nateko.cp.meta.Drought2018._
+			import se.lu.nateko.cp.meta.UploadWorkbench._
 		""",
 
 		cleanupCommands in console in Test := """
+			system.terminate()
 		"""
 	)
 

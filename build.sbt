@@ -71,6 +71,7 @@ lazy val meta = (project in file("."))
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.1-SNAPSHOT" % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
 		cpDeployTarget := "cpmeta",
@@ -104,12 +105,13 @@ lazy val meta = (project in file("."))
 		watchSources ++= watchSources.in(uploadgui, Compile).value,
 
 		initialCommands in console in Test := """
-			import se.lu.nateko.cp.meta.Drought2018._
-			import se.lu.nateko.cp.meta.UploadWorkbench._
+			import se.lu.nateko.cp.meta._
+			import se.lu.nateko.cp.meta.DoiWorkbench._
 		""",
 
 		cleanupCommands in console in Test := """
 			system.terminate()
+			UploadWorkbench.system.terminate()
 		"""
 	)
 

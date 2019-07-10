@@ -21,6 +21,7 @@ import akka.http.scaladsl.Http
 import akka.Done
 import se.lu.nateko.cp.meta.utils.akkahttp.responseToDone
 import akka.stream.ActorMaterializer
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
@@ -109,46 +110,56 @@ object Drought2018{
 			station = meta.station,
 			instrument = None,
 			samplingHeight = None,
+			//acquisitionInterval = None,
 			acquisitionInterval = Some(TimeInterval(meta.acqStart, meta.acqEnd)),
-			nRows = None,
+			nRows = meta.nPoints,
 			production = Some(productionDto)
 		)
 		DataObjectDto(
 			hashSum = meta.hash,
 			submitterId = "CP",
 			objectSpecification = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct"),
+//			objectSpecification = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct"),
 			fileName = meta.fname,
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = None,
-			preExistingDoi = None
+			preExistingDoi = Some("10.18160/" + DoiWorkbench.coolDoi(meta.hash))
 		)
 	}
 
 	def parseFluxMeta(row: Array[String]) = new FluxMeta(
 		hash = Sha256Sum.fromHex(row(0)).get,
 		fname = row(1),
-		isIcos = row(2) == "yes",
-		pi = new URI("http://meta.icos-cp.eu/resources/people/" + row(3)),
-		ack = ifNotEmpty(row(4)),
-		papers = ifNotEmpty(row(5)).toSeq ++ ifNotEmpty(row(6))
+		nPoints = ifNotEmpty(row(2)).map(_.toInt - 1),
+		isIcos = row(3) == "yes",
+		pi = new URI("http://meta.icos-cp.eu/resources/people/" + row(4)),
+		ack = ifNotEmpty(row(5)),
+		papers = ifNotEmpty(row(6)).toSeq ++ ifNotEmpty(row(7))
 	)
 
 	private def ifNotEmpty(s: String): Option[String] = Option(s).map(_.trim).filter(_.length > 0)
 
-	class FluxMeta(val hash: Sha256Sum, val fname: String, val isIcos: Boolean, val pi: URI, val ack: Option[String], val papers: Seq[String]){
+	class FluxMeta(
+		val hash: Sha256Sum, val fname: String, val nPoints: Option[Int], val isIcos: Boolean,
+		val pi: URI, val ack: Option[String], val papers: Seq[String]
+	){
+
+		val StationId(stationId) = fname.substring(4, 10)
 
 		def station: URI = {
-			val statId = fname.substring(4, 10)
 			val pref = if(isIcos) "ES_" else "FLUXNET_"
-			new URI(s"http://meta.icos-cp.eu/resources/stations/$pref$statId")
+			new URI(s"http://meta.icos-cp.eu/resources/stations/$pref${stationId.id}")
 		}
 
+		def yearFrom = fname.substring(31, 35).toInt
+		def yearTo = fname.substring(36, 40).toInt
+
 		def acqStart = Instant.parse(
-			s"${fname.substring(31, 35)}-01-01T00:00:00Z"
+			s"${yearFrom}-01-01T00:00:00Z"
 		)
 
 		def acqEnd = Instant.parse(
-			s"${fname.substring(36, 40).toInt + 1}-01-01T00:00:00Z"
+			s"${yearTo + 1}-01-01T00:00:00Z"
 		)
 
 		def comment: Option[String] = if(ack.isEmpty && papers.isEmpty) None else Some{

@@ -9,9 +9,9 @@ import akka.stream.ActorMaterializer
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
 import se.lu.nateko.cp.meta.core.sparql.JsonSupport._
-import java.net.URL
+import java.net.URI
 
-class SparqlClient(url: URL)(implicit system: ActorSystem) {
+class SparqlClient(url: URI)(implicit system: ActorSystem) {
 	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
 

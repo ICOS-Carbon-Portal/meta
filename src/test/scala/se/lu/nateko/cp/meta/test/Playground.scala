@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test
 
-import java.net.URL
+import java.net.URI
 
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -31,7 +31,7 @@ object Playground {
 		metaConf.dataUploadService.handle.copy(prefix = "11676", dryRun = false)
 	)
 
-	val sparql = new SparqlClient(new URL("https://meta.icos-cp.eu/sparql"))
+	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))
 	val citer = new CitationClient(Nil, metaConf.citations)
 
 	def stop() = system.terminate()

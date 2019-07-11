@@ -2,8 +2,6 @@ package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
 
-import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
-import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 

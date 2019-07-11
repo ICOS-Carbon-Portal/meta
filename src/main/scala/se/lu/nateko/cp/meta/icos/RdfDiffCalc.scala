@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
 
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant

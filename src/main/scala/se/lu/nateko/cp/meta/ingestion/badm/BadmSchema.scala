@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import java.io.InputStream
-
 object BadmSchema{
 
 	type BadmVarVocab = Map[String, AncillaryValue]

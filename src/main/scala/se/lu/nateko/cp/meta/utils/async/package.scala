@@ -13,7 +13,7 @@ import akka.Done
 
 package object async {
 
-	def ok = Future.successful(Done)
+	def ok: Future[Done] = Future.successful(Done)
 
 	def error[T](msg: String): Future[T] = Future.failed(new Exception(msg))
 
@@ -49,4 +49,7 @@ package object async {
 			}
 		}
 	}
+
+	def executeSequentially[T](on: Iterable[T])(thunk: T => Future[Done])(implicit ctxt: ExecutionContext): Future[Done] =
+		on.foldLeft(ok){(acc, next) => acc.flatMap(_ => thunk(next))}
 }

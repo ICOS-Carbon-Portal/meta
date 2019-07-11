@@ -10,7 +10,6 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.Keep
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

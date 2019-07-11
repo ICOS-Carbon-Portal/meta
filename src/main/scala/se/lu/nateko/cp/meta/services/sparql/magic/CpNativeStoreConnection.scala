@@ -14,10 +14,7 @@ import org.eclipse.rdf4j.model._
 import org.eclipse.rdf4j.sail.SailException
 import org.eclipse.rdf4j.common.iteration.SingletonIteration
 import org.eclipse.rdf4j.common.iteration.UnionIteration
-import org.eclipse.rdf4j.sail.base.SailSource
-import org.eclipse.rdf4j.sail.base.SailDataset
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
-import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._

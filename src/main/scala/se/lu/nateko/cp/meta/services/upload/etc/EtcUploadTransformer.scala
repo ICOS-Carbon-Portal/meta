@@ -9,7 +9,6 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
-import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

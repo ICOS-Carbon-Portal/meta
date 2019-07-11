@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.api.Doi
-import se.lu.nateko.cp.meta.views.LandingPageHelpers
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.CpmetaConfig
 import org.eclipse.rdf4j.model.Statement

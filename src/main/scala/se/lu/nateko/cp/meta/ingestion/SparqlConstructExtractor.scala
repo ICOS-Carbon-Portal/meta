@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import org.apache.commons.io.IOUtils
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 

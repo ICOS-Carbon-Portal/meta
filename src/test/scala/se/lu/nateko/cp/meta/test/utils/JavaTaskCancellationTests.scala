@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.test.utils
 
 import org.scalatest.FunSuite
-import java.util.concurrent.Executors
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ScheduledThreadPoolExecutor

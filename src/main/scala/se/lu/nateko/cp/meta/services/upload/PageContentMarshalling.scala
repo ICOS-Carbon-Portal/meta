@@ -9,7 +9,7 @@ import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.{CitationClient, Doi, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
-import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfig, StaticCollection}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import se.lu.nateko.cp.meta.utils.getStackTrace

@@ -1,14 +1,11 @@
 package se.lu.nateko.cp.meta.views
 
-import java.net.URI
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json._
 
 

@@ -7,7 +7,6 @@ import org.eclipse.rdf4j.query.algebra.TupleFunctionCall
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.query.algebra.ValueExpr
-import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.Join
 import org.eclipse.rdf4j.query.algebra.QueryModelNode
 import org.eclipse.rdf4j.model.vocabulary.OWL

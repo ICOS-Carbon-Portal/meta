@@ -1,14 +1,12 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.Html
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 
 object StaticRoute {

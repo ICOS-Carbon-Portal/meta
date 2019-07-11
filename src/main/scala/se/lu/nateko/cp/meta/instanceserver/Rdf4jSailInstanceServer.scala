@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.instanceserver
 import java.util.UUID
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Try

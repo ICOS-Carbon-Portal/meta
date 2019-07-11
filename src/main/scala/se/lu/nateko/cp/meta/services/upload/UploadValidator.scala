@@ -28,7 +28,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
-import java.time.Instant
 
 class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
 	import servers.{ metaVocab, vocab }

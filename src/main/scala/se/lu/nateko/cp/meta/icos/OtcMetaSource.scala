@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.icos
 
-import scala.collection.immutable
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 

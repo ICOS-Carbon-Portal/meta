@@ -2,11 +2,8 @@ package se.lu.nateko.cp.meta.ingestion
 
 import java.net.URI
 
-import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector
@@ -20,7 +17,6 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 import akka.stream.Materializer

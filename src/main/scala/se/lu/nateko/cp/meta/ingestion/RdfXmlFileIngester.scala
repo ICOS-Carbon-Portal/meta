@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.ingestion
 import org.eclipse.rdf4j.rio.RDFFormat
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.Statement
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 

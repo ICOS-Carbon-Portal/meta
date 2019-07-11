@@ -18,7 +18,6 @@ object CpmetaJsonProtocol{
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import CpmetaJsonProtocol._
-	import se.lu.nateko.cp.meta.core.crypto.Sha256Sum._
 
 	implicit val resourceDtoFormat = jsonFormat3(ResourceDto)
 	implicit val literalValueDtoFormat = jsonFormat2(LiteralValueDto)

@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import java.text.NumberFormat
 import java.text.ParseException
 import java.time.LocalDate
-import java.util.Locale
 
 import BadmConsts._
 import com.opencsv.CSVParserBuilder
@@ -15,7 +13,6 @@ import spray.json.JsObject
 import spray.json.JsString
 import java.io.StringReader
 import java.time.LocalDateTime
-import java.time.format.DateTimeParseException
 
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import spray.json.JsValue

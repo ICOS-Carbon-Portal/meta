@@ -15,8 +15,6 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.util.Success
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import akka.Done
 import akka.actor.ActorSystem
@@ -27,7 +25,6 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri

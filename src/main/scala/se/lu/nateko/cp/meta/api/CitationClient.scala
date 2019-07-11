@@ -12,11 +12,6 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaRange
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.timeLimit

@@ -13,9 +13,6 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.api.CitationClient
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
 

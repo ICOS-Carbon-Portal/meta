@@ -10,7 +10,6 @@ import scala.concurrent.Future
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.semanticweb.owlapi.apibinding.OWLManager
 
 import akka.actor.ActorSystem
@@ -38,14 +37,10 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
-import se.lu.nateko.cp.meta.services.sparql.magic.MagicTupleFuncSail
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.CitationProviderFactory
-import se.lu.nateko.cp.meta.services.CitationProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import _root_.views.html.landpagesnips.metaDownloadButton
 import se.lu.nateko.cp.meta.api.CitationClient
 
 

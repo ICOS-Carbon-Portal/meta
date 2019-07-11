@@ -5,14 +5,11 @@ import scala.util.Failure
 import scala.util.Success
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
-import spray.json.JsNumber
-import spray.json.JsObject
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcUploadConfig

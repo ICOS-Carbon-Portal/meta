@@ -15,14 +15,16 @@ class FluxMeta(
 ){
 
 	val StationId(stationId) = fname.substring(4, 10)
+	private val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
+	private val YearsRegex(yearFromStr, yearToStr) = fname
 
 	def station: URI = {
 		val pref = if(isIcos) "ES_" else "FLUXNET_"
 		new URI(s"http://meta.icos-cp.eu/resources/stations/$pref${stationId.id}")
 	}
 
-	def yearFrom = fname.substring(31, 35).toInt
-	def yearTo = fname.substring(36, 40).toInt
+	def yearFrom = yearFromStr.toInt
+	def yearTo = yearToStr.toInt
 
 	def acqStart = Instant.parse(
 		s"${yearFrom}-01-01T00:00:00Z"

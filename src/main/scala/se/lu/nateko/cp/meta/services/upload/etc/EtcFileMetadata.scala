@@ -72,7 +72,9 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 
 	def lookupLogger(station: StationId, loggerId: Int) =	loggers.get((station, loggerId))
 
-	def getUtcOffset(station: StationId) = stations.get(station).map(_.utcOffset)
+	def getUtcOffset(station: StationId) = stations.get(station)
+		.map(_.utcOffset)
+		.orElse(EtcFileMetadataStore.fallbackUtcOffset(station))
 
 	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dtype: DataType.Value) = files.get((station, loggerId, fileId, dtype))
 }
@@ -89,5 +91,12 @@ trait EtcFileMetadataStore {
 object EtcFileMetadataStore {
 	def apply(entries: Seq[BadmEntry]): EtcFileMetadataStore = {
 		new EtcFileMetadataStoreImpl(entries)
+	}
+
+	def fallbackUtcOffset(station: StationId): Option[Int] = station.id.take(2) match {
+		case "BE" | "CH" | "CZ" | "DE" | "DK" | "ES" | "FR" | "IT" | "NL" | "SE" => Some(1)
+		case "FI" => Some(2)
+		case "RU" => Some(3)
+		case _ => None
 	}
 }

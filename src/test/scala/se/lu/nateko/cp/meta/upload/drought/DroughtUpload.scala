@@ -6,7 +6,7 @@ import java.net.URI
 import java.nio.file.Path
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import akka.Done
-import java.io.FileReader
+import java.io.InputStreamReader
 import com.opencsv.CSVReader
 import java.nio.file.Paths
 import scala.collection.JavaConverters.asScalaIteratorConverter
@@ -23,8 +23,8 @@ object DroughtUpload{
 	val archiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
 	val hhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
 
-	def archiveMetas = metas("fluxnetMetaSrc.csv")
-	def hhMetas = metas("hh/fluxnetHhMetaSrc.csv")
+	def archiveMetas = metas(baseDir, "fluxnetMetaSrc.csv")
+	def hhMetas = metas(baseDir.resolve("hh/"), "fluxnetHhMetaSrc.csv")
 
 	def archiveObjInfos: Iterator[CpUploadClient.ObjectUploadInfo] = archiveMetas.map{meta =>
 		makeDto(meta, archiveSpec) -> meta.fileInfo
@@ -34,11 +34,10 @@ object DroughtUpload{
 		makeDto(meta, hhSpec) -> meta.fileInfo
 	}
 
-	def metas(path: String): Iterator[FluxMeta] = {
-		val metaSrcPath = baseDir.resolve(Paths.get(path))
-		val csv = new CSVReader(new FileReader(metaSrcPath.toFile))
-		val folder = metaSrcPath.getParent
-		csv.iterator().asScala.drop(1).map(parseFluxMeta(_, folder))
+	def metas(filesFolder: Path, metaSrcFileName: String): Iterator[FluxMeta] = {
+		val metaSrc = getClass.getClassLoader.getResourceAsStream(metaSrcFileName)
+		val csv = new CSVReader(new InputStreamReader(metaSrc))
+		csv.iterator().asScala.drop(1).map(parseFluxMeta(_, filesFolder))
 	}
 
 	def uploadCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getCollDto)

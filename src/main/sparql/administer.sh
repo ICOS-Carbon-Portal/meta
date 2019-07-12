@@ -1,3 +1,3 @@
 #!/bin/bash
-curl -X POST -H "Cookie: " -d @insertDeprecation.rq https://meta.icos-cp.eu/admin/insert/atmprodcsv?dryRun=false
+curl -X POST -H "Cookie: cpauthToken=" -d @purgeColl.rq https://meta.icos-cp.eu/admin/delete/icoscolls?dryRun=false
 

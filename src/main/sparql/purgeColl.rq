@@ -1,0 +1,8 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct {
+?s ?p ?o .
+} where{
+   bind (<https://meta.icos-cp.eu/collections/ESBf1inTKnaOj07ALg1MN88W> as ?s)
+   ?s ?p ?o .
+}
+

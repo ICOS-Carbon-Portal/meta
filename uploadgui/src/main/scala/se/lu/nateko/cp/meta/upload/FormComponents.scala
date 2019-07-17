@@ -9,6 +9,7 @@ import scala.util.Failure
 
 import org.scalajs.dom
 import org.scalajs.dom.{ document, html }
+import org.scalajs.dom.raw._
 
 import Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -168,4 +169,18 @@ class SubmitButton(elemId: String, onSubmit: () => Unit){
 	button.disabled = true
 
 	button.onclick = _ => onSubmit()
+}
+
+class DataElements() {
+	def show(): Unit = {
+		dom.document.querySelectorAll(".data-section").asInstanceOf[NodeListOf[HTMLElement]].map { section =>
+			section.style.display = "block"
+		}
+	}
+
+	def hide(): Unit = {
+		dom.document.querySelectorAll(".data-section").asInstanceOf[NodeListOf[HTMLElement]].map { section =>
+			section.style.display = "none"
+		}
+	}
 }

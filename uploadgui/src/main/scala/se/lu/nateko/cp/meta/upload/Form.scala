@@ -26,6 +26,12 @@ class Form(
 		case Failure(err) => button.disable(err.getMessage)
 	}
 
+	val dataElements = new DataElements()
+	val onFileTypeSelected: Int => Unit = (fileType: Int) => fileType match {
+		case 0 => dataElements.show()
+		case 1 => dataElements.hide()
+	}
+
 	val onLevelSelected: Int => Unit = (level: Int) =>
 		whenDone{
 			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
@@ -55,6 +61,7 @@ class Form(
 	}
 
 	val fileInput = new FileInput("fileinput", updateButton)
+	val typeControl = new Radio("file-type-radio", onFileTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)

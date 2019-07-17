@@ -3,7 +3,7 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Data upload", "Data upload", envri, cpauthHostOpt = Some(authConf.authHost)){
+@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost)){
 	<style type="text/css">
 	.form {
 		display: none;
@@ -29,6 +29,9 @@
 		text-align: center;
 		margin: 5vh 0;
 	}
+	.data-section {
+		display: none;
+	}
 	#submitbutton {
 		margin-top: 2vh;
 		pointer-events: auto;
@@ -39,11 +42,33 @@
 		<div id="alert-placeholder"></div>
 		<form id="form-block" class="form panel panel-default">
 			<section>
-				<h2>Data</h2>
+				<h2>File</h2>
 				<div class="form-group">
 					<label for="fileinput">File</label>
 					<input id="fileinput" type="file" placeholder="Select file for upload">
 				</div>
+				<div class="form-group">
+					<label for="file-type-radio">Level</label>
+					<div>
+						<div id="file-type-radio">
+							<label class="radio-inline">
+								<input type="radio" name="type" value="0" class="js-file-type">
+								Data
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="type" value="1" class="js-file-type">
+								Document
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Previous version of this file <em class="text-muted">- optional</em></label>
+					<input type="text" id="previoushash" class="form-element form-control" placeholder="hashsum">
+				</div>
+			</section>
+			<section class="data-section">
+				<h2>Data</h2>
 				<div class="form-group">
 					<label for="level-radio">Level</label>
 					<div>
@@ -64,10 +89,6 @@
 					</div>
 				</div>
 				<div class="form-group">
-					<label>Previous version of this file <em class="text-muted">- optional</em></label>
-					<input type="text" id="previoushash" class="form-element form-control" placeholder="hashsum">
-				</div>
-				<div class="form-group">
 					<label for="objspecselect">Data type</label>
 					<select id="objspecselect" class="form-element" disabled></select>
 				</div>
@@ -83,7 +104,7 @@
 					<select id="submitteridselect" class="form-element"></select>
 				</div>
 			</section>
-			<section>
+			<section class="data-section">
 				<h2>Acquisition</h2>
 				<div class="form-group">
 					<label for="stationselect">Station</label>

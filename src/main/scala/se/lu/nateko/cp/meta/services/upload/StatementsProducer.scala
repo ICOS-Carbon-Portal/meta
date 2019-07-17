@@ -24,6 +24,7 @@ import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils._
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -51,7 +52,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
-			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.map(vocab.getStaticObject)) ++
+			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(vocab.lit))
 	}
 
@@ -79,7 +80,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(collIri, dct.creator, submittingOrg.toRdf)
 		) ++
 			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
-			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.map(vocab.getCollection)) ++
+			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.flattenToSeq.map(vocab.getCollection)) ++
 			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(vocab.lit)) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
@@ -155,6 +156,10 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
 		prod.contributors.map{ contrib =>
 			makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)
+		} ++
+		prod.sources.getOrElse(Nil).map{srcHash =>
+			val src = vocab.getStaticObject(srcHash)
+			makeSt(objectUri, metaVocab.prov.hadPrimarySource, src)
 		}
 	}
 
@@ -173,7 +178,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def makeSt(subj: IRI, pred: IRI, obj: Option[Value]): Iterable[Statement] =
+	private def makeSt(subj: IRI, pred: IRI, obj: Iterable[Value]): Iterable[Statement] =
 		obj.map(factory.createStatement(subj, pred, _))
 
 	private def makeSt(subj: IRI, pred: IRI, obj: Value): Statement = factory.createStatement(subj, pred, obj)

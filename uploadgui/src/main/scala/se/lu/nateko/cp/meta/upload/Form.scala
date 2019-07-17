@@ -96,7 +96,7 @@ class Form(
 				production = None
 			)
 		),
-		isNextVersionOf = previousVersion,
+		isNextVersionOf = previousVersion.map(Left(_)),
 		preExistingDoi = None
 	)
 }

@@ -1,11 +1,22 @@
 @import java.net.URI
 
-@(vers: Option[URI])
-@vers match{
-	case None => {
+@(vers: Iterable[URI])
+@vers.toList match{
+	case Nil => {
 		not available
 	}
-	case Some(uri) => {
+	case uri :: Nil => {
 		<a href=@{uri}>available</a>
+	}
+	case _ => {
+		<span>
+			<span>multiple: </span>
+			@for((uri, i) <- vers.zipWithIndex){
+				@if(i > 0){
+					<span>, </span>
+				}
+				<a href=@{uri}>@{s"previous #${i + 1}"}</a>
+			}
+		</span>
 	}
 }

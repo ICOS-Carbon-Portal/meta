@@ -26,28 +26,19 @@ object JsonSupport {
 		def writes(uri: URI) = JsString(uri.toASCIIString)
 	}
 
-	implicit val dataProductionDtoWrites = Json.writes[DataProductionDto]
-
-	implicit val spatialCoverageWrites = new Writes[Either[LatLonBox, URI]]{
-		def writes(spatial: Either[LatLonBox, URI]) = spatial.fold(Json.toJson(_), Json.toJson(_))
+	implicit val sha256SumWrites = new Writes[Sha256Sum]{
+		def writes(hash: Sha256Sum) = JsString(hash.base64Url)
 	}
 
-	implicit val instrumentWrites = new Writes[Either[URI, Seq[URI]]]{
-		def writes(instr: Either[URI, Seq[URI]]) = instr.fold(Json.toJson(_), Json.toJson(_))
+	implicit val dataProductionDtoWrites = Json.writes[DataProductionDto]
+	implicit def eitherWrites[L: Writes, R: Writes] = new Writes[Either[L, R]]{
+		def writes(e: Either[L, R]) = e.fold(Json.toJson(_), Json.toJson(_))
 	}
 
 	implicit val elaboratedProductMetadataWrites = Json.writes[ElaboratedProductMetadata]
 	implicit val stationDataMetadataWrites = Json.writes[StationDataMetadata]
 
-	implicit val sha256SumWrites = new Writes[Sha256Sum]{
-		def writes(hash: Sha256Sum) = JsString(hash.base64Url)
-	}
-
 	implicit val staticCollectionDtoWrites = Json.writes[StaticCollectionDto]
-
-	implicit val specificInfoWrites = new Writes[Either[ElaboratedProductMetadata, StationDataMetadata]]{
-		def writes(info: Either[ElaboratedProductMetadata, StationDataMetadata]) = info.fold(Json.toJson(_), Json.toJson(_))
-	}
 
 	implicit val uploadMetadataDtoWrites = Json.writes[DataObjectDto]
 	implicit val javaUriReads = new Reads[URI]{

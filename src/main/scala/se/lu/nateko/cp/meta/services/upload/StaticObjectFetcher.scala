@@ -32,7 +32,7 @@ class StaticObjectFetcher(
 		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
-			.map(getDataProduction)
+			.map(getDataProduction(dobj, _))
 
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
 		val spec = getSpecification(specIri)

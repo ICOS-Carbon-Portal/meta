@@ -22,4 +22,10 @@ package object utils {
 		err.printStackTrace(new java.io.PrintWriter(traceWriter))
 		traceWriter.toString
 	}
+
+	implicit class OptionalItemOrSeqOps[T](val item: Option[Either[T, Seq[T]]]){
+		def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
+			either.fold(Seq(_), identity)
+		}
+	}
 }

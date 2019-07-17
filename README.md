@@ -59,7 +59,8 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 			"contributors": [],
 			"hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
 			"comment": "free text",
-			"creationDate": "2017-12-01T12:00:00.000Z"
+			"creationDate": "2017-12-01T12:00:00.000Z",
+			"sources": ["utw3ah9Fo7_Sp7BN5i8z2vbK"]
 		}
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
@@ -84,6 +85,7 @@ Clarifications:
 		- `hostOrganization` is optional.
 		- `comment` is an optional free text.
 		- `creationDate` is an ISO 8601 time stamp.
+		- `sources` (optional) is an array of source data objects, that the current one was produced from, referred to as hashsums. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
 - `specificInfo` for level 3
 	- `title` is a required string.
@@ -95,10 +97,10 @@ Clarifications:
 	- `temporal` is the time coverage.
 		- `interval` containing `start` and `stop` timestamps.
 		- `resolution` is a string indicating the resolution of the dataset.
-	- `production` is similar to `production` for levels 0, 1 and 2.
+	- `production` is similar to `production` for levels 1 and 2.
 	- `customLandingPage` is an optional url linking to the data hosted somewhere else.
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
-- `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object that is already present. The value is the SHA256 hashsum of the older data object. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
+- `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object(s) that is(are) already present. The value is the SHA256 hashsum of the older data object (or an array of the hashsums, if they are more than one). Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:

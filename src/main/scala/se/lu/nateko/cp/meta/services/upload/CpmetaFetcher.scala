@@ -58,7 +58,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
-		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(_.toJava),
+		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject).map(_.asUriResource),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 

@@ -112,6 +112,9 @@
 					@for(host <- production.host){
 						@agentPanelRow("Host organization", host)
 					}
+					@for(source <- production.sources){
+						@resourcePanelRow("Source object", source)
+					}
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
 					@for(comment <- production.comment){
 						@PanelRow("Comment", comment)

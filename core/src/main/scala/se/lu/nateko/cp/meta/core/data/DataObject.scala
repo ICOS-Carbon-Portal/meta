@@ -48,7 +48,7 @@ case class DataProduction(
 	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
-	sources: Seq[URI],
+	sources: Seq[UriResource],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])

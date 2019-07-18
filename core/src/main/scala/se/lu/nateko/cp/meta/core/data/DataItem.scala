@@ -8,7 +8,9 @@ sealed trait DataItem
 
 sealed trait StaticDataItem extends DataItem
 
-final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem
+final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem{
+	def asUriResource = UriResource(res, Some(name))
+}
 
 sealed trait DataItemCollection extends DataItem {
 	type M <: DataItem

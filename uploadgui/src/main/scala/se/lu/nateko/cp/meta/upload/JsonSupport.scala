@@ -49,7 +49,8 @@ object JsonSupport {
 		def writes(info: Either[ElaboratedProductMetadata, StationDataMetadata]) = info.fold(Json.toJson(_), Json.toJson(_))
 	}
 
-	implicit val uploadMetadataDtoWrites = Json.writes[DataObjectDto]
+	implicit val dataDtoWrites = Json.writes[DataObjectDto]
+	implicit val documentDtoWrites = Json.writes[DocObjectDto]
 	implicit val javaUriReads = new Reads[URI]{
 		def reads(js: JsValue) = js.validate[String].map(new URI(_))
 	}

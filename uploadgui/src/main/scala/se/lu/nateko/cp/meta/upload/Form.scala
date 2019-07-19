@@ -88,15 +88,13 @@ class Form(
 
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
-	def dto: Try[ObjectUploadDto] = dataElements.areEnabled match {
-		case true => dataObjectDto
-		case false => documentObjectDto
-	}
+	def dto: Try[ObjectUploadDto] = if (dataElements.areEnabled) dataObjectDto else documentObjectDto
+	private def isTypeSelected = if (typeControl.value.isEmpty) fail("No file type selected") else Success(())
 
 	def dataObjectDto: Try[DataObjectDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
-		_ <- typeControl.value;
+		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
@@ -126,7 +124,7 @@ class Form(
 	def documentObjectDto: Try[DocObjectDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
-		_ <- typeControl.value;
+		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id")
 	) yield DocObjectDto(

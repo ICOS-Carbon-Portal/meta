@@ -51,6 +51,12 @@ object JsonSupport {
 
 	implicit val dataDtoWrites = Json.writes[DataObjectDto]
 	implicit val documentDtoWrites = Json.writes[DocObjectDto]
+	implicit val ObjectUploadDtoWrites = new Writes[ObjectUploadDto] {
+		def writes(dto: ObjectUploadDto) = dto match {
+			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
+			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
+		}
+	}
 	implicit val javaUriReads = new Reads[URI]{
 		def reads(js: JsValue) = js.validate[String].map(new URI(_))
 	}

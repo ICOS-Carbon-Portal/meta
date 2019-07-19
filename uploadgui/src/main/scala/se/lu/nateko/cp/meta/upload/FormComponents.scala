@@ -10,6 +10,7 @@ import scala.util.Failure
 import org.scalajs.dom
 import org.scalajs.dom.{ document, html }
 import org.scalajs.dom.raw._
+import org.scalajs.dom.ext._
 
 import Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -77,7 +78,7 @@ class Radio(elemId: String, cb: String => Unit) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
 	protected[this] var _value: Option[String] = None
 
-	def value: Try[Option[String]] = if (_value.isEmpty) Failure(new Exception("No file type selected")) else Success(_value)
+	def value: Option[String] = _value
 
 	inputBlock.onchange = _ => {
 		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value)
@@ -176,15 +177,17 @@ class DataElements() {
 	def areEnabled: Boolean = enabled
 
 	def show(): Unit = {
-		dom.document.querySelectorAll(".data-section").asInstanceOf[NodeListOf[HTMLElement]].map { section =>
-			section.style.display = "block"
+		dom.document.querySelectorAll(".data-section").foreach {
+			case section: HTMLElement =>
+				section.style.display = "block"
 		}
 		enabled = true
 	}
 
 	def hide(): Unit = {
-		dom.document.querySelectorAll(".data-section").asInstanceOf[NodeListOf[HTMLElement]].map { section =>
-			section.style.display = "none"
+		dom.document.querySelectorAll(".data-section").foreach {
+			case section: HTMLElement =>
+				section.style.display = "none"
 		}
 		enabled = false
 	}

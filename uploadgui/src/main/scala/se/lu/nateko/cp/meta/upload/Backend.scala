@@ -10,7 +10,7 @@ import org.scalajs.dom.ext.AjaxException
 import org.scalajs.dom.raw.XMLHttpRequest
 import JsonSupport._
 import play.api.libs.json._
-import se.lu.nateko.cp.meta.{SubmitterProfile, ObjectUploadDto, DataObjectDto, DocObjectDto}
+import se.lu.nateko.cp.meta.{SubmitterProfile, ObjectUploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
@@ -75,11 +75,8 @@ object Backend {
 				.get
 		)
 
-	def submitMetadata(dto: ObjectUploadDto): Future[URI] = {
-		val json = dto match {
-			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
-			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
-		}
+	def submitMetadata[T <: ObjectUploadDto](dto: T): Future[URI] = {
+		val json = Json.toJson(dto)
 		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
 			.recoverWith(recovery("upload data object metadata"))
 			.map(xhr => new URI(xhr.responseText))

@@ -9,6 +9,8 @@ import scala.util.Failure
 
 import org.scalajs.dom
 import org.scalajs.dom.{ document, html }
+import org.scalajs.dom.raw._
+import org.scalajs.dom.ext._
 
 import Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -61,7 +63,7 @@ class FileInput(elemId: String, cb: () => Unit){
 		}
 		whenDone(FileHasher.hash(f)){hash =>
 			if(file.toOption.contains(f)) {
-				_hash = Success(hash)//file could have been changed while digesting for SHA-256
+				_hash = Success(hash) //file could have been changed while digesting for SHA-256
 				cb()
 			}
 		}
@@ -72,14 +74,14 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 }
 
-class Radio(elemId: String, cb: Int => Unit) {
+class Radio(elemId: String, cb: String => Unit) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
-	protected[this] var _value: Option[Int] = None
+	protected[this] var _value: Option[String] = None
 
-	def value: Option[Int] = _value
+	def value: Option[String] = _value
 
 	inputBlock.onchange = _ => {
-		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value.toInt)
+		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value)
 		_value.foreach(cb)
 	}
 
@@ -168,4 +170,25 @@ class SubmitButton(elemId: String, onSubmit: () => Unit){
 	button.disabled = true
 
 	button.onclick = _ => onSubmit()
+}
+
+class DataElements() {
+	private[this] var enabled = false
+	def areEnabled: Boolean = enabled
+
+	def show(): Unit = {
+		dom.document.querySelectorAll(".data-section").foreach {
+			case section: HTMLElement =>
+				section.style.display = "block"
+		}
+		enabled = true
+	}
+
+	def hide(): Unit = {
+		dom.document.querySelectorAll(".data-section").foreach {
+			case section: HTMLElement =>
+				section.style.display = "none"
+		}
+		enabled = false
+	}
 }

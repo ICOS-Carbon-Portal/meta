@@ -2,7 +2,6 @@
 <rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xmlns:dc="http://purl.org/dc/elements/1.1/"
-     xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
@@ -10,6 +9,7 @@
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
+     xmlns:geosp="http://www.opengis.net/ont/geosparql#"
      xmlns:sites="https://meta.fieldsites.se/ontologies/sites/"
      xmlns:dcterms="http://purl.org/dc/terms/"
      xmlns:sitesorg="https://meta.fieldsites.se/resources/organizations/">
@@ -2293,6 +2293,15 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/netcdf">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NetCDF</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/otcRawData -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/otcRawData">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS OTC Raw Data</rdfs:label>
     </owl:NamedIndividual>
     
 

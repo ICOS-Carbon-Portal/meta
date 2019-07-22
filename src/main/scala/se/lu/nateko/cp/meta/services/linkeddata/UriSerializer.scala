@@ -69,8 +69,9 @@ class Rdf4jUriSerializer(
 		import servers.vocab
 		for(
 			server <- servers.getInstServerForStaticObj(hash).toOption;
-			collFetcher <- servers.collFetcher;
-			objectFetcher = new StaticObjectFetcher(server, vocab, collFetcher, pidFactory);
+			collFetcher <- servers.collFetcherLite;
+			plainFetcher <- servers.plainFetcher;
+			objectFetcher = new StaticObjectFetcher(server, vocab, collFetcher, plainFetcher, pidFactory);
 			dobj <- objectFetcher.fetch(hash)
 		) yield dobj
 	}

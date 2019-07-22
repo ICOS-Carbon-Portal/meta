@@ -100,17 +100,24 @@ class DataObjectInstanceServers(
 	}
 
 	def getCollectionCreator(coll: Sha256Sum)(implicit envri: Envri): Option[IRI] =
-		collFetcher.flatMap(_.getCreatorIfCollExists(coll))
+		collFetcherLite.flatMap(_.getCreatorIfCollExists(coll))
 
 	def collectionExists(coll: Sha256Sum)(implicit envri: Envri): Boolean =
-		collFetcher.map(_.collectionExists(coll)).getOrElse(false)
+		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
 	def collectionExists(coll: IRI)(implicit envri: Envri): Boolean =
-		collFetcher.map(_.collectionExists(coll)).getOrElse(false)
+		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
-	def collFetcher(implicit envri: Envri): Option[CollectionFetcher] = collectionServers.get(envri).map{
-		new CollectionFetcher(_, allDataObjs(envri), vocab)
-	}
+	def plainFetcher(implicit envri: Envri): Option[PlainStaticObjectFetcher] =
+		allDataObjs.get(envri).map(new PlainStaticObjectFetcher(_))
+
+	def collFetcher(implicit envri: Envri): Option[CollectionFetcher] = for(
+		collServer <- collectionServers.get(envri);
+		thePlainFetcher <- plainFetcher
+	) yield new CollectionFetcher(collServer, thePlainFetcher, vocab)
+
+	def collFetcherLite(implicit envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
+		.map(new CollectionFetcherLite(_, vocab))
 
 	def dataObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)

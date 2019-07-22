@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
 
-class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab) extends CpmetaFetcher {
+class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab)(implicit envri: Envri) extends CpmetaFetcher {
 
 	val memberProp = metaVocab.dcterms.hasPart
 
@@ -32,24 +32,6 @@ class CollectionFetcherLite(protected val server: InstanceServer, protected val 
 			.collect{case iri: IRI => fetchLite(iri)}
 			.flatten
 			.toIndexedSeq
-}
-
-class CollectionFetcher(
-	server: InstanceServer,
-	dobjsServer: InstanceServer,
-	vocab: CpVocab
-)(implicit envri: Envri) extends CollectionFetcherLite(server, vocab) {collFetcher =>
-
-	private val dobjFetcher = new CpmetaFetcher{
-		val server = dobjsServer
-		val vocab = collFetcher.vocab
-	}
-
-	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {
-		val collUri = vocab.getCollection(hash)
-		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri))
-		else None
-	}
 
 	def getCreatorIfCollExists(hash: Sha256Sum): Option[IRI] = {
 		val collUri = vocab.getCollection(hash)
@@ -57,13 +39,26 @@ class CollectionFetcher(
 	}
 
 	def collectionExists(coll: Sha256Sum): Boolean = collectionExists(vocab.getCollection(coll))
+}
+
+class CollectionFetcher(
+	server: InstanceServer,
+	plainFetcher: PlainStaticObjectFetcher,
+	vocab: CpVocab
+)(implicit envri: Envri) extends CollectionFetcherLite(server, vocab) {collFetcher =>
+
+	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {
+		val collUri = vocab.getCollection(hash)
+		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri))
+		else None
+	}
 
 	private def getExistingStaticColl(coll: IRI): StaticCollection = {
 		val dct = metaVocab.dcterms
 
 		val members = server.getUriValues(coll, memberProp).map{item =>
 			if(collectionExists(item)) getExistingStaticColl(item)
-			else dobjFetcher.getPlainStaticObject(item)
+			else plainFetcher.getPlainStaticObject(item)
 		}.sortBy(_ match{
 			case coll: StaticCollection => coll.title
 			case dobj: PlainStaticObject => dobj.name

@@ -17,12 +17,6 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 	protected def vocab: CpVocab
 
-	def getPlainStaticObject(dobj: IRI) = PlainStaticObject(
-		dobj.toJava,
-		getHashsum(dobj, metaVocab.hasSha256sum),
-		getSingleString(dobj, metaVocab.hasName)
-	)
-
 	def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
 		project = getLabeledResource(spec, metaVocab.hasAssociatedProject),
@@ -53,12 +47,12 @@ trait CpmetaFetcher extends FetchingHelper{
 		label = getOptionalString(cov, RDFS.LABEL)
 	)
 
-	protected def getDataProduction(obj: IRI, prod: IRI) = DataProduction(
+	protected def getDataProduction(obj: IRI, prod: IRI, fetcher: PlainStaticObjectFetcher) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
-		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject).map(_.asUriResource),
+		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(fetcher.getPlainStaticObject).map(_.asUriResource),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 

@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.upload
 
 import java.net.URI
 
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.HandleNetClient
@@ -10,12 +11,15 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
 class StaticObjectFetcher(
 	protected val server: InstanceServer,
 	protected val vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,
+	plainFetcher: PlainStaticObjectFetcher,
 	pidFactory: HandleNetClient.PidFactory
 ) extends CpmetaFetcher {
 
@@ -32,7 +36,7 @@ class StaticObjectFetcher(
 		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
-			.map(getDataProduction(dobj, _))
+			.map(getDataProduction(dobj, _, plainFetcher))
 
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
 		val spec = getSpecification(specIri)
@@ -93,4 +97,15 @@ class StaticObjectFetcher(
 			)
 		}
 	}
+}
+
+class PlainStaticObjectFetcher(private val allDataObjServer: InstanceServer) extends FetchingHelper{
+	private val metaVocab = new CpmetaVocab(allDataObjServer.factory)
+	override protected def server = allDataObjServer
+
+	def getPlainStaticObject(dobj: IRI) = PlainStaticObject(
+		dobj.toJava,
+		getHashsum(dobj, metaVocab.hasSha256sum),
+		getSingleString(dobj, metaVocab.hasName)
+	)
 }

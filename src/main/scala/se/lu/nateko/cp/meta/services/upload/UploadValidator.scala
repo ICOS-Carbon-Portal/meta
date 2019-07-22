@@ -21,10 +21,12 @@ import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
@@ -64,7 +66,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		submConf <- getSubmitterConfig(coll);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- submitterAuthorizedByCollectionCreator(submConf, hash);
-		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf)
+		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
 	) yield NotUsed
 
 	def getSubmitterConfig(dto: UploadDto)(implicit envri: Envri): Try[DataSubmitterConfig] = {
@@ -174,7 +176,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				if(spec.dataLevel > 2) errors += "The data level for this kind of metadata package must have been 2 or less"
 				else{
 					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
-						errors += "Must provide 'aquisitionInterval' with start and stop timestamps."
+						errors += "Must provide 'acquisitionInterval' with start and stop timestamps."
 
 					if(
 						(spec.datasetSpec.isDefined) && stationMeta.nRows.isEmpty &&
@@ -198,37 +200,50 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
-	private def validatePrevVers(dto: ObjectUploadDto, getInstServ: => Try[InstanceServer])(implicit envri: Envri): Try[NotUsed] =
-		dto.isNextVersionOf match{
-			case None => ok
-			case Some(prevHash) =>
-				if(prevHash == dto.hashSum)
-					userFail("Data/doc object cannot be a next version of itself")
+	private def validatePrevVers(dto: ObjectUploadDto, getInstServ: => Try[InstanceServer])(implicit envri: Envri): Try[NotUsed] = dto
+		.isNextVersionOf
+		.flattenToSeq
+		.map{prevHash =>
+			if(prevHash == dto.hashSum)
+				userFail("Data/doc object cannot be a next version of itself")
 
-				else getInstServ.flatMap{ server =>
-					val prevDobj = vocab.getStaticObject(prevHash)
-					hasCompletedDeprecator(server, prevDobj)
-				}
+			else getInstServ.flatMap{ inServer =>
+				val prevDobj = vocab.getStaticObject(prevHash)
+				bothOk(
+					existsAndIsCompleted(prevDobj, inServer),
+					{
+						val except = vocab.getStaticObject(dto.hashSum)
+						hasNoOtherDeprecators(prevDobj, except, inServer, true)
+					}
+				)
+			}
 		}
+		.foldLeft(ok)(bothOk(_, _))
 
-	private def hasCompletedDeprecator(server: InstanceServer, dobj: IRI): Try[NotUsed] = {
+	private def existsAndIsCompleted(obj: IRI, inServer: InstanceServer): Try[NotUsed] = {
+		if(inServer.hasStatement(Some(obj), Some(metaVocab.hasSizeInBytes), None))
+			ok
+		else
+			userFail(s"Data-/document object was not found or has not been successfully uploaded: $obj")
+	}
 
-		val deprs = server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
-			.map(_.getSubject).collect{case iri: IRI => iri}
+	private def bothOk(try1: Try[NotUsed], try2: => Try[NotUsed]): Try[NotUsed] = try1.flatMap(_ => try2)
 
-		def isCompleted(depr: IRI) = !server
-			.getUriValues(depr, metaVocab.wasSubmittedBy)
-			.flatMap(subm => server.getValues(subm, metaVocab.prov.endedAtTime))
-			.isEmpty
+	private def hasNoOtherDeprecators(item: IRI, except: IRI, inServer: InstanceServer, amongCompleted: Boolean): Try[NotUsed] = {
 
-		deprs.filter(isCompleted).toTraversable.headOption match{
-			case Some(depr) =>
-				userFail(s"Data/doc object $dobj has already been deprecated by $depr; deprecate the latter instead.")
-			case None =>
-				if(server.hasStatement(Some(dobj), Some(metaVocab.hasSha256sum), None))
-					ok
-				else
-					userFail(s"Previous-version data/doc object was not found: $dobj")
+		val deprs = inServer
+			.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+			.map(_.getSubject)
+			.collect{
+				case iri: IRI if iri != except => iri
+			}.toIndexedSeq
+
+		val filteredDeprs = if(amongCompleted)
+				deprs.filter(depr => existsAndIsCompleted(depr, inServer).isSuccess)
+			else deprs
+
+		filteredDeprs.headOption.fold(ok){depr =>
+			userFail(s"Item $item already has new version $depr; upload your object/collection as new version of the latter instead.")
 		}
 	}
 
@@ -241,7 +256,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		case DataObjectDto(
 			_, _, _, _,
 			Right(StationDataMetadata(_, _, _, Some(TimeInterval(_, acqStop)), _, _)),
-			Some(prevHash), _
+			Some(Left(prevHash)), _
 		) =>
 			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat){
 				val prevDobj = vocab.getStaticObject(prevHash)
@@ -258,13 +273,20 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		case _ => ok
 	} else ok
 
-	private def validatePreviousCollectionVersion(prevVers: Option[Sha256Sum])(implicit envri: Envri): Try[NotUsed] =
-		prevVers.map{coll =>
-			if(servers.collectionExists(coll))
-				ok
-			else
+	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(implicit envri: Envri): Try[NotUsed] =
+		prevVers.flattenToSeq.map{coll =>
+			if(servers.collectionExists(coll)) bothOk({
+				if(coll != newCollHash) ok
+				else userFail(s"A collection cannot be a next version of itself")
+			},{
+				val inServer = servers.collectionServers(envri)
+				val prevColl = vocab.getCollection(coll)
+				val exceptColl = vocab.getCollection(newCollHash)
+				hasNoOtherDeprecators(prevColl, exceptColl, inServer, false)
+			}) else
 				userFail(s"Previous-version collection was not found: $coll")
-		}.getOrElse(ok)
+		}
+		.foldLeft(ok)(bothOk(_, _))
 
 	private def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
 	private def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))

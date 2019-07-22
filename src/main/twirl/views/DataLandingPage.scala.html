@@ -4,6 +4,7 @@
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j._
+@import se.lu.nateko.cp.meta.utils._
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
 
@@ -33,7 +34,7 @@
 					@accessUrlRow(dobj)
 				}
 				@resourcePanelRow("Data affiliation", dobj.specification.project)
-				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion)}
+				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion.flattenToSeq)}
 				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
 				@for(coll <- dobj.parentCollections){
 					@resourcePanelRow("Part of", coll)
@@ -110,6 +111,9 @@
 					}
 					@for(host <- production.host){
 						@agentPanelRow("Host organization", host)
+					}
+					@for(source <- production.sources){
+						@resourcePanelRow("Source object", source)
 					}
 					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
 					@for(comment <- production.comment){

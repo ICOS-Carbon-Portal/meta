@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils._
 
 class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab) extends CpmetaFetcher {
 
@@ -75,7 +76,7 @@ class CollectionFetcher(
 			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
 			nextVersion = getNextVersion(coll),
-			previousVersion = getPreviousVersion(coll),
+			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi)
 		)
 	}

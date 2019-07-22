@@ -53,11 +53,12 @@ trait CpmetaFetcher extends FetchingHelper{
 		label = getOptionalString(cov, RDFS.LABEL)
 	)
 
-	protected def getDataProduction(prod: IRI) = DataProduction(
+	protected def getDataProduction(obj: IRI, prod: IRI) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
+		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject).map(_.asUriResource),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 
@@ -168,7 +169,11 @@ trait CpmetaFetcher extends FetchingHelper{
 			}
 	}
 
-	protected def getPreviousVersion(dobj: IRI): Option[URI] =
-		getOptionalUri(dobj, metaVocab.isNextVersionOf).map(_.toJava)
+	protected def getPreviousVersion(dobj: IRI): Option[Either[URI, Seq[URI]]] =
+		server.getUriValues(dobj, metaVocab.isNextVersionOf).map(_.toJava).toList match {
+			case Nil => None
+			case single :: Nil => Some(Left(single))
+			case many => Some(Right(many))
+		}
 
 }

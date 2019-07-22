@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
@@ -41,11 +41,11 @@ object UploadApp {
 		getElementById[html.Form]("form-block").get.style.display = "block"
 	}
 
-	def upload(dto: DataObjectDto, file: dom.File): Unit = {
+	def upload(dto: ObjectUploadDto, file: dom.File): Unit = {
 		whenDone{
 			Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 		}(doi => {
-			showAlert(s"Data uploaded! <a class='alert-link' href='https://doi.org/$doi'>View metadata</a>", "alert alert-success")
+			showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://doi.org/$doi'>View metadata</a>", "alert alert-success")
 		})
 	}
 }

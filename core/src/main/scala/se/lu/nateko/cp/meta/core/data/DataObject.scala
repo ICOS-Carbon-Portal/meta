@@ -37,7 +37,7 @@ case class DataObjectSpec(
 case class DataAcquisition(
 	station: Station,
 	interval: Option[TimeInterval],
-	instrument: Option[Either[URI, Seq[URI]]],
+	instrument: OptionalOneOrSeq[URI],
 	samplingHeight: Option[Float]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
@@ -48,6 +48,7 @@ case class DataProduction(
 	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
+	sources: Seq[UriResource],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
@@ -74,7 +75,7 @@ sealed trait StaticObject{
 	def doi: Option[String]
 	def fileName: String
 	def submission: DataSubmission
-	def previousVersion: Option[URI]
+	def previousVersion: OptionalOneOrSeq[URI]
 	def nextVersion: Option[URI]
 	def parentCollections: Seq[UriResource]
 
@@ -94,7 +95,7 @@ case class DataObject(
 	submission: DataSubmission,
 	specification: DataObjectSpec,
 	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],
-	previousVersion: Option[URI],
+	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource],
 	citationString: Option[String]
@@ -118,7 +119,7 @@ case class DocObject(
 	fileName: String,
 	size: Option[Long],
 	submission: DataSubmission,
-	previousVersion: Option[URI],
+	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource]
 ) extends StaticObject

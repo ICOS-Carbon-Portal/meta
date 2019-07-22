@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.data._
 
 sealed trait UploadDto{
 	def submitterId: String
-	def isNextVersionOf: Option[Sha256Sum]
+	def isNextVersionOf: OptionalOneOrSeq[Sha256Sum]
 	def preExistingDoi: Option[String]
 }
 
@@ -23,7 +23,7 @@ case class DataObjectDto(
 	objectSpecification: URI,
 	fileName: String,
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
-	isNextVersionOf: Option[Sha256Sum],
+	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[String]
 ) extends ObjectUploadDto
 
@@ -31,7 +31,7 @@ case class DocObjectDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	fileName: String,
-	isNextVersionOf: Option[Sha256Sum],
+	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[String]
 ) extends ObjectUploadDto
 
@@ -41,7 +41,7 @@ case class StaticCollectionDto(
 	members: Seq[URI],
 	title: String,
 	description: Option[String],
-	isNextVersionOf: Option[Sha256Sum],
+	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[String]
 ) extends UploadDto
 
@@ -70,6 +70,7 @@ case class DataProductionDto(
 	contributors: Seq[URI],
 	hostOrganization: Option[URI],
 	comment: Option[String],
+	sources: Option[Seq[Sha256Sum]],
 	creationDate: Instant
 )
 

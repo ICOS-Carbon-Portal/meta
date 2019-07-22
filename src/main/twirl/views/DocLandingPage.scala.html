@@ -1,5 +1,6 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.core.data.{Envri, DocObject}
+@import se.lu.nateko.cp.meta.utils._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
@@ -30,7 +31,7 @@
 					}
 					@accessUrlRow(doc)
 				}
-				@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion)}
+				@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion.flattenToSeq)}
 				@PanelHtmlRow{Next version}{@versionLink(doc.nextVersion)}
 				@for(coll <- doc.parentCollections){
 					@PanelHtmlRow{Part of}{

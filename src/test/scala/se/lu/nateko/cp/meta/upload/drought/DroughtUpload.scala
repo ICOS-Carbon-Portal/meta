@@ -57,6 +57,7 @@ object DroughtUpload{
 			contributors = Seq(meta.pi),
 			hostOrganization = None,
 			creationDate = meta.creationDate,
+			sources = None,
 			comment = meta.comment
 		)
 		val stationMeta = StationDataMetadata(

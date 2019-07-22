@@ -109,6 +109,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		implicit val bup = makeUriProvider(CpmetaVocab.ProvPrefix)
 
 		val wasAssociatedWith = getRelative("wasAssociatedWith")
+		val hadPrimarySource = getRelative("hadPrimarySource")
 		val startedAtTime = getRelative("startedAtTime")
 		val endedAtTime = getRelative("endedAtTime")
 	}

@@ -58,6 +58,16 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:Instrument</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:Instrument</AbbreviatedIRI>
+        <IRI>https://meta.fieldsites.se/resources/instruments/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>

@@ -1,36 +1,25 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j._
 @import se.lu.nateko.cp.meta.utils._
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
 
-@(dobj: DataObject, extras: LandingPageExtras, handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
+@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value)
 @template{
 	<div class="container-fluid">
 
 		<div class="row">
 			@Panel("Summary", 8, summaryStyleContext){
-				@if(uploadComplete) {
-					@PanelRow("Status - OK", "Data and metadata are complete.")
-				} else {
+				@if(!uploadComplete) {
 					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 				}
-				@DoiPanelHtmlRow(dobj.doi)
+				@DoiPanelHtmlRow(dobj.doi, handleProxies.doi)
 				@if(uploadComplete) {
-					@PanelHtmlRow{PID}{
-						@dobj.pid match{
-							case None => {
-								<span>Not assigned</span>
-							}
-							case Some(pid) => {
-								<span>@{pid} (<a href=@{handleService.toString + pid}>link</a>)</span>
-							}
-						}
-					}
+					@PidPanelHtmlRow(dobj.pid, handleProxies.basic)
 					@accessUrlRow(dobj)
 				}
 				@resourcePanelRow("Data affiliation", dobj.specification.project)

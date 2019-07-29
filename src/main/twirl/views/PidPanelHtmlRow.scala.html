@@ -1,0 +1,13 @@
+@import java.net.URI
+
+@(pidOpt: Option[String], handleProxy: URI)
+@PanelHtmlRow{PID}{
+	@pidOpt match{
+		case None => {
+			<span>Not assigned</span>
+		}
+		case Some(pid) => {
+			<span>@{pid} (<a href=@{handleProxy.toString + pid}>link</a>)</span>
+		}
+	}
+}

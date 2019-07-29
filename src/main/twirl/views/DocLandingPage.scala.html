@@ -1,34 +1,24 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.core.data.{Envri, DocObject}
+@import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.utils._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
 
-@(doc: DocObject, extras: LandingPageExtras, handleService: URI)(implicit envri: Envri.Value)
+@(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value)
 @ServerSidePage(doc.fileName, pageHeading, envri){
 	<div class="container-fluid">
 
 		<div class="row">
 			@Panel("Summary", 8, summaryStyleContext){
-				@if(uploadComplete) {
-					@PanelRow("Status - OK", "Upload complete.")
-				} else {
+				@if(!uploadComplete) {
 					@PanelRow("Status - Not complete", "Metadata uploaded. Document not uploaded. No PID assigned.")
 				}
-				@DoiPanelHtmlRow(doc.doi)
+				@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
 				@if(uploadComplete) {
-					@PanelHtmlRow{PID}{
-						@doc.pid match{
-							case None => {
-								<span>Not assigned</span>
-							}
-							case Some(pid) => {
-								<span>@{pid} (<a href=@{handleService.toString + pid}>link</a>)</span>
-							}
-						}
-					}
+					@PidPanelHtmlRow(doc.pid, handleProxies.basic)
 					@accessUrlRow(doc)
 				}
 				@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion.flattenToSeq)}

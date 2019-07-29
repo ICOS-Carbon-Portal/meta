@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.ETC
@@ -54,8 +55,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	def getAncillaryEntry(valueId: String) = getRelative("ancillary/", valueId)(icosBup)
 
-	def staticObjectPrefix(implicit envri: Envri): String = s"${getConfig.metaPrefix}objects/"
-	def getStaticObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(staticObjectPrefix, hash.id)
+	def getStaticObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(staticObjLandingPage(hash)(getConfig).toString)
 	def getCollection(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(s"${getConfig.metaPrefix}collections/", hash.id)
 
 	def getStaticObjectAccessUrl(hash: Sha256Sum)(implicit envri: Envri) = new URI(s"${getConfig.dataPrefix}objects/${hash.id}")

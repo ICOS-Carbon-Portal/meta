@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.api.{CitationClient, Doi, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
+import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import se.lu.nateko.cp.meta.utils.getStackTrace
@@ -19,7 +20,7 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.core.data.StaticObject
 
-class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
+class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
 	import PageContentMarshalling.{getHtml, getJson}
 
@@ -31,14 +32,14 @@ class PageContentMarshalling(handleService: URI, citer: CitationClient, vocab: C
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield (citOpt: Option[String]) => {
 				val extras = LandingPageExtras(citOpt, dlCount, previewCount)
-				LandingPage(obj, extras, handleService, vocab)
+				LandingPage(obj, extras, handleProxies, vocab)
 			}
 		makeMarshaller(template, MessagePage("Data object not found", ""), _.doi)
 	}
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
 		makeMarshaller(
-			coll => Future.successful(CollectionLandingPage(coll, _)),
+			coll => Future.successful(CollectionLandingPage(coll, handleProxies, _)),
 			MessagePage("Collection not found", ""),
 			_.doi
 		)

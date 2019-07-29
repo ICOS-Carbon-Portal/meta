@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailInstanceServer
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.staticObjPrefix
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcherLite
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
@@ -66,7 +67,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 		new StaticObjectFetcher(server, vocab, collFetcher, plainFetcher, pidFactory)
 	}
 
-	private val objPrefix: String = vocab.staticObjectPrefix
+	private val objPrefix: String = staticObjPrefix(vocab.getConfig)
 
 	def getStaticObject(maybeDobj: Resource): Option[StaticObject] = maybeDobj match{
 
@@ -113,6 +114,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 		for(
 			_ <- isIcos;
 			title <- titleOpt;
+			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
 			pid <- dobj.doi.orElse(dobj.pid);
 			productionInstant <- dobj.production.map(_.dateTime).orElse{
 				dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
@@ -135,7 +137,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 
 			//val authors = s"$icos$producerOrg$station"
 			val year = formatDate(productionInstant).take(4)
-			s"ICOS RI, $year. $title, ${coreConf.handleService}$pid"
+			s"ICOS RI, $year. $title, ${handleProxy}$pid"
 		}
 	}
 

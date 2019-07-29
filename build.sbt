@@ -17,7 +17,7 @@ val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
 lazy val metaCore = (project in file("core"))
 	.settings(
 		name := "meta-core",
-		version := "0.4.2-SNAPSHOT",
+		version := "0.4.3-SNAPSHOT",
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.5",

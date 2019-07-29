@@ -1,12 +1,13 @@
 @import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import java.net.URI
 
-@(obj: StaticObject, extras: LandingPageExtras, handleService: URI, vocab: CpVocab)(implicit envri: Envri.Value)
+@(obj: StaticObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value)
 @{
 	obj match {
-		case dobj: DataObject => DataLandingPage(dobj, extras, handleService, vocab)
-		case doc: DocObject => DocLandingPage(doc, extras, handleService)
+		case dobj: DataObject => DataLandingPage(dobj, extras, handleProxies, vocab)
+		case doc: DocObject => DocLandingPage(doc, extras, handleProxies)
 	}
 }

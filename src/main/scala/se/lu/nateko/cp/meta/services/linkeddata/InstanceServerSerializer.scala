@@ -29,21 +29,18 @@ object InstanceServerSerializer {
 
 	private val utf8 = HttpCharsets.`UTF-8`
 
-	val turtleContType = getContType("text/turtle")
-	val xmlContType = getContType("application/rdf+xml")
+	val turtleContType = getContType("text/turtle", ".ttl")
+	val xmlContType = getContType("application/rdf+xml", ".rdf")
 	private val basicNamespaces = Seq(XMLSchema.NS, OWL.NS, RDFS.NS, RDF.NS)
 
 
 	private val statementProdMarshaller: ToResponseMarshaller[StatementProducer] = Marshaller(
 		implicit exeCtxt => producer => Future.successful(
-			Marshalling.WithFixedContentType(
-				ContentTypes.`text/plain(UTF-8)`,
-				() => getResponse(producer, turtleContType, new TurtleWriterFactory())
-			) ::
-			Marshalling.WithFixedContentType(
-				ContentType(MediaTypes.`application/xml`, utf8),
-				() => getResponse(producer, xmlContType, new RDFXMLWriterFactory())
-			) :: Nil
+			getMarshalling(producer, ContentTypes.`text/plain(UTF-8)`, turtleContType, new TurtleWriterFactory()) ::
+			getMarshalling(producer, turtleContType, turtleContType, new TurtleWriterFactory()) ::
+			getMarshalling(producer, ContentType(MediaTypes.`application/xml`, utf8), xmlContType, new RDFXMLWriterFactory()) ::
+			getMarshalling(producer, xmlContType, xmlContType, new RDFXMLWriterFactory()) ::
+			Nil
 		)
 	)
 
@@ -68,16 +65,17 @@ object InstanceServerSerializer {
 			def namespaces = basicNamespaces
 		})
 
-	private def getContType(name: String): ContentType = {
-		val mediaType = MediaType.custom(name, false, fileExtensions = List(".rdf"))
+	private def getContType(name: String, filenameExt: String): ContentType = {
+		val mediaType = MediaType.custom(name, false, fileExtensions = List(filenameExt))
 		ContentType(mediaType, () => utf8)
 	}
 
-	private def getResponse(
+	private def getMarshalling(
 		producer: StatementProducer,
-		contType: ContentType,
+		acceptedContType: ContentType,
+		returnedContType: ContentType,
 		writerFactory: RDFWriterFactory
-	)(implicit ctxt: ExecutionContext): HttpResponse = {
+	)(implicit ctxt: ExecutionContext) = Marshalling.WithFixedContentType(acceptedContType, () => {
 
 		val entityBytes = StreamConverters.asOutputStream().mapMaterializedValue{ outStr =>
 			ctxt.execute(() => {
@@ -94,8 +92,8 @@ object InstanceServerSerializer {
 				}
 			})
 		}
-		HttpResponse(entity = HttpEntity(contType, entityBytes))
-	}
+		HttpResponse(entity = HttpEntity(returnedContType, entityBytes))
+	})
 
 	private trait StatementProducer{
 		def statements: CloseableIterator[Statement]

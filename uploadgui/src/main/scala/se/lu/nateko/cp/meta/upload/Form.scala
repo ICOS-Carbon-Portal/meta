@@ -97,6 +97,7 @@ class Form(
 		hash <- fileInput.hash;
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
+		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
 		station <- stationSelect.value.withErrorContext("Station");
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
@@ -120,19 +121,20 @@ class Form(
 			)
 		),
 		isNextVersionOf = previousVersion.map(Left(_)),
-		preExistingDoi = None
+		preExistingDoi = doi
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
 		file <- fileInput.file;
 		hash <- fileInput.hash;
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
+		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id")
 	) yield DocObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
 		fileName = file.name,
 		isNextVersionOf = previousVersion.map(Left(_)),
-		preExistingDoi = None
+		preExistingDoi = doi
 	)
 }

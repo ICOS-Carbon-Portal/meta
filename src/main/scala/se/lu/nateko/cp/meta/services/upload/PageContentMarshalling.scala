@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import java.net.URI
+import java.util.concurrent.ExecutionException
 
 import akka.http.scaladsl.marshalling.Marshalling._
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
@@ -119,11 +120,10 @@ object PageContentMarshalling{
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
-
 	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {
 
-			val msg = (if(err.getMessage == null) "" else err.getMessage) + "\n" + getStackTrace(err)
+			val msg = extractMessage(err)
 
 			val getErrorPage: HttpCharset => MessageEntity = getHtml(MessagePage("Server error", msg), _)
 
@@ -135,4 +135,11 @@ object PageContentMarshalling{
 			)
 		}
 	)
+
+	private def extractMessage(err: Throwable): String = err match {
+		case boxed: ExecutionException if (boxed.getCause != null) =>
+			extractMessage(boxed.getCause)
+		case _ =>
+			(if(err.getMessage == null) "" else err.getMessage) + "\n" + getStackTrace(err)
+	}
 }

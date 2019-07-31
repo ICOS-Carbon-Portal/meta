@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.data._
 import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.doi._
 
 object JsonSupport {
 
@@ -37,6 +38,10 @@ object JsonSupport {
 
 	implicit val elaboratedProductMetadataWrites = Json.writes[ElaboratedProductMetadata]
 	implicit val stationDataMetadataWrites = Json.writes[StationDataMetadata]
+
+	implicit val doiWrites = new Writes[Doi]{
+		def writes(doi: Doi) = JsString(doi.toString)
+	}
 
 	implicit val staticCollectionDtoWrites = Json.writes[StaticCollectionDto]
 

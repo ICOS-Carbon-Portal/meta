@@ -5,7 +5,9 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
-
+import se.lu.nateko.cp.doi._
+import scala.util.Failure
+import scala.util.Success
 
 object CpmetaJsonProtocol{
 	implicit class ExtendableJsObj(val js: JsValue) extends AnyVal{
@@ -64,6 +66,20 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
 	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
 	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
+
+	implicit object doiFormat extends RootJsonFormat[Doi]{
+
+			override def write(doi: Doi): JsValue = JsString(doi.toString)
+
+			override def read(value: JsValue): Doi = value match {
+				case JsString(doiStr) =>
+					Doi.parse(doiStr) match {
+						case Success(doi) => doi
+						case Failure(exc) => deserializationError("Bad DOI", exc)
+					}
+				case _ => deserializationError("Error parsing a DOI from JSON, expected a string, got " + value.getClass.getName)
+		}
+	}
 
 	implicit val dataProductionDtoFormat = jsonFormat6(DataProductionDto)
 	implicit val stationDataMetadataFormat = jsonFormat6(StationDataMetadata)

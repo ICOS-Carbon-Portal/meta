@@ -71,6 +71,7 @@ lazy val meta = (project in file("."))
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "doi-common"                    			% "0.1.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.1-SNAPSHOT" % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
@@ -126,6 +127,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scala-js"      %%% "scalajs-dom"       % "0.9.6",
 			"com.typesafe.play" %%% "play-json"         % "2.6.7",
 			"org.scala-js"      %%% "scalajs-java-time" % "0.2.4",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.1-SNAPSHOT",
 			"org.scalatest"     %%% "scalatest"         % "3.0.4" % "test"
 		)
 	)

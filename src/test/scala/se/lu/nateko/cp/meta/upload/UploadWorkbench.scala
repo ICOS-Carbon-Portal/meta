@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import scala.concurrent.Await
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker
 import scala.concurrent.duration.DurationInt
+import se.lu.nateko.cp.doi._
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
@@ -47,7 +48,7 @@ Measurements have been collected using the following instructions:
 # ICOS Ecosystem Instructions for Turbulent Flux Measurements of CO2, Energy and Momentum, https://doi.org/10.18160/QWV4-639G"""
 		),
 		isNextVersionOf = None,
-		preExistingDoi = Some("10.18160/NNAD-PN5W")
+		preExistingDoi = Some(Doi("10.18160", "NNAD-PN5W"))
 	)
 }
 

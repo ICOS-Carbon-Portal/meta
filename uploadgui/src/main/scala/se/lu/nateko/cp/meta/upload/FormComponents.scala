@@ -15,6 +15,7 @@ import org.scalajs.dom.ext._
 import Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.doi.Doi
 
 class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 	private val select = getElementById[html.Select](elemId).get
@@ -152,6 +153,10 @@ class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(s => {
 	if(s.startsWith("https://") || s.startsWith("http://")) Try(Some(new URI(s)))
 	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
+})
+class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Doi](elemId, cb)(s => Doi.parse(s) match {
+	case Success(doi) => Success(Some(doi))
+	case Failure(err) => if (s.isEmpty) Success(None) else Failure(err)
 })
 
 class SubmitButton(elemId: String, onSubmit: () => Unit){

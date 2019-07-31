@@ -74,6 +74,7 @@ class Form(
 	val typeControl = new Radio("file-type-radio", onFileTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
+	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, onSpecSelected)

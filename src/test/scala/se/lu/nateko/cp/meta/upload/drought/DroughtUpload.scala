@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.doi._
 
 
 object DroughtUpload{
@@ -48,7 +49,7 @@ object DroughtUpload{
 		title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",
 		description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 27 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018"),
 		isNextVersionOf = None,
-		preExistingDoi = Some("10.18160/PZDK-EF78")
+		preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
 	)
 
 	def makeDto(meta: FluxMeta, spec: URI): ObjectUploadDto = {
@@ -76,7 +77,7 @@ object DroughtUpload{
 			fileName = meta.fname,
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = None,
-			preExistingDoi = Some("10.18160/" + DoiMaker.coolDoi(meta.hash))
+			preExistingDoi = Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash)))
 		)
 	}
 

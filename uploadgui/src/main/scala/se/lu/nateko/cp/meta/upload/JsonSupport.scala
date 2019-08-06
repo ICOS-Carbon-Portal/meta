@@ -43,18 +43,18 @@ object JsonSupport {
 		def writes(doi: Doi) = JsString(doi.toString)
 	}
 
-	implicit val staticCollectionDtoWrites = Json.writes[StaticCollectionDto]
-
 	implicit val specificInfoWrites = new Writes[Either[ElaboratedProductMetadata, StationDataMetadata]]{
 		def writes(info: Either[ElaboratedProductMetadata, StationDataMetadata]) = info.fold(Json.toJson(_), Json.toJson(_))
 	}
 
 	implicit val dataDtoWrites = Json.writes[DataObjectDto]
 	implicit val documentDtoWrites = Json.writes[DocObjectDto]
-	implicit val ObjectUploadDtoWrites = new Writes[ObjectUploadDto] {
-		def writes(dto: ObjectUploadDto) = dto match {
+	implicit val staticCollectionDtoWrites = Json.writes[StaticCollectionDto]
+	implicit val UploadDtoWrites = new Writes[UploadDto] {
+		def writes(dto: UploadDto) = dto match {
 			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
 			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
+			case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
 		}
 	}
 	implicit val javaUriReads = new Reads[URI]{

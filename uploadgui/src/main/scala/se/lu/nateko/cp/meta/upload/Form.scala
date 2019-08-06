@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, ObjectUploadDto}
+import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, UploadDto, StaticCollectionDto}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
@@ -11,30 +11,50 @@ import scala.concurrent.Future
 import Utils._
 
 class Form(
-	onUpload: (ObjectUploadDto, dom.File) => Unit,
+	onUpload: (UploadDto, Option[dom.File]) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
-	val dataElements = new DataElements()
+	var formType: Option[String] = None
+	val dataElements = new HtmlElements(".data-section")
+	val collectionElements = new HtmlElements(".collection-section")
 	val onFileTypeSelected: String => Unit = (fileType: String) => {
 		fileType match {
-			case "data" => dataElements.show()
-			case "document" => dataElements.hide()
+			case "data" => {
+				dataElements.show()
+				collectionElements.hide()
+				fileInput.enable()
+			}
+			case "document" => {
+				dataElements.hide()
+				collectionElements.hide()
+				fileInput.enable()
+			}
+			case "collection" => {
+				dataElements.hide()
+				collectionElements.show()
+				fileInput.disable()
+			}
 		}
 		updateButton()
 	}
 
-	def submitAction(): Unit = dataElements.areEnabled match {
-		case true =>
+	def submitAction(): Unit = typeControl.value match {
+		case Some("data") =>
 			for(dto <- dto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
 				whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
-					onUpload(dto, file)
+					onUpload(dto, Some(file))
 				}
 			}
-		case false =>
+		case Some("document") =>
 			for(dto <- dto; file <- fileInput.file) {
-				onUpload(dto, file)
+				onUpload(dto, Some(file))
 			}
+		case Some("collection") =>
+			for(dto <- dto) {
+				onUpload(dto, None)
+			}
+		case _ => ()
 	}
 	val button = new SubmitButton("submitbutton", () => submitAction())
 	val updateButton: () => Unit = () => dto match {
@@ -86,10 +106,18 @@ class Form(
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
 	val instrUriInput = new UriOptInput("instrumenturi", updateButton)
-
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
-	def dto: Try[ObjectUploadDto] = if (dataElements.areEnabled) dataObjectDto else documentObjectDto
+	val collectionTitle = new TextInput("collectiontitle", updateButton)
+	val collectionDescription = new OptTextArea("collectiondescription", updateButton)
+	val collectionMembers = new UriListInput("collectionmembers", updateButton)
+
+	def dto: Try[UploadDto] = typeControl.value match {
+		case Some("data") => dataObjectDto
+		case Some("document") => documentObjectDto
+		case Some("collection") => staticCollectionDto
+		case _ => dataObjectDto
+	}
 	private def isTypeSelected = if (typeControl.value.isEmpty) fail("No file type selected") else Success(())
 
 	def dataObjectDto: Try[DataObjectDto] = for(
@@ -134,6 +162,22 @@ class Form(
 		hashSum = hash,
 		submitterId = submitter.id,
 		fileName = file.name,
+		isNextVersionOf = previousVersion.map(Left(_)),
+		preExistingDoi = doi
+	)
+	def staticCollectionDto: Try[StaticCollectionDto] = for(
+		title <- collectionTitle.value.withErrorContext("Collection title");
+		description <- collectionDescription.value;
+		members <- collectionMembers.value.withErrorContext("List of object urls");
+		_ <- isTypeSelected;
+		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
+		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
+		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id")
+	) yield StaticCollectionDto(
+		submitterId = submitter.id,
+		members = members,
+		title = title,
+		description = description,
 		isNextVersionOf = previousVersion.map(Left(_)),
 		preExistingDoi = doi
 	)

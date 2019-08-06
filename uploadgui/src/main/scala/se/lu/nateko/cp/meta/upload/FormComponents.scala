@@ -70,6 +70,14 @@ class FileInput(elemId: String, cb: () => Unit){
 		}
 	}
 
+	def enable(): Unit = {
+		fileInput.disabled = false
+	}
+
+	def disable(): Unit = {
+		fileInput.disabled = true
+	}
+
 	if(file.isSuccess){//pre-chosen file, e.g. due to browser page reload
 		queue.execute(() => fileInput.oninput(null))// no need to do this eagerly, just scheduling
 	}
@@ -139,6 +147,7 @@ abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(par
 class InstantInput(elemId: String, cb: () => Unit) extends GenericInput[Instant](elemId, cb, fail("no timestamp provided"))(
 	s => Try(Instant.parse(s))
 )
+class TextInput(elemId: String, cb: () => Unit) extends GenericInput[String](elemId, cb, fail("Missing title"))(s => Try(s))
 
 class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
 		extends GenericInput[Option[T]](elemId, cb, Success(None))(
@@ -158,6 +167,54 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 	case Success(doi) => Success(Some(doi))
 	case Failure(err) => if (s.isEmpty) Success(None) else Failure(err)
 })
+class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
+
+abstract class GenericTextArea[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
+	protected[this] val input: html.TextArea = getElementById[html.TextArea](elemId).get
+	private[this] var _value: Try[T] = init
+
+	def value: Try[T] = _value
+
+	input.oninput = _ => {
+		val oldValue = _value
+		_value = parser(input.value)
+
+		if (_value.isSuccess || input.value.isEmpty) {
+			input.title = ""
+			input.parentElement.classList.remove("has-error")
+		} else {
+			input.title = _value.failed.map(_.getMessage).getOrElse("")
+			input.parentElement.classList.add("has-error")
+		}
+
+		if(oldValue.isSuccess != _value.isSuccess) cb()
+	}
+
+	def enable(): Unit = {
+		input.disabled = false
+	}
+
+	def disable(): Unit = {
+		input.disabled = true
+	}
+
+	def isDisabled: Boolean = input.disabled
+
+	if(!input.value.isEmpty){
+		queue.execute(() => input.oninput(null))
+	}
+}
+
+class GenericOptionalTextArea[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
+		extends GenericTextArea[Option[T]](elemId, cb, Success(None))(
+	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim)
+)
+
+class UriListInput(elemId: String, cb: () => Unit) extends GenericTextArea[Seq[URI]](elemId, cb, fail("Missing list of object urls"))(s =>
+	Try(s.split("\n").map(new URI(_)))
+)
+
+class OptTextArea(elemId: String, cb: () => Unit) extends GenericOptionalTextArea[String](elemId, cb)(s => Try(Some(s)))
 
 class SubmitButton(elemId: String, onSubmit: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get
@@ -177,12 +234,12 @@ class SubmitButton(elemId: String, onSubmit: () => Unit){
 	button.onclick = _ => onSubmit()
 }
 
-class DataElements() {
+class HtmlElements(cssClass: String) {
 	private[this] var enabled = false
 	def areEnabled: Boolean = enabled
 
 	def show(): Unit = {
-		dom.document.querySelectorAll(".data-section").foreach {
+		dom.document.querySelectorAll(cssClass).foreach {
 			case section: HTMLElement =>
 				section.style.display = "block"
 		}
@@ -190,7 +247,7 @@ class DataElements() {
 	}
 
 	def hide(): Unit = {
-		dom.document.querySelectorAll(".data-section").foreach {
+		dom.document.querySelectorAll(cssClass).foreach {
 			case section: HTMLElement =>
 				section.style.display = "none"
 		}

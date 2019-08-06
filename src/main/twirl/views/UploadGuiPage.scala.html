@@ -24,22 +24,30 @@
 		max-width: 100%;
 		padding: 0 2em 2em;
 	}
+	.collection-section {
+		width: auto;
+	}
 	.form-element {
 		display: block;
 	}
 	select {
 		width: 100%;
 	}
+	textarea {
+		resize: none;
+		max-width: 100%;
+	}
 	.login-block {
 		display: none;
 		text-align: center;
 		margin: 5vh 0;
 	}
-	.data-section {
+	.data-section,
+	.collection-section {
 		display: none;
 	}
 	#submitbutton {
-		margin: 2vh 1.5em;
+		margin: 2vh 0;
 		pointer-events: auto;
 		width: 100%;
 	}
@@ -48,6 +56,7 @@
 			margin: 0 2em 2em 0;
 		}
 		#submitbutton {
+			margin: 2vh 1.5em;
 			width: auto;
 		}
 	}
@@ -64,10 +73,6 @@
 					<select id="submitteridselect" class="form-element"></select>
 				</div>
 				<div class="form-group">
-					<label for="fileinput">File</label>
-					<input id="fileinput" type="file" placeholder="Select file for upload">
-				</div>
-				<div class="form-group">
 					<label for="file-type-radio">Type</label>
 					<div>
 						<div id="file-type-radio">
@@ -79,11 +84,19 @@
 								<input type="radio" name="type" value="document" class="js-file-type">
 								Document
 							</label>
+							<label class="radio-inline">
+								<input type="radio" name="type" value="collection" class="js-file-type">
+								Collection
+							</label>
 						</div>
 					</div>
 				</div>
 				<div class="form-group">
-					<label>Previous version of this file <em class="text-muted">- optional</em></label>
+					<label for="fileinput">File</label>
+					<input id="fileinput" type="file" placeholder="Select file for upload">
+				</div>
+				<div class="form-group">
+					<label>Previous version <em class="text-muted">- optional</em></label>
 					<input type="text" id="previoushash" class="form-element form-control" placeholder="Hashsum">
 				</div>
 				<div class="form-group">
@@ -142,6 +155,21 @@
 				<div class="form-group">
 					<label for="instrumenturi">Instrument (URL) <em class="text-muted">- optional</em></label>
 					<input id="instrumenturi" type="text" class="form-element form-control">
+				</div>
+			</section>
+			<section class="form-section panel panel-default collection-section">
+				<h2>Collection</h2>
+				<div class="form-group">
+					<label for="collectionmembers">List of object urls (one per line)</label>
+					<textarea name="collectionmembers" id="collectionmembers" rows="8" cols="80" class="form-element"></textarea>
+				</div>
+				<div class="form-group">
+					<label for="collectiontitle">Title</label>
+					<input id="collectiontitle" type="text" placeholder="Collection title" class="form-element form-control">
+				</div>
+				<div class="form-group">
+					<label for="collectiondescription">Description</label>
+					<textarea name="collectiondescription" id="collectiondescription" rows="8" cols="80" class="form-element"></textarea>
 				</div>
 			</section>
 			</div>

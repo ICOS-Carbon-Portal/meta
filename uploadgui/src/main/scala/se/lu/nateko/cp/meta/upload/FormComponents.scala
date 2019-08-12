@@ -83,6 +83,11 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 }
 
+sealed trait FormType
+case object Document extends FormType
+case object Data extends FormType
+case object Collection extends FormType
+
 class Radio(elemId: String, cb: String => Unit) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
 	protected[this] var _value: Option[String] = None
@@ -96,6 +101,14 @@ class Radio(elemId: String, cb: String => Unit) {
 
 	if(querySelector[html.Input](inputBlock, "input[type=radio]:checked").isDefined){
 		queue.execute(() => inputBlock.onchange(null))
+	}
+}
+
+class FormTypeRadio(elemId: String, cb: String => Unit) extends Radio(elemId, cb) {
+	def formType:FormType = value match {
+		case Some("data") => Data
+		case Some("collection") => Collection
+		case _ => Document
 	}
 }
 

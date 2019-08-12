@@ -108,8 +108,13 @@ class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
 			) yield Some(TimeInterval(from, to))
 }
 
-abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
-	protected[this] val input: html.Input = getElementById[html.Input](elemId).get
+private abstract class TextInputElement extends html.Element{
+	var value: String
+	var disabled: Boolean
+}
+
+abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
+	private[this] val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
 	private[this] var _value: Try[T] = init
 
 	def value: Try[T] = _value
@@ -144,13 +149,13 @@ abstract class GenericInput[T](elemId: String, cb: () => Unit, init: Try[T])(par
 	}
 }
 
-class InstantInput(elemId: String, cb: () => Unit) extends GenericInput[Instant](elemId, cb, fail("no timestamp provided"))(
+class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Instant](elemId, cb, fail("no timestamp provided"))(
 	s => Try(Instant.parse(s))
 )
-class TextInput(elemId: String, cb: () => Unit) extends GenericInput[String](elemId, cb, fail("Missing title"))(s => Try(s))
+class TextInput(elemId: String, cb: () => Unit) extends GenericTextInput[String](elemId, cb, fail("Missing title"))(s => Try(s))
 
 class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
-		extends GenericInput[Option[T]](elemId, cb, Success(None))(
+		extends GenericTextInput[Option[T]](elemId, cb, Success(None))(
 	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim)
 )
 
@@ -169,52 +174,11 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 })
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
-abstract class GenericTextArea[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
-	protected[this] val input: html.TextArea = getElementById[html.TextArea](elemId).get
-	private[this] var _value: Try[T] = init
-
-	def value: Try[T] = _value
-
-	input.oninput = _ => {
-		val oldValue = _value
-		_value = parser(input.value)
-
-		if (_value.isSuccess || input.value.isEmpty) {
-			input.title = ""
-			input.parentElement.classList.remove("has-error")
-		} else {
-			input.title = _value.failed.map(_.getMessage).getOrElse("")
-			input.parentElement.classList.add("has-error")
-		}
-
-		if(oldValue.isSuccess != _value.isSuccess) cb()
-	}
-
-	def enable(): Unit = {
-		input.disabled = false
-	}
-
-	def disable(): Unit = {
-		input.disabled = true
-	}
-
-	def isDisabled: Boolean = input.disabled
-
-	if(!input.value.isEmpty){
-		queue.execute(() => input.oninput(null))
-	}
-}
-
-class GenericOptionalTextArea[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
-		extends GenericTextArea[Option[T]](elemId, cb, Success(None))(
-	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim)
-)
-
-class UriListInput(elemId: String, cb: () => Unit) extends GenericTextArea[Seq[URI]](elemId, cb, fail("Missing list of object urls"))(s =>
+class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, fail("Missing list of object urls"))(s =>
 	Try(s.split("\n").map(new URI(_)))
 )
 
-class OptTextArea(elemId: String, cb: () => Unit) extends GenericOptionalTextArea[String](elemId, cb)(s => Try(Some(s)))
+class OptTextArea(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
 class SubmitButton(elemId: String, onSubmit: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get

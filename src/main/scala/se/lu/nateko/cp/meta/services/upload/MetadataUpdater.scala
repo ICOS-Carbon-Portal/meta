@@ -72,6 +72,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
 		else if(subj == subm && isProvTime) Fixed
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
+		else if(pred === metaVocab.hasNumberOfRows) Sticky
 		else Plain
 	}
 

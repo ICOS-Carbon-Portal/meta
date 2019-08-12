@@ -48,8 +48,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- validateForFormat(meta, spec, submConf);
-		_ <- validatePrevVers(meta, getInstServer(spec))
-//		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
+		_ <- validatePrevVers(meta, getInstServer(spec));
+		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
@@ -258,7 +258,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			Right(StationDataMetadata(_, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _
 		) =>
-			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat){
+			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.uri === vocab.icosProject){
 				val prevDobj = vocab.getStaticObject(prevHash)
 				server.flatMap{instServer =>
 					val prevAcqStop = instServer.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>

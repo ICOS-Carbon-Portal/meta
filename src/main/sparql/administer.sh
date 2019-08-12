@@ -1,3 +1,3 @@
 #!/bin/bash
-curl -X POST -H "Cookie: cpauthToken=rO0ABXcIAAABa/rALKN0ABhvbGVnLm1pcnpvdkBuYXRla28ubHUuc2V0AARTYW1sdXIAAltCrPMX+AYIVOACAAB4cAAAAQDLL0pqAh6zHwGrWa3vT2QIxj1wgEqRR0xNhRs9xfiGHEO0AOYMM72AqRF1cSgkign3CgbM3YLPU8yu/xJj5hphdi2jxBfG2Uv5ow56yuRPbfljJg6IjsThTVKUJ5wa1QGLeeVy+2ys01K0jwANzUR360iE3s+0RrFPYN5dYwrIEQVJ5gejhTXFDnae8tdOR3Jh2fArzK23siXw9exiiRnmLUaV4QAnrGi4VsUxh6NSzGVjPAUd9h9S5hxAWJjSr7qOG2pzyD6///J3UrMNiSSMNSdU2hhyJih7xOUK1AkVAQl39kouHERlhXAicn/pt/Eaj9SAk2sYfaqgdzf4beHM" -d @purgeColl.rq https://meta.icos-cp.eu/admin/delete/etcprodcsv?dryRun=false
+curl -X POST -H "Cookie: cpauthToken=" -d @insertL1Deprecation.rq https://meta.icos-cp.eu/admin/insert/atmprodcsv?dryRun=false
 

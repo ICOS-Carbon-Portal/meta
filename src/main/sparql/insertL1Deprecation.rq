@@ -1,0 +1,30 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+	?dobjL2 cpmeta:isNextVersionOf ?dobjL1 .
+}
+FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
+where {
+	{
+		select ?dobjL1 ?station ?height ?specL2 where{
+			VALUES (?specL1 ?specL2){
+				(cpres:atcCh4NrtGrowingDataObject cpres:atcCh4L2DataObject )
+				(cpres:atcCo2NrtGrowingDataObject cpres:atcCo2L2DataObject )
+				(cpres:atcMeteoGrowingNrtDataObject cpres:atcMtoL2DataObject )
+			}
+			?dobjL1 cpmeta:hasObjectSpec ?specL1 .
+			?dobjL1 cpmeta:wasSubmittedBy/prov:endedAtTime ?submTimeL1 .
+			?dobjL1 cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			?dobjL1 cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?height .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobjL1}
+			FILTER(?submTimeL1 < "2019-08-01T00:00:00Z"^^xsd:dateTime)
+		}
+	}
+
+	?dobjL2 cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobjL2 cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?height .
+	?dobjL2 cpmeta:hasObjectSpec ?specL2 .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobjL2}
+}
+

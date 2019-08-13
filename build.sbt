@@ -120,6 +120,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 		name := "uploadgui",
 		version := "0.1.1",
 		scalacOptions ++= commonScalacOptions,
+		scalacOptions += "-P:scalajs:sjsDefinedByDefault",
 
 		scalaJSUseMainModuleInitializer := true,
 

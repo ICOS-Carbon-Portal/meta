@@ -9,52 +9,47 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
+import FormTypeRadio._
 
 class Form(
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
-	var formType: Option[String] = None
 	val dataElements = new HtmlElements(".data-section")
 	val collectionElements = new HtmlElements(".collection-section")
-	val onFileTypeSelected: String => Unit = (fileType: String) => {
-		fileType match {
-			case "data" => {
-				dataElements.show()
-				collectionElements.hide()
-				fileInput.enable()
-			}
-			case "document" => {
-				dataElements.hide()
-				collectionElements.hide()
-				fileInput.enable()
-			}
-			case "collection" => {
-				dataElements.hide()
+
+	val onFormTypeSelected: FormType => Unit = formType => {
+		dataElements.hide()
+		collectionElements.hide()
+		fileInput.enable()
+
+		formType match {
+			case Data => dataElements.show()
+			case Collection => {
 				collectionElements.show()
 				fileInput.disable()
 			}
+			case Document =>
 		}
 		updateButton()
 	}
 
-	def submitAction(): Unit = typeControl.value match {
-		case Some("data") =>
+	def submitAction(): Unit = typeControl.formType match {
+		case Data =>
 			for(dto <- dto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
 				whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
 					onUpload(dto, Some(file))
 				}
 			}
-		case Some("document") =>
-			for(dto <- dto; file <- fileInput.file) {
-				onUpload(dto, Some(file))
-			}
-		case Some("collection") =>
+		case Collection =>
 			for(dto <- dto) {
 				onUpload(dto, None)
 			}
-		case _ => ()
+		case Document =>
+			for(dto <- dto; file <- fileInput.file) {
+				onUpload(dto, Some(file))
+			}
 	}
 	val button = new SubmitButton("submitbutton", () => submitAction())
 	val updateButton: () => Unit = () => dto match {
@@ -91,7 +86,7 @@ class Form(
 	}
 
 	val fileInput = new FileInput("fileinput", updateButton)
-	val typeControl = new Radio("file-type-radio", onFileTypeSelected)
+	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
@@ -109,14 +104,13 @@ class Form(
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
 	val collectionTitle = new TextInput("collectiontitle", updateButton)
-	val collectionDescription = new OptTextArea("collectiondescription", updateButton)
+	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
 	val collectionMembers = new UriListInput("collectionmembers", updateButton)
 
-	def dto: Try[UploadDto] = typeControl.value match {
-		case Some("data") => dataObjectDto
-		case Some("document") => documentObjectDto
-		case Some("collection") => staticCollectionDto
-		case _ => dataObjectDto
+	def dto: Try[UploadDto] = typeControl.formType match {
+		case Data => dataObjectDto
+		case Collection => staticCollectionDto
+		case Document => documentObjectDto
 	}
 	private def isTypeSelected = if (typeControl.value.isEmpty) fail("No file type selected") else Success(())
 

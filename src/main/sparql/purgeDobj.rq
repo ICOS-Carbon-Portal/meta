@@ -1,15 +1,22 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?s ?p ?o .
+?dobj ?p ?o .
 ?o ?p2 ?o2 .
 } where{
-   bind (<https://meta.icos-cp.eu/objects/IN90ApSzMJbs8E_ADp-T_ivD> as ?s)
-   graph <http://meta.icos-cp.eu/resources/atmprodcsv/> {
-       ?s ?p ?o .
+	?spec cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere>;
+		cpmeta:hasDataLevel "1"^^xsd:integer;
+		cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> .
+	?dobj cpmeta:hasObjectSpec ?spec .
+	filter not exists {[] cpmeta:isNextVersionOf ?dobj}
+	filter not exists {?dobj cpmeta:isNextVersionOf []}
+	?dobj cpmeta:hasName ?fileName .
+	filter (!contains(?fileName, "JFJ"))
+	graph <http://meta.icos-cp.eu/resources/atmprodcsv/> {
+		?dobj ?p ?o .
 		OPTIONAL{
 			?o ?p2 ?o2 .
 			FILTER(?p != cpmeta:isNextVersionOf)
 		}
-  }
+	}
 }
 

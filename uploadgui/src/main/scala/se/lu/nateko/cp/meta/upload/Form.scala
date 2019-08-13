@@ -9,6 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
+import FormTypeRadio._
 
 class Form(
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
@@ -18,18 +19,18 @@ class Form(
 	val dataElements = new HtmlElements(".data-section")
 	val collectionElements = new HtmlElements(".collection-section")
 
-	val onFileTypeSelected: String => Unit = (_) => {
+	val onFormTypeSelected: FormType => Unit = formType => {
 		dataElements.hide()
 		collectionElements.hide()
 		fileInput.enable()
 
-		typeControl.formType match {
+		formType match {
 			case Data => dataElements.show()
 			case Collection => {
 				collectionElements.show()
 				fileInput.disable()
 			}
-			case _ =>
+			case Document =>
 		}
 		updateButton()
 	}
@@ -45,7 +46,7 @@ class Form(
 			for(dto <- dto) {
 				onUpload(dto, None)
 			}
-		case _ =>
+		case Document =>
 			for(dto <- dto; file <- fileInput.file) {
 				onUpload(dto, Some(file))
 			}
@@ -85,7 +86,7 @@ class Form(
 	}
 
 	val fileInput = new FileInput("fileinput", updateButton)
-	val typeControl = new FormTypeRadio("file-type-radio", onFileTypeSelected)
+	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
@@ -103,13 +104,13 @@ class Form(
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
 	val collectionTitle = new TextInput("collectiontitle", updateButton)
-	val collectionDescription = new OptTextArea("collectiondescription", updateButton)
+	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
 	val collectionMembers = new UriListInput("collectionmembers", updateButton)
 
 	def dto: Try[UploadDto] = typeControl.formType match {
 		case Data => dataObjectDto
 		case Collection => staticCollectionDto
-		case _ => documentObjectDto
+		case Document => documentObjectDto
 	}
 	private def isTypeSelected = if (typeControl.value.isEmpty) fail("No file type selected") else Success(())
 

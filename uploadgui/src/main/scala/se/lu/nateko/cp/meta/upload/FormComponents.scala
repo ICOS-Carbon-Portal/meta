@@ -13,6 +13,7 @@ import org.scalajs.dom.raw._
 import org.scalajs.dom.ext._
 
 import Utils._
+import FormTypeRadio._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.doi.Doi
@@ -83,11 +84,6 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 }
 
-sealed trait FormType
-case object Document extends FormType
-case object Data extends FormType
-case object Collection extends FormType
-
 class Radio(elemId: String, cb: String => Unit) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
 	protected[this] var _value: Option[String] = None
@@ -104,12 +100,22 @@ class Radio(elemId: String, cb: String => Unit) {
 	}
 }
 
-class FormTypeRadio(elemId: String, cb: String => Unit) extends Radio(elemId, cb) {
-	def formType:FormType = value match {
-		case Some("data") => Data
-		case Some("collection") => Collection
-		case _ => Document
+class FormTypeRadio(elemId: String, cb: FormType => Unit) extends Radio(elemId, formTypeParser.andThen(cb)) {
+	def formType: FormType = value.map(formTypeParser).getOrElse(defaultType)
+}
+
+object FormTypeRadio {
+	sealed trait FormType
+	case object Document extends FormType
+	case object Data extends FormType
+	case object Collection extends FormType
+
+	val formTypeParser: String => FormType = _ match {
+		case "data" => Data
+		case "collection" => Collection
+		case _ => defaultType
 	}
+	val defaultType: FormType = Document
 }
 
 class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
@@ -190,8 +196,6 @@ class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[
 class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, fail("Missing list of object urls"))(s =>
 	Try(s.split("\n").map(new URI(_)))
 )
-
-class OptTextArea(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
 class SubmitButton(elemId: String, onSubmit: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get

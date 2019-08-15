@@ -8,9 +8,16 @@ package object data{
 	type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
 
 	def staticObjLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
-		s"$staticObjPrefix${hash.id}"
+		s"$objectPrefix${hash.id}"
 	)
 
-	def staticObjPrefix(implicit envri: EnvriConfig): String = s"${envri.metaPrefix}objects/"
+	def staticCollLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
+		s"$collectionPrefix${hash.id}"
+	)
 
+	def objectPrefix(implicit envri: EnvriConfig): String = envri.metaPrefix + objectPathPrefix
+	def collectionPrefix(implicit envri: EnvriConfig): String = envri.metaPrefix + collectionPathPrefix
+
+	val objectPathPrefix = "objects/"
+	val collectionPathPrefix = "collections/"
 }

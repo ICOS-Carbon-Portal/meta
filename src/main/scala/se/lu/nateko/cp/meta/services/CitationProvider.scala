@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailInstanceServer
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.core.data.staticObjPrefix
+import se.lu.nateko.cp.meta.core.data.objectPrefix
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcherLite
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
@@ -67,7 +67,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 		new StaticObjectFetcher(server, vocab, collFetcher, plainFetcher, pidFactory)
 	}
 
-	private val objPrefix: String = staticObjPrefix(vocab.getConfig)
+	private val objPrefix: String = objectPrefix(vocab.getConfig)
 
 	def getStaticObject(maybeDobj: Resource): Option[StaticObject] = maybeDobj match{
 

@@ -48,7 +48,7 @@ case class StaticCollectionDto(
 
 case class StationDataMetadata(
 	station: URI,
-	instrument: Option[Either[URI, Seq[URI]]],
+	instrument: OptionalOneOrSeq[URI],
 	samplingHeight: Option[Float],
 	acquisitionInterval: Option[TimeInterval],
 	nRows: Option[Int],

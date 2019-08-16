@@ -13,7 +13,7 @@
 				@PanelRow("Title", coll.title)
 				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
 				@PanelHtmlRow{Download URL}{
-					<span><a target="_blank" href=@{downloadLink}>@{coll.title + ".zip"}</a></span>
+					<span><a target="_blank" href=@{downloadLink(coll)}>@{coll.title + ".zip"}</a></span>
 				}
 				@PanelHtmlRow{Collection creator}{
 					@agentLink(coll.creator)
@@ -52,14 +52,7 @@
 	}
 }
 
-@downloadLink = @{
+@downloadLink(coll: StaticCollection)(implicit conf: EnvriConfig) = @{
 	import akka.http.scaladsl.model.Uri
-
-	def objHashes(coll: StaticCollection): Seq[String] = coll.members.flatMap{
-		case PlainStaticObject(_, hash, _) => Seq(hash.id)
-		case inner: StaticCollection => objHashes(inner)
-	}
-	val objList = objHashes(coll).mkString("[\"", "\",\"", "\"]")
-	val query = Uri.Query("ids" -> objList, "fileName" -> coll.title)
-	Uri(conf.dataPrefix + "objects").withQuery(query).toString
+	Uri(conf.dataPrefix + coll.res.getPath.stripPrefix("/"))
 }

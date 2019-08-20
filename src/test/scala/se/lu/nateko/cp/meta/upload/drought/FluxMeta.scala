@@ -11,7 +11,7 @@ import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
 
 class FluxMeta(
 	val hash: Sha256Sum, val filePath: Path, val nPoints: Option[Int], val isIcos: Boolean,
-	val pi: URI, val ack: Option[String], val papers: Seq[String]
+	val pi: URI, val ack: Option[String], val papers: Seq[String], val prevVers: Option[Sha256Sum]
 ){
 
 	val StationId(stationId) = fname.substring(4, 10)

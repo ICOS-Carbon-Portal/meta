@@ -1,8 +1,7 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?dobj cpmeta:hasDoi ?doi .
+?coll ?p ?o .
 } where{
-   ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct> .
-	?dobj cpmeta:hasDoi ?doi .
+	bind (<https://meta.icos-cp.eu/collections/4sQmxX_V04zSBx1c9TyS5286> as ?coll)
+	?coll ?p ?o
 }
-

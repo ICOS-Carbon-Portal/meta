@@ -5,4 +5,5 @@ select * where{
 	OPTIONAL{?coll cpmeta:hasDoi ?doi}
 	?coll dcterms:title ?title .
 }
+order by ?title
 `;

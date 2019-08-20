@@ -20,7 +20,7 @@ import se.lu.nateko.cp.doi._
 
 
 object DroughtUpload{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/draught2018")
+	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018")
 	val archiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
 	val hhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
 
@@ -47,8 +47,8 @@ object DroughtUpload{
 		submitterId = "CP",
 		members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",
-		description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 27 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018"),
-		isNextVersionOf = None,
+		description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 30 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018. Updates since the previous version of this collection: 3 more stations added (CH-Lae, CH-Oe2, FI-Let), and data from ES-LM2 and FI-Sii have been updated."),
+		isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("XFqbNeOh4sjd6o_aREB9EAFJ").get)),
 		preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
 	)
 
@@ -76,19 +76,20 @@ object DroughtUpload{
 			objectSpecification = spec,
 			fileName = meta.fname,
 			specificInfo = Right(stationMeta),
-			isNextVersionOf = None,
+			isNextVersionOf = meta.prevVers.map(Left(_)),
 			preExistingDoi = Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash)))
 		)
 	}
 
 	def parseFluxMeta(row: Array[String], base: Path) = new FluxMeta(
 		hash = Sha256Sum.fromHex(row(0)).get,
-		filePath = base.resolve(row(1)),
-		nPoints = ifNotEmpty(row(2)).map(_.toInt - 1),
-		isIcos = row(3) == "yes",
-		pi = new URI("http://meta.icos-cp.eu/resources/people/" + row(4)),
-		ack = ifNotEmpty(row(5)),
-		papers = ifNotEmpty(row(6)).toSeq ++ ifNotEmpty(row(7))
+		filePath = base.resolve(row(2)),
+		nPoints = ifNotEmpty(row(3)).map(_.toInt - 1),
+		isIcos = row(4) == "yes",
+		pi = new URI("http://meta.icos-cp.eu/resources/people/" + row(5)),
+		ack = ifNotEmpty(row(6)),
+		papers = ifNotEmpty(row(7)).toSeq ++ ifNotEmpty(row(8)),
+		prevVers = Sha256Sum.fromHex(row(1)).toOption
 	)
 
 	private def ifNotEmpty(s: String): Option[String] = Option(s).map(_.trim).filter(_.length > 0)

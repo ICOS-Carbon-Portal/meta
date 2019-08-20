@@ -37,7 +37,8 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		val stationName = names(meta.station)
 		val title = Title(s"Drought-2018 ecosystem eddy covariance flux product from " + stationName, None, None)
 		val descr = "Public release of the observational data product for eddy covariance fluxes " +
-		s"at $stationName, covering the period ${meta.yearFrom}-${meta.yearTo}"
+			s"at $stationName, covering the period ${meta.yearFrom}-${meta.yearTo}"
+		val minorVersion = if(meta.prevVers.isDefined) 1 else 0
 
 		DoiMeta(
 			id = maker.client.doi(coolDoi(meta.hash)),
@@ -59,7 +60,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 				Date(meta.creationDate.toString.take(10), DateType.Created)
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
-			version = Some(Version(1, 0)),
+			version = Some(Version(1, minorVersion)),
 			rights = Seq(cc4by),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None)) ++ meta.comment.toSeq.map(comm =>
 				Description(comm, DescriptionType.Other, None)
@@ -71,7 +72,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		val metas = DroughtUpload.archiveMetas.toIndexedSeq
 		val piContribs = metas.map(meta => contributorPi(meta.pi, meta.station))
 		val title = Title("Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1", None, None)
-		val descr = "This is the first public release of the observational data product for eddy covariance fluxes at 27 stations " + 
+		val descr = s"This is the first public release of the observational data product for eddy covariance fluxes at ${metas.size} stations " +
 			"in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018."
 		DoiMeta(
 			id = maker.client.doi(suffix),
@@ -84,12 +85,12 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
 			),
-			contributors = (etcContrib +: piContribs) ++ etcPeople,
+			contributors = ((etcContrib +: piContribs) ++ etcPeople).distinct,
 			dates = Seq(
 				Date(Instant.now.toString.take(10), DateType.Issued)
 			),
 			formats = Seq("Collection of FLUXNET product ZIP archives"),
-			version = Some(Version(1, 0)),
+			version = Some(Version(1, 1)),
 			rights = Seq(cc4by),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None))
 		)

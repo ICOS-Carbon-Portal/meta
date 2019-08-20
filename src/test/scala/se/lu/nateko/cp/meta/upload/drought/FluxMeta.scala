@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import java.time.Instant
 import se.lu.nateko.cp.meta.upload.CpUploadClient
 import java.util.zip.ZipFile
-import java.nio.file.Path
+import java.nio.file.{Path, Files}
 import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
 
 
@@ -43,8 +43,12 @@ class FluxMeta(
 
 	def fname: String = filePath.getFileName.toString
 
+	def fileExists: Boolean = Files.exists(filePath)
+
 	def creationDate = Instant.ofEpochMilli(
-		new ZipFile(filePath.toFile).entries().asScala.map(_.getTime).max
+		if(fileExists)
+			new ZipFile(filePath.toFile).entries().asScala.map(_.getTime).max
+		else 0
 	)
 
 }

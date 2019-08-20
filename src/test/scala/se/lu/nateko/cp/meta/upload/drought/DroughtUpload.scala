@@ -28,11 +28,11 @@ object DroughtUpload{
 	def hhMetas = metas(baseDir.resolve("hh/"), "fluxnetHhMetaSrc.csv")
 
 	def archiveObjInfos: Iterator[CpUploadClient.ObjectUploadInfo] = archiveMetas.map{meta =>
-		makeDto(meta, archiveSpec) -> meta.fileInfo
+		makeDto(meta, archiveSpec, false) -> meta.fileInfo
 	}
 
 	def hhObjInfos: Iterator[CpUploadClient.ObjectUploadInfo] = hhMetas.map{meta =>
-		makeDto(meta, hhSpec) -> meta.fileInfo
+		makeDto(meta, hhSpec, true) -> meta.fileInfo
 	}
 
 	def metas(filesFolder: Path, metaSrcFileName: String): Iterator[FluxMeta] = {
@@ -48,11 +48,11 @@ object DroughtUpload{
 		members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",
 		description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 30 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018. Updates since the previous version of this collection: 3 more stations added (CH-Lae, CH-Oe2, FI-Let), and data from ES-LM2 and FI-Sii have been updated."),
-		isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("XFqbNeOh4sjd6o_aREB9EAFJ").get)),
+		isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("681IIgBN34OEbfWwVU_IWlwA").get)),
 		preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
 	)
 
-	def makeDto(meta: FluxMeta, spec: URI): ObjectUploadDto = {
+	def makeDto(meta: FluxMeta, spec: URI, isHh: Boolean): ObjectUploadDto = {
 		val productionDto = DataProductionDto(
 			creator = new URI("http://meta.icos-cp.eu/resources/organizations/ETC"),
 			contributors = Seq(meta.pi),
@@ -65,8 +65,7 @@ object DroughtUpload{
 			station = meta.station,
 			instrument = None,
 			samplingHeight = None,
-			//acquisitionInterval = None,
-			acquisitionInterval = Some(TimeInterval(meta.acqStart, meta.acqEnd)),
+			acquisitionInterval = if(isHh) None else Some(TimeInterval(meta.acqStart, meta.acqEnd)),
 			nRows = meta.nPoints,
 			production = Some(productionDto)
 		)
@@ -77,7 +76,7 @@ object DroughtUpload{
 			fileName = meta.fname,
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevVers.map(Left(_)),
-			preExistingDoi = Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash)))
+			preExistingDoi = if(isHh) None else Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash)))
 		)
 	}
 

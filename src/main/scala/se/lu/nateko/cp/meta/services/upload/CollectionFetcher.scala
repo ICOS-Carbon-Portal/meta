@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.net.URI
+
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.IRI
 
@@ -26,12 +28,16 @@ class CollectionFetcherLite(protected val server: InstanceServer, protected val 
 		) else None
 	}
 
-	def getParentCollections(dobj: IRI): Seq[UriResource] =
-		server.getStatements(None, Some(memberProp), Some(dobj))
+	def getParentCollections(dobj: IRI): Seq[UriResource] = {
+		val allIris = server.getStatements(None, Some(memberProp), Some(dobj))
 			.map(_.getSubject)
-			.collect{case iri: IRI if getNextVersion(iri).isEmpty => fetchLite(iri)}
-			.flatten
+			.collect{case iri: IRI => iri}
 			.toIndexedSeq
+
+		val deprecatedColls = allIris.flatMap(getPreviousVersions).toSet
+
+		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
+	}
 
 	def getCreatorIfCollExists(hash: Sha256Sum): Option[IRI] = {
 		val collUri = vocab.getCollection(hash)

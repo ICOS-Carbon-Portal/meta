@@ -156,18 +156,20 @@ trait CpmetaFetcher extends FetchingHelper{
 			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
 	}
 
-	protected def getNextVersion(dobj: IRI): Option[URI] = {
-		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(dobj))
+	protected def getNextVersion(item: IRI): Option[URI] = {
+		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 			.toSeq.headOption.collect{
 				case Rdf4jStatement(next, _, _) => next.toJava
 			}
 	}
 
-	protected def getPreviousVersion(dobj: IRI): Option[Either[URI, Seq[URI]]] =
-		server.getUriValues(dobj, metaVocab.isNextVersionOf).map(_.toJava).toList match {
+	protected def getPreviousVersion(item: IRI): Option[Either[URI, Seq[URI]]] =
+		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
 			case Nil => None
 			case single :: Nil => Some(Left(single))
 			case many => Some(Right(many))
 		}
+
+	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
 }

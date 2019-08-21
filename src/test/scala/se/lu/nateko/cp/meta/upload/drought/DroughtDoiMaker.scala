@@ -54,7 +54,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 			contributors = Seq(
 				etcContrib,
 				contributorStation(stationName, meta.stationId, ContributorType.DataCollector),
-				contributorPi(meta.pi, meta.station)
+				contributorPi(meta.pi, Seq(meta.station))
 			) ++ etcPeople,
 			dates = Seq(
 				Date(meta.creationDate.toString.take(10), DateType.Created)
@@ -70,7 +70,9 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 
 	def collDoiMeta(suffix: String): DoiMeta = {
 		val metas = DroughtUpload.archiveMetas.toIndexedSeq
-		val piContribs = metas.map(meta => contributorPi(meta.pi, meta.station))
+		val piContribs = metas.groupBy(_.pi).map{
+			case (pi, metas) => contributorPi(pi, metas.map(_.station))
+		}.toSeq
 		val title = Title("Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1", None, None)
 		val descr = s"This is the first public release of the observational data product for eddy covariance fluxes at ${metas.size} stations " +
 			"in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018."
@@ -96,8 +98,8 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		)
 	}
 
-	def contributorPi(piId: URI, stId: URI) = Contributor(
-		peeps(piId), Nil, Seq("Principal investigator at " + names(stId)), ContributorType.DataCollector
+	def contributorPi(piId: URI, stIds: Seq[URI]) = Contributor(
+		peeps(piId), Nil, stIds.map(stId => "Principal investigator at " + names(stId)), ContributorType.DataCollector
 	)
 }
 

@@ -29,7 +29,7 @@ class CollectionFetcherLite(protected val server: InstanceServer, protected val 
 	def getParentCollections(dobj: IRI): Seq[UriResource] =
 		server.getStatements(None, Some(memberProp), Some(dobj))
 			.map(_.getSubject)
-			.collect{case iri: IRI => fetchLite(iri)}
+			.collect{case iri: IRI if getNextVersion(iri).isEmpty => fetchLite(iri)}
 			.flatten
 			.toIndexedSeq
 

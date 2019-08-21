@@ -31,6 +31,7 @@
 				@for(description <- coll.description){
 					@PanelRow("Description", description)
 				}
+				@PanelRow("Number of items", coll.members.size.toString)
 				@for(item <- coll.members){
 					@PanelHtmlRow{Item}{
 						@staticDataItemLink(item)

@@ -172,6 +172,10 @@ class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Inst
 	s => Try(Instant.parse(s))
 )
 class TextInput(elemId: String, cb: () => Unit) extends GenericTextInput[String](elemId, cb, fail("Missing title"))(s => Try(s))
+class UriInput(elemId: String, cb: () => Unit) extends GenericTextInput[URI](elemId, cb, fail("Malformed URL (must start with http[s]://)"))(s => {
+	if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))
+	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
+})
 
 class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
 		extends GenericTextInput[Option[T]](elemId, cb, Success(None))(
@@ -180,6 +184,11 @@ class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => 
 
 class HashOptInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Sha256Sum](elemId, cb)(s => Sha256Sum.fromString(s).map(Some(_)))
+class HashOptListInput(elemId: String, cb: () => Unit)
+	extends GenericOptionalInput[Seq[Sha256Sum]](elemId, cb)(s =>
+		if(s.isEmpty) Success(None)
+		else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get)))
+	)
 
 class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)))
 class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)))
@@ -197,7 +206,7 @@ class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[
 	Try(s.split("\n").map(new URI(_)))
 )
 
-class SubmitButton(elemId: String, onSubmit: () => Unit){
+class Button(elemId: String, onClick: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get
 
 	def enable(): Unit = {
@@ -210,9 +219,7 @@ class SubmitButton(elemId: String, onSubmit: () => Unit){
 		button.title = errMessage
 	}
 
-	button.disabled = true
-
-	button.onclick = _ => onSubmit()
+	button.onclick = _ => onClick()
 }
 
 class HtmlElements(cssClass: String) {

@@ -25,6 +25,7 @@ class Form(
 		dataElements.hide()
 		collectionElements.hide()
 		fileInput.enable()
+		productionElements.hide()
 
 		formType match {
 			case Data => dataElements.show()
@@ -37,21 +38,24 @@ class Form(
 		updateButton()
 	}
 
-	def submitAction(): Unit = typeControl.formType match {
-		case Data =>
-			for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
-				whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+	def submitAction(): Unit = {
+		dom.window.scrollTo(0, 0)
+		typeControl.formType match {
+			case Data =>
+				for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+					whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+						onUpload(dto, Some(file))
+					}
+				}
+			case Collection =>
+				for(dto <- staticCollectionDto) {
+					onUpload(dto, None)
+				}
+			case Document =>
+				for(dto <- documentObjectDto; file <- fileInput.file) {
 					onUpload(dto, Some(file))
 				}
-			}
-		case Collection =>
-			for(dto <- staticCollectionDto) {
-				onUpload(dto, None)
-			}
-		case Document =>
-			for(dto <- documentObjectDto; file <- fileInput.file) {
-				onUpload(dto, Some(file))
-			}
+		}
 	}
 	val submitButton = new Button("submitbutton", () => submitAction())
 	val updateButton: () => Unit = () => dto match {

@@ -160,11 +160,11 @@
 							<select id="stationselect" class="form-element" disabled></select>
 						</div>
 						<div class="form-group">
-							<label for="acqstartinput">From (@timezone)</label>
+							<label for="acqstartinput">From (UTC)</label>
 							<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
 						</div>
 						<div class="form-group">
-							<label for="acqstopinput">To (@timezone)</label>
+							<label for="acqstopinput">To (UTC)</label>
 							<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
 						</div>
 						<div class="form-group">
@@ -204,7 +204,7 @@
 							<textarea name="productioncomment" id="productioncomment" rows="8" cols="80" class="form-element"></textarea>
 						</div>
 						<div class="form-group">
-							<label for="creationdate">Creation date (@timezone)</label>
+							<label for="creationdate">Creation date (UTC)</label>
 							<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
 						</div>
 						<div class="form-group">
@@ -250,11 +250,4 @@
 
 @jspath = @{
 	if(devVersion) "uploadgui-fastopt.js" else "uploadgui-opt.js"
-}
-
-@timezone = @{
-	envri match {
-		case Envri.SITES => "UTC+1"
-		case _ => "UTC"
-	}
 }

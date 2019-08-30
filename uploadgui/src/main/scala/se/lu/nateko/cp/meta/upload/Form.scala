@@ -166,7 +166,7 @@ class Form(
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
 		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI");
-		production <- if(productionElements.areEnabled) dataProductionDto else Try(None)
+		production <- if(productionElements.areEnabled) dataProductionDto else Success(None)
 	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,

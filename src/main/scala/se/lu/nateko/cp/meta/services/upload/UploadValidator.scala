@@ -255,7 +255,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	)(implicit envri: Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
-			Right(StationDataMetadata(_, _, _, Some(TimeInterval(_, acqStop)), _, _)),
+			Right(StationDataMetadata(stationUri, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _
 		) =>
 			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.uri === vocab.icosProject){
@@ -266,7 +266,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 					}
 					if(prevAcqStop.exists(_ == acqStop)) userFail(
 						"The supposedly NRT growing data object you intend to upload " +
-						"has not grown in comparison with its older version"
+						"has not grown in comparison with its older version.\n" +
+						s"Older object: $prevDobj , station: $stationUri, new (claimed) acquisition stop time: $acqStop"
 					) else ok
 				}
 			} else ok

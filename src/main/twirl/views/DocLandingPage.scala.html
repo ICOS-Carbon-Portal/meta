@@ -30,9 +30,9 @@
 				}
 			}
 			@Panel("Metadata download", 4){
-				@metaDownloadButton(doc, "JSON", "json")
-				@metaDownloadButton(doc, "RDF/XML", "xml")
-				@metaDownloadButton(doc, "RDF/Turtle", "ttl")
+				@objMetaDownloadButton(doc, "JSON", "json")
+				@objMetaDownloadButton(doc, "RDF/XML", "xml")
+				@objMetaDownloadButton(doc, "RDF/Turtle", "ttl")
 			}
 			@Panel("Download count", 2){
 				@extras.downloadStats.getOrElse("Not available")

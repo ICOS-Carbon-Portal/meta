@@ -1,15 +1,16 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
+@import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
 
-@(coll: StaticCollection, handleProxies: HandleProxiesConfig, citation: Option[String])(implicit envri: Envri.Value, conf: EnvriConfig)
+@(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.default){
 	<div class="container-fluid">
 
 		<div class="row">
-			@Panel("Summary", 4){
+			@Panel("Summary", 8, "success"){
 				@PanelRow("Title", coll.title)
 				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
 				@PanelHtmlRow{Download URL}{
@@ -21,11 +22,19 @@
 				@PanelHtmlRow{Previous version}{@versionLink(coll.previousVersion)}
 				@PanelHtmlRow{Next version}{@versionLink(coll.nextVersion)}
 			}
+			@Panel("Metadata download", 4){
+				@collMetaDownloadButton(coll, "JSON", "json")
+				@collMetaDownloadButton(coll, "RDF/XML", "xml")
+				@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")
+			}
+			@Panel("Download count", 2){
+				@extras.downloadStats.getOrElse("Not available")
+			}
 		</div>
 
 		<div class="row">
-			@Panel("Content", 6){
-				@for(cit <- citation){
+			@Panel("Content", 12){
+				@for(cit <- extras.citation){
 					@PanelRow("Citation", cit)
 				}
 				@for(description <- coll.description){

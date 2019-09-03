@@ -1,0 +1,5 @@
+@import se.lu.nateko.cp.meta.core.data.StaticCollection
+
+@(coll: StaticCollection, title: String, ext: String)
+@metaDownloadButton(coll.res.getPath.split("/").last, coll.title, title, ext)
+

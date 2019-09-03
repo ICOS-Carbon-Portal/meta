@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.api
 
+import java.net.URI
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 import akka.actor.ActorSystem
@@ -53,8 +54,12 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 		getStatistic(s"$dbUri/portaluse/_aggrs/getPreviewCountForPid?avars={'pid':'${dobjHash.id}'}&np")
 	}
 
-	def getDownloadCount(dobjHash: Sha256Sum)(implicit envri: Envri): Future[Option[Int]] = {
+	def getObjDownloadCount(dobjHash: Sha256Sum)(implicit envri: Envri): Future[Option[Int]] = {
 		getStatistic(s"$dbUri/dobjdls/_aggrs/getDownloadCountForSHA256?avars={'pid':'${dobjHash.base64Url}'}&np")
+	}
+
+	def getCollDownloadCount(uri: URI)(implicit envri: Envri): Future[Option[Int]] = {
+		getStatistic(s"$dbUri/colldls/_aggrs/getDownloadCountForUri?avars={'uri':'$uri'}&np")
 	}
 
 	private def sumCounts(stats: Seq[Statistics]): Option[Int] = Some(stats.map(_.count).sum)

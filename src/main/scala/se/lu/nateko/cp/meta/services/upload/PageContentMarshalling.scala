@@ -29,7 +29,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		import statisticsClient.executionContext
 		val template: StaticObject => Future[Option[String] => Html] = obj =>
 			for(
-				dlCount <- statisticsClient.getDownloadCount(obj.hash);
+				dlCount <- statisticsClient.getObjDownloadCount(obj.hash);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield (citOpt: Option[String]) => {
 				val extras = LandingPageExtras(citOpt, dlCount, previewCount)
@@ -38,12 +38,16 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		makeMarshaller(template, MessagePage("Data object not found", ""), _.doi)
 	}
 
-	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] =
-		makeMarshaller(
-			coll => Future.successful(CollectionLandingPage(coll, handleProxies, _)),
-			MessagePage("Collection not found", ""),
-			_.doi
-		)
+	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] = {
+		import statisticsClient.executionContext
+		val template: StaticCollection => Future[Option[String] => Html] = coll =>
+			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
+			yield (citOpt: Option[String]) => {
+				val extras = LandingPageExtras(citOpt, dlCount, None)
+				CollectionLandingPage(coll, extras, handleProxies)
+			}
+		makeMarshaller(template, MessagePage("Collection not found", ""), _.doi)
+	}
 
 	private def makeMarshaller[T: JsonWriter](
 		templateFetcher: T => Future[Option[String] => Html],

@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import spray.json.DefaultJsonProtocol._
 
 object LinkedDataRoute {
@@ -33,10 +34,9 @@ object LinkedDataRoute {
 		val genericRdfUriResourcePage: Route = (extractUri & extractEnvri){(uri, envri) =>
 			extractHost{hostname =>
 				val scheme = if(envri == Envri.ICOS){
-					import Uri.Path.{Segment, Slash}
-
 					uri.path match{
-						case Slash(Segment("objects", _)) => "https" //objects have HTTPS URIs in our RDF
+						case Hash.Object(_) => "https" //objects have HTTPS URIs in our RDF
+						case Hash.Collection(_) => "https" //objects have HTTPS URIs in our RDF
 						case _ => "http"
 					}
 				} else "https"
@@ -66,7 +66,7 @@ object LinkedDataRoute {
 					}
 				}
 			} ~
-			pathPrefix("objects" / Sha256Segment){_ =>
+			pathPrefix(("objects" | "collections") / Sha256Segment){_ =>
 				pathEnd{
 					respondWithHeaders(`Access-Control-Allow-Origin`.*) {
 						genericRdfUriResourcePage
@@ -85,7 +85,7 @@ object LinkedDataRoute {
 						reject
 				}
 			} ~
-			pathPrefix("ontologies" | "resources" | "files" | "collections"){
+			pathPrefix("ontologies" | "resources" | "files"){
 				genericRdfUriResourcePage
 			} ~
 			path("config" / "dataObjectGraphInfos"){

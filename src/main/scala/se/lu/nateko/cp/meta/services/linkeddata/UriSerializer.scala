@@ -32,6 +32,23 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 }
 
+object UriSerializer{
+	object Hash {
+		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
+
+		object Object extends HashExtractor(objectPathPrefix.stripSuffix("/"))
+		object Collection extends HashExtractor(collectionPathPrefix.stripSuffix("/"))
+
+		abstract class HashExtractor(segment: String) {
+			def unapply(arg: Uri.Path): Option[Sha256Sum] = arg match {
+				case Slash(Segment(`segment`, Slash(Segment(Hash(hash), Empty)))) => Some(hash)
+				case _ => None
+			}
+		}
+	}
+
+}
+
 class Rdf4jUriSerializer(
 	repo: Repository,
 	servers: DataObjectInstanceServers,
@@ -41,6 +58,7 @@ class Rdf4jUriSerializer(
 
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer._
+	import UriSerializer.Hash
 
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	val stats = new StatisticsClient(config.restheart)
@@ -146,25 +164,10 @@ class Rdf4jUriSerializer(
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
 }
 
-
-
 private object Rdf4jUriSerializer{
 
 	type FLMHR = Future[List[Marshalling[HttpResponse]]]
 
-	object Hash {
-		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
-
-		object Object extends HashExtractor("objects")
-		object Collection extends HashExtractor("collections")
-
-		abstract class HashExtractor(segment: String) {
-			def unapply(arg: Uri.Path): Option[Sha256Sum] = arg match {
-				case Slash(Segment(`segment`, Slash(Segment(Hash(hash), Empty)))) => Some(hash)
-				case _ => None
-			}
-		}
-	}
 	val Limit = 500
 
 	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {

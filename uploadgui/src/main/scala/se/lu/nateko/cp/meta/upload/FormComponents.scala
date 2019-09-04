@@ -202,8 +202,8 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 })
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
-class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, fail("Missing list of object urls"))(s =>
-	Try(s.split("\n").map(new URI(_)))
+class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, Success(Nil))(s =>
+	Try(s.split("\n").map(_.trim).filterNot(_.isEmpty).map(new URI(_)))
 )
 
 class Button(elemId: String, onClick: () => Unit){

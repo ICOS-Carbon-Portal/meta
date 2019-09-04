@@ -203,6 +203,7 @@ class Form(
 		title <- collectionTitle.value.withErrorContext("Collection title");
 		description <- collectionDescription.value;
 		members <- collectionMembers.value.withErrorContext("List of object urls");
+		_ <- (if(members.isEmpty) fail("Collection cannot be empty") else Success(()));
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");

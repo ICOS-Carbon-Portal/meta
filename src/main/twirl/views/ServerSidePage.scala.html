@@ -1,40 +1,18 @@
 @import se.lu.nateko.cp.viewscore._
 @import se.lu.nateko.cp.meta.core.data.Envri
+@import landpagesnips._
 
-@(title: String, header: String, envri: Envri.Value, menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, pidOpt: Option[String] = None)(body: Html)
+@(
+	title: String, header: String, envri: Envri.Value,
+	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None
+)(body: Html)
 @template{
 	@LandingPageStyle()
 }{
-	@pidOpt match{
-		case None => {
-			<div class="page-header">
-				<h1>@header</h1>
-			</div>
-		}
-		case Some(pid) => {
-			<div class="row page-header">
-				<div class="col-md-9">
-					<h1>@header</h1>
-				</div>
-				<div class="col-md-3 text-right">
-					<a class="btn btn-primary" href="@dataURL(pid)" style="margin-top: 30px;">View in the data portal</a>
-				</div>
-			</div>
-		}
-	}
-
+	@pageHeader(header, headerExtra)
 	@body
 }
 
-
 @template = @{
 	if(envri == Envri.SITES) SitesPage(title) _ else CpCommonPage(title, menu, cpauthHostOpt) _
-}
-
-@dataURL(pid: String) = @{
-	s"""//${dataHost}/portal/#{"route":"metadata","id":"${pid.split("/").last}"}"""
-}
-
-@dataHost = @{
-	if(envri == Envri.SITES) "data.fieldsites.se" else "data.icos-cp.eu"
 }

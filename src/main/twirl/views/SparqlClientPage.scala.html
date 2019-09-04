@@ -1,3 +1,5 @@
+@import landpagesnips._
+
 @CpCommonPage("Carbon Portal SPARQL Endpoint"){
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
 	<script type="text/javascript" src="sparqlclient.js"></script>
@@ -13,9 +15,7 @@
 		.row{margin-bottom: 5px;}
 	</style>
 }{
-	<div class="page-header">
-		<h1>Carbon Portal SPARQL Endpoint <small>Access to Carbon Portal metadata</small></h1>
-	</div>
+	@pageHeader("Carbon Portal SPARQL Endpoint", subTitle = Some("Access to Carbon Portal metadata"))
 	<div class="row">
 		<div class="col-md-7">
 			<textarea id="queryTA" class="form-control" rows="10"></textarea>

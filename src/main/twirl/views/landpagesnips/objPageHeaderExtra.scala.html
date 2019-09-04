@@ -1,0 +1,10 @@
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
+
+@(objectId: String)(implicit envriConf: EnvriConfig)
+<div class="col-md-3 text-right">
+	<a class="btn btn-primary" href="@dataURL(objectId)">View in the data portal</a>
+</div>
+
+@dataURL(id: String) = @{
+	s"""${envriConf.dataPrefix}portal/#{"route":"metadata","id":"$id"}"""
+}

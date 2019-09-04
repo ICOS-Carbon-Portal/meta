@@ -1,0 +1,21 @@
+@(header: String, headerExtra: Option[Html] = None, subTitle: Option[String] = None)
+@headerExtra match{
+	case None => {
+		<div class="page-header">
+			<h1>
+				@header
+				@for(sub <- subTitle){
+					<small>@sub</small>
+				}
+			</h1>
+		</div>
+	}
+	case Some(extra) => {
+		<div class="row page-header">
+			<div class="col-md-9">
+				<h1 style="margin-top: 0px">@header</h1>
+			</div>
+			@extra
+		</div>
+	}
+}

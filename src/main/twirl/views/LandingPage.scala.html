@@ -4,7 +4,7 @@
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import java.net.URI
 
-@(obj: StaticObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value)
+@(obj: StaticObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @{
 	obj match {
 		case dobj: DataObject => DataLandingPage(dobj, extras, handleProxies, vocab)

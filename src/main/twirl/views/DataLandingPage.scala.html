@@ -8,7 +8,7 @@
 @import se.lu.nateko.cp.meta.utils._
 @import landpagesnips._
 
-@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value)
+@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @template{
 	<div class="container-fluid">
 
@@ -182,10 +182,16 @@
 	}
 }
 
+@headerExtra = @{
+	dobj.pid.map{_ =>
+		objPageHeaderExtra(dobj.hash.id)
+	}
+}
+
 @template = @{
 	val spec = dobj.specification
 	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.uri === vocab.icosProject && spec.dataLevel == 1)
-		AtcLandingPage(pageTitle) _
+		AtcLandingPage(pageTitle, headerExtra) _
 	else
-		ServerSidePage(pageTitle, pageHeading, envri, pidOpt=dobj.pid) _
+		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra) _
 }

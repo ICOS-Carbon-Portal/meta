@@ -25,7 +25,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 
 	import PageContentMarshalling.{getHtml, getJson}
 
-	implicit def staticObjectMarshaller(implicit envri: Envri): ToResponseMarshaller[() => Option[StaticObject]] = {
+	implicit def staticObjectMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticObject]] = {
 		import statisticsClient.executionContext
 		val template: StaticObject => Future[Option[String] => Html] = obj =>
 			for(

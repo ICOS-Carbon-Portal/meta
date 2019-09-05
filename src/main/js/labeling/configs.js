@@ -88,7 +88,8 @@ let propNamesLookup = {
 		'hasDiscreteTco2TechniqueDescription', 'hasDiscreteTco2MethodReferences', 'hasDiscreteAlkalinityCurveFitting',
 		'hasDiscreteAlkalinityTitrationType', 'hasDiscreteAlkalinityOtherTitration', 'hasDiscreteAlkalinityMethodReferences',
 		'hasDiscretePco2Analysis', 'hasDiscretePco2AnalysisMethod', 'hasDiscretePco2MethodReferences', 'hasDiscretePhScale',
-		'hasDiscretePhAnalysisMethod', 'hasDiscretePhMethodReferences', 'hasDiscreteAdditionalInfo'].concat(etc.bboxPropNames)
+		'hasDiscretePhAnalysisMethod', 'hasDiscretePhMethodReferences', 'hasDiscreteAdditionalInfo',
+		'hasNrtDataDeliveryMethod', 'hasNrtDataUpdateFrequency'].concat(etc.bboxPropNames)
 };
 
 export function themeToProperties(theme){

@@ -70,6 +70,10 @@ export default function(StationMixins) {
 
 				<Inputs.String {...this.otcProps('hasDiscreteAdditionalInfo')} header="Additional information such as other parameters measured" />
 
+				<Inputs.Header txt="2.3 NRT data delivery" />
+				<Inputs.String {...this.otcProps('hasNrtDataDeliveryMethod')} header="Does your station provide NRT data, and if yes, which communication (Wifi, satellite, etc.)?" />
+				<Inputs.String {...this.otcProps('hasNrtDataUpdateFrequency')} header="If your station provide NRT data, how often are updates received?" />
+
 			</Inputs.FormForm>;
 		},
 

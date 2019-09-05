@@ -183,9 +183,9 @@
 }
 
 @headerExtra = @{
-	dobj.pid.map{_ =>
-		objPageHeaderExtra(dobj.hash.id)
-	}
+	if(dobj.specification.dataLevel > 0 && uploadComplete)
+		Some(objPageHeaderExtra(dobj.hash.id))
+	else None
 }
 
 @template = @{

@@ -2426,6 +2426,15 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/delimitedHeaderCsv -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/delimitedHeaderCsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Character delimited header csv</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/ontologies/sites/image -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/image">

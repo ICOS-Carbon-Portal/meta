@@ -15,14 +15,25 @@ val commonScalacOptions = Seq(
 val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
 
 lazy val metaCore = (project in file("core"))
+	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.4.3-SNAPSHOT",
+		version := "0.4.4",
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.5",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),
+		cpTsGenTypeMap := Map(
+			"URI" -> "string",
+			"Instant" -> "string",
+			"Sha256Sum" -> "string",
+			"JsValue" -> "object"
+		),
+		cpTsGenSources := {
+			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
+			Seq(dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataObject.scala")
+		},
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"
 			if (isSnapshot.value)

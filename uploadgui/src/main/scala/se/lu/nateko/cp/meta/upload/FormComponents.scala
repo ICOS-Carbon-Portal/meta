@@ -202,8 +202,11 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 })
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
-class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, Success(Nil))(s =>
-	Try(s.split("\n").map(_.trim).filterNot(_.isEmpty).map(new URI(_)))
+class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, fail("Missing url list"))(s =>
+	Try(s.split("\n").map(_.trim).map(line => {
+			if (line.startsWith("https://") || line.startsWith("http://")) Success(new URI(line))
+			else Failure(new Exception("Malformed URL (must start with http[s]://)"))
+	}.get))
 )
 
 class Button(elemId: String, onClick: () => Unit){

@@ -63,6 +63,7 @@ object DroughtUpload{
 		)
 		val stationMeta = StationDataMetadata(
 			station = meta.station,
+			site = None,
 			instrument = None,
 			samplingHeight = None,
 			acquisitionInterval = if(isHh) None else Some(TimeInterval(meta.acqStart, meta.acqEnd)),

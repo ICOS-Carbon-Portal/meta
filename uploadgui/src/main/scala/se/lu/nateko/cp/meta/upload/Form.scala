@@ -101,13 +101,26 @@ class Form(
 		updateButton()
 	}
 
+	private val onStationSelected: () => Unit = () => {
+		stationSelect.value.foreach { station =>
+			whenDone(Backend.getSites(station.uri)) { sites =>
+				sites match {
+					case IndexedSeq() => siteSelect.setOptions(IndexedSeq.empty)
+					case _ => siteSelect.setOptions(None +: sites.map(Some(_)))
+				}
+			}
+			updateButton()
+		}
+	}
+
 	val fileInput = new FileInput("fileinput", updateButton)
 	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
-	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", updateButton)
+	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", onStationSelected)
+	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 
@@ -160,6 +173,7 @@ class Form(
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
 		station <- stationSelect.value.withErrorContext("Station");
+		site <- siteSelect.value;
 		objSpec <- objSpecSelect.value.withErrorContext("Data type");
 		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
@@ -175,6 +189,7 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
+				site = site.map(_.uri),
 				instrument = instrumentUri.map(Left(_)),
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,

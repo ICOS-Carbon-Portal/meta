@@ -79,6 +79,9 @@
 			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
 				@Panel("Acquisition", 4){
 					@agentPanelRow("Station", station.org)
+					@for(site <- acquisition.site){
+						@resourcePanelRow("Ecosystem", site.ecosystem)
+					}
 					@for(interval <- acquisition.interval){
 						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
 						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
@@ -124,7 +127,7 @@
 					@PanelRow("Coverage", covText)
 				}
 
-				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+				@for(coverage <- geoFeature; geoJson = coverage.geoJson){
 					<iframe src="/station/?icon=@icon&coverage=@geoJson"></iframe>
 				}
 			}
@@ -174,8 +177,10 @@
 @uploadComplete = @{dobj.submission.stop.isDefined}
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
+@geoFeature = @{dobj.specificInfo.right.toOption.flatMap(_.acquisition.site.flatMap(_.area)).orElse(dobj.coverage)}
+
 @coverageText = @{
-	dobj.coverage match{
+	geoFeature match{
 		case None => None
 		case Some(_: GeoTrack) | Some(_: GenericGeoFeature) => None
 		case Some(geo) => Some(geo.textSpecification)

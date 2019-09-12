@@ -10,3 +10,5 @@ case class Station(uri: URI, id: String, name: String)
 case class ObjSpec(uri: URI, name: String, dataLevel: Int, hasDataset: Boolean)
 
 case class InitAppInfo(userEmail: Option[String], envri: Envri, envriConfig: EnvriConfig)
+
+case class Site(uri: URI, name: String)

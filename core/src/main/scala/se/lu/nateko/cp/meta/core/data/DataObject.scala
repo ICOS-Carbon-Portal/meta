@@ -22,6 +22,8 @@ case class Station(
 	coverage: Option[GeoFeature]
 )
 
+case class Site(self: UriResource, ecosystem: UriResource, area: Option[GeoFeature])
+
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
 
 case class DataObjectSpec(
@@ -36,6 +38,7 @@ case class DataObjectSpec(
 
 case class DataAcquisition(
 	station: Station,
+	site: Option[Site],
 	interval: Option[TimeInterval],
 	instrument: OptionalOneOrSeq[URI],
 	samplingHeight: Option[Float]

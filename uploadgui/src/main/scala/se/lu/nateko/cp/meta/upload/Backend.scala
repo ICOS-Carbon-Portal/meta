@@ -50,6 +50,9 @@ object Backend {
 	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
+	def getSites(station: URI): Future[IndexedSeq[Site]] =
+		sparqlSelect(sites(station)).map(_.map(toSite))
+
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){

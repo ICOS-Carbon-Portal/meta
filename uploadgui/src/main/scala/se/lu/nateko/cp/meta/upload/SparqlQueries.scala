@@ -37,12 +37,9 @@ object SparqlQueries {
 
 	def sites(station: URI): String = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT ?site ?name
-		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|FROM <https://meta.fieldsites.se/resources/sites/>
 		|WHERE {
-		|	values ?station { <$station> }
-		|	?station cpmeta:operatesOn ?site .
-		| ?site rdfs:label ?name .
+		|	<$station> cpmeta:operatesOn ?site .
+		|	?site rdfs:label ?name .
 		|}""".stripMargin
 
 	def toSite(b: Binding) = Site(new URI(b("site")), b("name"))

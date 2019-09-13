@@ -115,8 +115,6 @@ trait CpmetaFetcher extends FetchingHelper{
 		area = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
 	)
 
-	def getOptionalSite(site: IRI): Option[Site] = Try(getSite(site)).toOption
-
 	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
 
 		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
@@ -137,7 +135,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		val acq = DataAcquisition(
 			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),
-			site = getOptionalUri(acqUri, metaVocab.operatesOn).map(getSite),
+			site = getOptionalUri(acqUri, metaVocab.wasPerformedAt).map(getSite),
 			interval = for(
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)

@@ -135,7 +135,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(aquisitionUri, RDF.TYPE, metaVocab.aquisitionClass),
 			makeSt(aquisitionUri, metaVocab.prov.wasAssociatedWith, meta.station.toRdf)
 		) ++
-		makeSt(aquisitionUri, metaVocab.operatesOn, meta.site.map(_.toRdf)) ++
+		makeSt(aquisitionUri, metaVocab.wasPerformedAt, meta.site.map(_.toRdf)) ++
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++

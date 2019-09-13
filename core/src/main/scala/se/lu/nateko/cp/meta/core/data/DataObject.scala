@@ -44,6 +44,7 @@ case class DataAcquisition(
 	samplingHeight: Option[Float]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
+	def coverage: Option[GeoFeature] = site.flatMap(_.area).orElse(station.coverage)
 }
 
 case class DataProduction(
@@ -110,7 +111,7 @@ case class DataObject(
 
 	def coverage: Option[GeoFeature] = specificInfo.fold(
 		l3 => Some(l3.spatial),
-		l2 => l2.coverage.orElse(l2.acquisition.station.coverage)
+		l2 => l2.coverage.orElse(l2.acquisition.coverage)
 	)
 }
 

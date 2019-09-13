@@ -24,9 +24,9 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 
 	select.onchange = _ => cb()
 
-	def value: Try[T] = {
+	def value: Option[T] = {
 		val idx = select.selectedIndex
-		if(idx < 0 || idx >= _values.length) fail("no option chosen") else Success(_values(idx))
+		if(idx < 0 || idx >= _values.length) None else Some(_values(idx))
 	}
 
 	def setOptions(values: IndexedSeq[T]): Unit = {

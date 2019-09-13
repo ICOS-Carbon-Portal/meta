@@ -103,11 +103,8 @@ class Form(
 
 	private val onStationSelected: () => Unit = () => {
 		stationSelect.value.foreach { station =>
-			whenDone(Backend.getSites(station.uri)) { sites =>
-				sites match {
-					case IndexedSeq() => siteSelect.setOptions(IndexedSeq.empty)
-					case _ => siteSelect.setOptions(None +: sites.map(Some(_)))
-				}
+			whenDone(Backend.getSites(station.uri)) {
+				siteSelect.setOptions(_)
 			}
 			updateButton()
 		}
@@ -120,7 +117,7 @@ class Form(
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", onStationSelected)
-	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), updateButton)
+	val siteSelect = new Select[Site]("siteselect", _.name, updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 
@@ -167,15 +164,14 @@ class Form(
 	))
 
 	def dataObjectDto: Try[DataObjectDto] = for(
+		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set");
 		file <- fileInput.file;
 		hash <- fileInput.hash;
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
-		station <- stationSelect.value.withErrorContext("Station");
-		site <- siteSelect.value;
-		objSpec <- objSpecSelect.value.withErrorContext("Data type");
-		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id");
+		station <- stationSelect.value.withMissingError("Station not chosen");
+		objSpec <- objSpecSelect.value.withMissingError("Data type not set");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
@@ -189,7 +185,7 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
-				site = site.map(_.uri),
+				site = siteSelect.value.map(_.uri),
 				instrument = instrumentUri.map(Left(_)),
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
@@ -206,7 +202,7 @@ class Form(
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
-		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id")
+		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set")
 	) yield DocObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -222,7 +218,7 @@ class Form(
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
-		submitter <- submitterIdSelect.value.withErrorContext("Submitter Id")
+		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set")
 	) yield StaticCollectionDto(
 		submitterId = submitter.id,
 		members = members,

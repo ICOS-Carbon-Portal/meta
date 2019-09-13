@@ -66,11 +66,13 @@ class Form(
 	val addProductionButton = new Button("addproductionbutton", () => {
 		addProductionElements.hide()
 		productionElements.show()
+		updateButton()
 	})
 
 	val removeProductionButton = new Button("removeproductionbutton", () => {
 		addProductionElements.show()
 		productionElements.hide()
+		updateButton()
 	})
 
 	val onLevelSelected: String => Unit = (level: String) =>

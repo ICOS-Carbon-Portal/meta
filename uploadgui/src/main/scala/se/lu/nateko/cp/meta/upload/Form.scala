@@ -128,7 +128,7 @@ class Form(
 
 	val collectionTitle = new TextInput("collectiontitle", updateButton)
 	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
-	val collectionMembers = new UriListInput("collectionmembers", updateButton)
+	val collectionMembers = new NonEmptyUriListInput("collectionmembers", updateButton)
 
 	def dto: Try[UploadDto] = typeControl.formType match {
 		case Data => dataObjectDto
@@ -202,8 +202,7 @@ class Form(
 	def staticCollectionDto: Try[StaticCollectionDto] = for(
 		title <- collectionTitle.value.withErrorContext("Collection title");
 		description <- collectionDescription.value;
-		members <- collectionMembers.value.withErrorContext("List of object urls");
-		_ <- (if(members.isEmpty) fail("Collection cannot be empty") else Success(()));
+		members <- collectionMembers.value.withErrorContext("Collection members (list of object urls)");
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");

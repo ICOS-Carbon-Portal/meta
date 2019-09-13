@@ -202,12 +202,27 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 })
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
 
-class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, fail("Missing url list"))(s =>
-	Try(s.split("\n").map(_.trim).map(line => {
-			if (line.startsWith("https://") || line.startsWith("http://")) Success(new URI(line))
-			else Failure(new Exception("Malformed URL (must start with http[s]://)"))
-	}.get))
+class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, Success(Nil))(
+	UriListInput.parser
 )
+
+class NonEmptyUriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, UriListInput.emptyError)(
+	s => UriListInput.parser(s).flatMap(
+		uris => if(uris.isEmpty) UriListInput.emptyError else Success(uris)
+	)
+)
+
+object UriListInput{
+
+	def parser(value: String): Try[Seq[URI]] = Try(
+		value.split("\n").map(_.trim).filterNot(_.isEmpty).map(line => {
+			if (line.startsWith("https://") || line.startsWith("http://")) new URI(line)
+			else throw new Exception("Malformed URL (must start with http[s]://)")
+		})
+	)
+
+	val emptyError = fail(s"uri list cannot be empty")
+}
 
 class Button(elemId: String, onClick: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get

@@ -45,8 +45,8 @@ object UploadApp {
 		case Some(file) => {
 			whenDone{
 				Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
-			}(doi => {
-				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://doi.org/$doi'>View metadata</a>", "alert alert-success")
+			}(pid => {
+				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://hdl.handle.net/$pid'>View metadata</a>", "alert alert-success")
 			})
 		}
 		case None => {

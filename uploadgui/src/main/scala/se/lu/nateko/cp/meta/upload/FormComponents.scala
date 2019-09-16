@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.doi.Doi
 
-class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
+class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = false, cb: () => Unit){
 	private val select = getElementById[html.Select](elemId).get
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
 
@@ -40,7 +40,7 @@ class Select[T](elemId: String, labeller: T => String, cb: () => Unit){
 		}
 
 		// Select option if only one choice
-		if (values.size == 1) {
+		if (autoselect && values.size == 1) {
 			select.selectedIndex = 0
 			cb()
 		} else {

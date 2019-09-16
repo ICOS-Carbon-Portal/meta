@@ -103,8 +103,11 @@ class Form(
 
 	private val onStationSelected: () => Unit = () => {
 		stationSelect.value.foreach { station =>
-			whenDone(Backend.getSites(station.uri)) {
-				siteSelect.setOptions(_)
+			whenDone(Backend.getSites(station.uri)) { sites =>
+				siteSelect.setOptions {
+					if (sites.isEmpty) IndexedSeq.empty
+					else None +: sites.map(Some(_))
+				}
 			}
 			updateButton()
 		}
@@ -116,12 +119,12 @@ class Form(
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
-	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", onStationSelected)
-	val siteSelect = new Select[Site]("siteselect", _.name, updateButton)
-	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, onSpecSelected)
+	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", cb = onStationSelected)
+	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
+	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 
-	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, onSubmitterSelected)
+	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
@@ -185,7 +188,7 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
-				site = siteSelect.value.map(_.uri),
+				site = siteSelect.value.flatten.map(_.uri),
 				instrument = instrumentUri.map(Left(_)),
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,

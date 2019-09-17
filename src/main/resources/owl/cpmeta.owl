@@ -384,6 +384,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#atLocation"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:range rdf:resource="http://www.opengis.net/ont/geosparql#Feature"/>
@@ -395,6 +396,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#atLocation"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Site"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">operates on</rdfs:label>
@@ -426,6 +428,18 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#wasAssociatedWith"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#atLocation"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Activity"/>
+        <rdfs:range rdf:resource="http://www.opengis.net/ont/geosparql#Feature"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">was performed at</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -497,6 +511,12 @@
         <rdfs:domain rdf:resource="http://www.opengis.net/ont/geosparql#Feature"/>
         <rdfs:range rdf:resource="http://www.opengis.net/ont/geosparql#Geometry"/>
     </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/ns/prov#atLocation -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/ns/prov#atLocation"/>
     
 
 

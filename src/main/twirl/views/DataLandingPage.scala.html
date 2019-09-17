@@ -79,6 +79,9 @@
 			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
 				@Panel("Acquisition", 4){
 					@agentPanelRow("Station", station.org)
+					@for(site <- acquisition.site){
+						@resourcePanelRow("Ecosystem", site.ecosystem)
+					}
 					@for(interval <- acquisition.interval){
 						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
 						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)

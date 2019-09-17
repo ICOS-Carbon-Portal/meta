@@ -39,4 +39,8 @@ object Utils {
 			case err: Throwable => Failure(new Exception(ctxt + ": " + err.getMessage, err))
 		}
 	}
+
+	implicit class OptionWithMissingErrorEnrichment[T](val inner: Option[T]) extends AnyVal{
+		def withMissingError(msg: String): Try[T] = inner.fold[Try[T]]{Failure(new Exception(msg))}(Success(_))
+	}
 }

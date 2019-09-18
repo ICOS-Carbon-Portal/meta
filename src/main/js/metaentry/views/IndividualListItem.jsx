@@ -27,7 +27,7 @@ module.exports = React.createClass({
 		var glyph = "glyphicon glyphicon-" + (readyDelete ? "arrow-up" : "remove");
 		var preDeleteClick = readyDelete ? this.abortDeletion : this.activateDeletion;
 
-		return <li className={itemClasses} title={ind.displayName} onClick={ind.clickHandler} style={{padding: '0px'}}>
+		return <li className={itemClasses} title={ind.displayName} onClick={ind.clickHandler} style={{padding: '0px'}} role="menuitem">
 
 			<div className="input-group">
 
@@ -58,4 +58,3 @@ module.exports = React.createClass({
 		</li>;
 	}
 });
-	

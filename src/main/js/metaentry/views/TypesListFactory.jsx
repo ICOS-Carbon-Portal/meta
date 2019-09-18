@@ -13,7 +13,7 @@ module.exports = function(typesStore, chooseTypeAction){
 
 			return <Widget widgetType="primary" widgetTitle="Types">
 				<ScreenHeightColumn>
-					<div className="list-group">{
+					<div className="list-group" role="menu">{
 
 						this.state.types.map(function(theType){
 
@@ -23,11 +23,11 @@ module.exports = function(typesStore, chooseTypeAction){
 
 							return <li
 								className={"cp-lnk list-group-item list-group-item-" + (isChosen ? "info" : "default")}
-								key={theType.uri} title={fullName} onClick={clickHandler}>
+								key={theType.uri} title={fullName} onClick={clickHandler} role="menuitem">
 								{capped(fullName)}
 							</li>;
 						})
-				
+
 					}</div>
 				</ScreenHeightColumn>
 			</Widget>;
@@ -35,4 +35,3 @@ module.exports = function(typesStore, chooseTypeAction){
 
 	});
 }
-

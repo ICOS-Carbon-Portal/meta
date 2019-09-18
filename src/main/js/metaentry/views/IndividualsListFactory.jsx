@@ -35,7 +35,7 @@ module.exports = function(individualsStore, chooseAction, removeAction, Individu
 				{this.state.addingInstance ? <IndividualAdder cancelHandler={this.hideAdder}/> : null}
 
 				<ScreenHeightColumn>
-					<div className="list-group">{
+					<div className="list-group" role="menu">{
 						individuals.map(function(ind){
 							return <IndividualListItem key={ind.uri} individual={ind} />;
 						})
@@ -51,4 +51,3 @@ module.exports = function(individualsStore, chooseAction, removeAction, Individu
 
 	});
 }
-

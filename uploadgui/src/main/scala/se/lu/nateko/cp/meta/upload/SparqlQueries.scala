@@ -14,7 +14,8 @@ object SparqlQueries {
 		|SELECT *
 		|FROM <https://meta.fieldsites.se/resources/sites/>
 		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
-		| $orgFilter }""".stripMargin
+		| $orgFilter }
+		|order by ?name""".stripMargin
 
 	private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
@@ -39,8 +40,8 @@ object SparqlQueries {
 		|SELECT ?site ?name
 		|WHERE {
 		|	<$station> cpmeta:operatesOn ?site .
-		|	?site rdfs:label ?name .
-		|}""".stripMargin
+		|	?site rdfs:label ?name }
+		|order by ?name""".stripMargin
 
 	def toSite(b: Binding) = Site(new URI(b("site")), b("name"))
 

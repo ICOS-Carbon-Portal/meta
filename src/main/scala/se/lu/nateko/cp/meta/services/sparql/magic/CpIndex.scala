@@ -48,6 +48,10 @@ trait ObjInfo extends ObjSpecific{
 
 object CpIndex{
 	val UpdateQueueSize = 1024
+
+	private class Counter{
+		var count: Int = 0
+	}
 }
 
 class CpIndex(sail: Sail) extends ReadWriteLocking{
@@ -79,12 +83,17 @@ class CpIndex(sail: Sail) extends ReadWriteLocking{
 
 	def statEntries: Iterable[StatEntry] = readLocked{
 		val nullKey = StatKey(null, null, None)
-		stats.values
-			.groupBy(_.getKeyOrElse(nullKey))
-			.collect{
-				case (key, vals) if key.ne(nullKey) => StatEntry(key, vals.size)
-			}
-			.toIndexedSeq
+		val counts = HashMap.empty[StatKey, Counter]
+
+		stats.values.foreach{oe =>
+			val key = oe.getKeyOrElse(nullKey)
+			val counter = counts.getOrElseUpdate(key, new Counter)
+			counter.count += 1
+		}
+
+		counts.toIterable.map{
+			case (key, counter) => StatEntry(key, counter.count)
+		}
 	}
 
 	//stats.valuesIterator.filter(_.spec === spec)

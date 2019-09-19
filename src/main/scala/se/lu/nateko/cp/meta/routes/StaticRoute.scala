@@ -37,8 +37,10 @@ object StaticRoute {
 				getFromResource("www/metaentry.js")
 			} ~ {
 				config.instOntoServers.get(ontId) match {
-					case Some(ontConfig) => pathSingleSlash{
-							complete(views.html.MetaentryPage(ontConfig.serviceTitle, authConf))
+					case Some(ontConfig) => extractEnvri{envri =>
+							pathSingleSlash{
+								complete(views.html.MetaentryPage(ontConfig.serviceTitle, envri, authConf))
+							}
 						}
 					case None =>
 						complete((StatusCodes.NotFound, s"Unrecognized metadata entry project: $ontId"))

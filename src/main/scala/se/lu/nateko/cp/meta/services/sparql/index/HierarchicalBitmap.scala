@@ -1,9 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import scala.collection.mutable.HashMap
+import scala.collection.JavaConverters.asScalaIteratorConverter
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import HierarchicalBitmap._
+import java.{util => ju}
 
 /**
  * Assumptions:
@@ -16,7 +18,7 @@ import HierarchicalBitmap._
 */
 class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
-	private val values = MutableRoaringBitmap.bitmapOf()
+	private val values = emptyBitmap
 	private[this] var n = 0
 	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null //to avoid empty map creation in leaf nodes
 
@@ -34,10 +36,11 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 	}
 
 	private def spilledOver: Boolean = (n >= geo.spilloverThreshold) && {
+		//TODO Get rid of this block
 		val iter = values.iterator()
 		val firstKey = geo.keyLookup(iter.next())
 		var seenDifferentKeys: Boolean = false
-		while(iter.hasNext() && seenDifferentKeys){
+		while(iter.hasNext() && !seenDifferentKeys){
 			val nextKey = geo.keyLookup(iter.next())
 			seenDifferentKeys = ord.compare(firstKey, nextKey) != 0
 		}
@@ -50,7 +53,61 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 		child.add(key, value)
 	}
 
-	def ascendingValues: Iterator[Int] = if(children == null) ??? else ???
+
+	def iterateSorted(filter: Option[ImmutableRoaringBitmap] = None, offset: Int = 0, sortDescending: Boolean = false): Iterator[Int] = {
+
+		val valComp: ju.Comparator[Int] = {
+			val keyOrd = if(sortDescending) ord.reverse else ord
+			Ordering.by(geo.keyLookup)(keyOrd)
+		}
+
+		val coordOrd: Ordering[Coord] = {
+			val ascending = implicitly[Ordering[Coord]]
+			if(sortDescending) ascending.reverse else ascending
+		}
+
+		implicit val iter = new IterationInstruction(filter, valComp, coordOrd)
+
+		innerIterate(offset).fold(_ => Iterator.empty, identity)
+	}
+
+	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult = if(children == null) {
+
+		val filtered = iter.filter.fold(values){
+			ImmutableRoaringBitmap.and(values, _)
+		}
+
+		val eagerlyKnownAmount: Option[Int] = if(iter.filter.isEmpty) Some(n) else None
+
+		def sortedIter(knownSize: Option[Int]): Iterator[Int] = {
+			val list = knownSize.fold(new ju.ArrayList[Int])(s => new ju.ArrayList[Int](s))
+			filtered.forEach(i => {list.add(i);()})
+			list.sort(iter.valComp)
+			list.iterator.asScala
+		}
+
+		if(offset > 0){
+			val amount = eagerlyKnownAmount.getOrElse(filtered.getCardinality)
+			if(amount <= offset)
+				Left(offset - amount)
+			else
+				Right(sortedIter(Some(amount)).drop(offset))
+		} else
+			Right(sortedIter(eagerlyKnownAmount))
+
+	} else {
+		val bitmapIter: Iterator[HierarchicalBitmap[K]] = children.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2)
+		if(offset <= 0)
+			Right(bitmapIter.flatMap(_.innerIterate(0).fold(_ => Iterator.empty, identity)))
+		else
+			bitmapIter.foldLeft[OffsetOrResult](Left(offset))(
+				(acc, bm) => acc match {
+					case Left(offset) => bm.innerIterate(offset)
+					case Right(iterSoFar) => bm.innerIterate(0).map(iterSoFar ++ _)
+				}
+			)
+	}
+
 
 
 	def filter(req: FilterRequest[K]): ImmutableRoaringBitmap = {
@@ -125,4 +182,21 @@ object HierarchicalBitmap{
 	case class IntervalFilter[K](from: MinFilter[K], to: MaxFilter[K]) extends FilterRequest[K]{
 		val filter = v => from.filter(v) && to.filter(v)
 	}
+
+	private class IterationInstruction(
+		val filter: Option[ImmutableRoaringBitmap],
+		val valComp: ju.Comparator[Int],
+		val coordOrd: Ordering[Coord]
+	)
+
+	private type OffsetOrResult = Either[Int, Iterator[Int]]
+
+	// private def time[T](comp: => T): T = {
+	// 	val start = System.nanoTime
+	// 	val res = comp
+	// 	val us = (System.nanoTime - start) / 1000
+	// 	println(s"Elapsed $us us")
+	// 	res
+	// }
+
 }

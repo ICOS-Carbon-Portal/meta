@@ -87,4 +87,36 @@ class StringHierarchicalBitmapTests extends FunSpec{
 			testFilter(EqualsFilter(kaboom), strings.indices)
 		}
 	}
+
+	describe("iterateSorting"){
+		val strings = Array("oops", "zulu", "mememe", "bebebe", "aardvark", "just", "about", "any", "kind", "of", "jibberish")
+		def sortStringInds(s: Array[String]) = s.indices.sortBy(s.apply)(StringHierarchicalBitmap.Ord)
+		val bm = initBm(strings)
+
+		it("unfiltered iteration without offset works"){
+			assert(bm.iterateSorted().toSeq == sortStringInds(strings))
+		}
+
+		it("unfiltered iteration with offset works"){
+			val offset = 5
+			assert(bm.iterateSorted(offset = offset).toSeq == sortStringInds(strings).drop(offset))
+		}
+
+		it("unfiltered iteration without offset over large bitmap index works"){
+			val rnd = new Random(333)
+			val n = 1000
+			val manyStrings = Array.fill(n)(rnd.alphanumeric.take(6).mkString)
+			val largeBm = initBm(manyStrings)
+			val result = largeBm.iterateSorted().toIndexedSeq
+			assert(result.toSeq == sortStringInds(manyStrings))
+		}
+
+	}
+
+	// private def time[T](comp: => T): T = {
+	// 	val start = System.currentTimeMillis()
+	// 	val res = comp
+	// 	println(System.currentTimeMillis() - start)
+	// 	res
+	// }
 }

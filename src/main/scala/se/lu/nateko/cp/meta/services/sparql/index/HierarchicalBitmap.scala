@@ -21,30 +21,27 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 	private val values = emptyBitmap
 	private[this] var n = 0
 	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null //to avoid empty map creation in leaf nodes
+	private[this] var firstKey: Option[K] = None
+	private[this] var seenDifferentKeys: Boolean = false
 
 	def add(key: K, value: Int): Unit = {
 		if(depth > 0) values.add(value)
 
 		n += 1
 
-		if(children == null && (depth == 0 || spilledOver)) {
-			children = HashMap.empty[Coord, HierarchicalBitmap[K]]
+		assessDiversityOfKeys(key)
+
+		if(children == null && (depth == 0 || (n >= geo.spilloverThreshold) && seenDifferentKeys)) {
+			children = HashMap.empty
 			values.forEach{v => addToChild(geo.keyLookup(v), v)}
 		}
 
-		if(children != null) addToChild(key, value) //hasSpilledOver
+		if(children != null) addToChild(key, value)
 	}
 
-	private def spilledOver: Boolean = (n >= geo.spilloverThreshold) && {
-		//TODO Get rid of this block
-		val iter = values.iterator()
-		val firstKey = geo.keyLookup(iter.next())
-		var seenDifferentKeys: Boolean = false
-		while(iter.hasNext() && !seenDifferentKeys){
-			val nextKey = geo.keyLookup(iter.next())
-			seenDifferentKeys = ord.compare(firstKey, nextKey) != 0
-		}
-		seenDifferentKeys
+	private def assessDiversityOfKeys(key: K): Unit = if(!seenDifferentKeys) firstKey match{
+		case None =>       firstKey = Some(key)
+		case Some(fKey) => seenDifferentKeys = !ord.equiv(fKey, key)
 	}
 
 	private def addToChild(key: K, value: Int): Unit = {
@@ -71,43 +68,47 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 		innerIterate(offset).fold(_ => Iterator.empty, identity)
 	}
 
-	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult = if(children == null) {
+	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult =
+		if(offset >= n){
+			val amount = iter.filter.fold(n){filter =>
+				ImmutableRoaringBitmap.andCardinality(values, filter)
+			}
+			Left(offset - amount)
 
-		val filtered = iter.filter.fold(values){
-			ImmutableRoaringBitmap.and(values, _)
-		}
+		} else if(children == null) {
 
-		val eagerlyKnownAmount: Option[Int] = if(iter.filter.isEmpty) Some(n) else None
+			val (filtered, amount) = iter.filter.fold(values -> n){filterBm =>
+				val filtered = ImmutableRoaringBitmap.and(values, filterBm)
+				filtered -> filtered.getCardinality
+			}
 
-		def sortedIter(knownSize: Option[Int]): Iterator[Int] = {
-			val list = knownSize.fold(new ju.ArrayList[Int])(s => new ju.ArrayList[Int](s))
-			filtered.forEach(i => {list.add(i);()})
-			list.sort(iter.valComp)
-			list.iterator.asScala
-		}
+			if(offset >= amount && offset > 0) Left(offset - amount)
+			else if(amount > 0) Right{
+				val res =
+					if(seenDifferentKeys && amount > 1){
+						val list = new ju.ArrayList[Int](amount)
+						filtered.forEach(i => {list.add(i);()})
+						list.sort(iter.valComp)
+						list.iterator.asScala
+					} else
+						filtered.iterator.asScala.map(_.intValue)
 
-		if(offset > 0){
-			val amount = eagerlyKnownAmount.getOrElse(filtered.getCardinality)
-			if(amount <= offset)
-				Left(offset - amount)
+				res.drop(offset)
+			} else Right(Iterator.empty)
+
+		} else {
+			val childrenIter: Iterator[HierarchicalBitmap[K]] = children.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2)
+
+			if(offset <= 0)
+				Right(childrenIter.flatMap(_.innerIterate(0).fold(_ => Iterator.empty, identity)))
 			else
-				Right(sortedIter(Some(amount)).drop(offset))
-		} else
-			Right(sortedIter(eagerlyKnownAmount))
-
-	} else {
-		val bitmapIter: Iterator[HierarchicalBitmap[K]] = children.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2)
-		if(offset <= 0)
-			Right(bitmapIter.flatMap(_.innerIterate(0).fold(_ => Iterator.empty, identity)))
-		else
-			bitmapIter.foldLeft[OffsetOrResult](Left(offset))(
-				(acc, bm) => acc match {
-					case Left(offset) => bm.innerIterate(offset)
-					case Right(iterSoFar) => bm.innerIterate(0).map(iterSoFar ++ _)
-				}
-			)
-	}
-
+				childrenIter.foldLeft[OffsetOrResult](Left(offset))(
+					(acc, bm) => acc match {
+						case Left(offset)     => bm.innerIterate(offset)
+						case Right(iterSoFar) => bm.innerIterate(0).map(iterSoFar ++ _)
+					}
+				)
+		}
 
 
 	def filter(req: FilterRequest[K]): ImmutableRoaringBitmap = {
@@ -128,12 +129,12 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 					else emptyBitmap
 				}
 			} else {
-				val res = emptyBitmap
+				val filtered = emptyBitmap
 				values.forEach(v => {
 					val key = geo.keyLookup(v)
-					if(req.filter(key)) res.add(v)
+					if(req.filter(key)) filtered.add(v)
 				})
-				res
+				filtered
 			}
 		} else req match{
 			case EqualsFilter(key) =>

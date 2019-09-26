@@ -5,9 +5,12 @@ import se.lu.nateko.cp.meta.services.sparql.index._
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
 import HierarchicalBitmap._
+import StringHierarchicalBitmap.Ord
 import scala.util.Random
 
 class StringHierarchicalBitmapTests extends FunSpec{
+
+	private[this] val EnableTrace = false
 
 	def initBm(strings: IndexedSeq[String]): HierarchicalBitmap[String] = {
 		val bm = StringHierarchicalBitmap(strings.apply)
@@ -15,12 +18,18 @@ class StringHierarchicalBitmapTests extends FunSpec{
 		bm
 	}
 
+	def initRandom(size: Int): (HierarchicalBitmap[String], Array[String]) = {
+		val rnd = new Random(333)
+		val strings = time(s"init array (size = $size)")(Array.fill(size)(rnd.alphanumeric.take(6).mkString))
+		val bm = time(s"initBm(array.size = $size)")(initBm(strings))
+		(bm, strings)
+	}
+
 	def testFilter(req: FilterRequest[String], expected: Seq[Int])(implicit bm: HierarchicalBitmap[String]) = {
 		assert(bm.filter(req).iterator().asScala.toSeq == expected)
 	}
 
 	describe("string ordering"){
-		import StringHierarchicalBitmap.Ord
 
 		it("works as expected"){
 			assert(Ord.compare("aardvark", "aaaa") > 0)
@@ -90,33 +99,64 @@ class StringHierarchicalBitmapTests extends FunSpec{
 
 	describe("iterateSorting"){
 		val strings = Array("oops", "zulu", "mememe", "bebebe", "aardvark", "just", "about", "any", "kind", "of", "jibberish")
-		def sortStringInds(s: Array[String]) = s.indices.sortBy(s.apply)(StringHierarchicalBitmap.Ord)
+		def sortStringInds(s: Array[String]) = s.indices.sortBy(s.apply)(Ord)
 		val bm = initBm(strings)
 
-		it("unfiltered iteration without offset works"){
+		it("small index, unfiltered iteration, without offset"){
 			assert(bm.iterateSorted().toSeq == sortStringInds(strings))
 		}
 
-		it("unfiltered iteration with offset works"){
+		it("small index, unfiltered iteration, with offset"){
 			val offset = 5
 			assert(bm.iterateSorted(offset = offset).toSeq == sortStringInds(strings).drop(offset))
 		}
 
-		it("unfiltered iteration without offset over large bitmap index works"){
-			val rnd = new Random(333)
-			val n = 1000
-			val manyStrings = Array.fill(n)(rnd.alphanumeric.take(6).mkString)
-			val largeBm = initBm(manyStrings)
+		it("small index, many variably-filtered iterations, with/without offset, ascending/descending sort"){
+			val fullRange = "aaaa" +: strings :+ "zzz"
+			for(
+				minvalue <- fullRange;
+				maxvalue <- fullRange if(Ord.lteq(minvalue, maxvalue));
+				filter = bm.filter(IntervalFilter(MinFilter(minvalue, true), MaxFilter(maxvalue, true)));
+				offset <- Array(0, 3, 5, 8, 100);
+				desc <- Array(false, true)
+			){
+				val sortedRes = bm.iterateSorted(Some(filter), offset = offset, sortDescending = desc).toIndexedSeq
+
+				val expected = strings.indices
+					.filter(i => Ord.lteq(minvalue, strings(i)) && Ord.gteq(maxvalue, strings(i)))
+					.sortBy(strings.apply)(if(desc) Ord.reverse else Ord)
+					.drop(offset)
+
+				assert(sortedRes == expected)
+			}
+		}
+
+		it("large random index, unfiltered iteration, without offset"){
+			val (largeBm, manyStrings) = initRandom(1000)
 			val result = largeBm.iterateSorted().toIndexedSeq
 			assert(result.toSeq == sortStringInds(manyStrings))
 		}
 
+		it("large random index, unfiltered iteration, with offset"){
+			val n = 1000; val offset = n / 2; val limit = 100
+
+			val (largeBm, manyStrings) = time(s"initRandom($n)")(initRandom(n))
+
+			val iter = time(s"iterateSorted(offset = $offset)")(largeBm.iterateSorted(offset = offset))
+
+			val res = time(s"iterator.take($limit).toIndexedSeq (size $n , offset $offset)"){
+				iter.take(limit).toIndexedSeq
+			}
+			assert(res == sortStringInds(manyStrings).drop(offset).take(limit))
+		}
+
 	}
 
-	// private def time[T](comp: => T): T = {
-	// 	val start = System.currentTimeMillis()
-	// 	val res = comp
-	// 	println(System.currentTimeMillis() - start)
-	// 	res
-	// }
+	private def time[T](what: String)(comp: => T): T = {
+		val start = System.currentTimeMillis()
+		val res = comp
+		val elapsed = System.currentTimeMillis() - start
+		if(EnableTrace) println(s"Elapsed on $what : $elapsed ms")
+		res
+	}
 }

@@ -60,7 +60,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		}
 		override def read(value: JsValue) = ???
 	}
-	
+
 	implicit val classDtoFormat = jsonFormat2(ClassDto)
 	implicit val classInfoDtoFormat = jsonFormat3(ClassInfoDto)
 	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
@@ -107,5 +107,5 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val labelingUserFormat = jsonFormat9(LabelingUserDto)
 	implicit val labelingStatusUpdateFormat = jsonFormat2(LabelingStatusUpdate)
 
-	implicit val submitterProfileDtoFormat = jsonFormat2(SubmitterProfile)
+	implicit val submitterProfileDtoFormat = jsonFormat3(SubmitterProfile)
 }

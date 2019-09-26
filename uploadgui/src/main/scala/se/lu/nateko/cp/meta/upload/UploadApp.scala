@@ -23,7 +23,7 @@ object UploadApp {
 	private def setupForm(envri: Envri, envriConf: EnvriConfig) = {
 		implicit val envr = envri
 		implicit val envrConf = envriConf
-		val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass))
+		val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass, subm.producingOrganization))
 		displayForm()
 
 		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)

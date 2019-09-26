@@ -76,4 +76,4 @@ case class DataProductionDto(
 	creationDate: Instant
 )
 
-case class SubmitterProfile(id: String, producingOrganizationClass: Option[URI])
+case class SubmitterProfile(id: String, producingOrganizationClass: Option[URI], producingOrganization: Option[URI])

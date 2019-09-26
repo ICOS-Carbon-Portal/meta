@@ -44,8 +44,8 @@ object Backend {
 			.recoverWith(recovery("fetch the list of available submitter ids"))
 			.map(parseTo[IndexedSeq[SubmitterProfile]])
 
-	def stationInfo(orgClass: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
-		sparqlSelect(stations(orgClass)).map(_.map(toStation))
+	def stationInfo(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
+		sparqlSelect(stations(orgClass, producingOrg)).map(_.map(toStation))
 
 	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))

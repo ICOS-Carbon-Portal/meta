@@ -24,22 +24,27 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 	private[this] var firstKey: Option[K] = None
 	private[this] var seenDifferentKeys: Boolean = false
 
+	//TODO Handle the case of value already being present
 	def add(key: K, value: Int): Unit = {
-		if(depth > 0) values.add(value)
 
 		n += 1
+		if(depth > 0) {
+			assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
+			values.add(value)
+		}
+		if(children != null) addToChild(key, value)
 
-		assessDiversityOfKeys(key)
+		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
 		if(children == null && (depth == 0 || (n >= geo.spilloverThreshold) && seenDifferentKeys)) {
 			children = HashMap.empty
 			values.forEach{v => addToChild(geo.keyLookup(v), v)}
+			if(depth == 0) addToChild(key, value) //need to do this, as it was not done yet since we do not keep values for depth = 0
 		}
 
-		if(children != null) addToChild(key, value)
 	}
 
-	private def assessDiversityOfKeys(key: K): Unit = if(!seenDifferentKeys) firstKey match{
+	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)
 		case Some(fKey) => seenDifferentKeys = !ord.equiv(fKey, key)
 	}
@@ -49,7 +54,6 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 		val child = children.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1))
 		child.add(key, value)
 	}
-
 
 	def iterateSorted(filter: Option[ImmutableRoaringBitmap] = None, offset: Int = 0, sortDescending: Boolean = false): Iterator[Int] = {
 
@@ -65,7 +69,7 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
 		implicit val iter = new IterationInstruction(filter, valComp, coordOrd)
 
-		innerIterate(offset).fold(_ => Iterator.empty, identity)
+		open(innerIterate(offset))
 	}
 
 	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult =
@@ -100,12 +104,12 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 			val childrenIter: Iterator[HierarchicalBitmap[K]] = children.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2)
 
 			if(offset <= 0)
-				Right(childrenIter.flatMap(_.innerIterate(0).fold(_ => Iterator.empty, identity)))
+				Right(childrenIter.flatMap(childIter => open(childIter.innerIterate(0))))
 			else
 				childrenIter.foldLeft[OffsetOrResult](Left(offset))(
 					(acc, bm) => acc match {
 						case Left(offset)     => bm.innerIterate(offset)
-						case Right(iterSoFar) => bm.innerIterate(0).map(iterSoFar ++ _)
+						case Right(iterSoFar) => Right(iterSoFar ++ open(bm.innerIterate(0)))
 					}
 				)
 		}
@@ -191,6 +195,7 @@ object HierarchicalBitmap{
 	)
 
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
+	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
 	// private def time[T](comp: => T): T = {
 	// 	val start = System.nanoTime

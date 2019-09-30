@@ -12,6 +12,10 @@ import scala.scalajs.js.URIUtils
 object UploadApp {
 	import Utils._
 
+	private val loginBlock = new HtmlElements("#login-block")
+	private val formBlock = new HtmlElements("#form-block")
+	private val progressBar = new HtmlElements("#progress-bar")
+
 	def main(args: Array[String]): Unit = {
 
 		whenDone(Backend.fetchConfig) {
@@ -29,27 +33,27 @@ object UploadApp {
 		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
 	}
 
-	def displayLoginButton(authHost: String): Unit = {
+	private def displayLoginButton(authHost: String): Unit = {
 		val url = URIUtils.encodeURI(dom.window.location.href)
 		val href = s"https://$authHost/login/?targetUrl=$url"
 		getElementById[html.Anchor]("login-button").get.setAttribute("href", href)
-		getElementById[html.Div]("login-block").get.style.display = "block"
+		loginBlock.show()
 	}
 
-	def displayForm(): Unit = {
-		getElementById[html.Div]("login-block").get.style.display = "none"
-		getElementById[html.Form]("form-block").get.style.display = "block"
+	private def displayForm(): Unit = {
+		loginBlock.hide()
+		formBlock.show()
 	}
 
-	def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {
+	private def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {
 		case Some(file) => {
 			whenDone{
-				getElementById[html.Div]("progress-bar").get.style.display = "block"
+				progressBar.show()
 				Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 			}(pid => {
 				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://hdl.handle.net/$pid'>View metadata</a>", "alert alert-success")
 			}).onComplete {
-				case _ => getElementById[html.Div]("progress-bar").get.style.display = "none"
+				case _ => progressBar.hide()
 			}
 		}
 		case None => {

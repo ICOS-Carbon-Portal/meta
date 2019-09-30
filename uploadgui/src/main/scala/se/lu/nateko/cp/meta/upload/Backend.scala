@@ -61,7 +61,7 @@ object Backend {
 		val url = s"${envriConfig.dataPrefix}tryingest?specUri=${spec.uri}$nRowsQuery"
 		Ajax
 			.put(url, file)
-			.recoverWith(recovery("upload data object contents"))
+			.recoverWith(recovery("upload file"))
 			.flatMap(xhr => xhr.status match {
 				case 200 => Future.successful(())
 				case _ => Future.failed(new Exception(xhr.responseText))
@@ -81,13 +81,13 @@ object Backend {
 	def submitMetadata[T <: UploadDto](dto: T): Future[URI] = {
 		val json = Json.toJson(dto)
 		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
-			.recoverWith(recovery("upload data object metadata"))
+			.recoverWith(recovery("upload metadata"))
 			.map(xhr => new URI(xhr.responseText))
 	}
 
 	def uploadFile(file: File, path: URI): Future[String] = Ajax
 		.put(path.toString, file, headers = Map("Content-Type" -> "application/octet-stream"), withCredentials = true)
-		.recoverWith(recovery("upload data object contents"))
+		.recoverWith(recovery("upload file"))
 		.map(_.responseText)
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {

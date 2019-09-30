@@ -44,10 +44,13 @@ object UploadApp {
 	def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {
 		case Some(file) => {
 			whenDone{
+				getElementById[html.Div]("progress-bar").get.style.display = "block"
 				Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 			}(pid => {
 				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://hdl.handle.net/$pid'>View metadata</a>", "alert alert-success")
-			})
+			}).onComplete {
+				case _ => getElementById[html.Div]("progress-bar").get.style.display = "none"
+			}
 		}
 		case None => {
 			whenDone{

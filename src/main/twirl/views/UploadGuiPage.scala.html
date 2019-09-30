@@ -66,9 +66,6 @@
 		.form-container {
 			margin: 0 -1em;
 		}
-		.form-section {
-			margin: 1em;
-		}
 		#submitbutton {
 			margin: 2vh 1.5em;
 			width: auto;
@@ -78,6 +75,11 @@
 
 	<div id="main">
 		<div id="alert-placeholder"></div>
+		<div id="progress-bar" class="progress" style="display: none">
+			<div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%">
+				Uploading...
+			</div>
+		</div>
 		<form id="form-block" class="form">
 			<div class="row">
 				<section class="col-md-4">

@@ -40,6 +40,7 @@ class Form(
 
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
+		submitButton.disable("")
 		typeControl.formType match {
 			case Data =>
 				for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {

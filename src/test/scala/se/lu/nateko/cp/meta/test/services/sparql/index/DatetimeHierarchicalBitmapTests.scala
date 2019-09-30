@@ -96,6 +96,14 @@ class DatetimeHierarchicalBitmapTests extends FunSpec{
 			}
 			testFilter(MaxFilter(toMillis("2016-01-01T00:00:00Z"), inclusive = false), Seq(0, 2, 4))
 		}
+
+		it("large bitmap, interval filter"){
+			val (bm, _) = initRandom(1000)
+			val min = MinFilter(toMillis("2012-01-01T00:00:00Z"), false)
+			val max = MaxFilter(toMillis("2017-01-01T00:00:00Z"), false)
+			val filteredSize = bm.filter(IntervalFilter(min, max)).getCardinality
+			assert(filteredSize > 450 && filteredSize < 550)
+		}
 	}
 
 	describe("iterateSorting"){

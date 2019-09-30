@@ -29,6 +29,33 @@ class StringHierarchicalBitmapTests extends FunSpec{
 		assert(bm.filter(req).iterator().asScala.toSeq == expected)
 	}
 
+	describe("adding and removing values"){
+		val (bm, arr) = initRandom(1000)
+
+		it("throws exception if trying to add existing value"){
+			assertThrows[AssertionError]{
+				bm.add("bebe", 10)
+			}
+		}
+
+		it("throws exception if trying to remove value, but supplying wrong key"){
+			assertThrows[AssertionError]{
+				bm.remove("bebe", 10)
+			}
+		}
+
+		it("first removing a value, then adding it again with a new key works"){
+			val idx = 444
+			val oldKey = arr(idx)
+			val newKey = "bebebe"
+			arr(idx) = newKey //it is ok to modify geo.lookupKey's behaviour even before removal
+			bm.remove(oldKey, idx)
+			bm.add(newKey, idx)
+			testFilter(EqualsFilter(newKey), Seq(idx))(bm)
+			testFilter(EqualsFilter(oldKey), Seq())(bm)
+		}
+	}
+
 	describe("string ordering"){
 
 		it("works as expected"){
@@ -77,15 +104,6 @@ class StringHierarchicalBitmapTests extends FunSpec{
 			testFilter(filter2, Seq(1))
 		}
 
-	}
-
-	describe("indexing large number of random strings"){
-		val rnd = new Random(333)
-		val n = 1000
-		val strings = Array.fill(n)(rnd.nextString(6))
-		val bm = initBm(strings)
-		val size = bm.filter(MinFilter("naaaaa", false)).iterator.asScala.size
-		assert(size > n / 2 && size < n * 2 / 3)
 	}
 
 	describe("bitmap with large number of identical strings"){
@@ -148,6 +166,15 @@ class StringHierarchicalBitmapTests extends FunSpec{
 				iter.take(limit).toIndexedSeq
 			}
 			assert(res == sortStringInds(manyStrings).drop(offset).take(limit))
+		}
+
+		it("large random index, with MinFilter('M')"){
+			val n = 1000
+			val (bm, _) = initRandom(n)
+			val filter = bm.filter(MinFilter("M", false))
+			val size = bm.iterateSorted(Some(filter)).size
+			assert(size > n / 2 && size < n * 2 / 3)
+			assert(filter.getCardinality == size)
 		}
 
 	}

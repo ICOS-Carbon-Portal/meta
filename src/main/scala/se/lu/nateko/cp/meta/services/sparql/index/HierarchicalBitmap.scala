@@ -20,28 +20,49 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private val values = emptyBitmap
 	private[this] var n = 0
-	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null //to avoid empty map creation in leaf nodes
+	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null
 	private[this] var firstKey: Option[K] = None
 	private[this] var seenDifferentKeys: Boolean = false
 
-	//TODO Handle the case of value already being present
+	/**
+	 * Adds the value. The value must not be already present.
+	 * @param key must be the same as what {{{geo.keyLookup(value)}}} would return.
+	 * @throws java.lang.AssertionError if the value is already present.
+	*/
 	def add(key: K, value: Int): Unit = {
 
+		assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
+		values.add(value)
 		n += 1
-		if(depth > 0) {
-			assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
-			values.add(value)
-		}
 		if(children != null) addToChild(key, value)
 
 		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
-		if(children == null && (depth == 0 || (n >= geo.spilloverThreshold) && seenDifferentKeys)) {
+		if(children == null && seenDifferentKeys && (n >= geo.spilloverThreshold)) {
 			children = HashMap.empty
 			values.forEach{v => addToChild(geo.keyLookup(v), v)}
-			if(depth == 0) addToChild(key, value) //need to do this, as it was not done yet since we do not keep values for depth = 0
 		}
 
+	}
+
+	/**
+	 * Removes the value, returning true if value was present and false otherwise.
+	 * @param key must be the same as the one supplied when the value was added.
+	 * @throws java.lang.AssertionError if the value was present but not inserted with the key supplied.
+	 */
+	def remove(key: K, value: Int): Boolean = {
+		val wasPresentInSelf = values.contains(value)
+		values.remove(value)
+		if(wasPresentInSelf) n -= 1
+
+		if(children == null) wasPresentInSelf else {
+			val coord = nextLevel(key)
+			val wasPresentInChildren = children.get(coord).map(_.remove(key, value)).getOrElse(false)
+
+			assert(wasPresentInChildren == wasPresentInSelf, "Inconsistency in Hierarchical bitmap!")
+
+			wasPresentInSelf || wasPresentInChildren
+		}
 	}
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
@@ -125,8 +146,7 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 		)
 
 		if(children == null){
-			if(n >= geo.spilloverThreshold){
-				//should have spilled over but did not, therefore all keys are identical
+			if(!seenDifferentKeys){
 				if(values.isEmpty) values else {
 					val theOnlyKey = geo.keyLookup(values.first)
 					if(req.filter(theOnlyKey)) values
@@ -158,6 +178,12 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 				val maxC = nextLevel(to.max)
 				inner(c => c == minC || c == maxC, c => c > minC && c < maxC)
 		}
+	}
+
+	def optimizeAndTrim(): Unit = {
+		values.runOptimize()
+		values.trim()
+		if(children != null) children.valuesIterator.foreach(_.optimizeAndTrim())
 	}
 
 	private def nextLevel(key: K): Coord = geo.coordinate(key, depth + 1)

@@ -128,6 +128,9 @@ class DataObjectInstanceServers(
 	def dataObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)
 
+	def docObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
+		docServers(envri).hasStatement(dobj, RDF.TYPE, metaVocab.docObjectClass)
+
 	def getObjSubmitter(obj: ObjectUploadDto)(implicit envri: Envri): Option[IRI] = {
 		val objUri = vocab.getStaticObject(obj.hashSum)
 		val server = obj match{

@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils._
 import scala.util.Success
+import se.lu.nateko.cp.meta.instanceserver.CompositeReadonlyInstanceServer
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],
@@ -108,8 +109,13 @@ class DataObjectInstanceServers(
 	def collectionExists(coll: IRI)(implicit envri: Envri): Boolean =
 		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
-	def plainFetcher(implicit envri: Envri): Option[PlainStaticObjectFetcher] =
-		allDataObjs.get(envri).map(new PlainStaticObjectFetcher(_))
+	def plainFetcher(implicit envri: Envri): Option[PlainStaticObjectFetcher] = for(
+			objsServ <- allDataObjs.get(envri);
+			docsServ <- docServers.get(envri)
+		) yield{
+			val joint = new CompositeReadonlyInstanceServer(objsServ, docsServ)
+			new PlainStaticObjectFetcher(joint)
+		}
 
 	def collFetcher(implicit envri: Envri): Option[CollectionFetcher] = for(
 		collServer <- collectionServers.get(envri);

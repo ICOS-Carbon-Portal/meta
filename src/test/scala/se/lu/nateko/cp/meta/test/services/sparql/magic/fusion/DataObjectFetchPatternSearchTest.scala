@@ -19,14 +19,14 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 		describe("Locating the pattern"){
 
-			def getFetch: DataObjectFetch = {
+			def getFetch: DataObjectFetchNode = {
 				val query = getQuery
 				val patternOpt = dofps.search(query)
 
 				val pattern = patternOpt.getOrElse(fail("Pattern was not found!"))
 				pattern.fuse()
 
-				val fetchOpt = takeNode.ifIs[DataObjectFetch].recursive(query)
+				val fetchOpt = takeNode.ifIs[DataObjectFetchNode].recursive(query)
 				fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 			}
 

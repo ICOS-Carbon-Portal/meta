@@ -15,7 +15,7 @@ import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
 import se.lu.nateko.cp.meta.services.CpVocab
 import scala.collection.JavaConverters.asJavaIterator
 import se.lu.nateko.cp.meta.utils.rdf4j._
@@ -32,7 +32,7 @@ class CpEvaluationStrategyFactory(
 
 			override def evaluate(expr: TupleExpr, bindings: BindingSet): CloseableIteration[BindingSet, QueryEvaluationException] = {
 				expr match {
-					case doFetch: DataObjectFetch =>
+					case doFetch: DataObjectFetchNode =>
 						new CloseableIteratorIteration(asJavaIterator(bindingsForObjectFetch(doFetch, bindings)))
 					case _ =>
 						super.evaluate(expr, bindings)
@@ -40,26 +40,26 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-	private def bindingsForObjectFetch(doFetch: DataObjectFetch, bindings: BindingSet): Iterator[BindingSet] = {
+	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
 
 		val specBinding: Option[Value] = doFetch.specVar.flatMap(spec => Option(bindings.getValue(spec)))
 
 		val infos1: Iterator[ObjInfo] = bindings.getValue(doFetch.dobjVar) match {
 			case null =>
-				specBinding.fold(indexThunk().objInfo.valuesIterator){
+				specBinding.fold(indexThunk().objInfos){
 					case spec: IRI =>
 						indexThunk().getObjsForSpec(spec)
 					case _ => Iterator.empty
 				}
 			case dobjUri @ CpVocab.DataObject(hash, _) =>
-				indexThunk().objInfo.get(hash).filter(
+				indexThunk().objInfo(hash).filter(
 					oinfo => oinfo.uri === dobjUri && specBinding.forall(oinfo.spec == _)
 				).iterator
 			case _ =>
 				Iterator.empty
 		}
 
-		val infos2 = if(doFetch.excludeDeprecated) infos1.filterNot(_.isDeprecated) else infos1
+		val infos2 = if(doFetch.excludeDeprecated) infos1/*.filterNot(_.isDeprecated)*/ else infos1
 
 		val infos3 = doFetch.stationVar.fold(infos2){stationVar =>
 			val stationBinding: Option[Value] = Option(bindings.getValue(stationVar))

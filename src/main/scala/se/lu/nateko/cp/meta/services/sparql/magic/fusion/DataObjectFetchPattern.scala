@@ -44,7 +44,7 @@ class DataObjectFetchPattern(
 
 		val deepest = allPatterns.maxBy(p => nodeDepth(p.expr))
 
-		val fetchExpr = new DataObjectFetch(
+		val fetchExpr = new DataObjectFetchNode(
 			deepest.dobjVar,
 			spec.map(_.specVar),
 			dataStart.map(_.timeVar),

@@ -4,7 +4,7 @@ import scala.collection.JavaConverters.asJavaCollectionConverter
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 
-class DataObjectFetch(
+class DataObjectFetchNode(
 	val dobjVar: String,
 	val specVar: Option[String],
 	val dataStartTimeVar: Option[String],
@@ -17,7 +17,7 @@ class DataObjectFetch(
 
 	private val allVars = Seq(dobjVar) ++ specVar ++ dataStartTimeVar ++ dataEndTimeVar ++ submStartTimeVar ++ submEndTimeVar ++ stationVar
 
-	override def clone() = new DataObjectFetch(
+	override def clone() = new DataObjectFetchNode(
 		dobjVar, specVar, dataStartTimeVar, dataEndTimeVar, submStartTimeVar, submEndTimeVar, stationVar, excludeDeprecated
 	)
 

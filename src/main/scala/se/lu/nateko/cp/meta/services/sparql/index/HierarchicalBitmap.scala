@@ -24,6 +24,8 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 	private[this] var firstKey: Option[K] = None
 	private[this] var seenDifferentKeys: Boolean = false
 
+	def all: ImmutableRoaringBitmap = values
+
 	/**
 	 * Adds the value. The value must not be already present.
 	 * @param key must be the same as what {{{geo.keyLookup(value)}}} would return.
@@ -61,13 +63,13 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
 			assert(wasPresentInChildren == wasPresentInSelf, "Inconsistency in Hierarchical bitmap!")
 
-			wasPresentInSelf || wasPresentInChildren
+			wasPresentInSelf // `|| wasPresentInChildren` is not needed due to the assertion above
 		}
 	}
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)
-		case Some(fKey) => seenDifferentKeys = !ord.equiv(fKey, key)
+		case Some(fKey) => seenDifferentKeys = nextLevel(key) != nextLevel(fKey)
 	}
 
 	private def addToChild(key: K, value: Int): Unit = {
@@ -149,14 +151,14 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 			if(!seenDifferentKeys){
 				if(values.isEmpty) values else {
 					val theOnlyKey = geo.keyLookup(values.first)
-					if(req.filter(theOnlyKey)) values
+					if(filterKey(theOnlyKey, req)) values
 					else emptyBitmap
 				}
 			} else {
 				val filtered = emptyBitmap
 				values.forEach(v => {
 					val key = geo.keyLookup(v)
-					if(req.filter(key)) filtered.add(v)
+					if(filterKey(key, req)) filtered.add(v)
 				})
 				filtered
 			}
@@ -186,6 +188,13 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 		if(children != null) children.valuesIterator.foreach(_.optimizeAndTrim())
 	}
 
+	def filterKey(key: K, filter: FilterRequest[K]): Boolean = filter match{
+		case EqualsFilter(fkey) => ord.equiv(key, fkey)
+		case MinFilter(min, inclusive) => if(inclusive) ord.lteq(min, key) else ord.lt(min, key)
+		case MaxFilter(max, inclusive) => if(inclusive) ord.gteq(max, key) else ord.gt(max, key)
+		case IntervalFilter(from, to) => filterKey(key, from) && filterKey(key, to)
+	}
+
 	private def nextLevel(key: K): Coord = geo.coordinate(key, depth + 1)
 	private def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 }
@@ -198,21 +207,12 @@ object HierarchicalBitmap{
 		def keyLookup(value: Int): K
 		def spilloverThreshold: Int
 	}
-	sealed trait FilterRequest[K]{
-		val filter: K => Boolean
-	}
-	case class EqualsFilter[K](key: K)(implicit ord: Ordering[K]) extends FilterRequest[K]{
-		val filter = ord.equiv(key, _)
-	}
-	case class MinFilter[K](min: K, inclusive: Boolean)(implicit ord: Ordering[K]) extends FilterRequest[K]{
-		val filter = if(inclusive) ord.lteq(min, _) else ord.lt(min, _)
-	}
-	case class MaxFilter[K](max: K, inclusive: Boolean)(implicit ord: Ordering[K]) extends FilterRequest[K]{
-		val filter = if(inclusive) ord.gteq(max, _) else ord.gt(max, _)
-	}
-	case class IntervalFilter[K](from: MinFilter[K], to: MaxFilter[K]) extends FilterRequest[K]{
-		val filter = v => from.filter(v) && to.filter(v)
-	}
+
+	sealed trait FilterRequest[K]
+	case class EqualsFilter[K](key: K) extends FilterRequest[K]
+	case class MinFilter[K](min: K, inclusive: Boolean) extends FilterRequest[K]
+	case class MaxFilter[K](max: K, inclusive: Boolean) extends FilterRequest[K]
+	case class IntervalFilter[K](from: MinFilter[K], to: MaxFilter[K]) extends FilterRequest[K]
 
 	private class IterationInstruction(
 		val filter: Option[ImmutableRoaringBitmap],

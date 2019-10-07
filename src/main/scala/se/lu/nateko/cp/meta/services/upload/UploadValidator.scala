@@ -136,10 +136,10 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			userFail("Creating empty static collections is not allowed")
 		else
 			coll.members.find{item =>
-				!servers.collectionExists(item.toRdf) && !servers.dataObjExists(item.toRdf)
+				!servers.collectionExists(item.toRdf) && !servers.dataObjExists(item.toRdf) && !servers.docObjExists(item.toRdf)
 			} match {
 				case None => ok
-				case Some(item) => userFail(s"Neither collection nor data object was found at $item")
+				case Some(item) => userFail(s"Neither collection nor object was found at $item")
 			}
 	}
 

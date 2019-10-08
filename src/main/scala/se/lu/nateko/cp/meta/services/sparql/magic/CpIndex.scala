@@ -55,22 +55,22 @@ trait ObjInfo extends ObjSpecific{
 class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	import CpIndex._
 
-	private implicit val factory = sail.getValueFactory
+	implicit val factory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val stats = new ArrayBuffer[ObjEntry](nObjects)
-	private val perSpec = new AnyRefMap[IRI, MutableRoaringBitmap]
-	private val perSubmitter = new AnyRefMap[IRI, MutableRoaringBitmap]
-	private val perStation = new AnyRefMap[Option[IRI], MutableRoaringBitmap]
 	private val deprecated = MutableRoaringBitmap.bitmapOf()
-	private val bmMap = new AnyRefMap[Property[_], HierarchicalBitmap[_]]
+	private val categMaps = new AnyRefMap[CategProp[_], AnyRefMap[_, MutableRoaringBitmap]]
+	private val bmMap = new AnyRefMap[ContProp[_], HierarchicalBitmap[_]]
 
-	def objInfo(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(stats.apply)
-	def objInfos: Iterator[ObjInfo] = stats.iterator
 	def size: Int = stats.length
 
+	private def categMap[T <: AnyRef](prop: CategProp[T]): AnyRefMap[T, MutableRoaringBitmap] = categMaps
+		.getOrElseUpdate(prop, new AnyRefMap[T, MutableRoaringBitmap])
+		.asInstanceOf[AnyRefMap[T, MutableRoaringBitmap]]
+
 	/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-	private def bitmap[T](prop: Property[T]): HierarchicalBitmap[T] = bmMap.getOrElseUpdate(prop, prop match {
+	private def bitmap[T](prop: ContProp[T]): HierarchicalBitmap[T] = bmMap.getOrElseUpdate(prop, prop match {
 		case FileName => StringHierarchicalBitmap{idx =>
 			val uri = stats(idx).uri
 			sail.accessEagerly{conn => //this is to avoid storing all the file names in memory
@@ -103,9 +103,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		def or(bms: Seq[MutableRoaringBitmap]): Seq[MutableRoaringBitmap] =
 			if(bms.isEmpty) Nil else Seq(BufferFastAggregation.or(bms: _*)) //single-element Seq for convenience
 
-		val specFilter = or(req.specs.flatMap(perSpec.get))
-		val submsFilter = or(req.submitters.flatMap(perSubmitter.get))
-		val stationsFilter = or(req.stations.flatMap(perStation.get))
+		val categVarFilters = req.selections.flatMap{sel =>
+			val perValue = categMap(sel.category)
+			or(sel.values.flatMap(perValue.get))
+		}
 
 		val continuousVarFilters = req.filtering.filters.map{f =>
 			bitmap(f.property).filter(f.condition)
@@ -115,7 +116,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			.diff(req.filtering.filters.map(_.property))
 			.map(bitmap(_).all)
 
-		val allThusFar = Seq(specFilter, submsFilter, stationsFilter, continuousVarFilters, presentPropertiesFilters).flatten
+		val allThusFar = Seq(categVarFilters, continuousVarFilters, presentPropertiesFilters).flatten
 
 		val filterThusFar: Option[ImmutableRoaringBitmap] =
 			if(allThusFar.isEmpty) None
@@ -145,19 +146,14 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 	def statEntries: Iterable[StatEntry] = readLocked{
 		for(
-			(spec, specBm) <- perSpec;
-			(subm, submBm) <- perSubmitter;
-			(station, stationBm) <- perStation
+			(spec, specBm) <- categMap(Spec);
+			(subm, submBm) <- categMap(Submitter);
+			(station, stationBm) <- categMap(Station)
 		) yield{
 			val key = StatKey(spec, subm, station)
 			val count = BufferFastAggregation.and(specBm, submBm, stationBm).getCardinality
 			StatEntry(key, count)
 		}
-	}
-
-	//stats.valuesIterator.filter(_.spec === spec)
-	def getObjsForSpec(spec: IRI): Iterator[ObjInfo] = readLocked{
-		perSpec.get(spec).iterator.flatMap(_.iterator.asScala).map(i => stats(i))
 	}
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
@@ -170,11 +166,6 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	def put(st: RdfUpdate): Unit = {
 		q.put(st)
 		if(q.remainingCapacity == 0) flush()
-	}
-
-	private def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int, isAssertion: Boolean): Unit = {
-		val bm = set.getOrElseUpdate(categ, MutableRoaringBitmap.bitmapOf())
-		if(isAssertion) bm.add(idx) else bm.remove(idx)
 	}
 
 	def flush(): Unit = if(!q.isEmpty) writeLocked{
@@ -197,20 +188,25 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
-		def handleContinuousPropUpdate[T](prop: Property[T], key: T, idx: Int): Unit = {
+		def handleContinuousPropUpdate[T](prop: ContProp[T], key: T, idx: Int): Unit = {
 			if(isAssertion) bitmap(prop).add(key, idx)
 			else bitmap(prop).remove(key, idx)
 		}
 
+		def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int): Unit = {
+			val bm = set.getOrElseUpdate(categ, MutableRoaringBitmap.bitmapOf())
+			if(isAssertion) bm.add(idx) else bm.remove(idx)
+		}
+	
 		pred match{
 
 			case `hasObjectSpec` => obj match{
 				case spec: IRI =>
 					modForDobj(subj){oe =>
-						updateCategSet(perSpec, spec, oe.idx, isAssertion)
+						updateCategSet(categMap(Spec), spec, oe.idx)
 						if(isAssertion) oe.spec = spec
 						else if(spec === oe.spec) oe.spec = null
-						if(!specRequiresStation.getOrElse(spec, true)) updateCategSet(perStation, None, oe.idx, isAssertion)
+						if(!specRequiresStation.getOrElse(spec, true)) updateCategSet(categMap(Station), None, oe.idx)
 					}
 			}
 
@@ -222,12 +218,12 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				case CpVocab.Submission(hash) =>
 					val oe = getObjEntry(hash)
 					oe.submitter = targetUri
-					obj match{ case subm: IRI => updateCategSet(perSubmitter, subm, oe.idx, isAssertion) }
+					obj match{ case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx) }
 
 				case CpVocab.Acquisition(hash) =>
 					val oe = getObjEntry(hash)
 					oe.station = targetUri
-					obj match{ case stat: IRI => updateCategSet(perStation, Some(stat), oe.idx, isAssertion) }
+					obj match{ case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx) }
 				case _ =>
 			}
 

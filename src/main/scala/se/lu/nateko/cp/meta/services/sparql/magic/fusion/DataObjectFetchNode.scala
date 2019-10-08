@@ -3,23 +3,17 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import scala.collection.JavaConverters.asJavaCollectionConverter
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Property
 
 class DataObjectFetchNode(
-	val dobjVar: String,
-	val specVar: Option[String],
-	val dataStartTimeVar: Option[String],
-	val dataEndTimeVar: Option[String],
-	val submStartTimeVar: Option[String],
-	val submEndTimeVar: Option[String],
-	val stationVar: Option[String],
-	val excludeDeprecated: Boolean
+	val fetchRequest: DataObjectFetch,
+	val varNames: Map[Property[_], String]
 ) extends AbstractQueryModelNode with TupleExpr{
 
-	private val allVars = Seq(dobjVar) ++ specVar ++ dataStartTimeVar ++ dataEndTimeVar ++ submStartTimeVar ++ submEndTimeVar ++ stationVar
+	private val allVars = varNames.values.toIndexedSeq
 
-	override def clone() = new DataObjectFetchNode(
-		dobjVar, specVar, dataStartTimeVar, dataEndTimeVar, submStartTimeVar, submEndTimeVar, stationVar, excludeDeprecated
-	)
+	override def clone() = new DataObjectFetchNode(fetchRequest, varNames)
 
 	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
 		case _: EvaluationStatistics.CardinalityCalculator => //this visitor crashes on 'alien' query nodes
@@ -33,6 +27,8 @@ class DataObjectFetchNode(
 
 	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
 
-	override def getSignature(): String = s"${super.getSignature} (vars: ${allVars.mkString(", ")}; exclude deprecated: ${excludeDeprecated})"
+	override def getSignature(): String = s"${super.getSignature} (vars: ${allVars.mkString(", ")}; exclude deprecated: ${
+		fetchRequest.filtering.filterDeprecated
+	})"
 
 }

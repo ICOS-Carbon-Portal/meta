@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.IRI
 
 class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 	import PatternFinder._
+	import StatementPatternSearch._
 
 	val notExistsSingleStatementPattern: NodeSearch[Filter, StatementPattern] = takeNode[Filter]
 		.thenGet(_.getCondition)
@@ -37,23 +38,16 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		.recursive
 
 	// ?dobj cpmeta:hasObjectSpec ?spec
-	val dataObjSpecPatternSearch: TopNodeSearch[ObjSpecPattern] = takeNode
-		.ifIs[StatementPattern]
-		.thenSearch(sp => {
-			val (s, p, o) = splitTriple(sp)
-			if(meta.hasObjectSpec == p.getValue && !s.isAnonymous && !o.isAnonymous)
-				Some(new ObjSpecPattern(sp, s.getName, o.getName))
-			else
-				None
-		})
+	val dataObjSpecPatternSearch: TopNodeSearch[NamedVarPattern] = byPredicate(meta.hasObjectSpec)
+		.thenSearch(nonAnonymous)
 		.recursive
 
-	def twoStepPropPatternSearch(pred1: IRI, pred2: IRI): TopNodeSearch[TwoStepPropPathPattern] =
-		StatementPatternSearch.twoStepPropPath(pred1, pred2).thenGet(new TwoStepPropPathPattern(_))
+	// def twoStepPropPatternSearch(pred1: IRI, pred2: IRI): TopNodeSearch[TwoStepPropPathPattern] =
+	// 	StatementPatternSearch.twoStepPropPath(pred1, pred2).thenGet(new TwoStepPropPathPattern(_))
 
-	val stationPatternSearch = twoStepPropPatternSearch(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
-	val submStartPatternSearch = twoStepPropPatternSearch(meta.wasSubmittedBy, meta.prov.startedAtTime)
-	val submEndPatternSearch = twoStepPropPatternSearch(meta.wasSubmittedBy, meta.prov.endedAtTime)
+	val stationPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
+	val submStartPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.startedAtTime)
+	val submEndPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.endedAtTime)
 
 	val search: TopNodeSearch[DataObjectFetchPattern] = node => {
 		val tempCoverage = new TempCoveragePatternSearch(meta)
@@ -66,10 +60,12 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		val submEndOpt = submEndPatternSearch(node)
 		val stationOpt = stationPatternSearch(node)
 
-		val res = new DataObjectFetchPattern(specOpt, noDeprecatedOpt, dataStartOpt, dataEndOpt, submStartOpt, submEndOpt, stationOpt)
-		val dobjVarNameVersions = res.allPatterns.map(_.dobjVar).distinct
-		val inSameJoin = areWithinCommonJoin(res.allPatterns.map(_.expr))
-
-		if(inSameJoin && dobjVarNameVersions.length == 1 && res.allPatterns.length > 1) Some(res) else None
+		specOpt.flatMap{spec =>
+			val res = new DataObjectFetchPattern(noDeprecatedOpt)
+			val dobjVarNameVersions = res.allPatterns.map(_.dobjVar).distinct
+			val inSameJoin = areWithinCommonJoin(res.allPatterns.flatMap(_.exprs))
+	
+			if(inSameJoin && dobjVarNameVersions.length == 1 && res.allPatterns.length > 1) Some(res) else None
+		}
 	}
 }

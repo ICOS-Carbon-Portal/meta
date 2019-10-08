@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
 import se.lu.nateko.cp.meta.services.CpVocab
 import scala.collection.JavaConverters.asJavaIterator
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 
 
 class CpEvaluationStrategyFactory(
@@ -41,44 +42,30 @@ class CpEvaluationStrategyFactory(
 		}
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
+		val index = indexThunk()
 
-		val specBinding: Option[Value] = doFetch.specVar.flatMap(spec => Option(bindings.getValue(spec)))
+		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
 
-		val infos1: Iterator[ObjInfo] = bindings.getValue(doFetch.dobjVar) match {
-			case null =>
-				specBinding.fold(indexThunk().objInfos){
-					case spec: IRI =>
-						indexThunk().getObjsForSpec(spec)
-					case _ => Iterator.empty
-				}
-			case dobjUri @ CpVocab.DataObject(hash, _) =>
-				indexThunk().objInfo(hash).filter(
-					oinfo => oinfo.uri === dobjUri && specBinding.forall(oinfo.spec == _)
-				).iterator
-			case _ =>
-				Iterator.empty
-		}
+			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
+			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
-		val infos2 = if(doFetch.excludeDeprecated) infos1/*.filterNot(_.isDeprecated)*/ else infos1
-
-		val infos3 = doFetch.stationVar.fold(infos2){stationVar =>
-			val stationBinding: Option[Value] = Option(bindings.getValue(stationVar))
-			stationBinding.fold(
-				infos2.filter(_.station != null) //station variable needs to be set, but has not been set yet
-			){
-				station => infos2.filter(station == _.station)
+			prop match{
+				case Spec            => setter(_.spec)
+				case Station         => setter(_.station)
+				case Submitter       => setter(_.submitter)
+				case FileName        => (_: QueryBindingSet, _: ObjInfo) => ()
+				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))
+				case SubmissionStart => setterOpt(_.submissionStartTime)
+				case SubmissionEnd   => setterOpt(_.submissionEndTime)
+				case DataStart       => setterOpt(_.dataStartTime)
+				case DataEnd         => setterOpt(_.dataEndTime)
 			}
 		}
-
-		infos3.map{oinfo =>
+		index.fetch(doFetch.fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
-			bs.setBinding(doFetch.dobjVar, oinfo.uri)
-			doFetch.specVar.foreach(bs.setBinding(_, oinfo.spec))
-			doFetch.stationVar.foreach(bs.setBinding(_, oinfo.station))
-			for(name <- doFetch.dataStartTimeVar; value <- oinfo.dataStartTime) bs.setBinding(name, value)
-			for(name <- doFetch.dataEndTimeVar; value <- oinfo.dataEndTime) bs.setBinding(name, value)
-			for(name <- doFetch.submStartTimeVar; value <- oinfo.submissionStartTime) bs.setBinding(name, value)
-			for(name <- doFetch.submEndTimeVar; value <- oinfo.submissionEndTime) bs.setBinding(name, value)
+			setters.foreach{_(bs, oinfo)}
 			bs
 		}
 		// .zipWithIndex.collect{

@@ -35,7 +35,7 @@ class TempCoveragePatternSearch(meta: CpmetaVocab){
 				if meta.wasAcquiredBy == pl.getValue && l2Pred == pr.getValue && ol.getName == sr.getName &&
 					!sl.isAnonymous && !or.isAnonymous
 			) yield
-				TimePatternVars(sl.getName, or.getName)
+				new TimePatternVars(sl.getName, or.getName)
 		}
 
 		takeNode.ifIs[Union].thenSearch(union => {
@@ -51,3 +51,7 @@ class TempCoveragePatternSearch(meta: CpmetaVocab){
 		u => inner(u.getLeftArg).orElse(inner(u.getRightArg))
 
 }
+
+private class TimePatternVars(val dobjVar: String, val timeVar: String)
+
+class TempCoveragePattern(val expr: Union, val dobjVar: String, val timeVar: String)

@@ -19,8 +19,8 @@ object StatementPatternSearch{
 	}
 
 
-	def twoStepPropPath(pred1: IRI, pred2: IRI): TopNodeSearch[TwoStepPropPath] =  node => {
-		def isPropPath(sp1: StatementPattern, sp2: StatementPattern): Boolean = (sp1 ne sp2) && {
+	def twoStepPropPath(pred1: IRI, pred2: IRI): TopNodeSearch[TwoStepPropPath] = {
+		def isPropPath(sp1: StatementPattern, sp2: StatementPattern): Boolean = {
 			val (s1, _, o1) = splitTriple(sp1)
 			val (s2, _, o2) = splitTriple(sp2)
 			!s1.isAnonymous && o1.isAnonymous && s2.isAnonymous && o1.getName == s2.getName && !o2.isAnonymous &&
@@ -28,11 +28,11 @@ object StatementPatternSearch{
 				areSiblings(sp1, sp2) || sp1.isUncleOf(sp2) || sp2.isUncleOf(sp1)
 			)
 		}
-		for(
-			sp1 <- byPredicate(pred1).recursive(node);
-			sp2 <- byPredicate(pred2).recursive(node)
-			if isPropPath(sp1, sp2)
-		) yield new TwoStepPropPath(sp1, sp2)
+		byPredicate(pred1).recursive.thenFlatMap{sp1 =>
+			byPredicate(pred2).filter{sp2 => isPropPath(sp1, sp2)}.recursive
+		}.thenGet{
+			case (sp1, sp2) => new TwoStepPropPath(sp1, sp2)
+		}
 	}
 
 	class TwoStepPropPath(val step1: StatementPattern, val step2: StatementPattern){

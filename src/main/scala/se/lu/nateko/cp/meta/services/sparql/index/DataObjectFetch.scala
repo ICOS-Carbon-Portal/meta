@@ -52,7 +52,7 @@ object DataObjectFetch{
 	final case object DataStart extends ContProp[Long]
 	final case object DataEnd extends ContProp[Long]
 
-	sealed trait CategProp[T] extends Property[T]
+	sealed trait CategProp[T <: AnyRef] extends Property[T]
 
 	final case object Spec extends CategProp[IRI]
 	final case object Station extends CategProp[Option[IRI]]

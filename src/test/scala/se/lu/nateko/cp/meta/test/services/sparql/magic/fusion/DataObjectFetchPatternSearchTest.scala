@@ -14,8 +14,8 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 	private def parseQuery(q: String): TupleExpr = parser.parseQuery(q, "http://dummy.org").getTupleExpr
 
-	ignore("Optimizing data object list fetching query"){
-		def getQuery = parseQuery(TestQs.fetchDobjList)
+	describe("Optimizing data object list fetching query"){
+		def getQuery = parseQuery(TestQs.fetchDobjListFromNewIndex)
 
 		describe("Locating the pattern"){
 
@@ -31,22 +31,25 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 			}
 
 			it("correctly finds data object and object spec variable names"){
-				val fetch = getFetch
-				//assert(fetch.dobjVar == "dobj" && fetch.specVar == Some("spec"))
+				val varNames = getFetch.varNames.values.toIndexedSeq
+				assert(varNames.contains("dobj"))
+				assert(varNames.contains("spec"))
 			}
 
 			it("correctly finds temporal coverage variable names"){
-				val fetch = getFetch
-				//assert(fetch.dataStartTimeVar == Some("timeStart") && fetch.dataEndTimeVar == Some("timeEnd"))
+				val varNames = getFetch.varNames.values.toIndexedSeq
+				assert(varNames.contains("timeStart"))
+				assert(varNames.contains("timeEnd"))
 			}
 
 			it("identifies the no-deprecated-objects filter"){
 				val fetch = getFetch
-				//assert(fetch.excludeDeprecated)
+				assert(fetch.fetchRequest.filtering.filterDeprecated)
 			}
 
 			it("detects and fuses the station property path pattern"){
-				val fetch = getFetch
+				val varNames = getFetch.varNames.values.toIndexedSeq
+				assert(varNames.contains("station"))
 				//assert(fetch.stationVar === Some("station"))
 			}
 
@@ -56,12 +59,12 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 	describe("BindingSetAssignmentSearch"){
 		val query = parseQuery(TestQs.fetchDobjListFromNewIndex)
 
-		ignore("parses query and prints the AST"){
+		describe("parses query and prints the AST"){
 			println(parseQuery(TestQs.fetchDobjListFromNewIndex).toString)
 		}
 
 		it("finds station inline values in the query"){
-			val bsas = BindingSetAssignmentSearch.byVarName("station")(query).get
+			val bsas = BindingSetAssignmentSearch.byVarName("station").recursive(query).get
 			assert(bsas.values.length == 2)
 		}
 	}

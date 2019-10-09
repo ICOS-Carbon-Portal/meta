@@ -29,6 +29,9 @@ object PatternFinder{
 			for(o <- test(node); o2 <- other(o)) yield o -> o2
 		}
 
+		def thenFlatMap[O2](next: O => NodeSearch[I, O2]): NodeSearch[I, (O, O2)] =
+			node => for(o1 <- test(node); o2 <- next(o1)(node)) yield o1 -> o2
+
 		def thenGet[O2](f: O => O2): NodeSearch[I, O2] = test.andThen(_.map(f).filter(_ != null))
 
 		def ifIs[O2 : ClassTag]: NodeSearch[I, O2] = thenSearch{
@@ -39,6 +42,8 @@ object PatternFinder{
 		def filter(pred: O => Boolean): NodeSearch[I, O] = test.andThen(_.filter(pred))
 
 		def ifFound[O2](other: O => Option[O2]): NodeSearch[I, O] = node => test(node).filter(t => other(t).isDefined)
+
+		def optional: NodeSearch[I, Option[O]] = test.andThen(Some(_))
 	}
 
 	private class Visitor[T](test: TopNodeSearch[T]) extends AbstractQueryModelVisitor{
@@ -50,4 +55,5 @@ object PatternFinder{
 			if(!result.isDefined) node.visitChildren(this)
 		}
 	}
+
 }

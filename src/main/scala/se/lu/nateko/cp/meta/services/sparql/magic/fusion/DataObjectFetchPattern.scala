@@ -3,78 +3,77 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import org.eclipse.rdf4j.query.algebra._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
+import DobjPattern._
 
 trait DobjPattern{
-	def exprs: Seq[TupleExpr]
-//	def dobjVar: String
-	def removeExprs(): Unit = exprs.foreach(_.replaceWith(new SingletonSet))
+	def expressions: Seq[TupleExpr]
+	def removeExpressions(): Unit = expressions.foreach(_.replaceWith(new SingletonSet))
 }
 
-class DobjPropPattern(val exprs: Seq[TupleExpr], val propVar: String) extends DobjPattern
+object DobjPattern{
+	trait PropPattern extends DobjPattern{
+		type ValueType
+		def property: Property[ValueType]
+		def propVarName: String
+	}
 
-class DobjCategPattern[T <: AnyRef](val propPatt: DobjPropPattern, bsa: BindingSetAssignment, val vals: Seq[T]) extends DobjPattern{
-	override def exprs = propPatt.exprs :+ bsa
+	trait ContPropPattern extends PropPattern{ override def property: ContProp[ValueType] }
+
+	trait CategPropPattern extends PropPattern{
+		type ValueType <: AnyRef
+		override def property: CategProp[ValueType]
+		def categValues: Seq[ValueType]
+	}
+
+	def contPattern[T](exprs: Seq[TupleExpr], prop: ContProp[T], propVar: String) = new ContPropPattern{
+		type ValueType = T
+		val expressions = exprs
+		val property = prop
+		val propVarName = propVar
+	}
+
+	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp[T], propVar: String, vals: Seq[T]) = new CategPropPattern{
+		type ValueType = T
+		val expressions = exprs
+		val property = prop
+		val propVarName = propVar
+		val categValues = vals
+	}
+
 }
-
-// trait SingleExprDobjPattern extends DobjPattern{
-// 	def expr: TupleExpr
-// 	override def exprs = Seq(expr)
-// }
-
-//class ObjSpecPattern(val expr: StatementPattern, val dobjVar: String, val specVar: String) extends SingleExprDobjPattern
 
 class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends DobjPattern{
-	override def exprs = Seq(expr)
-	override def removeExprs(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
+	override def expressions = Seq(expr)
+	override def removeExpressions(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
 }
 
-// class TwoStepPropPathPattern(val path: StatementPatternSearch.TwoStepPropPath) extends DobjPattern{
-// 	def dobjVar: String =  path.subjVariable
-// 	override def exprs = Seq(path.step1, path.step2)
-// }
-
 class DataObjectFetchPattern(
-	categPatterns: Map[CategProp[_], DobjCategPattern[_]],
-	propPatterns: Map[ContProp[_], DobjPropPattern],
-//	spec: ObjSpecPattern,
+	categPatterns: Seq[CategPropPattern],
+	propPatterns: Seq[ContPropPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern]
-	// dataStart: Option[TempCoveragePattern],
-	// dataEnd: Option[TempCoveragePattern],
-	// submStart: Option[TwoStepPropPathPattern],
-	// submEnd: Option[TwoStepPropPathPattern],
-	// station: Option[TwoStepPropPathPattern]
 ){
 
-	val allPatterns: Seq[DobjPattern] = categPatterns.values.toSeq ++ propPatterns.values ++ noDeprecated
+	val allPatterns: Seq[DobjPattern] = categPatterns ++ propPatterns ++ noDeprecated
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
-		val deepest = allPatterns.maxBy(p => p.exprs.map(nodeDepth).max)
 		val fetch = new DataObjectFetch(
-			selections = Seq(
-				selection(Spec, Nil)
-			),
-			filtering = new Filtering(Nil, true, Nil),
+			selections = categPatterns.map(cp => selection(cp.property, cp.categValues)),
+			filtering = new Filtering(Nil, noDeprecated.isDefined, propPatterns.map(_.property)),
 			sort = None,
 			offset = 0
 		)
-		val varNames: Map[Property[_], String] = categPatterns.mapValues(_.propPatt.propVar) ++ propPatterns.mapValues(_.propVar)
+
+		val varNames: Map[Property[_], String] = (categPatterns ++ propPatterns).map(p => p.property -> p.propVarName).toMap
 
 		val fetchExpr = new DataObjectFetchNode(fetch, varNames)
-		// 	deepest.dobjVar,
-		// 	spec.map(_.specVar),
-		// 	dataStart.map(_.timeVar),
-		// 	dataEnd.map(_.timeVar),
-		// 	submStart.map(_.path.objVariable),
-		// 	submEnd.map(_.path.objVariable),
-		// 	station.map(_.path.objVariable),
-		// 	noDeprecated.isDefined
-		// )
-		val deepestExpr = deepest.exprs.maxBy(nodeDepth)
-		deepest.exprs.filter(_ ne deepestExpr).foreach(_.replaceWith(new SingletonSet))
+
+		val deepest = allPatterns.maxBy(p => p.expressions.map(nodeDepth).max)
+		val deepestExpr = deepest.expressions.maxBy(nodeDepth)
+		deepest.expressions.filter(_ ne deepestExpr).foreach(_.replaceWith(new SingletonSet))
 		deepestExpr.replaceWith(fetchExpr)
 
-		for(patt <- allPatterns if patt ne deepest) patt.removeExprs()
+		for(patt <- allPatterns if patt ne deepest) patt.removeExpressions()
 	}
 
 }

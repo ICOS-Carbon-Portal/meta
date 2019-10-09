@@ -9,7 +9,6 @@ object BindingSetAssignmentSearch{
 	def byVarName(varName: String): TopNodeSearch[SingleVarIriBindSetAssignment] = takeNode
 		.ifIs[BindingSetAssignment]
 		.thenSearch{bsa =>
-
 			bsa.getBindingNames.toArray match{
 
 				case Array(`varName`) =>
@@ -19,12 +18,11 @@ object BindingSetAssignmentSearch{
 					}.toIndexedSeq
 
 					if(values.isEmpty) None
-					else Some(new SingleVarIriBindSetAssignment(bsa, varName, values))
+					else Some(new SingleVarIriBindSetAssignment(bsa, values))
 
 				case _ => None
 			}
 		}
-		.recursive
 
-	class SingleVarIriBindSetAssignment(val expr: BindingSetAssignment, val varName: String, val values: Seq[IRI])
+	class SingleVarIriBindSetAssignment(val expr: BindingSetAssignment, val values: Seq[IRI])
 }

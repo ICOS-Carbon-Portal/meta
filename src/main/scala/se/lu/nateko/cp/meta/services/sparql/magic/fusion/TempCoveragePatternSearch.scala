@@ -52,6 +52,6 @@ class TempCoveragePatternSearch(meta: CpmetaVocab){
 
 }
 
-private class TimePatternVars(val dobjVar: String, val timeVar: String)
+private case class TimePatternVars(val dobjVar: String, val timeVar: String)
 
 class TempCoveragePattern(val expr: Union, val dobjVar: String, val timeVar: String)

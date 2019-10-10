@@ -48,6 +48,7 @@ class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends Do
 }
 
 class DataObjectFetchPattern(
+	dobjVarName: String,
 	categPatterns: Seq[CategPropPattern],
 	propPatterns: Seq[ContPropPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern]
@@ -66,7 +67,7 @@ class DataObjectFetchPattern(
 
 		val varNames: Map[Property[_], String] = (categPatterns ++ propPatterns).map(p => p.property -> p.propVarName).toMap
 
-		val fetchExpr = new DataObjectFetchNode(fetch, varNames)
+		val fetchExpr = new DataObjectFetchNode(fetch, varNames + (DobjUri -> dobjVarName))
 
 		val deepest = allPatterns.maxBy(p => p.expressions.map(nodeDepth).max)
 		val deepestExpr = deepest.expressions.maxBy(nodeDepth)

@@ -43,6 +43,8 @@ object DataObjectFetch{
 
 	sealed trait Property[T]
 
+	final case object DobjUri extends Property[IRI]
+
 	sealed trait ContProp[T] extends Property[T]
 
 	final case object FileName extends ContProp[String]

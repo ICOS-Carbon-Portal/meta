@@ -60,6 +60,17 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				tspp.subjVariable -> categPattern(exprs, Station, tspp.objVariable, bsas.values.map(Some(_)))
 		}
 
+	//?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
+	val submitterPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.wasAssociatedWith)
+		.thenFlatMap{tspp =>
+			BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
+		}
+		.thenGet{
+			case (tspp, bsas) =>
+				val exprs = Seq(tspp.step1, tspp.step2, bsas.expr)
+				tspp.subjVariable -> categPattern(exprs, Submitter, tspp.objVariable, bsas.values)
+		}
+
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
 	val submStartPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.startedAtTime)
 		.thenGet{tspp =>
@@ -91,20 +102,30 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		val noDeprecatedOpt = isLatestDobjVersionFilter(node)
 		val specOpt = dataObjSpecPatternSearch(node)
 		val stationOpt = stationPatternSearch(node)
+		val submitterOpt = submitterPatternSearch(node)
 		val dataStartOpt = dataStartSearch(node)
 		val dataEndOpt = dataEndSearch(node)
 		val submStartOpt = submStartPatternSearch(node)
 		val submEndOpt = submEndPatternSearch(node)
 
-		val categPatts = (specOpt.toSeq ++ stationOpt).map(_._2)
-		val contPatts = (submStartOpt.toSeq ++ submEndOpt ++ dataStartOpt ++ dataEndOpt).map(_._2)
+		val categPatts = specOpt.toSeq ++ stationOpt ++ submitterOpt
+		val contPatts = submStartOpt.toSeq ++ submEndOpt ++ dataStartOpt ++ dataEndOpt
 
-		val res = new DataObjectFetchPattern(categPatts, contPatts, noDeprecatedOpt)
-		//TODO Perform ?dobj variable sameness-control
-		//val dobjVarNameVersions = res.allPatterns.map(_.dobjVar).distinct
-		val inSameJoin = areWithinCommonJoin(res.allPatterns.flatMap(_.expressions))
+		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
+		val dobjVarNameOpt = dobjVarNames.groupBy(identity).mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
 
-		if(inSameJoin /*&& dobjVarNameVersions.length == 1*/ && res.allPatterns.length > 1) Some(res) else None
+		dobjVarNameOpt
+			.map{dobjVar =>
+				new DataObjectFetchPattern(
+					dobjVar,
+					categPatts.collect{ case (`dobjVar`, cp) => cp },
+					contPatts.collect { case (`dobjVar`, cp) => cp },
+					noDeprecatedOpt
+				)
+			}
+			.filter{res =>
+				res.allPatterns.length > 1 && areWithinCommonJoin(res.allPatterns.flatMap(_.expressions))
+			}
 	}
 }
 

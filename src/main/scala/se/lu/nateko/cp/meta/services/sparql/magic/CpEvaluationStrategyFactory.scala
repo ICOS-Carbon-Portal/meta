@@ -52,6 +52,7 @@ class CpEvaluationStrategyFactory(
 				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
 			prop match{
+				case DobjUri         => setter(_.uri)
 				case Spec            => setter(_.spec)
 				case Station         => setter(_.station)
 				case Submitter       => setter(_.submitter)

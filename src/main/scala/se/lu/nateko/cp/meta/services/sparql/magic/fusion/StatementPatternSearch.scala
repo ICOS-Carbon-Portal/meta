@@ -28,11 +28,15 @@ object StatementPatternSearch{
 				areSiblings(sp1, sp2) || sp1.isUncleOf(sp2) || sp2.isUncleOf(sp1)
 			)
 		}
-		byPredicate(pred1).recursive.thenFlatMap{sp1 =>
-			byPredicate(pred2).filter{sp2 => isPropPath(sp1, sp2)}.recursive
-		}.thenGet{
-			case (sp1, sp2) => new TwoStepPropPath(sp1, sp2)
-		}
+
+		node => byPredicate(pred1)
+			.thenAlsoSearch{sp1 =>
+				byPredicate(pred2).filter(sp2 => isPropPath(sp1, sp2)).recursive(node)
+			}
+			.thenGet{
+				case (sp1, sp2) => new TwoStepPropPath(sp1, sp2)
+			}
+			.recursive(node)
 	}
 
 	class TwoStepPropPath(val step1: StatementPattern, val step2: StatementPattern){

@@ -19,7 +19,7 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 		describe("Locating the pattern"){
 
-			def getFetch: DataObjectFetchNode = {
+			lazy val getFetch: DataObjectFetchNode = {
 				val query = getQuery
 				val patternOpt = dofps.search(query)
 
@@ -50,7 +50,11 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 			it("detects and fuses the station property path pattern"){
 				val varNames = getFetch.varNames.values.toIndexedSeq
 				assert(varNames.contains("station"))
-				//assert(fetch.stationVar === Some("station"))
+			}
+
+			it("detects and fuses the submitter property path pattern"){
+				val varNames = getFetch.varNames.values.toIndexedSeq
+				assert(varNames.contains("submitter"))
 			}
 
 		}
@@ -59,9 +63,9 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 	describe("BindingSetAssignmentSearch"){
 		val query = parseQuery(TestQs.fetchDobjListFromNewIndex)
 
-		describe("parses query and prints the AST"){
-			println(parseQuery(TestQs.fetchDobjListFromNewIndex).toString)
-		}
+		// describe("parses query and prints the AST"){
+		// 	println(parseQuery(TestQs.fetchDobjListFromNewIndex).toString)
+		// }
 
 		it("finds station inline values in the query"){
 			val bsas = BindingSetAssignmentSearch.byVarName("station").recursive(query).get
@@ -101,13 +105,13 @@ private object TestQs{
 		FROM <http://meta.icos-cp.eu/resources/atmcsv/>
 		FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
 		where {
-			VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject>}
-			?dobj cpmeta:hasObjectSpec ?spec .
-			VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_HTM>}
-			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
-			VALUES ?submitter {<http://meta.icos-cp.eu/resources/organizations/ATC>}
-			?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter
 			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject>}
+			VALUES ?submitter {<http://meta.icos-cp.eu/resources/organizations/ATC>}
+			VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_HTM>}
+			?dobj cpmeta:hasObjectSpec ?spec .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
 			?dobj cpmeta:hasSizeInBytes ?size .
 			?dobj cpmeta:hasName ?fileName .
 			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .

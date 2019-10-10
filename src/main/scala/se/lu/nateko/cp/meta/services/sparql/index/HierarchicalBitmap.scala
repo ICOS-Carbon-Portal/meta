@@ -69,7 +69,7 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)
-		case Some(fKey) => seenDifferentKeys = nextLevel(key) != nextLevel(fKey)
+		case Some(fKey) => seenDifferentKeys = !ord.equiv(key, fKey)
 	}
 
 	private def addToChild(key: K, value: Int): Unit = {

@@ -12,6 +12,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 	import StatementPatternSearch._
 	import DataObjectFetchPatternSearch._
 
+	// FILTER NOT EXISTS {[] [] []}
 	val notExistsSingleStatementPattern: NodeSearch[Filter, StatementPattern] = takeNode[Filter]
 		.thenGet(_.getCondition)
 		.ifIs[Not]
@@ -20,6 +21,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		.thenGet(_.getSubQuery)
 		.ifIs[StatementPattern]
 
+	// [] cpmeta:isNextVersionOf ?dobj
 	val deprecatedDobjVarName: NodeSearch[StatementPattern, String] = sp => {
 		val (s, p, o) = splitTriple(sp)
 		if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && !o.isAnonymous)
@@ -49,7 +51,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				nvp.subjVar -> categPattern(exprs, Spec, nvp.objVar, bsas.values)
 		}
 
-	//?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station . VALUES ?station {<iri1> ... <irin>}
+	// ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station . VALUES ?station {<iri1> ... <irin>}
 	val stationPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
 		.thenFlatMap{tspp =>
 			BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
@@ -60,7 +62,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				tspp.subjVariable -> categPattern(exprs, Station, tspp.objVariable, bsas.values.map(Some(_)))
 		}
 
-	//?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
+	// ?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
 	val submitterPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.wasAssociatedWith)
 		.thenFlatMap{tspp =>
 			BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
@@ -87,29 +89,36 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 	val tempCoverage = new TempCoveragePatternSearch(meta)
 
+	// ?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStartTime .
 	val dataStartSearch: ContPatternSearch = tempCoverage.startTimePattern
 		.thenGet{tcp =>
 			tcp.dobjVar -> contPattern(Seq(tcp.expr), DataStart, tcp.timeVar)
 		}
 
+	// ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEndTime .
 	val dataEndSearch: ContPatternSearch = tempCoverage.endTimePattern
 		.thenGet{tcp =>
 			tcp.dobjVar -> contPattern(Seq(tcp.expr), DataEnd, tcp.timeVar)
 		}
 
+	def simpleContPattSearch[T](pred: IRI, prop: ContProp[T]): ContPatternSearch =
+		StatementPatternSearch.byPredicate(pred)
+			.thenSearch(nonAnonymous)
+			.thenGet(sp => sp.subjVar -> contPattern(Seq(sp.sp), prop, sp.objVar))
+			.recursive
+
+	val fileNameSearch = simpleContPattSearch(meta.hasName, FileName)
+	val fileSizeSearch = simpleContPattSearch(meta.hasSizeInBytes, FileSize)
+
 	val search: TopNodeSearch[DataObjectFetchPattern] = node => {
 
 		val noDeprecatedOpt = isLatestDobjVersionFilter(node)
-		val specOpt = dataObjSpecPatternSearch(node)
-		val stationOpt = stationPatternSearch(node)
-		val submitterOpt = submitterPatternSearch(node)
-		val dataStartOpt = dataStartSearch(node)
-		val dataEndOpt = dataEndSearch(node)
-		val submStartOpt = submStartPatternSearch(node)
-		val submEndOpt = submEndPatternSearch(node)
 
-		val categPatts = specOpt.toSeq ++ stationOpt ++ submitterOpt
-		val contPatts = submStartOpt.toSeq ++ submEndOpt ++ dataStartOpt ++ dataEndOpt
+		val categPatts = dataObjSpecPatternSearch(node).toSeq ++ stationPatternSearch(node) ++ submitterPatternSearch(node)
+
+		val contPatts = submStartPatternSearch(node).toSeq ++ submEndPatternSearch(node) ++
+			dataStartSearch(node) ++ dataEndSearch(node) ++
+			fileNameSearch(node) ++ fileSizeSearch(node)
 
 		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
 		val dobjVarNameOpt = dobjVarNames.groupBy(identity).mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
@@ -120,11 +129,18 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 					dobjVar,
 					categPatts.collect{ case (`dobjVar`, cp) => cp },
 					contPatts.collect { case (`dobjVar`, cp) => cp },
-					noDeprecatedOpt
+					noDeprecatedOpt,
+					OrderPatternSearch.search.recursive(node)
 				)
 			}
 			.filter{res =>
-				res.allPatterns.length > 1 && areWithinCommonJoin(res.allPatterns.flatMap(_.expressions))
+				res.allPatterns.length > 1 && {
+					val patternsToBeInCommonJoin = res.allPatterns.filter{
+						case _: OrderPattern => false
+						case _ => true
+					}
+					areWithinCommonJoin(patternsToBeInCommonJoin.flatMap(_.expressions))
+				}
 			}
 	}
 }

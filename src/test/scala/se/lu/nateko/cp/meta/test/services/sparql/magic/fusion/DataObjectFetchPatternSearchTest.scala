@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 
 import PatternFinder._
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.SubmissionEnd
 
 class DataObjectFetchPatternSearchTests extends FunSpec{
 	private val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
@@ -57,13 +58,18 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				assert(varNames.contains("submitter"))
 			}
 
+			it("detects order-by clause"){
+				val sortBy = getFetch.fetchRequest.sort.get
+				assert(sortBy.property == SubmissionEnd)
+				assert(sortBy.descending)
+			}
 		}
 	}
 
 	describe("BindingSetAssignmentSearch"){
 		val query = parseQuery(TestQs.fetchDobjListFromNewIndex)
 
-		// describe("parses query and prints the AST"){
+		// it("parses query and prints the AST"){
 		// 	println(parseQuery(TestQs.fetchDobjListFromNewIndex).toString)
 		// }
 
@@ -118,6 +124,7 @@ private object TestQs{
 			?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 			?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 		}
+		order by desc(?submTime)
 		offset 20 limit 61
 	"""
 }

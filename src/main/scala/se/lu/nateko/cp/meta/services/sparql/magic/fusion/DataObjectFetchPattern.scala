@@ -5,21 +5,21 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
 import DobjPattern._
 
-trait DobjPattern{
+sealed trait DobjPattern{
 	def expressions: Seq[TupleExpr]
 	def removeExpressions(): Unit = expressions.foreach(_.replaceWith(new SingletonSet))
 }
 
 object DobjPattern{
-	trait PropPattern extends DobjPattern{
+	sealed trait PropPattern extends DobjPattern{
 		type ValueType
 		def property: Property[ValueType]
 		def propVarName: String
 	}
 
-	trait ContPropPattern extends PropPattern{ override def property: ContProp[ValueType] }
+	sealed trait ContPropPattern extends PropPattern{ override def property: ContProp[ValueType] }
 
-	trait CategPropPattern extends PropPattern{
+	sealed trait CategPropPattern extends PropPattern{
 		type ValueType <: AnyRef
 		override def property: CategProp[ValueType]
 		def categValues: Seq[ValueType]
@@ -40,32 +40,45 @@ object DobjPattern{
 		val categValues = vals
 	}
 
-}
+	class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends DobjPattern{
+		override def expressions = Seq(expr)
+		override def removeExpressions(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
+	}
 
-class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends DobjPattern{
-	override def expressions = Seq(expr)
-	override def removeExpressions(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
+	class OrderPattern(val expr: Order, val sortVar: String, val descending: Boolean) extends DobjPattern{
+		override def expressions = Seq(expr)
+		override def removeExpressions(): Unit = expr.replaceWith(expr.getArg)
+	}
 }
 
 class DataObjectFetchPattern(
 	dobjVarName: String,
 	categPatterns: Seq[CategPropPattern],
-	propPatterns: Seq[ContPropPattern],
-	noDeprecated: Option[ExcludeDeprecatedPattern]
+	contPatterns: Seq[ContPropPattern],
+	noDeprecated: Option[ExcludeDeprecatedPattern],
+	singleVarOrder: Option[OrderPattern]
 ){
 
-	val allPatterns: Seq[DobjPattern] = categPatterns ++ propPatterns ++ noDeprecated
+	private val sortBy: Option[SortBy] = singleVarOrder.flatMap{orderPatt =>
+		contPatterns.collectFirst{
+			case cpp if cpp.propVarName == orderPatt.sortVar => SortBy(cpp.property, orderPatt.descending)
+		}
+	}
+
+	private val order: Option[OrderPattern] = singleVarOrder.filter(_ => sortBy.isDefined)
+
+	val allPatterns: Seq[DobjPattern] = categPatterns ++ contPatterns ++ noDeprecated ++ order
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
 		val fetch = new DataObjectFetch(
 			selections = categPatterns.map(cp => selection(cp.property, cp.categValues)),
-			filtering = new Filtering(Nil, noDeprecated.isDefined, propPatterns.map(_.property)),
-			sort = None,
+			filtering = new Filtering(Nil, noDeprecated.isDefined, contPatterns.map(_.property)),
+			sort = sortBy,
 			offset = 0
 		)
 
-		val varNames: Map[Property[_], String] = (categPatterns ++ propPatterns).map(p => p.property -> p.propVarName).toMap
+		val varNames: Map[Property[_], String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap
 
 		val fetchExpr = new DataObjectFetchNode(fetch, varNames + (DobjUri -> dobjVarName))
 
@@ -74,7 +87,18 @@ class DataObjectFetchPattern(
 		deepest.expressions.filter(_ ne deepestExpr).foreach(_.replaceWith(new SingletonSet))
 		deepestExpr.replaceWith(fetchExpr)
 
-		for(patt <- allPatterns if patt ne deepest) patt.removeExpressions()
+		val patternsToRemove = allPatterns.filter{
+
+			//filenames are not stored in the index, so falling back with their fetching to the standard SPARQL
+			case cpp: ContPropPattern if cpp.property == FileName => false
+
+			//the deepest expression is used to place the new QueryModelNode in its stead
+			case `deepest` => false
+
+			case _ => true
+		}
+
+		patternsToRemove.foreach(_.removeExpressions())
 	}
 
 }

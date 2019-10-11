@@ -49,6 +49,12 @@ object DobjPattern{
 		override def expressions = Seq(expr)
 		override def removeExpressions(): Unit = expr.replaceWith(expr.getArg)
 	}
+
+	class OffsetPattern(expr: Slice) extends DobjPattern{
+		val offset = expr.getOffset.toInt
+		override def expressions = Seq(expr)
+		override def removeExpressions(): Unit = expr.setOffset(0)
+	}
 }
 
 class DataObjectFetchPattern(
@@ -56,7 +62,8 @@ class DataObjectFetchPattern(
 	categPatterns: Seq[CategPropPattern],
 	contPatterns: Seq[ContPropPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern],
-	singleVarOrder: Option[OrderPattern]
+	singleVarOrder: Option[OrderPattern],
+	offset: Option[OffsetPattern]
 ){
 
 	private val sortBy: Option[SortBy] = singleVarOrder.flatMap{orderPatt =>
@@ -67,7 +74,7 @@ class DataObjectFetchPattern(
 
 	private val order: Option[OrderPattern] = singleVarOrder.filter(_ => sortBy.isDefined)
 
-	val allPatterns: Seq[DobjPattern] = categPatterns ++ contPatterns ++ noDeprecated ++ order
+	val allPatterns: Seq[DobjPattern] = categPatterns ++ contPatterns ++ noDeprecated ++ order ++ offset
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
@@ -75,7 +82,7 @@ class DataObjectFetchPattern(
 			selections = categPatterns.map(cp => selection(cp.property, cp.categValues)),
 			filtering = new Filtering(Nil, noDeprecated.isDefined, contPatterns.map(_.property)),
 			sort = sortBy,
-			offset = 0
+			offset = offset.fold(0)(_.offset)
 		)
 
 		val varNames: Map[Property[_], String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap

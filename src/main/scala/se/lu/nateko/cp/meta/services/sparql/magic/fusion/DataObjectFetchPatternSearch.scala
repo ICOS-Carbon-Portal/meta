@@ -101,7 +101,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			tcp.dobjVar -> contPattern(Seq(tcp.expr), DataEnd, tcp.timeVar)
 		}
 
-	def simpleContPattSearch[T](pred: IRI, prop: ContProp[T]): ContPatternSearch =
+	private def simpleContPattSearch[T](pred: IRI, prop: ContProp[T]): ContPatternSearch =
 		StatementPatternSearch.byPredicate(pred)
 			.thenSearch(nonAnonymous)
 			.thenGet(sp => sp.subjVar -> contPattern(Seq(sp.sp), prop, sp.objVar))
@@ -109,6 +109,11 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 	val fileNameSearch = simpleContPattSearch(meta.hasName, FileName)
 	val fileSizeSearch = simpleContPattSearch(meta.hasSizeInBytes, FileSize)
+
+	val offsetSearch: TopNodeSearch[OffsetPattern] = takeNode
+		.ifIs[Slice]
+		.thenGet(new OffsetPattern(_))
+		.filter(_.offset > 0)
 
 	val search: TopNodeSearch[DataObjectFetchPattern] = node => {
 
@@ -121,6 +126,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			fileNameSearch(node) ++ fileSizeSearch(node)
 
 		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
+		//detecting the most common variable name for data obj uri (for example, could be '?dobj')
 		val dobjVarNameOpt = dobjVarNames.groupBy(identity).mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
 
 		dobjVarNameOpt
@@ -130,17 +136,18 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 					categPatts.collect{ case (`dobjVar`, cp) => cp },
 					contPatts.collect { case (`dobjVar`, cp) => cp },
 					noDeprecatedOpt,
-					OrderPatternSearch.search.recursive(node)
+					OrderPatternSearch.search.recursive(node),
+					offsetSearch(node)
 				)
 			}
 			.filter{res =>
-				res.allPatterns.length > 1 && {
-					val patternsToBeInCommonJoin = res.allPatterns.filter{
-						case _: OrderPattern => false
-						case _ => true
-					}
-					areWithinCommonJoin(patternsToBeInCommonJoin.flatMap(_.expressions))
+				val patternsToBeInCommonJoin = res.allPatterns.filter{
+					case _: OrderPattern | _: OffsetPattern => false
+					case _ => true
 				}
+				patternsToBeInCommonJoin.length > 1 && areWithinCommonJoin(
+					patternsToBeInCommonJoin.flatMap(_.expressions)
+				)
 			}
 	}
 }

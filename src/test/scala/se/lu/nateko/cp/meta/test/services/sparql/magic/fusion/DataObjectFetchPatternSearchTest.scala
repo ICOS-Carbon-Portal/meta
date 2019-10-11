@@ -63,6 +63,10 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				assert(sortBy.property == SubmissionEnd)
 				assert(sortBy.descending)
 			}
+
+			it("detects offset clause"){
+				assert(getFetch.fetchRequest.offset == 20)
+			}
 		}
 	}
 

@@ -147,15 +147,16 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	}
 
 	def statEntries: Iterable[StatEntry] = readLocked{
-		for(
+		(for(
 			(spec, specBm) <- categMap(Spec);
 			(subm, submBm) <- categMap(Submitter);
 			(station, stationBm) <- categMap(Station)
 		) yield{
 			val key = StatKey(spec, subm, station)
 			val count = BufferFastAggregation.and(specBm, submBm, stationBm).getCardinality
-			StatEntry(key, count)
-		}
+			if(count > 0) Some(StatEntry(key, count))
+			else None
+		}).flatten
 	}
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{

@@ -153,7 +153,9 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			(station, stationBm) <- categMap(Station)
 		) yield{
 			val key = StatKey(spec, subm, station)
-			val count = BufferFastAggregation.and(specBm, submBm, stationBm).getCardinality
+			val and = BufferFastAggregation.and(specBm, submBm, stationBm)
+			and.andNot(deprecated)
+			val count = and.getCardinality
 			if(count > 0) Some(StatEntry(key, count))
 			else None
 		}).flatten

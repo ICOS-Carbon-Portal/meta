@@ -2,16 +2,21 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
-import DobjPattern._
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => FetchFilter, _}
+import DataObjectFetchPattern._
 
-sealed trait DobjPattern{
-	def expressions: Seq[TupleExpr]
-	def removeExpressions(): Unit = expressions.foreach(_.replaceWith(new SingletonSet))
-}
+object DataObjectFetchPattern{
+	sealed trait SubPattern{
+		def expressions: Seq[TupleExpr]
+		def removeExpressions(): Unit = expressions.foreach(_.replaceWith(new SingletonSet))
+	}
 
-object DobjPattern{
-	sealed trait PropPattern extends DobjPattern{
+	sealed abstract class UnaryTupleOpSubPattern(expr: UnaryTupleOperator) extends SubPattern{
+		override def expressions = Seq(expr)
+		override def removeExpressions(): Unit = expr.replaceWith(expr.getArg)
+	}
+
+	sealed trait PropPattern extends SubPattern{
 		type ValueType
 		def property: Property[ValueType]
 		def propVarName: String
@@ -40,17 +45,11 @@ object DobjPattern{
 		val categValues = vals
 	}
 
-	class ExcludeDeprecatedPattern(val expr: Filter, val dobjVar: String) extends DobjPattern{
-		override def expressions = Seq(expr)
-		override def removeExpressions(): Unit = expr.getParentNode.replaceChildNode(expr, expr.getArg)
-	}
+	class ExcludeDeprecatedPattern(expr: Filter, val dobjVar: String) extends UnaryTupleOpSubPattern(expr)
+	class OrderPattern(expr: Order, val sortVar: String, val descending: Boolean) extends UnaryTupleOpSubPattern(expr)
+	class FilterPattern(expr: Filter, val filters: Seq[FetchFilter]) extends UnaryTupleOpSubPattern(expr)
 
-	class OrderPattern(val expr: Order, val sortVar: String, val descending: Boolean) extends DobjPattern{
-		override def expressions = Seq(expr)
-		override def removeExpressions(): Unit = expr.replaceWith(expr.getArg)
-	}
-
-	class OffsetPattern(expr: Slice) extends DobjPattern{
+	class OffsetPattern(expr: Slice) extends SubPattern{
 		val offset = expr.getOffset.toInt
 		override def expressions = Seq(expr)
 		override def removeExpressions(): Unit = expr.setOffset(0)
@@ -61,6 +60,7 @@ class DataObjectFetchPattern(
 	dobjVarName: String,
 	categPatterns: Seq[CategPropPattern],
 	contPatterns: Seq[ContPropPattern],
+	filter: Option[FilterPattern],
 	noDeprecated: Option[ExcludeDeprecatedPattern],
 	singleVarOrder: Option[OrderPattern],
 	offset: Option[OffsetPattern]
@@ -74,13 +74,15 @@ class DataObjectFetchPattern(
 
 	private val order: Option[OrderPattern] = singleVarOrder.filter(_ => sortBy.isDefined)
 
-	val allPatterns: Seq[DobjPattern] = categPatterns ++ contPatterns ++ noDeprecated ++ order ++ offset
+	val allPatterns: Seq[SubPattern] = categPatterns ++ contPatterns ++ filter ++ noDeprecated ++ order ++ offset
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
+		val filters = filter.fold[Seq[FetchFilter]](Nil)(_.filters)
+
 		val fetch = new DataObjectFetch(
 			selections = categPatterns.map(cp => selection(cp.property, cp.categValues)),
-			filtering = new Filtering(Nil, noDeprecated.isDefined, contPatterns.map(_.property)),
+			filtering = new Filtering(filters, noDeprecated.isDefined, contPatterns.map(_.property)),
 			sort = sortBy,
 			offset = offset.fold(0)(_.offset)
 		)

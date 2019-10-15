@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.query.algebra._
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
-import DobjPattern._
+import DataObjectFetchPattern._
 import PatternFinder._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
 
@@ -125,6 +125,11 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			dataStartSearch(node) ++ dataEndSearch(node) ++
 			fileNameSearch(node) ++ fileSizeSearch(node)
 
+		val filterSearcher = {
+			val contPropLookup: Map[String, ContProp[_]] = contPatts.map(_._2).map(cpp => cpp.propVarName -> cpp.property).toMap
+			new FilterPatternSearch(contPropLookup.get)
+		}
+
 		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
 		//detecting the most common variable name for data obj uri (for example, could be '?dobj')
 		val dobjVarNameOpt = dobjVarNames.groupBy(identity).mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
@@ -135,6 +140,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 					dobjVar,
 					categPatts.collect{ case (`dobjVar`, cp) => cp },
 					contPatts.collect { case (`dobjVar`, cp) => cp },
+					filterSearcher.search(node),
 					noDeprecatedOpt,
 					OrderPatternSearch.search.recursive(node),
 					offsetSearch(node)
@@ -142,7 +148,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			}
 			.filter{res =>
 				val patternsToBeInCommonJoin = res.allPatterns.filter{
-					case _: OrderPattern | _: OffsetPattern => false
+					case _: OrderPattern | _: OffsetPattern | _: FilterPattern => false
 					case _ => true
 				}
 				patternsToBeInCommonJoin.length > 1 && areWithinCommonJoin(

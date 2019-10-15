@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.query.algebra.Var
 
 object OrderPatternSearch{
 	import PatternFinder._
-	import DobjPattern.OrderPattern
+	import DataObjectFetchPattern.OrderPattern
 
 	val search: TopNodeSearch[OrderPattern] = takeNode
 		.ifIs[Order]

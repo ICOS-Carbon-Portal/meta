@@ -8,6 +8,8 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr
 
 import PatternFinder._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.SubmissionEnd
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.DataStart
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.DataEnd
 
 class DataObjectFetchPatternSearchTests extends FunSpec{
 	private val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
@@ -66,6 +68,13 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 			it("detects offset clause"){
 				assert(getFetch.fetchRequest.offset == 20)
+			}
+
+			it("detects the filters"){
+				val filters = getFetch.fetchRequest.filtering.filters
+				val props = filters.map(_.property).distinct.toSet
+				assert(props === Set(DataStart, DataEnd, SubmissionEnd))
+				assert(filters.size === 4)
 			}
 		}
 	}
@@ -127,6 +136,10 @@ private object TestQs{
 			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 			?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 			?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+			FILTER (
+				?timeStart >= '2019-01-01T00:00:00.000Z'^^xsd:dateTime && ?timeEnd  <= '2019-10-18T00:00:00.000Z'^^xsd:dateTime &&
+				?submTime  >= '2018-09-03T00:00:00.000Z'^^xsd:dateTime && ?submTime <= '2019-10-10T00:00:00.000Z'^^xsd:dateTime
+			)
 		}
 		order by desc(?submTime)
 		offset 20 limit 61

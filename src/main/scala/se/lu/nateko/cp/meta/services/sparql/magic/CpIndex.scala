@@ -60,17 +60,17 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val stats = new ArrayBuffer[ObjEntry](nObjects)
 	private val deprecated = MutableRoaringBitmap.bitmapOf()
-	private val categMaps = new AnyRefMap[CategProp[_], AnyRefMap[_, MutableRoaringBitmap]]
-	private val bmMap = new AnyRefMap[ContProp[_], HierarchicalBitmap[_]]
+	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
+	private val bmMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
 
 	def size: Int = stats.length
 
-	private def categMap[T <: AnyRef](prop: CategProp[T]): AnyRefMap[T, MutableRoaringBitmap] = categMaps
-		.getOrElseUpdate(prop, new AnyRefMap[T, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[T, MutableRoaringBitmap]]
+	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
+		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
 	/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-	private def bitmap[T](prop: ContProp[T]): HierarchicalBitmap[T] = bmMap.getOrElseUpdate(prop, prop match {
+	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = bmMap.getOrElseUpdate(prop, prop match {
 		case FileName => StringHierarchicalBitmap{idx =>
 			val uri = stats(idx).uri
 			sail.accessEagerly{conn => //this is to avoid storing all the file names in memory
@@ -85,7 +85,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		case DataEnd =>         DatetimeHierarchicalBitmap(idx => stats(idx).dataEnd)
 		case SubmissionStart => DatetimeHierarchicalBitmap(idx => stats(idx).submissionStart)
 		case SubmissionEnd =>   DatetimeHierarchicalBitmap(idx => stats(idx).submissionEnd)
-	}).asInstanceOf[HierarchicalBitmap[T]]
+	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
@@ -99,6 +99,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
+		//val start = System.currentTimeMillis
 
 		def or(bms: Seq[MutableRoaringBitmap]): Seq[MutableRoaringBitmap] =
 			if(bms.isEmpty) Nil else Seq(BufferFastAggregation.or(bms: _*)) //single-element Seq for convenience
@@ -141,6 +142,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			case Some(SortBy(prop, descending)) =>
 				bitmap(prop).iterateSorted(totalFilter, req.offset, descending)
 		}
+		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
 		idxIter.map(stats.apply)
 	}
 
@@ -188,7 +190,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
-		def handleContinuousPropUpdate[T](prop: ContProp[T], key: T, idx: Int): Unit = {
+		def handleContinuousPropUpdate[T](prop: ContProp{ type ValueType = T}, key: T, idx: Int): Unit = {
 			if(isAssertion) bitmap(prop).add(key, idx)
 			else bitmap(prop).remove(key, idx)
 		}

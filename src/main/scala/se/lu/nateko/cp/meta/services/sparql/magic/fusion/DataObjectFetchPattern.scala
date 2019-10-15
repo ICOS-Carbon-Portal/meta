@@ -17,39 +17,29 @@ object DataObjectFetchPattern{
 	}
 
 	sealed trait PropPattern extends SubPattern{
-		type ValueType
-		def property: Property[ValueType]
+		def property: Property
 		def propVarName: String
 	}
 
-	sealed trait ContPropPattern extends PropPattern{ override def property: ContProp[ValueType] }
+	final class ContPropPattern(val expressions: Seq[TupleExpr], val property: ContProp, val propVarName: String) extends PropPattern
 
 	sealed trait CategPropPattern extends PropPattern{
-		type ValueType <: AnyRef
-		override def property: CategProp[ValueType]
-		def categValues: Seq[ValueType]
+		override val property: CategProp
+		def categValues: Seq[property.ValueType]
 	}
 
-	def contPattern[T](exprs: Seq[TupleExpr], prop: ContProp[T], propVar: String) = new ContPropPattern{
-		type ValueType = T
-		val expressions = exprs
-		val property = prop
-		val propVarName = propVar
-	}
-
-	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp[T], propVar: String, vals: Seq[T]) = new CategPropPattern{
-		type ValueType = T
+	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp{type ValueType = T}, propVar: String, vals: Seq[T]) = new CategPropPattern{
 		val expressions = exprs
 		val property = prop
 		val propVarName = propVar
 		val categValues = vals
 	}
 
-	class ExcludeDeprecatedPattern(expr: Filter, val dobjVar: String) extends UnaryTupleOpSubPattern(expr)
-	class OrderPattern(expr: Order, val sortVar: String, val descending: Boolean) extends UnaryTupleOpSubPattern(expr)
-	class FilterPattern(expr: Filter, val filters: Seq[FetchFilter]) extends UnaryTupleOpSubPattern(expr)
+	final class ExcludeDeprecatedPattern(expr: Filter, val dobjVar: String) extends UnaryTupleOpSubPattern(expr)
+	final class OrderPattern(expr: Order, val sortVar: String, val descending: Boolean) extends UnaryTupleOpSubPattern(expr)
+	final class FilterPattern(expr: Filter, val filters: Seq[FetchFilter]) extends UnaryTupleOpSubPattern(expr)
 
-	class OffsetPattern(expr: Slice) extends SubPattern{
+	final class OffsetPattern(expr: Slice) extends SubPattern{
 		val offset = expr.getOffset.toInt
 		override def expressions = Seq(expr)
 		override def removeExpressions(): Unit = expr.setOffset(0)
@@ -87,7 +77,7 @@ class DataObjectFetchPattern(
 			offset = offset.fold(0)(_.offset)
 		)
 
-		val varNames: Map[Property[_], String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap
+		val varNames: Map[Property, String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap
 
 		val fetchExpr = new DataObjectFetchNode(fetch, varNames + (DobjUri -> dobjVarName))
 

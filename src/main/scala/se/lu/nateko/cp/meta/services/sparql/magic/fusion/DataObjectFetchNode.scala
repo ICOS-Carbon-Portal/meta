@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Property
 
 class DataObjectFetchNode(
 	val fetchRequest: DataObjectFetch,
-	val varNames: Map[Property[_], String]
+	val varNames: Map[Property, String]
 ) extends AbstractQueryModelNode with TupleExpr{
 
 	private val allVars = varNames.values.toIndexedSeq

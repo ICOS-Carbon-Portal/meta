@@ -10,6 +10,7 @@ import PatternFinder._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.SubmissionEnd
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.DataStart
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.DataEnd
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
 
 class DataObjectFetchPatternSearchTests extends FunSpec{
 	private val dofps = new DataObjectFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
@@ -74,7 +75,8 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				val filters = getFetch.fetchRequest.filtering.filters
 				val props = filters.map(_.property).distinct.toSet
 				assert(props === Set(DataStart, DataEnd, SubmissionEnd))
-				assert(filters.size === 4)
+				assert(filters.size === 3)
+				assert(filters.find{_.property == SubmissionEnd}.get.condition.isInstanceOf[IntervalFilter[_]])
 			}
 		}
 	}

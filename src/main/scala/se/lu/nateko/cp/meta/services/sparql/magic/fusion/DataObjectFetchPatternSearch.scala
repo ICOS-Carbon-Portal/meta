@@ -77,14 +77,14 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 	val submStartPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.startedAtTime)
 		.thenGet{tspp =>
 			val exprs = Seq(tspp.step1, tspp.step2)
-			tspp.subjVariable -> contPattern(exprs, SubmissionStart, tspp.objVariable)
+			tspp.subjVariable -> new ContPropPattern(exprs, SubmissionStart, tspp.objVariable)
 		}
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 	val submEndPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.endedAtTime)
 		.thenGet{tspp =>
 			val exprs = Seq(tspp.step1, tspp.step2)
-			tspp.subjVariable -> contPattern(exprs, SubmissionEnd, tspp.objVariable)
+			tspp.subjVariable -> new ContPropPattern(exprs, SubmissionEnd, tspp.objVariable)
 		}
 
 	val tempCoverage = new TempCoveragePatternSearch(meta)
@@ -92,19 +92,19 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 	// ?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStartTime .
 	val dataStartSearch: ContPatternSearch = tempCoverage.startTimePattern
 		.thenGet{tcp =>
-			tcp.dobjVar -> contPattern(Seq(tcp.expr), DataStart, tcp.timeVar)
+			tcp.dobjVar -> new ContPropPattern(Seq(tcp.expr), DataStart, tcp.timeVar)
 		}
 
 	// ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEndTime .
 	val dataEndSearch: ContPatternSearch = tempCoverage.endTimePattern
 		.thenGet{tcp =>
-			tcp.dobjVar -> contPattern(Seq(tcp.expr), DataEnd, tcp.timeVar)
+			tcp.dobjVar -> new ContPropPattern(Seq(tcp.expr), DataEnd, tcp.timeVar)
 		}
 
-	private def simpleContPattSearch[T](pred: IRI, prop: ContProp[T]): ContPatternSearch =
+	private def simpleContPattSearch(pred: IRI, prop: ContProp): ContPatternSearch =
 		StatementPatternSearch.byPredicate(pred)
 			.thenSearch(nonAnonymous)
-			.thenGet(sp => sp.subjVar -> contPattern(Seq(sp.sp), prop, sp.objVar))
+			.thenGet(sp => sp.subjVar -> new ContPropPattern(Seq(sp.sp), prop, sp.objVar))
 			.recursive
 
 	val fileNameSearch = simpleContPattSearch(meta.hasName, FileName)
@@ -126,7 +126,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			fileNameSearch(node) ++ fileSizeSearch(node)
 
 		val filterSearcher = {
-			val contPropLookup: Map[String, ContProp[_]] = contPatts.map(_._2).map(cpp => cpp.propVarName -> cpp.property).toMap
+			val contPropLookup: Map[String, ContProp] = contPatts.map(_._2).map(cpp => cpp.propVarName -> cpp.property).toMap
 			new FilterPatternSearch(contPropLookup.get)
 		}
 

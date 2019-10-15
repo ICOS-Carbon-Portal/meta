@@ -13,50 +13,54 @@ class DataObjectFetch(
 
 object DataObjectFetch{
 
-	class Filtering(val filters: Seq[Filter], val filterDeprecated: Boolean, val requiredProps: Seq[ContProp[_]])
+	class Filtering(val filters: Seq[Filter], val filterDeprecated: Boolean, val requiredProps: Seq[ContProp])
 
 	sealed trait Filter{
-		type ValueType
-		def property: ContProp[ValueType]
-		def condition: FilterRequest[ValueType]
+		val property: ContProp
+		def condition: FilterRequest[property.ValueType]
 	}
 
 	sealed trait Selection{
-		type ValueType <: AnyRef
-		def category: CategProp[ValueType]
-		def values: Seq[ValueType]
+		val category: CategProp
+		def values: Seq[category.ValueType]
 	}
 
-	def selection[T <: AnyRef](cat: CategProp[T], vals: Seq[T]) = new Selection{
-		type ValueType = T
+	def selection[T <: AnyRef](cat: CategProp{type ValueType = T}, vals: Seq[T]) = new Selection{
 		val category = cat
 		val values = vals
 	}
 
-	def filter[T](prop: ContProp[T], cond: FilterRequest[T]) = new Filter{
-		type ValueType = T
+	def filter[T](prop: ContProp{type ValueType = T}, cond: FilterRequest[T]) = new Filter{
 		val property = prop
 		val condition = cond
 	}
 
-	case class SortBy(property: ContProp[_], descending: Boolean)
+	object Filter{
+		def unapply(f: Filter) = Some(f.property -> f.condition)
+	}
 
-	sealed trait Property[T]
+	case class SortBy(property: ContProp, descending: Boolean)
 
-	final case object DobjUri extends Property[IRI]
+	sealed trait Property{type ValueType}
 
-	sealed trait ContProp[T] extends Property[T]
+	sealed trait UriProperty extends Property{type ValueType = IRI}
 
-	final case object FileName extends ContProp[String]
-	final case object FileSize extends ContProp[Long]
-	final case object SubmissionStart extends ContProp[Long]
-	final case object SubmissionEnd extends ContProp[Long]
-	final case object DataStart extends ContProp[Long]
-	final case object DataEnd extends ContProp[Long]
+	final case object DobjUri extends UriProperty
 
-	sealed trait CategProp[T <: AnyRef] extends Property[T]
+	sealed trait ContProp extends Property
 
-	final case object Spec extends CategProp[IRI]
-	final case object Station extends CategProp[Option[IRI]]
-	final case object Submitter extends CategProp[IRI]
+	sealed trait LongProperty extends ContProp{type ValueType = Long}
+
+	final case object FileName extends ContProp{type ValueType = String}
+	final case object FileSize extends LongProperty
+	final case object SubmissionStart extends LongProperty
+	final case object SubmissionEnd extends LongProperty
+	final case object DataStart extends LongProperty
+	final case object DataEnd extends LongProperty
+
+	sealed trait CategProp extends Property{type ValueType <: AnyRef}
+
+	final case object Spec extends CategProp with UriProperty
+	final case object Station extends CategProp{ type ValueType = Option[IRI]}
+	final case object Submitter extends CategProp with UriProperty
 }

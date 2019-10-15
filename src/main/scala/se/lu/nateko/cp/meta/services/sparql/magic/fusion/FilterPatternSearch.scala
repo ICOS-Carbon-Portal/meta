@@ -21,14 +21,14 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 
 //TODO Add collapsing of two Min/Max filters into one IntervalFilter
-class FilterPatternSearch(varInfo: String => Option[ContProp[_]]){
+class FilterPatternSearch(varInfo: String => Option[ContProp]){
 	import FilterPatternSearch._
 	import DataObjectFetchPattern.FilterPattern
 
 	val search: TopNodeSearch[FilterPattern] = takeNode
 		.ifIs[FilterQMN]
 		.thenAlsoSearch{fqmn =>
-			parseFilterConjunction(fqmn.getCondition)
+			parseFilterConjunction(fqmn.getCondition).map(collapseIntervals)
 		}
 		.thenGet{
 			case (fqmn, filters) => new FilterPattern(fqmn, filters)
@@ -54,7 +54,7 @@ class FilterPatternSearch(varInfo: String => Option[ContProp[_]]){
 
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[Filter] = {
 
-		def makeFilter[T](prop: ContProp[T])(limit: T): Option[Filter] = {
+		def makeFilter[T](prop: ContProp{type ValueType = T})(limit: T): Option[Filter] = {
 			import Compare.CompareOp._
 			val reqOpt: Option[FilterRequest[T]] = op match{
 				case EQ => Some(EqualsFilter(limit))
@@ -69,21 +69,21 @@ class FilterPatternSearch(varInfo: String => Option[ContProp[_]]){
 			}
 		}
 
-		val propOpt: Option[ContProp[_]] = if(!left.isAnonymous) varInfo(left.getName) else None
+		val propOpt: Option[ContProp] = if(!left.isAnonymous) varInfo(left.getName) else None
 
 		val litOpt: Option[Literal] = right.getValue match{
 			case lit: Literal => Some(lit)
 			case _ => None
 		}
 
-		val optopt = for(prop <- propOpt; lit <- litOpt) yield prop match{
-
-			case fn @ FileName => asString(lit).flatMap(makeFilter(fn))
-
-			case fs @ FileSize => asLong(lit).flatMap(makeFilter(fs))
-
-			case tsProp @ (DataEnd | DataStart | SubmissionStart | SubmissionEnd) =>
-				asTsEpochMillis(lit).flatMap(makeFilter(tsProp))
+		val optopt: Option[Option[Filter]] = for(prop <- propOpt; lit <- litOpt) yield prop match{
+			//TODO Revisit this code segment with Scala 2.13 or later (try to remove repetition)
+			case FileName        => asString(lit).flatMap(makeFilter(FileName))
+			case FileSize        => asLong(lit).flatMap(makeFilter(FileSize))
+			case DataEnd         => asTsEpochMillis(lit).flatMap(makeFilter(DataEnd))
+			case DataStart       => asTsEpochMillis(lit).flatMap(makeFilter(DataStart))
+			case SubmissionStart => asTsEpochMillis(lit).flatMap(makeFilter(SubmissionStart))
+			case SubmissionEnd   => asTsEpochMillis(lit).flatMap(makeFilter(SubmissionEnd))
 		}
 		optopt.flatten
 	}
@@ -110,30 +110,39 @@ object FilterPatternSearch{
 		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
 	else None
 
-	// def collapseIntervals(filters: Seq[Filter]): Seq[Filter] = {
-	// 	val (minMaxes, rest) = filters.partition(f => f.condition match{
-	// 		case MaxFilter(_, _) => true
-	// 		case MinFilter(_, _) => true
-	// 		case _ => false
-	// 	})
-	// 	if(minMaxes.isEmpty) filters else{
-	// 		val collapsed = minMaxes.groupBy(_.property).flatMap{case (prop, propFilters) => {
+	def collapseIntervals(filters: Seq[Filter]): Seq[Filter] = {
 
-	// 			def makeFilter[T](prop: ContProp[T], cond1: FilterRequest[T], cond2: FilterRequest[T]): Seq[Filter] = (cond1, cond2) match{
-	// 				case (min: MinFilter[T], max: MaxFilter[T]) =>
-	// 					Seq(DataObjectFetch.filter[T](prop, IntervalFilter(min, max)))
-	// 				case (min: MinFilter[T], max: MaxFilter[T]) =>
-	// 					Seq(DataObjectFetch.filter[T](prop, IntervalFilter(min, max)))
-	// 			}
+		val (minMaxes, rest) = filters.partition(f => f.condition match{
+			case MaxFilter(_, _) => true
+			case MinFilter(_, _) => true
+			case _ => false
+		})
 
+		if(minMaxes.isEmpty) filters else{
+			val collapsed = minMaxes.groupBy(_.property).flatMap{case (prop, propFilters) => {
 
-	// 			if(propFilters.size != 2) propFilters else propFilters match{
-	// 				case Seq(Filter(p, cond1), Filter(`p`, cond2)) => makeFilter(p, cond1, cond2)
-	// 				case _ => Nil
-	// 			}
-	// 		}}
-	// 		???
-	// 		//collapsed +: rest
-	// 	}
-	// }
+				type VT = prop.ValueType
+
+				def makeFilter(cond1: FilterRequest[VT], cond2: FilterRequest[VT]): Option[IntervalFilter[VT]] = (cond1, cond2) match{
+					case (min: MinFilter[VT], max: MaxFilter[VT]) => Some(IntervalFilter(min, max))
+					case (max: MaxFilter[VT], min: MinFilter[VT]) => Some(IntervalFilter(min, max))
+					case _ => None
+				}
+
+				propFilters.toList match{
+					case Filter(`prop`, cond1) :: Filter(`prop`, cond2) :: Nil =>
+						//TODO Revisit the next line in next versions of Scala (2.13+), the casts should not be needed
+						makeFilter(cond1.asInstanceOf[FilterRequest[VT]], cond2.asInstanceOf[FilterRequest[VT]])
+							.map{intFilt =>
+								DataObjectFetch.filter[VT](prop, intFilt)
+							}
+							.fold(propFilters)(Seq(_))
+					case _ =>
+						propFilters
+				}
+
+			}}
+			collapsed.toSeq ++ rest
+		}
+	}
 }

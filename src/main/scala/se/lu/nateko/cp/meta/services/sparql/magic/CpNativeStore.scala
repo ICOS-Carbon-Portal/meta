@@ -74,7 +74,7 @@ class CpNativeStore(
 		nativeSail.initialize()
 		log.info("Triple store initialized, initializing Carbon Portal index...")
 		indexh = indexInit(originalSail)
-		log.info(s"Carbon Portal index initialized with info on ${indexh.index.objInfo.size} data objects")
+		log.info(s"Carbon Portal index initialized with info on ${indexh.index.size} data objects")
 		citer = citationFactory.getProvider(originalSail)
 		log.info("Initialized citation provider")
 	}

@@ -62,7 +62,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.4.4",
+		version := "0.5.0",
 		scalacOptions ++= jvmScalacOptions,
 
 		libraryDependencies ++= Seq(
@@ -80,9 +80,10 @@ lazy val meta = (project in file("."))
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
+			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
-			"se.lu.nateko.cp"       %% "doi-common"                    			% "0.1.1-SNAPSHOT",
+			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.1-SNAPSHOT",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.1-SNAPSHOT" % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
 		),

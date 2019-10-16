@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import scala.collection.JavaConverters.asJavaIterator
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 
 
 class CpEvaluationStrategyFactory(
@@ -64,7 +65,10 @@ class CpEvaluationStrategyFactory(
 				case DataEnd         => setterOpt(_.dataEndTime)
 			}
 		}
-		index.fetch(doFetch.fetchRequest).map{oinfo =>
+
+		val fetchRequest = getFetchRequest(doFetch, bindings)
+
+		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
 			setters.foreach{_(bs, oinfo)}
 			bs
@@ -75,5 +79,20 @@ class CpEvaluationStrategyFactory(
 		// 		if(i == 3) println("...")
 		// 		bs
 		// }
+	}
+
+	private def getFetchRequest(doFetch: DataObjectFetchNode, bindings: BindingSet): DataObjectFetch = {
+		val orig = doFetch.fetchRequest
+
+		val betterReqOpt: Option[DataObjectFetch] = for(
+			specVar <- doFetch.varNames.get(Spec) if bindings.hasBinding(specVar) &&
+				orig.selections.exists(sel => sel.category == Spec && sel.values.isEmpty);
+			spec <- bindings.getBinding(specVar).getValue match {
+				case uri: IRI => Some(uri)
+				case _ => None
+			}
+		) yield orig.withSelection(selection(Spec, Seq(spec)))
+
+		betterReqOpt.getOrElse(orig)
 	}
 }

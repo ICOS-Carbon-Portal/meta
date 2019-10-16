@@ -27,8 +27,18 @@ class DataObjectFetchNode(
 
 	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
 
-	override def getSignature(): String = s"${super.getSignature} (vars: ${allVars.mkString(", ")}; exclude deprecated: ${
-		fetchRequest.filtering.filterDeprecated
-	})"
+	override def getSignature(): String = {
+		val orig = super.getSignature
+		val deprecated = s"exclude deprecated: ${fetchRequest.filtering.filterDeprecated}"
+		val selections = s"selections: ${fetchRequest.selections.size}"
+		val filters = s"filters: ${fetchRequest.filtering.filters.size}"
+		val vars = s"""vars: ${allVars.mkString(", ")}"""
+		val sorting = fetchRequest.sort.fold("no sort")(sb => {
+			val dir = if(sb.descending) "DESC" else "ASC"
+			s"order by $dir(${sb.property})"
+		})
+		val offset = s"offset ${fetchRequest.offset}"
+		s"$orig ($vars), $selections, $filters, $sorting, $offset, $deprecated"
+	}
 
 }

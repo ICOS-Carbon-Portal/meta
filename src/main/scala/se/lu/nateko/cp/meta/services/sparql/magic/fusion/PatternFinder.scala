@@ -44,6 +44,9 @@ object PatternFinder{
 		def ifFound[O2](other: O => Option[O2]): NodeSearch[I, O] = node => test(node).filter(t => other(t).isDefined)
 
 		def optional: NodeSearch[I, Option[O]] = test.andThen(Some(_))
+
+		def orElse[I2 >: I <: QMN, O2 <: O](other: NodeSearch[I2, O2]): NodeSearch[I, O] =
+			node => test(node).orElse(other(node))
 	}
 
 	private class Visitor[T](test: TopNodeSearch[T]) extends AbstractQueryModelVisitor{

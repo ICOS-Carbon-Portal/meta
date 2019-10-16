@@ -70,11 +70,14 @@ class DataObjectFetchPattern(
 
 		val filters = filter.fold[Seq[FetchFilter]](Nil)(_.filters)
 
+		val selections = categPatterns.map(cp => selection(cp.property, cp.categValues))
+		val unboundedSelectionsPresent: Boolean = selections.exists(_.values.isEmpty)
+
 		val fetch = new DataObjectFetch(
-			selections = categPatterns.map(cp => selection(cp.property, cp.categValues)),
+			selections = selections,
 			filtering = new Filtering(filters, noDeprecated.isDefined, contPatterns.map(_.property)),
 			sort = sortBy,
-			offset = offset.fold(0)(_.offset)
+			offset = offset.filter(_ => !unboundedSelectionsPresent).fold(0)(_.offset)
 		)
 
 		val varNames: Map[Property, String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap
@@ -93,6 +96,9 @@ class DataObjectFetchPattern(
 
 			//the deepest expression is used to place the new QueryModelNode in its stead
 			case `deepest` => false
+
+			//cannot sort or skip if providing only partial solution, need to rely on the default sorting functionality
+			case _: OrderPattern | _: OffsetPattern if unboundedSelectionsPresent => false
 
 			case _ => true
 		}

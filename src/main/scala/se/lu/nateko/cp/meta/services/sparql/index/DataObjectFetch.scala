@@ -9,7 +9,12 @@ class DataObjectFetch(
 	val filtering: Filtering,
 	val sort: Option[SortBy],
 	val offset: Int
-)
+){
+	def withSelection(sel: Selection): DataObjectFetch = {
+		val newSels = selections.filterNot(_.category == sel.category) :+ sel
+		new DataObjectFetch(newSels, filtering, sort, offset)
+	}
+}
 
 object DataObjectFetch{
 

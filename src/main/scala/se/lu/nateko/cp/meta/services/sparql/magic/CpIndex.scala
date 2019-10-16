@@ -59,7 +59,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val stats = new ArrayBuffer[ObjEntry](nObjects)
-	private val deprecated = MutableRoaringBitmap.bitmapOf()
+	private val deprecated: MutableRoaringBitmap = emptyBitmap
 	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
 	private val bmMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
 
@@ -101,12 +101,12 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
-		def or(bms: Seq[MutableRoaringBitmap]): Seq[MutableRoaringBitmap] =
-			if(bms.isEmpty) Nil else Seq(BufferFastAggregation.or(bms: _*)) //single-element Seq for convenience
+		def or(bms: Seq[MutableRoaringBitmap]): Option[MutableRoaringBitmap] =
+			if(bms.isEmpty) None else Some(BufferFastAggregation.or(bms: _*))
 
 		val categVarFilters = req.selections.flatMap{sel =>
 			val perValue = categMap(sel.category)
-			or(sel.values.flatMap(perValue.get))
+			or(sel.values.map(v => perValue.getOrElse(v, emptyBitmap)))
 		}
 
 		val continuousVarFilters = req.filtering.filters.map{f =>
@@ -125,7 +125,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 		val totalFilter = if(req.filtering.filterDeprecated) {
 			val beforeDeprecation = filterThusFar.getOrElse{
-				val bm = MutableRoaringBitmap.bitmapOf()
+				val bm = emptyBitmap
 				bm.add(0L, (stats.length - 1).toLong)
 				bm
 			}
@@ -199,7 +199,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		}
 
 		def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int): Unit = {
-			val bm = set.getOrElseUpdate(categ, MutableRoaringBitmap.bitmapOf())
+			val bm = set.getOrElseUpdate(categ, emptyBitmap)
 			if(isAssertion) bm.add(idx) else bm.remove(idx)
 		}
 	
@@ -306,6 +306,9 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 object CpIndex{
 	val UpdateQueueSize = 1 << 13
+
+	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
+
 	private class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(implicit factory: ValueFactory) extends ObjInfo{
 		var spec: IRI = _
 		var submitter: IRI = _

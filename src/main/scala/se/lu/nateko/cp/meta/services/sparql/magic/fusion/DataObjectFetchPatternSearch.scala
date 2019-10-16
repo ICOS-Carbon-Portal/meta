@@ -7,9 +7,9 @@ import org.eclipse.rdf4j.model.IRI
 import DataObjectFetchPattern._
 import PatternFinder._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
+import StatementPatternSearch._
 
 class DataObjectFetchPatternSearch(meta: CpmetaVocab){
-	import StatementPatternSearch._
 	import DataObjectFetchPatternSearch._
 
 	// FILTER NOT EXISTS {[] [] []}
@@ -41,14 +41,14 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		}
 		.recursive
 
-	// ?dobj cpmeta:hasObjectSpec ?spec . VALUES ?spec {<iri1> ... <irin>}
+	// ?dobj cpmeta:hasObjectSpec ?spec . VALUES ?spec {<iri1> ... <irin>} (VALUES is optional)
 	val dataObjSpecPatternSearch: CategPatternSearch = StatementPatternSearch
 		.byPredicate(meta.hasObjectSpec).thenSearch(nonAnonymous).recursive
-		.thenFlatMap(nvp => BindingSetAssignmentSearch.byVarName(nvp.objVar).recursive)
+		.thenFlatMap(nvp => BindingSetAssignmentSearch.byVarName(nvp.objVar).recursive.optional)//allow unbound ?spec
 		.thenGet{
 			case (nvp, bsas) =>
-				val exprs = Seq(nvp.sp, bsas.expr)
-				nvp.subjVar -> categPattern(exprs, Spec, nvp.objVar, bsas.values)
+				val exprs = bsas.map(_.expr).toSeq :+ nvp.sp
+				nvp.subjVar -> categPattern(exprs, Spec, nvp.objVar, bsas.toSeq.flatMap(_.values))
 		}
 
 	// ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station . VALUES ?station {<iri1> ... <irin>}
@@ -75,30 +75,34 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
 	val submStartPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.startedAtTime)
-		.thenGet{tspp =>
-			val exprs = Seq(tspp.step1, tspp.step2)
-			tspp.subjVariable -> new ContPropPattern(exprs, SubmissionStart, tspp.objVariable)
-		}
+		.thenGet(tsppResult(SubmissionStart))
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 	val submEndPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.endedAtTime)
-		.thenGet{tspp =>
-			val exprs = Seq(tspp.step1, tspp.step2)
-			tspp.subjVariable -> new ContPropPattern(exprs, SubmissionEnd, tspp.objVariable)
-		}
+		.thenGet(tsppResult(SubmissionEnd))
 
 	val tempCoverage = new TempCoveragePatternSearch(meta)
 
-	// ?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStartTime .
+	// ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart
 	val dataStartSearch: ContPatternSearch = tempCoverage.startTimePattern
 		.thenGet{tcp =>
 			tcp.dobjVar -> new ContPropPattern(Seq(tcp.expr), DataStart, tcp.timeVar)
 		}
+		.orElse{
+			// ?dobj cpmeta:wasAcquiredBy / prov:startedAtTime ?timeStart
+			twoStepPropPath(meta.wasAcquiredBy, meta.prov.startedAtTime)
+				.thenGet(tsppResult(DataStart))
+		}
 
-	// ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEndTime .
+	// ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd
 	val dataEndSearch: ContPatternSearch = tempCoverage.endTimePattern
 		.thenGet{tcp =>
 			tcp.dobjVar -> new ContPropPattern(Seq(tcp.expr), DataEnd, tcp.timeVar)
+		}
+		.orElse{
+			// ?dobj cpmeta:wasAcquiredBy / prov:endedAtTime ?timeEnd
+			twoStepPropPath(meta.wasAcquiredBy, meta.prov.endedAtTime)
+				.thenGet(tsppResult(DataEnd))
 		}
 
 	private def simpleContPattSearch(pred: IRI, prop: ContProp): ContPatternSearch =
@@ -159,6 +163,16 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 }
 
 object DataObjectFetchPatternSearch{
-	type CategPatternSearch = TopNodeSearch[(String, CategPropPattern)]
-	type ContPatternSearch = TopNodeSearch[(String, ContPropPattern)]
+	type DobjVarName = String
+	type CategResult = (DobjVarName, CategPropPattern)
+	type ContResult = (DobjVarName, ContPropPattern)
+	type CategPatternSearch = TopNodeSearch[CategResult]
+	type ContPatternSearch = TopNodeSearch[ContResult]
+
+	def tsppResult(prop: ContProp)(tspp: TwoStepPropPath): ContResult = {
+		//the first statement pattern is left hanging, to be optimized away if not needed anywhere else
+		val exprs = Seq(tspp.step2)
+		tspp.subjVariable -> new ContPropPattern(exprs, prop, tspp.objVariable)
+	}
+
 }

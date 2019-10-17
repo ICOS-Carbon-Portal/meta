@@ -77,4 +77,62 @@ object TestQueries{
 		}
 		order by ?variable ?stationName ?height
 	"""
+
+	val etcsLatest = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+	prefix esstation: <http://meta.icos-cp.eu/resources/stations/ES_>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select ?pid ?fileName
+	where{
+		{
+			SELECT ?spec WHERE {
+				VALUES (?ftype ?spec){
+					("DHP" cpres:digHemispherPics )
+					("EC" cpres:etcEddyFluxRawSeriesBin )
+					("EC" cpres:etcEddyFluxRawSeriesCsv )
+					("ST" cpres:etcStorageFluxRawSeriesBin )
+					("ST" cpres:etcStorageFluxRawSeriesCsv )
+					("BM" cpres:etcBioMeteoRawSeriesBin )
+					("BM" cpres:etcBioMeteoRawSeriesCsv )
+					("SAHEAT" cpres:etcSaheatFlagFile )
+					("CEP" cpres:ceptometerMeasurements )
+				}
+				FILTER((?ftype = "EC"))
+			}
+		}
+		?dobj cpmeta:hasObjectSpec ?spec ;
+			cpmeta:wasAcquiredBy/prov:wasAssociatedWith esstation:DE-HoH ;
+			cpmeta:wasAcquiredBy/prov:startedAtTime ?acqStartTime ;
+			cpmeta:wasSubmittedBy/prov:startedAtTime ?submStartTime .
+		FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj }
+		BIND(substr(str(?dobj), strlen(str(?dobj)) - 23) AS ?pid)
+		?dobj cpmeta:hasName ?fileName .
+		FILTER(?submStartTime > "2019-10-10T21:00:00Z"^^xsd:dateTime)
+	}
+	order by ?acqStartTime
+	"""
+
+	val simpleSpecStationSelect = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+	prefix esstation: <http://meta.icos-cp.eu/resources/stations/ES_>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select ?dobj where{
+		?dobj cpmeta:hasObjectSpec cpres:etcEddyFluxRawSeriesCsv ;
+		cpmeta:wasAcquiredBy/prov:wasAssociatedWith esstation:DE-HoH .
+	}
+	"""
+
+	val last100uploaded = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select (str(?submTime) as ?time) ?dobj ?spec ?dataLevel ?fileName where{
+		?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+		?dobj cpmeta:hasName ?fileName .
+		?dobj cpmeta:hasObjectSpec [rdfs:label ?spec ; cpmeta:hasDataLevel ?dataLevel].
+	}
+	order by desc(?submTime)
+	limit 100
+	"""
 }

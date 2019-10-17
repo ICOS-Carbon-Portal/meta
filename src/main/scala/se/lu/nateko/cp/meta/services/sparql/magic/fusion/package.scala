@@ -16,15 +16,23 @@ package object fusion{
 		strict(node.getParentNode)
 	}
 
-	def areWithinCommonJoin(nodes: Seq[QueryModelNode]): Boolean = {
-		val (filters, nonFilters) = nodes.partition(_.isInstanceOf[Filter])
-		val joins = nonFilters.map(highestJoinOnlyAncestor).flatten
+	def highestAncestorInSameQuery(node: QueryModelNode): Option[QueryModelNode] = {
+		def strict(node: QueryModelNode): Option[QueryModelNode] = node match {
+			case _: Extension | _: Filter | _: Join | _: Order =>
+				highestAncestorInSameQuery(node.getParentNode).orElse(Some(node))
+			case _ => None
+		}
+		strict(node.getParentNode).orElse(strict(node))
+	}
 
-		joins.length == nonFilters.length &&
-		joins.distinct.length == 1 &&
-		filters.forall(
-			filter => nonFilters.forall(filter.isAncestorOf)
-		)
+	def areWithinCommonJoin(nodes: Seq[QueryModelNode]): Boolean = {
+		val joins = nodes.flatMap(highestJoinOnlyAncestor)
+		joins.length == nodes.length && joins.distinct.length == 1
+	}
+
+	def areWithinSameQuery(nodes: Seq[QueryModelNode]): Boolean = {
+		val joins = nodes.flatMap(highestAncestorInSameQuery)
+		joins.length == nodes.length && joins.distinct.length == 1
 	}
 
 	def areSiblings(n1: QueryModelNode, n2: QueryModelNode): Boolean = {
@@ -44,6 +52,11 @@ package object fusion{
 		res
 	}
 
+	@tailrec
+	def treeTop(anyNode: QueryModelNode): QueryModelNode = {
+		val parent = anyNode.getParentNode
+		if(parent == null) anyNode else treeTop(parent)
+	}
 	implicit class EnhancedQueryModelNode(val node: QueryModelNode) extends AnyVal{
 		@tailrec def isAncestorOf(other: QueryModelNode): Boolean =
 			if(other == null) false

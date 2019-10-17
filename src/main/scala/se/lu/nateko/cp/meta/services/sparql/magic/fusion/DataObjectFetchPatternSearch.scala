@@ -41,36 +41,79 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		}
 		.recursive
 
-	// ?dobj cpmeta:hasObjectSpec ?spec . VALUES ?spec {<iri1> ... <irin>} (VALUES is optional)
 	val dataObjSpecPatternSearch: CategPatternSearch = StatementPatternSearch
-		.byPredicate(meta.hasObjectSpec).thenSearch(nonAnonymous).recursive
-		.thenFlatMap(nvp => BindingSetAssignmentSearch.byVarName(nvp.objVar).recursive.optional)//allow unbound ?spec
+		.byPredicate(meta.hasObjectSpec)
+		.filter(sp => !sp.getSubjectVar.isAnonymous)
+		.recursive
+		.thenFlatMap{sp =>
+			val objVar = sp.getObjectVar
+			if(objVar.hasValue) {
+				//?dobj cpmeta:hasObjectSpec <iri>
+				_ => objVar.getValue match{
+					case iri: IRI => Some(Nil -> Seq(iri))
+					case _ => None
+				}
+			} else if(!objVar.isAnonymous) {
+				// ?dobj cpmeta:hasObjectSpec ?spec . VALUES ?spec {<iri1> ... <irin>} (VALUES is optional)
+				BindingSetAssignmentSearch.byVarName(objVar.getName).recursive
+					.optional//allow unbound ?spec
+					.thenGet(
+						_.fold[(Seq[TupleExpr], Seq[Spec.ValueType])](
+							Nil -> Nil
+						)(
+							bsas => Seq(bsas.expr) -> bsas.values
+						)
+					)
+			} else _ => None
+		}
 		.thenGet{
-			case (nvp, bsas) =>
-				val exprs = bsas.map(_.expr).toSeq :+ nvp.sp
-				nvp.subjVar -> categPattern(exprs, Spec, nvp.objVar, bsas.toSeq.flatMap(_.values))
+			case (sp, (exprs, vals)) =>
+				val objVar = sp.getObjectVar
+				val propVarName = if(objVar.isAnonymous) None else Some(objVar.getName)
+				sp.getSubjectVar.getName -> categPattern(exprs :+ sp, Spec, propVarName, vals)
 		}
 
-	// ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station . VALUES ?station {<iri1> ... <irin>}
 	val stationPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
 		.thenFlatMap{tspp =>
-			BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
+			val statVar = tspp.step2.getObjectVar
+			if(statVar.hasValue) {
+				//?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith <iri>
+				_ => statVar.getValue match{
+					case iri: IRI => Some(Nil -> Seq(Some(iri)))
+					case _ => None
+				}
+			} else if(!statVar.isAnonymous) {
+				// ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station . VALUES ?station {<iri1> ... <irin>}
+				BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
+					.optional//allow unbound ?station
+					.thenGet(
+						_.fold[(Seq[TupleExpr], Seq[Station.ValueType])](
+							Nil -> Nil
+						)(
+							bsas => Seq(bsas.expr) -> bsas.values.map(Some(_))
+						)
+					)
+			} else _ => None
+
 		}
 		.thenGet{
-			case (tspp, bsas) =>
-				val exprs = Seq(tspp.step1, tspp.step2, bsas.expr)
-				tspp.subjVariable -> categPattern(exprs, Station, tspp.objVariable, bsas.values.map(Some(_)))
+			case (tspp, (bsasExprs, vals)) =>
+				val exprs = Seq(tspp.step1, tspp.step2) ++ bsasExprs
+				val objVar = tspp.step2.getObjectVar
+				val propVarName = if(objVar.isAnonymous) None else Some(objVar.getName)
+				tspp.subjVariable -> categPattern(exprs, Station, propVarName, vals)
 		}
 
 	// ?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
 	val submitterPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.wasAssociatedWith)
+		.filter(!_.step2.getObjectVar.isAnonymous)
 		.thenFlatMap{tspp =>
 			BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
 		}
 		.thenGet{
 			case (tspp, bsas) =>
 				val exprs = Seq(tspp.step1, tspp.step2, bsas.expr)
-				tspp.subjVariable -> categPattern(exprs, Submitter, tspp.objVariable, bsas.values)
+				tspp.subjVariable -> categPattern(exprs, Submitter, Some(tspp.objVariable), bsas.values)
 		}
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
@@ -151,12 +194,13 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				)
 			}
 			.filter{res =>
-				val patternsToBeInCommonJoin = res.allPatterns.filter{
-					case _: OrderPattern | _: OffsetPattern | _: FilterPattern => false
+				val patternsToBeInSameQuery = res.allPatterns.filter{
+					case _: OffsetPattern => false
 					case _ => true
 				}
-				patternsToBeInCommonJoin.length > 1 && areWithinCommonJoin(
-					patternsToBeInCommonJoin.flatMap(_.expressions)
+
+				patternsToBeInSameQuery.length > 1 && areWithinSameQuery(
+					patternsToBeInSameQuery.flatMap(_.expressions)
 				)
 			}
 	}

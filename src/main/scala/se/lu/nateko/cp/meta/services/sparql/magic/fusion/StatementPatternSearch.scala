@@ -23,8 +23,8 @@ object StatementPatternSearch{
 		def isPropPath(sp1: StatementPattern, sp2: StatementPattern): Boolean = {
 			val (s1, _, o1) = splitTriple(sp1)
 			val (s2, _, o2) = splitTriple(sp2)
-			!s1.isAnonymous && o1.isAnonymous && s2.isAnonymous && o1.getName == s2.getName && !o2.isAnonymous &&
-			areWithinCommonJoin(Seq(sp1, sp2))
+			!s1.isAnonymous && o1.isAnonymous && s2.isAnonymous && o1.getName == s2.getName &&
+			(!o2.isAnonymous || o2.hasValue) && areWithinCommonJoin(Seq(sp1, sp2))
 		}
 
 		node => byPredicate(pred1)

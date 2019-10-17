@@ -44,6 +44,10 @@ object DataObjectFetch{
 		def unapply(f: Filter) = Some(f.property -> f.condition)
 	}
 
+	object Selection{
+		def unapply(s: Selection): Option[(CategProp, Seq[s.category.ValueType])] = Some(s.category -> s.values)
+	}
+
 	case class SortBy(property: ContProp, descending: Boolean)
 
 	sealed trait Property{type ValueType}

@@ -66,32 +66,52 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-		val fetchRequest = getFetchRequest(doFetch, bindings)
-
-		index.fetch(fetchRequest).map{oinfo =>
+		def makeBinding(oinfo: ObjInfo): BindingSet = {
 			val bs = new QueryBindingSet(bindings)
 			setters.foreach{_(bs, oinfo)}
 			bs
 		}
-		// .zipWithIndex.collect{
-		// 	case (bs, i) =>
-		// 		if(i < 3 || i == 10 || i == 100 || i == 1000 || i == 10000) println(s"binding $i : $bs")
-		// 		if(i == 3) println("...")
-		// 		bs
-		// }
+
+		doFetch.varNames.get(DobjUri) match{
+			//TODO Handle the case of already bound ?dobj as an extra selection in fetchRequest
+			case Some(dobjVar) if bindings.hasBinding(dobjVar) =>
+				bindings.getBinding(dobjVar).getValue match {
+					case CpVocab.DataObject(hash, _) =>
+						index.lookupObject(hash).iterator.map(makeBinding)
+					case _ =>
+						Iterator.empty
+				}
+
+			case _ =>
+				val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
+					.initializeRequest(doFetch.fetchRequest)
+
+				index.fetch(fetchRequest).map(makeBinding)
+			}
 	}
 
-	private def getFetchRequest(doFetch: DataObjectFetchNode, bindings: BindingSet): DataObjectFetch = {
-		val orig = doFetch.fetchRequest
+}
+
+class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
+
+	def initializeRequest(orig: DataObjectFetch): DataObjectFetch = initStation(initSpec(orig))
+
+	private def initSpec(req: DataObjectFetch): DataObjectFetch = initReq(req, Spec)(identity)
+	private def initStation(req: DataObjectFetch): DataObjectFetch = initReq(req, Station)(Some(_))
+
+	private def initReq(orig: DataObjectFetch, prop: CategProp)(mapper: IRI => prop.ValueType): DataObjectFetch = {
 
 		val betterReqOpt: Option[DataObjectFetch] = for(
-			specVar <- doFetch.varNames.get(Spec) if bindings.hasBinding(specVar) &&
-				orig.selections.exists(sel => sel.category == Spec && sel.values.isEmpty);
-			spec <- bindings.getBinding(specVar).getValue match {
-				case uri: IRI => Some(uri)
+
+			propVar <- varNames.get(prop)
+				if bindings.hasBinding(propVar) &&
+					orig.selections.exists(sel => sel.category == prop && sel.values.isEmpty);
+
+			propVal <- bindings.getBinding(propVar).getValue match {
+				case uri: IRI => Some(mapper(uri))
 				case _ => None
 			}
-		) yield orig.withSelection(selection(Spec, Seq(spec)))
+		) yield orig.withSelection(selection[prop.ValueType](prop, Seq(propVal)))
 
 		betterReqOpt.getOrElse(orig)
 	}

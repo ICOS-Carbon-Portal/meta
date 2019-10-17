@@ -161,6 +161,8 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		}).flatten
 	}
 
+	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(stats.apply)
+
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
 			val oe = new ObjEntry(hash, stats.length, "")
 			stats += oe

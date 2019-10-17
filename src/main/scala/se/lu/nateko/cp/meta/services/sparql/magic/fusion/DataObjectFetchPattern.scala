@@ -18,17 +18,17 @@ object DataObjectFetchPattern{
 
 	sealed trait PropPattern extends SubPattern{
 		def property: Property
-		def propVarName: String
 	}
 
 	final class ContPropPattern(val expressions: Seq[TupleExpr], val property: ContProp, val propVarName: String) extends PropPattern
 
 	sealed trait CategPropPattern extends PropPattern{
 		override val property: CategProp
+		def propVarName: Option[String]
 		def categValues: Seq[property.ValueType]
 	}
 
-	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp{type ValueType = T}, propVar: String, vals: Seq[T]) = new CategPropPattern{
+	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp{type ValueType = T}, propVar: Option[String], vals: Seq[T]) = new CategPropPattern{
 		val expressions = exprs
 		val property = prop
 		val propVarName = propVar
@@ -80,9 +80,17 @@ class DataObjectFetchPattern(
 			offset = offset.filter(_ => !unboundedSelectionsPresent).fold(0)(_.offset)
 		)
 
-		val varNames: Map[Property, String] = (categPatterns ++ contPatterns).map(p => p.property -> p.propVarName).toMap
+		val varNames: Map[Property, String] = (
+			categPatterns.flatMap{cp => cp.propVarName.map(cp.property -> _)} ++
+			contPatterns.map(p => p.property -> p.propVarName)
+		).toMap
 
 		val fetchExpr = new DataObjectFetchNode(fetch, varNames + (DobjUri -> dobjVarName))
+
+		val queryTop = {
+			val anyNode = allPatterns.toIterator.flatMap(_.expressions).next()
+			treeTop(anyNode)
+		}
 
 		val deepest = allPatterns.maxBy(p => p.expressions.map(nodeDepth).max)
 		val deepestExpr = deepest.expressions.maxBy(nodeDepth)
@@ -104,6 +112,7 @@ class DataObjectFetchPattern(
 		}
 
 		patternsToRemove.foreach(_.removeExpressions())
+		DanglingCleanup.clean(queryTop)
 	}
 
 }

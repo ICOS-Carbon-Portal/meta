@@ -13,6 +13,8 @@ import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Filtering
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.SubmissionEnd
 
 class StatsTupleFunction(indexThunk: () => CpIndex) extends TupleFunction{
 
@@ -23,7 +25,9 @@ class StatsTupleFunction(indexThunk: () => CpIndex) extends TupleFunction{
 	override def evaluate(valueFactory: ValueFactory, args: Value*):
 			CloseableIteration[_ <: java.util.List[_ <: Value], QueryEvaluationException] = {
 
-		val iter = indexThunk().statEntries.iterator.map(entry =>
+		val defaultFiltering = new Filtering(Nil, true, Seq(SubmissionEnd))
+
+		val iter = indexThunk().statEntries(defaultFiltering).iterator.map(entry =>
 
 			args.map(_.stringValue match{
 

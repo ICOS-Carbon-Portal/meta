@@ -110,48 +110,59 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			or(sel.values.map(v => perValue.getOrElse(v, emptyBitmap)))
 		}
 
-		val continuousVarFilters = req.filtering.filters.map{f =>
-			bitmap(f.property).filter(f.condition)
-		}
-
-		val presentPropertiesFilters = req.filtering.requiredProps
-			.diff(req.filtering.filters.map(_.property))
-			.map(bitmap(_).all)
-
-		val allThusFar = Seq(categVarFilters, continuousVarFilters, presentPropertiesFilters).flatten
-
-		val filterThusFar: Option[ImmutableRoaringBitmap] =
-			if(allThusFar.isEmpty) None
-			else Some(BufferFastAggregation.and(allThusFar: _*))
-
-		val totalFilter = if(req.filtering.filterDeprecated) {
-			val beforeDeprecation = filterThusFar.getOrElse{
-				val bm = emptyBitmap
-				bm.add(0L, (objs.length - 1).toLong)
-				bm
-			}
-			Some(ImmutableRoaringBitmap.andNot(beforeDeprecation, deprecated))
-		} else filterThusFar
+		val filterOpt: Option[ImmutableRoaringBitmap] = filterConjunction(
+			categVarFilters ++ continuousPropFilters(req.filtering),
+			req.filtering.filterDeprecated
+		)
 
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
-				totalFilter.fold{
+				filterOpt.fold{
 					objs.indices.drop(req.offset).iterator
 				}{
 					_.iterator.asScala.drop(req.offset).map(_.intValue)
 				}
 			case Some(SortBy(prop, descending)) =>
-				bitmap(prop).iterateSorted(totalFilter, req.offset, descending)
+				bitmap(prop).iterateSorted(filterOpt, req.offset, descending)
 		}
 		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
 		idxIter.map(objs.apply)
 	}
 
-	def statEntries: Iterable[StatEntry] = readLocked{
-		val filter = ImmutableRoaringBitmap.andNot(bitmap(SubmissionEnd).all, deprecated)
+	private def continuousPropFilters(filtering: Filtering): Seq[ImmutableRoaringBitmap] = {
+		val continuousVarFilters = filtering.filters.map{f =>
+			bitmap(f.property).filter(f.condition)
+		}
+
+		val presentPropertiesFilters = filtering.requiredProps
+			.diff(filtering.filters.map(_.property))
+			.map(bitmap(_).all)
+
+		continuousVarFilters ++ presentPropertiesFilters
+	}
+
+	private def filterConjunction(bms: Seq[ImmutableRoaringBitmap], filterDeprecated: Boolean): Option[ImmutableRoaringBitmap] = {
+		val filterThusFar: Option[ImmutableRoaringBitmap] =
+			if(bms.isEmpty) None
+			else Some(BufferFastAggregation.and(bms: _*))
+		if(filterDeprecated) filterDeprecation(filterThusFar) else filterThusFar
+	}
+
+	private def filterDeprecation(in: Option[ImmutableRoaringBitmap]): Option[ImmutableRoaringBitmap] = in match{
+		case None =>
+			Some(ImmutableRoaringBitmap.flip(deprecated, 0, (objs.length - 1).toLong))
+		case Some(beforeDeprecation) =>
+			Some(ImmutableRoaringBitmap.andNot(beforeDeprecation, deprecated))
+	}
+
+	def statEntries(filtering: Filtering): Iterable[StatEntry] = readLocked{
+		val filterOpt: Option[ImmutableRoaringBitmap] = filterConjunction(
+			continuousPropFilters(filtering),
+			filtering.filterDeprecated
+		)
 		stats.flatMap{
 			case (key, bm) =>
-				val count = ImmutableRoaringBitmap.andCardinality(bm, filter)
+				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
 				if(count > 0) Some(StatEntry(key, count))
 				else None
 		}

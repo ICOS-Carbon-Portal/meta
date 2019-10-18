@@ -1,0 +1,17 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct {
+?dobj ?p ?o .
+?o ?p2 ?o2 .
+} where{
+	values ?dobj {
+		<https://meta.icos-cp.eu/objects/y9CWc6l4Gkd9x_oI62yr4EH5>
+	}
+	graph <http://meta.icos-cp.eu/resources/otcprodcsv/> {
+		?dobj ?p ?o .
+		OPTIONAL{
+			?o ?p2 ?o2 .
+			FILTER(?p != cpmeta:isNextVersionOf)
+		}
+	}
+}
+

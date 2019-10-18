@@ -58,21 +58,22 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	implicit val factory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
-	private val stats = new ArrayBuffer[ObjEntry](nObjects)
+	private val objs = new ArrayBuffer[ObjEntry](nObjects)
 	private val deprecated: MutableRoaringBitmap = emptyBitmap
 	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
-	private val bmMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
+	private val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
+	private val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
 
-	def size: Int = stats.length
+	def size: Int = objs.length
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = bmMap.getOrElseUpdate(prop, prop match {
+	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = contMap.getOrElseUpdate(prop, prop match {
+		/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
 		case FileName => StringHierarchicalBitmap{idx =>
-			val uri = stats(idx).uri
+			val uri = objs(idx).uri
 			sail.accessEagerly{conn => //this is to avoid storing all the file names in memory
 				val iter = conn.getStatements(uri, vocab.hasName, null, false)
 				val res = if(iter.hasNext()) iter.next().getObject().stringValue() else ""
@@ -80,11 +81,11 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				res
 			}
 		}
-		case FileSize =>        FileSizeHierarchicalBitmap(idx => stats(idx).size)
-		case DataStart =>       DatetimeHierarchicalBitmap(idx => stats(idx).dataStart)
-		case DataEnd =>         DatetimeHierarchicalBitmap(idx => stats(idx).dataEnd)
-		case SubmissionStart => DatetimeHierarchicalBitmap(idx => stats(idx).submissionStart)
-		case SubmissionEnd =>   DatetimeHierarchicalBitmap(idx => stats(idx).submissionEnd)
+		case FileSize =>        FileSizeHierarchicalBitmap(idx => objs(idx).size)
+		case DataStart =>       DatetimeHierarchicalBitmap(idx => objs(idx).dataStart)
+		case DataEnd =>         DatetimeHierarchicalBitmap(idx => objs(idx).dataEnd)
+		case SubmissionStart => DatetimeHierarchicalBitmap(idx => objs(idx).submissionStart)
+		case SubmissionEnd =>   DatetimeHierarchicalBitmap(idx => objs(idx).submissionEnd)
 	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
@@ -95,7 +96,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	//Mass-import of the statistics data
 	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
 	flush()
-	bmMap.valuesIterator.foreach(_.optimizeAndTrim())
+	contMap.valuesIterator.foreach(_.optimizeAndTrim())
 
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
@@ -126,7 +127,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		val totalFilter = if(req.filtering.filterDeprecated) {
 			val beforeDeprecation = filterThusFar.getOrElse{
 				val bm = emptyBitmap
-				bm.add(0L, (stats.length - 1).toLong)
+				bm.add(0L, (objs.length - 1).toLong)
 				bm
 			}
 			Some(ImmutableRoaringBitmap.andNot(beforeDeprecation, deprecated))
@@ -135,7 +136,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
 				totalFilter.fold{
-					stats.indices.drop(req.offset).iterator
+					objs.indices.drop(req.offset).iterator
 				}{
 					_.iterator.asScala.drop(req.offset).map(_.intValue)
 				}
@@ -143,32 +144,27 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				bitmap(prop).iterateSorted(totalFilter, req.offset, descending)
 		}
 		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
-		idxIter.map(stats.apply)
+		idxIter.map(objs.apply)
 	}
 
 	def statEntries: Iterable[StatEntry] = readLocked{
-		(for(
-			(spec, specBm) <- categMap(Spec);
-			(subm, submBm) <- categMap(Submitter);
-			(station, stationBm) <- categMap(Station)
-		) yield{
-			val key = StatKey(spec, subm, station)
-			val and = BufferFastAggregation.and(specBm, submBm, stationBm)
-			and.andNot(deprecated)
-			val count = and.getCardinality
-			if(count > 0) Some(StatEntry(key, count))
-			else None
-		}).flatten
+		val filter = ImmutableRoaringBitmap.andNot(bitmap(SubmissionEnd).all, deprecated)
+		stats.flatMap{
+			case (key, bm) =>
+				val count = ImmutableRoaringBitmap.andCardinality(bm, filter)
+				if(count > 0) Some(StatEntry(key, count))
+				else None
+		}
 	}
 
-	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(stats.apply)
+	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
-			val oe = new ObjEntry(hash, stats.length, "")
-			stats += oe
+			val oe = new ObjEntry(hash, objs.length, "")
+			objs += oe
 			idLookup += hash -> oe.idx
 			oe
-		}(stats.apply)
+		}(objs.apply)
 
 	def put(st: RdfUpdate): Unit = {
 		q.put(st)
@@ -211,9 +207,15 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				case spec: IRI =>
 					modForDobj(subj){oe =>
 						updateCategSet(categMap(Spec), spec, oe.idx)
-						if(isAssertion) oe.spec = spec
-						else if(spec === oe.spec) oe.spec = null
 						if(!specRequiresStation.getOrElse(spec, true)) updateCategSet(categMap(Station), None, oe.idx)
+						if(isAssertion) {
+							if(oe.spec != null) removeStat(oe)
+							oe.spec = spec
+							addStat(oe)
+						} else if(spec === oe.spec) {
+							removeStat(oe)
+							oe.spec = null
+						}
 					}
 			}
 
@@ -225,11 +227,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				case CpVocab.Submission(hash) =>
 					val oe = getObjEntry(hash)
 					oe.submitter = targetUri
+					if(isAssertion) addStat(oe) else removeStat(oe)
 					obj match{ case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx) }
 
 				case CpVocab.Acquisition(hash) =>
 					val oe = getObjEntry(hash)
 					oe.station = targetUri
+					if(isAssertion) addStat(oe) else removeStat(oe)
 					obj match{ case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx) }
 				case _ =>
 			}
@@ -303,6 +307,23 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 		case _ =>
 	}
+
+	private def keyForDobj(obj: ObjEntry): Option[StatKey] = if(
+		obj.spec == null || obj.submitter == null ||
+		(obj.station == null && specRequiresStation.getOrElse(obj.spec, true))
+	) None else Some(
+		StatKey(obj.spec, obj.submitter, Option(obj.station))
+	)
+
+	private def removeStat(obj: ObjEntry): Unit = for(
+		key <- keyForDobj(obj);
+		bm <- stats.get(key)
+	) bm.remove(obj.idx)
+
+	private def addStat(obj: ObjEntry): Unit = for(
+		key <- keyForDobj(obj);
+		bm = stats.getOrElseUpdate(key, emptyBitmap)
+	) bm.add(obj.idx)
 
 }
 

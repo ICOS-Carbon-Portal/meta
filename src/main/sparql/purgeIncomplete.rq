@@ -4,17 +4,14 @@ construct{
     ?dobj ?pred ?obj .
         ?obj ?pred2 ?obj2 .
 }
-FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
+FROM <http://meta.icos-cp.eu/resources/otcprodcsv/>
 where {
 	?dobj cpmeta:wasSubmittedBy ?subm .
-	FILTER NOT EXISTS {?subm prov:endedAtTime ?size }
-	?subm prov:startedAtTime ?submTime .
-	?dobj cpmeta:hasName ?fileName .
-	FILTER(?submTime < "2018-08-27T13:00:00Z"^^xsd:dateTime)
+	FILTER NOT EXISTS {?subm prov:endedAtTime ?size } .
 	?dobj ?pred ?obj .
 	OPTIONAL{
 		?obj ?pred2 ?obj2 .
-	    FILTER(?pred != cpmeta:isNextVersionOf)
+		FILTER(?pred != cpmeta:isNextVersionOf )
 	}
 }
 

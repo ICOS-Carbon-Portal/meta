@@ -199,7 +199,14 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 					case _ => true
 				}
 
-				patternsToBeInSameQuery.length > 1 && areWithinSameQuery(
+				val dobjSpecificPatternsCount = res.allPatterns.count{
+					//filename prop occurs on many other types of resources, not just data objs
+					case cont: ContPropPattern if cont.property == FileName => false
+					case _: PropPattern => true
+					case _ => false
+				}
+
+				dobjSpecificPatternsCount >= 1 && areWithinSameQuery(
 					patternsToBeInSameQuery.flatMap(_.expressions)
 				)
 			}

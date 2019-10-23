@@ -45,6 +45,7 @@ npm-debug.log
 nohup.out
 README.html
 *.*~
+src/test/resources/startTimes.csv
 
 #Front end
 /src/main/resources/www/sparqlclient.js

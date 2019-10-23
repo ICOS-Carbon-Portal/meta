@@ -16,7 +16,7 @@ import java.{util => ju}
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
+class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private val values = emptyBitmap
 	private[this] var n = 0
@@ -74,7 +74,7 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private def addToChild(key: K, value: Int): Unit = {
 		val coord = nextLevel(key)
-		val child = children.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1))
+		val child = children.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1, Some(coord)))
 		child.add(key, value)
 	}
 
@@ -168,17 +168,25 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 				inner(eqCoord == _, _ => false)
 
 			case MinFilter(min, _) =>
-				val minCoord = nextLevel(min)
-				inner(minCoord == _, minCoord < _)
+				if(coord.exists(thisLevel(min) < _)) values else {
+					val minCoord = nextLevel(min)
+					inner(minCoord == _, minCoord < _)
+				}
 
 			case MaxFilter(max, _) =>
-				val maxCoord = nextLevel(max)
-				inner(maxCoord == _, maxCoord > _)
+				if(coord.exists(thisLevel(max) > _)) values else {
+					val maxCoord = nextLevel(max)
+					inner(maxCoord == _, maxCoord > _)
+				}
 
 			case IntervalFilter(from, to) =>
-				val minC = nextLevel(from.min)
-				val maxC = nextLevel(to.max)
-				inner(c => c == minC || c == maxC, c => c > minC && c < maxC)
+				val minIsOut: Boolean = coord.exists(thisLevel(from.min) < _)
+				val maxIsOut: Boolean = coord.exists(thisLevel(to.max) > _)
+				if(minIsOut && maxIsOut) values else {
+					val minC = nextLevel(from.min)
+					val maxC = nextLevel(to.max)
+					inner(c => c == minC || c == maxC, c => (minIsOut || c > minC) && (maxIsOut || c < maxC))
+				}
 		}
 	}
 
@@ -196,6 +204,7 @@ class HierarchicalBitmap[K](depth: Int)(implicit geo: Geo[K], ord: Ordering[K]){
 	}
 
 	private def nextLevel(key: K): Coord = geo.coordinate(key, depth + 1)
+	private def thisLevel(key: K): Coord = geo.coordinate(key, depth)
 	private def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 }
 

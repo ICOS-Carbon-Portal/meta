@@ -30,7 +30,7 @@ object DatetimeHierarchicalBitmap{
 			def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
 		}
 
-		new HierarchicalBitmap[Long](0)
+		new HierarchicalBitmap[Long](0, None)
 	}
 
 }

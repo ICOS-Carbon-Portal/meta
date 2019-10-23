@@ -40,7 +40,7 @@ object StringHierarchicalBitmap{
 				else key.charAt(depth - 1).toShort
 		}
 
-		new HierarchicalBitmap[String](0)(geo, Ord)
+		new HierarchicalBitmap[String](0, None)(geo, Ord)
 	}
 
 }

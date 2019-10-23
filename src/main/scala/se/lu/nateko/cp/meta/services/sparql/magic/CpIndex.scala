@@ -301,7 +301,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				modForDobj(subj){oe =>
 					if(isAssertion) oe.size = size
 					else if(oe.size == size) oe.size = -1
-					handleContinuousPropUpdate(FileSize, size, oe.idx)
+					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}
 			}
 

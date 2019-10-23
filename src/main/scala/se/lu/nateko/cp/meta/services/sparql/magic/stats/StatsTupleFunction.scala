@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Filtering
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.SubmissionEnd
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.FileSize
 
 class StatsTupleFunction(indexThunk: () => CpIndex) extends TupleFunction{
 
@@ -25,7 +26,7 @@ class StatsTupleFunction(indexThunk: () => CpIndex) extends TupleFunction{
 	override def evaluate(valueFactory: ValueFactory, args: Value*):
 			CloseableIteration[_ <: java.util.List[_ <: Value], QueryEvaluationException] = {
 
-		val defaultFiltering = new Filtering(Nil, true, Seq(SubmissionEnd))
+		val defaultFiltering = new Filtering(Nil, true, Seq(SubmissionEnd, FileSize))
 
 		val iter = indexThunk().statEntries(defaultFiltering).iterator.map(entry =>
 

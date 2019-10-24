@@ -294,7 +294,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			case `isNextVersionOf` =>
 				modForDobj(obj)(oe => {
 					if(isAssertion) deprecated.add(oe.idx)
-					else deprecated.remove(oe.idx)
+					else if(
+						deprecated.contains(oe.idx) && //this was to prevent needless repo access
+						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+					) deprecated.remove(oe.idx)
 				})
 
 			case `hasSizeInBytes` => ifLong(obj){size =>

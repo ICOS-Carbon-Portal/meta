@@ -18,6 +18,7 @@ import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.EarlyDobjInitSearch
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
@@ -35,15 +36,23 @@ class CpNativeStoreConnection(
 		includeInferred: Boolean
 	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = try{
 
-		val tupleExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-		logger.debug("Original query model:\n{}", tupleExpr)
-		tupleExpr.visit(new StatsQueryModelVisitor)
+		logger.debug("Original query model:\n{}", expr)
 
+		val clone: TupleExpr = TupleExprCloner.cloneExpr(expr)
 		val dofps = new DataObjectFetchPatternSearch(metaVocab)
-		dofps.search(tupleExpr).foreach(_.fuse())
 
-		logger.debug("Fused query model:\n{}", tupleExpr)
+		val tupleExpr = dofps.search(clone) match{
+			case None => clone
+			case Some(patt) =>
+				patt.fuse()
+				if(EarlyDobjInitSearch.hasEarlyDobjInit(clone)) TupleExprCloner.cloneExpr(expr)
+				else {
+					logger.debug("Fused query model:\n{}", clone)
+					clone
+				}
+		}
 
+		tupleExpr.visit(new StatsQueryModelVisitor)
 
 		flush()
 		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)

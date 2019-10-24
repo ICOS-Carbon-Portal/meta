@@ -83,6 +83,10 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				assert(filters.size === 3)
 				assert(filters.find{_.property == SubmissionEnd}.get.condition.isInstanceOf[IntervalFilter[_]])
 			}
+
+			it("there is no early dobj initialization in the query after fusion"){
+				assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
+			}
 		}
 
 		describe("Jupyter search for co2/co/ch4 mixing ratio data objects"){
@@ -111,6 +115,10 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				val actualVars = fetchNode.varNames.values.toSet
 				val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "fileName")
 				assert(actualVars === expectedVars)
+			}
+
+			it("there is no early dobj initialization in the query after fusion"){
+				assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
 			}
 		}
 
@@ -153,6 +161,9 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				assert(query.toString.contains("OrderElem"))
 			}
 
+			it("there is no early dobj initialization in the query after fusion"){
+				assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
+			}
 		}
 
 		describe("Simple select by spec and station (constants)"){
@@ -180,6 +191,10 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				assert(stationValues.length == 1)
 				assert(stationValues.head.asInstanceOf[Option[IRI]].get.stringValue == "http://meta.icos-cp.eu/resources/stations/ES_DE-HoH")
 			}
+
+			it("there is no early dobj initialization in the query after fusion"){
+				assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
+			}
 		}
 
 		ignore("Last 100 uploaded objects"){
@@ -192,6 +207,19 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 				println(query)
 				println("After optimization:")
 				println(QueryOptimizer.optimize(query))
+			}
+		}
+
+		describe("EarlyDobjInitSearch"){
+
+			it("Found in previous-versions query"){
+				val (query,_) = getFetchNode(TestQueries.prevVersions)
+				assert(EarlyDobjInitSearch.hasEarlyDobjInit(query))
+			}
+
+			it("Found in storage infos query"){
+				val (query,_) = getFetchNode(TestQueries.storageInfos)
+				assert(EarlyDobjInitSearch.hasEarlyDobjInit(query))
 			}
 		}
 	}

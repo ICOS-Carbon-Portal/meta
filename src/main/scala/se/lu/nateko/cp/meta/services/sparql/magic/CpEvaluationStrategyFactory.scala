@@ -66,28 +66,15 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-		def makeBinding(oinfo: ObjInfo): BindingSet = {
+		val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
+			.initializeRequest(doFetch.fetchRequest)
+
+		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
 			setters.foreach{_(bs, oinfo)}
 			bs
 		}
 
-		doFetch.varNames.get(DobjUri) match{
-			//TODO Handle the case of already bound ?dobj as an extra selection in fetchRequest
-			case Some(dobjVar) if bindings.hasBinding(dobjVar) =>
-				bindings.getBinding(dobjVar).getValue match {
-					case CpVocab.DataObject(hash, _) =>
-						index.lookupObject(hash).iterator.map(makeBinding)
-					case _ =>
-						Iterator.empty
-				}
-
-			case _ =>
-				val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
-					.initializeRequest(doFetch.fetchRequest)
-
-				index.fetch(fetchRequest).map(makeBinding)
-			}
 	}
 
 }

@@ -85,7 +85,7 @@ class DataObjectFetchPattern(
 			contPatterns.map(p => p.property -> p.propVarName)
 		).toMap
 
-		val fetchExpr = new DataObjectFetchNode(fetch, varNames + (DobjUri -> dobjVarName))
+		val fetchExpr = new DataObjectFetchNode(dobjVarName, fetch, varNames + (DobjUri -> dobjVarName))
 
 		val queryTop = {
 			val anyNode = allPatterns.toIterator.flatMap(_.expressions).next()

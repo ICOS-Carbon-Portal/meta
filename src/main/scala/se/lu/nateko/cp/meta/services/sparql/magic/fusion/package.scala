@@ -25,6 +25,17 @@ package object fusion{
 		strict(node.getParentNode).orElse(strict(node))
 	}
 
+	def earlierEvaluatedNodesInSameQuery(node: QueryModelNode): Seq[TupleExpr] = node.getParentNode match {
+		case binop: BinaryTupleOperator =>
+			if(binop.getRightArg eq node) binop.getLeftArg +: earlierEvaluatedNodesInSameQuery(binop)
+			else Seq.empty
+
+		case _: Extension | _: Filter | _: Order =>
+			earlierEvaluatedNodesInSameQuery(node.getParentNode)
+
+		case _ => Seq.empty
+	}
+
 	def areWithinCommonJoin(nodes: Seq[QueryModelNode]): Boolean = {
 		val joins = nodes.flatMap(highestJoinOnlyAncestor)
 		joins.length == nodes.length && joins.distinct.length == 1

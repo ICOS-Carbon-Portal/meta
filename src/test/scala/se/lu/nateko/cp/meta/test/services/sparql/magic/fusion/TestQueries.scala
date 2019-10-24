@@ -135,4 +135,21 @@ object TestQueries{
 	order by desc(?submTime)
 	limit 100
 	"""
+
+	val storageInfos = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|select * where{
+	|	?dobj cpmeta:hasObjectSpec/cpmeta:hasFormat ?format .
+	|	?dobj cpmeta:hasSizeInBytes ?size .
+	|	?dobj cpmeta:hasName ?fileName .
+	|	filter (?format != cpmeta:asciiWdcggTimeSer)
+	|}""".stripMargin
+
+	val prevVersions = """prefix prov: <http://www.w3.org/ns/prov#>
+	|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|select distinct ?dobj where{
+	|	?dobj cpmeta:hasName "$fileName" .
+	|	?dobj cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd]
+	|}
+	|order by desc(?submEnd)
+	|limit 2""".stripMargin
 }

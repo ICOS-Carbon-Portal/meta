@@ -19,6 +19,7 @@ import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.EarlyDobjInitSearch
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
@@ -41,18 +42,26 @@ class CpNativeStoreConnection(
 		val clone: TupleExpr = TupleExprCloner.cloneExpr(expr)
 		val dofps = new DataObjectFetchPatternSearch(metaVocab)
 
-		val tupleExpr = dofps.search(clone) match{
+		def dobjFetchFusion = dofps.search(clone) match{
 			case None => clone
 			case Some(patt) =>
 				patt.fuse()
 				if(EarlyDobjInitSearch.hasEarlyDobjInit(clone)) TupleExprCloner.cloneExpr(expr)
 				else {
-					logger.debug("Fused query model:\n{}", clone)
+					logger.debug("Fused query model (dobj list fetch):\n{}", clone)
 					clone
 				}
 		}
 
-		tupleExpr.visit(new StatsQueryModelVisitor)
+		val queryExpr = (new StatsFetchPatternSearch(metaVocab)).search(clone) match {
+			case None => dobjFetchFusion
+			case Some(statPatt) =>
+				statPatt.fuse()
+				logger.debug("Fused query model (stats fetch):\n{}", clone)
+				clone
+		}
+
+		queryExpr.visit(new StatsQueryModelVisitor)
 
 		flush()
 		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
@@ -70,13 +79,11 @@ class CpNativeStoreConnection(
 			new IterativeEvaluationOptimizer(),
 			new FilterOptimizer()
 			//new OrderLimitOptimizer()
-		).foreach(_.optimize(tupleExpr, dataset, bindings))
+		).foreach(_.optimize(queryExpr, dataset, bindings))
 
-		logger.debug("Fully optimized final query model:\n{}", tupleExpr)
+		logger.debug("Fully optimized final query model:\n{}", queryExpr)
 
-		strategy.evaluate(tupleExpr, EmptyBindingSet.getInstance)
-
-		//super.evaluateInternal(tupleExpr, dataset, bindings, includeInferred)
+		strategy.evaluate(queryExpr, EmptyBindingSet.getInstance)
 	}
 	catch {
 		case iae: IllegalArgumentException =>

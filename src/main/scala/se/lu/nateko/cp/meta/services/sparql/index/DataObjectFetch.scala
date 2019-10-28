@@ -30,14 +30,16 @@ object DataObjectFetch{
 		def values: Seq[category.ValueType]
 	}
 
-	def selection[T <: AnyRef](cat: CategProp{type ValueType = T}, vals: Seq[T]) = new Selection{
+	def selection(cat: CategProp)(vals: Seq[cat.ValueType]) = new Selection{
 		val category = cat
-		val values = vals
+		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
+		val values = vals.asInstanceOf[Seq[category.ValueType]]
 	}
 
-	def filter[T](prop: ContProp{type ValueType = T}, cond: FilterRequest[T]) = new Filter{
+	def filter(prop: ContProp)(cond: FilterRequest[prop.ValueType]) = new Filter{
 		val property = prop
-		val condition = cond
+		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
+		val condition = cond.asInstanceOf[FilterRequest[property.ValueType]]
 	}
 
 	object Filter{
@@ -59,13 +61,14 @@ object DataObjectFetch{
 	sealed trait ContProp extends Property
 
 	sealed trait LongProperty extends ContProp{type ValueType = Long}
+	sealed trait DateProperty extends LongProperty
 
 	final case object FileName extends ContProp{type ValueType = String}
 	final case object FileSize extends LongProperty
-	final case object SubmissionStart extends LongProperty
-	final case object SubmissionEnd extends LongProperty
-	final case object DataStart extends LongProperty
-	final case object DataEnd extends LongProperty
+	final case object SubmissionStart extends DateProperty
+	final case object SubmissionEnd extends DateProperty
+	final case object DataStart extends DateProperty
+	final case object DataEnd extends DateProperty
 
 	sealed trait CategProp extends Property{type ValueType <: AnyRef}
 

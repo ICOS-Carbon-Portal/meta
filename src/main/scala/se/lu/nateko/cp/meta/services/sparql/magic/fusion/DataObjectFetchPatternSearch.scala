@@ -70,7 +70,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			case (sp, (exprs, vals)) =>
 				val objVar = sp.getObjectVar
 				val propVarName = if(objVar.isAnonymous) None else Some(objVar.getName)
-				sp.getSubjectVar.getName -> categPattern(exprs :+ sp, Spec, propVarName, vals)
+				sp.getSubjectVar.getName -> categPattern(exprs :+ sp, Spec, propVarName)(vals)
 		}
 
 	val stationPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
@@ -101,7 +101,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				val exprs = Seq(tspp.step1, tspp.step2) ++ bsasExprs
 				val objVar = tspp.step2.getObjectVar
 				val propVarName = if(objVar.isAnonymous) None else Some(objVar.getName)
-				tspp.subjVariable -> categPattern(exprs, Station, propVarName, vals)
+				tspp.subjVariable -> categPattern(exprs, Station, propVarName)(vals)
 		}
 
 	// ?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
@@ -113,7 +113,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		.thenGet{
 			case (tspp, bsas) =>
 				val exprs = Seq(tspp.step1, tspp.step2, bsas.expr)
-				tspp.subjVariable -> categPattern(exprs, Submitter, Some(tspp.objVariable), bsas.values)
+				tspp.subjVariable -> categPattern(exprs, Submitter, Some(tspp.objVariable))(bsas.values)
 		}
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
@@ -162,20 +162,23 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 		.thenGet(new OffsetPattern(_))
 		.filter(_.offset > 0)
 
+	def continuousVarPatterns(node: QueryModelNode): Seq[ContResult] = submStartPatternSearch(node).toSeq ++ submEndPatternSearch(node) ++
+		dataStartSearch(node) ++ dataEndSearch(node) ++
+		fileNameSearch(node) ++ fileSizeSearch(node)
+
+	def filterSearch(contPatts: Seq[ContPropPattern]): FilterPatternSearch = {
+		val contPropLookup: Map[String, ContProp] = contPatts.map(cpp => cpp.propVarName -> cpp.property).toMap
+		new FilterPatternSearch(contPropLookup.get)
+	}
+
 	val search: TopNodeSearch[DataObjectFetchPattern] = node => {
 
 		val noDeprecatedOpt = isLatestDobjVersionFilter(node)
 
 		val categPatts = dataObjSpecPatternSearch(node).toSeq ++ stationPatternSearch(node) ++ submitterPatternSearch(node)
 
-		val contPatts = submStartPatternSearch(node).toSeq ++ submEndPatternSearch(node) ++
-			dataStartSearch(node) ++ dataEndSearch(node) ++
-			fileNameSearch(node) ++ fileSizeSearch(node)
-
-		val filterSearcher = {
-			val contPropLookup: Map[String, ContProp] = contPatts.map(_._2).map(cpp => cpp.propVarName -> cpp.property).toMap
-			new FilterPatternSearch(contPropLookup.get)
-		}
+		val contPatts = continuousVarPatterns(node)
+		val filterSearcher = filterSearch(contPatts.map(_._2))
 
 		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
 		//detecting the most common variable name for data obj uri (for example, could be '?dobj')

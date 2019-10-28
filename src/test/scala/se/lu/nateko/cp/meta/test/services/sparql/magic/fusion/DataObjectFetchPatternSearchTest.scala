@@ -1,7 +1,8 @@
-package se.lu.nateko.cp.meta.services.sparql.magic.fusion
+package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
 import org.scalatest.FunSpec
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr

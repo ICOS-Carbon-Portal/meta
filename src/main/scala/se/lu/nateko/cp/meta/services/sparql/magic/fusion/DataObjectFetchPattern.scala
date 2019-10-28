@@ -28,11 +28,12 @@ object DataObjectFetchPattern{
 		def categValues: Seq[property.ValueType]
 	}
 
-	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp{type ValueType = T}, propVar: Option[String], vals: Seq[T]) = new CategPropPattern{
+	def categPattern(exprs: Seq[TupleExpr], prop: CategProp, propVar: Option[String])(vals: Seq[prop.ValueType]) = new CategPropPattern{
 		val expressions = exprs
 		val property = prop
 		val propVarName = propVar
-		val categValues = vals
+		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
+		val categValues = vals.asInstanceOf[Seq[property.ValueType]]
 	}
 
 	final class ExcludeDeprecatedPattern(expr: Filter, val dobjVar: String) extends UnaryTupleOpSubPattern(expr)
@@ -70,7 +71,7 @@ class DataObjectFetchPattern(
 
 		val filters = filter.fold[Seq[FetchFilter]](Nil)(_.filters)
 
-		val selections = categPatterns.map(cp => selection(cp.property, cp.categValues))
+		val selections = categPatterns.map(cp => selection(cp.property)(cp.categValues))
 		val unboundedSelectionsPresent: Boolean = selections.exists(_.values.isEmpty)
 
 		val fetch = new DataObjectFetch(

@@ -54,9 +54,10 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[Filter] = {
 
-		def makeFilter[T](prop: ContProp{type ValueType = T})(limit: T): Option[Filter] = {
+		def makeFilter(prop: ContProp)(limit: prop.ValueType): Option[Filter] = {
 			import Compare.CompareOp._
-			val reqOpt: Option[FilterRequest[T]] = op match{
+
+			val reqOpt: Option[FilterRequest[prop.ValueType]] = op match{
 				case EQ => Some(EqualsFilter(limit))
 				case GT => Some(MinFilter(limit, false))
 				case LT => Some(MaxFilter(limit, false))
@@ -64,28 +65,22 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 				case LE => Some(MaxFilter(limit, true))
 				case _ => None
 			}
-			reqOpt.map{req =>
-				DataObjectFetch.filter(prop, req)
+
+			reqOpt.map(DataObjectFetch.filter(prop))
+		}
+
+		for(
+			prop <- if(!left.isAnonymous) varInfo(left.getName) else None;
+			lit <- right.getValue match{
+				case lit: Literal => Some(lit)
+				case _ => None
+			};
+			filter <- prop match{
+				case dp: DateProperty => asTsEpochMillis(lit).flatMap(makeFilter(dp))
+				case FileName         => asString(lit).flatMap(makeFilter(FileName))
+				case FileSize         => asLong(lit).flatMap(makeFilter(FileSize))
 			}
-		}
-
-		val propOpt: Option[ContProp] = if(!left.isAnonymous) varInfo(left.getName) else None
-
-		val litOpt: Option[Literal] = right.getValue match{
-			case lit: Literal => Some(lit)
-			case _ => None
-		}
-
-		val optopt: Option[Option[Filter]] = for(prop <- propOpt; lit <- litOpt) yield prop match{
-			//TODO Revisit this code segment with Scala 2.13 or later (try to remove repetition)
-			case FileName        => asString(lit).flatMap(makeFilter(FileName))
-			case FileSize        => asLong(lit).flatMap(makeFilter(FileSize))
-			case DataEnd         => asTsEpochMillis(lit).flatMap(makeFilter(DataEnd))
-			case DataStart       => asTsEpochMillis(lit).flatMap(makeFilter(DataStart))
-			case SubmissionStart => asTsEpochMillis(lit).flatMap(makeFilter(SubmissionStart))
-			case SubmissionEnd   => asTsEpochMillis(lit).flatMap(makeFilter(SubmissionEnd))
-		}
-		optopt.flatten
+		) yield filter
 	}
 
 }
@@ -134,7 +129,7 @@ object FilterPatternSearch{
 						//TODO Revisit the next line in next versions of Scala (2.13+), the casts should not be needed
 						makeFilter(cond1.asInstanceOf[FilterRequest[VT]], cond2.asInstanceOf[FilterRequest[VT]])
 							.map{intFilt =>
-								DataObjectFetch.filter[VT](prop, intFilt)
+								DataObjectFetch.filter(prop)(intFilt)
 							}
 							.fold(propFilters)(Seq(_))
 					case _ =>

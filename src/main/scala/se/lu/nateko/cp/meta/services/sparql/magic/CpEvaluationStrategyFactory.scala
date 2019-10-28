@@ -21,6 +21,7 @@ import scala.collection.JavaConverters.asJavaIterator
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 
 
 class CpEvaluationStrategyFactory(
@@ -34,13 +35,32 @@ class CpEvaluationStrategyFactory(
 
 			override def evaluate(expr: TupleExpr, bindings: BindingSet): CloseableIteration[BindingSet, QueryEvaluationException] = {
 				expr match {
+
 					case doFetch: DataObjectFetchNode =>
-						new CloseableIteratorIteration(asJavaIterator(bindingsForObjectFetch(doFetch, bindings)))
+						iteration(bindingsForObjectFetch(doFetch, bindings))
+
+					case statsFetch: StatsFetchNode =>
+						iteration(bindingsForStatsFetch(statsFetch))
+
 					case _ =>
 						super.evaluate(expr, bindings)
 				}
 			}
 		}
+
+	private def bindingsForStatsFetch(statFetch: StatsFetchNode): Iterator[BindingSet] = {
+		val index = indexThunk()
+		val dummyStation = index.factory.createIRI("http://dummy.unbound.station")
+
+		index.statEntries(statFetch.group.filtering).iterator.map{se =>
+			val bs = new QueryBindingSet
+			bs.setBinding(statFetch.countVarName, index.factory.createLiteral(se.count))
+			bs.setBinding(statFetch.group.submitterVar, se.key.submitter)
+			bs.setBinding(statFetch.group.specVar, se.key.spec)
+			bs.setBinding(statFetch.group.stationVar, se.key.station.getOrElse(dummyStation))
+			bs
+		}
+	}
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
 		val index = indexThunk()
@@ -77,6 +97,9 @@ class CpEvaluationStrategyFactory(
 
 	}
 
+	def iteration(iter: Iterator[BindingSet]) =
+		new CloseableIteratorIteration[BindingSet, QueryEvaluationException](asJavaIterator(iter))
+
 }
 
 class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
@@ -98,7 +121,7 @@ class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 				case uri: IRI => Some(mapper(uri))
 				case _ => None
 			}
-		) yield orig.withSelection(selection[prop.ValueType](prop, Seq(propVal)))
+		) yield orig.withSelection(selection(prop)(Seq(propVal)))
 
 		betterReqOpt.getOrElse(orig)
 	}

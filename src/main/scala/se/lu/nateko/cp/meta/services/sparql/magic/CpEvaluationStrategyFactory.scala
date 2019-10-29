@@ -50,14 +50,15 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForStatsFetch(statFetch: StatsFetchNode): Iterator[BindingSet] = {
 		val index = indexThunk()
-		val dummyStation = index.factory.createIRI("http://dummy.unbound.station")
 
 		index.statEntries(statFetch.group.filtering).iterator.map{se =>
 			val bs = new QueryBindingSet
 			bs.setBinding(statFetch.countVarName, index.factory.createLiteral(se.count))
 			bs.setBinding(statFetch.group.submitterVar, se.key.submitter)
 			bs.setBinding(statFetch.group.specVar, se.key.spec)
-			bs.setBinding(statFetch.group.stationVar, se.key.station.getOrElse(dummyStation))
+			se.key.station.foreach{station =>
+				bs.setBinding(statFetch.group.stationVar, station)
+			}
 			bs
 		}
 	}

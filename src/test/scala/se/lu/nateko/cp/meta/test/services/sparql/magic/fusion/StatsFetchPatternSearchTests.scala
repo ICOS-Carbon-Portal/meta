@@ -15,13 +15,16 @@ class StatsFetchPatternSearchTests extends FunSpec{
 	private def query = parseQuery(StatsFetchPatternSearchTests.query)
 
 	// it("prints query"){
-	// 	println(query)
+	// 	val q = query
+	// 	val patt = sfps.search(q).get
+	// 	patt.fuse()
+	// 	println(q)
 	// }
 
 	it("detects the GROUP BY clause"){
 		val groupOpt = sfps.groupSearch("dobj")(query)
 		groupOpt match{
-			case Some(GroupPattern(filtering, "submitter", "station", "spec")) =>
+			case Some(GroupPattern(filtering, "submitter", "stationOpt", "spec")) =>
 				assert(filtering.filterDeprecated)
 				assert(filtering.requiredProps.size == 1)
 				assert(filtering.filters.size == 1)
@@ -44,15 +47,17 @@ class StatsFetchPatternSearchTests extends FunSpec{
 object StatsFetchPatternSearchTests{
 	val query = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
-	select (count(?dobj) as ?count) ?spec ?station ?submitter where{
+	select (count(?dobj) as ?count) ?spec ?submitter
+	(if(bound(?stationOpt), ?stationOpt, <https://dummy.unbound.station>) as ?station0)
+	where{
 		?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
 		?dobj cpmeta:hasObjectSpec ?spec .
-		?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+		OPTIONAL{?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?stationOpt }
 		?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 		FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj}
 		FILTER (?timeStart >= '2019-01-01T00:00:00.000Z'^^xsd:dateTime)
 	}
-	group by ?spec ?submitter ?station
+	group by ?spec ?submitter ?stationOpt
 	"""
 
 	val nestingQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -62,16 +67,19 @@ object StatsFetchPatternSearchTests{
 	(if(bound(?stationName), CONCAT(?stPrefix, ?stationName), "(not applicable)") as ?stationLabel)
 	where{
 		{
-			select ?station0 ?submitter ?spec (count(?dobj) as ?count) where{
+			select
+				(if(bound(?stationOpt), ?stationOpt, <https://dummy.unbound.station>) as ?station0)
+				?submitter ?spec (count(?dobj) as ?count)
+			where{
 				?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
 				?dobj cpmeta:hasObjectSpec ?spec .
-				?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station0 .
+				OPTIONAL{?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?stationOpt }
 				?dobj cpmeta:hasSizeInBytes ?size .
 				?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 				FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj}
 				FILTER (?timeStart >= '2010-01-01T00:00:00.000Z'^^xsd:dateTime)
 			}
-			group by ?spec ?submitter ?station0
+			group by ?spec ?submitter ?stationOpt
 		}
 		OPTIONAL{?station0 cpmeta:hasName ?stationName}
 		OPTIONAL{?station0 cpmeta:hasStationId ?stId}

@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Filtering
 import org.eclipse.rdf4j.query.algebra.Extension
 import org.eclipse.rdf4j.query.algebra.ValueExpr
+import org.eclipse.rdf4j.query.algebra.LeftJoin
 
 class StatsFetchPatternSearch(meta: CpmetaVocab){
 	import StatsFetchPatternSearch._
@@ -37,7 +38,7 @@ class StatsFetchPatternSearch(meta: CpmetaVocab){
 			for(
 				countVar <- singleVarCountGroup(g) if countVar == dobjVar;
 				submitterVar <- provSearch(countVar, meta.wasSubmittedBy)(g);
-				stationVar <- provSearch(countVar, meta.wasAcquiredBy)(g);
+				stationVar <- stationSearch(countVar)(g);
 				specVar <- specSearch(countVar)(g)
 				if g.getGroupBindingNames.asScala == Set(specVar, submitterVar, stationVar);
 				filtering = filterSearch(countVar, g)
@@ -47,6 +48,12 @@ class StatsFetchPatternSearch(meta: CpmetaVocab){
 	def provSearch(dobjVar: String, provPred: IRI): TopNodeSearch[String] = twoStepPropPath(provPred, meta.prov.wasAssociatedWith)
 		.filter(_.subjVariable == dobjVar)
 		.thenGet(_.objVariable)
+
+	def stationSearch(dobjVar: String): TopNodeSearch[String] = takeNode
+		.ifIs[LeftJoin]
+		.thenGet(_.getRightArg)
+		.thenSearch(provSearch(dobjVar, meta.wasAcquiredBy))
+		.recursive
 
 	def specSearch(dobjVar: String): TopNodeSearch[String] = byPredicate(meta.hasObjectSpec)
 		.recursive
@@ -75,10 +82,13 @@ object StatsFetchPatternSearch{
 		case _         => None
 	}
 
-	def singleCountExtension(ext: Extension): Option[(String, String)] = ext.getElements().asScala match{
-		case Seq(elem) => singleVarCount(elem.getExpr).map(elem.getName -> _)
-		case _         => None
-	}
+	def singleCountExtension(ext: Extension): Option[(String, String)] = ext.getElements().asScala
+		.flatMap{
+			elem => singleVarCount(elem.getExpr).map(elem.getName -> _)
+		} match{
+			case Seq(singleCountVarNames) => Some(singleCountVarNames)
+			case _ => None
+		}
 
 	def singleVarCount(expr: ValueExpr): Option[String] = expr match{
 		case cnt: Count =>
@@ -92,6 +102,9 @@ object StatsFetchPatternSearch{
 	case class GroupPattern(filtering: Filtering, submitterVar: String, stationVar: String, specVar: String)
 
 	class StatsFetchPattern(expr: Extension, statsNode: StatsFetchNode){
-		def fuse(): Unit = expr.replaceWith(statsNode)
+		def fuse(): Unit = {
+			expr.getArg.replaceWith(statsNode)
+			expr.getElements.removeIf(elem => singleVarCount(elem.getExpr).isDefined)
+		}
 	}
 }

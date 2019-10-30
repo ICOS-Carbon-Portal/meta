@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.EarlyDobjInitSearch
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
+import scala.util.Try
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
@@ -103,7 +104,7 @@ class CpNativeStoreConnection(
 
 		if(subj == null || pred != null && pred != metaVocab.hasCitationString || obj != null) base else { //limited functionality for now
 
-			citer.getCitation(subj).fold(base){citation =>
+			Try(citer.getCitation(subj)).getOrElse(None).fold(base){citation =>
 				val citations: CloseableIteration[Statement, SailException] = new SingletonIteration(
 					valueFactory.createStatement(
 						subj,

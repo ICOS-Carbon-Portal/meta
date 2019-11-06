@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -163,7 +164,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		}
 	}
 
-	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig): Try[NotUsed] = {
+	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(implicit envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
@@ -191,6 +192,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 							errors += "Instrument URL(s) expected for ATC time series"
 						if(stationMeta.samplingHeight.isEmpty && spec.dataLevel > 0) errors += "Must provide sampling height"
 					}
+
+					if (envri == Envri.SITES && stationMeta.site.isEmpty)
+						errors += "Must provide 'location/ecosystem'"
 				}
 		}
 

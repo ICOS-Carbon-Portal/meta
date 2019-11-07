@@ -139,7 +139,6 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 	def value: Try[T] = _value
 
 	input.oninput = _ => {
-		val oldValue = _value
 		_value = parser(input.value)
 
 		if (_value.isSuccess || input.value.isEmpty) {
@@ -150,7 +149,7 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 			input.parentElement.classList.add("has-error")
 		}
 
-		if(oldValue.isSuccess != _value.isSuccess) cb()
+		cb()
 	}
 
 	def enable(): Unit = {

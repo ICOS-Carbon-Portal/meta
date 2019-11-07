@@ -162,7 +162,7 @@
 							<select id="stationselect" class="form-element" disabled></select>
 						</div>
 						<div class="form-group">
-							<label for="siteselect">Site <em class="text-muted">- optional</em></label>
+							<label for="siteselect">Location/Ecosystem@optionalsite</label>
 							<select id="siteselect" class="form-element" disabled></select>
 						</div>
 						<div class="form-group">
@@ -256,4 +256,8 @@
 
 @jspath = @{
 	if(devVersion) "uploadgui-fastopt.js" else "uploadgui-opt.js"
+}
+
+@optionalsite = @{
+	if (envri == Envri.ICOS) <em class="text-muted">- optional</em>
 }

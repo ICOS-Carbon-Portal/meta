@@ -122,7 +122,7 @@ class Form(
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio("level-radio", onLevelSelected)
-	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", cb = onStationSelected)
+	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)

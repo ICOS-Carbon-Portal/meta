@@ -381,6 +381,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#InverseFunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">is a quality flag for</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/locatedAt">

@@ -105,7 +105,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 					} else{
 						val from = formatDate(interval.start)
 						val to = formatDate(interval.stop)
-						s"$from-$to"
+						s"$from–$to"
 					}
 					s"$spec, $station$height, $time"
 				}

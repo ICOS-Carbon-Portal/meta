@@ -38,6 +38,7 @@ import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.async._
 import se.lu.nateko.cp.meta.utils.akkahttp._
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
 	import HandleNetClient._
@@ -88,8 +89,8 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 	private val authHeaders = RawHeader("Authorization", "Handle clientCert=\"true\"") :: Nil
 
-	def list: Future[Seq[String]] = {
-		val uriStr = s"${conf.baseUrl}api/handles?prefix=${conf.prefix}"
+	def list(implicit envri: Envri): Future[Seq[String]] = {
+		val uriStr = s"${conf.baseUrl}api/handles?prefix=${pidFactory.prefix}"
 
 		http.singleRequest(
 			HttpRequest(uri = Uri(uriStr), headers = authHeaders),
@@ -103,7 +104,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		)
 	}
 
-	def get(suffix: String): Future[URL] = {
+	def get(suffix: String)(implicit envri: Envri): Future[URL] = {
 		http.singleRequest(
 			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix)), headers = authHeaders),
 			httpsCtxt
@@ -122,13 +123,13 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		)
 	}
 
-	def createOrRecreate(suffix: String, target: URL): Future[Done] = if(conf.dryRun) ok else {
+	def createOrRecreate(suffix: String, target: URL)(implicit envri: Envri): Future[Done] = if(conf.dryRun) ok else {
 		val payload = HandleValues(
 			UrlHandleValue(1, target) ::
 			AdminHandleValue(
 				index = 100,
 				admin = AdminValue(
-					handle = "0.NA/" + conf.prefix,
+					handle = "0.NA/" + pidFactory.prefix,
 					index = 200,
 					permissions = "011111110011"
 				)
@@ -146,7 +147,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		}
 	}
 
-	def delete(suffix: String): Future[Done] = if(conf.dryRun) ok else {
+	def delete(suffix: String)(implicit envri: Envri): Future[Done] = if(conf.dryRun) ok else {
 		val req = HttpRequest(
 			uri = Uri(pidFactory.pidUrlStr(suffix)),
 			headers = authHeaders,
@@ -160,10 +161,14 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 object HandleNetClient{
 
 	class PidFactory(conf: HandleNetClientConfig){
-		def getPid(suffix: String) = s"${conf.prefix}/$suffix"
+		def prefix(implicit envri: Envri): String = conf.prefix.getOrElse(
+			envri,
+			throw new Exception(s"No PID prefix for ENVRI $envri in the config")
+		)
+		def getPid(suffix: String)(implicit envri: Envri) = s"${prefix}/$suffix"
 		def getSuffix(hash: Sha256Sum): String = hash.id
-		def getPid(hash: Sha256Sum): String = getPid(getSuffix(hash))
-		def pidUrlStr(suffix: String) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
+		def getPid(hash: Sha256Sum)(implicit envri: Envri): String = getPid(getSuffix(hash))
+		def pidUrlStr(suffix: String)(implicit envri: Envri) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
 	}
 //	implicit val system = ActorSystem()
 //	implicit val mat = ActorMaterializer()

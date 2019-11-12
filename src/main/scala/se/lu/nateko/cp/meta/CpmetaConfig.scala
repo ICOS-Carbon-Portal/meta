@@ -113,7 +113,7 @@ case class EpicPidConfig(
 )
 
 case class HandleNetClientConfig(
-	prefix: String,
+	prefix: Map[Envri, String],
 	baseUrl: String,
 	serverCertPemFilePath: Option[String],
 	clientCertPemFilePath: String,

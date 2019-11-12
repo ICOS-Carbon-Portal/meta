@@ -15,17 +15,19 @@ import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
+import se.lu.nateko.cp.meta.core.data.Envri
 
 object Playground {
 
 	implicit val system = ActorSystem("playground")
 	import system.dispatcher
 	implicit val mat = ActorMaterializer()
+	implicit val envri = Envri.ICOS
 
 	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
 	val handles = new HandleNetClient(
-		metaConf.dataUploadService.handle.copy(prefix = "11676", dryRun = false)
+		metaConf.dataUploadService.handle.copy(prefix = Map(Envri.ICOS -> "11676"), dryRun = false)
 	)
 
 	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))

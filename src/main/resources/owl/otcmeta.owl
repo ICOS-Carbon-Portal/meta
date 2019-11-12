@@ -276,6 +276,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasAttributionWeight -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasAttributionWeight">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attribution weight</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDate">

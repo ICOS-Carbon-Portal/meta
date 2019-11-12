@@ -81,7 +81,7 @@ class StaticObjectFetcher(
 		)
 	}
 
-	private def getPid(hash: Sha256Sum, format: URI): Option[String] = {
+	private def getPid(hash: Sha256Sum, format: URI)(implicit envri: Envri): Option[String] = {
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 	}
 

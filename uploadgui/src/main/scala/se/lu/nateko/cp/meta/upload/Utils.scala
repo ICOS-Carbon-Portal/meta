@@ -10,6 +10,9 @@ import org.scalajs.dom.{document, html}
 
 object Utils {
 
+	private val progressBar = new HtmlElements("#progress-bar")
+	private val alert = getElementById[html.Div]("alert-placeholder").get
+
 	def getElementById[T <: html.Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
 		case input: T => Some(input)
 		case _ => None
@@ -27,9 +30,21 @@ object Utils {
 	}
 
 	def showAlert(message: String, alertType: String): Unit = {
-		val element = getElementById[html.Div]("alert-placeholder").get
-		element.setAttribute("class", alertType)
-		element.innerHTML = message
+		alert.setAttribute("class", alertType)
+		alert.innerHTML = message
+	}
+
+	def hideAlert(): Unit = {
+		alert.setAttribute("class", "")
+		alert.innerHTML = ""
+	}
+
+	def showProgressBar(): Unit = {
+		progressBar.show()
+	}
+
+	def hideProgressBar(): Unit = {
+		progressBar.hide()
 	}
 
 	def fail(msg: String) = Failure(new Exception(msg))

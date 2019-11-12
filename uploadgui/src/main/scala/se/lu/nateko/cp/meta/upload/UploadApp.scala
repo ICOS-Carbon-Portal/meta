@@ -14,7 +14,6 @@ object UploadApp {
 
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
-	private val progressBar = new HtmlElements("#progress-bar")
 
 	def main(args: Array[String]): Unit = {
 
@@ -48,12 +47,11 @@ object UploadApp {
 	private def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {
 		case Some(file) => {
 			whenDone{
-				progressBar.show()
 				Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
 			}(pid => {
 				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://hdl.handle.net/$pid'>View metadata</a>", "alert alert-success")
 			}).onComplete {
-				case _ => progressBar.hide()
+				case _ => hideProgressBar()
 			}
 		}
 		case None => {

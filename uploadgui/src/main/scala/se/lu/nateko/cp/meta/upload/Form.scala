@@ -41,11 +41,15 @@ class Form(
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
 		submitButton.disable("")
+		hideAlert()
+		showProgressBar()
 		typeControl.formType match {
 			case Data =>
 				for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
 					whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
 						onUpload(dto, Some(file))
+					}.failed.foreach {
+						case _ => hideProgressBar()
 					}
 				}
 			case Collection =>

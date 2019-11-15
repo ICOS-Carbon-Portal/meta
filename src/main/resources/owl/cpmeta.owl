@@ -214,6 +214,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has documentation</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType">

@@ -2467,6 +2467,15 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/aquanetPointMeasurementsCsv -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/aquanetPointMeasurementsCsv">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">AquaNet point measurements csv</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/ontologies/sites/dailyDelimitedHeaderCsv -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/dailyDelimitedHeaderCsv">

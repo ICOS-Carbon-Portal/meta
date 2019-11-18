@@ -113,6 +113,7 @@ class Form(
 			whenDone(Backend.getSites(station.uri)) { sites =>
 				siteSelect.setOptions {
 					if (sites.isEmpty) IndexedSeq.empty
+					else if (envri == Envri.SITES) sites.map(Some(_))
 					else None +: sites.map(Some(_))
 				}
 			}

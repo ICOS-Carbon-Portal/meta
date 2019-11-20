@@ -63,7 +63,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">geographical region</rdfs:label>

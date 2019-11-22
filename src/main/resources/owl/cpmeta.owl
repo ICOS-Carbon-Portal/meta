@@ -854,6 +854,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasGoodFlagValue -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasGoodFlagValue">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy">
@@ -2155,6 +2164,9 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiAtcProductTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">O</hasGoodFlagValue>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">R</hasGoodFlagValue>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">U</hasGoodFlagValue>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Semicolon-separated ASCII, with #-prefixed multi-line header</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ATC time series</rdfs:label>
     </owl:NamedIndividual>
@@ -2203,6 +2215,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiOtcProductCsv">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2</hasGoodFlagValue>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Single-line comment, first column is UTC ISO-8601 timestamp, NaN for missing values, comma-separated.</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS OTC time series</rdfs:label>
     </owl:NamedIndividual>

@@ -19,7 +19,8 @@ case class Station(
 	org: Organization,
 	id: String,
 	name: String,
-	coverage: Option[GeoFeature]
+	coverage: Option[GeoFeature],
+	responsibleOrganization: Option[Organization]
 )
 
 case class Site(self: UriResource, ecosystem: UriResource, area: Option[GeoFeature])

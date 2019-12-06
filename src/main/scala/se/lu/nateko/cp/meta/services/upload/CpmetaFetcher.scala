@@ -104,7 +104,8 @@ trait CpmetaFetcher extends FetchingHelper{
 		coverage = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation))
+		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation)),
+		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization)
 	)
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption

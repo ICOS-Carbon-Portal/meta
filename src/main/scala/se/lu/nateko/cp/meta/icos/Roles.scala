@@ -12,4 +12,5 @@ sealed abstract class NonPiRole(val name: String) extends Role
 
 case object PI extends Role{def name = "PI"}
 case object Researcher extends NonPiRole("Researcher")
+case object Engineer extends NonPiRole("Engineer")
 case object DataManager extends NonPiRole("DataManager")

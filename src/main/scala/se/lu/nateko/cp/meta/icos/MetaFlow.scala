@@ -7,9 +7,10 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
-//import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 
 class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
@@ -31,18 +32,19 @@ object MetaFlow {
 		val cpServer = db.instanceServers(isConf.cpMetaInstanceServerId)
 		val icosServer = db.instanceServers(isConf.icosMetaInstanceServerId)
 
-//		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
-//			case wnis: WriteNotifyingInstanceServer => wnis
-//			case _ => throw new Exception(
-//				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-//			)
-//		}
+		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
+			case wnis: WriteNotifyingInstanceServer => wnis
+			case _ => throw new Exception(
+				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+			)
+		}
 
 		val rdfReader = new RdfReader(cpServer, icosServer)
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-//		val otcSource = new OtcMetaSource(otcServer, system.log)
+		val sparql = new Rdf4jSparqlRunner(db.repo)
+		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
 //		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
@@ -53,11 +55,11 @@ object MetaFlow {
 			}
 		}
 
-//		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
 //		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
 		new MetaFlow(new AtcMetaSource,
 			() => {
-//				stopOtc()
+				stopOtc()
 //				stopEtc.cancel()
 			}
 		)

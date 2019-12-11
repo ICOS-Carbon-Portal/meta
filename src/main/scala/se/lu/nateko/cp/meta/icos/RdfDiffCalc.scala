@@ -42,7 +42,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
 			role.kind,
 			peopleDiff.ensureIdPreservation(role.holder),
-			orgsDiff.ensureIdPreservation(role.org)
+			orgsDiff.ensureIdPreservation(role.org),
+			role.weight
 		)
 
 		val tcRoles = newSnapshot.roles.map(memb => memb.copy(role = updateRole(memb.role)))

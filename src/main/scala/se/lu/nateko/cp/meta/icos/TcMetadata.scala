@@ -39,7 +39,7 @@ object Entity{
 
 }
 
-case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lName: String, email: Option[String]) extends Entity[T]
+case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lname: String, email: Option[String]) extends Entity[T]
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
@@ -79,7 +79,7 @@ case class Instrument[+T <: TC](
 	partsCpIds: Seq[String] = Nil
 ) extends Entity[T]
 
-class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T]){
+class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T], val weight: Option[Int]){
 	def id = (kind.name, holder.tcId, org.tcId)
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }

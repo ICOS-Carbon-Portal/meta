@@ -72,7 +72,7 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 		) yield {
 			val cpStations = stations.map(_.station)
 			val membs = stations.map{s =>
-				val role = new AssumedRole[E](PI, s.pi, s.station)
+				val role = new AssumedRole[E](PI, s.pi, s.station, None)
 				Membership[E]("", role, s.piStart, None)
 			}
 			new TcState(cpStations, membs, instruments)

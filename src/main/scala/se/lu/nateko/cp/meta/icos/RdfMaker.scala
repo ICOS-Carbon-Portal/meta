@@ -25,7 +25,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		val holder = memb.role.holder
 		val roleId = memb.role.kind.name
 		val org = memb.role.org
-		val label = s"${holder.lName} as $roleId at ${org.cpId}"
+		val label = s"${holder.lname} as $roleId at ${org.cpId}"
 
 		val triples: Seq[(IRI, IRI, Value)] = {
 			(uri, RDF.TYPE, meta.membershipClass) +:
@@ -39,6 +39,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			memb.stop.toSeq.map{inst =>
 				(uri, meta.hasEndTime, vocab.lit(inst))
 			} ++:
+			//TODO Write attribution weight info
 			Nil
 		}
 		triples.map(vocab.factory.tripleToStatement)
@@ -58,7 +59,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			case p: Person[T] =>
 				(uri, RDF.TYPE, meta.personClass) +:
 				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
-				(uri, meta.hasLastName, vocab.lit(p.lName)) +:
+				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
 				p.email.map{email =>
 					(uri, meta.hasEmail, vocab.lit(email))
 				}.toList

@@ -727,6 +727,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">station id</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasUncertainty -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasUncertainty">
@@ -921,6 +932,12 @@
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Organization -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Organization">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <owl:disjointUnionOf rdf:parseType="Collection">
             <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution"/>
             <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
@@ -1038,6 +1055,12 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Station">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
     </owl:Class>
     
 

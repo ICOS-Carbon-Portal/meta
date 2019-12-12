@@ -78,9 +78,8 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 			) yield{
 				val startOpt = getOptionalInstant(uri, metaVocab.hasStartTime)
 				val endOpt = getOptionalInstant(uri, metaVocab.hasEndTime)
-				//val weight = getOptionalInt(uri, metaVocab.)
-				//TODO Read attribution weight
-				val assumedRole = new AssumedRole(role, person, org, None)
+				val weight = getOptionalInt(uri, metaVocab.hasAttributionWeight)
+				val assumedRole = new AssumedRole(role, person, org, weight)
 				Membership(uri.getLocalName, assumedRole, startOpt, endOpt)
 			})
 		}

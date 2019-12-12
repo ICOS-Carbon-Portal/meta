@@ -33,13 +33,15 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			(uri, meta.atOrganization, getIri(org)) +:
 			(uri, meta.hasRole, vocab.getRole(roleId)) +:
 			(getIri(memb.role.holder), meta.hasMembership, uri) +:
-			memb.start.toSeq.map{inst =>
+			memb.start.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))
 			} ++:
-			memb.stop.toSeq.map{inst =>
+			memb.stop.map{inst =>
 				(uri, meta.hasEndTime, vocab.lit(inst))
 			} ++:
-			//TODO Write attribution weight info
+			memb.role.weight.map{weight =>
+				(uri, meta.hasAttributionWeight, vocab.lit(weight))
+			} ++:
 			Nil
 		}
 		triples.map(vocab.factory.tripleToStatement)

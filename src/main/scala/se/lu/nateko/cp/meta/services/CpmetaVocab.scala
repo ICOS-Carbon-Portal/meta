@@ -81,6 +81,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasRole = getRelative("hasRole")
 	val hasMembership = getRelative("hasMembership")
 	val atOrganization = getRelative("atOrganization")
+	val hasAttributionWeight = getRelative("hasAttributionWeight")
 	val hasStartTime = getRelative("hasStartTime")
 	val hasEndTime = getRelative("hasEndTime")
 	val hasInstrumentOwner = getRelative("hasInstrumentOwner")

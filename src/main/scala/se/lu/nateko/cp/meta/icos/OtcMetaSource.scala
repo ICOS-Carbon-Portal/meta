@@ -24,6 +24,7 @@ import org.eclipse.rdf4j.model.Value
 import java.time.Instant
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import se.lu.nateko.cp.meta.core.data.Position
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, log: LoggingAdapter
@@ -54,8 +55,9 @@ class OtcMetaSource(
 	def readState: Validated[TcState[O]] = for(
 		people <- getPeople;
 		mobStations <- getMobileStations;
+		statStations <- getStationaryStations;
 		otherOrgs <- getCompsAndInsts;
-		orgs = mobStations ++ otherOrgs;
+		orgs = mobStations ++ statStations ++ otherOrgs;
 		membs <- getMemberships(orgs, people)
 		//TODO Fetch instruments
 	) yield new TcState(mobStations.values.toSeq, membs, Nil)
@@ -63,12 +65,12 @@ class OtcMetaSource(
 	private def getMobileStations: Validated[Map[IRI, CpMobileStation[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?st ?id ?name ?countryCode where{
-		|	values ?mobPlClass {otc:Ship otc:DriftingBuoy}
-		|	?plat a ?mobPlClass .
-		|	?depl otc:ofPlatform ?plat .
-		|	?depl otc:toStation ?st .
-		|	#optional {?depl otc:hasEndTime ?endTime}
 		|	?st otc:hasStationId ?id .
+		|	filter exists{
+		|		?depl otc:toStation ?st ; otc:ofPlatform ?plat .
+		|		values ?mobPlClass {otc:Ship otc:DriftingBuoy}
+		|		?plat a ?mobPlClass .
+		|	}
 		|	?st otc:hasName ?name .
 		|	optional {?st otc:countryCode ?countryCode }
 		|}""".stripMargin
@@ -81,6 +83,31 @@ class OtcMetaSource(
 			country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
 			geoJson = None
 		)}
+	}
+
+	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
+	private def getStationaryStations: Validated[Map[IRI, CpStationaryStation[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select distinct ?st ?id ?name ?lat ?lon ?countryCode where{
+		|	?plat a otc:Mooring .
+		|	?depl otc:ofPlatform ?plat ; otc:toStation ?st .
+		|	?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon .
+		|	#optional {?depl otc:hasEndTime ?endTime}
+		|	?st otc:hasStationId ?id ; otc:hasName ?name .
+		|	optional {?st otc:countryCode ?countryCode }
+		|}""".stripMargin
+
+		getLookup(q, "st"){(b, tcId) =>
+			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
+			CpStationaryStation(
+				cpId = TcConf.stationId[O](b.getValue("id").stringValue),
+				tcId = tcId,
+				id = b.getValue("id").stringValue,
+				name = b.getValue("name").stringValue,
+				pos = pos,
+				country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
+			)
+		}
 	}
 
 	private def getCompsAndInsts: Validated[Map[IRI, CompanyOrInstitution[O]]] = {
@@ -166,6 +193,13 @@ class OtcMetaSource(
 		case lit: Literal if lit.getDatatype == XMLSchema.DATE =>
 			Some(Instant.parse(lit.stringValue + "T12:00:00Z"))
 		case _ => None
+	}
+
+	private def parseDouble(v: Value): Double = v match {
+		case lit: Literal if lit.getDatatype == XMLSchema.DOUBLE =>
+			lit.stringValue.toDouble
+		case _ =>
+			throw new NumberFormatException(s"Expected $v to be a RDF literal of type xsd:double")
 	}
 
 }

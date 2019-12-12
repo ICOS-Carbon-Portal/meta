@@ -49,8 +49,10 @@ object MetaFlow {
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)
-			if(diffV.errors.isEmpty) diffV.foreach(icosServer.applyAll)
-			else{
+			if(diffV.errors.isEmpty) {
+				diffV.foreach(icosServer.applyAll)
+				system.log.info(s"Calculated and applied station-metadata diff from $tip")
+			} else{
 				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
 			}
 		}

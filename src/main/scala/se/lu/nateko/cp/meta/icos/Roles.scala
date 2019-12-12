@@ -5,9 +5,11 @@ sealed trait Role{
 }
 
 object Role{
-	val all: Seq[Role] = Seq(PI, Researcher, DataManager)
+	//ATTENTION: Every new role must be added to the Role.all list
+	val all: Seq[Role] = Seq(PI, Researcher, DataManager, Engineer)
 }
 
+//ATTENTION: Every role must be listed in Role.all
 sealed abstract class NonPiRole(val name: String) extends Role
 
 case object PI extends Role{def name = "PI"}

@@ -67,7 +67,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 			Validated(for(
 				orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
 				org <- getOrganization(orgUri);
-				role <- getRole(getSingleUri(uri, metaVocab.hasRole));
+				role = getRole(getSingleUri(uri, metaVocab.hasRole));
 				person <- {
 					val persons = getPropValueHolders(metaVocab.hasMembership, uri).flatMap{persUri =>
 						getTcId[T](persUri).map(getPerson(_, persUri))
@@ -134,9 +134,9 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		CompanyOrInstitution[T](vocab.getOrganizationId(uri), tcId, core.name, core.self.label)
 	}
 
-	protected def getRole(iri: IRI): Option[Role] = {
+	protected def getRole(iri: IRI): Role = {
 		val roleId = iri.getLocalName
-		Role.all.find(_.name == roleId)
+		Role.all.find(_.name == roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
 	}
 
 	protected def getPerson[T <: TC](tcId: TcId[T], uri: IRI): Person[T] = {

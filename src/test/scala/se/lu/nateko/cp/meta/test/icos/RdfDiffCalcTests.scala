@@ -30,7 +30,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 	val airCpStation = CpMobileStation[A]("AIR1", aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
-		val piMemb = Membership[A]("", new AssumedRole(PI, pi, airCpStation), None, None)
+		val piMemb = Membership[A]("", new AssumedRole(PI, pi, airCpStation, None), None, None)
 		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
@@ -69,7 +69,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 
 		When("afterwards a new snapshot comes with person's last name (and consequently cpId) changed")
 
-		val jane2 = jane.copy(cpId = "Jane_Smith", lName = "Smith")
+		val jane2 = jane.copy(cpId = "Jane_Smith", lname = "Smith")
 
 		val nameUpdates = state.calc.calcDiff(atcInitSnap(jane2)).result.get.toIndexedSeq
 
@@ -146,7 +146,7 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		Given("starting with a single org with a single researcher and no own CP statements")
 
 		val uni = CompanyOrInstitution("uni", aId("uni0"), "Just Some Uni", None)
-		val janeAtUni = Membership[A]("", new AssumedRole[A](Researcher, jane, uni), None, None)
+		val janeAtUni = Membership[A]("", new AssumedRole[A](Researcher, jane, uni, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
 		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)

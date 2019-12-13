@@ -39,7 +39,7 @@ class StaticObjectFetcher(
 			.map(getDataProduction(dobj, _, plainFetcher))
 
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
-		val spec = getSpecification(specIri)
+		val spec = getSpecification(specIri, plainFetcher)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 
 		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))

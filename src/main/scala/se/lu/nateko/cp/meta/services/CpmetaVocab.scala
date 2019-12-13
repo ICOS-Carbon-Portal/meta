@@ -57,6 +57,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasDataLevel = getRelative("hasDataLevel")
 	val hasDataTheme = getRelative("hasDataTheme")
 	val hasAssociatedProject = getRelative("hasAssociatedProject")
+	val hasDocumentationObject = getRelative("hasDocumentationObject")
 	val containsDataset = getRelative("containsDataset")
 	val hasObjectSpec = getRelative("hasObjectSpec")
 	val hasFormat = getRelative("hasFormat")

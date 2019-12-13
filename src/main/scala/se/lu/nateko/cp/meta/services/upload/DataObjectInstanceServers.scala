@@ -58,7 +58,8 @@ class DataObjectInstanceServers(
 
 
 	def getDataObjSpecification(spec: IRI)(implicit envri: Envri): Try[DataObjectSpec] = Try{
-		metaFetchers(envri).getSpecification(spec)
+		val fetcher = plainFetcher.getOrElse(throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
+		metaFetchers(envri).getSpecification(spec, fetcher)
 	}
 
 	def getInstServerForFormat(format: IRI)(implicit envri: Envri): Try[InstanceServer] =

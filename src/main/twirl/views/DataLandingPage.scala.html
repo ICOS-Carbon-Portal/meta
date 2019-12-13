@@ -66,6 +66,8 @@
 				@PanelRow("Data level", dobj.specification.dataLevel.toString)
 				@resourcePanelRow("Format", dobj.specification.format)
 				@resourcePanelRow("Encoding", dobj.specification.encoding)
+
+				@documentationLink(dobj.specification.documentation)
 				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
 				@if(uploadComplete) {

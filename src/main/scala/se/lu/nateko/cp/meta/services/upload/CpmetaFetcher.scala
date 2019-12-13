@@ -17,7 +17,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 	protected def vocab: CpVocab
 
-	def getSpecification(spec: IRI) = DataObjectSpec(
+	def getSpecification(spec: IRI, fetcher: PlainStaticObjectFetcher) = DataObjectSpec(
 		self = getLabeledResource(spec),
 		project = getLabeledResource(spec, metaVocab.hasAssociatedProject),
 		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
@@ -28,7 +28,8 @@ trait CpmetaFetcher extends FetchingHelper{
 				import se.lu.nateko.cp.meta.core.data.JsonSupport.uriResourceFormat
 				import spray.json._
 				getLabeledResource(iri).toJson
-			}
+			},
+		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject)
 	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)

@@ -1,0 +1,21 @@
+@import java.net.URI
+@import se.lu.nateko.cp.meta.core.data._
+@import views.html.PanelHtmlRow
+@import views.html.PanelRow
+
+@(documents: Seq[PlainStaticObject])
+@documents.toList match {
+	case Nil => {}
+	case _ => {
+			@PanelHtmlRow{Documentation}{
+				<span>
+					@for((document, i) <- documents.zipWithIndex){
+						@if(i > 0) {
+							<span>, </span>
+						}
+						<a href=@{document.res}>@{document.name}</a>
+					}
+				</span>
+		}
+	}
+}

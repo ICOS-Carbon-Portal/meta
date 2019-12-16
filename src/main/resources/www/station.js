@@ -1,4 +1,5 @@
 var queryParams = processQuery(window.location.search);
+var isSites = window.location.host.endsWith("fieldsites.se");
 
 if (queryParams.coverage){
 	initMap(queryParams);
@@ -18,7 +19,7 @@ function initMap(queryParams) {
 		map.addLayer(baseMaps.Topographic);
 		L.control.layers(baseMaps).addTo(map);
 
-		if (geoJson.type == "Polygon"){
+		if (geoJson.type === "Polygon"){
 			L.Mask = L.Polygon.extend({
 				options: {
 					weight: 2,
@@ -62,15 +63,12 @@ function initMap(queryParams) {
 					switch (feature.geometry.type) {
 						case 'Line':
 							return {color: "rgb(50,50,255)", weight: 2};
-							break;
 
 						case 'LineString':
 							return {color: "rgb(50,50,255)", weight: 2};
-							break;
 
 						case 'MultiLineString':
 							return {color: "rgb(50,50,255)", weight: 2};
-							break;
 
 						default:
 							return {color: "rgb(50,255,50)", weight: 2};
@@ -80,8 +78,9 @@ function initMap(queryParams) {
 
 			map.addLayer(fg);
 
-			if (geoJson.type == "Point") {
-				map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], 4);
+			if (geoJson.type === "Point") {
+				const zoom = isSites ? 5 : 4;
+				map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], zoom);
 			} else {
 				map.fitBounds(fg.getBounds());
 			}
@@ -116,7 +115,21 @@ function getIcon(iconUrl){
 		});
 }
 
+function getLmUrl(layer){
+	return "//api.lantmateriet.se/open/topowebb-ccby/v1/wmts/token/a39d27b8-9fd6-3770-84cb-2589b772b8ca/1.0.0/"
+		+ layer
+		+ "/default/3857/{z}/{y}/{x}.png";
+}
+
 function getBaseMaps(maxZoom){
+	var topoLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb'), {
+		maxZoom: 15
+	});
+
+	var topoTonedLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb_nedtonad'), {
+		maxZoom: 15
+	});
+
 	var topo = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
 		maxZoom
 	});
@@ -129,7 +142,14 @@ function getBaseMaps(maxZoom){
 		maxZoom
 	});
 
-	return {
+	return isSites
+	? {
+		"Topographic": topoLM,
+		"Topographic Toned": topoTonedLM,
+		"Satellite": image,
+		"OSM": osm
+	}
+	: {
 		"Topographic": topo,
 		"Satellite": image,
 		"OSM": osm

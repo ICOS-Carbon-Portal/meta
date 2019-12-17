@@ -30,7 +30,7 @@ object Badm{
 		def unapply(v: String): Option[T]
 	}
 
-	private val numParser = NumberFormat.getNumberInstance(Locale.ROOT)
+	val numParser = NumberFormat.getNumberInstance(Locale.ROOT)
 
 	object Numeric extends Extractor[Number]{
 		override def unapply(v: String): Option[Number] = try{

@@ -1,6 +1,8 @@
 package se.lu.nateko.cp.meta.utils
 
 import scala.collection.mutable.Buffer
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 
@@ -66,5 +68,11 @@ object Validated{
 		}
 
 		new Validated(Some(res), errs)
+	}
+
+	def liftFuture[T](v: Validated[Future[T]])(implicit ctxt: ExecutionContext): Future[Validated[T]] = v.result.fold(
+		Future.successful(new Validated[T](None, v.errors))
+	){
+		_.map(res => new Validated[T](Some(res), v.errors))
 	}
 }

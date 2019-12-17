@@ -95,6 +95,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 
 	def getIcosCitation(dobj: DataObject): Option[String] = {
 		val isIcos: Option[Unit] = if(dobj.specification.project.uri === vocab.icosProject) Some(()) else None
+		val zoneId = ZoneId.of("UTC")
 
 		def titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
@@ -105,7 +106,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 				) yield {
 					val station = acq.station.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
-					val time = getTimeFromInterval(interval)
+					val time = getTimeFromInterval(interval, zoneId)
 					s"$spec, $station$height, $time"
 				}
 		)
@@ -135,28 +136,27 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 //			val icos = if(dobj.specification.dataLevel == 2) "ICOS ERIC, " else ""
 
 			//val authors = s"$icos$producerOrg$station"
-			val year = formatDate(productionInstant).take(4)
+			val year = formatDate(productionInstant, zoneId).take(4)
 			s"ICOS RI, $year. $title, ${handleProxy}$pid"
 		}
 	}
 
-	private def formatDate(inst: Instant): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(inst)
+	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
 
 	def getSitesCitation(dobj: DataObject): Option[String] = {
-		def titleOpt = dobj.specificInfo.fold(
+		val zoneId = ZoneId.of("Europe/Stockholm")
+		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.self.label);
 					interval <- acq.interval;
-					productionInstant <- dobj.production.map(_.dateTime).orElse{
-						dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
-					}
+					productionInstant = dobj.production.fold(interval.stop)(_.dateTime)
 				) yield {
 					val station = acq.station.name
-					val time = getTimeFromInterval(interval)
-					val year = formatDate(productionInstant).take(4)
+					val time = getTimeFromInterval(interval, zoneId)
+					val year = formatDate(productionInstant, zoneId).take(4)
 					s"$station. $year. $spec from $location, $time"
 				}
 		)
@@ -170,14 +170,14 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 		}
 	}
 
-	private def getTimeFromInterval(interval: TimeInterval): String = {
+	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {
 		val duration = Duration.between(interval.start, interval.stop)
 		if (duration.getSeconds < 24 * 3601) { //daily data object
 			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
-			formatDate(middle)
+			formatDate(middle, zoneId)
 		} else {
-			val from = formatDate(interval.start)
-			val to = formatDate(interval.stop)
+			val from = formatDate(interval.start, zoneId)
+			val to = formatDate(interval.stop, zoneId)
 			s"$from–$to"
 		}
 	}

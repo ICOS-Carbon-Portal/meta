@@ -144,7 +144,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
 
 	def getSitesCitation(dobj: DataObject): Option[String] = {
-		val zoneId = ZoneId.of("Europe/Stockholm")
+		val zoneId = ZoneId.of("UTC+01:00")
 		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(

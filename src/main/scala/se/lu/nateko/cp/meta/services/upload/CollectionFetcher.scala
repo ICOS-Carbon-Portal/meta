@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
 
-class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab)(implicit envri: Envri) extends CpmetaFetcher {
+class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab) extends CpmetaFetcher {
 
 	val memberProp = metaVocab.dcterms.hasPart
 
@@ -39,12 +39,12 @@ class CollectionFetcherLite(protected val server: InstanceServer, protected val 
 		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
 	}
 
-	def getCreatorIfCollExists(hash: Sha256Sum): Option[IRI] = {
+	def getCreatorIfCollExists(hash: Sha256Sum)(implicit envri: Envri): Option[IRI] = {
 		val collUri = vocab.getCollection(hash)
 		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
 	}
 
-	def collectionExists(coll: Sha256Sum): Boolean = collectionExists(vocab.getCollection(coll))
+	def collectionExists(coll: Sha256Sum)(implicit envri: Envri): Boolean = collectionExists(vocab.getCollection(coll))
 }
 
 class CollectionFetcher(

@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.Resource
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailInstanceServer
 import se.lu.nateko.cp.meta.core.data.DataObject
@@ -26,6 +27,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 
 class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
 
@@ -50,13 +52,15 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 }
 
 class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
-	val vocab = new CpVocab(sail.getValueFactory)(coreConf.envriConfigs)
+	private implicit val envriConfs = coreConf.envriConfigs
+	val vocab = new CpVocab(sail.getValueFactory)
 
-	def getCitation(maybeDobj: Resource): Option[String] = getStaticObject(maybeDobj).flatMap{dobj =>
-		dobj.asDataObject.flatMap(getIcosCitation).orElse(getDataCiteCitation(dobj))
+	def getCitation(maybeDobj: Resource): Option[String] = getStaticObject(maybeDobj).flatMap{
+		case (obj, envri) => obj.asDataObject.flatMap{ dobj =>
+			if (envri == Envri.SITES) getSitesCitation(dobj)
+			else getIcosCitation(dobj)
+		}.orElse(getDataCiteCitation(obj))
 	}
-
-	private implicit val envri = Envri.ICOS //functionality limited to ICOS for now
 
 	private val objFetcher = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
@@ -67,17 +71,20 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 		new StaticObjectFetcher(server, vocab, collFetcher, plainFetcher, pidFactory)
 	}
 
-	private val objPrefix: String = objectPrefix(vocab.getConfig)
+	def getStaticObject(maybeDobj: Resource): Option[(StaticObject, Envri)] = maybeDobj match {
 
-	def getStaticObject(maybeDobj: Resource): Option[StaticObject] = maybeDobj match{
-
-		case iri: IRI if iri.stringValue.startsWith(objPrefix) => for(
+		case iri: IRI => for(
+			envri <- inferObjectEnvri(iri);
 			hash <- Sha256Sum.fromBase64Url(iri.getLocalName).toOption;
-			obj <- objFetcher.fetch(hash)
-		) yield obj
+			obj <- objFetcher.fetch(hash)(envri)
+		) yield obj -> envri
 
 		case _ =>
 			None
+	}
+
+	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
+		implicit envri => obj.stringValue.startsWith(objectPrefix(vocab.getConfig))
 	}
 
 	def getDataCiteCitation(dobj: StaticObject): Option[String] = for(
@@ -98,15 +105,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 				) yield {
 					val station = acq.station.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
-					val duration = Duration.between(interval.start, interval.stop)
-					val time = if(duration.getSeconds < 24 * 3601){ //daily data object
-						val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
-						formatDate(middle)
-					} else{
-						val from = formatDate(interval.start)
-						val to = formatDate(interval.stop)
-						s"$from–$to"
-					}
+					val time = getTimeFromInterval(interval)
 					s"$spec, $station$height, $time"
 				}
 		)
@@ -142,5 +141,45 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	}
 
 	private def formatDate(inst: Instant): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(inst)
+
+	def getSitesCitation(dobj: DataObject): Option[String] = {
+		def titleOpt = dobj.specificInfo.fold(
+			l3 => Some(l3.title),
+			l2 => for(
+					spec <- dobj.specification.self.label;
+					acq = l2.acquisition;
+					location <- acq.site.flatMap(_.self.label);
+					interval <- acq.interval;
+					productionInstant <- dobj.production.map(_.dateTime).orElse{
+						dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
+					}
+				) yield {
+					val station = acq.station.name
+					val time = getTimeFromInterval(interval)
+					val year = formatDate(productionInstant).take(4)
+					s"$station. $year. $spec from $location, $time"
+				}
+		)
+
+		for(
+			title <- titleOpt;
+			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
+			pid <- dobj.doi.orElse(dobj.pid)
+		) yield {
+			s"$title. SITES Data Portal. ${handleProxy}$pid"
+		}
+	}
+
+	private def getTimeFromInterval(interval: TimeInterval): String = {
+		val duration = Duration.between(interval.start, interval.stop)
+		if (duration.getSeconds < 24 * 3601) { //daily data object
+			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
+			formatDate(middle)
+		} else {
+			val from = formatDate(interval.start)
+			val to = formatDate(interval.stop)
+			s"$from–$to"
+		}
+	}
 
 }

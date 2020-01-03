@@ -32,20 +32,20 @@ object MetaFlow {
 		val cpServer = db.instanceServers(isConf.cpMetaInstanceServerId)
 		val icosServer = db.instanceServers(isConf.icosMetaInstanceServerId)
 
-		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
-			case wnis: WriteNotifyingInstanceServer => wnis
-			case _ => throw new Exception(
-				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-			)
-		}
+		// val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
+		// 	case wnis: WriteNotifyingInstanceServer => wnis
+		// 	case _ => throw new Exception(
+		// 		"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+		// 	)
+		// }
 
 		val rdfReader = new RdfReader(cpServer, icosServer)
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-		val sparql = new Rdf4jSparqlRunner(db.repo)
-		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
-//		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
+//		val sparql = new Rdf4jSparqlRunner(db.repo)
+//		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
+		val etcSource = new EtcMetaSource
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)
@@ -57,12 +57,12 @@ object MetaFlow {
 			}
 		}
 
-		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
-//		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
+//		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
 		new MetaFlow(new AtcMetaSource,
 			() => {
-				stopOtc()
-//				stopEtc.cancel()
+//				stopOtc()
+				stopEtc.cancel()
 			}
 		)
 	}

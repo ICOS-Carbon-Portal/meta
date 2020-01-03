@@ -40,7 +40,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 	import system.dispatcher
 
 	def state: Source[State, Cancellable] = Source
-		.tick(25.seconds, 5.hours, NotUsed)
+		.tick(5.seconds, 5.hours, NotUsed) //TODO Wait a bit longer in the begining (in production)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
 				case Failure(err) =>
@@ -67,7 +67,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 				stations <- stationsVal
 			) yield {
 				val membExtractor: Lookup => Validated[EtcMembership] = getMembership(
-					people.map(p => p.tcId -> p).toMap,
+					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
 				)(_)
 				fetchFromTsv("teamrole", membExtractor).map(_.map{membs =>
@@ -96,7 +96,7 @@ object EtcMetaSource{
 	type E = ETC.type
 	//type EtcInstrument = Instrument[E]
 	type EtcPerson = Person[E]
-	type EtcStation = CpStationaryStation[E]
+	type EtcStation = TcStationaryStation[E]
 	type EtcMembership = Membership[E]
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
@@ -173,7 +173,7 @@ object EtcMetaSource{
 			tcId <- lookUp(Vars.persId).require("unique ETC's id is required for a person");
 			email <- lookUp(Vars.email).optional
 		) yield
-			Person(urlEncode(fname + "_" + lname), makeId(tcId), fname, lname, email)
+			Person(urlEncode(fname + "_" + lname), Some(makeId(tcId)), fname, lname, email)
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 
@@ -200,7 +200,7 @@ object EtcMetaSource{
 		id <- lookUp(Vars.siteId);
 		countryCode <- getCountryCode(id.take(2))
 	) yield
-		CpStationaryStation(TcConf.stationId[E](id), makeId(tcId), name, id, Some(countryCode), pos)
+		TcStationaryStation(TcConf.stationId[E](id), makeId(tcId), name, id, Some(countryCode), pos)
 
 	def getMembership(
 		people: Map[TcId[E], EtcPerson],

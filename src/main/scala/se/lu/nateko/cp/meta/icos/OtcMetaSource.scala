@@ -62,7 +62,7 @@ class OtcMetaSource(
 		//TODO Fetch instruments
 	) yield new TcState(mobStations.values.toSeq, membs, Nil)
 
-	private def getMobileStations: Validated[Map[IRI, CpMobileStation[O]]] = {
+	private def getMobileStations: Validated[Map[IRI, TcMobileStation[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?st ?id ?name ?countryCode where{
 		|	?st otc:hasStationId ?id .
@@ -75,7 +75,7 @@ class OtcMetaSource(
 		|	optional {?st otc:countryCode ?countryCode }
 		|}""".stripMargin
 
-		getLookup(q, "st"){(b, tcId) => CpMobileStation(
+		getLookup(q, "st"){(b, tcId) => TcMobileStation(
 			cpId = TcConf.stationId[O](b.getValue("id").stringValue),
 			tcId = tcId,
 			id = b.getValue("id").stringValue,
@@ -86,7 +86,7 @@ class OtcMetaSource(
 	}
 
 	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
-	private def getStationaryStations: Validated[Map[IRI, CpStationaryStation[O]]] = {
+	private def getStationaryStations: Validated[Map[IRI, TcStationaryStation[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?st ?id ?name ?lat ?lon ?countryCode where{
 		|	?plat a otc:Mooring .
@@ -99,7 +99,7 @@ class OtcMetaSource(
 
 		getLookup(q, "st"){(b, tcId) =>
 			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
-			CpStationaryStation(
+			TcStationaryStation(
 				cpId = TcConf.stationId[O](b.getValue("id").stringValue),
 				tcId = tcId,
 				id = b.getValue("id").stringValue,
@@ -121,7 +121,7 @@ class OtcMetaSource(
 
 		getLookup(q, "org"){(b, tcId) => CompanyOrInstitution(
 			cpId = tcId.id,
-			tcId = tcId,
+			tcIdOpt = Some(tcId),
 			name = b.getValue("name").stringValue,
 			label = Option(b.getValue("label")).map(_.stringValue)
 		)}
@@ -141,7 +141,7 @@ class OtcMetaSource(
 			val lname = b.getValue("lname").stringValue
 			Person(
 				cpId = CpVocab.getPersonCpId(fname, lname),
-				tcId = tcId,
+				tcIdOpt = Some(tcId),
 				fname = fname,
 				lname = lname,
 				email = Option(b.getValue("email")).map(_.stringValue)

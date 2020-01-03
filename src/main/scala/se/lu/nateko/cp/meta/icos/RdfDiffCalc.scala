@@ -36,7 +36,6 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val tcPeople = newSnapshot.roles.map(_.role.holder)
 		val cpPeople = current.roles.map(_.role.holder)
-
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
@@ -55,7 +54,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		)
 	}
 
-	private def diff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
+	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
 		val fromSet = from.toSet
 		val toSet = to.toSet
 		val toAdd = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
@@ -75,14 +74,31 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
 
-		val newOriginalAdded = toKeys.diff(fromKeys).diff(cpKeys).toSeq.map(toMap.apply)
-			.flatMap(rdfMaker.getStatements[T]).map(RdfUpdate(_, true)).toSeqDiff[T, E]
+		val newOriginalAdded = {
+			val newEnts = toKeys.diff(fromKeys).diff(cpKeys).toSeq.map(toMap.apply)
+			val initCpIds = cpOwn.map(_.cpId).toSet
+
+			val (_, dedupedEnts) = newEnts.foldLeft[(Set[String], List[E])]((initCpIds, Nil)){
+				case ((cpIds, ents), ent) =>
+					val idAttempts = Iterator(ent.cpId) ++ Iterator.from(2).map{i =>s"${ent.cpId}_$i"}
+					val newCpId = idAttempts.find(!cpIds.contains(_)).get //will always find something
+					(cpIds + newCpId) -> (ent.withCpId(newCpId) :: ents)
+			}
+
+			val rdfDiff = dedupedEnts.flatMap(rdfMaker.getStatements[T]).map(RdfUpdate(_, true))
+
+			val map = dedupedEnts.flatMap(ent => ent.tcIdOpt.map(_ -> ent.cpId)).filter{
+				case (key, cpId) => toMap(key).cpId != cpId
+			}.toMap
+
+			new SequenceDiff[T, E](rdfDiff, map)
+		}
 
 		val existingChangedTcOnly = toKeys.intersect(fromKeys).diff(cpKeys).toSeq.map{key =>
 
 			val (from, to) = (fromMap(key), toMap(key))
 
-			val rdfDiff = diff(
+			val rdfDiff = statsDiff(
 				rdfMaker.getStatements[T](from),
 				rdfMaker.getStatements[T](to.withCpId(from.cpId))
 			)
@@ -107,7 +123,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val existingAppearedInCp = {
 			val keys = cpKeys.intersect(fromKeys).toSeq
-
+keys.map(_.id).foreach(println)
+//TODO Debug this code segment
 			val rdfDiff = keys.flatMap{key =>
 
 				val toDelete = fromMap(key)
@@ -131,6 +148,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				(redundantBasicStatements ++ redundantExtraStatements ++ usagesToRemove).map(RdfUpdate(_, false)) ++
 				(replacementExtraStatements ++ replacementUsages).map(RdfUpdate(_, true))
 			}
+rdfDiff.foreach(println)
 			val lookup = keys.collect{
 				case key if fromMap(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
 			}.toMap
@@ -160,20 +178,21 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			RdfUpdate(stat, true)
 		}
 		//TODO Add handling of intersecting roles (could mean a noop or, in some cases, retraction of stop times)
+		//TODO Handle the case of person holding the same role at the same org more than once, at non-overlapping time intervals
+		//TODO Do not end memberships (or delete entities) that have disappeared from TC's metadata. TCs must provide end dates explicitly.
+		//TODO Handle duplicates (in the sense of identical cpId but different tcId)
+		//TODO Handle conflicting statements from CP and TC (e.g. different emails or name spellings)
 		newMembs ++ endedMembs
 	}
 }
 
 object RdfDiffCalc{
-	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.map(e => e.tcId -> e).toMap
+	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.flatMap(e => e.tcIdOpt.map(_ -> e)).toMap
 }
 
 class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], String]){
 
-	def ensureIdPreservation(entity: E): E = cpIdLookup.get(entity.tcId) match {
-		case None => entity
-		case Some(cpId) => entity.withCpId(cpId)
-	}
+	def ensureIdPreservation(entity: E): E = entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
 }
 
 object SequenceDiff{

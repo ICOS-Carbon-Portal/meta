@@ -8,7 +8,12 @@ import se.lu.nateko.cp.meta.core.data.Position
 
 sealed trait Entity[+T <: TC]{
 	def cpId: String
+	def tcIdOpt: Option[TcId[T]]
+}
+
+sealed trait TcEntity[+T <: TC] extends Entity[T]{
 	def tcId: TcId[T]
+	override def tcIdOpt = Some(tcId)
 }
 
 trait CpIdSwapper[E]{
@@ -27,8 +32,8 @@ object Entity{
 
 	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
 		def withCpId(org: Organization[T], id: String) = org match{
-			case ss: CpStationaryStation[T] => ss.copy(cpId = id)
-			case ms: CpMobileStation[T] => ms.copy(cpId = id)
+			case ss: TcStationaryStation[T] => ss.copy(cpId = id)
+			case ms: TcMobileStation[T] => ms.copy(cpId = id)
 			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
 		}
 	}
@@ -39,34 +44,34 @@ object Entity{
 
 }
 
-case class Person[+T <: TC](cpId: String, tcId: TcId[T], fname: String, lname: String, email: Option[String]) extends Entity[T]
+case class Person[+T <: TC](cpId: String, tcIdOpt: Option[TcId[T]], fname: String, lname: String, email: Option[String]) extends Entity[T]
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
-sealed trait CpStation[+T <: TC] extends Organization[T]{
+sealed trait TcStation[+T <: TC] extends Organization[T] with TcEntity[T]{
 	def id: String
 	def country: Option[CountryCode]
 }
 
-case class CpStationaryStation[+T <: TC](
+case class TcStationaryStation[+T <: TC](
 	cpId: String,
 	tcId: TcId[T],
 	name: String,
 	id: String,
 	country: Option[CountryCode],
 	pos: Position
-) extends CpStation[T]
+) extends TcStation[T]
 
-case class CpMobileStation[+T <: TC](
+case class TcMobileStation[+T <: TC](
 	cpId: String,
 	tcId: TcId[T],
 	name: String,
 	id: String,
 	country: Option[CountryCode],
 	geoJson: Option[String]
-) extends CpStation[T]
+) extends TcStation[T]
 
-case class CompanyOrInstitution[+T <: TC](cpId: String, tcId: TcId[T], name: String, label: Option[String]) extends Organization[T]
+case class CompanyOrInstitution[+T <: TC](cpId: String, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
 
 case class Instrument[+T <: TC](
 	cpId: String,
@@ -77,16 +82,16 @@ case class Instrument[+T <: TC](
 	vendor: Option[Organization[T]] = None,
 	owner: Option[Organization[T]] = None,
 	partsCpIds: Seq[String] = Nil
-) extends Entity[T]
+) extends TcEntity[T]
 
 class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T], val weight: Option[Int]){
-	def id = (kind.name, holder.tcId, org.tcId)
+	def id = (kind.name, holder.cpId, org.cpId)
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }
 
 case class Membership[+T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[CpStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
+class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
 	def tcConf = implicitly[TcConf[T]]
 }
 

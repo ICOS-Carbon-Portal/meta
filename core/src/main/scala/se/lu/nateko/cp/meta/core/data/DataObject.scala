@@ -35,7 +35,8 @@ case class DataObjectSpec(
 	encoding: UriResource,
 	dataLevel: Int,
 	datasetSpec: Option[JsValue],
-	documentation: Seq[PlainStaticObject]
+	documentation: Seq[PlainStaticObject],
+	description: Option[String]
 )
 
 case class DataAcquisition(

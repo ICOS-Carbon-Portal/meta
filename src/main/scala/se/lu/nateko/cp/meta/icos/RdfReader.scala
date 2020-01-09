@@ -66,7 +66,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		val membOptSeqV = getDirectClassMembers(metaVocab.membershipClass).map{uri =>
 			Validated(for(
 				orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
-				org = getOrganization(orgUri);
+				org <- getOrganization(orgUri);
 				role = getRole(getSingleUri(uri, metaVocab.hasRole));
 				person <- {
 					val persons = getPropValueHolders(metaVocab.hasMembership, uri).map{persUri =>
@@ -94,8 +94,8 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
 			name = getOptionalString(uri, metaVocab.hasName),
-			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).map(o => getOrganization(o)),
-			vendor = getOptionalUri(uri, metaVocab.hasVendor).map(v => getOrganization(v)),
+			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getOrganization(o)),
+			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getOrganization(v)),
 			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(_.getLocalName)
 		)
 	}
@@ -135,26 +135,24 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		CompanyOrInstitution[T](vocab.getOrganizationId(uri), tcId, core.name, core.self.label)
 	}
 
-	protected def getRole(iri: IRI): Role = {
+	private def getRole(iri: IRI): Role = {
 		val roleId = iri.getLocalName
 		Role.all.find(_.name == roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
 	}
 
-	protected def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {
+	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {
 		val core: data.Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
 		Person[T](uri.getLocalName, tcId, core.firstName, core.lastName, email)
 	}
 
-	def getOrganization[T <: TC : TcConf](uri: IRI): Organization[T] = {
-
+	private def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] =
 		if(server.hasStatement(uri, RDF.TYPE, stationClass))
-			getStation(getTcId(uri), uri)
+			Some(getStation(getTcId(uri), uri))
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
-			getCompOrInst(getTcId(uri), uri)
+			Some(getCompOrInst(getTcId(uri), uri))
 		else
-			throw new MetadataException(s"$uri is neither a station nor a plain organization")
-	}
+			None //uri is neither a TC-specific station nor a plain organization
 
 
 	def getPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = getEntities[T, Person[T]](metaVocab.personClass)(getPerson)

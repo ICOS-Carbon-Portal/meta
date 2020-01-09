@@ -99,14 +99,15 @@ class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 		state.tcServer.applyAll(piUpdates)
 
 		it("Then previous PI's membership stays and the new ones' is created and started"){
-			assert(piUpdates.size >= 11)
+			assert(piUpdates.size >= 10)
 			val membs = state.reader.getCurrentState[A].result.get.roles
 			assert(membs.size === 2)
 			val johnMemb = membs.find(_.role.holder == john).get
 			val janeMemb = membs.find(_.role.holder == jane).get
-			assert(johnMemb.start.isDefined)
+			assert(johnMemb.start.isEmpty)
 			assert(johnMemb.stop.isEmpty)
 			assert(janeMemb.start.isEmpty)
+			assert(janeMemb.stop.isEmpty)
 		}
 
 	}

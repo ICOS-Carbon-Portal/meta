@@ -32,36 +32,38 @@ object MetaFlow {
 		val cpServer = db.instanceServers(isConf.cpMetaInstanceServerId)
 		val icosServer = db.instanceServers(isConf.icosMetaInstanceServerId)
 
-		// val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
-		// 	case wnis: WriteNotifyingInstanceServer => wnis
-		// 	case _ => throw new Exception(
-		// 		"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-		// 	)
-		// }
+		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
+			case wnis: WriteNotifyingInstanceServer => wnis
+			case _ => throw new Exception(
+				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+			)
+		}
 
 		val rdfReader = new RdfReader(cpServer, icosServer)
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-//		val sparql = new Rdf4jSparqlRunner(db.repo)
-//		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
+		val sparql = new Rdf4jSparqlRunner(db.repo)
+		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
 		val etcSource = new EtcMetaSource
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)
 			if(diffV.errors.isEmpty) {
-				diffV.foreach(icosServer.applyAll)
-				system.log.info(s"Calculated and applied station-metadata diff from $tip")
+				diffV.foreach{updates =>
+					icosServer.applyAll(updates)
+					system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
+				}
 			} else{
 				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
 			}
 		}
 
-//		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
 		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
 		new MetaFlow(new AtcMetaSource,
 			() => {
-//				stopOtc()
+				stopOtc()
 				stopEtc.cancel()
 			}
 		)

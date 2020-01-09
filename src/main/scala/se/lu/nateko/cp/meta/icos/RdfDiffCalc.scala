@@ -20,8 +20,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
 
-		val tcOrgs = instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.role.org) ++ newSnapshot.stations
-		val cpOrgs = instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations
+		val tcOrgs = uniqBestId(instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.role.org) ++ newSnapshot.stations)
+		val cpOrgs = uniqBestId(instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations)
 
 		val orgsDiff = diff[T, Organization[T]](cpOrgs, tcOrgs, cpOwnOrgs)
 
@@ -34,8 +34,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val instrDiff = diff[T, Instrument[T]](current.instruments, tcInstrs, Nil)
 
-		val tcPeople = newSnapshot.roles.map(_.role.holder)
-		val cpPeople = current.roles.map(_.role.holder).groupBy(_.cpId).map(_._2.head).toSeq
+		val tcPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
+		val cpPeople = uniqBestId(current.roles.map(_.role.holder))
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
@@ -134,12 +134,15 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 						deleteCands.find(e => e.cpId != cpMap(key).cpId) //should delete TC's that has different URI than CP's
 					else deleteCands.headOption
 				val toDelete = deleteCand.getOrElse(throw new Exception("Algorithmic error in RdfDiffCalc"))
+
 				val deletedIri = rdfMaker.getIri(toDelete)
 				val replacementIri = rdfMaker.getIri(cpMap(key))
+
 				val basicEntityStatements = rdfMaker.getStatements(toDelete).toSet
 
 				val (redundantBasicStatements, extraStatements) = rdfReader.getTcOnlyStatements(deletedIri)
 					.partition(basicEntityStatements.contains)
+
 				val redundantExtraStatements = if(deletedIri != replacementIri) extraStatements else Nil
 				val replacementExtraStatements = redundantExtraStatements.map(swapSubject(replacementIri))
 
@@ -164,11 +167,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val tcMap = tc.groupBy(m => m.role.id)
 		val newIds = tcMap.keySet.diff(cpMap.keySet).toSeq
 
-		val newStart: Option[Instant] = if(cp.isEmpty) None else Some(Instant.now)
-
 		val newMembs = newIds.flatMap(tcMap.apply).flatMap{memb =>
-			val theStart = memb.start.orElse(if(memb.stop.isEmpty) newStart else None)
-			val newMemb = memb.copy(cpId = RolesDiffCalc.newMembId, start = theStart)
+			val newMemb = memb.copy(cpId = RolesDiffCalc.newMembId)
 			rdfMaker.getStatements[T](newMemb).map(RdfUpdate(_, true))
 		}
 
@@ -187,6 +187,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 object RdfDiffCalc{
 	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.flatMap(e => e.tcIdOpt.map(_ -> e)).toMap
+
+	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
 class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], String]){

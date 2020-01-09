@@ -35,7 +35,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val instrDiff = diff[T, Instrument[T]](current.instruments, tcInstrs, Nil)
 
 		val tcPeople = newSnapshot.roles.map(_.role.holder)
-		val cpPeople = current.roles.map(_.role.holder)
+		val cpPeople = current.roles.map(_.role.holder).groupBy(_.cpId).map(_._2.head).toSeq
 		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
@@ -74,6 +74,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
 
+		def cpIdLookup(keys: Iterable[TcId[T]], map: Map[TcId[T], E]): Map[TcId[T], String] = keys.collect{
+			case key if map(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
+		}.toMap
+
 		val newOriginalAdded = {
 			val newEnts = toKeys.diff(fromKeys).diff(cpKeys).toSeq.map(toMap.apply)
 			val initCpIds = cpOwn.map(_.cpId).toSet
@@ -87,11 +91,11 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 			val rdfDiff = dedupedEnts.flatMap(rdfMaker.getStatements[T]).map(RdfUpdate(_, true))
 
-			val map = dedupedEnts.flatMap(ent => ent.tcIdOpt.map(_ -> ent.cpId)).filter{
+			val idLookup = dedupedEnts.flatMap(ent => ent.tcIdOpt.map(_ -> ent.cpId)).filter{
 				case (key, cpId) => toMap(key).cpId != cpId
 			}.toMap
 
-			new SequenceDiff[T, E](rdfDiff, map)
+			new SequenceDiff[T, E](rdfDiff, idLookup)
 		}
 
 		val existingChangedTcOnly = toKeys.intersect(fromKeys).diff(cpKeys).toSeq.map{key =>
@@ -103,39 +107,39 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				rdfMaker.getStatements[T](to.withCpId(from.cpId))
 			)
 
-			val map: Map[TcId[T], String] =
+			val idLookup: Map[TcId[T], String] =
 				if(from.cpId == to.cpId)
 					Map.empty
 				else
 					Map(key -> from.cpId)
 
-			new SequenceDiff[T, E](rdfDiff, map)
+			new SequenceDiff[T, E](rdfDiff, idLookup)
 		}.join
 
-		val oldOriginalRemoved = SequenceDiff.empty[T, E] //no entities are deleted
+		//no entities are deleted, cpIdLookup covered in 'existingAppearedInCp'
+		val oldOriginalRemoved = SequenceDiff.empty[T, E]
 
-		val newButPresentInCp = {
-			val map = toKeys.diff(fromKeys).intersect(cpKeys).toSeq.collect{
-				case key if toMap(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
-			}.toMap
-			new SequenceDiff[T, E](Nil, map)
+		val presentInCp = { //needed for completeness of cpIdLookup info
+			val idLookup = cpIdLookup(toKeys.intersect(cpKeys), toMap)
+			new SequenceDiff[T, E](Nil, idLookup)
 		}
 
 		val existingAppearedInCp = {
 			val keys = cpKeys.intersect(fromKeys).toSeq
-keys.map(_.id).foreach(println)
-//TODO Debug this code segment
+
 			val rdfDiff = keys.flatMap{key =>
 
-				val toDelete = fromMap(key)
+				val deleteCands = from.filter(e => e.tcIdOpt.contains(key))
+				val deleteCand: Option[E] = if(deleteCands.size > 1)
+						deleteCands.find(e => e.cpId != cpMap(key).cpId) //should delete TC's that has different URI than CP's
+					else deleteCands.headOption
+				val toDelete = deleteCand.getOrElse(throw new Exception("Algorithmic error in RdfDiffCalc"))
 				val deletedIri = rdfMaker.getIri(toDelete)
 				val replacementIri = rdfMaker.getIri(cpMap(key))
-
 				val basicEntityStatements = rdfMaker.getStatements(toDelete).toSet
 
 				val (redundantBasicStatements, extraStatements) = rdfReader.getTcOnlyStatements(deletedIri)
 					.partition(basicEntityStatements.contains)
-
 				val redundantExtraStatements = if(deletedIri != replacementIri) extraStatements else Nil
 				val replacementExtraStatements = redundantExtraStatements.map(swapSubject(replacementIri))
 
@@ -148,41 +152,36 @@ keys.map(_.id).foreach(println)
 				(redundantBasicStatements ++ redundantExtraStatements ++ usagesToRemove).map(RdfUpdate(_, false)) ++
 				(replacementExtraStatements ++ replacementUsages).map(RdfUpdate(_, true))
 			}
-rdfDiff.foreach(println)
-			val lookup = keys.collect{
-				case key if fromMap(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
-			}.toMap
-			new SequenceDiff[T, E](rdfDiff, lookup)
+
+			new SequenceDiff[T, E](rdfDiff, cpIdLookup(keys, fromMap))
 		}
 
-		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, newButPresentInCp, existingAppearedInCp).join
+		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp).join
 	}
 
 	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
 		val cpMap = cp.groupBy(m => m.role.id)
 		val tcMap = tc.groupBy(m => m.role.id)
-		val finishedIds = cpMap.keySet.diff(tcMap.keySet).toSeq
 		val newIds = tcMap.keySet.diff(cpMap.keySet).toSeq
 
 		val newStart: Option[Instant] = if(cp.isEmpty) None else Some(Instant.now)
 
 		val newMembs = newIds.flatMap(tcMap.apply).flatMap{memb =>
-			val membId = scala.util.Random.alphanumeric.take(24).mkString
 			val theStart = memb.start.orElse(if(memb.stop.isEmpty) newStart else None)
-			val newMemb = memb.copy(cpId = membId, start = theStart)
+			val newMemb = memb.copy(cpId = RolesDiffCalc.newMembId, start = theStart)
 			rdfMaker.getStatements[T](newMemb).map(RdfUpdate(_, true))
 		}
 
-		val endedMembs = finishedIds.flatMap(cpMap.apply).filter(_.stop.isEmpty).map{memb =>
-			val stat = rdfMaker.getMembershipEnd(memb.cpId)
-			RdfUpdate(stat, true)
+		val updatedMembs = cpMap.keySet.intersect(tcMap.keySet).toSeq.flatMap{key =>
+			val currentMembs = cpMap(key)
+			val latestMembs = tcMap(key)
+			val newMembs = RolesDiffCalc.resultingMembsForSameAssumedRole(currentMembs, latestMembs)
+			statsDiff(
+				currentMembs.flatMap(rdfMaker.getStatements[T]),
+				newMembs.flatMap(rdfMaker.getStatements[T])
+			)
 		}
-		//TODO Add handling of intersecting roles (could mean a noop or, in some cases, retraction of stop times)
-		//TODO Handle the case of person holding the same role at the same org more than once, at non-overlapping time intervals
-		//TODO Do not end memberships (or delete entities) that have disappeared from TC's metadata. TCs must provide end dates explicitly.
-		//TODO Handle duplicates (in the sense of identical cpId but different tcId)
-		//TODO Handle conflicting statements from CP and TC (e.g. different emails or name spellings)
-		newMembs ++ endedMembs
+		newMembs ++ updatedMembs
 	}
 }
 

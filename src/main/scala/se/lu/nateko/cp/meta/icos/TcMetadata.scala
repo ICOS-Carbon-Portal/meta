@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.data.Position
 sealed trait Entity[+T <: TC]{
 	def cpId: String
 	def tcIdOpt: Option[TcId[T]]
+	def bestId: String = tcIdOpt.fold(cpId)(_.id)
 }
 
 sealed trait TcEntity[+T <: TC] extends Entity[T]{
@@ -85,7 +86,7 @@ case class Instrument[+T <: TC](
 ) extends TcEntity[T]
 
 class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T], val weight: Option[Int]){
-	def id = (kind.name, holder.cpId, org.cpId)
+	def id = (kind.name, holder.bestId, org.bestId)
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }
 

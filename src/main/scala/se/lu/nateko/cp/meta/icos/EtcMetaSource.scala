@@ -40,7 +40,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 	import system.dispatcher
 
 	def state: Source[State, Cancellable] = Source
-		.tick(5.seconds, 5.hours, NotUsed) //TODO Wait a bit longer in the begining (in production)
+		.tick(35.seconds, 5.hours, NotUsed)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
 				case Failure(err) =>

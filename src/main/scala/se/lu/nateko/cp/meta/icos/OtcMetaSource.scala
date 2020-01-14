@@ -6,6 +6,7 @@ import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 
+import akka.actor.ActorRef
 import akka.actor.Status
 import akka.event.LoggingAdapter
 import akka.stream.OverflowStrategy
@@ -27,32 +28,17 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.core.data.Position
 
 class OtcMetaSource(
-	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, log: LoggingAdapter
-) extends TcMetaSource[OTC.type] {
+	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
+) extends TriggeredMetaSource[OTC.type] {
 
 	private type O = OTC.type
 	private val otcVocab = new OtcMetaVocab(server.factory)
 
-	def state: Source[TcState[O], () => Unit] = Source
-		.actorRef(1, OverflowStrategy.dropHead)
-		.mapMaterializedValue{actor =>
-			server.setSubscriber(() => actor ! 2) //cost of single update is 2 units
-			() => actor ! Status.Success
-		}
-		.prepend(Source.single(2)) //triggering initial state reading at the stream startup
-		.conflate(Keep.right) //swallow throttle's back-pressure
-		.throttle(2, 1.minute, 1, identity, ThrottleMode.Shaping) //2 units of cost per minute
-		.mapConcat[TcState[O]]{_ =>
-			val stateV = Validated(readState).flatMap(identity)
+	override def registerListener(actor: ActorRef): Unit = {
+		server.setSubscriber(() => actor ! 1)
+	}
 
-			if(!stateV.errors.isEmpty){
-				val errKind = if(stateV.result.isEmpty) "Hard error" else "Problems"
-				log.warning(s"$errKind while reading OTC metadata:\n${stateV.errors.mkString("\n")}")
-			}
-			stateV.result.toList
-		}
-
-	def readState: Validated[TcState[O]] = for(
+	override def readState: Validated[State] = for(
 		people <- getPeople;
 		mobStations <- getMobileStations;
 		statStations <- getStationaryStations;
@@ -76,7 +62,7 @@ class OtcMetaSource(
 		|}""".stripMargin
 
 		getLookup(q, "st"){(b, tcId) => TcMobileStation(
-			cpId = TcConf.stationId[O](b.getValue("id").stringValue),
+			cpId = stationId(b.getValue("id").stringValue),
 			tcId = tcId,
 			id = b.getValue("id").stringValue,
 			name = b.getValue("name").stringValue,
@@ -100,7 +86,7 @@ class OtcMetaSource(
 		getLookup(q, "st"){(b, tcId) =>
 			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
 			TcStationaryStation(
-				cpId = TcConf.stationId[O](b.getValue("id").stringValue),
+				cpId = stationId(b.getValue("id").stringValue),
 				tcId = tcId,
 				id = b.getValue("id").stringValue,
 				name = b.getValue("name").stringValue,

@@ -96,7 +96,8 @@ class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq
 	def tcConf = implicitly[TcConf[T]]
 }
 
-abstract class TcMetaSource[T <: TC]{
+abstract class TcMetaSource[T <: TC : TcConf]{
 	type State = TcState[T]
 	def state: Source[State, Any]
+	def stationId(baseId: String) = TcConf.stationId[T](baseId)
 }

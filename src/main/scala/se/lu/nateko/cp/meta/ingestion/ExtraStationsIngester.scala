@@ -1,39 +1,35 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.io.Source
 
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
-class IcosStationsIngester(
-	sparqlPath: String,
-	extraStationsPath: String
-)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Extractor{
+class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 	import IcosStationsIngester._
 
-	def getStatements(repo: Repository): Ingestion.Statements =
-		new SparqlConstructExtractor(sparqlPath).getStatements(repo).map{own =>
-			val stationListInput = getClass.getResourceAsStream(extraStationsPath)
+	def getStatements(vf: ValueFactory): Ingestion.Statements = Future{
+		val stationListInput = getClass.getResourceAsStream(extraStationsPath)
 
-			own ++ Source.fromInputStream(stationListInput, "UTF-8")
-				.getLines
-				.drop(1)
-				.collect{
-					case line if !line.trim.isEmpty => Station.parse(line.trim)
-				}
-				.flatMap(makeStationStatements(repo))
-		}
+		Source.fromInputStream(stationListInput, "UTF-8")
+			.getLines
+			.drop(1)
+			.collect{
+				case line if !line.trim.isEmpty => Station.parse(line.trim)
+			}
+			.flatMap(makeStationStatements(vf))
+	}
 
 
-	private def makeStationStatements(repo: Repository): Station => Iterator[Statement] = {
-		implicit val vf = repo.getValueFactory
+	private def makeStationStatements(implicit vf: ValueFactory): Station => Iterator[Statement] = {
 		val vocab = new CpVocab(vf)
 		val metaVocab = new CpmetaVocab(vf)
 		val projToClass = Map(

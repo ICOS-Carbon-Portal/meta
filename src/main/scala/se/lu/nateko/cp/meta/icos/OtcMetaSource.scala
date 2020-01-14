@@ -6,6 +6,7 @@ import scala.util.Try
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 
+import akka.actor.ActorRef
 import akka.actor.Status
 import akka.event.LoggingAdapter
 import akka.stream.OverflowStrategy
@@ -16,97 +17,205 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import org.eclipse.rdf4j.query.BindingSet
+import se.lu.nateko.cp.meta.services.CpVocab
+import org.eclipse.rdf4j.model.Value
+import java.time.Instant
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import se.lu.nateko.cp.meta.core.data.Position
 
 class OtcMetaSource(
-	server: WriteNotifyingInstanceServer, log: LoggingAdapter
-)(implicit envriConfigs: EnvriConfigs) extends TcMetaSource[OTC.type] {
+	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
+) extends TriggeredMetaSource[OTC.type] {
 
 	private type O = OTC.type
+	private val otcVocab = new OtcMetaVocab(server.factory)
 
-	def state: Source[TcState[O], () => Unit] = Source
-		.actorRef(1, OverflowStrategy.dropHead)
-		.mapMaterializedValue{actor =>
-			server.setSubscriber(() => actor ! 2) //cost of single update is 2 units
-			() => actor ! Status.Success
-		}
-		.prepend(Source.single(2)) //triggering initial state reading at the stream startup
-		.conflate(Keep.right) //swallow throttle's back-pressure
-		.throttle(2, 1.minute, 1, identity, ThrottleMode.Shaping) //2 units of cost per minute
-		.mapConcat[TcState[O]]{_ =>
-			val stateV = Validated(readState).flatMap(identity)
+	override def registerListener(actor: ActorRef): Unit = {
+		server.setSubscriber(() => actor ! 1)
+	}
 
-			if(!stateV.errors.isEmpty){
-				val errKind = if(stateV.result.isEmpty) "Hard error" else "Problems"
-				log.warning(s"$errKind while reading OTC metadata:\n${stateV.errors.mkString("\n")}")
-			}
-			stateV.result.toList
-		}
+	override def readState: Validated[State] = for(
+		people <- getPeople;
+		mobStations <- getMobileStations;
+		statStations <- getStationaryStations;
+		otherOrgs <- getCompsAndInsts;
+		orgs = mobStations ++ statStations ++ otherOrgs;
+		membs <- getMemberships(orgs, people)
+		//TODO Fetch instruments
+	) yield new TcState(mobStations.values.toSeq, membs, Nil)
 
-	def readState: Validated[TcState[O]] = for(
-		instruments <- reader.getOtcInstruments;
-		allMembs <- reader.getOtcMemberships;
-		stations = allMembs.map(_.role.org).collect{
-			case s: CpStation[O] => s
-		}
-	) yield new TcState(stations, allMembs, instruments)
+	private def getMobileStations: Validated[Map[IRI, TcMobileStation[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select distinct ?st ?id ?name ?countryCode where{
+		|	?st otc:hasStationId ?id .
+		|	filter exists{
+		|		?depl otc:toStation ?st ; otc:ofPlatform ?plat .
+		|		values ?mobPlClass {otc:Ship otc:DriftingBuoy}
+		|		?plat a ?mobPlClass .
+		|	}
+		|	?st otc:hasName ?name .
+		|	optional {?st otc:countryCode ?countryCode }
+		|}""".stripMargin
 
-	private object reader extends IcosMetaInstancesFetcher(server.inner){
+		getLookup(q, "st"){(b, tcId) => TcMobileStation(
+			cpId = stationId(b.getValue("id").stringValue),
+			tcId = tcId,
+			id = b.getValue("id").stringValue,
+			name = b.getValue("name").stringValue,
+			country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
+			geoJson = None
+		)}
+	}
 
-		private val otcVocab = new OtcMetaVocab(server.factory)
-		private def makeId(iri: IRI): TcId[O] = TcConf.OtcConf.makeId(iri.getLocalName)
+	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
+	private def getStationaryStations: Validated[Map[IRI, TcStationaryStation[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select distinct ?st ?id ?name ?lat ?lon ?countryCode where{
+		|	?plat a otc:Mooring .
+		|	?depl otc:ofPlatform ?plat ; otc:toStation ?st .
+		|	?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon .
+		|	#optional {?depl otc:hasEndTime ?endTime}
+		|	?st otc:hasStationId ?id ; otc:hasName ?name .
+		|	optional {?st otc:countryCode ?countryCode }
+		|}""".stripMargin
 
-		/**
-		 * important override changing the default behaviour of RdfReader
-		 */
-		override protected def getTcId[T <: TC](uri: IRI)(implicit tcConf: TcConf[T]): Option[TcId[T]] =
-			Some(tcConf.makeId(uri.getLocalName))
-
-		def getOtcInstruments: Validated[Seq[Instrument[O]]] = getInstruments[O].map(_.map{instr =>
-			instr.copy(cpId = TcConf.tcScopedId[O](instr.cpId))
-		})
-
-		def getOtcMemberships: Validated[IndexedSeq[Membership[O]]] = {
-			val rolesOptSeqV = getDirectClassMembers(otcVocab.assumedRoleClass).map{arIri =>
-				Validated(
-					for(
-						persIri <- getOptionalUri(arIri, otcVocab.hasHolder);
-						person <- Try(getPerson(makeId(persIri), persIri)).toOption;
-						roleIri <- getOptionalUri(arIri, otcVocab.hasRole);
-						roleKind <- getRole(roleIri);
-						orgIri <- getOptionalUri(arIri, otcVocab.atOrganization);
-						org0 <- getOrganization[O](orgIri)
-					) yield {
-						val org = makeStationCpIdOtcSpecific(org0);
-						val start = getOptionalInstant(arIri, otcVocab.hasStartTime);
-						val end = getOptionalInstant(arIri, otcVocab.hasEndTime)
-						val role = new AssumedRole(roleKind, person, org)
-						Membership[O](arIri.getLocalName, role, start, end)
-					}
-				)
-			}
-			Validated.sequence(rolesOptSeqV).map(_.flatten.toIndexedSeq)
-		}
-
-		private def makeStationCpIdOtcSpecific(org: Organization[O]): Organization[O] = org match {
-			case _: CpStation[O] => org.withCpId(TcConf.stationId[O](org.cpId))
-			case _ => org
+		getLookup(q, "st"){(b, tcId) =>
+			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
+			TcStationaryStation(
+				cpId = stationId(b.getValue("id").stringValue),
+				tcId = tcId,
+				id = b.getValue("id").stringValue,
+				name = b.getValue("name").stringValue,
+				pos = pos,
+				country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
+			)
 		}
 	}
+
+	private def getCompsAndInsts: Validated[Map[IRI, CompanyOrInstitution[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select distinct ?org ?name ?label where{
+		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
+		|	?org a ?orgClass .
+		|	?org otc:hasName ?name .
+		|	optional{?org rdfs:label ?label }
+		|}""".stripMargin
+
+		getLookup(q, "org"){(b, tcId) => CompanyOrInstitution(
+			cpId = tcId.id,
+			tcIdOpt = Some(tcId),
+			name = b.getValue("name").stringValue,
+			label = Option(b.getValue("label")).map(_.stringValue)
+		)}
+	}
+
+	private def getPeople: Validated[Map[IRI, Person[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select distinct ?p ?fname ?lname ?email where{
+		|	?p a otc:Person .
+		|	?p otc:hasFirstName ?fname .
+		|	?p otc:hasLastName ?lname .
+		|	optional{?p otc:hasEmail ?email }
+		|}""".stripMargin
+
+		getLookup(q, "p"){(b, tcId) =>
+			val fname = b.getValue("fname").stringValue
+			val lname = b.getValue("lname").stringValue
+			Person(
+				cpId = CpVocab.getPersonCpId(fname, lname),
+				tcIdOpt = Some(tcId),
+				fname = fname,
+				lname = lname,
+				email = Option(b.getValue("email")).map(_.stringValue)
+			)
+		}
+	}
+	private def getLookup[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => T): Validated[Map[IRI, T]] = {
+		Validated(sparql.evaluateTupleQuery(SparqlQuery(query))).flatMap{iter =>
+			val entValids = iter.toIndexedSeq.map{b =>
+				Validated{
+					val entIri = b.getValue(entVar).asInstanceOf[IRI]
+					val ent = maker(b, TcConf.makeId[O](entIri.getLocalName))
+					entIri -> ent
+				}
+			}
+			Validated.sequence(entValids).map(_.toMap)
+		}
+	}
+
+	private def getMemberships(orgs: Map[IRI, Organization[O]], pers: Map[IRI, Person[O]]): Validated[Seq[Membership[O]]] = {
+		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+		|select * where{
+		|	?role a otc:AssumedRole .
+		|	?role otc:hasRole ?roleKind .
+		|	?role otc:atOrganization ?org .
+		|	?role otc:hasHolder ?person .
+		|	optional{?role otc:hasAttributionWeight ?weight}
+		|	optional{?role otc:hasStartTime ?start}
+		|	optional{?role otc:hasEndTime ?end}
+		|}""".stripMargin
+
+		getLookup(q, "role"){(b, tcId) =>
+			val role = new AssumedRole[O](
+				kind = otcVocab.Roles.map(b.getValue("roleKind").asInstanceOf[IRI]),
+				holder = pers(b.getValue("person").asInstanceOf[IRI]),
+				org = orgs(b.getValue("org").asInstanceOf[IRI]),
+				weight = Option(b.getValue("weight")).map(_.stringValue.toInt)
+			)
+			Membership[O](
+				cpId = tcId.id,
+				role = role,
+				start = parseDate(b.getValue("start")),
+				stop = parseDate(b.getValue("end"))
+			)
+		}.map(_.values.toSeq)
+	}
+
+	private def parseDate(v: Value): Option[Instant] = v match {
+		case lit: Literal if lit.getDatatype == XMLSchema.DATE =>
+			Some(Instant.parse(lit.stringValue + "T12:00:00Z"))
+		case _ => None
+	}
+
+	private def parseDouble(v: Value): Double = v match {
+		case lit: Literal if lit.getDatatype == XMLSchema.DOUBLE =>
+			lit.stringValue.toDouble
+		case _ =>
+			throw new NumberFormatException(s"Expected $v to be a RDF literal of type xsd:double")
+	}
+
 }
 
 class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
 
-	val hasHolder = getRelative("hasHolder")
-	val hasRole = getRelative("hasRole")
-	val atOrganization = getRelative("atOrganization")
+	// val hasHolder = getRelative("hasHolder")
+	// val hasRole = getRelative("hasRole")
+	// val atOrganization = getRelative("atOrganization")
 
-	val spatialReference = getRelative("hasSpatialReference")
-	val hasStartTime = getRelative("hasStartTime")
-	val hasEndTime = getRelative("hasEndTime")
+	// val spatialReference = getRelative("hasSpatialReference")
+	// val hasStartTime = getRelative("hasStartTime")
+	// val hasEndTime = getRelative("hasEndTime")
 
-	val assumedRoleClass = getRelative("AssumedRole")
+	// val assumedRoleClass = getRelative("AssumedRole")
 
+	object Roles{
+		val dataSubmitter = getRelative("dataSubmitter")
+		val engineer = getRelative("engineer")
+		val pi = getRelative("pi")
+		val researcher = getRelative("researcher")
+
+		val map: Map[IRI, Role] = Map(
+			dataSubmitter -> DataManager,
+			engineer -> Engineer,
+			pi -> PI,
+			researcher -> Researcher
+		)
+	}
 }
 

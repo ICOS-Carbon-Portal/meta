@@ -19,7 +19,7 @@ object SparqlQueries {
 
 	private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
-		|FROM <http://meta.icos-cp.eu/resources/stations/>
+		|FROM <http://meta.icos-cp.eu/resources/icos/>
 		|FROM <http://meta.icos-cp.eu/resources/cpmeta/>
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|WHERE {

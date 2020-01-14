@@ -27,9 +27,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getIcosLikeStation(stationId: String) = getRelative(s"stations/", stationId)(icosBup)
 	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](id.id))
 
-	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(
-		s"${urlEncode(firstName)}_${urlEncode(lastName)}"
-	)
+	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: String)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
 
 //	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
@@ -71,6 +69,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 }
 
 object CpVocab{
+	import CustomVocab.urlEncode
+
 	val AcqPrefix = "acq_"
 	val ProdPrefix = "prod_"
 	val SubmPrefix = "subm_"
@@ -100,4 +100,6 @@ object CpVocab{
 		else
 			None
 	}
+
+	def getPersonCpId(firstName: String, lastName: String) = s"${urlEncode(firstName)}_${urlEncode(lastName)}"
 }

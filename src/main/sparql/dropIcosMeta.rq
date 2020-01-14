@@ -1,0 +1,7 @@
+construct {
+?s ?p ?o .
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	?s ?p ?o
+}

@@ -10,7 +10,7 @@ class CustomVocabTests extends FunSpec{
 	private[this] object Vocab extends CustomVocab{
 		implicit val bup = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
 		val factory: ValueFactory = new MemValueFactory
-		def encode(s: String) = urlEncode(s)
+		def encode(s: String) = CustomVocab.urlEncode(s)
 	}
 
 	describe("getRelative and getRelativeRaw"){

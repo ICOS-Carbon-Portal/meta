@@ -41,7 +41,7 @@ object Ingestion {
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
 			"badm" -> badm,
 			"badmSchema" -> badmSchema,
-			"pisAndStations" -> new IcosStationsIngester("/sparql/labelingToCpOnto.rq", "/extraStations.csv"),
+			"extraStations" -> new ExtraStationsIngester("/extraStations.csv"),
 			"cpMetaInstances" -> new RemoteRdfGraphIngester(
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("http://meta.icos-cp.eu/resources/cpmeta/")
@@ -50,11 +50,16 @@ object Ingestion {
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("https://meta.fieldsites.se/resources/sites/")
 			),
+			"otcMetaEntry" -> new RemoteRdfGraphIngester(
+				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
+				rdfGraph = new URI("http://meta.icos-cp.eu/resources/otcmeta/")
+			),
 //			"cpStationEntry" -> new RemoteRdfGraphIngester(
 //				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 //				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
 //			),
-			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeopleAndOrgs.txt")
+			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeopleAndOrgs.txt"),
+			"emptySource" -> EmptyIngester
 		)
 	}
 
@@ -89,6 +94,10 @@ object Ingestion {
 		val toAdd = from.filterNotContainedStatements(to.getStatements(None, None, None))
 
 		toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true))
+	}
+
+	object EmptyIngester extends Ingester{
+		override def getStatements(valueFactory: ValueFactory) = Future.successful(Iterator.empty)
 	}
 
 }

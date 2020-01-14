@@ -7,9 +7,11 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
-//import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.cpauth.core.UserId
 
 
 class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
@@ -31,34 +33,44 @@ object MetaFlow {
 		val cpServer = db.instanceServers(isConf.cpMetaInstanceServerId)
 		val icosServer = db.instanceServers(isConf.icosMetaInstanceServerId)
 
-//		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
-//			case wnis: WriteNotifyingInstanceServer => wnis
-//			case _ => throw new Exception(
-//				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-//			)
-//		}
+		val otcServer = db.instanceServers(isConf.otcMetaInstanceServerId) match{
+			case wnis: WriteNotifyingInstanceServer => wnis
+			case _ => throw new Exception(
+				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+			)
+		}
 
 		val rdfReader = new RdfReader(cpServer, icosServer)
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
-//		val otcSource = new OtcMetaSource(otcServer, system.log)
-//		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
+		val sparql = new Rdf4jSparqlRunner(db.repo)
+
+		//TODO Add ATC user to config
+		val atcSource = new AtcMetaSource(UserId("uploader@ATC"))
+		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
+		val etcSource = new EtcMetaSource
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)
-			if(diffV.errors.isEmpty) diffV.foreach(icosServer.applyAll)
-			else{
+			if(diffV.errors.isEmpty) {
+				diffV.foreach{updates =>
+					icosServer.applyAll(updates)
+					system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
+				}
+			} else{
 				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
 			}
 		}
 
-//		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
-//		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
-		new MetaFlow(new AtcMetaSource,
+		val stopAtc = atcSource.state.map{applyDiff("ATC")}.to(Sink.ignore).run()
+		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
+		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
+		new MetaFlow(atcSource,
 			() => {
-//				stopOtc()
-//				stopEtc.cancel()
+				stopAtc()
+				stopOtc()
+				stopEtc.cancel()
 			}
 		)
 	}

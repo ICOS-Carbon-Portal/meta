@@ -25,7 +25,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		val holder = memb.role.holder
 		val roleId = memb.role.kind.name
 		val org = memb.role.org
-		val label = s"${holder.lName} as $roleId at ${org.cpId}"
+		val label = s"${holder.lname} as $roleId at ${org.cpId}"
 
 		val triples: Seq[(IRI, IRI, Value)] = {
 			(uri, RDF.TYPE, meta.membershipClass) +:
@@ -33,11 +33,14 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			(uri, meta.atOrganization, getIri(org)) +:
 			(uri, meta.hasRole, vocab.getRole(roleId)) +:
 			(getIri(memb.role.holder), meta.hasMembership, uri) +:
-			memb.start.toSeq.map{inst =>
+			memb.start.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))
 			} ++:
-			memb.stop.toSeq.map{inst =>
+			memb.stop.map{inst =>
 				(uri, meta.hasEndTime, vocab.lit(inst))
+			} ++:
+			memb.role.weight.map{weight =>
+				(uri, meta.hasAttributionWeight, vocab.lit(weight))
 			} ++:
 			Nil
 		}
@@ -58,12 +61,12 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			case p: Person[T] =>
 				(uri, RDF.TYPE, meta.personClass) +:
 				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
-				(uri, meta.hasLastName, vocab.lit(p.lName)) +:
+				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
 				p.email.map{email =>
 					(uri, meta.hasEmail, vocab.lit(email))
 				}.toList
 
-			case s: CpStationaryStation[T] =>
+			case s: TcStationaryStation[T] =>
 				(uri, meta.hasLatitude, vocab.lit(s.pos.lat)) +:
 				(uri, meta.hasLongitude, vocab.lit(s.pos.lon)) +:
 				s.pos.alt.map{alt =>
@@ -71,7 +74,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 				} ++:
 				stationTriples(s)
 
-			case s: CpMobileStation[T] =>
+			case s: TcMobileStation[T] =>
 				stationTriples(s) ++ s.geoJson.toList.flatMap{json =>
 					val spcovUri = vocab.factory.createIRI(uri.stringValue + "_spcov")
 					(uri, meta.hasSpatialCoverage, spcovUri) ::
@@ -107,8 +110,8 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 
 		val tcIdPredicate: IRI = implicitly[TcConf[T]].tcIdPredicate(meta)
 
-		val tcIdTriple = (uri, tcIdPredicate, vocab.lit(e.tcId.id))
-		(triples :+ tcIdTriple).map(vocab.factory.tripleToStatement)
+		val tcIdTriple = e.tcIdOpt.map{tcId => (uri, tcIdPredicate, vocab.lit(tcId.id))}
+		(triples ++ tcIdTriple).map(vocab.factory.tripleToStatement)
 	}
 
 	def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
@@ -116,7 +119,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 		case p: Person[T] =>
 			vocab.getPerson(p.cpId)
 
-		case s: CpStation[T] => vocab.getIcosLikeStation(s.cpId)
+		case s: TcStation[T] => vocab.getIcosLikeStation(s.cpId)
 
 		case ci: CompanyOrInstitution[T] =>
 			vocab.getOrganization(ci.cpId)
@@ -125,7 +128,7 @@ class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
 			vocab.getIcosInstrument(instr.cpId)
 	}
 
-	private def stationTriples[T <: TC : TcConf](s: CpStation[T]): List[(IRI, IRI, Value)] = {
+	private def stationTriples[T <: TC : TcConf](s: TcStation[T]): List[(IRI, IRI, Value)] = {
 		val uri = getIri(s)
 		val stationClass = implicitly[TcConf[T]].stationClass(meta)
 		(uri, RDF.TYPE, stationClass) ::

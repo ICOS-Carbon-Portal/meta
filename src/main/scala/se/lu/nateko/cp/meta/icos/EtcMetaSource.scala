@@ -15,10 +15,12 @@ import akka.actor.ActorSystem
 import akka.actor.Cancellable
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.Uri
 import akka.stream.ActorAttributes
 import akka.stream.Materializer
 import akka.stream.Supervision
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
@@ -33,14 +35,12 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 
-class EtcMetaSource(conf: EtcUploadConfig)(
-	implicit system: ActorSystem, mat: Materializer, tcConf: TcConf[ETC.type]
-) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
 	import system.dispatcher
 
 	def state: Source[State, Cancellable] = Source
-		.tick(25.seconds, 5.hours, NotUsed)
+		.tick(35.seconds, 5.hours, NotUsed)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
 				case Failure(err) =>
@@ -54,130 +54,126 @@ class EtcMetaSource(conf: EtcUploadConfig)(
 		}
 
 
-	def fetchFromEtc(): Future[Validated[State]] = Http()
-		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))
-		.flatMap(EtcEntriesFetcher.responseToJson)
-		.map(Parser.parseEntriesFromEtcJson)
-		.map(getState)
+	def fetchFromEtc(): Future[Validated[State]] = {
+		val peopleFut = fetchFromTsv("team", getPerson(_))
+		val stationsFut = fetchFromTsv("station", getStation(_))
 
-	def getState(badms: Seq[BadmEntry]): Validated[State] = {
-		val stationBadms = badms.groupBy(_.stationId).toSeq.collect{
-			case (Some(id), badms) if id != falso => id -> badms
-		}
-		val stationsV = stationBadms.map{case (id, badms) => getStation(id, badms)}
-		val instrumentsV = stationBadms.flatMap{case (id, badms) => getInstruments(id, badms)}
-		for(
-			stations <- Validated.sequence(stationsV);
-			instruments <- Validated.sequence(instrumentsV)
-		) yield {
-			val cpStations = stations.map(_.station)
-			val membs = stations.map{s =>
-				val role = new AssumedRole[E](PI, s.pi, s.station)
-				Membership[E]("", role, s.piStart, None)
+		val futfutValVal = for(
+			peopleVal <- peopleFut;
+			stationsVal <- stationsFut
+		) yield Validated.liftFuture{
+			for(
+				people <- peopleVal;
+				stations <- stationsVal
+			) yield {
+				val membExtractor: Lookup => Validated[EtcMembership] = getMembership(
+					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
+					stations.map(s => s.tcId -> s).toMap
+				)(_)
+				fetchFromTsv("teamrole", membExtractor).map(_.map{membs =>
+					//TODO Add instruments info
+					new TcState(stations, membs, Nil)
+				})
 			}
-			new TcState(cpStations, membs, instruments)
 		}
+
+		futfutValVal.flatten.map(_.flatMap(identity))
 	}
 
-	def getStation(stId: StationId, badms: Seq[BadmEntry]): Validated[EtcStation] = {
-		val id = stId.id
-		val (roleEntries, nonRoleEntries) = badms.partition(_.variable == "GRP_TEAM")
+	private def fetchFromTsv[T](tableType: String, extractor: Lookup => Validated[T]): Future[Validated[Seq[T]]] = Http()
+		.singleRequest(HttpRequest(
+			uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
+		))
+		.flatMap(_.entity.toStrict(3.seconds))
+		.map(ent => Validated.sequence(parseTsv(ent.data).map(extractor)))
 
-		val (piEntries, nonPiEntries) = roleEntries.partition(be =>
-			be.values.exists(bv => bv.variable == "TEAM_MEMBER_ROLE" && bv.valueStr == "PI")
-		)
-
-		val nPisValidation = if(piEntries.size <= 1) Validated.ok(())
-			else Validated.error(s"ETC stations must have exactly one PI but $id had ${piEntries.size}").optional
-
-		val nonPiRolesValidation = if(nonPiEntries.isEmpty) Validated.ok(())
-			else Validated.error(s"Encountered non-PI ETC role(s) for $id." +
-				" They were ignored for now (support must be added by CP)").optional
-
-		implicit val lookup = toLookup(nonRoleEntries)
-		val piLookup = toLookup(piEntries)
-		for(
-			_ <- nPisValidation;
-			_ <- nonPiRolesValidation;
-			siteName <- getString("GRP_HEADER/SITE_NAME")
-				.require(s"Station $id had no value for SITE_NAME");
-			pos <- getPosition
-				.require(s"Station $id had no properly specified geo-position");
-			pi <- getPerson(piLookup, tcConf)
-				.require(s"Station $id had no properly specified PI")
-				.require(_.email.isDefined, s"PI of station $id had no email");
-			piStart <- getLocalDate("GRP_TEAM/TEAM_MEMBER_DATE")(piLookup).optional;
-			country <- getCountryCode(stId)
-		) yield {
-			val cpId = TcConf.stationId[E](id)
-			//TODO Use an actual guaranteed-stable id as tcId here
-			val cpStation = new CpStationaryStation(cpId, tcConf.makeId(id), siteName, id, Some(country), pos)
-			new EtcStation(cpStation, pi, piStart)
-		}
-	}
 }
 
 object EtcMetaSource{
 
-	val StationId(falso) = "FA-Lso"
-	type Lookup = Map[String, BadmValue]
+	val baseEtcApiUrl = Uri("http://gaia.agraria.unitus.it:89/cpmeta")
+	type Lookup = Map[String, String]
 	type E = ETC.type
-	type EtcInstrument = Instrument[E]
+	//type EtcInstrument = Instrument[E]
 	type EtcPerson = Person[E]
+	type EtcStation = TcStationaryStation[E]
+	type EtcMembership = Membership[E]
 
-	class EtcStation(val station: CpStation[E], val pi: EtcPerson, val piStart: Option[Instant])
+	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
 
-	def getInstruments(stId: StationId, badms: Seq[BadmEntry])(implicit tcConf: TcConf[ETC.type]): Seq[Validated[EtcInstrument]] = {
-		val sid = stId.id
-		badms.filter(_.variable == "GRP_LOGGER").map{badm =>
-			implicit val lookup = toLookup(Seq(badm))
-			for(
-				lid <- getNumber("GRP_LOGGER/LOGGER_ID").require(s"a logger at $sid has no id");
-				model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
-				sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number");
-				cpId = CpVocab.getEtcInstrId(stId, lid.intValue)
-			) yield
-				//TODO Use TC-stable station id as component of tcId
-				Instrument(cpId, tcConf.makeId(s"${sid}_$lid"), model, sn.valueStr)
-		}
+	object Vars{
+		val lat = "LOCATION_LAT"
+		val lon = "LOCATION_LONG"
+		val elev = "LOCATION_ELEV"
+		val fname = "TEAM_MEMBER_FIRSTNAME"
+		val lname = "TEAM_MEMBER_LASTNAME"
+		val email = "TEAM_MEMBER_EMAIL"
+		val role = "TEAM_MEMBER_ROLE"
+		val roleEnd = "TEAM_MEMBER_WORKEND"
+		val persId = "ID_TEAM"
+		val stationTcId = "ID_STATION"
+		val siteName = "SITE_NAME"
+		val siteId = "SITE_ID"
 	}
 
-	def lookUp(varName: String)(implicit lookup: Lookup): Validated[BadmValue] =
-		new Validated(lookup.get(varName))
+	val rolesLookup: Map[String, Option[Role]] = Map(
+		"PI"         -> Some(PI),
+		"CO-PI"      -> Some(Researcher),
+		"MANAGER"    -> None,
+		"SCI"        -> Some(Researcher),
+		"SCI-FLX"    -> Some(Researcher),
+		"SCI-ANC"    -> Some(Researcher),
+		"TEC"        -> Some(Engineer),
+		"TEC-FLX"    -> Some(Engineer),
+		"TEC-ANC"    -> Some(Engineer),
+		"DATA"       -> Some(DataManager),
+		"ADMIN"      -> None,
+		"AFFILIATED" -> None
+	)
+
+	// def getInstruments(stId: StationId, badms: Seq[BadmEntry])(implicit tcConf: TcConf[ETC.type]): Seq[Validated[EtcInstrument]] = {
+	// 	val sid = stId.id
+	// 	badms.filter(_.variable == "GRP_LOGGER").map{badm =>
+	// 		implicit val lookup = toLookup(Seq(badm))
+	// 		for(
+	// 			lid <- getNumber("GRP_LOGGER/LOGGER_ID").require(s"a logger at $sid has no id");
+	// 			model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
+	// 			sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number");
+	// 			cpId = CpVocab.getEtcInstrId(stId, lid.intValue)
+	// 		) yield
+	// 			//TODO Use TC-stable station id as component of tcId
+	// 			Instrument(cpId, makeId(s"${sid}_$lid"), model, sn.valueStr)
+	// 	}
+	// }
+
+	def lookUp(varName: String)(implicit lookup: Lookup): Validated[String] =
+		new Validated(lookup.get(varName).filter(_.length > 0))
 
 	def getNumber(varName: String)(implicit lookup: Lookup): Validated[Number] = lookUp(varName).flatMap{
-		case BadmValue(_, Badm.Numeric(v)) => Validated.ok(v)
-		case bv => Validated.error(s"$varName must have been a number (was ${bv.valueStr})")
-	}
-
-	def getString(varName: String)(implicit lookup: Lookup): Validated[String] = lookUp(varName).flatMap{
-		bv => Validated.ok(bv.valueStr)
+		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
 	def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[Instant] = lookUp(varName).flatMap{
-		case BadmValue(_, Badm.Date(BadmLocalDateTime(dt))) => Validated.ok(toCET(dt))
-		case BadmValue(_, Badm.Date(BadmLocalDate(date))) => Validated.ok(toCETnoon(date))
-		case bv => Validated.error(s"$varName must have been a local date(Time) (was ${bv.valueStr})")
+		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(toCET(dt))
+		case Badm.Date(BadmLocalDate(date)) => Validated.ok(toCETnoon(date))
+		case bv => Validated.error(s"$varName must have been a local date(Time) (was $bv)")
 	}
 
 	def getPosition(implicit lookup: Lookup): Validated[Position] =
 		for(
-			lat <- getNumber("GRP_LOCATION/LOCATION_LAT").require("station must have latitude");
-			lon <- getNumber("GRP_LOCATION/LOCATION_LONG").require("station must have longitude");
-			alt <- getNumber("GRP_LOCATION/LOCATION_ELEV").optional
+			lat <- getNumber(Vars.lat).require("station must have latitude");
+			lon <- getNumber(Vars.lon).require("station must have longitude");
+			alt <- getNumber(Vars.elev).optional
 		) yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue))
 
-	def toLookup(badms: Seq[BadmEntry]): Lookup =
-		badms.flatMap(be => be.values.map(bv => (be.variable + "/" + bv.variable) -> bv)).toMap
-
-	def getPerson(implicit lookup: Map[String, BadmValue], tcConf: TcConf[ETC.type]): Validated[EtcPerson] =
+	def getPerson(implicit lookup: Lookup): Validated[EtcPerson] =
 		for(
-			fname <- getString("GRP_TEAM/TEAM_MEMBER_FIRSTNAME").require("person must have first name");
-			lname <- getString("GRP_TEAM/TEAM_MEMBER_LASTNAME").require("person must have last name");
-			email <- getString("GRP_TEAM/TEAM_MEMBER_EMAIL").optional
+			fname <- lookUp(Vars.fname).require("person must have first name");
+			lname <- lookUp(Vars.lname).require("person must have last name");
+			tcId <- lookUp(Vars.persId).require("unique ETC's id is required for a person");
+			email <- lookUp(Vars.email).optional
 		) yield
-			//TODO Use proper stable TC id for the person here
-			Person(urlEncode(fname + "_" + lname), tcConf.makeId(fname + "_" + lname), fname, lname, email)
+			Person(urlEncode(fname + "_" + lname), Some(makeId(tcId)), fname, lname, email)
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 
@@ -188,4 +184,39 @@ object EtcMetaSource{
 
 	def toCET(ldt: LocalDateTime): Instant = ldt.atOffset(ZoneOffset.ofHours(1)).toInstant
 	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
+
+	def parseTsv(bs: ByteString): Seq[Lookup] = {
+		val lines = scala.io.Source.fromString(bs.utf8String).getLines()
+		val colNames: Array[String] = lines.next().split('\t').map(_.trim)
+		lines.map{lineStr =>
+			colNames.zip(lineStr.split('\t').map(_.trim)).toMap
+		}.toSeq
+	}
+
+	def getStation(implicit lookup: Lookup): Validated[EtcStation] = for(
+		pos <- getPosition;
+		tcId <- lookUp(Vars.stationTcId);
+		name <- lookUp(Vars.siteName);
+		id <- lookUp(Vars.siteId);
+		countryCode <- getCountryCode(id.take(2))
+	) yield
+		TcStationaryStation(TcConf.stationId[E](id), makeId(tcId), name, id, Some(countryCode), pos)
+
+	def getMembership(
+		people: Map[TcId[E], EtcPerson],
+		stations: Map[TcId[E], EtcStation]
+	)(implicit lookup: Lookup): Validated[EtcMembership] = for(
+		persId <- lookUp(Vars.persId).require(s"${Vars.persId} is required for membership info");
+		stationTcId <- lookUp(Vars.stationTcId).require(s"${Vars.stationTcId} is required for membership info");
+		roleStr <- lookUp(Vars.role).require(s"${Vars.role} is required for membership info");
+		roleOpt <- new Validated(rolesLookup.get(roleStr)).require(s"Unknown ETC role: $roleStr");
+		role <- new Validated(roleOpt);
+		roleEnd <- getLocalDate(Vars.roleEnd).optional;
+		person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
+		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $persId")
+	) yield {
+		val assumedRole = new AssumedRole[E](role, person, station, None)
+		Membership("", assumedRole, None, roleEnd)
+	}
+
 }

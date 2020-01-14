@@ -90,7 +90,7 @@ object Playground {
 		}""".stripMargin
 	}
 
-	val etcMetaSrc = new EtcMetaSource(metaConf.dataUploadService.etc)
+	val etcMetaSrc = new EtcMetaSource
 
 	def etcStationTable(badms: Seq[BadmEntry]): Seq[Seq[String]] = {
 		def toByVarLookup(bs: Seq[BadmEntry]): Map[String, String] =

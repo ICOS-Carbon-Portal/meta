@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 trait CustomVocab {
+	import CustomVocab.urlEncode
 	protected trait BaseUriProvider{
 		def baseUri: String
 	}
@@ -18,8 +19,6 @@ trait CustomVocab {
 	protected def makeUriProvider(uri: String) = new BaseUriProvider{
 		def baseUri: String = uri
 	}
-
-	protected def urlEncode(s: String): String = se.lu.nateko.cp.meta.utils.urlEncode(s)
 
 	def getRelativeRaw(local: String)(implicit bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
 	def getRelative(local: String)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(urlEncode(local))
@@ -35,4 +34,8 @@ trait CustomVocab {
 	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
 	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XMLSchema.DATE)
 	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
+}
+
+object CustomVocab{
+	def urlEncode(s: String) = se.lu.nateko.cp.meta.utils.urlEncode(s)
 }

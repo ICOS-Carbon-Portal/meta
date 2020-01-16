@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.model.Resource
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.objectPrefix
@@ -28,6 +28,11 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
 import se.lu.nateko.cp.meta.core.data.TimeInterval
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import akka.event.LoggingAdapter
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
 
@@ -46,25 +51,29 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 		}
 
 		val dataCiter = new CitationClient(dois, conf.citations)
-		new CitationProvider(dataCiter, sail, conf.core, conf.dataUploadService)
+		new CitationProvider(dataCiter, sail, conf.core, conf.dataUploadService, system.log)
 	}
 
 }
 
-class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
+class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig, log: LoggingAdapter){
 	private implicit val envriConfs = coreConf.envriConfigs
+	private val repo = new SailRepository(sail)
+	private val attrProvider = new AttributionProvider(repo)
 	val vocab = new CpVocab(sail.getValueFactory)
 
-	def getCitation(maybeDobj: Resource): Option[String] = getStaticObject(maybeDobj).flatMap{
-		case (obj, envri) => obj.asDataObject.flatMap{ dobj =>
-			if (envri == Envri.SITES) getSitesCitation(dobj)
-			else getIcosCitation(dobj)
-		}.orElse(getDataCiteCitation(obj))
-	}
+	def getCitation(maybeDobj: Resource): Option[String] = toOption("citation")(Try{
+		getStaticObject(maybeDobj).flatMap{
+			case (obj, envri) => obj.asDataObject.flatMap{ dobj =>
+				if (envri == Envri.SITES) getSitesCitation(dobj)
+				else getIcosCitation(dobj)
+			}.orElse(getDataCiteCitation(obj))
+		}
+	}).flatten
 
 	private val objFetcher = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
-		val server = new Rdf4jSailInstanceServer(sail)
+		val server = new Rdf4jInstanceServer(repo)
 
 		val collFetcher = new CollectionFetcherLite(server, vocab)
 		val plainFetcher = new PlainStaticObjectFetcher(server)
@@ -75,7 +84,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 
 		case iri: IRI => for(
 			envri <- inferObjectEnvri(iri);
-			hash <- Sha256Sum.fromBase64Url(iri.getLocalName).toOption;
+			hash <- toOption("hashsum")(Sha256Sum.fromBase64Url(iri.getLocalName));
 			obj <- objFetcher.fetch(hash)(envri)
 		) yield obj -> envri
 
@@ -90,7 +99,8 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	def getDataCiteCitation(dobj: StaticObject): Option[String] = for(
 		doiStr <- dobj.doi;
 		doi <- Doi.unapply(doiStr);
-		cit <- dataCiter.getCitation(doi).value.flatMap(_.toOption)
+		cit <- dataCiter.getCitation(doi).value //not waiting for the future
+			.flatMap(toOption("DataCite citation"))
 	) yield cit
 
 	def getIcosCitation(dobj: DataObject): Option[String] = {
@@ -110,34 +120,16 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 					s"$spec, $station$height, $time"
 				}
 		)
-
 		for(
 			_ <- isIcos;
 			title <- titleOpt;
-			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
 			pid <- dobj.doi.orElse(dobj.pid);
-			productionInstant <- dobj.production.map(_.dateTime).orElse{
-				dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
-			}
+			productionInstant <- AttributionProvider.productionTime(dobj)
 		) yield {
-
-//			val station = dobj.specificInfo.fold(
-//				_ => None, //L3 data
-//				l2 => if(dobj.specification.dataLevel > 1) None else{
-//					Some(l2.acquisition.station.name)
-//				}
-//			).fold("")(_ + ", ")
-
-//			val producerOrg = dobj.production.flatMap(_.creator match{
-//				case Organization(_, name) => Some(name)
-//				case _ => None
-//			}).fold("")(_ + ", ")
-
-//			val icos = if(dobj.specification.dataLevel == 2) "ICOS ERIC, " else ""
-
-			//val authors = s"$icos$producerOrg$station"
+			val authors = attrProvider.getAuthors(dobj).map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
+			val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 			val year = formatDate(productionInstant, zoneId).take(4)
-			s"ICOS RI, $year. $title, ${handleProxy}$pid"
+			s"${authors}ICOS RI, $year. $title, ${handleProxy}$pid"
 		}
 	}
 
@@ -180,6 +172,13 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 			val to = formatDate(interval.stop, zoneId)
 			s"$from–$to"
 		}
+	}
+
+	private def toOption[T](hint: String)(tr: Try[T]): Option[T] = tr match {
+		case Success(t) => Some(t)
+		case Failure(exc) =>
+			log.error(exc, s"Error while obtaining $hint")
+			None
 	}
 
 }

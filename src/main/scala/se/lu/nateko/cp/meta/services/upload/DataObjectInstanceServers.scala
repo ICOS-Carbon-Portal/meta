@@ -27,15 +27,14 @@ class DataObjectInstanceServers(
 	docServers: Map[Envri, InstanceServer],
 	val allDataObjs: Map[Envri, InstanceServer],
 	perFormat: Map[Envri, Map[IRI, InstanceServer]]
-)(implicit envriConfs: EnvriConfigs, factory: ValueFactory){top =>
+)(implicit envriConfs: EnvriConfigs, factory: ValueFactory){
 
 	val metaVocab = new CpmetaVocab(factory)
 	val vocab = new CpVocab(factory)
 
 	private val metaFetchers = metaServers.map{case (envri, instServer) =>
 		envri -> new CpmetaFetcher{
-			protected val server = instServer
-			val vocab = top.vocab
+			override protected val server = instServer
 		}
 	}
 

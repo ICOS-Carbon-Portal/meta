@@ -7,7 +7,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
-import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
@@ -15,7 +14,6 @@ import scala.util.Try
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
-	protected def vocab: CpVocab
 
 	def getSpecification(spec: IRI, fetcher: PlainStaticObjectFetcher) = DataObjectSpec(
 		self = getLabeledResource(spec),

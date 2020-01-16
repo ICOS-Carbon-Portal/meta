@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
 class StaticObjectFetcher(
 	protected val server: InstanceServer,
-	protected val vocab: CpVocab,
+	vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,
 	plainFetcher: PlainStaticObjectFetcher,
 	pidFactory: HandleNetClient.PidFactory

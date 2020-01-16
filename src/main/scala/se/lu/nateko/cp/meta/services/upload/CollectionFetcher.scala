@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
 
-class CollectionFetcherLite(protected val server: InstanceServer, protected val vocab: CpVocab) extends CpmetaFetcher {
+class CollectionFetcherLite(protected val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
 	val memberProp = metaVocab.dcterms.hasPart
 

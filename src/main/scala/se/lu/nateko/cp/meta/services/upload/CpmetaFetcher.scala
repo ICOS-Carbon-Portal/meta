@@ -112,10 +112,15 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
 
+	private def getLocation(location: IRI) = Location(
+		geometry = getCoverage(location),
+		label = getOptionalString(location, RDFS.LABEL)
+	)
+
 	private def getSite(site: IRI) = Site(
 		self = getLabeledResource(site),
 		ecosystem = getLabeledResource(site, metaVocab.hasEcosystemType),
-		area = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
+		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getLocation)
 	)
 
 	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {

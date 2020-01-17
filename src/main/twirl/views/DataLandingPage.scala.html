@@ -80,6 +80,9 @@
 
 			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
 				@Panel("Acquisition", 4){
+					@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
+						@PanelRow("Location", location)
+					}
 					@agentPanelRow("Station", station.org)
 					@for(responsibleOrganization <- station.responsibleOrganization){
 						@agentPanelRow("Responsible organization", responsibleOrganization)

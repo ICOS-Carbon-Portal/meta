@@ -23,7 +23,8 @@ case class Station(
 	responsibleOrganization: Option[Organization]
 )
 
-case class Site(self: UriResource, ecosystem: UriResource, area: Option[GeoFeature])
+case class Location(geometry: GeoFeature, label: Option[String])
+case class Site(self: UriResource, ecosystem: UriResource, location: Option[Location])
 
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
 
@@ -47,7 +48,7 @@ case class DataAcquisition(
 	samplingHeight: Option[Float]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
-	def coverage: Option[GeoFeature] = site.flatMap(_.area).orElse(station.coverage)
+	def coverage: Option[GeoFeature] = site.flatMap(_.location.map(_.geometry)).orElse(station.coverage)
 }
 
 case class DataProduction(

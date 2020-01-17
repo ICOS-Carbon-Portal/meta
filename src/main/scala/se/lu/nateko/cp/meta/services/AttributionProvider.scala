@@ -1,24 +1,26 @@
 package se.lu.nateko.cp.meta.services
 
-import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.Person
-import java.time.Instant
-import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import java.{util => ju}
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import org.eclipse.rdf4j.query.BindingSet
 import java.net.URI
+import java.time.Instant
+import java.{util => ju}
+
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.repository.Repository
 
-class AttributionProvider(repo: Repository) extends CpmetaFetcher{
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.Person
+import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.utils.rdf4j._
+
+class AttributionProvider(repo: Repository){
 	import AttributionProvider._
 
-	override protected val server = new Rdf4jInstanceServer(repo)
 	private val sparql = new Rdf4jSparqlRunner(repo)
+	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
 
 	def getAuthors(dobj: DataObject): Seq[Person] = (
 		for(
@@ -35,21 +37,28 @@ class AttributionProvider(repo: Repository) extends CpmetaFetcher{
 		}
 	).toSeq.flatten
 
-	def membsQuery(station: URI) = s"""select ?person ?weight ?start ?end where{
+	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?weight ?start ?end where{
 		|	?memb <${metaVocab.atOrganization}> <$station> .
-		|	?person <${metaVocab.hasMembership}> ?memb .
+		|	?person <${metaVocab.hasMembership}> ?memb ;
+		|		<${metaVocab.hasFirstName}> ?fname ;
+		|		<${metaVocab.hasLastName}> ?lname .
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
 		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
 		|}""".stripMargin
 
-	def parseMembership(bs: BindingSet): Membership = {
-		val person = getPerson(bs.getValue("person").asInstanceOf[IRI])
-		val start = getOptInstant(bs, "start")
-		val end = getOptInstant(bs, "end")
-		val weight = getOptInt(bs, "weight")
-		new Membership(person, start, end, weight)
-	}
+	private def parseMembership(bs: BindingSet) = new Membership(
+		parsePerson(bs),
+		getOptInstant(bs, "start"),
+		getOptInstant(bs, "end"),
+		getOptInt(bs, "weight")
+	)
+
+	private def parsePerson(bs: BindingSet) = Person(
+		UriResource(bs.getValue("person").asInstanceOf[IRI].toJava, None),
+		bs.getValue("fname").stringValue,
+		bs.getValue("lname").stringValue
+	)
 }
 
 object AttributionProvider{

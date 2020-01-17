@@ -36,7 +36,7 @@ case class DataObjectSpec(
 	dataLevel: Int,
 	datasetSpec: Option[JsValue],
 	documentation: Seq[PlainStaticObject],
-	description: Option[String]
+	description: Seq[String]
 )
 
 case class DataAcquisition(

@@ -30,7 +30,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				getLabeledResource(iri).toJson
 			},
 		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
-		description = getOptionalString(spec, RDFS.COMMENT)
+		description = server.getStringValues(spec, RDFS.COMMENT)
 	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)

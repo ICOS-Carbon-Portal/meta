@@ -4,6 +4,7 @@ select * where{
 	?coll a cpmeta:Collection .
 	OPTIONAL{?coll cpmeta:hasDoi ?doi}
 	?coll dcterms:title ?title .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 }
 order by ?title
 `;

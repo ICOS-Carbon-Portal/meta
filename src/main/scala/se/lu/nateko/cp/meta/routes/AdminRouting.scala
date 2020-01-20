@@ -38,7 +38,7 @@ class AdminRouting(
 		)(
 			instServ => entity(as[String]){query =>
 				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query)).map(RdfUpdate(_, insert))
-				applicationRoute(instServ, updates)
+				applicationRoute(instServ.writeContextsView, updates)
 			}
 		)
 	}

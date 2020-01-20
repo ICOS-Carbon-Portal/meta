@@ -37,7 +37,6 @@ Andrews, Oliver
 Arora, Vivek
 Bakker, Dorothee
 Barbero, Leticia
-Becker, Meike
 Betts, Richard
 Bopp, Laurent
 Chevallier, Frédéric
@@ -61,7 +60,6 @@ Keeling, Ralph
 Klein Goldewijk, Kees
 Körtzinger, Arne
 Landschützer, Peter
-Lefèvre, Nathalie
 Lenton, Andrew
 Lienert, Sebastian
 Lima, Ivan
@@ -78,18 +76,15 @@ Peregon, Anna
 Pfeil, Benjamin
 Pierrot, Denis
 Poulter, Benjamin
-Rehder, Gregor
 Reimer, Janet
 Rödenbeck, Christian
 Schwinger, Jörg
 Séférian, Roland
-Skjelvan, Ingunn
 Stocker, Benjamin
 Tian, Hanqin
 Tilbrook, Bronte
 van der Laan-Luijkx, Ingrid
 van der Werf, Guido
-van Heuven, Steven
 Viovy, Nicolas
 Vuichard, Nicolas
 Walker, Anthony

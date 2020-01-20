@@ -1,0 +1,9 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?res ?p ?o .
+}
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+where{
+	?res cpmeta:hasOtcId ?otcId .
+	?res ?p ?o .
+}

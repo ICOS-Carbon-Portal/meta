@@ -6,7 +6,7 @@ import java.time.Instant
 
 import spray.json.JsValue
 
-case class UriResource(uri: URI, label: Option[String])
+case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
 sealed trait Agent{
 	val self: UriResource
@@ -36,8 +36,7 @@ case class DataObjectSpec(
 	encoding: UriResource,
 	dataLevel: Int,
 	datasetSpec: Option[JsValue],
-	documentation: Seq[PlainStaticObject],
-	description: Seq[String]
+	documentation: Seq[PlainStaticObject]
 )
 
 case class DataAcquisition(

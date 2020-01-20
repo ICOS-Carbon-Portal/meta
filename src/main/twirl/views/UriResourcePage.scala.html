@@ -12,7 +12,7 @@
 				@for(label <- info.res.label) {
 					@PanelRow("Label", label)
 				}
-				@for(comment <- info.comment) {
+				@for(comment <- info.res.comments) {
 					@PanelRow("Comment", comment)
 				}
 				@for((rdfType, idx) <- info.types.zipWithIndex){

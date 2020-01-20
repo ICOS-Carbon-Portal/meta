@@ -29,8 +29,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				import spray.json._
 				getLabeledResource(iri).toJson
 			},
-		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
-		description = server.getStringValues(spec, RDFS.COMMENT)
+		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject)
 	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)

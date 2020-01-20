@@ -85,7 +85,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 
 	private def fetchCitation(doi: Doi): Future[String] = http.singleRequest(
 			HttpRequest(
-				uri = s"https://data.datacite.org/text/x-bibliography%3Bstyle%3D${config.style}/${doi.prefix}/${doi.suffix}"
+				uri = s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
 			)
 		).flatMap{resp =>
 			Unmarshal(resp).to[String].transform{

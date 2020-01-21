@@ -1,5 +1,6 @@
 Project	Station ID	Name	Country code	Lat	Lon	Elevation
 INGOS	BIK	Bialystok	PL	53.2294	23.0128	183
+INGOS	CES	Cabauw	NL	51.970258	4.926161	0
 INGOS	GIF	Gif sur Yvette	FR	48.71	2.1475	160
 INGOS	HEI	Heidelberg	DE	49.4172	8.675	113
 INGOS	HUN	Hegyhatsal	HU	46.9558	16.6522	248
@@ -7,6 +8,7 @@ INGOS	KAS	Kasprowy Wierch	PL	49.2333	19.9833	1987
 INGOS	MHD	Mace Head	IE	53.3261	-9.9036	5
 INGOS	SCH	Schauinsland	DE	47.9167	7.9166	1205
 INGOS	VKV	Voevikov	RU	59.95	30.7	70
+INGOS	WAO	Weybourne Atmospheric Observatory	GB	52.95	1.12	15
 FLUXNET	CH-Aws	Alp Weissenstein	CH	46.583306	9.790417	1988
 FLUXNET	CH-Cha	Chamau grassland	CH	47.21022	8.41044	394
 FLUXNET	CH-Fru	Fruebuel grassland	CH	47.11583	8.53778	975

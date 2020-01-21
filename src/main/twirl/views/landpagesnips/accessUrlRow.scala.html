@@ -6,7 +6,7 @@
 	<span>
 		@obj.accessUrl match {
 			case Some(url) => {
-				<a target="_blank" href="@url">@{obj.fileName}</a>
+				<a href="@url">@{obj.fileName}</a>
 			}
 			case None => {
 				<span>Available on request</span>

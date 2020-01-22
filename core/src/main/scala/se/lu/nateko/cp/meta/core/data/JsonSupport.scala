@@ -6,7 +6,7 @@ import spray.json._
 
 object JsonSupport extends CommonJsonSupport{
 
-	implicit val uriResourceFormat = jsonFormat2(UriResource)
+	implicit val uriResourceFormat = jsonFormat3(UriResource)
 	implicit val dataThemeFormat = jsonFormat3(DataTheme)
 	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
 	implicit val dataObjectSpecFormat = jsonFormat8(DataObjectSpec)
@@ -47,6 +47,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val orgFormat = jsonFormat2(Organization)
 	implicit val personFormat = jsonFormat3(Person)
 	implicit val stationFormat = jsonFormat5(Station)
+	implicit val locationFormat = jsonFormat2(Location)
 	implicit val siteFormat = jsonFormat3(Site)
 
 	implicit object agentFormat extends JsonFormat[Agent]{

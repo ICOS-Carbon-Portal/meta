@@ -7,12 +7,11 @@ import ResourceViewInfo.PropValue
 case class ResourceViewInfo(
 	res: UriResource,
 	infrastructure: Envri.Value,
-	comment: Option[String],
 	types: List[UriResource],
 	propValues: List[(UriResource, PropValue)],
 	usage: Seq[(UriResource, UriResource)]
 ){
-	def isEmpty: Boolean = propValues.isEmpty && usage.isEmpty && types.isEmpty && comment.isEmpty
+	def isEmpty: Boolean = propValues.isEmpty && usage.isEmpty && types.isEmpty
 }
 
 object ResourceViewInfo{

@@ -24,7 +24,7 @@ class CollectionFetcherLite(protected val server: InstanceServer, vocab: CpVocab
 
 	def fetchLite(collUri: IRI): Option[UriResource] = {
 		if(collectionExists(collUri)) Some(
-			UriResource(collUri.toJava, Some(getTitle(collUri)))
+			UriResource(collUri.toJava, Some(getTitle(collUri)), Nil)
 		) else None
 	}
 

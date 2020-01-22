@@ -188,7 +188,7 @@ private object Rdf4jUriSerializer{
 			val propValueOpt: Option[PropValue] = bset.getValue("val") match {
 				case uri: IRI =>
 					val valLabel = getOptLit(bset, "valLabel")
-					Some(Left(UriResource(uri.toJava, valLabel)))
+					Some(Left(UriResource(uri.toJava, valLabel, Nil)))
 				case lit: Literal =>
 					Some(Right(lit.stringValue))
 				case _ => None
@@ -203,17 +203,17 @@ private object Rdf4jUriSerializer{
 		}.flatten.take(Limit).toIndexedSeq
 
 		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None), envri, None, Nil, Nil, usageInfos)
+		val seed = ResourceViewInfo(UriResource(uri, None, Nil), envri, Nil, Nil, usageInfos)
 
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 
-			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.LABEL) =>
-				acc.copy(res = UriResource(uri, Some(strVal)))
+			case (UriResource(propUri, _, _), Right(strVal)) if(propUri === RDFS.LABEL) =>
+				acc.copy(res = acc.res.copy(label = Some(strVal)))
 
-			case (UriResource(propUri, _), Right(strVal)) if(propUri === RDFS.COMMENT) =>
-				acc.copy(comment = Some(strVal))
+			case (UriResource(propUri, _, _), Right(strVal)) if(propUri === RDFS.COMMENT) =>
+				acc.copy(res = acc.res.copy(comments = acc.res.comments :+ strVal))
 
-			case (UriResource(propUri, _), Left(rdfType)) if(propUri === RDF.TYPE) =>
+			case (UriResource(propUri, _, _), Left(rdfType)) if(propUri === RDF.TYPE) =>
 				acc.copy(types = rdfType :: acc.types)
 
 			case _ =>
@@ -225,7 +225,7 @@ private object Rdf4jUriSerializer{
 		bset.getValue(varName) match {
 			case uri: IRI =>
 				val label = getOptLit(bset, lblName)
-				Some(UriResource(uri.toJava, label))
+				Some(UriResource(uri.toJava, label, Nil))
 			case _ => None
 		}
 	}

@@ -16,7 +16,7 @@ class HermitBasedReasonerTests extends FunSpec{
 			val owlClass = TestConfig.getOWLClass("Organization")
 			val props = reasoner.getPropertiesWhoseDomainIncludes(owlClass)
 				.map(oc => getLastFragment(oc.getIRI))
-			assert(props.toSet === Set("hasName", "locatedAt", "hasTcId", "hasEtcId", "hasAtcId", "hasOtcId"))
+			assert(props.toSet === Set("hasName", "locatedAt", "hasTcId", "hasEtcId", "hasAtcId", "hasOtcId", "hasEmail"))
 		}
 	}
 

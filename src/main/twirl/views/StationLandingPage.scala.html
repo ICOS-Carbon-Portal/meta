@@ -20,6 +20,9 @@
 				case _ => {}
 			}
 			}
+			@for(email <- station.org.email) {
+				@PanelHtmlRow{Contact}{<a href="mailto:@email">@{email}</a>}
+			}
 		</div>
 		<div class="row text-center form-group">
 			<a class="btn btn-lg btn-primary" href="@portalLink">Browse data from @station.name</a>

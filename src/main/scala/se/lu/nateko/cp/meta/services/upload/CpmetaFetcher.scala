@@ -72,7 +72,8 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getOrganization(org: IRI) = Organization(
 		self = getLabeledResource(org),
-		name = getSingleString(org, metaVocab.hasName)
+		name = getSingleString(org, metaVocab.hasName),
+		email = getOptionalString(org, metaVocab.hasEmail)
 	)
 
 	protected def getPerson(pers: IRI) = Person(

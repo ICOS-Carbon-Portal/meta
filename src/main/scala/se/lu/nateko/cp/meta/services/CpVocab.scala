@@ -17,10 +17,14 @@ import se.lu.nateko.cp.meta.icos.TcConf
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab._
 
-	def getConfig(implicit envri: Envri) = envriConfigs(envri)
+	private val baseResourceUriProviders: Map[Envri, BaseUriProvider] = envriConfigs.map{
+		case (envri, envriConf) =>
+			envri -> makeUriProvider(envriConf.metaResourcePrefix + "resources/")
+	}
 
-	private implicit def baseUriProviderForEnvri(implicit envri: Envri) =
-		makeUriProvider(getConfig(envri).metaResourcePrefix.toString)
+	private def getConfig(implicit envri: Envri) = envriConfigs(envri)
+
+	private implicit def baseUriProviderForEnvri(implicit envri: Envri) = baseResourceUriProviders(envri)
 
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 

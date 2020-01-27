@@ -11,14 +11,10 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 trait CustomVocab {
 	import CustomVocab.urlEncode
-	protected trait BaseUriProvider{
-		def baseUri: String
-	}
 	def factory: ValueFactory
 
-	protected def makeUriProvider(uri: String) = new BaseUriProvider{
-		def baseUri: String = uri
-	}
+	protected class BaseUriProvider(val baseUri: String)
+	protected def makeUriProvider(uri: String) = new BaseUriProvider(uri)
 
 	def getRelativeRaw(local: String)(implicit bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
 	def getRelative(local: String)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(urlEncode(local))

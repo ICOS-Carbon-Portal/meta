@@ -93,7 +93,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	}
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
-		implicit envri => obj.stringValue.startsWith(objectPrefix(vocab.getConfig))
+		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))
 	}
 
 	def getDataCiteCitation(dobj: StaticObject): Option[String] = for(

@@ -22,11 +22,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
-		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map{iri =>
-				import se.lu.nateko.cp.meta.core.data.JsonSupport.uriResourceFormat
-				import spray.json._
-				getLabeledResource(iri).toJson
-			},
+		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getLabeledResource),
 		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject)
 	)
 

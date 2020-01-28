@@ -4,8 +4,6 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
 
-import spray.json.JsValue
-
 case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
 sealed trait Agent{
@@ -35,7 +33,7 @@ case class DataObjectSpec(
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
-	datasetSpec: Option[JsValue],
+	datasetSpec: Option[UriResource],
 	documentation: Seq[PlainStaticObject]
 )
 

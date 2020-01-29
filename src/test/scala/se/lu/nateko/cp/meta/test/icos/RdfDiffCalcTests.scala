@@ -19,7 +19,7 @@ import RdfDiffCalcTests._
 class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
 
 	implicit val envriConfs = Map(
-		Envri.ICOS -> EnvriConfig(null, null, null, new URI("http://test.icos.eu/resources/"))
+		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"))
 	)
 
 	type A = ATC.type

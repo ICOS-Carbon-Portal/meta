@@ -4,10 +4,15 @@ import java.net.URI
 
 case class EnvriConfig(
 	authHost: String,
-	dataPrefix: URI,
-	metaPrefix: URI,
-	metaResourcePrefix: URI
-)
+	dataHost: String,
+	metaHost: String,
+	dataItemPrefix: URI,
+	metaItemPrefix: URI
+){
+	def matchesHost(host: String): Boolean =
+		host == dataHost || host == metaHost ||
+		host == dataItemPrefix.getHost || host == metaItemPrefix.getHost
+}
 
 object Envri extends Enumeration{
 
@@ -18,13 +23,8 @@ object Envri extends Enumeration{
 
 	def infer(uri: URI)(implicit configs: EnvriConfigs): Option[Envri] = infer(uri.getHost)
 
-	def infer(hostname: String)(implicit configs: EnvriConfigs): Option[Envri] = {
-
-		def matches(uri: URI) = hostname == uri.getHost
-
-		configs.collectFirst{
-			case (envri, conf) if matches(conf.metaPrefix) || matches(conf.dataPrefix) => envri
-		}
+	def infer(hostname: String)(implicit configs: EnvriConfigs): Option[Envri] = configs.collectFirst{
+		case (envri, conf) if conf.matchesHost(hostname) => envri
 	}
 
 }

@@ -6,5 +6,5 @@
 </div>
 
 @dataURL(id: String) = @{
-	s"""${envriConf.dataPrefix}portal/#{"route":"metadata","id":"$id"}"""
+	s"""https://${envriConf.dataHost}/portal/#{"route":"metadata","id":"$id"}"""
 }

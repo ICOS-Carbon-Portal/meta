@@ -32,17 +32,12 @@ object LinkedDataRoute {
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
 		val genericRdfUriResourcePage: Route = (extractUri & extractEnvri){(uri, envri) =>
-			extractHost{hostname =>
-				val scheme = if(envri == Envri.ICOS){
-					uri.path match{
-						case Hash.Object(_) => "https" //objects have HTTPS URIs in our RDF
-						case Hash.Collection(_) => "https" //objects have HTTPS URIs in our RDF
-						case _ => "http"
-					}
-				} else "https"
-
-				complete(uri.withHost(hostname).withScheme(scheme))
+			val envriConf = envriConfs(envri)//will not fail, as envri extraction is based on EnvriConfigs
+			val itemPrefix = uri.path match{
+				case Hash.Object(_) | Hash.Collection(_) => envriConf.dataItemPrefix
+				case _ => envriConf.metaItemPrefix
 			}
+			complete(uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme))
 		}
 
 		get{

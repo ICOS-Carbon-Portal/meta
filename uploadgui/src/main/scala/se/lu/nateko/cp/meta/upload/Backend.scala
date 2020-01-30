@@ -58,7 +58,7 @@ object Backend {
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){
 
 		val nRowsQuery = nRows.map(nRows => s"&nRows=$nRows").getOrElse("")
-		val url = s"${envriConfig.dataPrefix}tryingest?specUri=${spec.uri}$nRowsQuery"
+		val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQuery"
 		Ajax
 			.put(url, file)
 			.recoverWith(recovery("upload file"))

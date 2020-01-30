@@ -11,12 +11,20 @@ package object data{
 		s"$objectPrefix${hash.id}"
 	)
 
+	def staticObjAccessUrl(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
+		s"https://${envri.dataHost}/$objectPathPrefix${hash.id}"
+	)
+
 	def staticCollLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
 		s"$collectionPrefix${hash.id}"
 	)
 
-	def objectPrefix(implicit envri: EnvriConfig): String = envri.metaPrefix + objectPathPrefix
-	def collectionPrefix(implicit envri: EnvriConfig): String = envri.metaPrefix + collectionPathPrefix
+	def staticCollAccessUrl(landingPage: URI)(implicit envri: EnvriConfig) = new URI(
+		s"https://${envri.dataHost}${landingPage.getPath}"
+	)
+
+	def objectPrefix(implicit envri: EnvriConfig): String = s"${envri.dataItemPrefix}$objectPathPrefix"
+	def collectionPrefix(implicit envri: EnvriConfig): String = s"${envri.dataItemPrefix}$collectionPathPrefix"
 
 	val objectPathPrefix = "objects/"
 	val collectionPathPrefix = "collections/"

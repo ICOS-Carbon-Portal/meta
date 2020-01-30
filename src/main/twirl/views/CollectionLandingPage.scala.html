@@ -14,7 +14,7 @@
 				@PanelRow("Title", coll.title)
 				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
 				@PanelHtmlRow{Download URL}{
-					<span><a target="_blank" href=@{downloadLink(coll)}>@{coll.title + ".zip"}</a></span>
+					<span><a target="_blank" href=@{staticCollAccessUrl(coll.res)}>@{coll.title + ".zip"}</a></span>
 				}
 				@PanelHtmlRow{Collection creator}{
 					@agentLink(coll.creator)
@@ -60,9 +60,4 @@
 			<a target="_blank" href=@{coll.res}>@{coll.title}</a>
 		}
 	}
-}
-
-@downloadLink(coll: StaticCollection)(implicit conf: EnvriConfig) = @{
-	import akka.http.scaladsl.model.Uri
-	Uri(conf.dataPrefix + coll.res.getPath.stripPrefix("/"))
 }

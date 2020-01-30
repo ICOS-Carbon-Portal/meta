@@ -49,8 +49,9 @@ object TestConfig {
 
 	implicit val envriConfs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu",
-		dataPrefix = new URI("https://data.icos-cp.eu/objects/"),
-		metaPrefix = new URI("https://meta.icos-cp.eu/objects/"),
-		metaResourcePrefix = new URI("http://meta.icos-cp.eu/resources/")
+		dataHost = "data.icos-cp.eu",
+		metaHost = "meta.icos-cp.eu",
+		metaItemPrefix = new URI("http://meta.icos-cp.eu/"),
+		dataItemPrefix = new URI("https://meta.icos-cp.eu/")
 	))
 }

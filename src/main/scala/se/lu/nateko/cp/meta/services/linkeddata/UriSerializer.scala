@@ -30,6 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
+	def fetchStaticObject(uri: Uri): Option[StaticObject]
+	def fetchStaticCollection(uri: Uri): Option[StaticCollection]
 }
 
 object UriSerializer{
@@ -82,6 +84,16 @@ class Rdf4jUriSerializer(
 	private def inferEnvri(uri: Uri) = Envri.infer(new java.net.URI(uri.toString)).getOrElse(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
+
+	def fetchStaticObject(uri: Uri): Option[StaticObject] = uri.path match {
+		case Hash.Object(hash) => fetchStaticObj(hash)(inferEnvri(uri))
+		case _ => None
+	}
+
+	def fetchStaticCollection(uri: Uri): Option[StaticCollection] = uri.path match {
+		case Hash.Collection(hash) => fetchStaticColl(hash)(inferEnvri(uri))
+		case _ => None
+	}
 
 	private def fetchStaticObj(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		import servers.vocab

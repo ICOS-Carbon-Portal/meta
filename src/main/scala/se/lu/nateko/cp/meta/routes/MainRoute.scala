@@ -43,6 +43,8 @@ object MainRoute {
 
 		val filesRoute = FilesRoute(db.fileService)
 
+		val dtoDlRoute = DtoDownloadRoute(db.uriSerializer)
+
 		val adminRoute = {
 			val sparqler = new Rdf4jSparqlRunner(db.repo)
 			new AdminRouting(sparqler, db.instanceServers, authRouting, config.sparql).route
@@ -58,6 +60,7 @@ object MainRoute {
 			staticRoute ~
 			linkedDataRoute ~
 			adminRoute ~
+			dtoDlRoute ~
 			path("buildInfo"){
 				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
 			}

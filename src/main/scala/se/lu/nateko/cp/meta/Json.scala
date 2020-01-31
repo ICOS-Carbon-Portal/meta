@@ -101,6 +101,13 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 
 	implicit val staticCollDtoFormat = jsonFormat6(StaticCollectionDto)
 
+	implicit object uploadDtoWriter extends RootJsonWriter[UploadDto]{
+		override def write(dto: UploadDto) = dto match {
+			case oud: ObjectUploadDto => oud.toJson
+			case scd: StaticCollectionDto => scd.toJson
+		}
+	}
+
 	implicit val userIdFormat = jsonFormat1(UserId)
 
 	implicit val fileDeletionFormat = jsonFormat2(FileDeletionDto)

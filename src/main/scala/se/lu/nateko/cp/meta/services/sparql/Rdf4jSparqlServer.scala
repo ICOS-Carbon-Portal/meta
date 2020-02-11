@@ -112,7 +112,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 	private def getQueryMarshalling[Q <: Query](
 		query: Q,
 		protocolOption: ProtocolOption[Q],
-		qquoter: quoter.QueryQuotaManager,
+		qquoter: QuotaManager.QueryQuotaManager,
 		onDone: () => Unit
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
@@ -128,7 +128,10 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 				canceller.schedule(
 					() => if(qquoter.keepRunningIndefinitely)
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						else sparqlFut.cancel(true),
+						else if(!sparqlFut.isDone){
+							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+							sparqlFut.cancel(true)
+						},
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)

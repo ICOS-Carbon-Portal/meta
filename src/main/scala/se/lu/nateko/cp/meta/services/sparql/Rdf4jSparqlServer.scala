@@ -126,12 +126,14 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 				)
 
 				canceller.schedule(
-					() => if(qquoter.keepRunningIndefinitely)
+					() => if(!sparqlFut.isDone){
+						if(qquoter.keepRunningIndefinitely)
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						else if(!sparqlFut.isDone){
+						else{
 							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
 							sparqlFut.cancel(true)
-						},
+						}
+					},
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)

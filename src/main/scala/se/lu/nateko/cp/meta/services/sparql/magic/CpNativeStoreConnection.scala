@@ -34,9 +34,12 @@ class CpNativeStoreConnection(
 	private val metaVocab = new CpmetaVocab(valueFactory)
 	private val sailStore = sail.getSailStore
 
-	private val logAction = new CancellableAction(1.seconds, system.scheduler)(
-		logger.info(s"Creating connection $this")
-	)(system.dispatcher)
+	private val stacktrace = Thread.currentThread().getStackTrace().collect{
+		case ste if ste.getClassName().contains("nateko") => ste.toString
+	}
+	private val logAction = new CancellableAction(1.seconds, system.scheduler)({
+		logger.info(s"Creating connection $this :\n" + stacktrace.mkString("\n"))
+	})(system.dispatcher)
 
 	override def closeInternal(): Unit = {
 		super.closeInternal()

@@ -167,7 +167,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getNextVersion(item: IRI): Option[URI] = {
 		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.toSeq.headOption.collect{
+			.toIndexedSeq.headOption.collect{
 				case Rdf4jStatement(next, _, _) => next.toJava
 			}
 	}

@@ -21,16 +21,27 @@ import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.EarlyDobjInitSearch
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
 import scala.util.Try
+import akka.actor.ActorSystem
+import se.lu.nateko.cp.meta.utils.async.CancellableAction
+import scala.concurrent.duration.DurationInt
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
 	citer: CitationProvider
-) extends NativeStoreConnection(sail){
+)(implicit system: ActorSystem) extends NativeStoreConnection(sail){
 
 	private val valueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
 	private val sailStore = sail.getSailStore
 
+	private val logAction = new CancellableAction(1.seconds, system.scheduler)(
+		logger.info(s"Creating connection $this")
+	)(system.dispatcher)
+
+	override def closeInternal(): Unit = {
+		super.closeInternal()
+		logAction.cancelOr(logger.info(s"Closed connection $this"))
+	}
 	override def evaluateInternal(
 		expr: TupleExpr,
 		dataset: Dataset,

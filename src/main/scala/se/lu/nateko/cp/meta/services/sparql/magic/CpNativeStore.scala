@@ -16,13 +16,14 @@ import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsTupleFunction
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
+import akka.actor.ActorSystem
 
 class CpNativeStore(
 	storageFolder: File,
 	indexInit: Sail => IndexHandler,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
-) extends SailWrapper{ cpsail =>
+)(implicit system: ActorSystem) extends SailWrapper{ cpsail =>
 
 	private[this] var indexh: IndexHandler = _
 	private[this] var citer: CitationProvider = _

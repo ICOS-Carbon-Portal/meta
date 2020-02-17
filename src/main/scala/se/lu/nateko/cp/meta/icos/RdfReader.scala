@@ -180,11 +180,12 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	private def stationClass[T <: TC](implicit tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
 
 
-	protected def getDirectClassMembers(cls: IRI): Iterator[IRI] = getPropValueHolders(RDF.TYPE, cls)
+	private def getDirectClassMembers(cls: IRI): IndexedSeq[IRI] = getPropValueHolders(RDF.TYPE, cls)
 
-	private def getPropValueHolders(prop: IRI, v: Value): Iterator[IRI] = server
+	private def getPropValueHolders(prop: IRI, v: Value): IndexedSeq[IRI] = server
 		.getStatements(None, Some(prop), Some(v))
 		.map(_.getSubject)
 		.collect{case iri: IRI => iri}
+		.toIndexedSeq
 
 }

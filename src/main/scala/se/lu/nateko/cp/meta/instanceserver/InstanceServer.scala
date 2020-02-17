@@ -72,7 +72,7 @@ trait InstanceServer {
 		values
 	}
 
-	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): Seq[String] = {
+	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] = {
 		val values = getValues(subj, pred).collect{
 			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
 		}.distinct

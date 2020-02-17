@@ -35,8 +35,6 @@ case class DataObjectInstServersConfig(
 	definitions: Seq[DataObjectInstServerDefinition]
 )
 
-case class DObjGraphInfo(graph: URI, format: URI)
-
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
 	forDataObjects: Map[Envri, DataObjectInstServersConfig],
@@ -158,7 +156,6 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	import MetaCoreConfig.envriFormat
 
-	implicit val dObjGraphInfoFormat = jsonFormat2(DObjGraphInfo)
 	implicit val ingestionConfigFormat = jsonFormat3(IngestionConfig)
 	implicit val instanceServerConfigFormat = jsonFormat5(InstanceServerConfig)
 	implicit val dataObjectInstServerDefinitionFormat = jsonFormat2(DataObjectInstServerDefinition)

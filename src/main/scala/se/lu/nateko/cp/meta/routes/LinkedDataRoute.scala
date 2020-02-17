@@ -6,7 +6,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.meta.ConfigLoader.dObjGraphInfoFormat
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.core.data.Envri
@@ -37,7 +36,9 @@ object LinkedDataRoute {
 				case Hash.Object(_) | Hash.Collection(_) => envriConf.dataItemPrefix
 				case _ => envriConf.metaItemPrefix
 			}
-			complete(uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme))
+			respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+				complete(uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme))
+			}
 		}
 
 		get{
@@ -63,9 +64,7 @@ object LinkedDataRoute {
 			} ~
 			pathPrefix(("objects" | "collections") / Sha256Segment){_ =>
 				pathEnd{
-					respondWithHeaders(`Access-Control-Allow-Origin`.*) {
-						genericRdfUriResourcePage
-					}
+					genericRdfUriResourcePage
 				} ~
 				path(Segment){
 					case fileName @ FileNameWithExtension(_, ext) =>
@@ -82,17 +81,10 @@ object LinkedDataRoute {
 			} ~
 			pathPrefix("ontologies" | "resources" | "files"){
 				genericRdfUriResourcePage
-			} ~
-			path("config" / "dataObjectGraphInfos"){
-				extractEnvri{implicit envri =>
-					respondWithHeader(`Access-Control-Allow-Origin`.*){
-						complete(MetaDb.getDobjGraphInfos(config))
-					}
-				}
 			}
 		} ~
 		options{
-			pathPrefix("objects" / Sha256Segment) { _ =>
+			pathPrefix("objects" | "collections" | "resources") {
 				respondWithHeaders(
 					`Access-Control-Allow-Origin`.*,
 					`Access-Control-Allow-Methods`(HttpMethods.GET),

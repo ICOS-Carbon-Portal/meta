@@ -59,6 +59,7 @@ object UploadApp {
 				Backend.submitMetadata(dto)
 			}(metadataURL => {
 				showAlert(s"Metadata uploaded! <a class='alert-link' href='$metadataURL'>View metadata</a>", "alert alert-success")
+				hideProgressBar()
 			})
 		}
 	}

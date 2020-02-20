@@ -25,8 +25,10 @@ object Utils {
 
 	def whenDone[T](fut: Future[T])(cb: T => Unit): Future[T] = fut.andThen{
 		case Success(res) => cb(res)
-		case Failure(err) =>
+		case Failure(err) => {
 			showAlert(err.getMessage, "alert alert-danger")
+			hideProgressBar()
+		}
 	}
 
 	def showAlert(message: String, alertType: String): Unit = {

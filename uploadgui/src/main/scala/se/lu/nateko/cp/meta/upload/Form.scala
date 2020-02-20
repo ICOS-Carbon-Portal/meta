@@ -10,15 +10,28 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
 import FormTypeRadio._
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 class Form(
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
+	val fileElement = new HtmlElements("#fileinput")
+	val filenameElement = new HtmlElements("#filename")
+	val metadataUrlElement = new HtmlElements("#metadata-url")
+
+	val onNewUpdateSelected: String => Unit = _ match {
+		case "new" =>
+			fileElement.show()
+			metadataUrlElement.hide()
+		case "update" =>
+			fileElement.hide()
+			metadataUrlElement.show()
+	}
+
 	val dataElements = new HtmlElements(".data-section")
 	val collectionElements = new HtmlElements(".collection-section")
-	val addProductionElements = new HtmlElements(".add-production-section")
 	val productionElements = new HtmlElements(".production-section")
 
 	val onFormTypeSelected: FormType => Unit = formType => {
@@ -26,9 +39,13 @@ class Form(
 		collectionElements.hide()
 		fileInput.enable()
 		productionElements.hide()
+		disableProductionButton()
 
 		formType match {
-			case Data => dataElements.show()
+			case Data => {
+				dataElements.show()
+				enableProductionButton()
+			}
 			case Collection => {
 				collectionElements.show()
 				fileInput.disable()
@@ -45,20 +62,34 @@ class Form(
 		showProgressBar()
 		typeControl.formType match {
 			case Data =>
-				for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
-					whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
-						onUpload(dto, Some(file))
-					}.failed.foreach {
-						case _ => hideProgressBar()
-					}
+				newUpdateControl.value match {
+					case Some("new") => 
+						for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+								onUpload(dto, Some(file))
+							}.failed.foreach {
+								case _ => hideProgressBar()
+							}
+						}
+					case _ =>
+						for(dto <- dataObjectDto) {
+							onUpload(dto, None)
+						}
 				}
 			case Collection =>
 				for(dto <- staticCollectionDto) {
 					onUpload(dto, None)
 				}
 			case Document =>
-				for(dto <- documentObjectDto; file <- fileInput.file) {
-					onUpload(dto, Some(file))
+				newUpdateControl.value match {
+					case Some("new") => 
+						for(dto <- documentObjectDto; file <- fileInput.file) {
+							onUpload(dto, Some(file))
+						}
+					case _ =>
+						for(dto <- staticCollectionDto) {
+							onUpload(dto, None)
+						}
 				}
 		}
 	}
@@ -68,14 +99,31 @@ class Form(
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
 
+	val getMetadataButton = new Button("get-metadata", getMetadata)
+	val updateGetMetadataButton: () => Unit = () => {
+		(submitterIdSelect.value.withMissingError("Submitter Id not set"), metadataUriInput.value) match {
+			case (Success(_), Success(_)) => getMetadataButton.enable()
+			case (Failure(err), _) => getMetadataButton.disable(err.getMessage)
+			case (_, Failure(err)) => getMetadataButton.disable(err.getMessage)
+		}
+	}
+
 	val addProductionButton = new Button("addproductionbutton", () => {
-		addProductionElements.hide()
+		disableProductionButton()
 		productionElements.show()
 		updateButton()
 	})
 
+	val disableProductionButton: () => Unit = () => {
+		addProductionButton.disable("")
+	}
+
+	val enableProductionButton: () => Unit = () => {
+		addProductionButton.enable()
+	}
+
 	val removeProductionButton = new Button("removeproductionbutton", () => {
-		addProductionElements.show()
+		enableProductionButton()
 		productionElements.hide()
 		updateButton()
 	})
@@ -90,6 +138,7 @@ class Form(
 			whenDone(onSubmitterSelect(submitter)){stations =>
 				stationSelect.setOptions(stations)
 				updateButton()
+				updateGetMetadataButton()
 			}
 		}
 
@@ -122,11 +171,14 @@ class Form(
 	}
 
 	val fileInput = new FileInput("fileinput", updateButton)
+	val fileNameText = new TextElement("filename")
+	var fileHash: Option[Sha256Sum] = None
+	val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => s)
 	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
-	val levelControl = new Radio("level-radio", onLevelSelected)
+	val levelControl = new Radio[Int]("level-radio", onLevelSelected, i => i.toString())
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
@@ -137,7 +189,7 @@ class Form(
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
-	val instrUriInput = new UriOptInput("instrumenturi", updateButton)
+	val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", updateButton)
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
 	val creatorInput = new UriInput("creatoruri", updateButton)
@@ -150,6 +202,8 @@ class Form(
 	val collectionTitle = new TextInput("collectiontitle", updateButton)
 	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
 	val collectionMembers = new NonEmptyUriListInput("collectionmembers", updateButton)
+
+	val metadataUriInput = new UriInput("metadata-update", updateGetMetadataButton)
 
 	def dto: Try[UploadDto] = typeControl.formType match {
 		case Data => dataObjectDto
@@ -176,8 +230,8 @@ class Form(
 
 	def dataObjectDto: Try[DataObjectDto] = for(
 		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set");
-		file <- fileInput.file;
-		hash <- fileInput.hash;
+		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else Success(fileNameText.value);
+		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
@@ -192,24 +246,24 @@ class Form(
 		hashSum = hash,
 		submitterId = submitter.id,
 		objectSpecification = objSpec.uri,
-		fileName = file.name,
+		fileName = file,
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
 				site = siteSelect.value.flatten.map(_.uri),
-				instrument = instrumentUri.map(Left(_)),
+				instrument = instrumentUri,
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
 				production = production
 			)
 		),
-		isNextVersionOf = previousVersion.map(Left(_)),
+		isNextVersionOf = previousVersion,
 		preExistingDoi = doi
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
-		file <- fileInput.file;
-		hash <- fileInput.hash;
+		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else Success(fileNameText.value);
+		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
 		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
@@ -217,8 +271,8 @@ class Form(
 	) yield DocObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
-		fileName = file.name,
-		isNextVersionOf = previousVersion.map(Left(_)),
+		fileName = file,
+		isNextVersionOf = previousVersion,
 		preExistingDoi = doi
 	)
 	def staticCollectionDto: Try[StaticCollectionDto] = for(
@@ -234,7 +288,88 @@ class Form(
 		members = members,
 		title = title,
 		description = description,
-		isNextVersionOf = previousVersion.map(Left(_)),
+		isNextVersionOf = previousVersion,
 		preExistingDoi = doi
 	)
+
+	def getMetadata(): Unit = {
+		hideAlert()
+		metadataUriInput.value.map { metadataUri =>
+			whenDone(Backend.getMetadata(metadataUri)) { 
+				case dto: DataObjectDto => {
+					typeControl.value = Data
+					onFormTypeSelected(Data)
+					fileNameText.value = dto.fileName
+					fileHash = Some(dto.hashSum)
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+					whenDone(Backend.getObjSpecs){ specs =>
+						specs.find(_.uri == dto.objectSpecification).map{ spec =>
+							levelControl.value = spec.dataLevel
+							objSpecSelect.setOptions(specs.filter(_.dataLevel == spec.dataLevel))
+							objSpecSelect.value = spec
+						}
+					}
+					dto.specificInfo match {
+						case Left(_) => 
+						case Right(acquisition) => {
+							nRowsInput.value = acquisition.nRows
+							submitterIdSelect.value.map{ submitter =>
+								whenDone(Backend.stationInfo(submitter.producingOrganizationClass, submitter.producingOrganization)){ stations =>
+									stations.find(_.uri == acquisition.station).map{ station =>
+										stationSelect.value = station
+										whenDone(Backend.getSites(station.uri)) { sites =>
+											siteSelect.setOptions {
+												if (sites.isEmpty) IndexedSeq.empty
+												else if (envri == Envri.SITES) sites.map(Some(_))
+												else None +: sites.map(Some(_))
+											}
+											acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map(site => siteSelect.value = Some(site)))
+											updateButton()
+										}
+										acquisition.acquisitionInterval.map{ time =>
+											acqStartInput.value = time.start
+											acqStopInput.value = time.stop
+											timeIntevalInput.value = Some(time)
+										}
+										samplingHeightInput.value = acquisition.samplingHeight
+										instrUriInput.value = acquisition.instrument
+									}
+								}
+							}
+							acquisition.production.map { production =>
+								disableProductionButton()
+								productionElements.show()
+								creatorInput.value = production.creator
+								contributorsInput.value = production.contributors
+								hostOrganizationInput.value = production.hostOrganization
+								commentInput.value = production.comment
+								creationDateInput.value = production.creationDate
+								sourcesInput.value = production.sources
+							}
+						}
+					}
+				}
+				case dto: DocObjectDto =>
+					typeControl.value = Document
+					onFormTypeSelected(Document)
+					fileNameText.value = dto.fileName
+					fileHash = Some(dto.hashSum)
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+					updateButton()
+				case dto: StaticCollectionDto =>
+					typeControl.value = Collection
+					onFormTypeSelected(Collection)
+					collectionTitle.value = dto.title
+					collectionMembers.value = dto.members
+					collectionDescription.value = dto.description
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+					updateButton()
+				case _ =>
+					showAlert(s"$metadataUri cannot be found", "alert alert-danger")
+			}
+		}
+	}
 }

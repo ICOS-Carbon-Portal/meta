@@ -90,6 +90,10 @@ object Backend {
 		.recoverWith(recovery("upload file"))
 		.map(_.responseText)
 
+	def getMetadata(uri: URI): Future[UploadDto] = Ajax.get(s"/dtodownload?uri=$uri")
+		.recoverWith(recovery("fetch existing object"))
+		.map(parseTo[UploadDto])
+
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{
 			case (key, v) => key -> (v \ "value").validate[String].get

@@ -29,6 +29,8 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 		if(idx < 0 || idx >= _values.length) None else Some(_values(idx))
 	}
 
+	def value_=(t: T): Unit = select.selectedIndex = _values.indexOf(t)
+
 	def setOptions(values: IndexedSeq[T]): Unit = {
 		select.innerHTML = ""
 		_values = values
@@ -84,11 +86,25 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 }
 
-class Radio(elemId: String, cb: String => Unit) {
+class Radio[T](elemId: String, cb: String => Unit, serializer: T => String) {
 	protected[this] val inputBlock: html.Element = getElementById[html.Element](elemId).get
 	protected[this] var _value: Option[String] = None
 
 	def value: Option[String] = _value
+	def value_=(t: T): Unit = {
+		inputBlock.querySelectorAll("input[type=radio]").map(_ match {
+			case input: html.Input => {
+				if (input.value == serializer(t)) {
+					input.checked = true
+					_value = Some(input.value)
+				}
+			}
+		})
+	}
+	def reset(): Unit = {
+		_value = None
+		querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.checked = false)
+	}
 
 	inputBlock.onchange = _ => {
 		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value)
@@ -100,7 +116,7 @@ class Radio(elemId: String, cb: String => Unit) {
 	}
 }
 
-class FormTypeRadio(elemId: String, cb: FormType => Unit) extends Radio(elemId, formTypeParser.andThen(cb)) {
+class FormTypeRadio(elemId: String, cb: FormType => Unit) extends Radio[FormType](elemId, formTypeParser.andThen(cb), formTypeSerializer) {
 	def formType: FormType = value.map(formTypeParser).getOrElse(defaultType)
 }
 
@@ -116,9 +132,23 @@ object FormTypeRadio {
 		case _ => defaultType
 	}
 	val defaultType: FormType = Document
+
+	val formTypeSerializer: FormType => String = _ match {
+		case Data => "data"
+		case Collection => "collection"
+		case Document => "document"
+	}
 }
 
 class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
+	def value_=(newIntOpt: Option[TimeInterval]): Unit = newIntOpt match {
+		case None => 
+			fromInput.reset()
+			toInput.reset()
+		case Some(newInt) => 
+			fromInput.value = newInt.start
+			toInput.value = newInt.stop
+	}
 	def value: Try[Option[TimeInterval]] =
 		if(fromInput.isDisabled && toInput.isDisabled) Success(None) else
 			for(
@@ -132,11 +162,30 @@ private abstract class TextInputElement extends html.Element{
 	var disabled: Boolean
 }
 
-abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T]) {
+class TextElement(elemId: String) {
+	private[this] val input: Element = getElementById[html.Element](elemId).get
+	private[this] var _value = ""
+
+	def value = _value
+	def value_=(s: String): Unit = {
+		_value = s
+		input.innerHTML = s
+	}
+}
+
+abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T], serializer: T => String) {
 	private[this] val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
 	private[this] var _value: Try[T] = init
 
 	def value: Try[T] = _value
+	def value_=(t: T): Unit = {
+		_value = Success(t)
+		input.value = serializer(t)
+	}
+	def reset(): Unit = {
+		_value = init
+		input.value = ""
+	}
 
 	input.oninput = _ => {
 		_value = parser(input.value)
@@ -168,47 +217,71 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 }
 
 class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Instant](elemId, cb, fail("no timestamp provided"))(
-	s => Try(Instant.parse(s))
+	s => Try(Instant.parse(s)),
+	i => i.toString()
 )
-class TextInput(elemId: String, cb: () => Unit) extends GenericTextInput[String](elemId, cb, fail("Missing title"))(s => Try(s))
+class TextInput(elemId: String, cb: () => Unit) extends GenericTextInput[String](elemId, cb, fail("Missing title"))(s => Try(s), s => s)
 class UriInput(elemId: String, cb: () => Unit) extends GenericTextInput[URI](elemId, cb, fail("Malformed URL (must start with http[s]://)"))(s => {
 	if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))
 	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
-})
+}, uri => uri.toString())
 
-class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]])
+class GenericOptionalInput[T](elemId: String, cb: () => Unit)(parser: String => Try[Option[T]], serializer: T => String)
 		extends GenericTextInput[Option[T]](elemId, cb, Success(None))(
-	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim)
+	s => if (s == null || s.trim.isEmpty) Success(None) else parser(s.trim),
+	_.fold("")(serializer(_))
 )
 
 class HashOptInput(elemId: String, cb: () => Unit)
-	extends GenericOptionalInput[Sha256Sum](elemId, cb)(s => Sha256Sum.fromString(s).map(Some(_)))
+	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
+		s =>
+			if(s.isEmpty) Success(None)
+			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get))))
+			else Try(Some(Left(Sha256Sum.fromString(s).get))),
+		_ match {
+			case Left(sha) => sha.toString()
+			case Right(sha) => sha.mkString("\n")
+		}
+	)
 class HashOptListInput(elemId: String, cb: () => Unit)
-	extends GenericOptionalInput[Seq[Sha256Sum]](elemId, cb)(s =>
-		if(s.isEmpty) Success(None)
-		else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get)))
+	extends GenericOptionalInput[Seq[Sha256Sum]](elemId, cb)(
+		s =>
+			if(s.isEmpty) Success(None)
+			else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get))),
+		s => s.mkString("\n")
 	)
 
-class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)))
-class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)))
-class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(s => {
-	if(s.startsWith("https://") || s.startsWith("http://")) Try(Some(new URI(s)))
-	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
-})
+class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)), _.toString())
+class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)), _.toString())
+
+class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
+class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Either[URI, Seq[URI]]](elemId, cb)(s =>
+	if(s.isEmpty) Success(None)
+	else if(s.contains("\n")) Try(Some(Right(UriListInput.parser(s).get)))
+	else Try(Some(Left(UriInput.parser(s).get))),
+	s => s.toString())
+object UriInput {
+	def parser(s: String) = {
+		if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))
+		else Failure(new Exception("Malformed URL (must start with http[s]://)"))
+	}
+}
 class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Doi](elemId, cb)(s => Doi.parse(s) match {
 	case Success(doi) => Success(Some(doi))
 	case Failure(err) => if (s.isEmpty) Success(None) else Failure(err)
-})
-class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)))
+}, _.toString())
+class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
 class UriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, Success(Nil))(
-	UriListInput.parser
+	UriListInput.parser,
+	UriListInput.serializer
 )
 
 class NonEmptyUriListInput(elemId: String, cb: () => Unit) extends GenericTextInput[Seq[URI]](elemId, cb, UriListInput.emptyError)(
 	s => UriListInput.parser(s).flatMap(
 		uris => if(uris.isEmpty) UriListInput.emptyError else Success(uris)
-	)
+	),
+	UriListInput.serializer
 )
 
 object UriListInput{
@@ -219,6 +292,10 @@ object UriListInput{
 			else throw new Exception("Malformed URL (must start with http[s]://)")
 		})
 	)
+
+	def serializer = {
+		list: Seq[URI] => list.map(_.toString).mkString("\n")
+	}
 
 	val emptyError = fail(s"uri list cannot be empty")
 }

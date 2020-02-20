@@ -3,7 +3,7 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost)){
+@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header)){
 	<style type="text/css">
 	#main {
 		max-width: 1280px;
@@ -28,6 +28,7 @@
 	}
 	.form-element {
 		display: block;
+		margin-bottom: 5px;
 	}
 	select {
 		width: 100%;
@@ -46,19 +47,11 @@
 	.production-section {
 		display: none;
 	}
-	.add-production-section {
-		max-height: 240px;
-	}
-	.add-production-content {
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 2em;
-		border-style: dashed;
+	.filename {
+		overflow-wrap: break-word;
 	}
 	#submitbutton {
-		margin: 2vh 0;
+		margin: 0;
 		pointer-events: auto;
 		width: 100%;
 	}
@@ -67,7 +60,7 @@
 			margin: 0 -1em;
 		}
 		#submitbutton {
-			margin: 2vh 1.5em;
+			margin: 0 1.5em;
 			width: auto;
 		}
 	}
@@ -84,10 +77,30 @@
 			<div class="row">
 				<section class="col-md-4">
 					<div class="form-section panel panel-default">
-					<h2>File Upload</h2>
+					<h2>About</h2>
 					<div class="form-group">
 						<label for="submitteridselect">Submitter ID</label>
 						<select id="submitteridselect" class="form-element"></select>
+					</div>
+					<div class="form-group">
+						<label for="new-update-radio">New file/Update</label>
+						<div>
+							<div id="new-update-radio">
+								<label class="radio-inline">
+									<input type="radio" name="new-update" value="new" class="js-new-update" checked>
+									New file
+								</label>
+								<label class="radio-inline">
+									<input type="radio" name="new-update" value="update" class="js-new-update">
+									Update metadata
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="form-group" id="metadata-url" style="display: none;">
+						<label for="metadata-update">Metadata url</label>
+						<input type="text" id="metadata-update" class="form-element form-control" placeholder="Metadata URL">
+						<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get Metadata</button>
 					</div>
 					<div class="form-group">
 						<label for="file-type-radio">Type</label>
@@ -108,13 +121,14 @@
 							</div>
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group file-element">
 						<label for="fileinput">File</label>
 						<input id="fileinput" type="file" placeholder="Select file for upload">
+						<div class="filename" id="filename"></div>
 					</div>
 					<div class="form-group">
 						<label>Previous version <em class="text-muted">- optional</em></label>
-						<input type="text" id="previoushash" class="form-element form-control" placeholder="Hashsum">
+						<textarea name="previoushash" id="previoushash" rows="2" cols="80" class="form-element"></textarea>
 					</div>
 					<div class="form-group">
 						<label>Pre-existing DOI <em class="text-muted">- optional</em></label>
@@ -179,14 +193,7 @@
 						</div>
 						<div class="form-group">
 							<label for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
-							<input id="instrumenturi" type="text" class="form-element form-control">
-						</div>
-					</div>
-				</section>
-				<section class="col-md-4 data-section add-production-section">
-					<div class="form-section panel panel-default add-production-content">
-						<div class="">
-							<button id="addproductionbutton" type="button" class="btn btn-link">Add production metadata</button>
+							<textarea name="instrumenturi" id="instrumenturi" rows="2" cols="80" class="form-element"></textarea>
 						</div>
 					</div>
 				</section>
@@ -238,9 +245,6 @@
 					</div>
 				</section>
 			</div>
-			<section>
-				<button id="submitbutton" type="button" class="btn btn-primary btn-submit btn-lg" disabled>Upload</button>
-			</section>
 		</form>
 		<div id="login-block" class="login-block">
 			<h2>Log in to upload data</h2>
@@ -260,4 +264,11 @@
 
 @optionalsite = @{
 	if (envri == Envri.ICOS) <em class="text-muted">- optional</em>
+}
+
+@header = {
+	<div style="float: right;">
+		<button id="addproductionbutton" type="button" class="btn btn-default">Add production metadata</button>
+		<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
+	</div>
 }

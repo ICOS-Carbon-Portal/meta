@@ -1,7 +1,9 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.utils.urlEncode
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.stationUriShortener
 @import akka.http.scaladsl.model.Uri
 
 @(station: Station)(implicit envri: Envri.Value, conf: EnvriConfig)
@@ -9,16 +11,16 @@
 	<div class="container-fluid">
 		<div class="row form-group">
 			@for(coverage <- station.coverage; geoJson = coverage.geoJson) {
-			<iframe src="/station/?theme=Other&coverage=@geoJson"></iframe>
-			@coverage match {
-				case Position(lat, long, alt) => {
-				@PanelRow("Coordinates", s"""$lat, $long""")
-					@alt.map { alt =>
-					@PanelRow("Elevation", s"""${alt.toInt} m""")
-					}.getOrElse("")
+				<iframe src="/station/?theme=Other&coverage=@geoJson"></iframe>
+				@coverage match {
+					case Position(lat, long, altOpt) => {
+						@PanelRow("Coordinates", s"""$lat, $long""")
+						@for(alt <- altOpt){
+							@PanelRow("Elevation", s"""${alt.toInt} m""")
+						}
+					}
+					case _ => {}
 				}
-				case _ => {}
-			}
 			}
 			@for(email <- station.org.email) {
 				@PanelHtmlRow{Contact}{<a href="mailto:@email">@{email}</a>}
@@ -31,6 +33,6 @@
 }
 
 @portalLink = @{
-	Uri(s"https://${conf.dataHost}/portal").withFragment(s"""{"filterCategories":{"station":["${station.org.self.uri}"]}}""")
+	val stationUri = urlEncode(stationUriShortener(station.org.self.uri))
+	Uri(s"https://${conf.dataHost}/portal/").withFragment(s"""{"filterCategories":{"station":["$stationUri"]}}""")
 }
-

@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import spray.json._
+import java.net.URI
 
 
 object LandingPageHelpers{
@@ -59,4 +60,20 @@ object LandingPageHelpers{
 	implicit val uriResourceOrdering = Ordering.by[UriResource, String]{res =>
 		res.label.getOrElse(res.uri.getPath.split('/').last)
 	}
+
+	def stationUriShortener(uri: URI): String = {
+		val icosStationPref = "http://meta.icos-cp.eu/resources/stations/"
+		val wdcggStationPref = "http://meta.icos-cp.eu/resources/wdcgg/station/"
+		val sitesStationPref = "https://meta.fieldsites.se/resources/stations/"
+		val uriStr = uri.toString
+		if(uriStr.startsWith(icosStationPref))
+			"i" + uriStr.stripPrefix(icosStationPref)
+		else if(uriStr.startsWith(wdcggStationPref))
+			"w" + uriStr.stripPrefix(wdcggStationPref)
+		else if(uriStr.startsWith(sitesStationPref))
+			uriStr.stripPrefix(sitesStationPref)
+		else
+			uriStr
+	}
+
 }

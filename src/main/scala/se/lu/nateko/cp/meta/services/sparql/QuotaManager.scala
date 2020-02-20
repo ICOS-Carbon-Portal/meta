@@ -11,16 +11,18 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 	private[this] val idGen = new AtomicLong(0)
 	private type ClientHistory = TrieMap[QueryId, QueryRun]
 	private[this] val q = TrieMap.empty[ClientId, ClientHistory]
-	private[this] val longRunning = new AtomicLong(-1)
+	private[this] val longRunning = new AtomicLong(-1) //only one long-running non-localhost query at a time
 
-	def logNewQueryStart(clientId: ClientId): QueryQuotaManager = {
+	def logNewQueryStart(clientIdOpt: Option[ClientId]): QueryQuotaManager = {
 		val id = idGen.incrementAndGet()
-		val history: ClientHistory = q.getOrElseUpdate(clientId, TrieMap.empty)
-		history += id -> QueryRun(now(), None, None)
-		new QueryQuotaManager(clientId, id)
+		clientIdOpt.fold[QueryQuotaManager](new NoQuota(NoClient, id)){clientId =>
+			val history: ClientHistory = q.getOrElseUpdate(clientId, TrieMap.empty)
+			history += id -> QueryRun(now(), None, None)
+			new ProperQueryQuotaManager(clientId, id)
+		}
 	}
 
-	def quotaExcess(clientId: ClientId): Option[String] = if(clientId.isEmpty) None else q.get(clientId).flatMap(hist => {
+	def quotaExcess(clientIdOpt: Option[ClientId]): Option[String] = clientIdOpt.flatMap(q.get).flatMap(hist => {
 		var minuteCost: Float = 0
 		var hourCost: Float = 0
 		var count: Int = 0
@@ -67,8 +69,8 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		private def ageAt(i: Instant): Float = (i.toEpochMilli - start.toEpochMilli).toFloat / 1000
 	}
 
-	class QueryQuotaManager(val cid: ClientId, val qid: QueryId){
-		private def runInfo = q.get(cid).flatMap(_.get(qid))
+	private class ProperQueryQuotaManager(val cid: ClientId, val qid: QueryId) extends QueryQuotaManager{
+		private def runInfo: Option[QueryRun] = q.get(cid).flatMap(_.get(qid))
 
 		private def isOngoing = runInfo.fold(false)(_.isOngoing)
 		private def streamingStarted = runInfo.fold(false)(_.streamingStarted)
@@ -95,6 +97,24 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 }
 
 object QuotaManager{
-	type ClientId = Option[String]
+
+	type ClientId = String
 	type QueryId = Long
+
+	val NoClient: ClientId = "localhost"
+
+	trait QueryQuotaManager{
+		def cid: ClientId
+		def qid: QueryId
+		def keepRunningIndefinitely: Boolean
+		def logQueryFinish(): Unit
+		def logQueryStreamingStart(): Unit
+	}
+
+	class NoQuota(val cid: ClientId, val qid: QueryId) extends QueryQuotaManager{
+		def keepRunningIndefinitely: Boolean = true
+		def logQueryFinish(): Unit = {}
+		def logQueryStreamingStart(): Unit = {}
+	}
+
 }

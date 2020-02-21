@@ -18,6 +18,14 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.doi.Doi
 
+class FormElement(elemId: String) {
+	private val form = getElementById[html.Form](elemId).get
+	
+	def reset() = {
+		form.reset()
+	}
+}
+
 class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = false, cb: () => Unit){
 	private val select = getElementById[html.Select](elemId).get
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
@@ -30,6 +38,10 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 	}
 
 	def value_=(t: T): Unit = select.selectedIndex = _values.indexOf(t)
+
+	def reset() = {
+		select.selectedIndex = -1
+	}
 
 	def setOptions(values: IndexedSeq[T]): Unit = {
 		select.innerHTML = ""
@@ -104,6 +116,18 @@ class Radio[T](elemId: String, cb: String => Unit, serializer: T => String) {
 	def reset(): Unit = {
 		_value = None
 		querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.checked = false)
+	}
+
+	def enable(): Unit = {
+		inputBlock.querySelectorAll("input[type=radio]").map(_ match {
+			case input: html.Input => input.disabled = false
+		})
+	}
+
+	def disable(): Unit = {
+		inputBlock.querySelectorAll("input[type=radio]").map(_ match {
+			case input: html.Input => input.disabled = true
+		})
 	}
 
 	inputBlock.onchange = _ => {
@@ -239,8 +263,8 @@ class HashOptInput(elemId: String, cb: () => Unit)
 			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get))))
 			else Try(Some(Left(Sha256Sum.fromString(s).get))),
 		_ match {
-			case Left(sha) => sha.toString()
-			case Right(sha) => sha.mkString("\n")
+			case Left(sha) => sha.id
+			case Right(shaSeq) => shaSeq.map(_.id).mkString("\n")
 		}
 	)
 class HashOptListInput(elemId: String, cb: () => Unit)
@@ -248,7 +272,7 @@ class HashOptListInput(elemId: String, cb: () => Unit)
 		s =>
 			if(s.isEmpty) Success(None)
 			else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get))),
-		s => s.mkString("\n")
+		shaSeq => shaSeq.map(_.id).mkString("\n")
 	)
 
 class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)), _.toString())
@@ -259,7 +283,10 @@ class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOp
 	if(s.isEmpty) Success(None)
 	else if(s.contains("\n")) Try(Some(Right(UriListInput.parser(s).get)))
 	else Try(Some(Left(UriInput.parser(s).get))),
-	s => s.toString())
+	_ match {
+		case Left(value) => value.toString()
+		case Right(value) => value.mkString("\n")
+	})
 object UriInput {
 	def parser(s: String) = {
 		if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))

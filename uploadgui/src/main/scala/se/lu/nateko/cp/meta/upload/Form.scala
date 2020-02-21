@@ -17,17 +17,35 @@ class Form(
 	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
+	val formElement = new FormElement("form-block")
 	val fileElement = new HtmlElements("#fileinput")
 	val filenameElement = new HtmlElements("#filename")
 	val metadataUrlElement = new HtmlElements("#metadata-url")
 
+	def resetForm() = {
+		val subm = submitterIdSelect.value
+		formElement.reset()
+		subm.map(s => submitterIdSelect.value = s)
+		onSubmitterSelected()
+		objSpecSelect.reset()
+		stationSelect.reset()
+		updateButton()
+	}
+
 	val onNewUpdateSelected: String => Unit = _ match {
 		case "new" =>
+			resetForm()
 			fileElement.show()
+			filenameElement.hide()
 			metadataUrlElement.hide()
+			typeControl.enable()
 		case "update" =>
+			resetForm()
+			newUpdateControl.value = "update"
 			fileElement.hide()
+			filenameElement.show()
 			metadataUrlElement.show()
+			typeControl.disable()
 	}
 
 	val dataElements = new HtmlElements(".data-section")
@@ -171,7 +189,7 @@ class Form(
 	}
 
 	val fileInput = new FileInput("fileinput", updateButton)
-	val fileNameText = new TextElement("filename")
+	val fileNameText = new TextInput("filename", updateButton)
 	var fileHash: Option[Sha256Sum] = None
 	val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => s)
 	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
@@ -230,7 +248,7 @@ class Form(
 
 	def dataObjectDto: Try[DataObjectDto] = for(
 		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set");
-		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else Success(fileNameText.value);
+		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;
 		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
@@ -262,7 +280,7 @@ class Form(
 		preExistingDoi = doi
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
-		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else Success(fileNameText.value);
+		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;
 		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
 		_ <- isTypeSelected;
 		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");

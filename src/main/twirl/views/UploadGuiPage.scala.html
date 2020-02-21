@@ -9,7 +9,8 @@
 		max-width: 1280px;
 		margin: 0 auto;
 	}
-	.form {
+	.form,
+	#header-buttons {
 		display: none;
 	}
 	.form-container {
@@ -34,7 +35,7 @@
 		width: 100%;
 	}
 	textarea {
-		resize: none;
+		resize: vertical;
 		width: 100%;
 	}
 	.login-block {
@@ -48,6 +49,7 @@
 		display: none;
 	}
 	.filename {
+		display: none;
 		overflow-wrap: break-word;
 	}
 	#submitbutton {
@@ -103,7 +105,7 @@
 						<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get Metadata</button>
 					</div>
 					<div class="form-group">
-						<label for="file-type-radio">Type of item</label>
+						<label for="file-type-radio">Item type</label>
 						<div>
 							<div id="file-type-radio">
 								<label class="radio-inline">
@@ -124,7 +126,7 @@
 					<div class="form-group file-element">
 						<label for="fileinput">File</label>
 						<input id="fileinput" type="file" placeholder="Select file for upload">
-						<div class="filename" id="filename"></div>
+						<input id="filename" class="form-element form-control filename" type="text">
 					</div>
 					<div class="form-group">
 						<label>Previous version <em class="text-muted">- optional</em></label>
@@ -267,7 +269,7 @@
 }
 
 @header = {
-	<div style="float: right;">
+	<div id="header-buttons" style="float: right;">
 		<button id="addproductionbutton" type="button" class="btn btn-default">Add production metadata</button>
 		<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
 	</div>

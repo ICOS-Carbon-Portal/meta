@@ -14,6 +14,7 @@ object UploadApp {
 
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
+	private val headerButtons = new HtmlElements("#header-buttons")
 
 	def main(args: Array[String]): Unit = {
 
@@ -42,6 +43,7 @@ object UploadApp {
 	private def displayForm(): Unit = {
 		loginBlock.hide()
 		formBlock.show()
+		headerButtons.show()
 	}
 
 	private def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {

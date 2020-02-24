@@ -18,31 +18,31 @@ class Form(
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
 
 	val formElement = new FormElement("form-block")
-	val fileElement = new HtmlElements("#fileinput")
+	val fileElement = new HtmlElements("#file-element")
+	val fileInputElement = new HtmlElements("#fileinput")
 	val filenameElement = new HtmlElements("#filename")
 	val metadataUrlElement = new HtmlElements("#metadata-url")
 
 	def resetForm() = {
 		val subm = submitterIdSelect.value
+		val mode = newUpdateControl.value
 		formElement.reset()
 		subm.map(s => submitterIdSelect.value = s)
 		onSubmitterSelected()
-		objSpecSelect.reset()
-		stationSelect.reset()
+		mode.map(s => newUpdateControl.value = s)
 		updateButton()
 	}
 
 	val onNewUpdateSelected: String => Unit = _ match {
 		case "new" =>
 			resetForm()
-			fileElement.show()
+			fileInputElement.show()
 			filenameElement.hide()
 			metadataUrlElement.hide()
 			typeControl.enable()
 		case "update" =>
 			resetForm()
-			newUpdateControl.value = "update"
-			fileElement.hide()
+			fileInputElement.hide()
 			filenameElement.show()
 			metadataUrlElement.show()
 			typeControl.disable()
@@ -55,7 +55,7 @@ class Form(
 	val onFormTypeSelected: FormType => Unit = formType => {
 		dataElements.hide()
 		collectionElements.hide()
-		fileInput.enable()
+		fileElement.show()
 		productionElements.hide()
 		disableProductionButton()
 
@@ -66,7 +66,7 @@ class Form(
 			}
 			case Collection => {
 				collectionElements.show()
-				fileInput.disable()
+				fileElement.hide()
 			}
 			case Document =>
 		}
@@ -105,7 +105,7 @@ class Form(
 							onUpload(dto, Some(file))
 						}
 					case _ =>
-						for(dto <- staticCollectionDto) {
+						for(dto <- documentObjectDto) {
 							onUpload(dto, None)
 						}
 				}
@@ -160,17 +160,21 @@ class Form(
 			}
 		}
 
+	private val setupSpec: ObjSpec => Unit = objSpec => {
+		if (objSpec.hasDataset) {
+			nRowsInput.enable()
+			acqStartInput.disable()
+			acqStopInput.disable()
+		} else {
+			nRowsInput.disable()
+			acqStartInput.enable()
+			acqStopInput.enable()
+		}
+	}
+
 	private val onSpecSelected: () => Unit = () => {
 		objSpecSelect.value.foreach{ objSpec =>
-			if(objSpec.hasDataset){
-				nRowsInput.enable()
-				acqStartInput.disable()
-				acqStopInput.disable()
-			} else{
-				nRowsInput.disable()
-				acqStartInput.enable()
-				acqStopInput.enable()
-			}
+			setupSpec(objSpec)
 		}
 		updateButton()
 	}
@@ -313,7 +317,8 @@ class Form(
 	def getMetadata(): Unit = {
 		hideAlert()
 		metadataUriInput.value.map { metadataUri =>
-			whenDone(Backend.getMetadata(metadataUri)) { 
+			resetForm()
+			whenDone(Backend.getMetadata(metadataUri)) {
 				case dto: DataObjectDto => {
 					typeControl.value = Data
 					onFormTypeSelected(Data)
@@ -326,6 +331,7 @@ class Form(
 							levelControl.value = spec.dataLevel
 							objSpecSelect.setOptions(specs.filter(_.dataLevel == spec.dataLevel))
 							objSpecSelect.value = spec
+							setupSpec(spec)
 						}
 					}
 					dto.specificInfo match {

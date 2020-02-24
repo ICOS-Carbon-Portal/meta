@@ -31,6 +31,10 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
 
 	select.onchange = _ => cb()
+	getElementById[html.Form]("form-block").get.onreset = _ => {
+		select.selectedIndex = -1
+		cb()
+	}
 
 	def value: Option[T] = {
 		val idx = select.selectedIndex
@@ -38,10 +42,6 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 	}
 
 	def value_=(t: T): Unit = select.selectedIndex = _values.indexOf(t)
-
-	def reset() = {
-		select.selectedIndex = -1
-	}
 
 	def setOptions(values: IndexedSeq[T]): Unit = {
 		select.innerHTML = ""
@@ -113,10 +113,6 @@ class Radio[T](elemId: String, cb: String => Unit, serializer: T => String) {
 			}
 		})
 	}
-	def reset(): Unit = {
-		_value = None
-		querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.checked = false)
-	}
 
 	def enable(): Unit = {
 		inputBlock.querySelectorAll("input[type=radio]").map(_ match {
@@ -133,6 +129,11 @@ class Radio[T](elemId: String, cb: String => Unit, serializer: T => String) {
 	inputBlock.onchange = _ => {
 		_value = querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.value)
 		_value.foreach(cb)
+	}
+
+	getElementById[html.Form]("form-block").get.onreset = _ => {
+		_value = None
+		querySelector[html.Input](inputBlock, "input[type=radio]:checked").map(input => input.checked = false)
 	}
 
 	if(querySelector[html.Input](inputBlock, "input[type=radio]:checked").isDefined){
@@ -186,17 +187,6 @@ private abstract class TextInputElement extends html.Element{
 	var disabled: Boolean
 }
 
-class TextElement(elemId: String) {
-	private[this] val input: Element = getElementById[html.Element](elemId).get
-	private[this] var _value = ""
-
-	def value = _value
-	def value_=(s: String): Unit = {
-		_value = s
-		input.innerHTML = s
-	}
-}
-
 abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T], serializer: T => String) {
 	private[this] val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
 	private[this] var _value: Try[T] = init
@@ -211,6 +201,7 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 		input.value = ""
 	}
 
+	getElementById[html.Form]("form-block").get.onreset = _ => reset()
 	input.oninput = _ => {
 		_value = parser(input.value)
 

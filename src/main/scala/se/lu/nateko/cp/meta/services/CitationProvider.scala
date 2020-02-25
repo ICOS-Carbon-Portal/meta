@@ -149,7 +149,8 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 					val station = acq.station.name
 					val time = getTimeFromInterval(interval, zoneId)
 					val year = formatDate(productionInstant, zoneId).take(4)
-					s"$station. $year. $spec from $location, $time"
+					val dataType = spec.split(",").head
+					s"$station. $year. $dataType from $location, $time"
 				}
 		)
 

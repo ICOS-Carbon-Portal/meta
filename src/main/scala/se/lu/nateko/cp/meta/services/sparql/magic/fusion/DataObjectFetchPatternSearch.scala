@@ -73,7 +73,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				sp.getSubjectVar.getName -> categPattern(exprs :+ sp, Spec, propVarName)(vals)
 		}
 
-	val stationPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.prov.wasAssociatedWith)
+	def acquisitionPatternSearch(pred: IRI, property: OptUriProperty) = twoStepPropPath(meta.wasAcquiredBy, pred)
 		.thenFlatMap{tspp =>
 			val statVar = tspp.step2.getObjectVar
 			if(statVar.hasValue) {
@@ -87,7 +87,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				BindingSetAssignmentSearch.byVarName(tspp.objVariable).recursive
 					.optional//allow unbound ?station
 					.thenGet(
-						_.fold[(Seq[TupleExpr], Seq[Station.ValueType])](
+						_.fold[(Seq[TupleExpr], Seq[property.ValueType])](
 							Nil -> Nil
 						)(
 							bsas => Seq(bsas.expr) -> bsas.values.map(Some(_))
@@ -101,8 +101,11 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				val exprs = Seq(tspp.step1, tspp.step2) ++ bsasExprs
 				val objVar = tspp.step2.getObjectVar
 				val propVarName = if(objVar.isAnonymous) None else Some(objVar.getName)
-				tspp.subjVariable -> categPattern(exprs, Station, propVarName)(vals)
+				tspp.subjVariable -> categPattern(exprs, property, propVarName)(vals)
 		}
+
+	val stationPatternSearch: CategPatternSearch = acquisitionPatternSearch(meta.prov.wasAssociatedWith, Station)
+	val sitePatternSearch: CategPatternSearch = acquisitionPatternSearch(meta.wasPerformedAt, Site)
 
 	// ?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter . VALUES ?submitter {<iri1> ... <irin>}
 	val submitterPatternSearch: CategPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.wasAssociatedWith)
@@ -175,7 +178,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 		val noDeprecatedOpt = isLatestDobjVersionFilter(node)
 
-		val categPatts = dataObjSpecPatternSearch(node).toSeq ++ stationPatternSearch(node) ++ submitterPatternSearch(node)
+		val categPatts = dataObjSpecPatternSearch(node).toSeq ++ stationPatternSearch(node) ++ submitterPatternSearch(node) ++ sitePatternSearch(node)
 
 		val contPatts = continuousVarPatterns(node)
 		val filterSearcher = filterSearch(contPatts.map(_._2))

@@ -77,6 +77,7 @@ class CpEvaluationStrategyFactory(
 				case DobjUri         => setter(_.uri)
 				case Spec            => setter(_.spec)
 				case Station         => setter(_.station)
+				case Site            => setter(_.site)
 				case Submitter       => setter(_.submitter)
 				case FileName        => (_: QueryBindingSet, _: ObjInfo) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))

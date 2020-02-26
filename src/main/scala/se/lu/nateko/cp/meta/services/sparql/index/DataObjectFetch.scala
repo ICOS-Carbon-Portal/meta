@@ -55,6 +55,7 @@ object DataObjectFetch{
 	sealed trait Property{type ValueType}
 
 	sealed trait UriProperty extends Property{type ValueType = IRI}
+	sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
 
 	final case object DobjUri extends UriProperty
 
@@ -73,6 +74,7 @@ object DataObjectFetch{
 	sealed trait CategProp extends Property{type ValueType <: AnyRef}
 
 	final case object Spec extends CategProp with UriProperty
-	final case object Station extends CategProp{ type ValueType = Option[IRI]}
+	final case object Station extends OptUriProperty
+	final case object Site extends OptUriProperty
 	final case object Submitter extends CategProp with UriProperty
 }

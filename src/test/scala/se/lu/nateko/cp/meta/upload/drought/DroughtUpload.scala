@@ -20,7 +20,7 @@ import se.lu.nateko.cp.doi._
 
 
 object DroughtUpload{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018")
+	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018/v2")
 	val archiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
 	val hhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
 
@@ -41,9 +41,19 @@ object DroughtUpload{
 		csv.iterator().asScala.drop(1).map(parseFluxMeta(_, filesFolder))
 	}
 
-	def uploadCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getCollDto)
+	def fileMetaEntries(fileName: String, project: String): IndexedSeq[FileEntry] = {
+		import DroughtMeta2._
 
-	def getCollDto = StaticCollectionDto(
+		def metaFile(fname: String) = baseDir.resolve(s"meta/$fname").toFile
+
+		val affils = parseAffiliations(metaFile("affiliation.csv"))
+		val persons = parsePersons(metaFile("persons.csv"), affils)
+		parseFileEntries(metaFile(fileName), project, persons)
+	}
+
+	def uploadFluxCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getFluxCollDto)
+
+	def getFluxCollDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",
@@ -92,6 +102,6 @@ object DroughtUpload{
 		prevVers = Sha256Sum.fromHex(row(1)).toOption
 	)
 
-	private def ifNotEmpty(s: String): Option[String] = Option(s).map(_.trim).filter(_.length > 0)
+	def ifNotEmpty(s: String): Option[String] = Option(s).map(_.trim).filter(_.length > 0)
 
 }

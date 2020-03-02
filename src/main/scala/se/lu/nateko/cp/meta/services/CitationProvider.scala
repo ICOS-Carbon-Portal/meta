@@ -142,7 +142,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 			l2 => for(
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
-					location <- acq.site.flatMap(_.self.label);
+					location <- acq.site.flatMap(_.location.flatMap(_.label));
 					interval <- acq.interval;
 					productionInstant = dobj.production.fold(interval.stop)(_.dateTime)
 				) yield {

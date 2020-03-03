@@ -1,94 +1,91 @@
-Aalto, Tuula: Finnish Meteorological Institute (FMI)
-Barcza, Zoltan: Eötvös Loránd University (ELTE)
-Chen, Huilin: Rijksuniversiteit Groningen (RUG)
-Chmura, Lukasz: Akademia Garniczo-Hutnicza (AGH)
-Galkowski, Michael: Akademia Garniczo-Hutnicza (AGH)
-Hammer, Samuel: Institute of Environmental Physics, University of Heidelberg (IUP)
-Haszpra, Laszlo: Hungarian Meteorological Institute (HMS)
-Hermanson, Ove: Norwegian Polar Institute/ Norwegian Institute for Air Research (NILU)
-Lavrič, Jošt: Max Planck Institute for Biogeochemistry (MPI-BGC)
-Levin, Ingeborg: Institute of Environmental Physics, University of Heidelberg (IUP)
-Lunder, Chris: Norwegian Polar Institute/ Norwegian Institute for Air Research (NILU)
-Manca, Giovanni: Institute for Environment and Sustainability (IES)
-Meinhardt, Frank: Umweltbundesamt Germany (UBA)
-Moncrieff, John: University of Bristol (BRIS)
-Necki, Jaroslaw: Akademia Garniczo-Hutnicza (AGH)
-Nisbet, Euan: Royal Holloway University of London (RHUL)
-O'Doherty, Simon: University of Bristol (BRIS)
-Reimann, Stefan: Swiss Federal Laboratories for Materials Science and Technology (EMPA)
-Reimann, Stefan: The International Foundation High Altitude Research Stations Jungfraujoch and Gornergrat (HFSJG)
-Reshetnikov, Alexander: Federal Service for Hydrometeorology and Environmental Monitoring - St Petersburg (Rosgidromet)
-Scheeren, Bert: Institute for Environment and Sustainability (IES)
-Schmidt, Martina: Laboratoire des Sciences du Climat et de l'Environnement (LSCE)
-Vermeulen, Alex: Energy Research Foundation of the Netherlands (ECN)
-Le Quéré, Corinne
-Andrew, Robbie
-Friedlingstein, Pierre
-Sitch, Stephen
-Pongratz, Julia
-Manning, Andrew
-Korsbakken, Jan Ivar
-Peters, Glen
-Canadell, Josep
-Jackson, Robert
-Boden, Thomas
-Tans, Pieter
-Andrews, Oliver
-Arora, Vivek
-Bakker, Dorothee
-Barbero, Leticia
-Betts, Richard
-Bopp, Laurent
-Chevallier, Frédéric
-Chini, Louise
-Ciais, Philippe
-Cosca, Catherine
-Cross, Jessica
-Currie, Kim
-Gasser, Thomas
-Harris, Ian
-Hauck, Judith
-Haverd, Vanessa
-Houghton, Richard
-Hunt, Christopher
-Hurtt, George
-Ilyina, Tatiana
-Jain, Atul
-Kato, Etsushi
-Kautz, Markus
-Keeling, Ralph
-Klein Goldewijk, Kees
-Körtzinger, Arne
-Landschützer, Peter
-Lenton, Andrew
-Lienert, Sebastian
-Lima, Ivan
-Lombardozzi, Danica
-Metzl, Nicolas
-Millero, Frank
-Monteiro, Pedro
-Munro, David
-Nabel, Julia
-Nakaoka, Shin-ichiro
-Nojiri, Yukihiro
-Padín, X. Antoni
-Peregon, Anna
-Pfeil, Benjamin
-Pierrot, Denis
-Poulter, Benjamin
-Reimer, Janet
-Rödenbeck, Christian
-Schwinger, Jörg
-Séférian, Roland
-Stocker, Benjamin
-Tian, Hanqin
-Tilbrook, Bronte
-van der Laan-Luijkx, Ingrid
-van der Werf, Guido
-Viovy, Nicolas
-Vuichard, Nicolas
-Walker, Anthony
-Watson, Andrew
-Wiltshire, Andrew
-Zaehle, Sönke
-Zhu, Dan
+Alekseychik, Pavel
+Apadula, Francesco
+Blanc, Pierre-Eric
+Blanfort, Vincent
+Bornet, Frédéric
+Bozzano, Roberto
+Brunner, Dominik
+Caracciolo Di Torchiarolo, Luigi
+Cardin, Vanessa
+Carrara, Arnaud
+Chipeaux, Christophe
+Conte, Adriano
+Cristofanelli, Paolo
+Cuevas-Agulló, Emilio
+Curcoll, Roger
+De Mazière, Martine
+Delmotte, Marc
+Delorme, Jean-Pierre
+Dengel, Sigrid
+di Sarra, Alcide
+Drüe, Clemens
+El-Madany, Tarek Sebastian
+Emmel, Carmen
+Emmenegger, Lukas
+Feigenwinter, Iris
+Fiedler, Björn
+Foltýnová, Lenka
+Foster, Grant
+Fransson, Agneta
+Frumau, Arnoud
+Fuchs, Kathrin
+Gharun, Mana
+Gheusi, François
+Ghiasi, Shiva
+Giani, Michele
+Graf, Alexander
+Hartman, Susan
+Henne, Stephan
+Hensen, Arjan
+Hertel, Martin
+Hofmann, Joachim
+Jurasinski, Gerald
+Karstensen, Johannes
+Koebsch, Franziska
+Kolle, Olaf
+Komínková, Kateřina
+Kubistin, Dagmar
+Kurbatova, Julia
+Laurent, Olivier
+Lehner, Irene
+Leskinen, Ari
+Leuenberger, Markus
+Levula, Janne
+Li, Xuefei
+Lindauer, Matthias
+Lopez, Morgan
+Lopez Jimenez, Ramon
+Lucas-Moffat, Antje
+Lund, Magnus
+Lund Myhre, Cathrine
+Maier, Regine
+Martin, Dan
+Merbold, Lutz
+Moreno, Gerardo
+Morgui, Josep-Anton
+Nightingale, Phil
+O'Dowd, Colin
+Paul-Limoges, Eugenie
+Peltola, Olli
+Perez-Priego, Oscar
+Piacentino, Salvatore
+Plaß-Dülmer, Christian
+Ramonet, Michel
+Reichstein, Markus
+Rutgersson, Anna
+Sachs, Torsten
+Sahoo, Ganapati
+Say, Dan
+Sferlazzo, Damiano
+Simioni, Guillaume
+Soltwedel, Thomas
+Sørensen, Lise Lotte
+Sorgi, Tiziano
+Steinbacher, Martin
+Taipale, Risto
+Varlagin, Andrej
+Vítková, Gabriela
+Vygodskaya, Natalia
+Weyrauch, Dietmar
+Xueref-Remy, Irène
+Yver, Camille

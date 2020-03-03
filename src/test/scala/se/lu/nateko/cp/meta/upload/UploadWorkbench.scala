@@ -8,10 +8,17 @@ import scala.concurrent.Await
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker
 import scala.concurrent.duration.DurationInt
 import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.CitationConfig
+import akka.stream.ActorMaterializer
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import scala.concurrent.Future
+import akka.Done
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
 	import system.dispatcher
+	implicit val mat = ActorMaterializer()
 
 	val uploadConfBase = new CpUploadClient.Config(
 		"???",
@@ -20,6 +27,18 @@ object UploadWorkbench{
 		//Some(Uri("http://127.0.0.1:9094")),
 		//Some(Uri("http://127.0.0.1:9010"))
 	)
+
+	val citer = new CitationClient(Nil, new CitationConfig("apa", false))
+
+	def uploadAtmoDrought(client: CpUploadClient): Future[Done] = {
+		val upload = drought.DroughtUpload2.atmoUpload(citer)
+		executeSequentially(upload.fileMetaEntries){fe =>
+			val finfo = upload.getFileInfo(fe)
+			upload.makeDto(fe).flatMap{dto =>
+				client.uploadSingleObject(dto, finfo)
+			}
+		}
+	}
 
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 

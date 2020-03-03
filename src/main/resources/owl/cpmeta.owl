@@ -1433,6 +1433,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ATMO station</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility">
@@ -1900,6 +1909,15 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Role -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Role"/>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sail Drone</rdfs:label>
+    </owl:Class>
     
 
 

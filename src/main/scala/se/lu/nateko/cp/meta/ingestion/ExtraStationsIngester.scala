@@ -35,7 +35,9 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 		val projToClass = Map(
 			Project.INGOS -> metaVocab.ingosStationClass,
 			Project.WDCGG -> metaVocab.wdcggStationClass,
-			Project.FLUXNET -> metaVocab.fluxnetStationClass
+			Project.FLUXNET -> metaVocab.fluxnetStationClass,
+			Project.ATMO -> metaVocab.atmoDroughtStationClass,
+			Project.SAILDRONE -> metaVocab.sailDroneStationClass
 		)
 
 		station => {
@@ -58,7 +60,7 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 private object IcosStationsIngester{
 
 	object Project extends Enumeration{
-		val INGOS, WDCGG, FLUXNET = Value
+		val INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE = Value
 	}
 
 	case class Station(project: Project.Value, id: String, name: String, country: String, lat: Double, lon: Double, elevation: Float)

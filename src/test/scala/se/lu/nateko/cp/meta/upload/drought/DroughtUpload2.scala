@@ -20,6 +20,7 @@ import se.lu.nateko.cp.doi._
 import se.lu.nateko.cp.meta.api.CitationClient
 import scala.concurrent.ExecutionContext
 import java.nio.file.Files
+import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
 
 
 object DroughtUpload2{
@@ -30,13 +31,17 @@ object DroughtUpload2{
 
 	val atcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ATC")
 	val etcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ETC")
+
+	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("atmos_data.csv", atmoSpec, citer)
+	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_hh.csv", fluxnetHhSpec, citer)
+	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_arch.csv", fluxnetArchiveSpec, citer)
 }
 
 
 class DroughtUpload2(
 	fileEntriesFile: String, spec: URI,
 	citer: CitationClient
-){
+)(implicit ctxt: ExecutionContext){
 
 	import DroughtUpload2._
 	import DroughtMeta2._
@@ -64,27 +69,30 @@ class DroughtUpload2(
 	// 	preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
 	// )
 
-	def makeDto(
-		meta: FileEntry, acqInt: Option[TimeInterval]
-	)(implicit ctxt: ExecutionContext): Future[ObjectUploadDto] = meta.comment(citer).map{comment =>
+	def getFilePath(meta: FileEntry): Path = baseDir.resolve(project.toLowerCase).resolve(meta.fileName)
+	def getFileInfo(meta: FileEntry) = new FileInfo(getFilePath(meta), meta.hash)
+
+	def makeDto(meta: FileEntry): Future[ObjectUploadDto] = meta.comment(citer).map{comment =>
 
 		val productionDto = DataProductionDto(
 			creator = meta.creatorUrl,
 			contributors = (meta.authors ++ meta.contribs).map(p => new URI(p.url)),
 			hostOrganization = None,
-			creationDate = Files.getLastModifiedTime(baseDir.resolve(project.toLowerCase).resolve(meta.fileName)).toInstant,
+			creationDate = Files.getLastModifiedTime(getFilePath(meta)).toInstant,
 			sources = None,
 			comment = comment
 		)
+
 		val stationMeta = StationDataMetadata(
-			station = new URI(meta.stationUrl),
+			station = meta.stationUrl,
 			site = None,
 			instrument = None,
-			samplingHeight = None,
-			acquisitionInterval = acqInt,
-			nRows = meta.nPoints,
+			samplingHeight = samplingHeightOpt(meta),
+			acquisitionInterval = timeIntervalOpt(meta),
+			nRows = npointsOpt(meta),
 			production = Some(productionDto)
 		)
+
 		DataObjectDto(
 			hashSum = meta.hash,
 			submitterId = "CP",
@@ -96,4 +104,9 @@ class DroughtUpload2(
 		)
 	}
 
+	def timeIntervalOpt(fe: FileEntry): Option[TimeInterval] =
+		if(spec == fluxnetArchiveSpec) Some(fluxTimeInterval(fe)) else None
+
+	def npointsOpt(fe: FileEntry): Option[Int] =
+		if(spec == fluxnetHhSpec) fe.nPoints else None
 }

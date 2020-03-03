@@ -38,6 +38,7 @@ object DoiMaker{
 
 	val cc4by = Rights("CC4.0BY", Some("https://creativecommons.org/licenses/by/4.0"))
 	val etc = GenericName("ICOS Ecosystem Thematic Centre")
+	val atc = GenericName("ICOS Atmosphere Thematic Centre")
 
 	def coolDoi(hash: Sha256Sum): String = {
 		val id: Long = hash.getBytes.take(8).foldLeft(0L){(acc, b) => (acc << 8) + b}

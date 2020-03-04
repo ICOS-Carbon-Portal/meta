@@ -43,15 +43,21 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 		station => {
 			val stUri = vocab.getIcosLikeStation(s"${station.project}_${station.id}")
 
-			Iterator(
+			val iter = Iterator(
 				(stUri, RDF.TYPE, projToClass(station.project)),
 				(stUri, metaVocab.hasStationId, station.id.toRdf),
 				(stUri, metaVocab.hasName, station.name.toRdf),
 				(stUri, metaVocab.countryCode, station.country.toRdf),
-				(stUri, metaVocab.hasLatitude, vocab.lit(station.lat)),
-				(stUri, metaVocab.hasLongitude, vocab.lit(station.lon)),
 				(stUri, metaVocab.hasElevation, vocab.lit(station.elevation)),
-			).map(vf.tripleToStatement)
+			) ++
+			station.lat.iterator.map{lat =>
+				(stUri, metaVocab.hasLatitude, vocab.lit(lat))
+			} ++
+			station.lon.iterator.map{lon =>
+				(stUri, metaVocab.hasLongitude, vocab.lit(lon))
+			}
+
+			iter.map(vf.tripleToStatement)
 		}
 	}
 }
@@ -63,12 +69,27 @@ private object IcosStationsIngester{
 		val INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE = Value
 	}
 
-	case class Station(project: Project.Value, id: String, name: String, country: String, lat: Double, lon: Double, elevation: Float)
+	case class Station(
+		project: Project.Value,
+		id: String,
+		name: String,
+		country: String,
+		lat: Option[Double],
+		lon: Option[Double],
+		elevation: Float
+	)
 
 	object Station{
 		def parse(line: String): Station = {
 			val Seq(projStr, id, name, country, latStr, lonStr, elevStr) = line.trim.split('\t').toSeq
-			Station(Project.withName(projStr), id, name, country, latStr.toDouble, lonStr.toDouble, elevStr.toFloat)
+			Station(
+				Project.withName(projStr), id, name, country,
+				lat = optDouble(latStr),
+				lon = optDouble(lonStr),
+				elevation = elevStr.toFloat
+			)
 		}
 	}
+
+	def optDouble(s: String): Option[Double] = if(s.trim.isEmpty) None else Some(s.trim.toDouble)
 }

@@ -89,7 +89,7 @@ class DroughtUpload2(
 			instrument = None,
 			samplingHeight = samplingHeightOpt(meta),
 			acquisitionInterval = timeIntervalOpt(meta),
-			nRows = npointsOpt(meta),
+			nRows = meta.nPoints,
 			production = Some(productionDto)
 		)
 
@@ -107,6 +107,4 @@ class DroughtUpload2(
 	def timeIntervalOpt(fe: FileEntry): Option[TimeInterval] =
 		if(spec == fluxnetArchiveSpec) Some(fluxTimeInterval(fe)) else None
 
-	def npointsOpt(fe: FileEntry): Option[Int] =
-		if(spec == fluxnetHhSpec) fe.nPoints else None
 }

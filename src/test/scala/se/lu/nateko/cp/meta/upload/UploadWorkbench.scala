@@ -14,6 +14,7 @@ import akka.stream.ActorMaterializer
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import scala.concurrent.Future
 import akka.Done
+import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker2
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
@@ -28,11 +29,14 @@ object UploadWorkbench{
 		//Some(Uri("http://127.0.0.1:9010"))
 	)
 
-	val citer = new CitationClient(Nil, new CitationConfig("apa", false))
+	val citer = new CitationClient(Nil, new CitationConfig("copernicus-publications", false, 10))
+	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
+
+	private def atmoUpload = drought.DroughtUpload2.atmoUpload(citer)
 
 	def uploadAtmoDrought(client: CpUploadClient): Future[Done] = {
-		val upload = drought.DroughtUpload2.atmoUpload(citer)
-		executeSequentially(upload.fileMetaEntries){fe =>
+		val upload = atmoUpload
+		executeSequentially(upload.uploadedFileMetaEntries){fe =>
 			val finfo = upload.getFileInfo(fe)
 			upload.makeDto(fe).flatMap{dto =>
 				client.uploadSingleObject(dto, finfo)
@@ -40,7 +44,19 @@ object UploadWorkbench{
 		}
 	}
 
-	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
+	def uploadAtmoColl(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(atmoUpload.getAtmoCollDto)
+
+	def registerAtmoCollDoi(password: String): Future[Done] = {
+		val client = new DoiMaker(password)
+		val maker = new DroughtDoiMaker2(client, citer)
+		val doiMeta = maker.atmoCollDoiMeta("ERE9-9D85", atmoUpload.allFileMetaEntries)
+		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/yZecOZ-jPa8nw8JVOTHtlaYN"))
+	}
+
+	def registerAtmoDois(password: String): Future[Done] = {
+		val maker = new DroughtDoiMaker2(new DoiMaker(password), citer)
+		maker.publishDois(atmoUpload.uploadedFileMetaEntries, maker.makeAtmoDoiMeta)
+	}
 
 	def droughtDoiMaker(password: String): DroughtDoiMaker = Await.result(
 		DroughtDoiMaker(new DoiMaker(password)),

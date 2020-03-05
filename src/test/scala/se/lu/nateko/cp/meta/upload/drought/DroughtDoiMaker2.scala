@@ -44,7 +44,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 
 		DoiMeta(
 			id = maker.client.doi(coolDoi(meta.hash)),
-			creators = etcCreator +: creatorStation(stationName, meta.stationId) +: meta.authors.map(creatorPerson),
+			creators = meta.authors.map(creatorPerson) :+ etcCreator,
 			titles = Seq(title),
 			publisher = "ICOS Carbon Portal",
 			publicationYear = 2020,
@@ -54,9 +54,9 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 				Subject("Troposphere: composition and chemistry")
 			),
 			contributors = (
-					etcContrib +:
-					contributorStation(stationName, meta.stationId, ContributorType.DataCollector) +:
-					meta.contribs.map(dataCollectorPerson)
+					meta.contribs.map(dataCollectorPerson) :+
+					contributorStation(stationName, meta.stationId, ContributorType.DataCollector) :+
+					etcContrib
 				) ++ etcPeople,
 			dates = Seq(
 				Date(meta.creationDate.toString, DateType.Created)
@@ -78,7 +78,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 
 		DoiMeta(
 			id = maker.client.doi(coolDoi(meta.hash)),
-			creators = atcCreator +: creatorStation(stationName, meta.stationId) +: meta.authors.map(creatorPerson),
+			creators = meta.authors.map(creatorPerson) :+ atcCreator,
 			titles = Seq(title),
 			publisher = "ICOS Carbon Portal",
 			publicationYear = 2020,
@@ -87,9 +87,9 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 				Subject("Carbon dioxide")
 			),
 			contributors = (
-					atcContrib +:
-					contributorStation(stationName, meta.stationId, ContributorType.DataCollector) +:
-					meta.contribs.map(dataCollectorPerson)
+					meta.contribs.map(dataCollectorPerson) :+
+					contributorStation(stationName, meta.stationId, ContributorType.DataCollector) :+
+					atcContrib
 				) ++ atcPeople,
 			dates = Seq(
 				Date(meta.creationDate.toString, DateType.Created)
@@ -136,8 +136,8 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val contribs = metas.flatMap(fe => fe.authors ++ fe.contribs).groupBy(_.id).map{
 			case (_, pes) => dataCollectorPerson(pes.head)
 		}.toSeq
-		val title = Title("Drought-2018 CO2 molar fraction product in ICOS ATC format—release 2019", None, None)
-		val descr = s"Public release of the observational data product for atmospheric CO2 molar fractions at ${metas.size} station/sampling height combinations"
+		val title = Title("Drought-2018 atmospheric CO2 Mole Fraction product for 48 stations (96 sample heights)—release 2019-1", None, None)
+		val descr = s"Atmospheric Greenhouse Gas Mole Fractions of CO2 collected by the Drought-2018 team, covering the period 1979-2018. Final quality controlled Level 2 data, release 2019-1. During the most recent period,  a selected set of stations, after being labelled as ICOS stations, follow the ICOS Atmospheric Station specification V1.3 (https://www.icos-ri.eu/fetch/ba12290c-3714-4dd5-a9f0-c431b9900ad1;1.0). Measurements and data processing for all time series is described in Ramonet, 2019 (doi:xxxxx). All concentrations are calibrated to the WMO X2007 CO2 mole fraction scale in µmole/mole (ppm)."
 
 		DoiMeta(
 			id = maker.client.doi(suffix),

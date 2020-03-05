@@ -46,7 +46,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 	}
 
 	private def fetchTimeLimited(doi: Doi): Future[String] =
-		timeLimit(fetchCitation(doi), 3.seconds, scheduler).recoverWith{
+		timeLimit(fetchCitation(doi), config.timeoutSec.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
 				new Exception("Citation formatting service timed out")
 			)

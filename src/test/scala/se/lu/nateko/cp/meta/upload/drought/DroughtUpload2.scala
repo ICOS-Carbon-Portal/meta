@@ -10,6 +10,7 @@ import java.io.InputStreamReader
 import com.opencsv.CSVReader
 import java.nio.file.Paths
 import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto
@@ -21,6 +22,8 @@ import se.lu.nateko.cp.meta.api.CitationClient
 import scala.concurrent.ExecutionContext
 import java.nio.file.Files
 import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
+import java.util.zip.ZipFile
+import java.time.Instant
 
 
 object DroughtUpload2{
@@ -35,6 +38,13 @@ object DroughtUpload2{
 	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("atmos_data.csv", atmoSpec, citer)
 	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_hh.csv", fluxnetHhSpec, citer)
 	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_arch.csv", fluxnetArchiveSpec, citer)
+
+	val excludedUploadStations = Set(
+		"BE-Bra", "BE-Lon", "BE-Vie",
+		"CH-Aws", "CH-Cha", "CH-Dav", "CH-Fru",
+		"FI-Var", "FR-EM2",
+		"IT-SR2", "IT-Tor", "SE-Ros"
+	)
 }
 
 
@@ -49,7 +59,11 @@ class DroughtUpload2(
 	private val haveDois: Boolean = (spec != fluxnetHhSpec)
 	private val project: String = if(spec == atmoSpec) Atmo else Fluxnet
 
-	val fileMetaEntries: IndexedSeq[FileEntry] = {
+	def uploadedFileMetaEntries: IndexedSeq[FileEntry] = allFileMetaEntries.filter{fe =>
+		!excludedUploadStations.contains(fe.fileName.substring(4, 10))
+	}
+
+	val allFileMetaEntries: IndexedSeq[FileEntry] = {
 
 		def metaFile(fname: String) = baseDir.resolve(s"meta/$fname").toFile
 
@@ -60,10 +74,19 @@ class DroughtUpload2(
 
 	//def uploadFluxCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getFluxCollDto)
 
+	def getAtmoCollDto = StaticCollectionDto(
+		submitterId = "CP",
+		members = allFileMetaEntries.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
+		title = "Drought-2018 atmospheric CO2 Mole Fraction product for 48 stations (96 sample heights)—release 2019-1",
+		description = Some("Atmospheric Greenhouse Gas Mole Fractions of CO2 collected by the Drought-2018 team, covering the period 1979-2018. Final quality controlled Level 2 data, release 2019-1. During the most recent period,  a selected set of stations, after being labelled as ICOS stations, follow the ICOS Atmospheric Station specification V1.3 (https://www.icos-ri.eu/fetch/ba12290c-3714-4dd5-a9f0-c431b9900ad1;1.0). Measurements and data processing for all time series is described in Ramonet, 2019 (doi:xxxxx). All concentrations are calibrated to the WMO X2007 CO2 mole fraction scale in µmole/mole (ppm)."),
+		isNextVersionOf = None,
+		preExistingDoi = Some(Doi("10.18160", "ERE9-9D85"))
+	)
+
 	// def getFluxCollDto = StaticCollectionDto(
 	// 	submitterId = "CP",
 	// 	members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
-	// 	title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",
+	// 	title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format—release 2019-1",
 	// 	description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 30 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018. Updates since the previous version of this collection: 3 more stations added (CH-Lae, CH-Oe2, FI-Let), and data from ES-LM2 and FI-Sii have been updated."),
 	// 	isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("681IIgBN34OEbfWwVU_IWlwA").get)),
 	// 	preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
@@ -78,7 +101,10 @@ class DroughtUpload2(
 			creator = meta.creatorUrl,
 			contributors = (meta.authors ++ meta.contribs).map(p => new URI(p.url)),
 			hostOrganization = None,
-			creationDate = Files.getLastModifiedTime(getFilePath(meta)).toInstant,
+			creationDate = if(meta.fileName.endsWith(".zip")) Instant.ofEpochMilli(
+					new ZipFile(getFilePath(meta).toFile).entries().asScala.map(_.getTime).max
+				) else
+					Files.getLastModifiedTime(getFilePath(meta)).toInstant,
 			sources = None,
 			comment = comment
 		)

@@ -130,7 +130,7 @@ case class SparqlServerConfig(
 
 case class RdfStorageConfig(path: String, recreateAtStartup: Boolean)
 
-case class CitationConfig(style: String, eagerWarmUp: Boolean)
+case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -178,7 +178,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
 	implicit val rdfStorageConfigFormat = jsonFormat2(RdfStorageConfig)
-	implicit val citationConfigFormat = jsonFormat2(CitationConfig)
+	implicit val citationConfigFormat = jsonFormat3(CitationConfig)
 	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat13(CpmetaConfig)

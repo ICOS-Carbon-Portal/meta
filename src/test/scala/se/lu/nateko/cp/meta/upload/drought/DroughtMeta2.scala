@@ -77,7 +77,7 @@ object DroughtMeta2{
 	val Fluxnet = "FLUXNET"
 
 	val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
-	val HeightRegex = """^\w{3}_(\d+\.?\d*)m_""".r
+	val HeightRegex = """^\w{3}_(\d+\.?\d*)m_""".r.unanchored
 
 	def fluxFileYears(fe: FileEntry): (Int, Int) = {
 		assert(fe.project == Fluxnet, s"Can parse years only from the $Fluxnet files")

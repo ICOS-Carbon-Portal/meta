@@ -85,7 +85,8 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 
 	private def fetchCitation(doi: Doi): Future[String] = http.singleRequest(
 			HttpRequest(
-				uri = s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
+				//uri = s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
+				uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
 			)
 		).flatMap{resp =>
 			Unmarshal(resp).to[String].transform{

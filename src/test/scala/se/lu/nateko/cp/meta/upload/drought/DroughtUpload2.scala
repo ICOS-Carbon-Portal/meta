@@ -42,8 +42,8 @@ object DroughtUpload2{
 	val excludedUploadStations = Set(
 		"BE-Bra", "BE-Lon", "BE-Vie",
 		"CH-Aws", "CH-Cha", "CH-Dav", "CH-Fru",
-		"FI-Var", "FR-EM2",
-		"IT-SR2", "IT-Tor", "SE-Ros"
+		"DE-Geb", "DK-Sor", "FI-Let", "FI-Var", "FR-EM2", "FR-Hes",
+		"IT-Cp2", "IT-SR2", "IT-Tor", "SE-Ros"
 	)
 }
 
@@ -60,7 +60,10 @@ class DroughtUpload2(
 	private val project: String = if(spec == atmoSpec) Atmo else Fluxnet
 
 	def uploadedFileMetaEntries: IndexedSeq[FileEntry] = allFileMetaEntries.filter{fe =>
-		!excludedUploadStations.contains(fe.fileName.substring(4, 10))
+		val sameVersion = fe.prevHash.contains(fe.hash)
+		//if(sameVersion) println(s"New version of itself: ${fe.fileName}")
+		!excludedUploadStations.contains(fe.fileName.substring(4, 10)) &&
+		!sameVersion
 	}
 
 	val allFileMetaEntries: IndexedSeq[FileEntry] = {
@@ -83,14 +86,14 @@ class DroughtUpload2(
 		preExistingDoi = Some(Doi("10.18160", "ERE9-9D85"))
 	)
 
-	// def getFluxCollDto = StaticCollectionDto(
-	// 	submitterId = "CP",
-	// 	members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
-	// 	title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format—release 2019-1",
-	// 	description = Some("This is the first public release of the observational data product for eddy covariance fluxes at 30 stations in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018. Updates since the previous version of this collection: 3 more stations added (CH-Lae, CH-Oe2, FI-Let), and data from ES-LM2 and FI-Sii have been updated."),
-	// 	isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("681IIgBN34OEbfWwVU_IWlwA").get)),
-	// 	preExistingDoi = Some(Doi("10.18160", "PZDK-EF78"))
-	// )
+	def getFluxCollDto = StaticCollectionDto(
+		submitterId = "CP",
+		members = allFileMetaEntries.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
+		title = "Drought-2018 ecosystem eddy covariance flux product for 52 stations in FLUXNET-Archive format—release 2019-2",
+		description = Some("This is the release of the observational data product for eddy covariance fluxes at 52 stations in the ecosystem domain, part of them outside the ICOS network, from the Drought-2018 team and covering the period 1989-2018. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."),
+		isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("UZw8ra7OVilmVjATTCgIimpz").get)),
+		preExistingDoi = Some(Doi("10.18160", "YVR0-4898"))
+	)
 
 	def getFilePath(meta: FileEntry): Path = baseDir.resolve(project.toLowerCase).resolve(meta.fileName)
 	def getFileInfo(meta: FileEntry) = new FileInfo(getFilePath(meta), meta.hash)

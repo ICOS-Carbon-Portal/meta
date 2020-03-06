@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import scala.concurrent.Future
 import akka.Done
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker2
+import se.lu.nateko.cp.meta.upload.drought.DroughtUpload2
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
@@ -32,10 +33,22 @@ object UploadWorkbench{
 	val citer = new CitationClient(Nil, new CitationConfig("copernicus-publications", false, 10))
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
-	private def atmoUpload = drought.DroughtUpload2.atmoUpload(citer)
+	private def atmoUpload = DroughtUpload2.atmoUpload(citer)
+	private def fluxHhUpload = DroughtUpload2.fluxHhUpload(citer)
+	private def fluxUpload = DroughtUpload2.fluxUpload(citer)
 
-	def uploadAtmoDrought(client: CpUploadClient): Future[Done] = {
-		val upload = atmoUpload
+	private def doiMachinery(password: String): (DoiMaker, DroughtDoiMaker2) = {
+		val client = new DoiMaker(password)
+		val maker = new DroughtDoiMaker2(client, citer)
+		client -> maker
+	}
+
+	def uploadAtmoDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, atmoUpload)
+	def uploadFluxHhDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxHhUpload)
+	def uploadFluxDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxUpload)
+
+	private def uploadDrought(cpAuthToken: String, upload: DroughtUpload2): Future[Done] = {
+		val client = uploadClient(cpAuthToken)
 		executeSequentially(upload.uploadedFileMetaEntries){fe =>
 			val finfo = upload.getFileInfo(fe)
 			upload.makeDto(fe).flatMap{dto =>
@@ -45,17 +58,28 @@ object UploadWorkbench{
 	}
 
 	def uploadAtmoColl(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(atmoUpload.getAtmoCollDto)
+	def uploadFluxColl(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(fluxUpload.getFluxCollDto)
 
 	def registerAtmoCollDoi(password: String): Future[Done] = {
-		val client = new DoiMaker(password)
-		val maker = new DroughtDoiMaker2(client, citer)
+		val (client, maker) = doiMachinery(password)
 		val doiMeta = maker.atmoCollDoiMeta("ERE9-9D85", atmoUpload.allFileMetaEntries)
 		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/yZecOZ-jPa8nw8JVOTHtlaYN"))
 	}
 
+	def registerFluxCollDoi(password: String): Future[Done] = {
+		val (client, maker) = doiMachinery(password)
+		val doiMeta = maker.fluxCollDoiMeta("YVR0-4898", fluxUpload.allFileMetaEntries)
+		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/" + ???))
+	}
+
 	def registerAtmoDois(password: String): Future[Done] = {
-		val maker = new DroughtDoiMaker2(new DoiMaker(password), citer)
+		val (_, maker) = doiMachinery(password)
 		maker.publishDois(atmoUpload.uploadedFileMetaEntries, maker.makeAtmoDoiMeta)
+	}
+
+	def registerFluxDois(password: String): Future[Done] = {
+		val (_, maker) = doiMachinery(password)
+		maker.publishDois(fluxUpload.uploadedFileMetaEntries, maker.makeFluxDoiMeta)
 	}
 
 	def droughtDoiMaker(password: String): DroughtDoiMaker = Await.result(

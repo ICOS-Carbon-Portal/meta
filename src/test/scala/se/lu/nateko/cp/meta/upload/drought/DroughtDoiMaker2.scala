@@ -107,9 +107,8 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val contribs = metas.flatMap(fe => fe.authors ++ fe.contribs).groupBy(_.id).map{
 			case (_, pes) => dataCollectorPerson(pes.head)
 		}.toSeq
-		val title = Title("Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format—release 2019-2", None, None)
-		val descr = s"Public release of the observational data product for eddy covariance fluxes at ${metas.size} stations " +
-			"in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018."
+		val title = Title("Drought-2018 ecosystem eddy covariance flux product for 52 stations in FLUXNET-Archive format—release 2019-2", None, None)
+		val descr = "This is the release of the observational data product for eddy covariance fluxes at 52 stations in the ecosystem domain, part of them outside the ICOS network, from the Drought-2018 team and covering the period 1989-2018. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."
 		DoiMeta(
 			id = maker.client.doi(suffix),
 			creators = Seq(Creator(GenericName("Drought 2018 Team"), Nil, Nil), etcCreator),

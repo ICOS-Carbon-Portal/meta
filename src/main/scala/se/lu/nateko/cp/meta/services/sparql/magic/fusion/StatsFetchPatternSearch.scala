@@ -37,22 +37,28 @@ class StatsFetchPatternSearch(meta: CpmetaVocab){
 		.thenSearch{g =>
 			for(
 				countVar <- singleVarCountGroup(g) if countVar == dobjVar;
-				submitterVar <- provSearch(countVar, meta.wasSubmittedBy)(g);
+				submitterVar <- agentSearch(countVar, meta.wasSubmittedBy)(g);
 				stationVar <- stationSearch(countVar)(g);
+				siteVarOpt <- siteSearch(countVar)(g);
 				specVar <- specSearch(countVar)(g)
-				if g.getGroupBindingNames.asScala == Set(specVar, submitterVar, stationVar);
+				if g.getGroupBindingNames.asScala == Set(specVar, submitterVar, stationVar) ++ siteVarOpt;
 				filtering = filterSearch(countVar, g)
-			) yield new GroupPattern(filtering, submitterVar, stationVar, specVar)
+			) yield new GroupPattern(filtering, submitterVar, stationVar, specVar, siteVarOpt)
 		}
 
-	def provSearch(dobjVar: String, provPred: IRI): TopNodeSearch[String] = twoStepPropPath(provPred, meta.prov.wasAssociatedWith)
+	def agentSearch(dobjVar: String, provPred: IRI): TopNodeSearch[String] = provSearch(dobjVar, provPred, meta.prov.wasAssociatedWith)
+
+	def provSearch(dobjVar: String, provPred: IRI, objPred: IRI): TopNodeSearch[String] = twoStepPropPath(provPred, objPred)
 		.filter(_.subjVariable == dobjVar)
 		.thenGet(_.objVariable)
 
-	def stationSearch(dobjVar: String): TopNodeSearch[String] = takeNode
+	def stationSearch(dobjVar: String): TopNodeSearch[String] = acqSearch(dobjVar, meta.prov.wasAssociatedWith)
+	def siteSearch(dobjVar: String): TopNodeSearch[Option[String]] = acqSearch(dobjVar, meta.wasPerformedAt).optional
+
+	def acqSearch(dobjVar: String, objPred: IRI): TopNodeSearch[String] = takeNode
 		.ifIs[LeftJoin]
 		.thenGet(_.getRightArg)
-		.thenSearch(provSearch(dobjVar, meta.wasAcquiredBy))
+		.thenSearch(provSearch(dobjVar, meta.wasAcquiredBy, objPred))
 		.recursive
 
 	def specSearch(dobjVar: String): TopNodeSearch[String] = byPredicate(meta.hasObjectSpec)
@@ -99,7 +105,7 @@ object StatsFetchPatternSearch{
 		case _ => None
 	}
 
-	case class GroupPattern(filtering: Filtering, submitterVar: String, stationVar: String, specVar: String)
+	case class GroupPattern(filtering: Filtering, submitterVar: String, stationVar: String, specVar: String, siteVar: Option[String])
 
 	class StatsFetchPattern(expr: Extension, statsNode: StatsFetchNode){
 		def fuse(): Unit = {

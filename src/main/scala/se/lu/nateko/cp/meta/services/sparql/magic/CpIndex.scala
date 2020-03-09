@@ -32,7 +32,7 @@ import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
 
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI])
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
 
 trait ObjSpecific{
@@ -44,6 +44,7 @@ trait ObjInfo extends ObjSpecific{
 	def spec: IRI
 	def submitter: IRI
 	def station: IRI
+	def site: IRI
 	def sizeInBytes: Option[Long]
 	def dataStartTime: Option[Literal]
 	def dataEndTime: Option[Literal]
@@ -97,6 +98,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
 	flush()
 	contMap.valuesIterator.foreach(_.optimizeAndTrim())
+	stats.retain{case (_, bm) => !bm.isEmpty}
 
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
@@ -160,6 +162,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			continuousPropFilters(filtering),
 			filtering.filterDeprecated
 		)
+
 		stats.flatMap{
 			case (key, bm) =>
 				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
@@ -249,6 +252,16 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				case _ =>
 			}
 
+			case `wasPerformedAt` => subj match {
+				case CpVocab.Acquisition(hash) =>
+					val oe = getObjEntry(hash)
+					removeStat(oe)
+					oe.site = targetUri
+					if(isAssertion) addStat(oe)
+					obj match{case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx)}
+				case _ =>
+			}
+
 			case `hasStartTime` => ifDateTime(obj){ dt =>
 				modForDobj(subj){oe =>
 					oe.dataStart = dt
@@ -326,7 +339,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		obj.spec == null || obj.submitter == null ||
 		(obj.station == null && specRequiresStation.getOrElse(obj.spec, true))
 	) None else Some(
-		StatKey(obj.spec, obj.submitter, Option(obj.station))
+		StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 	)
 
 	private def removeStat(obj: ObjEntry): Unit = for(
@@ -350,6 +363,7 @@ object CpIndex{
 		var spec: IRI = _
 		var submitter: IRI = _
 		var station: IRI = _
+		var site: IRI = _
 		var size: Long = -1
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue

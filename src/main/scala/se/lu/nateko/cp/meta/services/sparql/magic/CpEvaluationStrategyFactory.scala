@@ -50,15 +50,24 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForStatsFetch(statFetch: StatsFetchNode): Iterator[BindingSet] = {
 		val index = indexThunk()
+		import statFetch.{group, countVarName}
 
-		index.statEntries(statFetch.group.filtering).iterator.map{se =>
+		val allStatEntries = index.statEntries(group.filtering)
+
+		val statEntries: Iterable[StatEntry] = group.siteVar match{
+			case Some(_) => allStatEntries
+			case None =>
+				allStatEntries.groupBy(se => se.key.copy(site = None)).map{
+					case (key, subEntries) => StatEntry(key, subEntries.map(_.count).sum)
+				}
+		}
+		statEntries.iterator.map{se =>
 			val bs = new QueryBindingSet
-			bs.setBinding(statFetch.countVarName, index.factory.createLiteral(se.count))
-			bs.setBinding(statFetch.group.submitterVar, se.key.submitter)
-			bs.setBinding(statFetch.group.specVar, se.key.spec)
-			se.key.station.foreach{station =>
-				bs.setBinding(statFetch.group.stationVar, station)
-			}
+			bs.setBinding(countVarName, index.factory.createLiteral(se.count))
+			bs.setBinding(group.submitterVar, se.key.submitter)
+			bs.setBinding(group.specVar, se.key.spec)
+			for(station <- se.key.station) bs.setBinding(group.stationVar, station)
+			for(siteVar <- group.siteVar; site <- se.key.site) bs.setBinding(siteVar, site)
 			bs
 		}
 	}
@@ -77,6 +86,7 @@ class CpEvaluationStrategyFactory(
 				case DobjUri         => setter(_.uri)
 				case Spec            => setter(_.spec)
 				case Station         => setter(_.station)
+				case Site            => setter(_.site)
 				case Submitter       => setter(_.submitter)
 				case FileName        => (_: QueryBindingSet, _: ObjInfo) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))

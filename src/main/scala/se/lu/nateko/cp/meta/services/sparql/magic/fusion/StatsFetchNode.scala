@@ -10,7 +10,7 @@ class StatsFetchNode(
 	val group: GroupPattern
 ) extends AbstractQueryModelNode with TupleExpr{
 
-	private val assuredVars: Seq[String] = Seq(countVarName, group.submitterVar, group.specVar)
+	private val assuredVars: Seq[String] = Seq(countVarName, group.submitterVar, group.specVar) ++ group.siteVar
 
 	override def clone() = new StatsFetchNode(countVarName, group)
 

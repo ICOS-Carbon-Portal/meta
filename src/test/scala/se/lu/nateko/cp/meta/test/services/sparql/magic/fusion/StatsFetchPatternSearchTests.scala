@@ -21,10 +21,23 @@ class StatsFetchPatternSearchTests extends FunSpec{
 	// 	println(q)
 	// }
 
-	it("detects the GROUP BY clause"){
+	it("detects the GROUP BY clause without the site pattern/variable"){
 		val groupOpt = sfps.groupSearch("dobj")(query)
 		groupOpt match{
-			case Some(GroupPattern(filtering, "submitter", "stationOpt", "spec")) =>
+			case Some(GroupPattern(filtering, "submitter", "stationOpt", "spec", None)) =>
+				assert(filtering.filterDeprecated)
+				assert(filtering.requiredProps.size == 1)
+				assert(filtering.filters.size == 1)
+
+			case _ => fail("group pattern was not detected")
+		}
+	}
+
+	it("detects the GROUP BY clause with the site pattern/variable"){
+		val withSite = parseQuery(StatsFetchPatternSearchTests.queryWithSite)
+		val groupOpt = sfps.groupSearch("dobj")(withSite)
+		groupOpt match{
+			case Some(GroupPattern(filtering, "submitter", "station", "spec", Some("site"))) =>
 				assert(filtering.filterDeprecated)
 				assert(filtering.requiredProps.size == 1)
 				assert(filtering.filters.size == 1)
@@ -58,6 +71,21 @@ object StatsFetchPatternSearchTests{
 		FILTER (?timeStart >= '2019-01-01T00:00:00.000Z'^^xsd:dateTime)
 	}
 	group by ?spec ?submitter ?stationOpt
+	"""
+
+	val queryWithSite = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select (count(?dobj) as ?count) ?spec ?submitter ?station ?site
+	where{
+		?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
+		?dobj cpmeta:hasObjectSpec ?spec .
+		OPTIONAL{?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station }
+		OPTIONAL{?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
+		?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+		FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj}
+		FILTER (?timeStart >= '2019-01-01T00:00:00.000Z'^^xsd:dateTime)
+	}
+	group by ?spec ?submitter ?station ?site
 	"""
 
 	val nestingQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

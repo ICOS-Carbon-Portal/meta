@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.Keep
 import scala.concurrent.Future
+import scala.collection.immutable.Seq
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -33,10 +34,19 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			complete((StatusCodes.BadRequest, userErr.getMessage))
 		case err => throw err
 	}
+
 	private val replyWithErrorOnBadContent = handleRejections(
-		RejectionHandler.newBuilder().handle{
-			case MalformedRequestContentRejection(msg, _) =>
-				complete((StatusCodes.BadRequest, msg))
+		RejectionHandler.newBuilder().handleAll[MalformedRequestContentRejection]{ rejs =>
+			val msgs = rejs match{
+				case Seq(single) =>
+					single.message
+				case _ =>
+					rejs.zipWithIndex.map{
+						case (rej, i) => s"Alternative ${i+1}: ${rej.message}"
+					}
+					.mkString("Attempts to parse the request resulted in the following errors:\n", "\n", "")
+			}
+			complete(StatusCodes.BadRequest -> msgs)
 		}.result()
 	)
 

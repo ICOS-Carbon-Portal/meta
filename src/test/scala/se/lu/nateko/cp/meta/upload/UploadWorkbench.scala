@@ -69,7 +69,7 @@ object UploadWorkbench{
 	def registerFluxCollDoi(password: String): Future[Done] = {
 		val (client, maker) = doiMachinery(password)
 		val doiMeta = maker.fluxCollDoiMeta("YVR0-4898", fluxUpload.allFileMetaEntries)
-		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/" + ???))
+		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/ueb_7FcyEcbG6y9-UGo5HUqV"))
 	}
 
 	def registerAtmoDois(password: String): Future[Done] = {

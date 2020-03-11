@@ -2233,6 +2233,8 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcHalfHourlyProductTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">0</hasGoodFlagValue>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1</hasGoodFlagValue>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The first two columns are expected to be the beginning and the end of the averaging period in yyyyMMddHHmm format (no DST)</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ETC half-hourly product CSV</rdfs:label>
         <rdfs:seeAlso rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/etcLocalDateTime"/>

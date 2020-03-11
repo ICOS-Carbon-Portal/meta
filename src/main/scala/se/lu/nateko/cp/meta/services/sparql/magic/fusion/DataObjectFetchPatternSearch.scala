@@ -73,7 +73,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 				sp.getSubjectVar.getName -> categPattern(exprs :+ sp, Spec, propVarName)(vals)
 		}
 
-	def acquisitionPatternSearch(pred: IRI, property: OptUriProperty) = twoStepPropPath(meta.wasAcquiredBy, pred)
+	def acquisitionPatternSearch(pred: IRI, property: OptUriProperty): CategPatternSearch = twoStepPropPath(meta.wasAcquiredBy, pred)
 		.thenFlatMap{tspp =>
 			val statVar = tspp.step2.getObjectVar
 			if(statVar.hasValue) {
@@ -117,6 +117,14 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 			case (tspp, bsas) =>
 				val exprs = Seq(tspp.step1, tspp.step2, bsas.expr)
 				tspp.subjVariable -> categPattern(exprs, Submitter, Some(tspp.objVariable))(bsas.values)
+		}
+
+	// ?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?height .
+	val samplingHeightSearch: ContPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.hasSamplingHeight)
+		.filter(!_.step2.getObjectVar.isAnonymous)
+		.thenGet{ tspp =>
+			val exprs = Seq(tspp.step1, tspp.step2)
+			tspp.subjVariable -> new ContPropPattern(exprs, SamplingHeight, tspp.objVariable)
 		}
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
@@ -167,7 +175,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 	def continuousVarPatterns(node: QueryModelNode): Seq[ContResult] = submStartPatternSearch(node).toSeq ++ submEndPatternSearch(node) ++
 		dataStartSearch(node) ++ dataEndSearch(node) ++
-		fileNameSearch(node) ++ fileSizeSearch(node)
+		fileNameSearch(node) ++ fileSizeSearch(node) ++ samplingHeightSearch(node)
 
 	def filterSearch(contPatts: Seq[ContPropPattern]): FilterPatternSearch = {
 		val contPropLookup: Map[String, ContProp] = contPatts.map(cpp => cpp.propVarName -> cpp.property).toMap

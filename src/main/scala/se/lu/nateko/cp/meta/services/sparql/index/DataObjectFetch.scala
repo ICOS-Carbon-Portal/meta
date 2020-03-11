@@ -66,6 +66,7 @@ object DataObjectFetch{
 
 	final case object FileName extends ContProp{type ValueType = String}
 	final case object FileSize extends LongProperty
+	final case object SamplingHeight extends ContProp{type ValueType = Float}
 	final case object SubmissionStart extends DateProperty
 	final case object SubmissionEnd extends DateProperty
 	final case object DataStart extends DateProperty

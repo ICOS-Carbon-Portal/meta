@@ -79,6 +79,7 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 				case dp: DateProperty => asTsEpochMillis(lit).flatMap(makeFilter(dp))
 				case FileName         => asString(lit).flatMap(makeFilter(FileName))
 				case FileSize         => asLong(lit).flatMap(makeFilter(FileSize))
+				case SamplingHeight   => asFloat(lit).flatMap(makeFilter(SamplingHeight))
 			}
 		) yield filter
 	}
@@ -99,7 +100,8 @@ object FilterPatternSearch{
 
 	def asString(lit: Literal): Option[String] = if(lit.getDatatype === XMLSchema.STRING) Some(lit.stringValue) else None
 
-	def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.stringValue.toLong).toOption else None
+	def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.longValue).toOption else None
+	def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XMLSchema.FLOAT) Try(lit.floatValue).toOption else None
 
 	def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.DATETIME)
 		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption

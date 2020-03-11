@@ -90,6 +90,7 @@ class CpEvaluationStrategyFactory(
 				case Submitter       => setter(_.submitter)
 				case FileName        => (_: QueryBindingSet, _: ObjInfo) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))
+				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(index.factory.createLiteral))
 				case SubmissionStart => setterOpt(_.submissionStartTime)
 				case SubmissionEnd   => setterOpt(_.submissionEndTime)
 				case DataStart       => setterOpt(_.dataStartTime)

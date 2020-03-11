@@ -114,7 +114,7 @@ class DataObjectFetchPatternSearchTests extends FunSpec{
 
 			it("Expected variables are detected and dealt with"){
 				val actualVars = fetchNode.varNames.values.toSet
-				val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "fileName")
+				val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "fileName", "height")
 				assert(actualVars === expectedVars)
 			}
 

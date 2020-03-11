@@ -46,6 +46,7 @@ trait ObjInfo extends ObjSpecific{
 	def station: IRI
 	def site: IRI
 	def sizeInBytes: Option[Long]
+	def samplingHeightMeters: Option[Float]
 	def dataStartTime: Option[Literal]
 	def dataEndTime: Option[Literal]
 	def submissionStartTime: Option[Literal]
@@ -83,6 +84,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			}
 		}
 		case FileSize =>        FileSizeHierarchicalBitmap(idx => objs(idx).size)
+		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(idx => objs(idx).samplingHeight)
 		case DataStart =>       DatetimeHierarchicalBitmap(idx => objs(idx).dataStart)
 		case DataEnd =>         DatetimeHierarchicalBitmap(idx => objs(idx).dataEnd)
 		case SubmissionStart => DatetimeHierarchicalBitmap(idx => objs(idx).submissionStart)
@@ -321,6 +323,17 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				}
 			}
 
+			case `hasSamplingHeight` => ifFloat(obj){height =>
+				subj match{
+					case CpVocab.Acquisition(hash) =>
+						val oe = getObjEntry(hash)
+						if(isAssertion) oe.samplingHeight = height
+						else if(oe.samplingHeight == height) oe.samplingHeight = Float.NaN
+						handleContinuousPropUpdate(SamplingHeight, height, oe.idx)
+					case _ =>
+				}
+			}
+
 			case _ =>
 		}
 
@@ -365,6 +378,7 @@ object CpIndex{
 		var station: IRI = _
 		var site: IRI = _
 		var size: Long = -1
+		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue
 		var submissionStart: Long = Long.MinValue
@@ -375,6 +389,7 @@ object CpIndex{
 			else Some(factory.createLiteral(Instant.ofEpochMilli(dt)))
 
 		def sizeInBytes: Option[Long] = if(size >= 0) Some(size) else None
+		def samplingHeightMeters: Option[Float] = if(samplingHeight == Float.NaN) None else Some(samplingHeight)
 		def dataStartTime: Option[Literal] = dateTimeFromLong(dataStart)
 		def dataEndTime: Option[Literal] = dateTimeFromLong(dataEnd)
 		def submissionStartTime: Option[Literal] = dateTimeFromLong(submissionStart)
@@ -395,9 +410,18 @@ object CpIndex{
 	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match{
 		case lit: Literal if lit.getDatatype === XMLSchema.LONG =>
 			try{
-				mod(lit.stringValue.toLong)
+				mod(lit.longValue)
 			}catch{
 				case _: Throwable => //ignoring wrong longs
+			}
+	}
+
+	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match{
+		case lit: Literal if lit.getDatatype === XMLSchema.FLOAT =>
+			try{
+				mod(lit.floatValue)
+			}catch{
+				case _: Throwable => //ignoring wrong floats
 			}
 	}
 

@@ -193,7 +193,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 		val dobjVarNames = categPatts.map(_._1) ++ contPatts.map(_._1) ++ noDeprecatedOpt.map(_.dobjVar)
 		//detecting the most common variable name for data obj uri (for example, could be '?dobj')
-		val dobjVarNameOpt = dobjVarNames.groupBy(identity).mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
+		val dobjVarNameOpt = dobjVarNames.groupBy(identity).view.mapValues(_.size).toSeq.sortBy(_._2).lastOption.map(_._1)
 
 		dobjVarNameOpt
 			.map{dobjVar =>

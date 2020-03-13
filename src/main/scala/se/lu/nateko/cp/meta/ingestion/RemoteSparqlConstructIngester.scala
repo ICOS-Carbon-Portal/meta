@@ -39,7 +39,7 @@ class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: Acto
 
 					Future{
 						parser.parse(inputStr, rdfGraph.toString)
-						import scala.collection.JavaConverters.asScalaIteratorConverter
+						import scala.jdk.CollectionConverters.IteratorHasAsScala
 						collector.getStatements.iterator().asScala
 					}
 				case _ =>

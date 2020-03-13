@@ -21,7 +21,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.Done
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
@@ -32,7 +32,6 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 	import system.dispatcher
 	import CpUploadClient._
 
-	implicit private val mat = ActorMaterializer()
 	private val cookie = Cookie("cpauthToken", conf.cpauthToken)
 	private val metaHost = Host(conf.metaHost)
 	private val dataHost = Host(conf.dataHost)

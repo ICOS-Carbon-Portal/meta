@@ -170,8 +170,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		repo: Repository,
 		instanceServers: Map[String, InstanceServer]
 	): UploadService = {
-		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply).toMap
-		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply).toMap
+		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
+		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
 		implicit val factory = repo.getValueFactory
 
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>

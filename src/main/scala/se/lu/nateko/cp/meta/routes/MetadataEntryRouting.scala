@@ -38,12 +38,12 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 				complete(onto.getExposedClasses.map(_.withFallbackBaseUri(instOnto.getWriteContext)))
 			} ~
 			pathSuffix("listIndividuals"){
-				parameter('classUri){ uriStr =>
+				parameter("classUri"){ uriStr =>
 					complete(instOnto.getIndividuals(new URI(uriStr)))
 				}
 			} ~
 			pathSuffix("getIndividual"){
-				parameter('uri){ uriStr =>
+				parameter("uri"){ uriStr =>
 					complete(instOnto.getIndividual(new URI(uriStr)))
 				}
 			} ~
@@ -53,7 +53,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 				}
 			} ~
 			pathSuffix("getRangeValues"){
-				parameters(('classUri, 'propUri)){ (classUri, propUri) =>
+				parameters(("classUri", "propUri")){ (classUri, propUri) =>
 					complete(instOnto.getRangeValues(new URI(classUri), new URI(propUri)))
 				}
 			}
@@ -74,14 +74,14 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 					})
 				} ~
 				pathSuffix("createIndividual"){
-					parameters(('uri, 'typeUri)){ (uriStr, typeUriStr) =>
+					parameters(("uri", "typeUri")){ (uriStr, typeUriStr) =>
 						instOnto.createIndividual(uriStr, typeUriStr).get
 						complete(StatusCodes.OK)
 					} ~
 					complete((StatusCodes.BadRequest, "Please provide 'uri' and 'typeUri' URL parameters"))
 				} ~
 				pathSuffix("deleteIndividual"){
-					parameter('uri){ uriStr =>
+					parameter("uri"){ uriStr =>
 						instOnto.deleteIndividual(uriStr).get
 						complete(StatusCodes.OK)
 					} ~

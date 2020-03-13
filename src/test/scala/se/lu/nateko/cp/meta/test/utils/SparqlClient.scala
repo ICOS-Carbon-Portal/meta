@@ -5,14 +5,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
 import se.lu.nateko.cp.meta.core.sparql.JsonSupport._
 import java.net.URI
 
 class SparqlClient(url: URI)(implicit system: ActorSystem) {
-	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
 
 	private val sparqlJson = MediaType.custom("application/sparql-results+json", binary = false)

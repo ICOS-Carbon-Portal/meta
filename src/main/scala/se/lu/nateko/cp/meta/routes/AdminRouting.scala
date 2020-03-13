@@ -53,7 +53,7 @@ class AdminRouting(
 				val Rdf4jStatement(subj, pred, obj) = upd.statement
 
 				upd.isAssertion ^ server.hasStatement(subj, pred, obj)
-			}.toStream
+			}.to(LazyList)
 
 			if(!dryRun) server.applyAll(updatesStream)
 

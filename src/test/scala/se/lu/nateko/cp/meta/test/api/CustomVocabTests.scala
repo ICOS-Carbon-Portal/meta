@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test.api
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CustomVocab
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
-class CustomVocabTests extends FunSpec{
+class CustomVocabTests extends AnyFunSpec{
 
 	private[this] object Vocab extends CustomVocab{
 		implicit val bup = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")

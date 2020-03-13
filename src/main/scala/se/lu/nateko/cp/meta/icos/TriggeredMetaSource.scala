@@ -18,7 +18,7 @@ abstract class TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	protected def registerListener(actor: ActorRef): Unit
 
 	override def state: Source[State, () => Unit] = Source
-		.actorRef(1, OverflowStrategy.dropHead)
+		.actorRef(PartialFunction.empty, PartialFunction.empty, 1, OverflowStrategy.dropHead)
 		.mapMaterializedValue{actor =>
 			registerListener(actor)
 			() => actor ! Status.Success

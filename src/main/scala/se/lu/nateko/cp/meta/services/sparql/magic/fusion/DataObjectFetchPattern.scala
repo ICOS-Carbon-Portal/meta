@@ -89,7 +89,7 @@ class DataObjectFetchPattern(
 		val fetchExpr = new DataObjectFetchNode(dobjVarName, fetch, varNames + (DobjUri -> dobjVarName))
 
 		val queryTop = {
-			val anyNode = allPatterns.toIterator.flatMap(_.expressions).next()
+			val anyNode = allPatterns.iterator.flatMap(_.expressions).next()
 			treeTop(anyNode)
 		}
 

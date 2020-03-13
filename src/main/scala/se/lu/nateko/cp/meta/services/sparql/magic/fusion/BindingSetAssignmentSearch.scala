@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 import org.eclipse.rdf4j.model.IRI
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
 object BindingSetAssignmentSearch{
 	import PatternFinder._

@@ -32,7 +32,7 @@ class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSyste
 
 	private val fetchInterval = 5.hours
 	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval
-	system.scheduler.schedule(initDelay, fetchInterval)(fetchFromEtc())
+	system.scheduler.scheduleWithFixedDelay(initDelay, fetchInterval)(() => fetchFromEtc())
 
 	private def fetchFromEtc(): Unit = Http()
 		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))

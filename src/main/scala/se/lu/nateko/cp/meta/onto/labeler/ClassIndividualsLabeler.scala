@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.onto.Vocab

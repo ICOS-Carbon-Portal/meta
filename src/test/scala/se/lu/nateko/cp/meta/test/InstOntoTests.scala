@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import java.net.URI
 import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.onto.InstOnto
 
-class InstOntoTests extends FunSpec{
+class InstOntoTests extends AnyFunSpec{
 
 	val onto = new Onto(TestConfig.owlOnto)
 	val instOnto = new InstOnto(TestConfig.instServer, onto)

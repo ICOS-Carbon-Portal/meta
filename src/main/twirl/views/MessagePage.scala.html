@@ -7,7 +7,7 @@
 @ServerSidePage(title, title, envri, CpMenu.default){
 <div class="container-fluid">
     <div class="row">
-        @for(line <- message.lines) {
+        @for(line <- message.linesIterator) {
         <p>@line</p>
         }
     </div>

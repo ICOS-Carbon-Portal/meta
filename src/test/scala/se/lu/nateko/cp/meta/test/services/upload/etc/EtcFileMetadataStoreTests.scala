@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.upload.etc
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 import spray.json._
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.test.ingestion.badm.BadmTestHelper
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.services.upload.etc.{EtcFileMeta, EtcFileMetadataStore, EtcLoggerMeta}
 
-class EtcFileMetadataStoreTests extends FunSpec {
+class EtcFileMetadataStoreTests extends AnyFunSpec {
 
 	def getBadmEntries: Seq[BadmEntry] = {
 		val json = BadmTestHelper.getIcosMetaJson.parseJson

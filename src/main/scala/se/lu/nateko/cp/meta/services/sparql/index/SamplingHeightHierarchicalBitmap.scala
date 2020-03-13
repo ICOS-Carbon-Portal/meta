@@ -29,6 +29,8 @@ object SamplingHeightHierarchicalBitmap{
 			def coordinate(key: Float, depth: Int): Coord = getCoordinate(key, depth)
 		}
 
+		import scala.math.Ordering.Float.IeeeOrdering
+
 		new HierarchicalBitmap[Float](0, None)
 	}
 

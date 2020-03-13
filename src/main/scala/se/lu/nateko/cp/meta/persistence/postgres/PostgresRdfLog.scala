@@ -15,7 +15,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 
 	if(!isInitialized) initLog()
 
-	def appendAll(updates: TraversableOnce[RdfUpdate]): Unit = {
+	def appendAll(updates: IterableOnce[RdfUpdate]): Unit = {
 		//TODO Use a pool of connections/prepared statements for better performance
 
 		val appendPs: PreparedStatement = getConnection.prepareStatement(
@@ -25,7 +25,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 			val Seq(tstamp, assertion, typeCol, subject, predicate, objectCol, litattr) = 1 to 7
 			appendPs.clearBatch()
 
-			for(update <- updates){
+			for(update <- updates.iterator){
 				appendPs.setTimestamp(tstamp, new Timestamp(System.currentTimeMillis))
 				appendPs.setBoolean(assertion, update.isAssertion)
 				appendPs.setString(subject, update.statement.getSubject.stringValue)

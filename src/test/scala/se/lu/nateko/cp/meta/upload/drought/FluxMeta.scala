@@ -6,7 +6,7 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.upload.CpUploadClient
 import java.util.zip.ZipFile
 import java.nio.file.{Path, Files}
-import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
 
 
 class FluxMeta(

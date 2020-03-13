@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.test
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.semanticweb.owlapi.model.parameters.Imports
 
 
-class OwlOntologyTest extends FunSpec{
+class OwlOntologyTest extends AnyFunSpec{
 
 	val onto = TestConfig.owlOnto
 

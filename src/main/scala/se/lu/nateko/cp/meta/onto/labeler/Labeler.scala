@@ -9,7 +9,7 @@ import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.utils.owlapi._
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 trait InstanceLabeler {
 

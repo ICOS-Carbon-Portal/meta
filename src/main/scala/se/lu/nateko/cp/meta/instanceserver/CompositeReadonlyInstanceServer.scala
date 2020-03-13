@@ -13,7 +13,7 @@ class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceSer
 
 	def factory: ValueFactory = first.factory
 
-	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement] = {
+	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] = {
 		val seed = first.filterNotContainedStatements(statements)
 		others.foldRight(seed)(_ filterNotContainedStatements _)
 	}

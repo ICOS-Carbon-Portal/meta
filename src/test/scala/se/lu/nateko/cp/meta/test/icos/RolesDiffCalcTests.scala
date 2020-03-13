@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test.icos
 
 import java.time.Instant
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.icos.Membership
 import se.lu.nateko.cp.meta.icos.RolesDiffCalc
 
-class RolesDiffCalcTests extends FunSpec{
+class RolesDiffCalcTests extends AnyFunSpec{
 
 	describe("resultingMembsForSameAssumedRole"){
 

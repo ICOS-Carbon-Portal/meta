@@ -9,8 +9,7 @@ import akka.Done
 import java.io.InputStreamReader
 import com.opencsv.CSVReader
 import java.nio.file.Paths
-import scala.collection.JavaConverters.asScalaIteratorConverter
-import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
+import scala.jdk.CollectionConverters._
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto

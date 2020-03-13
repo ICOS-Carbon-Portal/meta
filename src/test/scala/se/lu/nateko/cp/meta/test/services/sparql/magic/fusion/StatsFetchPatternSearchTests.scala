@@ -1,5 +1,5 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 
-class StatsFetchPatternSearchTests extends FunSpec{
+class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val sfps = new StatsFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
 
 	private def parseQuery(q: String) = (new SPARQLParser).parseQuery(q, "http://dummy.org").getTupleExpr

@@ -70,8 +70,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						authRouting.mustBeLoggedIn{uploader =>
 							onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
 								extractDataBytes{data =>
-									onSuccess(data.toMat(sink)(Keep.right).run()){iores =>
-										iores.status.get
+									onSuccess(data.toMat(sink)(Keep.right).run()){_ =>
 										complete(StatusCodes.OK)
 									}
 								}
@@ -131,7 +130,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						complete(coreConf.envriConfigs(envri))
 					} ~
 					path("permissions"){
-						parameters(('submitter, 'userId))((submitter, userId) => {
+						parameters(("submitter", "userId"))((submitter, userId) => {
 							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
 							complete(JsBoolean(isAllowed))
 						})

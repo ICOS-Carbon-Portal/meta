@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.stats
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration

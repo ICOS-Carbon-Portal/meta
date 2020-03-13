@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test.reasoner
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig
 import se.lu.nateko.cp.meta.utils.owlapi._
 
-class HermitBasedReasonerTests extends FunSpec{
+class HermitBasedReasonerTests extends AnyFunSpec{
 
 	val owlOnto = TestConfig.owlOnto
 	val reasoner = new HermitBasedReasoner(owlOnto)

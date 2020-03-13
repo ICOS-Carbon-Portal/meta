@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.test.utils
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class DateTimeUtilsTests extends FunSpec{
+class DateTimeUtilsTests extends AnyFunSpec{
 
 	//import se.lu.nateko.cp.meta.utils.DateTimeUtils._
 

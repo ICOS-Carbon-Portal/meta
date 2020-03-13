@@ -17,7 +17,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
 import se.lu.nateko.cp.meta.services.CpVocab
-import scala.collection.JavaConverters.asJavaIterator
+import scala.jdk.CollectionConverters.IteratorHasAsJava
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
@@ -110,7 +110,7 @@ class CpEvaluationStrategyFactory(
 	}
 
 	def iteration(iter: Iterator[BindingSet]) =
-		new CloseableIteratorIteration[BindingSet, QueryEvaluationException](asJavaIterator(iter))
+		new CloseableIteratorIteration[BindingSet, QueryEvaluationException](iter.asJava)
 
 }
 

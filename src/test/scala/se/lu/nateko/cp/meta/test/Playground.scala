@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
@@ -21,7 +21,6 @@ object Playground {
 
 	implicit val system = ActorSystem("playground")
 	import system.dispatcher
-	implicit val mat = ActorMaterializer()
 	implicit val envri = Envri.ICOS
 
 	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
-import org.scalatest.AsyncFunSpec
+import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.ingestion.badm.RdfBadmEntriesIngester
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.instanceserver
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.persistence.InMemoryRdfLog
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
-class InstanceServerTests extends FunSpec{
+class InstanceServerTests extends AnyFunSpec{
 
 	val factory = SimpleValueFactory.getInstance()
 	val ctxt = factory.createIRI("http://www.icos-cp.eu/ontology/")

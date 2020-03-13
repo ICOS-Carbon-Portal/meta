@@ -3,10 +3,10 @@ package se.lu.nateko.cp.meta.test.utils.streams
 import scala.language.postfixOps
 
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 
 import scala.collection.immutable.Iterable
 import akka.util.ByteString
@@ -16,10 +16,9 @@ import akka.stream.scaladsl.Sink
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ZipEntryFlowTests extends FunSuite with BeforeAndAfterAll{
+class ZipEntryFlowTests extends AnyFunSuite with BeforeAndAfterAll{
 
 	private implicit val system = ActorSystem("ZipEntryStreamingTests")
-	private implicit val materializer = ActorMaterializer()
 
 	override def afterAll(): Unit = {
 		system.terminate()

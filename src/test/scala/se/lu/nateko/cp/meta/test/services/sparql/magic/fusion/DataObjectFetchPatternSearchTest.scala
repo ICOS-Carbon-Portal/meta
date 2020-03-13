@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
 import org.eclipse.rdf4j.model.IRI
 
-class DataObjectFetchPatternSearchTests extends FunSpec{
+class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
 	private val dofps = new DataObjectFetchPatternSearch(meta)
 	private val parser = new SPARQLParser

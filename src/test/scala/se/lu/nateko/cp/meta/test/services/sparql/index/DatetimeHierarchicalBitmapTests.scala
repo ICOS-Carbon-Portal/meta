@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.sparql.index._
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap._
 import scala.util.Random
 import java.time.Instant
 
-class DatetimeHierarchicalBitmapTests extends FunSpec{
+class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
 	val Min = toMillis("2010-01-01T00:00:00Z")
 	val Max = toMillis("2020-01-01T00:00:00Z")
 
@@ -16,7 +16,7 @@ class DatetimeHierarchicalBitmapTests extends FunSpec{
 
 	def toMillis(s: String): Long = Instant.parse(s).toEpochMilli
 
-	val millis = Array(
+	val millis = IndexedSeq(
 		"2015-02-02T10:30:00Z", "2019-09-01T00:00:00Z", "2015-01-01T00:00:00Z", "2017-01-01T00:00:00Z", "2015-02-02T10:00:00Z"
 	).map(toMillis)
 
@@ -30,7 +30,7 @@ class DatetimeHierarchicalBitmapTests extends FunSpec{
 
 	def initRandom(size: Int): (HierarchicalBitmap[Long], Array[Long]) = {
 		val longs = initArray(size)
-		val bm = initBm(longs)
+		val bm = initBm(longs.toIndexedSeq)
 		(bm, longs)
 	}
 
@@ -78,7 +78,7 @@ class DatetimeHierarchicalBitmapTests extends FunSpec{
 			for(i <- millis.indices){
 				testFilter(EqualsFilter(millis(i)), Seq(i))
 			}
-			testFilter(EqualsFilter(12345l), Seq())
+			testFilter(EqualsFilter(12345L), Seq())
 		}
 
 		it("inclusive MinFilter works"){

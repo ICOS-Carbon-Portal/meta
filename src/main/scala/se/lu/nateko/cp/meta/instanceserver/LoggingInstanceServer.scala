@@ -19,7 +19,7 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
 		inner.hasStatement(subject, predicate, obj)
 
-	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement] =
+	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] =
 		inner.filterNotContainedStatements(statements)
 
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = {

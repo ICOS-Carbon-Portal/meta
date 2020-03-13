@@ -7,7 +7,7 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
 
@@ -16,7 +16,6 @@ object Main extends App with CpmetaJsonProtocol{
 
 	implicit val system = ActorSystem("cpmeta", config = ConfigLoader.appConfig)
 	system.log //force log initialization to avoid deadlocks at startup
-	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
 	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default

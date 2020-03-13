@@ -2,11 +2,11 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 import java.time.Instant
 import scala.io.Source
 import se.lu.nateko.cp.meta.services.sparql.index.DatetimeHierarchicalBitmap
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-class LargeScaleDatetimeTest extends FunSpec{
+class LargeScaleDatetimeTest extends AnyFunSpec{
 	import LargeScaleDatetimeTest.parseTs
 
 	ignore("Filtering on real-life set of data start times (to use, run startTimes.sh in src/test/resources)"){

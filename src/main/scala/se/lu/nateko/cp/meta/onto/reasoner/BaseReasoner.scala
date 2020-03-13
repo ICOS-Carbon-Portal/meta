@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.{IteratorHasAsScala, SeqHasAsJava}
 import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.model.OWLOntology

@@ -20,7 +20,7 @@ trait InstanceServer {
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
-	def filterNotContainedStatements(statements: TraversableOnce[Statement]): Seq[Statement]
+	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
 	def writeContextsView: InstanceServer
 

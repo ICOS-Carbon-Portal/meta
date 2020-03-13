@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class BadmSchemaParserTests extends FunSpec{
+class BadmSchemaParserTests extends AnyFunSpec{
 
 	describe("parseSchemaFromCsv"){
 		it("Parses the test BADM schema successfully"){

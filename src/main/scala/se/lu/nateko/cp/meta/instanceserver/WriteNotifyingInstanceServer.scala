@@ -20,7 +20,7 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	}
 
 	def factory = inner.factory
-	def filterNotContainedStatements(stats: TraversableOnce[Statement]) = inner.filterNotContainedStatements(stats)
+	def filterNotContainedStatements(stats: IterableOnce[Statement]) = inner.filterNotContainedStatements(stats)
 	def getStatements(subj: Option[IRI], pred: Option[IRI], obj: Option[Value]) = inner.getStatements(subj, pred, obj)
 	def hasStatement(subj: Option[IRI], pred: Option[IRI], obj: Option[Value]) = inner.hasStatement(subj, pred, obj)
 	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)

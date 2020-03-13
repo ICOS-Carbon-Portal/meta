@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.test.icos
 import java.net.URI
 
 import org.eclipse.rdf4j.model.Statement
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
@@ -16,7 +16,7 @@ import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import RdfDiffCalcTests._
 
-class RdfDiffCalcTests extends FunSpec with GivenWhenThen{
+class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 	implicit val envriConfs = Map(
 		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"))

@@ -78,7 +78,7 @@
 
 		<div class="row">
 
-			@for(acquisition <- dobj.specificInfo.right.toOption.map(_.acquisition); station = acquisition.station){
+			@for(acquisition <- dobj.specificInfo.toOption.map(_.acquisition); station = acquisition.station){
 				@Panel("Acquisition", 4){
 					@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
 						@PanelRow("Location", location)

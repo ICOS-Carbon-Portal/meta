@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import scala.collection.mutable.HashMap
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import HierarchicalBitmap._

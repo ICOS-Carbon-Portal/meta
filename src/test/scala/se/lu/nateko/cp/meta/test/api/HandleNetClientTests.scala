@@ -1,12 +1,12 @@
 package se.lu.nateko.cp.meta.test.api
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import java.nio.file.Paths
 import java.nio.file.Files
 import javax.xml.bind.DatatypeConverter
 
-class HandleNetClientTests extends FunSpec{
+class HandleNetClientTests extends AnyFunSpec{
 
 	describe("getHandleNetKeyBytes"){
 

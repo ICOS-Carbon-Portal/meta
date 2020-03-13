@@ -40,12 +40,11 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 
 		if(user == allowedUser) Try{
 			val file = getTableFile(tableId)
-			FileIO.toPath(file).mapMaterializedValue{f =>
-				f.flatMap(ioRes => Future.fromTry(ioRes.status)).onComplete{
-					case Success(Done) => listener ! 1
+			FileIO.toPath(file).mapMaterializedValue{_
+				.andThen{
+					case Success(_) => listener ! 1
 					case Failure(exc) => system.log.error(exc, "Error writing ATC metadata table")
 				}
-				f
 			}
 		} else
 			Failure(new UnauthorizedUploadException(s"Only $allowedUser is allowed to upload ATC metadata to CP"))

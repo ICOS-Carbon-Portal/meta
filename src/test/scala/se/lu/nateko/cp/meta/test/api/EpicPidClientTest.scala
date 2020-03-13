@@ -3,14 +3,15 @@ package se.lu.nateko.cp.meta.test.api
 import scala.language.postfixOps
 
 import akka.actor.ActorSystem
-import org.scalatest.{BeforeAndAfterAll, FunSpec}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPidClient}
 import spray.json.JsString
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
-class EpicPidClientTest extends FunSpec with BeforeAndAfterAll{
+class EpicPidClientTest extends AnyFunSpec with BeforeAndAfterAll{
 
 	implicit var system: ActorSystem = _
 	var ep: EpicPidClient = _

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.persistence
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.OWL
@@ -8,12 +8,12 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.persistence.TripleIteratorDocumentSource
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.rio.RioNTriplesParserFactory
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.SetHasAsJava
 import org.semanticweb.owlapi.io.OWLParserFactory
 import se.lu.nateko.cp.meta.onto.Onto
 import scala.Iterator
 
-class TripleIteratorDocumentSourceTest extends FunSpec{
+class TripleIteratorDocumentSourceTest extends AnyFunSpec{
 
 	describe("TripleIteratorDocumentSource"){
 

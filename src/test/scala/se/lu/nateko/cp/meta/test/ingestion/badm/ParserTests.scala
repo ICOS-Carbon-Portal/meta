@@ -3,12 +3,12 @@ package se.lu.nateko.cp.meta.test.ingestion.badm
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.ingestion.badm._
 import se.lu.nateko.cp.meta.ingestion.badm.Parser._
 
-class ParserTests extends FunSpec{
+class ParserTests extends AnyFunSpec{
 
 	describe("toBadmDate"){
 		it("Parses BADM date string correctly"){

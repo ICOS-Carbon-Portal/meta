@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.collection.JavaConverters.asJavaCollectionConverter
+import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
@@ -27,5 +27,5 @@ class StatsFetchNode(
 
 	override def getSignature(): String = s"StatsFetchNode($countVarName, ${group.submitterVar}, ${group.stationVar}, ${group.specVar})"
 
-	private def mkSet(strs: Seq[String]): java.util.Set[String] = new java.util.HashSet[String](strs.asJavaCollection)
+	private def mkSet(strs: Seq[String]): java.util.Set[String] = new java.util.HashSet[String](strs.asJava)
 }

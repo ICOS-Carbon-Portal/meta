@@ -16,7 +16,7 @@ object DatetimeHierarchicalBitmap{
 		val vabs = Math.abs(key)
 		val mask = if(depth == 1) 0xffL else 0xfL
 		val shift = (10 - depth) * 4
-		(key.signum * ((vabs & (mask << shift)) >> shift)).toShort
+		(key.sign * ((vabs & (mask << shift)) >> shift)).toShort
 	}
 
 	def apply(millisLookup: Int => Long): HierarchicalBitmap[Long] = {

@@ -10,7 +10,7 @@ import scala.concurrent.duration.DurationInt
 import se.lu.nateko.cp.doi._
 import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.CitationConfig
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import scala.concurrent.Future
 import akka.Done
@@ -20,7 +20,6 @@ import se.lu.nateko.cp.meta.upload.drought.DroughtUpload2
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
 	import system.dispatcher
-	implicit val mat = ActorMaterializer()
 
 	val uploadConfBase = new CpUploadClient.Config(
 		"???",

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.collection.JavaConverters.asJavaCollectionConverter
+import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
@@ -23,7 +23,7 @@ class DataObjectFetchNode(
 	override def visitChildren[X <: Exception](v: QueryModelVisitor[X]): Unit = {}
 
 	override def getAssuredBindingNames(): java.util.Set[String] = getBindingNames
-	override def getBindingNames() = new java.util.HashSet[String](allVars.asJavaCollection)
+	override def getBindingNames() = new java.util.HashSet[String](allVars.asJava)
 
 
 	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}

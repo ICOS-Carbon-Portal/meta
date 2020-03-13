@@ -31,30 +31,30 @@ object Parser {
 					case obj: JsObject => etcJsonRowToSiteIdAndRawEntry(obj)
 				}.flatten
 				.groupBy(_._1) //by site id
-				.mapValues{
+				.values
+				.map{
 					idAndRaw => aggregateEntries(
 						idAndRaw.headOption.map{case (StationId(id), _) => id},
 						idAndRaw.map(_._2).sortBy(_.id)
 					)
-				}
-				.values.flatten.toSeq
+				}.flatten.toSeq
 			case JsObject(fields) =>
 				fields.get("d").map(parseEntriesFromEtcJson).getOrElse(Nil)
 			case _ => Nil
 		}
 	}
 
-	def getCsvRows(csvStream: String): Stream[Array[String]] = {
+	def getCsvRows(csvStream: String): LazyList[Array[String]] = {
 		val reader = new StringReader(csvStream)
 		val csvParser = new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build
 		val csvReader = new CSVReaderBuilder(reader).withCSVParser(csvParser).build
 		val iter = csvReader.iterator()
 
-		def getStream: Stream[Array[String]] = {
+		def getStream: LazyList[Array[String]] = {
 			if(iter.hasNext) iter.next() #:: getStream
 			else {
 				csvReader.close()
-				Stream.empty
+				LazyList.empty
 			}
 		}
 		getStream.drop(1)

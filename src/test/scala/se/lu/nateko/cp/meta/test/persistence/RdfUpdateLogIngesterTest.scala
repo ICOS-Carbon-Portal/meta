@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.persistence
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.OWL
@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import org.eclipse.rdf4j.common.iteration.Iterations
 
-class RdfUpdateLogIngesterTest extends FunSpec{
+class RdfUpdateLogIngesterTest extends AnyFunSpec{
 
 	describe("RdfUpdate sequence ingestion functionality"){
 

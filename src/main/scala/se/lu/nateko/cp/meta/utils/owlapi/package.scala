@@ -17,7 +17,7 @@ package object owlapi {
 	}
 
 	implicit class JavaStreamToScalaConverter[T <: AnyRef](val stream: JavaStream[T]) extends AnyVal {
-		def toIndexedSeq(implicit ev: ClassTag[T]): IndexedSeq[T] = stream.toArray[T](Array.ofDim[T])
+		def toIndexedSeq(implicit ev: ClassTag[T]): IndexedSeq[T] = stream.toArray[T](Array.ofDim[T]).toIndexedSeq
 	}
 
 	def getOntologyFromJarResourceFile(

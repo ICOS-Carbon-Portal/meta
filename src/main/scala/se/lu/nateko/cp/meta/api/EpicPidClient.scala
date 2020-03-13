@@ -8,7 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.headers.Location
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import se.lu.nateko.cp.meta.{ConfigLoader, EpicPidConfig}
 import scala.concurrent.Future
 import spray.json._
@@ -48,7 +48,6 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 
 	private val http = Http()
 
-	implicit val materializer = ActorMaterializer()
 	import system.dispatcher
 
 	implicit val pidExistingFormat = jsonFormat9(PidEntry)

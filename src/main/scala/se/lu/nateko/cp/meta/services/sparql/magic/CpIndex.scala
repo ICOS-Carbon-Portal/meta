@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
@@ -100,7 +100,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
 	flush()
 	contMap.valuesIterator.foreach(_.optimizeAndTrim())
-	stats.retain{case (_, bm) => !bm.isEmpty}
+	stats.filterInPlace{case (_, bm) => !bm.isEmpty}
 
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{

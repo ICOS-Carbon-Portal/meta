@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.sparql.index._
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap._
 import StringHierarchicalBitmap.Ord
@@ -69,7 +69,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 
 	describe("filtering"){
 
-		val strings = Array("zulu", "mememe", "bebebe", "aardvark")
+		val strings = IndexedSeq("zulu", "mememe", "bebebe", "aardvark")
 		implicit val bm = initBm(strings)
 
 		it("EqualsFilter works"){
@@ -109,15 +109,15 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	describe("bitmap with large number of identical strings"){
 		val kaboom = "kaboom!"
 		val strings = Array.fill(StringHierarchicalBitmap.SpilloverThreshold)(kaboom)
-		implicit val bm = initBm(strings)
+		implicit val bm = initBm(strings.toIndexedSeq)
 		it("EqualsFilter works"){
 			testFilter(EqualsFilter(kaboom), strings.indices)
 		}
 	}
 
 	describe("iterateSorting"){
-		val strings = Array("oops", "zulu", "mememe", "bebebe", "aardvark", "just", "about", "any", "kind", "of", "jibberish")
-		def sortStringInds(s: Array[String]) = s.indices.sortBy(s.apply)(Ord)
+		val strings = IndexedSeq("oops", "zulu", "mememe", "bebebe", "aardvark", "just", "about", "any", "kind", "of", "jibberish")
+		def sortStringInds(s: IndexedSeq[String]) = s.indices.sortBy(s.apply)(Ord)
 		val bm = initBm(strings)
 
 		it("small index, unfiltered iteration, without offset"){
@@ -152,7 +152,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 		it("large random index, unfiltered iteration, without offset"){
 			val (largeBm, manyStrings) = initRandom(1000)
 			val result = largeBm.iterateSorted().toIndexedSeq
-			assert(result.toSeq == sortStringInds(manyStrings))
+			assert(result.toSeq == sortStringInds(manyStrings.toIndexedSeq))
 		}
 
 		it("large random index, unfiltered iteration, with offset"){
@@ -165,7 +165,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 			val res = time(s"iterator.take($limit).toIndexedSeq (size $n , offset $offset)"){
 				iter.take(limit).toIndexedSeq
 			}
-			assert(res == sortStringInds(manyStrings).drop(offset).take(limit))
+			assert(res == sortStringInds(manyStrings.toIndexedSeq).drop(offset).take(limit))
 		}
 
 		it("large random index, with MinFilter('M')"){

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import PatternFinder._
 import org.eclipse.rdf4j.query.algebra.Group

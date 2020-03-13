@@ -50,10 +50,10 @@ object SparqlRoute {
 
 		pathPrefix("sparql"){
 			get{
-				parameter('query)(makeResponse)
+				parameter("query")(makeResponse)
 			} ~
 			post{
-				formField('query)(makeResponse) ~
+				formField("query")(makeResponse) ~
 				entity(as[String])(makeResponse)
 			} ~
 			options{

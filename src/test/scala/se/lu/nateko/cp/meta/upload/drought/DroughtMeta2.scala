@@ -7,7 +7,7 @@ import com.opencsv.CSVReaderBuilder
 import java.io.File
 import java.io.FileReader
 import java.net.URI
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import DroughtUpload.ifNotEmpty
 import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.api.Doi

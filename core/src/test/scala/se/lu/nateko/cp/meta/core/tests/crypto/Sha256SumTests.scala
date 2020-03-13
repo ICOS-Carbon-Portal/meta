@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.core.tests.crypto
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
-class Sha256SumTests extends FunSuite{
+class Sha256SumTests extends AnyFunSuite{
 
 	test("Hex parsing/serialization round trip"){
 		val hex = "000102030405060708090a0b0c0d0e0f1011"

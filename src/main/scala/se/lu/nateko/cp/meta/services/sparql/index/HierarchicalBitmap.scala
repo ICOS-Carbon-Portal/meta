@@ -114,7 +114,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 				val res =
 					if(seenDifferentKeys && amount > 1){
 						val list = new ju.ArrayList[Int](amount)
-						filtered.forEach(i => {list.add(i);()})
+						filtered.forEach((i: Int) => {list.add(i);()})
 						list.sort(iter.valComp)
 						list.iterator.asScala
 					} else
@@ -156,7 +156,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 				}
 			} else {
 				val filtered = emptyBitmap
-				values.forEach(v => {
+				values.forEach((v: Int) => {
 					val key = geo.keyLookup(v)
 					if(filterKey(key, req)) filtered.add(v)
 				})

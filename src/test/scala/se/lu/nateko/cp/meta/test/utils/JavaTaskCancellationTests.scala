@@ -1,12 +1,12 @@
 package se.lu.nateko.cp.meta.test.utils
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import org.scalatest.BeforeAndAfterAll
 
-class JavaTaskCancellationTests extends FunSuite with BeforeAndAfterAll{
+class JavaTaskCancellationTests extends AnyFunSuite with BeforeAndAfterAll{
 
 	private val exe = new ScheduledThreadPoolExecutor(2)
 	exe.setMaximumPoolSize(10)

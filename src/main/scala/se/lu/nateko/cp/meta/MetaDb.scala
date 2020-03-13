@@ -97,8 +97,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		validateConfig(config0)
 		import system.dispatcher
 
-	val citerFactory = new CitationProviderFactory(config0)
-	val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
+		val citerFactory = new CitationProviderFactory(config0)
+		val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
 
 		val config = if(didNotExist)
 				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
@@ -106,7 +106,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 
-		implicit val _ = config.core.envriConfigs
+		implicit val envriConfs = config.core.envriConfigs
 
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
@@ -170,8 +170,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		repo: Repository,
 		instanceServers: Map[String, InstanceServer]
 	): UploadService = {
-		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply)
-		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply)
+		val metaServers = config.dataUploadService.metaServers.mapValues(instanceServers.apply).toMap
+		val collectionServers = config.dataUploadService.collectionServers.mapValues(instanceServers.apply).toMap
 		implicit val factory = repo.getValueFactory
 
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
@@ -194,7 +194,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc)
-		implicit val _ = config.core.envriConfigs
+		implicit val envriConfs = config.core.envriConfigs
 		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)

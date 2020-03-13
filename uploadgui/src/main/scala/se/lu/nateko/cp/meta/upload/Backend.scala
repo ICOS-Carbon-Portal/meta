@@ -75,10 +75,10 @@ object Backend {
 			(parseTo[JsObject](xhr) \ "results" \ "bindings")
 				.validate[JsArray]
 				.map(_.value.collect(parseBinding))
-				.get
+				.get.toVector
 		)
 
-	def submitMetadata[T <: UploadDto](dto: T): Future[URI] = {
+	def submitMetadata[T : Writes](dto: T): Future[URI] = {
 		val json = Json.toJson(dto)
 		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
 			.recoverWith(recovery("upload metadata"))

@@ -1,16 +1,13 @@
 organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.12.10"
+scalaVersion in ThisBuild := "2.13.1"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
 	"-deprecation",
-	"-Xfuture",
-	"-Yno-adapted-args",
-	"-Ywarn-dead-code",
-	"-Ywarn-numeric-widen",
-	"-Ywarn-unused"
+	"-Wdead-code",
+	"-Wnumeric-widen"
 )
 val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
 
@@ -18,11 +15,11 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.4.10",
+		version := "0.4.11",
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.5",
-			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",
@@ -44,8 +41,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.5.17"
-val akkaHttpVersion = "10.1.5"
+val akkaVersion = "2.6.3"
+val akkaHttpVersion = "10.1.11"
 val rdf4jVersion = "2.4.6"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
@@ -62,7 +59,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.5.0",
+		version := "0.5.1",
 		scalacOptions ++= jvmScalacOptions,
 
 		libraryDependencies ++= Seq(
@@ -81,16 +78,16 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.1-SNAPSHOT",
-			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.0-SNAPSHOT",
-			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.1-SNAPSHOT",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.1-SNAPSHOT" % "test",
-			"org.scalatest"         %% "scalatest"                          % "3.0.1" % "test"
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.2",
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
+			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.2",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.2" % "test",
+			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
 		),
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 
-		scalacOptions += "-Ywarn-unused-import:false",
+		scalacOptions += "-Wunused:-imports",
 
 		assemblyMergeStrategy in assembly := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
@@ -130,18 +127,18 @@ lazy val uploadgui = (project in file("uploadgui"))
 	.enablePlugins(ScalaJSPlugin)
 	.settings(
 		name := "uploadgui",
-		version := "0.1.1",
+		version := "0.1.2",
 		scalacOptions ++= commonScalacOptions,
 		scalacOptions += "-P:scalajs:sjsDefinedByDefault",
 
 		scalaJSUseMainModuleInitializer := true,
 
 		libraryDependencies ++= Seq(
-			"org.scala-js"      %%% "scalajs-dom"       % "0.9.6",
-			"com.typesafe.play" %%% "play-json"         % "2.6.7",
-			"org.scala-js"      %%% "scalajs-java-time" % "0.2.4",
-			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.1-SNAPSHOT",
-			"org.scalatest"     %%% "scalatest"         % "3.0.4" % "test"
+			"org.scala-js"      %%% "scalajs-dom"       % "1.0.0",
+			"org.scala-js"      %%% "scalajs-java-time" % "0.2.6",
+			"com.typesafe.play" %%% "play-json"         % "2.8.1",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.2",
+			"org.scalatest"     %%% "scalatest"         % "3.1.0" % "test"
 		)
 	)
 

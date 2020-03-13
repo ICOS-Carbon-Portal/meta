@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.core.tests.data
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.core.data.Position
 
-class GeoFeaturesTests extends FunSuite {
+class GeoFeaturesTests extends AnyFunSuite {
 
 	test("Position's text representation is as expected"){
 		val p = new Position(50.01, 130.123456, None)

@@ -11,6 +11,7 @@ import scala.scalajs.js.URIUtils
 
 object UploadApp {
 	import Utils._
+	import JsonSupport._
 
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")

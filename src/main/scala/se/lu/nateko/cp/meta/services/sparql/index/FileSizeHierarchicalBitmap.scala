@@ -15,7 +15,7 @@ object FileSizeHierarchicalBitmap{
 	def getCoordinate(key: Long, depth: Int): Coord = if(depth <= 0 || depth > 16 || key <= 0) 0 else {
 		val logScaled = (logFactor * Math.log(key.toDouble)).toLong
 		val shift = (16 - depth) * 4
-		((logScaled & (0xfl << shift)) >> shift).toShort
+		((logScaled & (0xfL << shift)) >> shift).toShort
 	}
 
 	def apply(sizeLookup: Int => Long): HierarchicalBitmap[Long] = {

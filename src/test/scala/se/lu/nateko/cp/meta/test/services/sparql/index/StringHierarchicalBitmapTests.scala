@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.sparql.index._
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
@@ -8,7 +8,7 @@ import HierarchicalBitmap._
 import StringHierarchicalBitmap.Ord
 import scala.util.Random
 
-class StringHierarchicalBitmapTests extends FunSpec{
+class StringHierarchicalBitmapTests extends AnyFunSpec{
 
 	private[this] val EnableTrace = false
 
@@ -21,7 +21,7 @@ class StringHierarchicalBitmapTests extends FunSpec{
 	def initRandom(size: Int): (HierarchicalBitmap[String], Array[String]) = {
 		val rnd = new Random(333)
 		val strings = time(s"init array (size = $size)")(Array.fill(size)(rnd.alphanumeric.take(6).mkString))
-		val bm = time(s"initBm(array.size = $size)")(initBm(strings))
+		val bm = time(s"initBm(array.size = $size)")(initBm(strings.toIndexedSeq))
 		(bm, strings)
 	}
 

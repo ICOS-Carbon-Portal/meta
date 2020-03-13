@@ -11,7 +11,7 @@ class Md5Sum(private val bytes: Array[Byte]) {
 
 	assert(bytes.length == 16, "MD5 hash sum must be 16 bytes long")
 
-	def getBytes: Seq[Byte] = bytes
+	def getBytes: Seq[Byte] = bytes.toSeq
 
 	def hex: String = DatatypeConverter.printHexBinary(bytes).toLowerCase
 

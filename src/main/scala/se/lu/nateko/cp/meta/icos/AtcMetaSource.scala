@@ -66,7 +66,7 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 
 		val Seq(tcIdIdx, stIdIdx, stNameIdx, countryIdx, latIdx, lonIdx, altIdx) = Seq(
 			IdCol, StationIdCol, StationNameCol, CountryCol, LatCol, LonCol, AltCol
-		).map(colNames.indexOf)
+		).map(colName => colNames.indexOf(colName))
 
 		val stations = stationLines.map{line =>
 			val r = parseRow(line)

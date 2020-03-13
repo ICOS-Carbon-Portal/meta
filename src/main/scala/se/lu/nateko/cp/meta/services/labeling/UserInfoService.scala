@@ -21,7 +21,7 @@ trait UserInfoService { self: StationLabelingService =>
 			userMail <- userMails
 		) yield (userMail, tcUri)
 
-		userTcPairs.groupBy(_._1).mapValues(pairs => pairs.map(_._2))
+		userTcPairs.groupMap(_._1)(_._2)
 	}
 
 	def getLabelingUserInfo(uinfo: UserId): LabelingUserDto = {

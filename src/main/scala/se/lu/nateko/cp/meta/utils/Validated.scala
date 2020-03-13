@@ -67,7 +67,7 @@ object Validated{
 			errs ++= valid.errors
 		}
 
-		new Validated(Some(res), errs)
+		new Validated(Some(res.toSeq), errs.toSeq)
 	}
 
 	def liftFuture[T](v: Validated[Future[T]])(implicit ctxt: ExecutionContext): Future[Validated[T]] = v.result.fold(

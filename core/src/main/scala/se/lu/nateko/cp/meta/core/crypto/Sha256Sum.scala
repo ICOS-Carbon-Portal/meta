@@ -12,7 +12,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 	assert(bytes.length == 32 || bytes.length == 18,
 		"SHA-256 hash sum must be 32 (complete) or 18 (truncated) bytes long")
 
-	def getBytes: Seq[Byte] = bytes
+	def getBytes: Seq[Byte] = bytes.toSeq
 	def isTruncated: Boolean = bytes.length < 32
 	def truncate: Sha256Sum = if(isTruncated) this else new Sha256Sum(bytes.take(18))
 
@@ -56,7 +56,7 @@ object Sha256Sum {
 	}
 
 	def fromHex(hash: String): Try[Sha256Sum] = Try{
-		val arr = hash.sliding(2,2).map(Integer.parseInt(_, 16).toByte).toArray
+		val arr = hash.indices.sliding(2,2).map(r => Integer.parseInt(hash.substring(r.head, r.last), 16).toByte).toArray
 		new Sha256Sum(arr)
 	}
 

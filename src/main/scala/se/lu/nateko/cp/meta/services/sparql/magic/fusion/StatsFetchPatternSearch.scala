@@ -83,12 +83,12 @@ class StatsFetchPatternSearch(meta: CpmetaVocab){
 
 object StatsFetchPatternSearch{
 
-	def singleVarCountGroup(g: Group): Option[String] = g.getGroupElements().asScala match{
+	def singleVarCountGroup(g: Group): Option[String] = g.getGroupElements().asScala.toSeq match{
 		case Seq(elem) => singleVarCount(elem.getOperator)
 		case _         => None
 	}
 
-	def singleCountExtension(ext: Extension): Option[(String, String)] = ext.getElements().asScala
+	def singleCountExtension(ext: Extension): Option[(String, String)] = ext.getElements().asScala.toSeq
 		.flatMap{
 			elem => singleVarCount(elem.getExpr).map(elem.getName -> _)
 		} match{

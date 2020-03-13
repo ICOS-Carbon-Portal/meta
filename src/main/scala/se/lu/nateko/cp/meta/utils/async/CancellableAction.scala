@@ -8,7 +8,10 @@ class CancellableAction(delay: FiniteDuration, scheduler: Scheduler)(action: => 
 
 	private var itHappened: Boolean = false
 
-	private val cancel = scheduler.scheduleOnce(delay, () => {itHappened = true;action})
+	private val cancel = {
+		val run: Runnable = () => {itHappened = true;action}
+		scheduler.scheduleOnce(delay, run)
+	}
 	private val deadline = delay.fromNow
 
 	def cancelOr(tooLateAction: => Unit): Unit = {

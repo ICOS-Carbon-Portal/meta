@@ -14,7 +14,7 @@ object DatetimeHierarchicalBitmap{
 
 	def getCoordinate(key: Long, depth: Int): Coord = if(depth <= 0 || depth > 10) 0 else {
 		val vabs = Math.abs(key)
-		val mask = if(depth == 1) 0xffl else 0xfl
+		val mask = if(depth == 1) 0xffL else 0xfL
 		val shift = (10 - depth) * 4
 		(key.signum * ((vabs & (mask << shift)) >> shift)).toShort
 	}

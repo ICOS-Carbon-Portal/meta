@@ -60,7 +60,7 @@ private class WdcggUploadCompleter(
 			}
 			facts += ((objUri, keyProp, vocab.lit(value)))
 		}
-		facts.map(triple => RdfUpdate(factory.tripleToStatement(triple), true))
+		facts.map(triple => RdfUpdate(factory.tripleToStatement(triple), true)).toSeq
 	}
 
 	def finalize(hash: Sha256Sum): Future[Report] = Future.successful(

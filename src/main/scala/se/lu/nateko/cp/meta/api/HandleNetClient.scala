@@ -77,14 +77,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 		val d = http.defaultClientHttpsContext
 
-		val akkaSslConf = if(conf.disableHostnameVerification) Some(
-			AkkaSSLConfig(system).withSettings{
-				val d = AkkaSSLConfig.defaultSSLConfigSettings(system)
-				d.withLoose(d.loose.withDisableHostnameVerification(true))
-			}
-		) else d.sslConfig
-
-		new HttpsConnectionContext(sslCtxt, akkaSslConf, d.enabledCipherSuites, d.enabledProtocols, d.clientAuth, d.sslParameters, UseHttp2.Negotiated)
+		new HttpsConnectionContext(sslCtxt, d.sslConfig, d.enabledCipherSuites, d.enabledProtocols, d.clientAuth, d.sslParameters)
 	}
 
 	private val authHeaders = RawHeader("Authorization", "Handle clientCert=\"true\"") :: Nil
@@ -201,7 +194,7 @@ object HandleNetClient{
 
 	def getHandleNetKeyBytes(key: RSAPublicKey): Array[Byte] = {
 		def sizeArr(size: Int): Array[Byte] = Array(24, 16, 8, 0).map(shift => (0xff & (size >> shift)).toByte)
-		def withSize(arr: Array[Byte]): Seq[Array[Byte]] = Array(sizeArr(arr.size), arr)
+		def withSize(arr: Array[Byte]): Seq[Array[Byte]] = Seq(sizeArr(arr.size), arr)
 
 		val arraySeq: Seq[Seq[Array[Byte]]] = Seq(
 			withSize("RSA_PUB_KEY".getBytes("UTF8")),

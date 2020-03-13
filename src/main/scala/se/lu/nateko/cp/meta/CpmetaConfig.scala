@@ -116,7 +116,6 @@ case class HandleNetClientConfig(
 	serverCertPemFilePath: Option[String],
 	clientCertPemFilePath: String,
 	clientPrivKeyPKCS8FilePath: String,
-	disableHostnameVerification: Boolean,
 	dryRun: Boolean
 )
 
@@ -171,7 +170,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat6(EtcUploadConfig)
-	implicit val handleClientFormat = jsonFormat7(HandleNetClientConfig)
+	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
 
 	implicit val uploadServiceConfigFormat = jsonFormat7(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)

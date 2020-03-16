@@ -121,11 +121,7 @@ class DataObjectFetchPatternSearch(meta: CpmetaVocab){
 
 	// ?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?height .
 	val samplingHeightSearch: ContPatternSearch = twoStepPropPath(meta.wasAcquiredBy, meta.hasSamplingHeight)
-		.filter(!_.step2.getObjectVar.isAnonymous)
-		.thenGet{ tspp =>
-			val exprs = Seq(tspp.step1, tspp.step2)
-			tspp.subjVariable -> new ContPropPattern(exprs, SamplingHeight, tspp.objVariable)
-		}
+		.thenGet(tsppResult(SamplingHeight))
 
 	//	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime .
 	val submStartPatternSearch: ContPatternSearch = twoStepPropPath(meta.wasSubmittedBy, meta.prov.startedAtTime)

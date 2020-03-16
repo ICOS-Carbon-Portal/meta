@@ -106,10 +106,14 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 				assert(sel.values.isEmpty)
 			}
 
-			it("No filters are present, sorting is left untouched"){
+			it("No continuous-prop filters are present, sorting is left untouched"){
 				assert(req.filtering.filters.isEmpty)
 				assert(req.sort.isEmpty)
 				assert(query.toString.contains("OrderElem"))
+			}
+
+			it("Deprecated objects are filtered out"){
+				assert(req.filtering.filterDeprecated)
 			}
 
 			it("Expected variables are detected and dealt with"){
@@ -120,6 +124,21 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 
 			it("there is no early dobj initialization in the query after fusion"){
 				assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
+			}
+
+			it("Sampling height is optimized"){
+				assert(fetchNode.varNames(SamplingHeight) === "height")
+			}
+
+			it("File name is optimized"){
+				assert(fetchNode.varNames(FileName) === "fileName")
+			}
+
+			it("wasAcquiredBy-pattern is left in the query"){
+				val search = StatementPatternSearch.byPredicate(meta.wasAcquiredBy)
+					.filter(_.getSubjectVar.getName == "dobj")
+					.filter(_.getPredicateVar.isAnonymous)
+				assert(search.recursive(query).isDefined)
 			}
 		}
 

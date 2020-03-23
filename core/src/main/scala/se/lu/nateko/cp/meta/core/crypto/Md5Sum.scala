@@ -5,15 +5,13 @@ import java.util.Arrays
 import scala.util.Failure
 import scala.util.Try
 
-import javax.xml.bind.DatatypeConverter
-
 class Md5Sum(private val bytes: Array[Byte]) {
 
 	assert(bytes.length == 16, "MD5 hash sum must be 16 bytes long")
 
 	def getBytes: Seq[Byte] = bytes.toSeq
 
-	def hex: String = DatatypeConverter.printHexBinary(bytes).toLowerCase
+	def hex: String = bytes.iterator.map(Sha256Sum.formatByte).mkString
 
 	override def equals(other: Any): Boolean =
 		if(other.isInstanceOf[Md5Sum])
@@ -28,7 +26,7 @@ class Md5Sum(private val bytes: Array[Byte]) {
 object Md5Sum {
 
 	def fromHex(hash: String): Try[Md5Sum] = Try{
-		new Md5Sum(DatatypeConverter.parseHexBinary(hash))
+		new Md5Sum(Sha256Sum.parseHexArray(hash))
 	}
 
 	def fromString(hash: String): Try[Md5Sum] = fromHex(hash).orElse(Failure(

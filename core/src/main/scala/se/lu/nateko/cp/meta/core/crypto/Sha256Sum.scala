@@ -56,8 +56,7 @@ object Sha256Sum {
 	}
 
 	def fromHex(hash: String): Try[Sha256Sum] = Try{
-		val arr = hash.indices.sliding(2,2).map(r => Integer.parseInt(hash.substring(r.head, r.last), 16).toByte).toArray
-		new Sha256Sum(arr)
+		new Sha256Sum(parseHexArray(hash))
 	}
 
 	def fromString(hash: String): Try[Sha256Sum] = fromHex(hash).orElse(
@@ -71,4 +70,12 @@ object Sha256Sum {
 	def unapply(hash: String): Option[Sha256Sum] = fromString(hash).toOption
 
 	val formatByte: Byte => String = b => String.format("%02x", Int.box(255 & b))
+
+	def parseHexArray(hex: String): Array[Byte] = {
+		val strLen = hex.length
+		assert(strLen % 2 == 0, "hex string must have even number of characters")
+		Array.tabulate(strLen / 2){i =>
+			Integer.parseInt(hex.substring(i * 2, (i + 1) * 2), 16).toByte
+		}
+	}
 }

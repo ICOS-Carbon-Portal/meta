@@ -115,6 +115,8 @@ lazy val meta = (project in file("."))
 
 		watchSources ++= watchSources.in(uploadgui, Compile).value,
 
+		reStart / aggregate := false,
+
 		initialCommands in console in Test := """
 			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
 		""",

@@ -139,16 +139,25 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 
 
 	def filter(req: FilterRequest[K]): ImmutableRoaringBitmap = {
-
+		// println(s"Filtering on depth $depth at coordinate $coord with $req")
+		// def logAndreject(c: Coord): Boolean = {
+		// 	println(s"Rejecting child with coord $c and depth ${depth + 1}")
+		// 	false
+		// }
 		def inner(borderFilter: Coord => Boolean, wholeChildFilter: Coord => Boolean) = MutableRoaringBitmap.or(
 			children.collect{
+				//println(s"taking whole child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if wholeChildFilter(coord) => bm.values
+				//println(s"will filter child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if borderFilter(coord) => bm.filter(req)
+				//case (coord, _) if logAndreject(coord) => ???
 			}.toSeq :_*
 		)
 
 		if(children == null){
+			//println(s"No children, depth $depth")
 			if(!seenDifferentKeys){
+				//println("not seen different keys")
 				if(values.isEmpty) values else {
 					val theOnlyKey = geo.keyLookup(values.first)
 					if(filterKey(theOnlyKey, req)) values
@@ -160,6 +169,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 					val key = geo.keyLookup(v)
 					if(filterKey(key, req)) filtered.add(v)
 				})
+				//println(s"seen different keys, got ${filtered.getCardinality} results")
 				filtered
 			}
 		} else req match{
@@ -180,12 +190,20 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 				}
 
 			case IntervalFilter(from, to) =>
-				val minIsOut: Boolean = coord.exists(thisLevel(from.min) < _)
-				val maxIsOut: Boolean = coord.exists(thisLevel(to.max) > _)
-				if(minIsOut && maxIsOut) values else {
-					val minC = nextLevel(from.min)
-					val maxC = nextLevel(to.max)
-					inner(c => c == minC || c == maxC, c => (minIsOut || c > minC) && (maxIsOut || c < maxC))
+				val min = thisLevel(from.min)
+				val max = thisLevel(to.max)
+				val minIsOut: Boolean = coord.exists(min < _)
+				val maxIsOut: Boolean = coord.exists(max > _)
+				if(minIsOut && maxIsOut) values//println("returning all")
+				else if(minIsOut) filter(to)//println("lower limit redundant, deletating to MaxFilter")
+				else if(maxIsOut) filter(from)//println("upper limit redundant, deletating to MinFilter")
+				else {
+					assert(min == max, s"SPARQL engine algoritm error: both limits must have same bitmap-hierarchy-coordinate on depth $depth")
+					//safe to go deeper with interval filter
+					val minCn = nextLevel(from.min)
+					val maxCn = nextLevel(to.max)
+					//println(s"will analyze children with depth ${depth + 1} and $minCn <= coord <= $maxCn")
+					inner(c => c == minCn || c == maxCn, c => c > minCn && c < maxCn)
 				}
 		}
 	}

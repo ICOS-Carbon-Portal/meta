@@ -36,8 +36,7 @@ class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
 
 	def initArray(size: Int): Array[Long] = {
 		val rnd = new Random(333)
-		val rangeS = ((Max - Min) / 1000).toInt
-		Array.fill(size)(Min + (rnd.nextInt(rangeS)).toLong * 1000)
+		Array.fill(size)(Min + rnd.nextLong(Max-Min))
 	}
 
 

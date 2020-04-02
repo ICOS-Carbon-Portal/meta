@@ -56,7 +56,6 @@ frontendBuild := {
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
-	.aggregate(metaCore)
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -85,6 +84,12 @@ lazy val meta = (project in file("."))
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.2" % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
 		),
+
+		Test / test := {
+			(metaCore / Test / test).value
+			(Test / test).value
+		},
+
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 

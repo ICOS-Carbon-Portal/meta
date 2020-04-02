@@ -2,23 +2,31 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.Files
+
 import akka.event.LoggingAdapter
+
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.eclipse.rdf4j.sail.nativerdf.CpNativeStoreConnection
 import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailException
+
+import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.CitationProvider
-import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsTupleFunction
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
+
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
 
 class CpNativeStore(
-	storageFolder: File,
+	conf: RdfStorageConfig,
 	indexInit: Sail => IndexHandler,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
@@ -26,12 +34,16 @@ class CpNativeStore(
 
 	private[this] var indexh: IndexHandler = _
 	private[this] var citer: CitationProvider = _
+	private[this] val storageDir = Paths.get(conf.path)
 
-	private object nativeSail extends NativeStore(storageFolder, CpNativeStore.indices) with ReadWriteLocking{
+	val isFreshInit: Boolean = initStorageFolder() || conf.recreateAtStartup
+	private[this] val indices = if(isFreshInit) "" else conf.indices
 
-		private[this] var useCpConnection: Boolean = true
+	private object nativeSail extends NativeStore(storageDir.toFile, indices) with ReadWriteLocking{
 
-		setEvaluationStrategyFactory{
+		private[this] var useCpConnection: Boolean = !isFreshInit
+
+		if(!isFreshInit) setEvaluationStrategyFactory{
 			val tupleFunctionReg = new TupleFunctionRegistry()
 			val indexThunk = () => indexh.index
 			tupleFunctionReg.add(new StatsTupleFunction(indexThunk))
@@ -41,7 +53,7 @@ class CpNativeStore(
 		def getSpecificConnection(cpSpecific: Boolean): SailConnection = writeLocked{
 			useCpConnection = cpSpecific
 			val conn = getConnection()
-			useCpConnection = true
+			useCpConnection = !isFreshInit
 			conn
 		}
 
@@ -63,27 +75,43 @@ class CpNativeStore(
 	setBaseSail(nativeSail)
 
 	def getCitationClient: CitationClient = citer.dataCiter
-	def setForceSync(forceSync: Boolean): Unit = nativeSail.setForceSync(forceSync)
 
 	private val originalSail: Sail = new SailWrapper(nativeSail){
-		override	def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)
+		override def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)
 	}
 
 	override def initialize(): Unit = {
+		if(isFreshInit) log.warning(
+			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
+		)
 		log.info("Initializing triple store...")
+		nativeSail.setForceSync(!isFreshInit)
 		nativeSail.initialize()
-		log.info("Triple store initialized, initializing Carbon Portal index...")
-		indexh = indexInit(originalSail)
-		log.info(s"Carbon Portal index initialized with info on ${indexh.index.size} data objects")
+		if(isFreshInit)
+			log.info("Triple store initialized, skipping Carbon Portal index initialization")
+		else {
+			log.info("Triple store initialized, initializing Carbon Portal index...")
+			indexh = indexInit(originalSail)
+			log.info(s"Carbon Portal index initialized with info on ${indexh.index.size} data objects")
+		}
 		citer = citationFactory.getProvider(originalSail)
 		log.info("Initialized citation provider")
 	}
 
-	override	def getConnection(): SailConnection = nativeSail.getSpecificConnection(true)
-}
+	override def getConnection(): SailConnection = nativeSail.getSpecificConnection(!isFreshInit)
 
-object CpNativeStore{
-//	val indices = "spoc,posc,opsc,cspo,csop,cpso,cpos,cosp,cops"
-//	val indices = "spoc".permutations.mkString(",") //all the possible indices
-	val indices = "spoc,posc,ospc,cspo,cpos,cosp"
+	private def initStorageFolder(): Boolean = {
+
+		val didNotExist = !Files.exists(storageDir)
+
+		def storageFiles = Files.walk(storageDir).filter(Files.isRegularFile(_))
+
+		if(didNotExist)
+			Files.createDirectories(storageDir)
+		else if(conf.recreateAtStartup){
+			log.info("Purging the current native RDF storage")
+			storageFiles.forEach(Files.delete)
+		}
+		didNotExist || !storageFiles.findAny.isPresent
+	}
 }

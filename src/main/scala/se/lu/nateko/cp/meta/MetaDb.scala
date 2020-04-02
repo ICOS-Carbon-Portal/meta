@@ -42,6 +42,7 @@ import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import se.lu.nateko.cp.meta.api.CitationClient
+import org.eclipse.rdf4j.sail.Sail
 
 
 class MetaDb (
@@ -145,24 +146,14 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 	}
 
 	private def makeInitRepo(config: CpmetaConfig, citationFactory: CitationProviderFactory): (Repository, Boolean, CitationClient) = {
-		val storageDir = Paths.get(config.rdfStorage.path)
-
-		val didNotExist = !Files.exists(storageDir)
-		if(didNotExist)
-			Files.createDirectories(storageDir)
-		else if(config.rdfStorage.recreateAtStartup){
-			log.info("Purging the current native RDF storage")
-			Files.walk(storageDir).filter(Files.isRegularFile(_)).forEach(Files.delete)
-		}
-
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val native = new CpNativeStore(storageDir.toFile, new IndexHandler(_, system.scheduler)(system.dispatcher), citationFactory, log)
-		native.setForceSync(!didNotExist) //faster rebuilding
+		val indexInit: Sail => IndexHandler = new IndexHandler(_, system.scheduler)(system.dispatcher)
+		val native = new CpNativeStore(config.rdfStorage, indexInit, citationFactory, log)
 
 		val repo = new SailRepository(native)
 		repo.initialize()
-		(repo, didNotExist, native.getCitationClient)
+		(repo, native.isFreshInit, native.getCitationClient)
 	}
 
 	private def makeUploadService(

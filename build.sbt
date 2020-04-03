@@ -51,7 +51,7 @@ val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 val frontendBuild = taskKey[Unit]("Builds the front end apps")
 frontendBuild := {
 	import scala.sys.process.Process
-	(Process("npm install") #&& Process("npm run gulp")).!
+	(Process("npm ci") #&& Process("npm run gulp")).!
 }
 
 lazy val meta = (project in file("."))

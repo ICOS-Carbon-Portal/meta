@@ -1,8 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => FetchFilter, _}
+import se.lu.nateko.cp.meta.services.sparql.index.{DataObjectFetch, Filter => IndexFilter, And => IndexAnd, _}
 import DataObjectFetchPattern._
 
 object DataObjectFetchPattern{
@@ -28,17 +27,16 @@ object DataObjectFetchPattern{
 		def categValues: Seq[property.ValueType]
 	}
 
-	def categPattern(exprs: Seq[TupleExpr], prop: CategProp, propVar: Option[String])(vals: Seq[prop.ValueType]) = new CategPropPattern{
+	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp with TypedProp[T], propVar: Option[String])(vals: Seq[T]) = new CategPropPattern{
 		val expressions = exprs
 		val property = prop
 		val propVarName = propVar
-		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
-		val categValues = vals.asInstanceOf[Seq[property.ValueType]]
+		val categValues = vals
 	}
 
 	final class ExcludeDeprecatedPattern(expr: Filter, val dobjVar: String) extends UnaryTupleOpSubPattern(expr)
 	final class OrderPattern(expr: Order, val sortVar: String, val descending: Boolean) extends UnaryTupleOpSubPattern(expr)
-	final class FilterPattern(expr: Filter, val filters: Seq[FetchFilter]) extends UnaryTupleOpSubPattern(expr)
+	final class FilterPattern(expr: Filter, val filter: IndexFilter) extends UnaryTupleOpSubPattern(expr)
 
 	final class OffsetPattern(expr: Slice) extends SubPattern{
 		val offset = expr.getOffset.toInt
@@ -69,14 +67,17 @@ class DataObjectFetchPattern(
 
 	def fuse(): Unit = if(!allPatterns.isEmpty){
 
-		val filters = filter.fold[Seq[FetchFilter]](Nil)(_.filters)
+		val filterOpt = filter.map(_.filter)
 
-		val selections = categPatterns.map(cp => selection(cp.property)(cp.categValues))
+		val selections = categPatterns.map(cp => CategFilter(cp.property, cp.categValues))
 		val unboundedSelectionsPresent: Boolean = selections.exists(_.values.isEmpty)
 
 		val fetch = new DataObjectFetch(
-			selections = selections,
-			filtering = new Filtering(filters, noDeprecated.isDefined, contPatterns.map(_.property)),
+			filter = IndexAnd(
+				(selections ++ filterOpt) :+
+				noDeprecated.fold[IndexFilter](All)(_ => FilterDeprecated) :+
+				RequiredProps(contPatterns.map(_.property))
+			).flatten,
 			sort = sortBy,
 			offset = offset.filter(_ => !unboundedSelectionsPresent).fold(0)(_.offset)
 		)

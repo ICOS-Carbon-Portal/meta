@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
 import DataObjectFetchPattern._
 import PatternFinder._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.{Filter => _, _}
+import se.lu.nateko.cp.meta.services.sparql.index.{Filter => _, _}
 import StatementPatternSearch._
 
 class DataObjectFetchPatternSearch(meta: CpmetaVocab){

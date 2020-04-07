@@ -2,7 +2,6 @@ package org.eclipse.rdf4j.sail.nativerdf
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
-import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsQueryModelVisitor
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchPatternSearch
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.query.algebra._
@@ -61,8 +60,6 @@ class CpNativeStoreConnection(
 				logger.debug("Fused query model (stats fetch):\n{}", clone)
 				clone
 		}
-
-		queryExpr.visit(new StatsQueryModelVisitor)
 
 		flush()
 		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)

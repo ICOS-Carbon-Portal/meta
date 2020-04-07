@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.query.algebra.Group
 import org.eclipse.rdf4j.query.algebra.Count
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Filtering
+import se.lu.nateko.cp.meta.services.sparql.index._
 import org.eclipse.rdf4j.query.algebra.Extension
 import org.eclipse.rdf4j.query.algebra.ValueExpr
 import org.eclipse.rdf4j.query.algebra.LeftJoin
@@ -71,13 +71,15 @@ class StatsFetchPatternSearch(meta: CpmetaVocab){
 		.filter(_.dobjVar == dobjVar)
 		.thenGet(_ => ())
 
-	def filterSearch(dobjVar: String, node: Group): Filtering = {
-		val noDepr = noDeprecationSearch(dobjVar)(node).isDefined
+	def filterSearch(dobjVar: String, node: Group): Filter = {
+		val noDepr = noDeprecationSearch(dobjVar)(node).map(_ => FilterDeprecated)
 		val contPatts = dofps.continuousVarPatterns(node).collect{
 			case (`dobjVar`, patt) => patt
 		}
-		val filters = dofps.filterSearch(contPatts).search(node).map(_.filters).getOrElse(Nil)
-		new Filtering(filters, noDepr, contPatts.map(_.property))
+		val filterOpt = dofps.filterSearch(contPatts).search(node).map(_.filter)
+		And(
+			(filterOpt.toSeq ++ noDepr) :+  RequiredProps(contPatts.map(_.property))
+		)
 	}
 }
 
@@ -105,7 +107,7 @@ object StatsFetchPatternSearch{
 		case _ => None
 	}
 
-	case class GroupPattern(filtering: Filtering, submitterVar: String, stationVar: String, specVar: String, siteVar: Option[String])
+	case class GroupPattern(filter: Filter, submitterVar: String, stationVar: String, specVar: String, siteVar: Option[String])
 
 	class StatsFetchPattern(expr: Extension, statsNode: StatsFetchNode){
 		def fuse(): Unit = {

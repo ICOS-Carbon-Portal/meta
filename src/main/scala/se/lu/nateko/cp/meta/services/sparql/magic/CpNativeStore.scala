@@ -8,7 +8,6 @@ import java.nio.file.Files
 
 import akka.event.LoggingAdapter
 
-import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.eclipse.rdf4j.sail.nativerdf.CpNativeStoreConnection
 import org.eclipse.rdf4j.sail.NotifyingSailConnection
@@ -19,7 +18,6 @@ import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.CitationProvider
-import se.lu.nateko.cp.meta.services.sparql.magic.stats.StatsTupleFunction
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
@@ -44,10 +42,8 @@ class CpNativeStore(
 		private[this] var useCpConnection: Boolean = !isFreshInit
 
 		if(!isFreshInit) setEvaluationStrategyFactory{
-			val tupleFunctionReg = new TupleFunctionRegistry()
 			val indexThunk = () => indexh.index
-			tupleFunctionReg.add(new StatsTupleFunction(indexThunk))
-			new CpEvaluationStrategyFactory(tupleFunctionReg, getFederatedServiceResolver, indexThunk)
+			new CpEvaluationStrategyFactory(getFederatedServiceResolver, indexThunk)
 		}
 
 		def getSpecificConnection(cpSpecific: Boolean): SailConnection = writeLocked{

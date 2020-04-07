@@ -19,19 +19,17 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
 import se.lu.nateko.cp.meta.services.CpVocab
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 
 
 class CpEvaluationStrategyFactory(
-	tupleFunctionReg: TupleFunctionRegistry,
 	fedResolver: FederatedServiceResolver,
 	indexThunk: () => CpIndex
 ) extends AbstractEvaluationStrategyFactory{
 
 	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource) =
-		new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, tupleFunctionReg){
+		new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, new TupleFunctionRegistry){
 
 			override def evaluate(expr: TupleExpr, bindings: BindingSet): CloseableIteration[BindingSet, QueryEvaluationException] = {
 				expr match {
@@ -52,7 +50,7 @@ class CpEvaluationStrategyFactory(
 		val index = indexThunk()
 		import statFetch.{group, countVarName}
 
-		val allStatEntries = index.statEntries(group.filtering)
+		val allStatEntries = index.statEntries(group.filter)
 
 		val statEntries: Iterable[StatEntry] = group.siteVar match{
 			case Some(_) => allStatEntries
@@ -98,8 +96,8 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-		val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
-			.initializeRequest(doFetch.fetchRequest)
+		val fetchRequest = doFetch.fetchRequest//new RequestInitializer(doFetch.varNames, bindings)
+			//.initializeRequest(doFetch.fetchRequest)
 
 		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
@@ -114,6 +112,7 @@ class CpEvaluationStrategyFactory(
 
 }
 
+
 class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 
 	def initializeRequest(orig: DataObjectFetch): DataObjectFetch = initStation(initSpec(orig))
@@ -121,19 +120,19 @@ class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 	private def initSpec(req: DataObjectFetch): DataObjectFetch = initReq(req, Spec)(identity)
 	private def initStation(req: DataObjectFetch): DataObjectFetch = initReq(req, Station)(Some(_))
 
-	private def initReq(orig: DataObjectFetch, prop: CategProp)(mapper: IRI => prop.ValueType): DataObjectFetch = {
+	private def initReq[T <: AnyRef](orig: DataObjectFetch, prop: CategProp with TypedProp[T])(mapper: IRI => T): DataObjectFetch = {
 
 		val betterReqOpt: Option[DataObjectFetch] = for(
-
-			propVar <- varNames.get(prop)
-				if bindings.hasBinding(propVar) &&
-					orig.selections.exists(sel => sel.category == prop && sel.values.isEmpty);
-
+			propVar <- varNames.get(prop) if bindings.hasBinding(propVar);
 			propVal <- bindings.getBinding(propVar).getValue match {
 				case uri: IRI => Some(mapper(uri))
 				case _ => None
 			}
-		) yield orig.withSelection(selection(prop)(Seq(propVal)))
+		) yield orig.copy(
+			filter = orig.filter.replaceRecursively{
+				case CategFilter(`prop`, values) if values.isEmpty => CategFilter(prop, Seq(propVal))
+			}
+		)
 
 		betterReqOpt.getOrElse(orig)
 	}

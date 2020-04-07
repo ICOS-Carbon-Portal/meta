@@ -1,60 +1,56 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.ContProp
+
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import PatternFinder._
 
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Filter
-
-import org.eclipse.rdf4j.query.algebra.{Filter => FilterQMN, ValueExpr}
+import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
 import org.eclipse.rdf4j.query.algebra.And
 import org.eclipse.rdf4j.query.algebra.Compare
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.model.Literal
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.FileName
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And => IndexAnd, _}
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import scala.util.Try
 import java.time.Instant
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 
-//TODO Add collapsing of two Min/Max filters into one IntervalFilter
+//TODO Add searching of multiple FILTER clauses
 class FilterPatternSearch(varInfo: String => Option[ContProp]){
 	import FilterPatternSearch._
 	import DataObjectFetchPattern.FilterPattern
 
 	val search: TopNodeSearch[FilterPattern] = takeNode
-		.ifIs[FilterQMN]
+		.ifIs[Filter]
 		.thenAlsoSearch{fqmn =>
-			parseFilterConjunction(fqmn.getCondition).map(collapseIntervals)
+			parseFilterExpr(fqmn.getCondition)
 		}
 		.thenGet{
-			case (fqmn, filters) => new FilterPattern(fqmn, filters)
+			case (fqmn, filter) => new FilterPattern(fqmn, filter)
 		}
 		.recursive
 
 
-	def parseFilterConjunction(expr: ValueExpr): Option[Seq[Filter]] = expr match {
+	def parseFilterExpr(expr: ValueExpr): Option[IndexFilter] = expr match {
 		case and: And => for(
-			left <- parseFilterConjunction(and.getLeftArg);
-			right <- parseFilterConjunction(and.getRightArg)
-		) yield left ++ right
+			left <- parseFilterExpr(and.getLeftArg);
+			right <- parseFilterExpr(and.getRightArg)
+		) yield IndexAnd(Seq(left, right))
 
 		case cmp: Compare =>
 			(cmp.getLeftArg, cmp.getRightArg) match{
-				case (v: Var, c: ValueConstant) => getFilter(v, c, cmp.getOperator).map(Seq(_))
-				case (c: ValueConstant, v: Var) => getFilter(v, c, swapOp(cmp.getOperator)).map(Seq(_))
+				case (v: Var, c: ValueConstant) => getContFilter(v, c, cmp.getOperator)
+				case (c: ValueConstant, v: Var) => getContFilter(v, c, swapOp(cmp.getOperator))
 				case _ => None
 			}
 
 		case _ => None
 	}
 
-	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[Filter] = {
+	private def getContFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[IndexFilter] = {
 
-		def makeFilter(prop: ContProp)(limit: prop.ValueType): Option[Filter] = {
+		def makeFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
 			import Compare.CompareOp._
 
 			val reqOpt: Option[FilterRequest[prop.ValueType]] = op match{
@@ -66,7 +62,7 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 				case _ => None
 			}
 
-			reqOpt.map(DataObjectFetch.filter(prop))
+			reqOpt.map(ContFilter[prop.ValueType](prop, _))
 		}
 
 		for(
@@ -107,39 +103,4 @@ object FilterPatternSearch{
 		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
 	else None
 
-	def collapseIntervals(filters: Seq[Filter]): Seq[Filter] = {
-
-		val (minMaxes, rest) = filters.partition(f => f.condition match{
-			case MaxFilter(_, _) => true
-			case MinFilter(_, _) => true
-			case _ => false
-		})
-
-		if(minMaxes.isEmpty) filters else{
-			val collapsed = minMaxes.groupBy(_.property).flatMap{case (prop, propFilters) => {
-
-				type VT = prop.ValueType
-
-				def makeFilter(cond1: FilterRequest[VT], cond2: FilterRequest[VT]): Option[IntervalFilter[VT]] = (cond1, cond2) match{
-					case (min: MinFilter[VT], max: MaxFilter[VT]) => Some(IntervalFilter(min, max))
-					case (max: MaxFilter[VT], min: MinFilter[VT]) => Some(IntervalFilter(min, max))
-					case _ => None
-				}
-
-				propFilters.toList match{
-					case Filter(`prop`, cond1) :: Filter(`prop`, cond2) :: Nil =>
-						//TODO Revisit the next line in next versions of Scala (2.13+), the casts should not be needed
-						makeFilter(cond1.asInstanceOf[FilterRequest[VT]], cond2.asInstanceOf[FilterRequest[VT]])
-							.map{intFilt =>
-								DataObjectFetch.filter(prop)(intFilt)
-							}
-							.fold(propFilters)(Seq(_))
-					case _ =>
-						propFilters
-				}
-
-			}}
-			collapsed.toSeq ++ rest
-		}
-	}
 }

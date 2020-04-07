@@ -4,7 +4,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch.Property
+import se.lu.nateko.cp.meta.services.sparql.index.Property
 
 class DataObjectFetchNode(
 	val dobjVarName: String,
@@ -30,16 +30,14 @@ class DataObjectFetchNode(
 
 	override def getSignature(): String = {
 		val orig = super.getSignature
-		val deprecated = s"exclude deprecated: ${fetchRequest.filtering.filterDeprecated}"
-		val selections = s"selections: ${fetchRequest.selections.size}"
-		val filters = s"filters: ${fetchRequest.filtering.filters.size}"
+		val filters = s"filters: ${fetchRequest.filter.toString}"
 		val vars = s"""vars: ${allVars.mkString(", ")}"""
 		val sorting = fetchRequest.sort.fold("no sort")(sb => {
 			val dir = if(sb.descending) "DESC" else "ASC"
 			s"order by $dir(${sb.property})"
 		})
 		val offset = s"offset ${fetchRequest.offset}"
-		s"$orig ($vars), $selections, $filters, $sorting, $offset, $deprecated"
+		s"$orig ($vars), $sorting, $offset, $filters"
 	}
 
 }

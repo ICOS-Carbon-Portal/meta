@@ -24,10 +24,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import DataObjectFetch._
 import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
 
@@ -106,18 +104,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
-		def or(bms: Seq[MutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-			if(bms.isEmpty) None else Some(BufferFastAggregation.or(bms: _*))
-
-		val categVarFilters = req.selections.flatMap{sel =>
-			val perValue = categMap(sel.category)
-			or(sel.values.map(v => perValue.getOrElse(v, emptyBitmap)))
-		}
-
-		val filterOpt: Option[ImmutableRoaringBitmap] = filterConjunction(
-			categVarFilters ++ continuousPropFilters(req.filtering),
-			req.filtering.filterDeprecated
-		)
+		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(req.filter.optimize)
 
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
@@ -133,37 +120,53 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		idxIter.map(objs.apply)
 	}
 
-	private def continuousPropFilters(filtering: Filtering): Seq[ImmutableRoaringBitmap] = {
-		val continuousVarFilters = filtering.filters.map{f =>
-			bitmap(f.property).filter(f.condition)
-		}
+	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
+		case And(filters) =>
+			collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match{
+				case None => Some(emptyBitmap)
+				case Some(bms) => and(bms)
+			}
 
-		val presentPropertiesFilters = filtering.requiredProps
-			.diff(filtering.filters.map(_.property))
-			.map(bitmap(_).all)
-
-		continuousVarFilters ++ presentPropertiesFilters
-	}
-
-	private def filterConjunction(bms: Seq[ImmutableRoaringBitmap], filterDeprecated: Boolean): Option[ImmutableRoaringBitmap] = {
-		val filterThusFar: Option[ImmutableRoaringBitmap] =
-			if(bms.isEmpty) None
-			else Some(BufferFastAggregation.and(bms: _*))
-		if(filterDeprecated) filterDeprecation(filterThusFar) else filterThusFar
-	}
-
-	private def filterDeprecation(in: Option[ImmutableRoaringBitmap]): Option[ImmutableRoaringBitmap] = in match{
-		case None =>
+		case FilterDeprecated =>
 			Some(ImmutableRoaringBitmap.flip(deprecated, 0, (objs.length - 1).toLong))
-		case Some(beforeDeprecation) =>
-			Some(ImmutableRoaringBitmap.andNot(beforeDeprecation, deprecated))
+
+		case ContFilter(prop, filterReq) =>
+			Some(bitmap(prop).filter(filterReq))
+
+		case CategFilter(category, values) =>
+			val perValue = categMap(category)
+			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+
+		case RequiredProps(props) =>
+			and(props.map(bitmap(_).all))
+
+		case Or(filters) =>
+			collectUnless(filters.iterator.map(filtering))(_.isEmpty).flatMap{bmOpts =>
+				or(bmOpts.flatten)
+			}
+
+		case All =>
+			None
+		case Nothing =>
+			Some(emptyBitmap)
 	}
 
-	def statEntries(filtering: Filtering): Iterable[StatEntry] = readLocked{
-		val filterOpt: Option[ImmutableRoaringBitmap] = filterConjunction(
-			continuousPropFilters(filtering),
-			filtering.filterDeprecated
-		)
+	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
+		var condHappened = false
+		val seq = iter.takeWhile(elem => {
+			condHappened = cond(elem)
+			!condHappened
+		}).toIndexedSeq
+		if(condHappened) None else Some(seq)
+	}
+	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
+		if(bms.isEmpty) None else Some(BufferFastAggregation.or(bms: _*))
+
+	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
+		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms: _*))
+
+	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
+		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter.optimize)
 
 		stats.flatMap{
 			case (key, bm) =>

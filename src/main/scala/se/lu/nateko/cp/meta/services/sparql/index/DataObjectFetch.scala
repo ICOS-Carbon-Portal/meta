@@ -1,58 +1,30 @@
-package se.lu.nateko.cp.meta.services.sparql.index
+package se.lu.nateko.cp.meta.services.sparql
 
+import scala.language.implicitConversions
 import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
 
-class DataObjectFetch(
-	val selections: Seq[Selection],
-	val filtering: Filtering,
-	val sort: Option[SortBy],
-	val offset: Int
-){
-	def withSelection(sel: Selection): DataObjectFetch = {
-		val newSels = selections.filterNot(_.category == sel.category) :+ sel
-		new DataObjectFetch(newSels, filtering, sort, offset)
-	}
-}
+package object index{
 
-object DataObjectFetch{
+	import HierarchicalBitmap.FilterRequest
 
-	class Filtering(val filters: Seq[Filter], val filterDeprecated: Boolean, val requiredProps: Seq[ContProp])
+	case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
 
-	sealed trait Filter{
-		val property: ContProp
-		def condition: FilterRequest[property.ValueType]
-	}
+	sealed trait Filter
+	implicit def dofFilterOps(filter: Filter) = new FilterOps(filter)
 
-	sealed trait Selection{
-		val category: CategProp
-		def values: Seq[category.ValueType]
-	}
-
-	def selection(cat: CategProp)(vals: Seq[cat.ValueType]) = new Selection{
-		val category = cat
-		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
-		val values = vals.asInstanceOf[Seq[category.ValueType]]
-	}
-
-	def filter(prop: ContProp)(cond: FilterRequest[prop.ValueType]) = new Filter{
-		val property = prop
-		//TODO Get rid of the following type cast (might not be needed in versions of Scala after 2.12)
-		val condition = cond.asInstanceOf[FilterRequest[property.ValueType]]
-	}
-
-	object Filter{
-		def unapply(f: Filter) = Some(f.property -> f.condition)
-	}
-
-	object Selection{
-		def unapply(s: Selection): Option[(CategProp, Seq[s.category.ValueType])] = Some(s.category -> s.values)
-	}
+	final case class And(filters: Seq[Filter]) extends Filter
+	final case class Or(filters: Seq[Filter]) extends Filter
+	final case object All extends Filter
+	final case object Nothing extends Filter
+	final case object FilterDeprecated extends Filter
+	final case class RequiredProps(props: Seq[ContProp]) extends Filter
+	final case class CategFilter[T <: AnyRef](category: CategProp with TypedProp[T], values: Seq[T]) extends Filter
+	final case class ContFilter[T](property: ContProp with TypedProp[T], condition: FilterRequest[T]) extends Filter
 
 	case class SortBy(property: ContProp, descending: Boolean)
 
 	sealed trait Property{type ValueType}
+	type TypedProp[T] = Property{type ValueType = T}
 
 	sealed trait UriProperty extends Property{type ValueType = IRI}
 	sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
@@ -78,4 +50,5 @@ object DataObjectFetch{
 	final case object Station extends OptUriProperty
 	final case object Site extends OptUriProperty
 	final case object Submitter extends CategProp with UriProperty
+
 }

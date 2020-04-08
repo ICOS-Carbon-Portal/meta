@@ -120,7 +120,7 @@ class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 	private def initSpec(req: DataObjectFetch): DataObjectFetch = initReq(req, Spec)(identity)
 	private def initStation(req: DataObjectFetch): DataObjectFetch = initReq(req, Station)(Some(_))
 
-	private def initReq[T <: AnyRef](orig: DataObjectFetch, prop: CategProp with TypedProp[T])(mapper: IRI => T): DataObjectFetch = {
+	private def initReq[T <: AnyRef](orig: DataObjectFetch, prop: TypedCategProp[T])(mapper: IRI => T): DataObjectFetch = {
 
 		val betterReqOpt: Option[DataObjectFetch] = for(
 			propVar <- varNames.get(prop) if bindings.hasBinding(propVar);
@@ -129,7 +129,7 @@ class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 				case _ => None
 			}
 		) yield orig.copy(
-			filter = orig.filter.replaceRecursively{
+			filter = orig.filter.replace{
 				case CategFilter(`prop`, values) if values.isEmpty => CategFilter(prop, Seq(propVal))
 			}
 		)

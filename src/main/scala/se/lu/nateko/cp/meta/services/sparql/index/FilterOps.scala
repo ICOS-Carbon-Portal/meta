@@ -20,6 +20,7 @@ final class FilterOps(val self: Filter) extends AnyVal{
 		case Or(filters) =>
 			val subfilters = filters.flatMap(_.flatten match {
 				case Or(filters) => filters
+				case Nothing => Nil
 				case other => Iterable(other)
 			})
 			if(subfilters.isEmpty) Nothing
@@ -29,31 +30,36 @@ final class FilterOps(val self: Filter) extends AnyVal{
 		case other => other
 	}
 
-	def removeRedundantReqProps: Filter = {
-		def extractContProps(f: Filter): Seq[ContProp] = f match{
-			case ContFilter(prop, _) => Seq(prop)
-			case And(filters) => filters.flatMap(extractContProps)
-			case Or(filters) => filters.flatMap(extractContProps)
-			case _ => Nil
-		}
-		replaceRecursively{
-			case RequiredProps(props) => RequiredProps(
-				props.distinct.diff(extractContProps(self))
+	def removeRedundantReqProps: Filter = replace{
+		case RequiredProps(props) => RequiredProps(
+			props.distinct.diff(
+				self.collect{ case ContFilter(prop, _) => prop }
 			)
-		}
+		)
 	}
 
-	def replaceRecursively(pf: PartialFunction[Filter, Filter]): Filter = pf.andThen{
-		case And(filters) => And(filters.map(_.replaceRecursively(pf)))
-		case Or(filters) => Or(filters.map(_.replaceRecursively(pf)))
+	def replace(pf: PartialFunction[Filter, Filter]): Filter = pf.orElse[Filter, Filter]{
+		case And(filters) => And(filters.map(_.replace(pf)))
+		case Or(filters) => Or(filters.map(_.replace(pf)))
 		case other => other
 	}(self)
 
-	def existsRecursively(pred: Filter => Boolean): Boolean = pred(self) || (self match{
-		case And(filters) => filters.exists(pred)
-		case Or(filters) => filters.exists(pred)
+	def exists(pred: Filter => Boolean): Boolean = pred(self) || (self match{
+		case And(filters) => filters.exists(_.exists(pred))
+		case Or(filters) => filters.exists(_.exists(pred))
 		case _ => false
 	})
+
+	def exists(pf: PartialFunction[Filter, Unit]): Boolean = exists(pf.isDefinedAt _)
+
+	def collect[T](pf: PartialFunction[Filter, T]): Seq[T] = collectS(self, pf.andThen(Seq(_)))
+
+	private def collectS[T](f: Filter, pf: PartialFunction[Filter, Seq[T]]): Seq[T] = pf
+		.applyOrElse[Filter, Seq[T]](f, _ match{
+			case And(filters) => filters.flatMap(collectS(_, pf))
+			case Or(filters) => filters.flatMap(collectS(_, pf))
+			case _ => Nil
+		})
 
 	def mergeIntervals: Filter = self match{
 		case And(filters) =>
@@ -93,4 +99,3 @@ final class FilterOps(val self: Filter) extends AnyVal{
 		case other => other
 	}
 }
-

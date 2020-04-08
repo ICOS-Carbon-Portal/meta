@@ -18,13 +18,14 @@ package object index{
 	final case object Nothing extends Filter
 	final case object FilterDeprecated extends Filter
 	final case class RequiredProps(props: Seq[ContProp]) extends Filter
-	final case class CategFilter[T <: AnyRef](category: CategProp with TypedProp[T], values: Seq[T]) extends Filter
-	final case class ContFilter[T](property: ContProp with TypedProp[T], condition: FilterRequest[T]) extends Filter
+	final case class CategFilter[T <: AnyRef](category: TypedCategProp[T], values: Seq[T]) extends Filter
+	final case class ContFilter[T](property: ContProp{type ValueType = T}, condition: FilterRequest[T]) extends Filter
 
 	case class SortBy(property: ContProp, descending: Boolean)
 
 	sealed trait Property{type ValueType}
-	type TypedProp[T] = Property{type ValueType = T}
+
+	type TypedCategProp[T <: AnyRef] = CategProp{type ValueType = T}
 
 	sealed trait UriProperty extends Property{type ValueType = IRI}
 	sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
@@ -50,5 +51,4 @@ package object index{
 	final case object Station extends OptUriProperty
 	final case object Site extends OptUriProperty
 	final case object Submitter extends CategProp with UriProperty
-
 }

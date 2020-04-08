@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 
-import PatternFinder._
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch._
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
-import org.eclipse.rdf4j.model.IRI
+import se.lu.nateko.cp.meta.services.sparql.index._
+import PatternFinder._
 
 class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
@@ -54,7 +54,9 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			}
 
 			it("identifies the no-deprecated-objects filter"){
-				assert(fetchNode.fetchRequest.filtering.filterDeprecated)
+				assert(fetchNode.fetchRequest.filter.exists{
+					case FilterDeprecated =>
+				})
 			}
 
 			it("detects and fuses the station property path pattern"){
@@ -78,11 +80,16 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			}
 
 			it("detects the filters"){
-				val filters = fetchNode.fetchRequest.filtering.filters
-				val props = filters.map(_.property).distinct.toSet
-				assert(props === Set(DataStart, DataEnd, SubmissionEnd))
+				val filters = fetchNode.fetchRequest.filter.optimize.collect{
+					case cf @ ContFilter(_, _) => cf
+				}
 				assert(filters.size === 3)
-				assert(filters.find{_.property == SubmissionEnd}.get.condition.isInstanceOf[IntervalFilter[_]])
+				val props = filters.map(_.property).toSet
+				assert(props === Set(DataStart, DataEnd, SubmissionEnd))
+				assert(filters.exists{
+					case ContFilter(prop, IntervalFilter(_, _)) if prop == SubmissionEnd => true
+					case _ => false
+				})
 			}
 
 			it("there is no early dobj initialization in the query after fusion"){
@@ -100,20 +107,23 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			// }
 
 			it("Only spec selection is present (non-bound)"){
-				assert(req.selections.length == 1, "")
-				val sel = req.selections.head
+				val selections = req.filter.collect{
+					case c @ CategFilter(_, _) => c
+				}
+				assert(selections.length == 1, "")
+				val sel = selections.head
 				assert(sel.category == Spec)
 				assert(sel.values.isEmpty)
 			}
 
 			it("No continuous-prop filters are present, sorting is left untouched"){
-				assert(req.filtering.filters.isEmpty)
+				assert(req.filter.exists{case ContFilter(_, _) => } === false)
 				assert(req.sort.isEmpty)
 				assert(query.toString.contains("OrderElem"))
 			}
 
 			it("Deprecated objects are filtered out"){
-				assert(req.filtering.filterDeprecated)
+				assert(req.filter.exists{case FilterDeprecated => })
 			}
 
 			it("Expected variables are detected and dealt with"){
@@ -152,20 +162,20 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			// }
 
 			it("finds two selections (spec and station)"){
-				assert(req.selections.size == 2)
+				assert(req.filter.collect{case CategFilter(_, _) => }.size == 2)
 			}
 
 			it("spec selection is unbound"){
-				val specValues: Seq[Seq[Any]] = req.selections.collect{
-					case Selection(Spec, values) => values
+				val specValues: Seq[Seq[AnyRef]] = req.filter.collect{
+					case CategFilter(prop, values) if prop == Spec => values
 				}
 				assert(specValues.nonEmpty)
 				assert(specValues.flatten.isEmpty)
 			}
 
 			it("station is bound to single constant"){
-				val stationValueSeqs: Seq[Seq[Any]] = req.selections.collect{
-					case Selection(Station, values) => values
+				val stationValueSeqs: Seq[Seq[AnyRef]] = req.filter.collect{
+					case CategFilter(prop, values) if prop == Station => values
 				}
 				val stationValues = stationValueSeqs.flatten
 				assert(stationValues.length == 1)
@@ -173,7 +183,7 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			}
 
 			it("filtering is present"){
-				assert(req.filtering.filters.length == 1)
+				assert(req.filter.collect{case ContFilter(_, _) => }.length == 1)
 			}
 
 			it("Sorting is performed but left untouched in the query, to be done again on the whole result"){
@@ -191,12 +201,12 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			lazy val req = fetchNode.fetchRequest
 
 			it("finds two selections (spec and station)"){
-				assert(req.selections.size == 2)
+				assert(req.filter.collect{case CategFilter(_, _) => }.size == 2)
 			}
 
 			it("spec selection is bound to a single constant"){
-				val specValueSeqs: Seq[Seq[Any]] = req.selections.collect{
-					case Selection(Spec, values) => values
+				val specValueSeqs: Seq[Seq[AnyRef]] = req.filter.collect{
+					case CategFilter(prop, values) if prop == Spec => values
 				}
 				val specValues = specValueSeqs.flatten
 				assert(specValues.length == 1)
@@ -204,8 +214,8 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			}
 
 			it("station is bound to single constant"){
-				val stationValueSeqs: Seq[Seq[Any]] = req.selections.collect{
-					case Selection(Station, values) => values
+				val stationValueSeqs: Seq[Seq[AnyRef]] = req.filter.collect{
+					case CategFilter(prop, values) if prop == Station => values
 				}
 				val stationValues = stationValueSeqs.flatten
 				assert(stationValues.length == 1)

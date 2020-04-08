@@ -235,11 +235,11 @@ object HierarchicalBitmap{
 		def spilloverThreshold: Int
 	}
 
-	sealed trait FilterRequest[K]
-	case class EqualsFilter[K](key: K) extends FilterRequest[K]
-	case class MinFilter[K](min: K, inclusive: Boolean) extends FilterRequest[K]
-	case class MaxFilter[K](max: K, inclusive: Boolean) extends FilterRequest[K]
-	case class IntervalFilter[K](from: MinFilter[K], to: MaxFilter[K]) extends FilterRequest[K]
+	sealed trait FilterRequest[+K]
+	case class EqualsFilter[+K](key: K) extends FilterRequest[K]
+	case class MinFilter[+K](min: K, inclusive: Boolean) extends FilterRequest[K]
+	case class MaxFilter[+K](max: K, inclusive: Boolean) extends FilterRequest[K]
+	case class IntervalFilter[+K](from: MinFilter[K], to: MaxFilter[K]) extends FilterRequest[K]
 
 	private class IterationInstruction(
 		val filter: Option[ImmutableRoaringBitmap],

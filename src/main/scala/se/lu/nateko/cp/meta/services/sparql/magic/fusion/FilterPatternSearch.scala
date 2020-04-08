@@ -62,7 +62,7 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 				case _ => None
 			}
 
-			reqOpt.map(ContFilter[prop.ValueType](prop, _))
+			reqOpt.map(ContFilter(prop, _))
 		}
 
 		for(

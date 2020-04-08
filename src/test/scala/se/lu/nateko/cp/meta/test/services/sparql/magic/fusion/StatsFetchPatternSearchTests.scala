@@ -1,11 +1,15 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
+
 import org.scalatest.funspec.AnyFunSpec
+
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
+import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
+
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
-import org.eclipse.rdf4j.query.algebra.TupleExpr
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
+import se.lu.nateko.cp.meta.services.sparql.index._
 
 class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val sfps = new StatsFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
@@ -24,10 +28,10 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 	it("detects the GROUP BY clause without the site pattern/variable"){
 		val groupOpt = sfps.groupSearch("dobj")(query)
 		groupOpt match{
-			case Some(GroupPattern(filtering, "submitter", "stationOpt", "spec", None)) =>
-				assert(filtering.filterDeprecated)
-				assert(filtering.requiredProps.size == 1)
-				assert(filtering.filters.size == 1)
+			case Some(GroupPattern(filter, "submitter", "stationOpt", "spec", None)) =>
+				assert(filter.exists{case FilterDeprecated =>})
+				assert(requiredProps(filter) == 0)
+				assert(contFilterNum(filter) == 1)
 
 			case _ => fail("group pattern was not detected")
 		}
@@ -37,10 +41,10 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		val withSite = parseQuery(StatsFetchPatternSearchTests.queryWithSite)
 		val groupOpt = sfps.groupSearch("dobj")(withSite)
 		groupOpt match{
-			case Some(GroupPattern(filtering, "submitter", "station", "spec", Some("site"))) =>
-				assert(filtering.filterDeprecated)
-				assert(filtering.requiredProps.size == 1)
-				assert(filtering.filters.size == 1)
+			case Some(GroupPattern(filter, "submitter", "station", "spec", Some("site"))) =>
+				assert(filter.exists{case FilterDeprecated =>})
+				assert(requiredProps(filter) == 0)
+				assert(contFilterNum(filter) == 1)
 
 			case _ => fail("group pattern was not detected")
 		}
@@ -55,6 +59,9 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		val nesting = parseQuery(StatsFetchPatternSearchTests.nestingQuery)
 		assert(sfps.search(nesting).isDefined)
 	}
+
+	def requiredProps(f: Filter): Int = f.optimize.collect{case RequiredProps(props) => props.size}.sum
+	def contFilterNum(f: Filter): Int = f.collect{case ContFilter(_, _) =>}.size
 }
 
 object StatsFetchPatternSearchTests{

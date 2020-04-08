@@ -27,7 +27,7 @@ object DataObjectFetchPattern{
 		def categValues: Seq[property.ValueType]
 	}
 
-	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: CategProp with TypedProp[T], propVar: Option[String])(vals: Seq[T]) = new CategPropPattern{
+	def categPattern[T <: AnyRef](exprs: Seq[TupleExpr], prop: TypedCategProp[T], propVar: Option[String])(vals: Seq[T]) = new CategPropPattern{
 		val expressions = exprs
 		val property = prop
 		val propVarName = propVar

@@ -227,11 +227,15 @@ class DataObjectFetchPatternSearchTests extends AnyFunSpec{
 			}
 		}
 
-		ignore("Last 100 uploaded objects"){
-			lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.last100uploaded)
-//			lazy val req = fetchNode.fetchRequest
+		describe("Last 100 uploaded objects, filtered by date using OR-expression"){
+			lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.last100uploadedFilteredByDateWithOR)
 
-			it("Query AST is simplified after fusion"){
+			it("detects the OR-expression"){
+				assert(fetchNode.fetchRequest.filter.optimize.exists{
+					case Or(Seq(ContFilter(prop1, _), ContFilter(prop2, _))) if prop1 == SubmissionEnd && prop2 == SubmissionEnd =>
+				})
+			}
+			ignore("Query AST is simplified after fusion"){
 //				println(parseQuery(TestQueries.last100uploaded))
 				println("After fusion:")
 				println(query)

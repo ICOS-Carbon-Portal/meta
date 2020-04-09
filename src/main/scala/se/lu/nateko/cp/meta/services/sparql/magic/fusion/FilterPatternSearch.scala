@@ -5,13 +5,13 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import PatternFinder._
 
 import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
-import org.eclipse.rdf4j.query.algebra.And
+import org.eclipse.rdf4j.query.algebra.{And, Or}
 import org.eclipse.rdf4j.query.algebra.Compare
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.model.Literal
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
-import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And => IndexAnd, _}
+import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And => IndexAnd, Or => IndexOr, _}
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import scala.util.Try
 import java.time.Instant
@@ -37,6 +37,11 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 			left <- parseFilterExpr(and.getLeftArg);
 			right <- parseFilterExpr(and.getRightArg)
 		) yield IndexAnd(Seq(left, right))
+
+		case or: Or => for(
+			left <- parseFilterExpr(or.getLeftArg);
+			right <- parseFilterExpr(or.getRightArg)
+		) yield IndexOr(Seq(left, right))
 
 		case cmp: Compare =>
 			(cmp.getLeftArg, cmp.getRightArg) match{

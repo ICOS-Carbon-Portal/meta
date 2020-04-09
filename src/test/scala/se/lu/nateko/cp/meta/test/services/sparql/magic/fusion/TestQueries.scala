@@ -124,17 +124,16 @@ object TestQueries{
 	}
 	"""
 
-	val last100uploaded = """
-	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-	prefix prov: <http://www.w3.org/ns/prov#>
-	select (str(?submTime) as ?time) ?dobj ?spec ?dataLevel ?fileName where{
-		?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
-		?dobj cpmeta:hasName ?fileName .
-		?dobj cpmeta:hasObjectSpec [rdfs:label ?spec ; cpmeta:hasDataLevel ?dataLevel].
-	}
-	order by desc(?submTime)
-	limit 100
-	"""
+	val last100uploadedFilteredByDateWithOR = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select (str(?submTime) as ?time) ?dobj ?spec ?dataLevel ?fileName where{
+	|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	|	?dobj cpmeta:hasName ?fileName .
+	|	?dobj cpmeta:hasObjectSpec [rdfs:label ?spec ; cpmeta:hasDataLevel ?dataLevel].
+	|	FILTER (?submTime > "2020-03-24T03:30:00Z"^^xsd:dateTime || ?submTime < "2016-07-07T07:29:14Z"^^xsd:dateTime)
+	|}
+	|order by ?submTime
+	|limit 100""".stripMargin
 
 	val storageInfos = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|select * where{
@@ -152,4 +151,5 @@ object TestQueries{
 	|}
 	|order by desc(?submEnd)
 	|limit 2""".stripMargin
+
 }

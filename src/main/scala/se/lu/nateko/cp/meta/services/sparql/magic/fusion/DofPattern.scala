@@ -8,7 +8,12 @@ import org.eclipse.rdf4j.query.algebra._
   * Data object fetch pattern
   */
 sealed trait DofPattern{
-	def join(other: DofPattern): DofPattern
+	final def join(other: DofPattern): DofPattern = if(this eq DofPattern.Empty) other else other match{
+		case DofPattern.Empty => this
+		case pdp: ProjectionDofPattern => this &: pdp
+		case _ => joinInner(other)
+	}
+	protected def joinInner(other: DofPattern): DofPattern
 }
 
 final case class PlainDofPattern(
@@ -18,9 +23,7 @@ final case class PlainDofPattern(
 	filters: Seq[ValueExpr]
 ) extends DofPattern{
 
-	def join(another: DofPattern): DofPattern = if(this == DofPattern.Empty) another else another match{
-
-		case DofPattern.Empty => this
+	def joinInner(another: DofPattern): DofPattern = another match{
 
 		case other: PlainDofPattern => (dobjVar, other.dobjVar) match{
 
@@ -48,8 +51,7 @@ final case class PlainDofPattern(
 
 		case u: DofPatternUnion => new DofPatternUnion(u.subs.map(this.join _), u.union)
 
-		case pdp: ProjectionDofPattern =>
-			pdp.copy(outer = this.join(pdp.outer))
+		case unexpected => throw new MatchError(unexpected)
 	}
 
 }
@@ -58,22 +60,23 @@ final case class ProjectionDofPattern(
 	inner: DofPattern,
 	orderBy: Option[OrderPattern],
 	offset: Option[OffsetPattern],
-	outer: DofPattern
+	outer: Option[DofPattern]
 ) extends DofPattern {
-	def join(other: DofPattern): DofPattern = other match{
-		case pdp: ProjectionDofPattern =>
-			pdp.copy(outer = this.join(pdp.outer))
-		case any =>
-			copy(outer = outer.join(any))
-	}
+	protected def joinInner(other: DofPattern): DofPattern = copy(
+		outer = Some(outer.fold(other)(_ join other))
+	)
+
+	def &:(left: DofPattern): DofPattern = copy(
+		outer = Some(outer.fold(left)(left.join))
+	)
 }
 
 final class DofPatternList(val subs: DofPattern*) extends DofPattern{
-	def join(other: DofPattern): DofPattern = new DofPatternList(subs.map(_.join(other)) :_*)
+	protected def joinInner(other: DofPattern): DofPattern = new DofPatternList(subs.map(_.join(other)) :_*)
 }
 
 final class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends DofPattern{
-	def join(other: DofPattern): DofPattern = new DofPatternUnion(subs.map(_.join(other)), union)
+	protected def joinInner(other: DofPattern): DofPattern = new DofPatternUnion(subs.map(_.join(other)), union)
 }
 
 object DofPattern{

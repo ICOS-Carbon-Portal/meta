@@ -83,11 +83,10 @@ class Form(
 				newUpdateControl.value match {
 					case Some("new") =>
 						whenDone {
-								if (fileInput.hasBeenModified) {
+								if (fileInput.hasBeenModified)
 									fileInput.rehash
-								} else {
-									Future{}
-								}
+								else
+									Future.successful()
 						}{ _ =>
 							for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
 								whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>

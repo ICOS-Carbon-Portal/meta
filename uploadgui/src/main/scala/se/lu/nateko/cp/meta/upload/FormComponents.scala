@@ -96,7 +96,7 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 
 	// The event is not dispatched if the file selected is the same as before
-	fileInput.oninput = _ => file.foreach{f =>
+	fileInput.onchange = _ => file.foreach{f =>
 		if(_hash.isSuccess){
 			_hash = fail("hashsum is being computed")
 			cb()

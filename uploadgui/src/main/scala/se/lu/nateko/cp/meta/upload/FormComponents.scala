@@ -6,11 +6,13 @@ import java.time.Instant
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{ Success, Try }
 import scala.util.Failure
+import scala.concurrent.Future
 
 import org.scalajs.dom
 import org.scalajs.dom.{ document, html }
 import org.scalajs.dom.raw._
 import org.scalajs.dom.ext._
+import scala.scalajs.js
 
 import Utils._
 import FormTypeRadio._
@@ -20,7 +22,7 @@ import se.lu.nateko.cp.doi.Doi
 
 class FormElement(elemId: String) {
 	private val form = getElementById[html.Form](elemId).get
-	
+
 	def reset() = {
 		form.reset()
 	}
@@ -68,10 +70,32 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 class FileInput(elemId: String, cb: () => Unit){
 	private val fileInput = getElementById[html.Input](elemId).get
 	private var _hash: Try[Sha256Sum] = file.flatMap(_ => fail("hashsum computing has not started yet"))
+	private var _lastModified: Double = 0
 
 	def file: Try[dom.File] = if(fileInput.files.length > 0) Success(fileInput.files(0)) else fail("no file chosen")
-	def hash: Try[Sha256Sum] = _hash
 
+	def hash: Try[Sha256Sum] = {
+		if (hasBeenModified) {
+			fail("The file has been modified, please choose the updated version")
+		} else {
+			_hash
+		}
+	}
+
+	def hasBeenModified: Boolean =
+		file.map(_.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]) != Success(_lastModified)
+
+	def rehash: Future[Sha256Sum] = {
+		Future.fromTry(file).flatMap { f =>
+			FileHasher.hash(f).flatMap{ hash =>
+					_hash = Success(hash)
+					_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
+					Future(hash)
+			}
+		}
+	}
+
+	// The event is not dispatched if the file selected is the same as before
 	fileInput.oninput = _ => file.foreach{f =>
 		if(_hash.isSuccess){
 			_hash = fail("hashsum is being computed")
@@ -80,6 +104,7 @@ class FileInput(elemId: String, cb: () => Unit){
 		whenDone(FileHasher.hash(f)){hash =>
 			if(file.toOption.contains(f)) {
 				_hash = Success(hash) //file could have been changed while digesting for SHA-256
+				_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
 				cb()
 			}
 		}
@@ -167,10 +192,10 @@ object FormTypeRadio {
 
 class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
 	def value_=(newIntOpt: Option[TimeInterval]): Unit = newIntOpt match {
-		case None => 
+		case None =>
 			fromInput.reset()
 			toInput.reset()
-		case Some(newInt) => 
+		case Some(newInt) =>
 			fromInput.value = newInt.start
 			toInput.value = newInt.stop
 	}

@@ -81,12 +81,20 @@ class Form(
 		typeControl.formType match {
 			case Data =>
 				newUpdateControl.value match {
-					case Some("new") => 
-						for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
-							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
-								onUpload(dto, Some(file))
-							}.failed.foreach {
-								case _ => hideProgressBar()
+					case Some("new") =>
+						whenDone {
+								if (fileInput.hasBeenModified) {
+									fileInput.rehash
+								} else {
+									Future{}
+								}
+						}{ _ =>
+							for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+								whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+									onUpload(dto, Some(file))
+								}.failed.foreach {
+									case _ => hideProgressBar()
+								}
 							}
 						}
 					case _ =>
@@ -100,7 +108,7 @@ class Form(
 				}
 			case Document =>
 				newUpdateControl.value match {
-					case Some("new") => 
+					case Some("new") =>
 						for(dto <- documentObjectDto; file <- fileInput.file) {
 							onUpload(dto, Some(file))
 						}
@@ -335,7 +343,7 @@ class Form(
 						}
 					}
 					dto.specificInfo match {
-						case Left(_) => 
+						case Left(_) =>
 						case Right(acquisition) => {
 							nRowsInput.value = acquisition.nRows
 							submitterIdSelect.value.map{ submitter =>

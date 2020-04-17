@@ -23,7 +23,7 @@ final case class PlainDofPattern(
 	filters: Seq[ValueExpr]
 ) extends DofPattern{
 
-	def joinInner(another: DofPattern): DofPattern = another match{
+	protected def joinInner(another: DofPattern): DofPattern = another match{
 
 		case other: PlainDofPattern => (dobjVar, other.dobjVar) match{
 
@@ -102,5 +102,5 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 final case class OrderPattern(expr: Order, sortVar: String, descending: Boolean)
 
 final class OffsetPattern(val slice: Slice){
-	val offset = slice.getOffset.toInt
+	def offset = slice.getOffset.toInt
 }

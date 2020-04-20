@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.services.sparql.index._
 class DofPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
 	private val dofps = new DofPatternSearch(meta)
+	private val fusionSearch = new DofPatternFusion(meta)
 	private val parser = new SPARQLParser
 
 	private def parseQuery(q: String): TupleExpr = parser.parseQuery(q, "http://dummy.org").getTupleExpr
@@ -30,7 +31,8 @@ class DofPatternSearchTests extends AnyFunSpec{
 
 			it("Pattern detection does not crash"){
 				lazy val (query @ _, patt) = getPattern(TestQueries.fetchDobjListFromNewIndex)
-				println(patt)
+				val fusions = fusionSearch.findFusions(patt)
+				fusions.foreach(f => println(f.copy(exprsToFuse = Set.empty)))
 			}
 
 			

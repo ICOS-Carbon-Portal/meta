@@ -18,7 +18,10 @@ case class FusionResult(
 	exprsToFuse: Set[TupleExpr],
 	propVars: VarPropLookup,
 	isPureCpIndexQuery: Boolean
-)
+){
+	def essentials = copy(exprsToFuse = Set.empty)
+	def essentiallyEqual(other: FusionResult): Boolean = this.essentials == other.essentials
+}
 
 class DofPatternFusion(meta: CpmetaVocab){
 
@@ -36,19 +39,27 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case list: DofPatternList => list.subs.flatMap(findFusions)
 
 		case union: DofPatternUnion =>
-			val subs = union.subs.flatMap(findFusions)
+			val subSeqs = union.subs.map(findFusions)
+			val subs = subSeqs.flatten
 
-			val isValid = subs.forall(dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0)
+			val isValid = !subs.isEmpty && subSeqs.forall(_.size == 1) && subs.forall(
+				dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0
+			)
 
-			if(isValid){//should always be true in practice, here for extra code robustness and clarity
-				unionVarProps(subs.map(_.propVars)).map{propVals =>
-					val filter = Or(subs.map(_.fetch.filter))
-					val exprs = subs.map(_.exprsToFuse).reduce(_ union _)
-					val isPure = subs.forall(_.isPureCpIndexQuery)
-					FusionResult(DataObjectFetch(filter, None, 0), exprs, propVals, isPure)
+			if(!isValid) Nil else{
+				val allSame = if(subs.length < 2) true else subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
+
+				if(allSame){
+					Seq(subs.head.copy(exprsToFuse = Set(union.union)))
+				} else unionVarProps(subs.map(_.propVars)).map{propVars =>
+					FusionResult(
+						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
+						exprsToFuse = Set(union.union),
+						propVars = propVars,
+						isPureCpIndexQuery = subs.forall(_.isPureCpIndexQuery)
+					)
 				}.toSeq
-			} else
-				Nil
+			}
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
@@ -106,22 +117,22 @@ class DofPatternFusion(meta: CpmetaVocab){
 				varProps.contains(objVar.getName) || (objVar.isAnonymous && !objVar.hasValue)
 			}
 
-			FusionResult(DataObjectFetch(allFilts, None, 0), allExprs.toSet, varProps, allRecognized)
+			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs.toSet, varProps, allRecognized)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {
 
-		def endVarName(steps: IRI*): Option[String] = steps.reverse.toList match{
+		def endVarName(topLevel: Boolean, steps: IRI*): Iterable[String] = steps.reverse.toList match{
 			case Nil => patt.dobjVar
 			case head :: tail => for(
-				prev <- endVarName(tail:_*);
-				statPatts <- patt.propPaths.get(prev);
-				statPat <- statPatts.find(_.pred === head)
+				prev <- endVarName(false, tail:_*);
+				statPatts <- patt.propPaths.get(prev).toIterable;
+				statPat <- statPatts.filter(sp => sp.pred === head && (!topLevel || !sp.sp.getObjectVar.isAnonymous))
 			) yield statPat.targetVar
 		}
 
-		def propVar(prop: Property, steps: IRI*) = endVarName(steps:_*).map(_ -> prop)
-
+		def propVar(prop: Property, steps: IRI*) = endVarName(true, steps:_*).map(_ -> prop)
+		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
 		Seq(
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),
@@ -132,7 +143,9 @@ class DofPatternFusion(meta: CpmetaVocab){
 			propVar(SubmissionEnd  , meta.wasSubmittedBy , meta.prov.endedAtTime      ),
 			propVar(Station        , meta.wasAcquiredBy  , meta.prov.wasAssociatedWith),
 			propVar(Site           , meta.wasAcquiredBy  , meta.wasPerformedAt        ),
+			propVar(DataStart      , meta.hasStartTime  ),
 			propVar(DataStart      , meta.wasAcquiredBy  , meta.prov.startedAtTime    ),
+			propVar(DataEnd        , meta.hasEndTime    ),
 			propVar(DataEnd        , meta.wasAcquiredBy  , meta.prov.endedAtTime      ),
 			propVar(SamplingHeight , meta.wasAcquiredBy  , meta.hasSamplingHeight     ),
 		).flatten.toMap

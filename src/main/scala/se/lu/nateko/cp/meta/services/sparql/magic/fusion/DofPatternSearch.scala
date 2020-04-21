@@ -52,8 +52,20 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case join: Join =>
 			find0(join.getLeftArg).join(find0(join.getRightArg))
 
-		case join: LeftJoin =>
-			new DofPatternList(find0(join.getLeftArg), find0(join.getRightArg))
+		case join: LeftJoin => new DofPatternList(
+			Seq(find0(join.getLeftArg), find0(join.getRightArg)).flatMap{
+				case inner: DofPatternList => inner.subs
+				case other => Seq(other)
+			}: _*
+		)
+
+		case union: Union => new DofPatternUnion(
+			subs = Seq(find0(union.getLeftArg), find0(union.getRightArg)).flatMap{
+				case inner: DofPatternUnion => inner.subs
+				case other => Seq(other)
+			},
+			union
+		)
 
 		case filter: Filter =>
 			DofPattern.Empty.copy(filters = Seq(filter.getCondition)).join(find0(filter.getArg))

@@ -31,6 +31,7 @@ class DofPatternSearchTests extends AnyFunSpec{
 
 			it("Pattern detection does not crash"){
 				lazy val (query @ _, patt) = getPattern(TestQueries.fetchDobjListFromNewIndex)
+				//patt.asInstanceOf[ProjectionDofPattern].inner.asInstanceOf[DofPatternUnion].subs(1).asInstanceOf[DofPatternUnion].subs foreach println
 				val fusions = fusionSearch.findFusions(patt)
 				fusions.foreach(f => println(f.copy(exprsToFuse = Set.empty)))
 			}
@@ -40,6 +41,4 @@ class DofPatternSearchTests extends AnyFunSpec{
 
 	}
 
-
 }
-

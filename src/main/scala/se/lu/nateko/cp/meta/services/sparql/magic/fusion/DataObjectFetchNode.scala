@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.services.sparql.index.Property
 
 class DataObjectFetchNode(
+	//TODO Get rid of dobjVarName constructor argument
 	val dobjVarName: String,
 	val fetchRequest: DataObjectFetch,
 	val varNames: Map[Property, String]

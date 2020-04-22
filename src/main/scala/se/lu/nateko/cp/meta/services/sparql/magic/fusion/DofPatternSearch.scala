@@ -20,17 +20,17 @@ class DofPatternSearch(meta: CpmetaVocab){
 				case iri: IRI =>
 					val obj = sp.getObjectVar
 					val subj = sp.getSubjectVar
-					val subjVar = subj.getName
+					val subjVar = QVar(subj)
 
 					val varVals = if(obj.hasValue) Map(
-						subjVar -> ValueInfoPattern(
+						QVar(obj) -> ValueInfoPattern(
 							Some(Set(obj.getValue)),
 							Nil
 						)
-					) else Map.empty[String, ValueInfoPattern]
+					) else Map.empty[QVar, ValueInfoPattern]
 
 					DofPattern.Empty.copy(
-						dobjVar = if(iri === meta.hasObjectSpec && !subj.isAnonymous) Some(subjVar) else None,
+						dobjVar = Some(subjVar).collect{case nv: NamedVar if iri === meta.hasObjectSpec => nv},
 						propPaths = Map(subjVar -> Seq(StatementPattern2(iri, sp))),
 						varValues = varVals
 					)
@@ -44,7 +44,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 				val values = bsa.getBindingSets().asScala.map(_.getValue(varName)).toSet
 				val vif = ValueInfoPattern(Some(values), Seq(bsa))
-				DofPattern.Empty.copy(varValues = Map(varName -> vif))
+				DofPattern.Empty.copy(varValues = Map(NamedVar(varName) -> vif))
 
 			case _ => DofPattern.Empty
 		}
@@ -52,19 +52,19 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case join: Join =>
 			find0(join.getLeftArg).join(find0(join.getRightArg))
 
-		case join: LeftJoin => new DofPatternList(
-			Seq(find0(join.getLeftArg), find0(join.getRightArg)).flatMap{
-				case inner: DofPatternList => inner.subs
-				case other => Seq(other)
-			}: _*
-		)
-
 		case union: Union => new DofPatternUnion(
 			subs = Seq(find0(union.getLeftArg), find0(union.getRightArg)).flatMap{
 				case inner: DofPatternUnion => inner.subs
 				case other => Seq(other)
 			},
 			union
+		)
+
+		case otherBinOp: BinaryTupleOperator => new DofPatternList(
+			Seq(find0(otherBinOp.getLeftArg), find0(otherBinOp.getRightArg)).flatMap{
+				case inner: DofPatternList => inner.subs
+				case other => Seq(other)
+			}: _*
 		)
 
 		case filter: Filter =>
@@ -91,9 +91,10 @@ class DofPatternSearch(meta: CpmetaVocab){
 				val elems = order.getElements
 				if(elems.size == 1){
 					val elem = elems.get(0)
-					Option(elem.getExpr).collect{
-						case v: Var => OrderPattern(order, v.getName, !elem.isAscending)
-					}
+					Option(elem.getExpr).collect{case v: Var => QVar(v)}
+						.collect{
+							case nv: NamedVar => OrderPattern(order, nv, !elem.isAscending)
+						}
 				} else None
 			}
 			opOpt.fold(inner)(op => inner match {

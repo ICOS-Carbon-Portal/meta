@@ -12,11 +12,13 @@ import org.eclipse.rdf4j.query.algebra.Not
 import org.eclipse.rdf4j.query.algebra.StatementPattern
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.ValueExpr
+import org.eclipse.rdf4j.query.algebra.Union
+import org.eclipse.rdf4j.query.algebra.SingletonSet
 
 case class FusionResult(
 	fetch: DataObjectFetch,
 	exprsToFuse: Set[TupleExpr],
-	propVars: VarPropLookup,
+	propVars: Map[NamedVar, Property],
 	isPureCpIndexQuery: Boolean
 ){
 	def essentials = copy(exprsToFuse = Set.empty)
@@ -82,7 +84,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val varProps = getVarPropLookup(patt)
 
-			val andOrFilterParser = new FilterPatternSearch(v => varProps.get(v).collect{case cp: ContProp => cp})
+			val andOrFilterParser = new FilterPatternSearch(v => varProps.get(NamedVar(v)).collect{case cp: ContProp => cp})
 
 			val filtsAndExprs = patt.filters.flatMap{fexp =>
 				parseFilter(fexp, varProps)
@@ -92,15 +94,8 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val filts = filtsAndExprs.map(_._1)
 			val filtExprs = filtsAndExprs.collect{case (_, te: TupleExpr) => te}
 
-			val categFiltsAndExprs = for(
-				(vname, valInfo) <- patt.varValues.toSeq;
-				prop <- varProps.get(vname).collect{case cp: CategProp => cp}
-			) yield{
-				val vals = valInfo.vals.fold[Seq[IRI]](Nil)(s => s.collect{case iri: IRI => iri}.toSeq)
-				prop match{
-					case uriProp: UriProperty => CategFilter(uriProp, vals) -> valInfo.providers.toSet
-					case optUri: OptUriProperty => CategFilter(optUri, vals.map(Some(_))) -> valInfo.providers.toSet
-				}
+			val categFiltsAndExprs = varProps.toSeq.flatMap{
+				case (v, prop) => getCategFilter(v, prop, patt.varValues)
 			}
 
 			val categFilts: Seq[Filter] = categFiltsAndExprs.map(_._1)
@@ -114,24 +109,28 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val allRecognized = patt.propPaths.flatMap(_._2).forall{sp2 =>
 				val objVar = sp2.sp.getObjectVar
-				varProps.contains(objVar.getName) || (objVar.isAnonymous && !objVar.hasValue)
+				varProps.contains(sp2.targetVar) || (objVar.isAnonymous && !objVar.hasValue)
 			}
 
-			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs.toSet, varProps, allRecognized)
+			val namedVarProps = varProps.collect{
+				case (nv: NamedVar, prop) => nv -> prop
+			}
+
+			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs.toSet, namedVarProps, allRecognized)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {
 
-		def endVarName(topLevel: Boolean, steps: IRI*): Iterable[String] = steps.reverse.toList match{
+		def endVar(steps: IRI*): Iterable[QVar] = steps.reverse.toList match{
 			case Nil => patt.dobjVar
 			case head :: tail => for(
-				prev <- endVarName(false, tail:_*);
+				prev <- endVar(tail:_*);
 				statPatts <- patt.propPaths.get(prev).toIterable;
-				statPat <- statPatts.filter(sp => sp.pred === head && (!topLevel || !sp.sp.getObjectVar.isAnonymous))
+				statPat <- statPatts.filter(_.pred === head)
 			) yield statPat.targetVar
 		}
 
-		def propVar(prop: Property, steps: IRI*) = endVarName(true, steps:_*).map(_ -> prop)
+		def propVar(prop: Property, steps: IRI*) = endVar(steps:_*).map(_ -> prop)
 		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
 		Seq(
 			propVar(DobjUri),
@@ -156,7 +155,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			case exists: Exists => exists.getSubQuery match{
 				case sp: StatementPattern =>
 					val (s, p, o) = splitTriple(sp)
-					if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && !o.isAnonymous && parProps.get(o.getName) == Some(DobjUri))
+					if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && !o.isAnonymous && parProps.get(QVar(o)) == Some(DobjUri))
 						Some(FilterDeprecated)
 					else
 						None
@@ -167,18 +166,15 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case _ => None
 	}
 
-	def fuse(fusions: Seq[FusionResult]): Unit = {
-		//replace the deepest exprs that are not inside a union beloning to the exprs to be replaced
-		???
-	}
 }
 
 object DofPatternFusion{
 	type PlainFusionRes = (Filter, Set[TupleExpr])
-	type VarPropLookup = Map[String, Property]
+	type VarPropLookup = Map[QVar, Property]
+	type NamedVarPropLookup = Map[NamedVar, Property]
 
-	def unionVarProps(varProps: Seq[VarPropLookup]): Option[VarPropLookup] = varProps match{
-		case Nil => Some(Map.empty[String, Property])
+	def unionVarProps(varProps: Seq[NamedVarPropLookup]): Option[NamedVarPropLookup] = varProps match{
+		case Nil => Some(Map.empty[NamedVar, Property])
 		case Seq(single) => Some(single)
 		case Seq(vp1, rest @ _*) => unionVarProps(rest).flatMap{vp2 =>
 			val keys = vp1.keySet.intersect(vp2.keySet)
@@ -189,4 +185,29 @@ object DofPatternFusion{
 			) else None
 		}
 	}
+
+	def getCategFilter(v: QVar, prop: Property, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = prop match{
+		case cp: CategProp =>
+
+			val valsExprsOpt: Option[(Seq[IRI], Set[TupleExpr])] = vvals.get(v).map{vip =>
+				//TODO Change to explicit difference between unspecified values and an empty set of allowed values
+				val iris = vip.vals.map(_.toSeq.collect{case iri: IRI => iri}).getOrElse(Nil)
+				iris -> vip.providers.toSet
+			}.orElse(v match{
+				case _: NamedVar => Some(Nil -> Set.empty)
+				case _ => None
+			})
+
+			valsExprsOpt.map{
+				case (vals, exprs) =>
+					val filter: Filter = cp match{
+						case uriProp: UriProperty => CategFilter(uriProp, vals)
+						case optUri: OptUriProperty => CategFilter(optUri, vals.map(Some(_)))
+					}
+					filter -> exprs
+			}
+
+		case _ => None
+	}
+
 }

@@ -16,10 +16,19 @@ sealed trait DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern
 }
 
+sealed trait QVar{
+	def name: String
+}
+case class NamedVar(name: String) extends QVar
+case class AnonVar(name: String) extends QVar
+object QVar{
+	def apply(v: Var): QVar = if(v.isAnonymous) AnonVar(v.getName) else NamedVar(v.getName)
+}
+
 final case class PlainDofPattern(
-	dobjVar: Option[String],
-	propPaths: Map[String, Seq[StatementPattern2]],
-	varValues: Map[String, ValueInfoPattern],
+	dobjVar: Option[NamedVar],
+	propPaths: Map[QVar, Seq[StatementPattern2]],
+	varValues: Map[QVar, ValueInfoPattern],
 	filters: Seq[ValueExpr]
 ) extends DofPattern{
 
@@ -85,8 +94,8 @@ object DofPattern{
 
 final case class StatementPattern2(pred: IRI, sp: StatementPattern){
 	assert(sp.getPredicateVar.getValue == pred, "StatementPattern's predicate value must be a specified IRI")
-	def sourceVar: String = sp.getSubjectVar.getName
-	def targetVar: String = sp.getObjectVar.getName
+	def sourceVar = QVar(sp.getSubjectVar)
+	def targetVar = QVar(sp.getObjectVar)
 }
 
 final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[TupleExpr]){
@@ -99,7 +108,7 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 	}
 }
 
-final case class OrderPattern(expr: Order, sortVar: String, descending: Boolean)
+final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolean)
 
 final class OffsetPattern(val slice: Slice){
 	def offset = slice.getOffset.toInt

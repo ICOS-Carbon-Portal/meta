@@ -25,7 +25,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 		val query = parseQuery(queryStr)
 		val pattern = dofps.find(query)
 		val fusions = fuser.findFusions(pattern)
-		DofPatternRewrite.rewrite(fusions)
+		DofPatternRewrite.rewrite(query, fusions)
 
 		val fetchOpt = takeNode.ifIs[DataObjectFetchNode].recursive(query)
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
@@ -38,6 +38,8 @@ class DofPatternFusionTests extends AnyFunSpec{
 		// it("Query AST is simplified after fusion"){
 		// 	QueryOptimizer.optimize(query)
 		// 	println(query.toString)
+		// 	println(fetchNode.fetchRequest)
+		// 	println(fetchNode.varNames)
 		// }
 
 		it("correctly finds data object and object spec variable names"){
@@ -94,6 +96,10 @@ class DofPatternFusionTests extends AnyFunSpec{
 		it("there is no early dobj initialization in the query after fusion"){
 			assert(!EarlyDobjInitSearch.hasEarlyDobjInit(query))
 		}
+
+		it("BindingSetAssingments are cleaned up from the query"){
+			assert(!query.toString.contains("BindingSetAssignment"))
+		}
 	}
 
 	describe("Jupyter search for co2/co/ch4 mixing ratio data objects"){
@@ -143,6 +149,13 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("File name is optimized"){
 			assert(fetchNode.varNames(FileName) === "fileName")
+		}
+
+		it("wasAcquiredBy-pattern is left in the query"){
+			val search = StatementPatternSearch.byPredicate(meta.wasAcquiredBy)
+				.filter(_.getSubjectVar.getName == "dobj")
+				.filter(_.getPredicateVar.isAnonymous)
+			assert(search.recursive(query).isDefined)
 		}
 
 	}

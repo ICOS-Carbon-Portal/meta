@@ -25,7 +25,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 					val varVals = if(obj.hasValue) Map(
 						QVar(obj) -> ValueInfoPattern(
 							Some(Set(obj.getValue)),
-							Nil
+							Seq(sp)
 						)
 					) else Map.empty[QVar, ValueInfoPattern]
 

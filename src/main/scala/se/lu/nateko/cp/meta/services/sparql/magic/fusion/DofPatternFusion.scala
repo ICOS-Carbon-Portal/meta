@@ -14,14 +14,15 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.ValueExpr
 import org.eclipse.rdf4j.query.algebra.Union
 import org.eclipse.rdf4j.query.algebra.SingletonSet
+import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 
 case class FusionResult(
 	fetch: DataObjectFetch,
-	exprsToFuse: Set[TupleExpr],
+	exprsToFuse: Seq[TupleExpr],
 	propVars: Map[NamedVar, Property],
 	isPureCpIndexQuery: Boolean
 ){
-	def essentials = copy(exprsToFuse = Set.empty)
+	def essentials = copy(exprsToFuse = Nil)
 	def essentiallyEqual(other: FusionResult): Boolean = this.essentials == other.essentials
 }
 
@@ -49,14 +50,15 @@ class DofPatternFusion(meta: CpmetaVocab){
 			)
 
 			if(!isValid) Nil else{
+				val newExprsToFuse = subs.flatMap(_.exprsToFuse) :+ union.union
 				val allSame = if(subs.length < 2) true else subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
 
 				if(allSame){
-					Seq(subs.head.copy(exprsToFuse = Set(union.union)))
+					Seq(subs.head.copy(exprsToFuse = newExprsToFuse))
 				} else unionVarProps(subs.map(_.propVars)).map{propVars =>
 					FusionResult(
 						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
-						exprsToFuse = Set(union.union),
+						exprsToFuse = newExprsToFuse,
 						propVars = propVars,
 						isPureCpIndexQuery = subs.forall(_.isPureCpIndexQuery)
 					)
@@ -102,21 +104,28 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val categExprs = categFiltsAndExprs.flatMap(_._2)
 			val allFilts = And(categFilts ++ filts)
 
-			val allExprs = filtExprs ++ categExprs ++ varProps.keys.flatMap(patt.propPaths.get).flatten.collect{
-				//filenames are not in the index, need to leave this pattern in the query
-				case StatementPattern2(pred, sp) if pred != meta.hasName => sp
+			val namedVarProps = varProps.collect{
+				case (nv: NamedVar, prop) => nv -> prop
 			}
+
+			val engagedVars = namedVarProps.keySet.toSet[QVar]
+
+			val statPattExprs = patt.propPaths.values.flatten.collect{
+				//filenames are not in the index, need to leave this pattern in the query
+				case sp2 @ StatementPattern2(pred, sp) if pred != meta.hasName && engagedVars.contains(sp2.targetVar) => sp
+			}
+			val assignmentExprs = patt.varValues.collect{
+				case (v, vif) if varProps.contains(v) => vif.providers
+			}.flatten
+
+			val allExprs = filtExprs ++ categExprs ++ statPattExprs ++ assignmentExprs
 
 			val allRecognized = patt.propPaths.flatMap(_._2).forall{sp2 =>
 				val objVar = sp2.sp.getObjectVar
 				varProps.contains(sp2.targetVar) || (objVar.isAnonymous && !objVar.hasValue)
 			}
 
-			val namedVarProps = varProps.collect{
-				case (nv: NamedVar, prop) => nv -> prop
-			}
-
-			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs.toSet, namedVarProps, allRecognized)
+			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, allRecognized)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {

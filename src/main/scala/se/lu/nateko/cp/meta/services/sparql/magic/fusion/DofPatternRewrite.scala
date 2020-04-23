@@ -12,11 +12,7 @@ import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
 
 object DofPatternRewrite{
 
-	def rewrite(fusions: Seq[FusionResult]): Unit = {
-		val queryTop = {
-			val anyNode = fusions.iterator.flatMap(_.exprsToFuse).next()
-			treeTop(anyNode)
-		}
+	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionResult]): Unit = {
 
 		for(
 			fusion <- fusions;
@@ -55,8 +51,16 @@ object DofPatternRewrite{
 		case _: UnaryTupleOperator =>
 
 		case _ =>
-			node.replaceWith(new SingletonSet)
+			safelyReplace(node, new SingletonSet)
 	}
 
-	private def replaceUnaryOp(op: UnaryTupleOperator): Unit = op.replaceWith(op.getArg)
+	private def replaceUnaryOp(op: UnaryTupleOperator): Unit = safelyReplace(op, op.getArg)
+
+	def safelyReplace(expr: TupleExpr, replacement: TupleExpr): Unit = {
+		val parent = expr.getParentNode
+		if(parent != null){
+			parent.replaceChildNode(expr, replacement)
+			expr.setParentNode(null)
+		}
+	}
 }

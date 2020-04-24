@@ -16,11 +16,16 @@ sealed trait DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern
 }
 
+object DofPattern{
+	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
+}
+
 sealed trait QVar{
 	def name: String
 }
 case class NamedVar(name: String) extends QVar
 case class AnonVar(name: String) extends QVar
+
 object QVar{
 	def apply(v: Var): QVar = if(v.isAnonymous) AnonVar(v.getName) else NamedVar(v.getName)
 }
@@ -37,7 +42,7 @@ final case class PlainDofPattern(
 		case other: PlainDofPattern => (dobjVar, other.dobjVar) match{
 
 			case (Some(dobj1), Some(dobj2)) if(dobj1 != dobj2) =>
-				new DofPatternList(this, another)
+				DofPattern.Empty
 
 			case _ =>
 				val newDobjVar = dobjVar.orElse(other.dobjVar)
@@ -56,9 +61,9 @@ final case class PlainDofPattern(
 				)
 		}
 
-		case j: DofPatternList => new DofPatternList(j.subs.map(this.join _): _*)
+		case lj: LeftJoinDofPattern => new LeftJoinDofPattern(join(lj.left), lj.optionals)
 
-		case u: DofPatternUnion => new DofPatternUnion(u.subs.map(this.join _), u.union)
+		case u: DofPatternUnion => new DofPatternUnion(u.subs.map(join _), u.union)
 
 		case unexpected => throw new MatchError(unexpected)
 	}
@@ -68,6 +73,7 @@ final case class PlainDofPattern(
 final case class ProjectionDofPattern(
 	inner: DofPattern,
 	orderBy: Option[OrderPattern],
+	groupBy: Option[StatGroupByPattern],
 	offset: Option[OffsetPattern],
 	outer: Option[DofPattern]
 ) extends DofPattern {
@@ -80,16 +86,18 @@ final case class ProjectionDofPattern(
 	)
 }
 
-final class DofPatternList(val subs: DofPattern*) extends DofPattern{
-	protected def joinInner(other: DofPattern): DofPattern = new DofPatternList(subs.map(_.join(other)) :_*)
+final class LeftJoinDofPattern(val left: DofPattern, val optionals: Seq[DofPattern]) extends DofPattern{
+	protected def joinInner(other: DofPattern): DofPattern = new LeftJoinDofPattern(left.join(other), optionals)
+	def joinOptional(other: DofPattern) = new LeftJoinDofPattern(left, optionals :+ other)
 }
 
 final class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends DofPattern{
-	protected def joinInner(other: DofPattern): DofPattern = new DofPatternUnion(subs.map(_.join(other)), union)
-}
-
-object DofPattern{
-	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
+	protected def joinInner(other: DofPattern): DofPattern = other match{
+		case lj: LeftJoinDofPattern =>
+			new LeftJoinDofPattern(join(lj.left), lj.optionals)
+		case _ =>
+			new DofPatternUnion(subs.map(_.join(other)), union)
+	}
 }
 
 final case class StatementPattern2(pred: IRI, sp: StatementPattern){
@@ -113,3 +121,5 @@ final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolea
 final class OffsetPattern(val slice: Slice){
 	def offset = slice.getOffset.toInt
 }
+
+final class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)

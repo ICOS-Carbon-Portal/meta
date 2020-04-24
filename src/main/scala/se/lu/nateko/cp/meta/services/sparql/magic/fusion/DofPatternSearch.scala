@@ -6,6 +6,11 @@ import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
+
+
+import DofPatternSearch._
+import StatsFetchPatternSearch._
 
 class DofPatternSearch(meta: CpmetaVocab){
 
@@ -60,12 +65,12 @@ class DofPatternSearch(meta: CpmetaVocab){
 			union
 		)
 
-		case otherBinOp: BinaryTupleOperator => new DofPatternList(
-			Seq(find0(otherBinOp.getLeftArg), find0(otherBinOp.getRightArg)).flatMap{
-				case inner: DofPatternList => inner.subs
-				case other => Seq(other)
-			}: _*
-		)
+		case leftJoin: LeftJoin =>
+			val rightPatt = find0(leftJoin.getRightArg)
+			find0(leftJoin.getLeftArg) match{
+				case lj: LeftJoinDofPattern => lj.joinOptional(rightPatt)
+				case other => other.join(new LeftJoinDofPattern(DofPattern.Empty, Seq(rightPatt)))
+			}
 
 		case filter: Filter =>
 			DofPattern.Empty.copy(filters = Seq(filter.getCondition)).join(find0(filter.getArg))
@@ -79,10 +84,8 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 		case proj: Projection => find0(proj.getArg) match{
 			case pdofp: ProjectionDofPattern => pdofp
-			case any => ProjectionDofPattern(any, None, None, None)
+			case any => ProjectionDofPattern(any, None, None, None, None)
 		}
-
-		case ext: Extension => find0(ext.getArg)
 
 		case order: Order =>
 			val inner = find0(order.getArg)
@@ -99,21 +102,47 @@ class DofPatternSearch(meta: CpmetaVocab){
 			}
 			opOpt.fold(inner)(op => inner match {
 				case _: PlainDofPattern | _: DofPatternUnion | _: ProjectionDofPattern =>
-					ProjectionDofPattern(inner, Some(op), None, None)
+					ProjectionDofPattern(inner, Some(op), None, None, None)
 				case _ =>
 					inner
 			})
+
+		case ext: Extension =>
+			val groupByOpt = for(
+				(countVar, dobjCandVar) <- singleCountExtension(ext);
+				group <- ext.getArg.asOptInstanceOf[Group];
+				grpVars = group.getGroupBindingNames.asScala.toSet;
+				countedVar <- singleVarCountGroup(group)
+				if (countedVar == dobjCandVar) && (grpVars.size == 3 || grpVars.size == 4)
+			) yield {
+				val statGbPatt = Some(new StatGroupByPattern(countVar, dobjCandVar, grpVars, ext))
+
+				def mergeWithInner(patt: DofPattern): DofPattern = patt match{
+					case pdp @ ProjectionDofPattern(_, _, _, _, None) =>
+						pdp.copy(groupBy = statGbPatt)
+					case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
+						pdp.copy(outer = Some(mergeWithInner(outer)))
+					case inner =>
+						ProjectionDofPattern(inner, None, statGbPatt, None, None)
+				}
+				mergeWithInner(find0(group.getArg))
+			}
+			groupByOpt.getOrElse(find0(ext.getArg))
 
 		case _ => DofPattern.Empty
 
 	}
 
+}
+
+object DofPatternSearch{
+
 	def mergeProjectionPatterns(patt: DofPattern): DofPattern = patt match{
 
-		case pdp @ ProjectionDofPattern(inner: ProjectionDofPattern, _, _, None) =>
+		case pdp @ ProjectionDofPattern(inner: ProjectionDofPattern, _, _, _, None) =>
 			mergeProjectionPatterns(pdp.copy(inner = DofPattern.Empty) join inner)
 
-		case pdp @ ProjectionDofPattern(_, _, _, Some(outer)) =>
+		case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
 			pdp.copy(outer = Some(mergeProjectionPatterns(outer)))
 
 		case other => other

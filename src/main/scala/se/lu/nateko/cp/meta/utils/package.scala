@@ -6,6 +6,8 @@ import scala.util.{Try, Success, Failure}
 
 package object utils {
 
+import scala.reflect.ClassTag
+
 	implicit class ToTryConvertibleOption[T](val inner: Option[T]) extends AnyVal{
 		def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 			.getOrElse(Failure(error))
@@ -23,9 +25,16 @@ package object utils {
 		traceWriter.toString
 	}
 
-	implicit class OptionalItemOrSeqOps[T](val item: Option[Either[T, Seq[T]]]){
+	implicit class OptionalItemOrSeqOps[T](val item: Option[Either[T, Seq[T]]]) extends AnyVal{
 		def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
 			either.fold(Seq(_), identity)
+		}
+	}
+
+	implicit class AnyRefWithSafeOptTypecast(val inner: AnyRef) extends AnyVal{
+		def asOptInstanceOf[T: ClassTag]: Option[T] = inner match{
+			case t: T => Some(t)
+			case _ => None
 		}
 	}
 }

@@ -31,7 +31,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 	def findFusions(patt: DofPattern): Seq[FusionResult] = patt match{
 		case DofPattern.Empty => Nil
 
-		case pdp @ ProjectionDofPattern(_, _, _, Some(outer)) =>
+		case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
 			findFusions(pdp.copy(outer = None)) ++ findFusions(outer)
 
 		case pdp: ProjectionDofPattern => findFusions(pdp.inner) match{
@@ -39,7 +39,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			case any => any
 		}
 
-		case list: DofPatternList => list.subs.flatMap(findFusions)
+		case lj: LeftJoinDofPattern => findFusions(lj.left) ++ lj.optionals.flatMap(findFusions)
 
 		case union: DofPatternUnion =>
 			val subSeqs = union.subs.map(findFusions)

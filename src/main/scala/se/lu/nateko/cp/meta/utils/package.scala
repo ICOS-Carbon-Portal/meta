@@ -3,10 +3,10 @@ package se.lu.nateko.cp.meta
 import java.time.Instant
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import scala.util.{Try, Success, Failure}
+import scala.reflect.ClassTag
 
 package object utils {
 
-import scala.reflect.ClassTag
 
 	implicit class ToTryConvertibleOption[T](val inner: Option[T]) extends AnyVal{
 		def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
@@ -37,4 +37,5 @@ import scala.reflect.ClassTag
 			case _ => None
 		}
 	}
+
 }

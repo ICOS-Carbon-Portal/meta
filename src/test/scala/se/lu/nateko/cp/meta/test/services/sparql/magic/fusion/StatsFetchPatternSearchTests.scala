@@ -7,16 +7,27 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DobjStatFusion
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 
 class StatsFetchPatternSearchTests extends AnyFunSpec{
-	private val sfps = new StatsFetchPatternSearch(new CpmetaVocab(new MemValueFactory))
+	private val meta = new CpmetaVocab(new MemValueFactory)
+	private val dofps = new DofPatternSearch(meta)
+	private val fuser = new DofPatternFusion(meta)
 
 	private def parseQuery(q: String) = (new SPARQLParser).parseQuery(q, "http://dummy.org").getTupleExpr
 
 	private def query = parseQuery(StatsFetchPatternSearchTests.query)
+
+	private def groupSearch(query: TupleExpr): Option[StatsFetchNode] = {
+		fuser.findFusions(dofps.find(query)).collectFirst{
+			case dsf: DobjStatFusion => dsf.node
+		}
+	}
 
 	// it("prints query"){
 	// 	val q = query
@@ -26,7 +37,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 	// }
 
 	it("detects the GROUP BY clause without the site pattern/variable"){
-		val groupOpt = sfps.groupSearch("dobj")(query)
+		val groupOpt = groupSearch(query).map(_.group)
 		groupOpt match{
 			case Some(GroupPattern(filter, "submitter", "stationOpt", "spec", None)) =>
 				assert(filter.exists{case FilterDeprecated =>})
@@ -39,7 +50,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 
 	it("detects the GROUP BY clause with the site pattern/variable"){
 		val withSite = parseQuery(StatsFetchPatternSearchTests.queryWithSite)
-		val groupOpt = sfps.groupSearch("dobj")(withSite)
+		val groupOpt = groupSearch(withSite).map(_.group)
 		groupOpt match{
 			case Some(GroupPattern(filter, "submitter", "station", "spec", Some("site"))) =>
 				assert(filter.exists{case FilterDeprecated =>})
@@ -51,13 +62,13 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 	}
 
 	it("detects the stats-fetch pattern"){
-		val statOpt = sfps.search(query)
+		val statOpt = groupSearch(query)
 		assert(statOpt.isDefined)
 	}
 
 	it("works with nesting queries"){
 		val nesting = parseQuery(StatsFetchPatternSearchTests.nestingQuery)
-		assert(sfps.search(nesting).isDefined)
+		assert(groupSearch(nesting).isDefined)
 	}
 
 	def requiredProps(f: Filter): Int = f.optimize.collect{case RequiredProps(props) => props.size}.sum

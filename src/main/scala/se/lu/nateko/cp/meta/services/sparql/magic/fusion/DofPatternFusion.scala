@@ -15,27 +15,35 @@ import org.eclipse.rdf4j.query.algebra.ValueExpr
 import org.eclipse.rdf4j.query.algebra.Union
 import org.eclipse.rdf4j.query.algebra.SingletonSet
 import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
+import org.eclipse.rdf4j.query.algebra.Extension
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 
-case class FusionResult(
+sealed trait FusionPattern
+case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
+
+case class DobjListFusion(
 	fetch: DataObjectFetch,
 	exprsToFuse: Seq[TupleExpr],
 	propVars: Map[NamedVar, Property],
 	isPureCpIndexQuery: Boolean
-){
+) extends FusionPattern{
 	def essentials = copy(exprsToFuse = Nil)
-	def essentiallyEqual(other: FusionResult): Boolean = this.essentials == other.essentials
+	def essentiallyEqual(other: DobjListFusion): Boolean = this.essentials == other.essentials
 }
 
 class DofPatternFusion(meta: CpmetaVocab){
 
-	def findFusions(patt: DofPattern): Seq[FusionResult] = patt match{
+	def findFusions(patt: DofPattern): Seq[FusionPattern] = patt match{
 		case DofPattern.Empty => Nil
 
 		case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
 			findFusions(pdp.copy(outer = None)) ++ findFusions(outer)
 
+		case pdp @ ProjectionDofPattern(lj: LeftJoinDofPattern, _, Some(groupBy), _, _) =>
+			findStatsFusion(groupBy, lj).fold(findFusions(pdp.copy(groupBy = None)))(Seq(_))
+
 		case pdp: ProjectionDofPattern => findFusions(pdp.inner) match{
-			case Seq(singleResult) => Seq(addOrderByAndOffset(pdp, singleResult))
+			case Seq(singleResult: DobjListFusion) => Seq(addOrderByAndOffset(pdp, singleResult))
 			case any => any
 		}
 
@@ -43,20 +51,20 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		case union: DofPatternUnion =>
 			val subSeqs = union.subs.map(findFusions)
-			val subs = subSeqs.flatten
+			val subs = subSeqs.flatten.collect{case dlf: DobjListFusion => dlf}
 
 			val isValid = !subs.isEmpty && subSeqs.forall(_.size == 1) && subs.forall(
 				dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0
 			)
 
-			if(!isValid) Nil else{
+			if(!isValid) subSeqs.flatten else{
 				val newExprsToFuse = subs.flatMap(_.exprsToFuse) :+ union.union
 				val allSame = if(subs.length < 2) true else subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
 
 				if(allSame){
 					Seq(subs.head.copy(exprsToFuse = newExprsToFuse))
 				} else unionVarProps(subs.map(_.propVars)).map{propVars =>
-					FusionResult(
+					DobjListFusion(
 						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
 						exprsToFuse = newExprsToFuse,
 						propVars = propVars,
@@ -69,7 +77,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 	}
 
-	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: FusionResult): FusionResult = if(!inner.isPureCpIndexQuery) inner else{
+	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: DobjListFusion): DobjListFusion = if(!inner.isPureCpIndexQuery) inner else{
 		val sortBy = pdp.orderBy.map(op => op -> inner.propVars.get(op.sortVar)).collect{
 			case (op, Some(cp: ContProp)) => SortBy(cp, op.descending)
 		}
@@ -80,7 +88,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 		)
 	}
 
-	def findPlainFusion(patt: PlainDofPattern): Option[FusionResult] = patt.dobjVar.collect{
+	def findPlainFusion(patt: PlainDofPattern): Option[DobjListFusion] = patt.dobjVar.collect{
 		//if dobj is pre-specified, then there is no need for SPARQL magic
 		case dobjVar if(patt.varValues.get(dobjVar).flatMap(_.vals).isEmpty) =>
 
@@ -125,7 +133,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 				varProps.contains(sp2.targetVar) || (objVar.isAnonymous && !objVar.hasValue)
 			}
 
-			FusionResult(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, allRecognized)
+			DobjListFusion(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, allRecognized)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {
@@ -175,6 +183,36 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case _ => None
 	}
 
+	def findStatsFusion(groupBy: StatGroupByPattern, inner: LeftJoinDofPattern): Option[DobjStatFusion] = inner.left match{
+		case pdp @ PlainDofPattern(Some(NamedVar(dobjVar)), _, _, _) if dobjVar == groupBy.dobjVar =>
+
+			findPlainFusion(pdp).flatMap{dobjListFusion =>
+				val optionals = inner.optionals.collect{case pdp: PlainDofPattern => pdp}
+				if(optionals.size == inner.optionals.size && !optionals.isEmpty){
+
+					val allVarsPatt = DofPattern.Empty.copy(
+						dobjVar = Some(NamedVar(dobjVar)),
+						propPaths = pdp.propPaths ++ optionals.flatMap(_.propPaths)
+					)
+					for(
+						synthFusion <- findPlainFusion(allVarsPatt);
+						lookup = synthFusion.propVars.map(_.swap);
+						if lookup.size <= 4;
+						specVar <- lookup.get(Spec);
+						submVar <- lookup.get(Submitter);
+						stationVar <- lookup.get(Station);
+						siteVarOpt = lookup.get(Site)
+						if (Seq(specVar, submVar, stationVar) ++ siteVarOpt).map(_.name).toSet == groupBy.groupVars
+					) yield{
+						val gp = GroupPattern(dobjListFusion.fetch.filter, submVar.name, stationVar.name, specVar.name, siteVarOpt.map(_.name))
+						val node = new StatsFetchNode(groupBy.countVar, gp)
+						DobjStatFusion(groupBy.expr, node)
+					}
+				} else None
+			}
+		case _ => None
+	}
+
 }
 
 object DofPatternFusion{
@@ -218,5 +256,4 @@ object DofPatternFusion{
 
 		case _ => None
 	}
-
 }

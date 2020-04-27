@@ -118,8 +118,10 @@ class DofPatternSearch(meta: CpmetaVocab){
 				val statGbPatt = Some(new StatGroupByPattern(countVar, dobjCandVar, grpVars, ext))
 
 				def mergeWithInner(patt: DofPattern): DofPattern = patt match{
-					case pdp @ ProjectionDofPattern(_, _, _, _, None) =>
-						pdp.copy(groupBy = statGbPatt)
+					case pdp @ ProjectionDofPattern(_, _, _, _, None) => pdp.groupBy match{
+						case None => pdp.copy(groupBy = statGbPatt)
+						case Some(_) => pdp
+					}
 					case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
 						pdp.copy(outer = Some(mergeWithInner(outer)))
 					case inner =>

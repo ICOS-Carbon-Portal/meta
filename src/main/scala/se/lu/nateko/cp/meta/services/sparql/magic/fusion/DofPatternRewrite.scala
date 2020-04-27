@@ -12,14 +12,18 @@ import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
 
 object DofPatternRewrite{
 
-	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionResult]): Unit = {
+	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = fusions.foreach{
+		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
+		case DobjStatFusion(expr, statsNode) =>
+			expr.getArg.replaceWith(statsNode)
+			expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
+	}
 
-		for(
-			fusion <- fusions;
-			exprs = fusion.exprsToFuse if !exprs.isEmpty;
-			propVars = fusion.propVars.map{case (qvar, prop) => (prop, qvar.name)};
-			dobjVar <- propVars.get(DobjUri).toSeq
-		){
+	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
+		import fusion.{exprsToFuse => exprs}
+		val propVars = fusion.propVars.map{case (qvar, prop) => (prop, qvar.name)}
+
+		propVars.get(DobjUri).foreach{dobjVar =>
 
 			val subsumingParents = exprs.filter{
 				case _: BinaryTupleOperator => true
@@ -37,9 +41,10 @@ object DofPatternRewrite{
 			val fetchExpr = new DataObjectFetchNode(dobjVar, fusion.fetch, propVars)
 
 			deepest.replaceWith(fetchExpr)
+
+			DanglingCleanup.clean(queryTop)
 		}
 
-		DanglingCleanup.clean(queryTop)
 	}
 
 	def replaceNode(node: TupleExpr): Unit = node match{

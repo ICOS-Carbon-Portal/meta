@@ -237,14 +237,11 @@ object DofPatternFusion{
 	def getCategFilter(v: QVar, prop: Property, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = prop match{
 		case cp: CategProp =>
 
-			val valsExprsOpt: Option[(Seq[IRI], Set[TupleExpr])] = vvals.get(v).map{vip =>
-				//TODO Change to explicit difference between unspecified values and an empty set of allowed values
-				val iris = vip.vals.map(_.toSeq.collect{case iri: IRI => iri}).getOrElse(Nil)
-				iris -> vip.providers.toSet
-			}.orElse(v match{
-				case _: NamedVar => Some(Nil -> Set.empty)
-				case _ => None
-			})
+			val valsExprsOpt: Option[(Seq[IRI], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
+
+				val irisOpt = vip.vals.map(_.toSeq.collect{case iri: IRI => iri}).filter(!_.isEmpty)
+				irisOpt.map(_ -> vip.providers.toSet)
+			}
 
 			valsExprsOpt.map{
 				case (vals, exprs) =>

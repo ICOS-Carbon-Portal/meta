@@ -113,14 +113,11 @@ class DofPatternFusionTests extends AnyFunSpec{
 		// 	println(fetchNode.varNames)
 		// }
 
-		it("Only spec selection is present (non-bound)"){
+		it("No category filters are present"){
 			val selections = req.filter.collect{
 				case c @ CategFilter(_, _) => c
 			}
-			assert(selections.length == 1, "")
-			val sel = selections.head
-			assert(sel.category == Spec)
-			assert(sel.values.isEmpty)
+			assert(selections.isEmpty)
 		}
 
 		it("No continuous-prop filters are present, sorting is left untouched"){
@@ -171,16 +168,9 @@ class DofPatternFusionTests extends AnyFunSpec{
 		// 	println(fetchNode.varNames)
 		// }
 
-		it("finds two selections (spec and station)"){
-			assert(req.filter.collect{case CategFilter(_, _) => }.size == 2)
-		}
-
-		it("spec selection is unbound"){
-			val specValues: Seq[Seq[AnyRef]] = req.filter.collect{
-				case CategFilter(prop, values) if prop == Spec => values
-			}
-			assert(specValues.nonEmpty)
-			assert(specValues.flatten.isEmpty)
+		it("finds only one categ filter (station)"){
+			val categs = req.filter.collect{case CategFilter(prop, _) => prop}
+			assert(categs == Seq(Station))
 		}
 
 		it("station is bound to single constant"){

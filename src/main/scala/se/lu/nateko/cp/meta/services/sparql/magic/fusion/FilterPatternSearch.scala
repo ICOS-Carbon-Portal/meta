@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
 
 import PatternFinder._
 
@@ -10,17 +11,19 @@ import org.eclipse.rdf4j.query.algebra.Compare
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
 import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And => IndexAnd, Or => IndexOr, _}
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import scala.util.Try
 import java.time.Instant
 
-//TODO Add searching of multiple FILTER clauses
 class FilterPatternSearch(varInfo: String => Option[ContProp]){
 	import FilterPatternSearch._
 	import DataObjectFetchPattern.FilterPattern
 
+	//TODO Clean this up
 	val search: TopNodeSearch[FilterPattern] = takeNode
 		.ifIs[Filter]
 		.thenAlsoSearch{fqmn =>
@@ -53,6 +56,7 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 		case _ => None
 	}
 
+	//TODO Generalize to support categ filters in the filter exprs
 	private def getContFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[IndexFilter] = {
 
 		def makeFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
@@ -107,5 +111,27 @@ object FilterPatternSearch{
 	def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.DATETIME)
 		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
 	else None
+
+	def parsePropValueFilter(prop: Property, v: Value): Option[IndexFilter] = prop match{
+		case uriProp: UriProperty with CategProp =>
+			v.asOptInstanceOf[IRI].map(iri => CategFilter(uriProp, Seq(iri)))
+
+		case optUriProp: OptUriProperty =>
+			v.asOptInstanceOf[IRI].map(iri => CategFilter(optUriProp, Seq(Some(iri))))
+
+		case dp: DateProperty =>
+			v.asOptInstanceOf[Literal].flatMap(asTsEpochMillis).map(d => ContFilter(dp, EqualsFilter(d)))
+
+		case FileName =>
+			v.asOptInstanceOf[Literal].flatMap(asString).map(fn => ContFilter(FileName, EqualsFilter(fn)))
+
+		case FileSize =>
+			v.asOptInstanceOf[Literal].flatMap(asLong).map(fs => ContFilter(FileSize, EqualsFilter(fs)))
+
+		case SamplingHeight =>
+			v.asOptInstanceOf[Literal].flatMap(asFloat).map(sh => ContFilter(SamplingHeight, EqualsFilter(sh)))
+
+	}
+
 
 }

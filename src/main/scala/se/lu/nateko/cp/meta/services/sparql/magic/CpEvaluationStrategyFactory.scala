@@ -21,6 +21,8 @@ import scala.jdk.CollectionConverters.IteratorHasAsJava
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.FilterPatternSearch
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
 
 
 class CpEvaluationStrategyFactory(
@@ -97,7 +99,7 @@ class CpEvaluationStrategyFactory(
 		}
 
 		val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
-			.initializeRequest(doFetch.fetchRequest)
+			.enrichWithFilters(doFetch.fetchRequest)
 
 		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
@@ -115,25 +117,16 @@ class CpEvaluationStrategyFactory(
 
 class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 
-	def initializeRequest(orig: DataObjectFetch): DataObjectFetch = initStation(initSpec(orig))
+	def enrichWithFilters(orig: DataObjectFetch): DataObjectFetch = {
 
-	private def initSpec(req: DataObjectFetch): DataObjectFetch = initReq(req, Spec)(identity)
-	private def initStation(req: DataObjectFetch): DataObjectFetch = initReq(req, Station)(Some(_))
+		val extraFilters: Seq[Filter] = varNames.flatMap{ case (prop, varName) =>
+			Option(bindings.getValue(varName)).flatMap(
+				FilterPatternSearch.parsePropValueFilter(prop, _)
+			)
+		}.toIndexedSeq
 
-	private def initReq[T <: AnyRef](orig: DataObjectFetch, prop: TypedCategProp[T])(mapper: IRI => T): DataObjectFetch = {
-
-		val betterReqOpt: Option[DataObjectFetch] = for(
-			propVar <- varNames.get(prop) if bindings.hasBinding(propVar);
-			propVal <- bindings.getBinding(propVar).getValue match {
-				case uri: IRI => Some(mapper(uri))
-				case _ => None
-			}
-		) yield orig.copy(
-			filter = orig.filter.replace{
-				case CategFilter(`prop`, values) if values.isEmpty => CategFilter(prop, Seq(propVal))
-			}
+		if(extraFilters.isEmpty) orig else orig.copy(
+			filter = And(extraFilters :+ orig.filter).optimize
 		)
-
-		betterReqOpt.getOrElse(orig)
 	}
 }

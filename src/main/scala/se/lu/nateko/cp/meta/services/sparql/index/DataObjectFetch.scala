@@ -28,7 +28,7 @@ package object index{
 
 	type TypedCategProp[T <: AnyRef] = CategProp{type ValueType = T}
 
-	sealed trait UriProperty extends Property{type ValueType = IRI}
+	sealed trait UriProperty extends CategProp{type ValueType = IRI}
 	sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
 
 	final case object DobjUri extends UriProperty
@@ -48,8 +48,8 @@ package object index{
 
 	sealed trait CategProp extends Property{type ValueType <: AnyRef}
 
-	final case object Spec extends CategProp with UriProperty
+	final case object Spec extends UriProperty
 	final case object Station extends OptUriProperty
 	final case object Site extends OptUriProperty
-	final case object Submitter extends CategProp with UriProperty
+	final case object Submitter extends UriProperty
 }

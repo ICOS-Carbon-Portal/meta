@@ -119,7 +119,7 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 
 	if(file.isSuccess){//pre-chosen file, e.g. due to browser page reload
-		queue.execute(() => fileInput.oninput(null))// no need to do this eagerly, just scheduling
+		queue.execute(() => fileInput.onchange(null))// no need to do this eagerly, just scheduling
 	}
 }
 

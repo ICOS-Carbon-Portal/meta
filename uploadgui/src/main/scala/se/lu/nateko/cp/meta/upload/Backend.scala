@@ -61,7 +61,14 @@ object Backend {
 		val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQuery"
 		Ajax
 			.put(url, file)
-			.recoverWith(recovery("upload file"))
+			.recoverWith {
+				case AjaxException(xhr) =>
+					val msg = if(xhr.responseText.isEmpty)
+						"File could not be found"
+					else xhr.responseText
+
+					Future.failed(new Exception(msg))
+			}
 			.flatMap(xhr => xhr.status match {
 				case 200 => Future.successful(())
 				case _ => Future.failed(new Exception(xhr.responseText))

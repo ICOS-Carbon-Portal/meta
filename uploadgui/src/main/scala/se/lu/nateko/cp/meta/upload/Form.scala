@@ -86,7 +86,7 @@ class Form(
 								if (fileInput.hasBeenModified)
 									fileInput.rehash
 								else
-									Future.successful()
+									Future.successful(())
 						}{ _ =>
 							for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
 								whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>

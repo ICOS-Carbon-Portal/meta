@@ -183,32 +183,30 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case _ => None
 	}
 
-	def findStatsFusion(groupBy: StatGroupByPattern, inner: LeftJoinDofPattern): Option[DobjStatFusion] = inner.left match{
-		case pdp @ PlainDofPattern(Some(NamedVar(dobjVar)), _, _, _) if dobjVar == groupBy.dobjVar =>
+	def findStatsFusion(groupBy: StatGroupByPattern, inner: LeftJoinDofPattern): Option[DobjStatFusion] = findFusions(inner.left) match{
+		case Seq(DobjListFusion(DataObjectFetch(filter, None, 0), _, propVars, true))
+			if propVars.get(NamedVar(groupBy.dobjVar)).contains(DobjUri) =>
 
-			findPlainFusion(pdp).flatMap{dobjListFusion =>
-				val optionals = inner.optionals.collect{case pdp: PlainDofPattern => pdp}
-				if(optionals.size == inner.optionals.size && !optionals.isEmpty){
+			val optionals = inner.optionals.collect{
+				case pdp @ PlainDofPattern(None, _, _, Nil) =>
+					findPlainFusion(pdp.copy(dobjVar = Some(NamedVar(groupBy.dobjVar))))
+			}.flatten
 
-					val allVarsPatt = DofPattern.Empty.copy(
-						dobjVar = Some(NamedVar(dobjVar)),
-						propPaths = pdp.propPaths ++ optionals.flatMap(_.propPaths)
-					)
-					for(
-						synthFusion <- findPlainFusion(allVarsPatt);
-						lookup = synthFusion.propVars.map(_.swap);
-						if lookup.size <= 4;
-						specVar <- lookup.get(Spec);
-						submVar <- lookup.get(Submitter);
-						stationVar <- lookup.get(Station);
-						siteVarOpt = lookup.get(Site)
-						if (Seq(specVar, submVar, stationVar) ++ siteVarOpt).map(_.name).toSet == groupBy.groupVars
-					) yield{
-						val gp = GroupPattern(dobjListFusion.fetch.filter, submVar.name, stationVar.name, specVar.name, siteVarOpt.map(_.name))
-						val node = new StatsFetchNode(groupBy.countVar, gp)
-						DobjStatFusion(groupBy.expr, node)
-					}
-				} else None
+			if(optionals.size != inner.optionals.size || optionals.isEmpty) None else {
+
+				val lookup = (propVars ++ optionals.flatMap(_.propVars)).map(_.swap)
+
+				for(
+					specVar <- lookup.get(Spec);
+					submVar <- lookup.get(Submitter);
+					stationVar <- lookup.get(Station);
+					siteVarOpt = lookup.get(Site);
+					if (Seq(specVar, submVar, stationVar) ++ siteVarOpt).map(_.name).toSet == groupBy.groupVars
+				) yield{
+					val gp = GroupPattern(filter, submVar.name, stationVar.name, specVar.name, siteVarOpt.map(_.name))
+					val node = new StatsFetchNode(groupBy.countVar, gp)
+					DobjStatFusion(groupBy.expr, node)
+				}
 			}
 		case _ => None
 	}

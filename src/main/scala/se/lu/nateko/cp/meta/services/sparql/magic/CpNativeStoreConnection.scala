@@ -2,7 +2,9 @@ package org.eclipse.rdf4j.sail.nativerdf
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchPatternSearch
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternRewrite
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import org.eclipse.rdf4j.query.algebra._
 import org.eclipse.rdf4j.query.Dataset
@@ -17,8 +19,6 @@ import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.EarlyDobjInitSearch
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
 import scala.util.Try
 
 class CpNativeStoreConnection(
@@ -39,27 +39,15 @@ class CpNativeStoreConnection(
 
 		logger.debug("Original query model:\n{}", expr)
 
-		val clone: TupleExpr = TupleExprCloner.cloneExpr(expr)
-		val dofps = new DataObjectFetchPatternSearch(metaVocab)
+		val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
+		val dofps = new DofPatternSearch(metaVocab)
+		val fuser = new DofPatternFusion(metaVocab)
 
-		def dobjFetchFusion = dofps.search(clone) match{
-			case None => clone
-			case Some(patt) =>
-				patt.fuse()
-				if(EarlyDobjInitSearch.hasEarlyDobjInit(clone)) TupleExprCloner.cloneExpr(expr)
-				else {
-					logger.debug("Fused query model (dobj list fetch):\n{}", clone)
-					clone
-				}
-		}
+		val pattern = dofps.find(queryExpr)
+		val fusions = fuser.findFusions(pattern)
+		DofPatternRewrite.rewrite(queryExpr, fusions)
 
-		val queryExpr = (new StatsFetchPatternSearch(metaVocab)).search(clone) match {
-			case None => dobjFetchFusion
-			case Some(statPatt) =>
-				statPatt.fuse()
-				logger.debug("Fused query model (stats fetch):\n{}", clone)
-				clone
-		}
+		logger.debug("Fused query model:\n{}", queryExpr)
 
 		flush()
 		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)

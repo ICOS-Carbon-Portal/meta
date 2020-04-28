@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import se.lu.nateko.cp.meta.services.sparql.index.`package`.DobjUri
+import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
 import org.eclipse.rdf4j.query.algebra.SingletonSet
 import org.eclipse.rdf4j.query.algebra.BinaryTupleOperator
 import org.eclipse.rdf4j.query.algebra.TupleExpr

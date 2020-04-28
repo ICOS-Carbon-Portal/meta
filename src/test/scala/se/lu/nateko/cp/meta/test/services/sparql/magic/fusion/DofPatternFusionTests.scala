@@ -245,13 +245,17 @@ class DofPatternFusionTests extends AnyFunSpec{
 				case Or(Seq(ContFilter(prop1, _), ContFilter(prop2, _))) if prop1 == SubmissionEnd && prop2 == SubmissionEnd =>
 			})
 		}
-		ignore("Query AST is simplified after fusion"){
-//				println(parseQuery(TestQueries.last100uploaded))
-			println("After fusion:")
-			println(query)
-			println("After optimization:")
-			println(QueryOptimizer.optimize(query))
+
+		it("detects the sorting"){
+			assert(fetchNode.fetchRequest.sort.isDefined)
 		}
+		// ignore("Query AST is simplified after fusion"){
+		// 	println(parseQuery(TestQueries.last100uploaded))
+		// 	println("After fusion:")
+		// 	println(query)
+		// 	println("After optimization:")
+		// 	println(QueryOptimizer.optimize(query))
+		// }
 	}
 
 }

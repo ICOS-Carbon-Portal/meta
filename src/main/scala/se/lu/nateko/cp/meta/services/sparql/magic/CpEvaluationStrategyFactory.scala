@@ -96,8 +96,8 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-		val fetchRequest = doFetch.fetchRequest//new RequestInitializer(doFetch.varNames, bindings)
-			//.initializeRequest(doFetch.fetchRequest)
+		val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
+			.initializeRequest(doFetch.fetchRequest)
 
 		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)

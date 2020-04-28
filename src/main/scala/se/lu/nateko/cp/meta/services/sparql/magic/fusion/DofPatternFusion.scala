@@ -77,13 +77,16 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 	}
 
-	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: DobjListFusion): DobjListFusion = if(!inner.isPureCpIndexQuery) inner else{
+	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: DobjListFusion): DobjListFusion = {
 		val sortBy = pdp.orderBy.map(op => op -> inner.propVars.get(op.sortVar)).collect{
 			case (op, Some(cp: ContProp)) => SortBy(cp, op.descending)
 		}
-		val exprs = inner.exprsToFuse ++ sortBy.flatMap(_ => pdp.orderBy.map(_.expr)) ++ pdp.offset.map(_.slice)
+
+		val offset = pdp.offset.filter(_ => inner.isPureCpIndexQuery)
+
+		val exprs = inner.exprsToFuse ++ sortBy.flatMap(_ => pdp.orderBy.map(_.expr)) ++ offset.map(_.slice)
 		inner.copy(
-			fetch = inner.fetch.copy(sort = sortBy, offset = pdp.offset.fold(0)(_.offset)),
+			fetch = inner.fetch.copy(sort = sortBy, offset = offset.fold(0)(_.offset)),
 			exprsToFuse = exprs
 		)
 	}

@@ -133,9 +133,17 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		case ContFilter(prop, filterReq) =>
 			Some(bitmap(prop).filter(filterReq))
 
-		case CategFilter(category, values) =>
-			val perValue = categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+		case CategFilter(category, values) => category match{
+			case dobjUri if dobjUri == DobjUri =>
+				val objIndices: Seq[Int] = values
+					.collect{case iri: IRI => iri}
+					.collect{case CpVocab.DataObject(hash, _) => idLookup.get(hash)}
+					.flatten
+				Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
+			case _ =>
+				val perValue = categMap(category)
+				or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+		}
 
 		case RequiredProps(props) =>
 			and(props.map(bitmap(_).all))
@@ -160,7 +168,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		if(condHappened) None else Some(seq)
 	}
 	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if(bms.isEmpty) None else Some(BufferFastAggregation.or(bms: _*))
+		if(bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms: _*))
 
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms: _*))

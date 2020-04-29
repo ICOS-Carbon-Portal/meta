@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And =>
 import scala.util.Try
 import java.time.Instant
 
-class FilterPatternSearch(varInfo: String => Option[ContProp]){
+class FilterPatternSearch(varInfo: String => Option[Property]){
 	import FilterPatternSearch._
 
 	def parseFilterExpr(expr: ValueExpr): Option[IndexFilter] = expr match {
@@ -33,19 +33,18 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 
 		case cmp: Compare =>
 			(cmp.getLeftArg, cmp.getRightArg) match{
-				case (v: Var, c: ValueConstant) => getContFilter(v, c, cmp.getOperator)
-				case (c: ValueConstant, v: Var) => getContFilter(v, c, swapOp(cmp.getOperator))
+				case (v: Var, c: ValueConstant) => getFilter(v, c, cmp.getOperator)
+				case (c: ValueConstant, v: Var) => getFilter(v, c, swapOp(cmp.getOperator))
 				case _ => None
 			}
 
 		case _ => None
 	}
 
-	//TODO Generalize to support categ filters in the filter exprs
-	private def getContFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[IndexFilter] = {
+	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[IndexFilter] = {
+		import Compare.CompareOp._
 
-		def makeFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
-			import Compare.CompareOp._
+		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
 
 			val reqOpt: Option[FilterRequest[prop.ValueType]] = op match{
 				case EQ => Some(EqualsFilter(limit))
@@ -59,19 +58,19 @@ class FilterPatternSearch(varInfo: String => Option[ContProp]){
 			reqOpt.map(ContFilter(prop, _))
 		}
 
-		for(
-			prop <- if(!left.isAnonymous) varInfo(left.getName) else None;
-			lit <- right.getValue match{
-				case lit: Literal => Some(lit)
+		if(left.isAnonymous) None else varInfo(left.getName).flatMap{
+			case contProp: ContProp => right.getValue match{
+				case lit: Literal => contProp match{
+					case dp: DateProperty => asTsEpochMillis(lit).flatMap(makeContFilter(dp))
+					case FileName         => asString(lit).flatMap(makeContFilter(FileName))
+					case FileSize         => asLong(lit).flatMap(makeContFilter(FileSize))
+					case SamplingHeight   => asFloat(lit).flatMap(makeContFilter(SamplingHeight))
+				}
 				case _ => None
-			};
-			filter <- prop match{
-				case dp: DateProperty => asTsEpochMillis(lit).flatMap(makeFilter(dp))
-				case FileName         => asString(lit).flatMap(makeFilter(FileName))
-				case FileSize         => asLong(lit).flatMap(makeFilter(FileSize))
-				case SamplingHeight   => asFloat(lit).flatMap(makeFilter(SamplingHeight))
 			}
-		) yield filter
+			case prop =>
+				if(op != EQ) None else parsePropValueFilter(prop, right.getValue)
+		}
 	}
 
 }

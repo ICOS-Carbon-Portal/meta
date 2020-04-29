@@ -23,27 +23,24 @@ object DofPatternRewrite{
 		import fusion.{exprsToFuse => exprs}
 		val propVars = fusion.propVars.map{case (qvar, prop) => (prop, qvar.name)}
 
-		propVars.get(DobjUri).foreach{dobjVar =>
-
-			val subsumingParents = exprs.filter{
-				case _: BinaryTupleOperator => true
-				case _ => false
-			}
-
-			val independentChildren = exprs.filter{expr =>
-				!subsumingParents.exists(parent => parent != expr && parent.isAncestorOf(expr))
-			}
-
-			val deepest = independentChildren.toSeq.sortBy(nodeDepth).last
-
-			exprs.filter(_ ne deepest).foreach(replaceNode)
-
-			val fetchExpr = new DataObjectFetchNode(dobjVar, fusion.fetch, propVars)
-
-			deepest.replaceWith(fetchExpr)
-
-			DanglingCleanup.clean(queryTop)
+		val subsumingParents = exprs.filter{
+			case _: BinaryTupleOperator => true
+			case _ => false
 		}
+
+		val independentChildren = exprs.filter{expr =>
+			!subsumingParents.exists(parent => parent != expr && parent.isAncestorOf(expr))
+		}
+
+		val deepest = independentChildren.toSeq.sortBy(nodeDepth).last
+
+		exprs.filter(_ ne deepest).foreach(replaceNode)
+
+		val fetchExpr = new DataObjectFetchNode(fusion.fetch, propVars)
+
+		deepest.replaceWith(fetchExpr)
+
+		DanglingCleanup.clean(queryTop)
 
 	}
 

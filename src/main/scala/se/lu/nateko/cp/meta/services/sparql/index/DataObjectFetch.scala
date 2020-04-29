@@ -18,7 +18,6 @@ package object index{
 	final case object Nothing extends Filter
 	final case object FilterDeprecated extends Filter
 	final case class RequiredProps(props: Seq[ContProp]) extends Filter
-	//TODO Wrap values in Option to indicate no known values, i.e. allow-all filter, in contrast to empty values, which should become "no solutions"
 	final case class CategFilter[T <: AnyRef](category: TypedCategProp[T], values: Seq[T]) extends Filter
 	final case class ContFilter[T](property: ContProp{type ValueType = T}, condition: FilterRequest[T]) extends Filter
 

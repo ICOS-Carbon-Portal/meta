@@ -97,10 +97,10 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val varProps = getVarPropLookup(patt)
 
-			val andOrFilterParser = new FilterPatternSearch(v => varProps.get(NamedVar(v)).collect{case cp: ContProp => cp})
+			val andOrFilterParser = new FilterPatternSearch(v => varProps.get(NamedVar(v)))
 
 			val filtsAndExprs = patt.filters.flatMap{fexp =>
-				parseFilter(fexp, varProps)
+				parseDeprecatedObjsFilter(fexp, varProps)
 					.orElse(andOrFilterParser.parseFilterExpr(fexp))
 					.map(_ -> fexp.getParentNode)
 			}
@@ -134,7 +134,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val allRecognized = patt.propPaths.flatMap(_._2).forall{sp2 =>
 				val objVar = sp2.sp.getObjectVar
 				varProps.contains(sp2.targetVar) || (objVar.isAnonymous && !objVar.hasValue)
-			}
+			} && (patt.filters.size == filts.size)
 
 			DobjListFusion(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, allRecognized)
 	}
@@ -170,7 +170,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 		).flatten.toMap
 	}
 
-	def parseFilter(expr: ValueExpr, parProps: VarPropLookup): Option[Filter] = expr match{
+	def parseDeprecatedObjsFilter(expr: ValueExpr, parProps: VarPropLookup): Option[Filter] = expr match{
 		case not: Not => not.getArg match{
 			case exists: Exists => exists.getSubQuery match{
 				case sp: StatementPattern =>

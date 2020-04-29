@@ -7,15 +7,13 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.services.sparql.index.Property
 
 class DataObjectFetchNode(
-	//TODO Get rid of dobjVarName constructor argument
-	val dobjVarName: String,
 	val fetchRequest: DataObjectFetch,
 	val varNames: Map[Property, String]
 ) extends AbstractQueryModelNode with TupleExpr{
 
 	private val allVars = varNames.values.toIndexedSeq
 
-	override def clone() = new DataObjectFetchNode(dobjVarName, fetchRequest, varNames)
+	override def clone() = new DataObjectFetchNode(fetchRequest, varNames)
 
 	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
 		case _: EvaluationStatistics.CardinalityCalculator => //this visitor crashes on 'alien' query nodes

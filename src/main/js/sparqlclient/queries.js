@@ -11,6 +11,7 @@ import {existingCollections} from './queries/existingCollections';
 import {existingDocuments} from './queries/existingDocuments';
 import {concaveHulls} from './queries/concaveHulls';
 import {perFormatStats} from './queries/perFormatStats';
+import { bySamplingHeights } from './queries/bySamplingHeights';
 
 const queries = [
 	{name:"Table of stations", query: stationsTable},
@@ -19,6 +20,7 @@ const queries = [
 	{name:"Stations that used the labelling app", query: activeStations},
 	{name:"PIs of \"labelling-inactive\" stations", query: inactivePis},
 	{name:"Last 1000 data objects", query: lastDataObjects},
+	{name:"Search with sampling heights", query: bySamplingHeights},
 	{name:"Re-submitted files", query: resubmittedFiles},
 	{name:"Collections", query: existingCollections},
 	{name:"Documents", query: existingDocuments},

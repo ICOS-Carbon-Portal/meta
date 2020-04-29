@@ -3,8 +3,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
 
-import PatternFinder._
-
 import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
 import org.eclipse.rdf4j.query.algebra.{And, Or}
 import org.eclipse.rdf4j.query.algebra.Compare
@@ -21,19 +19,6 @@ import java.time.Instant
 
 class FilterPatternSearch(varInfo: String => Option[ContProp]){
 	import FilterPatternSearch._
-	import DataObjectFetchPattern.FilterPattern
-
-	//TODO Clean this up
-	val search: TopNodeSearch[FilterPattern] = takeNode
-		.ifIs[Filter]
-		.thenAlsoSearch{fqmn =>
-			parseFilterExpr(fqmn.getCondition)
-		}
-		.thenGet{
-			case (fqmn, filter) => new FilterPattern(fqmn, filter)
-		}
-		.recursive
-
 
 	def parseFilterExpr(expr: ValueExpr): Option[IndexFilter] = expr match {
 		case and: And => for(

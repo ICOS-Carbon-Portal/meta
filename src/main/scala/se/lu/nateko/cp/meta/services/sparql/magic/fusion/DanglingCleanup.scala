@@ -6,7 +6,6 @@ import org.eclipse.rdf4j.query.algebra.QueryModelNode
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
 
 object DanglingCleanup{
-	import PatternFinder._
 
 	def clean(query: QueryModelNode): Unit = {
 		val collector = new StatPattCollector

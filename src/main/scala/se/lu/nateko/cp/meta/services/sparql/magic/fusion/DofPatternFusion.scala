@@ -54,7 +54,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val subs = subSeqs.flatten.collect{case dlf: DobjListFusion => dlf}
 
 			val isValid = !subs.isEmpty && subSeqs.forall(_.size == 1) && subs.forall(
-				dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0
+				dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0 && dof.isPureCpIndexQuery
 			)
 
 			if(!isValid) subSeqs.flatten else{
@@ -68,7 +68,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
 						exprsToFuse = newExprsToFuse,
 						propVars = propVars,
-						isPureCpIndexQuery = subs.forall(_.isPureCpIndexQuery)
+						isPureCpIndexQuery = true
 					)
 				}.toSeq
 			}

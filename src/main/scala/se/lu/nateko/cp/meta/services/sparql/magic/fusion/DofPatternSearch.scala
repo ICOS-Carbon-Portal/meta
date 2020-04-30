@@ -46,7 +46,6 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case bsa: BindingSetAssignment => bsa.getBindingNames.asScala.toList match{
 
 			case varName :: Nil =>
-
 				val values = bsa.getBindingSets().asScala.map(_.getValue(varName)).toSet
 				val vif = ValueInfoPattern(Some(values), Seq(bsa))
 				DofPattern.Empty.copy(varValues = Map(NamedVar(varName) -> vif))
@@ -106,6 +105,18 @@ class DofPatternSearch(meta: CpmetaVocab){
 				case _ =>
 					inner
 			})
+
+		case ext: Extension if ext.getArg.isInstanceOf[SingletonSet] =>
+			ext.getElements.asScala.toSeq match {
+				case Seq(elem) => elem.getExpr match{
+					case vc: ValueConstant =>
+						val vif = ValueInfoPattern(Some(Set(vc.getValue)), Seq(ext))
+						DofPattern.Empty.copy(varValues = Map(NamedVar(elem.getName) -> vif))
+
+					case _ => DofPattern.Empty
+				}
+				case _ => DofPattern.Empty
+			}
 
 		case ext: Extension =>
 			val groupByOpt = for(

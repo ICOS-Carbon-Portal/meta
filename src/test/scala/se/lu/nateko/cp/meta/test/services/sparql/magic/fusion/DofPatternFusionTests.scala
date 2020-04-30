@@ -269,4 +269,22 @@ class DofPatternFusionTests extends AnyFunSpec{
 		}
 	}
 
+	describe("query with union and bind"){
+		val queryText = """
+			|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			|select ?fileName where{
+			|	?dobj cpmeta:hasName ?fileName .
+			|	?dobj cpmeta:hasObjectSpec ?spec .
+			|	{
+			|		{bind (<http://meta.icos-cp.eu/resources/cpmeta/globalCarbonBudget> as ?spec)}
+			|		UNION
+			|		{filter (?dobj = <https://meta.icos-cp.eu/objects/7yV2z2CffZT8d65qndeQZztL>)}
+			|	}
+			|}""".stripMargin
+		lazy val (query @ _, fetchNode @ _) = getFetchNode(queryText)
+
+		it("is recognized as an CP-index query with union"){
+			assert(fetchNode.fetchRequest.filter.isInstanceOf[Or])
+		}
+	}
 }

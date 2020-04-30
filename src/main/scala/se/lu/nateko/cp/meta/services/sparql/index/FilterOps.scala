@@ -15,6 +15,7 @@ final class FilterOps(val self: Filter) extends AnyVal{
 			})
 			if(subfilters.isEmpty) All
 			else if(subfilters.contains(Nothing)) Nothing
+			else if(subfilters.size == 1) subfilters.head
 			else And(subfilters)
 
 		case Or(filters) =>
@@ -25,6 +26,7 @@ final class FilterOps(val self: Filter) extends AnyVal{
 			})
 			if(subfilters.isEmpty) Nothing
 			else if(subfilters.contains(All)) All
+			else if(subfilters.size == 1) subfilters.head
 			else Or(subfilters)
 
 		case other => other

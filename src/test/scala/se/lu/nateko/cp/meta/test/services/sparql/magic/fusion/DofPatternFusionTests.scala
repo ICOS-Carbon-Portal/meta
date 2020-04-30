@@ -248,4 +248,25 @@ class DofPatternFusionTests extends AnyFunSpec{
 		// }
 	}
 
+	describe("query with submission end time being present, but not being used by filters"){
+		val queryText = """
+			|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			|prefix prov: <http://www.w3.org/ns/prov#>
+			|select ?dobj ?submEnd
+			|where {
+			|	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> }
+			|	?dobj cpmeta:hasObjectSpec ?spec .
+			|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+			|}""".stripMargin
+		lazy val (query @ _, fetchNode @ _) = getFetchNode(queryText)
+
+		it("requires SubmissionEnd property to be present"){
+			val reqProps = fetchNode.fetchRequest.filter.collect{
+				case RequiredProps(props) => props
+			}.flatten
+			assert(reqProps.contains(SubmissionEnd))
+		}
+	}
+
 }

@@ -32,10 +32,15 @@ final class FilterOps(val self: Filter) extends AnyVal{
 
 	def removeRedundantReqProps: Filter = replace{
 		case RequiredProps(props) => RequiredProps(
-			props.distinct.diff(
-				self.collect{ case ContFilter(prop, _) => prop }
-			)
+			props.distinct.diff(self.propsRequiredByConfFilters.toSeq)
 		)
+	}
+
+	def propsRequiredByConfFilters: Set[ContProp] = self match{
+		case And(subs) => subs.map(_.propsRequiredByConfFilters).reduce(_ union _)
+		case ContFilter(prop, _) => Set(prop)
+		case Or(subs) => subs.map(_.propsRequiredByConfFilters).reduce(_ intersect _)
+		case _ => Set.empty
 	}
 
 	def replace(pf: PartialFunction[Filter, Filter]): Filter = pf.orElse[Filter, Filter]{

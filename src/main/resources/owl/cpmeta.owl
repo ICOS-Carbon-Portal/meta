@@ -1815,6 +1815,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/NeonStation -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/NeonStation">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NEON station</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/OS -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OS">

@@ -4,7 +4,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.io.Source
 
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.ValueFactory
 
@@ -37,26 +39,28 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 			Project.WDCGG -> metaVocab.wdcggStationClass,
 			Project.FLUXNET -> metaVocab.fluxnetStationClass,
 			Project.ATMO -> metaVocab.atmoDroughtStationClass,
-			Project.SAILDRONE -> metaVocab.sailDroneStationClass
+			Project.SAILDRONE -> metaVocab.sailDroneStationClass,
+			Project.NEON -> metaVocab.neonStationClass
 		)
 
 		station => {
 			val stUri = vocab.getIcosLikeStation(s"${station.project}_${station.id}")
 
-			val iter = Iterator(
-				(stUri, RDF.TYPE, projToClass(station.project)),
-				(stUri, metaVocab.hasStationId, station.id.toRdf),
-				(stUri, metaVocab.hasName, station.name.toRdf),
-				(stUri, metaVocab.countryCode, station.country.toRdf),
-				(stUri, metaVocab.hasElevation, vocab.lit(station.elevation)),
-			) ++
-			station.lat.iterator.map{lat =>
-				(stUri, metaVocab.hasLatitude, vocab.lit(lat))
-			} ++
-			station.lon.iterator.map{lon =>
-				(stUri, metaVocab.hasLongitude, vocab.lit(lon))
+			val iter = projToClass.get(station.project).fold(Iterator.empty[(IRI, IRI, Value)]){stClass =>
+				Iterator(
+					(stUri, RDF.TYPE, stClass),
+					(stUri, metaVocab.hasStationId, station.id.toRdf),
+					(stUri, metaVocab.hasName, station.name.toRdf),
+					(stUri, metaVocab.countryCode, station.country.toRdf),
+					(stUri, metaVocab.hasElevation, vocab.lit(station.elevation)),
+				) ++
+				station.lat.iterator.map{lat =>
+					(stUri, metaVocab.hasLatitude, vocab.lit(lat))
+				} ++
+				station.lon.iterator.map{lon =>
+					(stUri, metaVocab.hasLongitude, vocab.lit(lon))
+				}
 			}
-
 			iter.map(vf.tripleToStatement)
 		}
 	}
@@ -66,7 +70,7 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 private object IcosStationsIngester{
 
 	object Project extends Enumeration{
-		val INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE = Value
+		val INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE, NEON = Value
 	}
 
 	case class Station(

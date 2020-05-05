@@ -17,6 +17,8 @@ import org.eclipse.rdf4j.query.algebra.SingletonSet
 import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 import org.eclipse.rdf4j.query.algebra.Extension
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Value
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -156,6 +158,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 		Seq(
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),
+			propVar(VariableName   , meta.hasVariableName),
 			propVar(FileName       , meta.hasName       ),
 			propVar(FileSize       , meta.hasSizeInBytes),
 			propVar(Submitter      , meta.wasSubmittedBy , meta.prov.wasAssociatedWith),
@@ -238,17 +241,22 @@ object DofPatternFusion{
 	def getCategFilter(v: QVar, prop: Property, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = prop match{
 		case cp: CategProp =>
 
-			val valsExprsOpt: Option[(Seq[IRI], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
+			val valsExprsOpt: Option[(Seq[Value], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
 
-				val irisOpt = vip.vals.map(_.toSeq.collect{case iri: IRI => iri}).filter(!_.isEmpty)
+				val irisOpt = vip.vals.map(_.toSeq).filter(!_.isEmpty)
 				irisOpt.map(_ -> vip.providers.toSet)
 			}
 
 			valsExprsOpt.map{
 				case (vals, exprs) =>
+					val iris = vals.collect{case iri: IRI => iri}
 					val filter: Filter = cp match{
-						case uriProp: UriProperty => CategFilter(uriProp, vals)
-						case optUri: OptUriProperty => CategFilter(optUri, vals.map(Some(_)))
+						case uriProp: UriProperty => CategFilter(uriProp, iris)
+						case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
+						case VariableName => CategFilter(
+							VariableName,
+							vals.collect{case lit: Literal => asString(lit)}.flatten
+						)
 					}
 					filter -> exprs
 			}

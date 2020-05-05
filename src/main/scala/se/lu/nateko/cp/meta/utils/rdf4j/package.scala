@@ -134,4 +134,14 @@ package object rdf4j {
 			}
 		}
 	}
+
+	def asString(lit: Literal): Option[String] = if(lit.getDatatype === XMLSchema.STRING) Some(lit.stringValue) else None
+
+	def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.longValue).toOption else None
+	def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XMLSchema.FLOAT) Try(lit.floatValue).toOption else None
+
+	def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.DATETIME)
+		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
+	else None
+
 }

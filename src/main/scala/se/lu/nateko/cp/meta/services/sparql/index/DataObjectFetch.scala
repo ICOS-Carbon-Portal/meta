@@ -51,4 +51,5 @@ package object index{
 	final case object Station extends OptUriProperty
 	final case object Site extends OptUriProperty
 	final case object Submitter extends UriProperty
+	final case object VariableName extends CategProp{type ValueType = String}
 }

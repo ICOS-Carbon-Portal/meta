@@ -89,6 +89,7 @@ class CpEvaluationStrategyFactory(
 				case Site            => setter(_.site)
 				case Submitter       => setter(_.submitter)
 				case FileName        => (_, _) => ()
+				case VariableName    => (_, _) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))
 				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(index.factory.createLiteral))
 				case SubmissionStart => setterOpt(_.submissionStartTime)

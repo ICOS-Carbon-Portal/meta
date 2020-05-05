@@ -25,6 +25,7 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
+import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
@@ -345,9 +346,14 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				}
 			}
 
+			case `hasActualColumnNames` => modForDobj(subj){oe =>
+				obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parseJsonStringArray).toSeq.flatten.foreach{varName =>
+					updateCategSet(categMap(VariableName), varName, oe.idx)
+				}
+			}
+
 			case _ =>
 		}
-
 	}
 
 	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{

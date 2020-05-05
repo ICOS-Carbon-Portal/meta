@@ -87,21 +87,15 @@ object FilterPatternSearch{
 		case NE => NE
 	}
 
-	def asString(lit: Literal): Option[String] = if(lit.getDatatype === XMLSchema.STRING) Some(lit.stringValue) else None
-
-	def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.longValue).toOption else None
-	def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XMLSchema.FLOAT) Try(lit.floatValue).toOption else None
-
-	def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.DATETIME)
-		Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
-	else None
-
 	def parsePropValueFilter(prop: Property, v: Value): Option[IndexFilter] = prop match{
-		case uriProp: UriProperty with CategProp =>
+		case uriProp: UriProperty =>
 			v.asOptInstanceOf[IRI].map(iri => CategFilter(uriProp, Seq(iri)))
 
 		case optUriProp: OptUriProperty =>
 			v.asOptInstanceOf[IRI].map(iri => CategFilter(optUriProp, Seq(Some(iri))))
+
+		case VariableName =>
+			v.asOptInstanceOf[Literal].flatMap(asString).map(varName => CategFilter(VariableName, Seq(varName)))
 
 		case dp: DateProperty =>
 			v.asOptInstanceOf[Literal].flatMap(asTsEpochMillis).map(d => ContFilter(dp, EqualsFilter(d)))

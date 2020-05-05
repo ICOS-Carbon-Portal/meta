@@ -38,4 +38,14 @@ package object utils {
 		}
 	}
 
+	def parseJsonStringArray(s: String): Option[Array[String]] = {
+		import spray.json._
+		import DefaultJsonProtocol._
+		try{
+			Some(s.parseJson.convertTo[Array[String]])
+		} catch{
+			case _: Throwable => None
+		}
+	}
+
 }

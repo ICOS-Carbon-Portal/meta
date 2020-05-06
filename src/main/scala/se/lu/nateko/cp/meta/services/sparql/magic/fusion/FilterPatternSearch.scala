@@ -3,9 +3,12 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
 
+import java.time.Instant
+
 import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
-import org.eclipse.rdf4j.query.algebra.{And, Or}
+import org.eclipse.rdf4j.query.algebra.{And, Or, Not}
 import org.eclipse.rdf4j.query.algebra.Compare
+import org.eclipse.rdf4j.query.algebra.{Regex => RdfRegex}
 import org.eclipse.rdf4j.query.algebra.Var
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.model.Literal
@@ -13,23 +16,26 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
-import se.lu.nateko.cp.meta.services.sparql.index.{Filter => IndexFilter, And => IndexAnd, Or => IndexOr, _}
+import se.lu.nateko.cp.meta.services.sparql.index
+import se.lu.nateko.cp.meta.services.sparql.index.{Filter => _, And => _, Or => _, Not => _, _}
 import scala.util.Try
-import java.time.Instant
+import scala.util.matching.Regex
 
 class FilterPatternSearch(varInfo: String => Option[Property]){
 	import FilterPatternSearch._
 
-	def parseFilterExpr(expr: ValueExpr): Option[IndexFilter] = expr match {
+	def parseFilterExpr(expr: ValueExpr): Option[index.Filter] = expr match {
 		case and: And => for(
 			left <- parseFilterExpr(and.getLeftArg);
 			right <- parseFilterExpr(and.getRightArg)
-		) yield IndexAnd(Seq(left, right))
+		) yield index.And(Seq(left, right))
 
 		case or: Or => for(
 			left <- parseFilterExpr(or.getLeftArg);
 			right <- parseFilterExpr(or.getRightArg)
-		) yield IndexOr(Seq(left, right))
+		) yield index.Or(Seq(left, right))
+
+		case not: Not => parseFilterExpr(not.getArg).map(index.Not(_))
 
 		case cmp: Compare =>
 			(cmp.getLeftArg, cmp.getRightArg) match{
@@ -38,10 +44,21 @@ class FilterPatternSearch(varInfo: String => Option[Property]){
 				case _ => None
 			}
 
+		case r: RdfRegex => (r.getArg, r.getPatternArg) match{
+			case (v: Var, c: ValueConstant) => for(
+				lit <- c.getValue.asOptInstanceOf[Literal];
+				prop <- varInfo(v.getName).collect{case cp: CategProp => cp}
+			) yield{
+				val regex = new Regex(lit.stringValue)
+				GeneralCategFilter[prop.ValueType](prop, v => regex.matches(v.toString))
+			}
+			case _ => None
+		}
+
 		case _ => None
 	}
 
-	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[IndexFilter] = {
+	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[index.Filter] = {
 		import Compare.CompareOp._
 
 		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
@@ -87,7 +104,7 @@ object FilterPatternSearch{
 		case NE => NE
 	}
 
-	def parsePropValueFilter(prop: Property, v: Value): Option[IndexFilter] = prop match{
+	def parsePropValueFilter(prop: Property, v: Value): Option[index.Filter] = prop match{
 		case uriProp: UriProperty =>
 			v.asOptInstanceOf[IRI].map(iri => CategFilter(uriProp, Seq(iri)))
 

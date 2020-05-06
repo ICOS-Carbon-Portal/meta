@@ -121,6 +121,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		idxIter.map(objs.apply)
 	}
 
+	//TODO Get rid of Option in the return type
 	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
 		case And(filters) =>
 			collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match{
@@ -129,22 +130,27 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			}
 
 		case FilterDeprecated =>
-			Some(ImmutableRoaringBitmap.flip(deprecated, 0, (objs.length - 1).toLong))
+			Some(negate(deprecated))
 
 		case ContFilter(prop, filterReq) =>
 			Some(bitmap(prop).filter(filterReq))
 
-		case CategFilter(category, values) => category match{
-			case dobjUri if dobjUri == DobjUri =>
-				val objIndices: Seq[Int] = values
-					.collect{case iri: IRI => iri}
-					.collect{case CpVocab.DataObject(hash, _) => idLookup.get(hash)}
-					.flatten
-				Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
-			case _ =>
-				val perValue = categMap(category)
-				or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
-		}
+		case CategFilter(category, values) if category == DobjUri =>
+			val objIndices: Seq[Int] = values
+				.collect{case iri: IRI => iri}
+				.collect{case CpVocab.DataObject(hash, _) => idLookup.get(hash)}
+				.flatten
+			Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
+
+		case CategFilter(category, values) =>
+			val perValue = categMap(category)
+			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+
+		case GeneralCategFilter(category, condition) => or(
+			categMap(category).collect{
+				case (cat, bm) if condition(cat) => bm
+			}.toSeq
+		)
 
 		case RequiredProps(props) =>
 			and(props.map(bitmap(_).all))
@@ -154,11 +160,19 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				or(bmOpts.flatten)
 			}
 
+
+		case Not(filter) => filtering(filter) match {
+			case None => Some(emptyBitmap)
+			case Some(bm) => Some(negate(bm))
+		}
+
 		case All =>
 			None
 		case Nothing =>
 			Some(emptyBitmap)
 	}
+
+	private def negate(bm: ImmutableRoaringBitmap) = ImmutableRoaringBitmap.flip(bm, 0, (objs.length - 1).toLong)
 
 	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
 		var condHappened = false

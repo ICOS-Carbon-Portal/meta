@@ -287,4 +287,15 @@ class DofPatternFusionTests extends AnyFunSpec{
 			assert(fetchNode.fetchRequest.filter.isInstanceOf[Or])
 		}
 	}
+
+	describe("variable-name filtering with regex"){
+		lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.varNameRegexFilter)
+
+		it("is recognized as a GeneralCategFilter on VariableName"){
+			val GeneralCategFilter(categ, cond) = fetchNode.fetchRequest.filter
+			assert(categ == VariableName)
+			assert(cond("SWC_1_5_1"))
+			assert(cond("blabla") == false)
+		}
+	}
 }

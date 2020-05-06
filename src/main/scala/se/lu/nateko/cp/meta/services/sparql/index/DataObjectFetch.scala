@@ -14,11 +14,15 @@ package object index{
 
 	final case class And(filters: Seq[Filter]) extends Filter
 	final case class Or(filters: Seq[Filter]) extends Filter
+	final case class Not(filter: Filter) extends Filter
 	final case object All extends Filter
 	final case object Nothing extends Filter
 	final case object FilterDeprecated extends Filter
 	final case class RequiredProps(props: Seq[ContProp]) extends Filter
 	final case class CategFilter[T <: AnyRef](category: TypedCategProp[T], values: Seq[T]) extends Filter
+	final case class GeneralCategFilter[T <: AnyRef](category: TypedCategProp[T], condition: T => Boolean) extends Filter{
+		override def toString = s"GeneralCategFilter($category)"
+	}
 	final case class ContFilter[T](property: ContProp{type ValueType = T}, condition: FilterRequest[T]) extends Filter
 
 	case class SortBy(property: ContProp, descending: Boolean)

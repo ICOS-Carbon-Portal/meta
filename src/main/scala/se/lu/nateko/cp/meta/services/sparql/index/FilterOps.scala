@@ -29,6 +29,8 @@ final class FilterOps(val self: Filter) extends AnyVal{
 			else if(subfilters.size == 1) subfilters.head
 			else Or(subfilters)
 
+		case RequiredProps(props) if props.isEmpty => All
+
 		case other => other
 	}
 

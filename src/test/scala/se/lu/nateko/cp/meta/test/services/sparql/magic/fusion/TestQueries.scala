@@ -152,4 +152,10 @@ object TestQueries{
 	|order by desc(?submEnd)
 	|limit 2""".stripMargin
 
+	val varNameRegexFilter = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|select ?dobj ?spec where{
+	|	?dobj cpmeta:hasVariableName ?varName .
+	|	?dobj cpmeta:hasObjectSpec ?spec .
+	|	FILTER(regex(?varName, "^SWC_\\d_5_\\d$"))
+	|}""".stripMargin
 }

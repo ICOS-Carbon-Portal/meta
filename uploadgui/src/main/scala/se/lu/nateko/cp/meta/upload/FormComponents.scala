@@ -83,13 +83,13 @@ class FileInput(elemId: String, cb: () => Unit){
 	}
 
 	def hasBeenModified: Boolean =
-		file.map(_.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]) != Success(_lastModified)
+		file.map(getLastModified(_)) != Success(_lastModified)
 
 	def rehash: Future[Sha256Sum] = {
 		Future.fromTry(file).flatMap { f =>
 			FileHasher.hash(f).flatMap{ hash =>
 					_hash = Success(hash)
-					_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
+					_lastModified = getLastModified(f)
 					Future(hash)
 			}
 		}
@@ -121,6 +121,10 @@ class FileInput(elemId: String, cb: () => Unit){
 	if(file.isSuccess){//pre-chosen file, e.g. due to browser page reload
 		queue.execute(() => fileInput.onchange(null))// no need to do this eagerly, just scheduling
 	}
+
+	private def getLastModified(file: dom.File) =
+		file.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
+
 }
 
 class Radio[T](elemId: String, cb: String => Unit, serializer: T => String) {

@@ -40,7 +40,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		val groupOpt = groupSearch(query).map(_.group)
 		groupOpt match{
 			case Some(GroupPattern(filter, "submitter", "stationOpt", "spec", None)) =>
-				assert(filter.exists{case FilterDeprecated =>})
+				assert(filter.exists{case Not(Exists(DeprecationFlag)) =>})
 				assert(requiredProps(filter) == 0)
 				assert(contFilterNum(filter) == 1)
 
@@ -53,7 +53,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		val groupOpt = groupSearch(withSite).map(_.group)
 		groupOpt match{
 			case Some(GroupPattern(filter, "submitter", "station", "spec", Some("site"))) =>
-				assert(filter.exists{case FilterDeprecated =>})
+				assert(filter.exists{case Not(Exists(DeprecationFlag)) =>})
 				assert(requiredProps(filter) == 0)
 				assert(contFilterNum(filter) == 1)
 
@@ -71,7 +71,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		assert(groupSearch(nesting).isDefined)
 	}
 
-	def requiredProps(f: Filter): Int = f.optimize.collect{case RequiredProps(props) => props.size}.sum
+	def requiredProps(f: Filter): Int = f.optimize.collect{case Exists(prop: ContProp) => prop}.size
 	def contFilterNum(f: Filter): Int = f.collect{case ContFilter(_, _) =>}.size
 }
 

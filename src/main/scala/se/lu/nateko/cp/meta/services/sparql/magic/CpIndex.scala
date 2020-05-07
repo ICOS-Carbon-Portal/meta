@@ -60,12 +60,14 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val objs = new ArrayBuffer[ObjEntry](nObjects)
-	private val deprecated: MutableRoaringBitmap = emptyBitmap
+	private val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
 	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
 	private val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
 	private val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
 
 	def size: Int = objs.length
+
+	private def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
@@ -121,7 +123,6 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		idxIter.map(objs.apply)
 	}
 
-	//TODO Get rid of Option in the return type
 	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
 		case And(filters) =>
 			collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match{
@@ -129,8 +130,23 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				case Some(bms) => and(bms)
 			}
 
-		case FilterDeprecated =>
-			Some(negate(deprecated))
+		case Not(filter) => filtering(filter) match {
+			case None => Some(emptyBitmap)
+			case Some(bm) => Some(negate(bm))
+		}
+
+		case Exists(prop) => prop match{
+			case cp: ContProp => Some(bitmap(cp).all)
+			case cp: CategProp => cp match{
+				case optUriProp: OptUriProperty => categMap(optUriProp).get(None) match{
+					case None => None
+					case Some(deprived) if deprived.isEmpty => None
+					case Some(deprived) => Some(negate(deprived))
+				}
+				case _ => None
+			}
+			case boo: BoolProperty => Some(boolBitmap(boo))
+		}
 
 		case ContFilter(prop, filterReq) =>
 			Some(bitmap(prop).filter(filterReq))
@@ -152,19 +168,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			}.toSeq
 		)
 
-		case RequiredProps(props) =>
-			and(props.map(bitmap(_).all))
-
 		case Or(filters) =>
 			collectUnless(filters.iterator.map(filtering))(_.isEmpty).flatMap{bmOpts =>
 				or(bmOpts.flatten)
 			}
-
-
-		case Not(filter) => filtering(filter) match {
-			case None => Some(emptyBitmap)
-			case Some(bm) => Some(negate(bm))
-		}
 
 		case All =>
 			None
@@ -334,6 +341,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 			case `isNextVersionOf` =>
 				modForDobj(obj)(oe => {
+					val deprecated = boolBitmap(DeprecationFlag)
 					if(isAssertion) deprecated.add(oe.idx)
 					else if(
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
@@ -364,6 +372,8 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parseJsonStringArray).toSeq.flatten.foreach{varName =>
 					updateCategSet(categMap(VariableName), varName, oe.idx)
 				}
+				val hasVarsBm = boolBitmap(HasVarList)
+				if(isAssertion) hasVarsBm.add(oe.idx) else hasVarsBm.remove(oe.idx)
 			}
 
 			case _ =>

@@ -56,7 +56,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("identifies the no-deprecated-objects filter"){
 			assert(fetchNode.fetchRequest.filter.exists{
-				case FilterDeprecated =>
+				case Not(Exists(DeprecationFlag)) =>
 			})
 		}
 
@@ -127,7 +127,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 		}
 
 		it("Deprecated objects are filtered out"){
-			assert(req.filter.exists{case FilterDeprecated => })
+			assert(req.filter.exists{case Not(Exists(DeprecationFlag)) => })
 		}
 
 		it("Expected variables are detected and dealt with"){
@@ -263,8 +263,8 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("requires SubmissionEnd property to be present"){
 			val reqProps = fetchNode.fetchRequest.filter.collect{
-				case RequiredProps(props) => props
-			}.flatten
+				case Exists(prop: ContProp) => prop
+			}
 			assert(reqProps.contains(SubmissionEnd))
 		}
 	}
@@ -296,6 +296,32 @@ class DofPatternFusionTests extends AnyFunSpec{
 			assert(categ == VariableName)
 			assert(cond("SWC_1_5_1"))
 			assert(cond("blabla") == false)
+		}
+	}
+
+	describe("Union of var-names-info-not-present and varName regex filtering"){
+		val queryText = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?dobj where{
+		|	?dobj cpmeta:hasObjectSpec ?spec .
+		|	{
+		|		{
+		|			?dobj cpmeta:hasVariableName ?varName
+		|			FILTER(regex(?varName, "^SWC_\\d_5_\\d$"))
+		|		}
+		|		UNION
+		|		{filter not exists{?dobj cpmeta:hasVariableName ?vname}}
+		|	}
+		|}""".stripMargin
+		lazy val (query @ _, fetchNode @ _) = getFetchNode(queryText)
+
+		it("is recognized as an OR of two expected subfilters"){
+			fetchNode.fetchRequest.filter match{
+				case Or(subs) =>
+					assert(subs.size == 2)
+					assert(!subs.collect{case Not(Exists(HasVarList)) =>}.isEmpty)
+					assert(!subs.collect{case GeneralCategFilter(categ, _) if categ == VariableName =>}.isEmpty)
+				case _ => fail("Expected an OR top filter")
+			}
 		}
 	}
 }

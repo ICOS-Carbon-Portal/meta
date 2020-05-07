@@ -12,6 +12,7 @@ import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
 
 object DofPatternRewrite{
 
+	//TODO Make the rewrite aware of all the fusions at the same time, not process independently one by one
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = fusions.foreach{
 		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
 		case DobjStatFusion(expr, statsNode) =>

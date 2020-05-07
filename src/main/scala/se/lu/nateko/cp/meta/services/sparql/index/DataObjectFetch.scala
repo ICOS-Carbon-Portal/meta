@@ -17,8 +17,7 @@ package object index{
 	final case class Not(filter: Filter) extends Filter
 	final case object All extends Filter
 	final case object Nothing extends Filter
-	final case object FilterDeprecated extends Filter
-	final case class RequiredProps(props: Seq[ContProp]) extends Filter
+	final case class Exists(prop: Property) extends Filter
 	final case class CategFilter[T <: AnyRef](category: TypedCategProp[T], values: Seq[T]) extends Filter
 	final case class GeneralCategFilter[T <: AnyRef](category: TypedCategProp[T], condition: T => Boolean) extends Filter{
 		override def toString = s"GeneralCategFilter($category)"
@@ -28,6 +27,10 @@ package object index{
 	case class SortBy(property: ContProp, descending: Boolean)
 
 	sealed trait Property{type ValueType}
+
+	sealed trait BoolProperty extends Property{type ValueType = Boolean}
+	final case object DeprecationFlag extends BoolProperty
+	final case object HasVarList extends BoolProperty
 
 	type TypedCategProp[T <: AnyRef] = CategProp{type ValueType = T}
 

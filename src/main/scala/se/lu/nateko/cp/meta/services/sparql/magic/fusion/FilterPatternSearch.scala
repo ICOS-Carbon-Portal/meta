@@ -5,8 +5,13 @@ import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
 
 import java.time.Instant
 
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
+import se.lu.nateko.cp.meta.services.sparql.index
+import se.lu.nateko.cp.meta.services.sparql.index._
+
 import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
-import org.eclipse.rdf4j.query.algebra.{And, Or, Not}
+import org.eclipse.rdf4j.query.algebra.{And, Or, Not, Exists}
 import org.eclipse.rdf4j.query.algebra.Compare
 import org.eclipse.rdf4j.query.algebra.{Regex => RdfRegex}
 import org.eclipse.rdf4j.query.algebra.Var
@@ -15,13 +20,11 @@ import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
-import se.lu.nateko.cp.meta.services.sparql.index
-import se.lu.nateko.cp.meta.services.sparql.index.{Filter => _, And => _, Or => _, Not => _, _}
 import scala.util.Try
 import scala.util.matching.Regex
+import org.eclipse.rdf4j.query.algebra.StatementPattern
 
-class FilterPatternSearch(varInfo: String => Option[Property]){
+class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	import FilterPatternSearch._
 
 	def parseFilterExpr(expr: ValueExpr): Option[index.Filter] = expr match {
@@ -44,10 +47,22 @@ class FilterPatternSearch(varInfo: String => Option[Property]){
 				case _ => None
 			}
 
+		case exists: Exists => exists.getSubQuery match{
+			case sp: StatementPattern =>
+				val (s, p, o) = splitTriple(sp)
+				if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && varProps.get(QVar(o)) == Some(DobjUri))
+					Some(index.Exists(DeprecationFlag))
+				else if(meta.hasVariableName == p.getValue && varProps.get(QVar(s)) == Some(DobjUri) && !o.hasValue)
+					Some(index.Exists(HasVarList))
+				else
+					None
+			case _ => None
+		}
+
 		case r: RdfRegex => (r.getArg, r.getPatternArg) match{
 			case (v: Var, c: ValueConstant) => for(
 				lit <- c.getValue.asOptInstanceOf[Literal];
-				prop <- varInfo(v.getName).collect{case cp: CategProp => cp}
+				prop <- varProps.get(QVar(v)).collect{case cp: CategProp => cp}
 			) yield{
 				val regex = new Regex(lit.stringValue)
 				GeneralCategFilter[prop.ValueType](prop, v => regex.matches(v.toString))
@@ -75,7 +90,7 @@ class FilterPatternSearch(varInfo: String => Option[Property]){
 			reqOpt.map(ContFilter(prop, _))
 		}
 
-		if(left.isAnonymous) None else varInfo(left.getName).flatMap{
+		if(left.isAnonymous) None else varProps.get(QVar(left)).flatMap{
 			case contProp: ContProp => right.getValue match{
 				case lit: Literal => contProp match{
 					case dp: DateProperty => asTsEpochMillis(lit).flatMap(makeContFilter(dp))
@@ -125,6 +140,8 @@ object FilterPatternSearch{
 
 		case SamplingHeight =>
 			v.asOptInstanceOf[Literal].flatMap(asFloat).map(sh => ContFilter(SamplingHeight, EqualsFilter(sh)))
+
+		case _: BoolProperty => None
 
 	}
 

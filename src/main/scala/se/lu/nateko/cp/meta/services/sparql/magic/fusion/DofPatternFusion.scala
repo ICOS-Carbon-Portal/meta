@@ -1,7 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index
+import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, _}
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import DofPatternFusion._
@@ -65,14 +66,14 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 				if(allSame){
 					Seq(subs.head.copy(exprsToFuse = newExprsToFuse))
-				} else unionVarProps(subs.map(_.propVars)).map{propVars =>
-					DobjListFusion(
+				} else unionVarProps(subs.map(_.propVars)).fold(subSeqs.flatten){propVars =>
+					Seq(DobjListFusion(
 						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
 						exprsToFuse = newExprsToFuse,
 						propVars = propVars,
 						isPureCpIndexQuery = true
-					)
-				}.toSeq
+					))
+				}
 			}
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
@@ -99,12 +100,10 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val varProps = getVarPropLookup(patt)
 
-			val andOrFilterParser = new FilterPatternSearch(v => varProps.get(NamedVar(v)))
+			val andOrFilterParser = new FilterPatternSearch(varProps, meta)
 
 			val filtsAndExprs = patt.filters.flatMap{fexp =>
-				parseDeprecatedObjsFilter(fexp, varProps)
-					.orElse(andOrFilterParser.parseFilterExpr(fexp))
-					.map(_ -> fexp.getParentNode)
+				andOrFilterParser.parseFilterExpr(fexp).map(_ -> fexp.getParentNode)
 			}
 			val filts = filtsAndExprs.map(_._1)
 			val filtExprs = filtsAndExprs.collect{case (_, te: TupleExpr) => te}
@@ -116,7 +115,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val categFilts: Seq[Filter] = categFiltsAndExprs.map(_._1)
 			val categExprs = categFiltsAndExprs.flatMap(_._2)
 			val reqContProps = varProps.valuesIterator.collect{case cp: ContProp => cp}.distinct.toSeq
-			val allFilts = And(categFilts ++ filts :+ RequiredProps(reqContProps))
+			val allFilts = And(categFilts ++ filts ++ reqContProps.map(index.Exists(_)))
 
 			val namedVarProps = varProps.collect{
 				case (nv: NamedVar, prop) => nv -> prop
@@ -172,22 +171,6 @@ class DofPatternFusion(meta: CpmetaVocab){
 			propVar(DataEnd        , meta.wasAcquiredBy  , meta.prov.endedAtTime      ),
 			propVar(SamplingHeight , meta.wasAcquiredBy  , meta.hasSamplingHeight     ),
 		).flatten.toMap
-	}
-
-	def parseDeprecatedObjsFilter(expr: ValueExpr, parProps: VarPropLookup): Option[Filter] = expr match{
-		case not: Not => not.getArg match{
-			case exists: Exists => exists.getSubQuery match{
-				case sp: StatementPattern =>
-					val (s, p, o) = splitTriple(sp)
-					if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && !o.isAnonymous && parProps.get(QVar(o)) == Some(DobjUri))
-						Some(FilterDeprecated)
-					else
-						None
-				case _ => None
-			}
-			case _ => None
-		}
-		case _ => None
 	}
 
 	def findStatsFusion(groupBy: StatGroupByPattern, inner: LeftJoinDofPattern): Option[DobjStatFusion] = findFusions(inner.left) match{

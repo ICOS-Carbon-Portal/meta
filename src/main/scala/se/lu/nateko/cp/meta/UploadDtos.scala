@@ -25,7 +25,8 @@ case class DataObjectDto(
 	fileName: String,
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
-	preExistingDoi: Option[Doi]
+	preExistingDoi: Option[Doi],
+	references: Option[References]
 ) extends ObjectUploadDto
 
 case class DocObjectDto(

@@ -70,7 +70,8 @@ object UploadDtoReader{
 			})),
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
-			}
+			},
+			references = Some(dobj.references)
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",

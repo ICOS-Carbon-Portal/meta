@@ -48,4 +48,9 @@ package object utils {
 		}
 	}
 
+	def printAsJsonArray(ss: Seq[String]): String = {
+		import spray.json.{JsArray, JsString}
+		JsArray(ss.map(s => JsString(s)).toVector).prettyPrint
+	}
+
 }

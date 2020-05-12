@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, UploadDto, StaticCollectionDto, DataProductionDto}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -288,7 +289,13 @@ class Form(
 			)
 		),
 		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
+		preExistingDoi = doi,
+		references = Some(
+			References(
+				citationString = None,
+				keywords = None
+			)
+		)
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
 		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;

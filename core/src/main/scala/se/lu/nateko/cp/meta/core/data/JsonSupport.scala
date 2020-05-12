@@ -105,6 +105,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
 	implicit val docObjectFormat = jsonFormat10(DocObject)
+	implicit val referencesFormat = jsonFormat2(References)
 
 	implicit object dataObjectFormat extends RootJsonFormat[DataObject] {
 		private val defFormat = jsonFormat13(DataObject)

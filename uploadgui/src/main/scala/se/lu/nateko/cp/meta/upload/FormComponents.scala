@@ -280,7 +280,7 @@ class HashOptInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)
-			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get))))
+			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get).toIndexedSeq)))
 			else Try(Some(Left(Sha256Sum.fromString(s).get))),
 		_ match {
 			case Left(sha) => sha.id
@@ -291,7 +291,7 @@ class HashOptListInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Seq[Sha256Sum]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)
-			else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get))),
+			else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get).toIndexedSeq)),
 		shaSeq => shaSeq.map(_.id).mkString("\n")
 	)
 
@@ -337,7 +337,7 @@ object UriListInput{
 		value.split("\n").map(_.trim).filterNot(_.isEmpty).map(line => {
 			if (line.startsWith("https://") || line.startsWith("http://")) new URI(line)
 			else throw new Exception("Malformed URL (must start with http[s]://)")
-		})
+		}).toIndexedSeq
 	)
 
 	def serializer = {

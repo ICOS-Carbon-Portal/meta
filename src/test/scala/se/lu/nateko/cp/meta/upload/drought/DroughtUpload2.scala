@@ -115,6 +115,7 @@ class DroughtUpload2(
 			station = meta.stationUrl,
 			site = None,
 			instrument = None,
+			samplingPoint = None,
 			samplingHeight = samplingHeightOpt(meta),
 			acquisitionInterval = timeIntervalOpt(meta),
 			nRows = meta.nPoints,

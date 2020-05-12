@@ -249,7 +249,12 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			val bm = set.getOrElseUpdate(categ, emptyBitmap)
 			if(isAssertion) bm.add(idx) else bm.remove(idx)
 		}
-	
+
+		def updateJsonStrArrayProp(prop: StringCategProp, idx: Int): Unit = obj
+			.asOptInstanceOf[Literal].flatMap(asString).flatMap(parseJsonStringArray).toSeq.flatten.foreach{strVal =>
+				updateCategSet(categMap(prop), strVal, idx)
+			}
+
 		pred match{
 
 			case `hasObjectSpec` => obj match{
@@ -369,11 +374,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			}
 
 			case `hasActualColumnNames` => modForDobj(subj){oe =>
-				obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parseJsonStringArray).toSeq.flatten.foreach{varName =>
-					updateCategSet(categMap(VariableName), varName, oe.idx)
-				}
+				updateJsonStrArrayProp(VariableName, oe.idx)
 				val hasVarsBm = boolBitmap(HasVarList)
 				if(isAssertion) hasVarsBm.add(oe.idx) else hasVarsBm.remove(oe.idx)
+			}
+
+			case `hasKeywords` => modForDobj(subj){oe =>
+				updateJsonStrArrayProp(Keyword, oe.idx)
 			}
 
 			case _ =>

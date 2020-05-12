@@ -158,6 +158,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),
 			propVar(VariableName   , meta.hasVariableName),
+			propVar(Keyword        , meta.hasKeyword    ),
 			propVar(FileName       , meta.hasName       ),
 			propVar(FileSize       , meta.hasSizeInBytes),
 			propVar(Submitter      , meta.wasSubmittedBy , meta.prov.wasAssociatedWith),
@@ -236,8 +237,8 @@ object DofPatternFusion{
 					val filter: Filter = cp match{
 						case uriProp: UriProperty => CategFilter(uriProp, iris)
 						case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
-						case VariableName => CategFilter(
-							VariableName,
+						case strProp: StringCategProp => CategFilter(
+							strProp,
 							vals.collect{case lit: Literal => asString(lit)}.flatten
 						)
 					}

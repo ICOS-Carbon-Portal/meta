@@ -69,7 +69,7 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	implicit val dataProductionFormat = jsonFormat6(DataProduction)
-	implicit val dataAcquisitionFormat = jsonFormat5(DataAcquisition)
+	implicit val dataAcquisitionFormat = jsonFormat6(DataAcquisition)
 	implicit val dataSubmissionFormat = jsonFormat3(DataSubmission)
 
 	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)

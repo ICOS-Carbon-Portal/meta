@@ -41,6 +41,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasLongitude = getRelative("hasLongitude")
 	val hasEasternBound = getRelative("hasEasternBound")
 	val hasWesternBound = getRelative("hasWesternBound")
+	val hasSamplingPoint = getRelative("hasSamplingPoint")
 	val hasSamplingHeight = getRelative("hasSamplingHeight")
 	val hasName = getRelative("hasName")
 	val hasStationId = getRelative("hasStationId")

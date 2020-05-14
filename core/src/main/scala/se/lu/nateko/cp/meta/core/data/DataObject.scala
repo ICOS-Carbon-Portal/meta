@@ -42,6 +42,7 @@ case class DataAcquisition(
 	site: Option[Site],
 	interval: Option[TimeInterval],
 	instrument: OptionalOneOrSeq[URI],
+	samplingPoint: Option[Position],
 	samplingHeight: Option[Float]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))

@@ -281,6 +281,7 @@ class Form(
 				station = station.uri,
 				site = siteSelect.value.flatten.map(_.uri),
 				instrument = instrumentUri,
+				samplingPoint = None,
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,

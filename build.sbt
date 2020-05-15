@@ -31,7 +31,7 @@ lazy val metaCore = (project in file("core"))
 		),
 		cpTsGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
-			Seq(dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala")
+			Seq(dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala", dir / "package.scala")
 		},
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"

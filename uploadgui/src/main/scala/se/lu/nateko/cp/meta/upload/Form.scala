@@ -213,6 +213,7 @@ class Form(
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
+	val keywordsInput = new TextInput("keywords", () => ())
 
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 
@@ -293,7 +294,7 @@ class Form(
 		references = Some(
 			References(
 				citationString = None,
-				keywords = None
+				keywords = keywordsInput.value.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
 			)
 		)
 	)

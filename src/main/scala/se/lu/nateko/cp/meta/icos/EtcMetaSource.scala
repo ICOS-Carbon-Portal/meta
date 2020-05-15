@@ -72,6 +72,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 				)(_)
 				fetchFromTsv("teamrole", membExtractor).map(_.map{membs =>
 					//TODO Add instruments info
+					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
 					new TcState(stations, membs, Nil)
 				})
 			}

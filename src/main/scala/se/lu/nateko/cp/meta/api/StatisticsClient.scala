@@ -14,6 +14,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
+import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.DocObject
 
 case class Statistics(count: Int)
 
@@ -54,8 +56,12 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 		getStatistic(s"$dbUri/portaluse/_aggrs/getPreviewCountForPid?avars={'pid':'${dobjHash.id}'}&np")
 	}
 
-	def getObjDownloadCount(dobjHash: Sha256Sum)(implicit envri: Envri): Future[Option[Int]] = {
-		getStatistic(s"$dbUri/dobjdls/_aggrs/getDownloadCountForSHA256?avars={'pid':'${dobjHash.base64Url}'}&np")
+	def getObjDownloadCount(obj: StaticObject)(implicit envri: Envri): Future[Option[Int]] = {
+		val doc = obj match{
+			case _: DocObject => "Doc"
+			case _ => ""
+		}
+		getStatistic(s"$dbUri/dobjdls/_aggrs/get${doc}DownloadCountForSHA256?avars={'pid':'${obj.hash.base64Url}'}&np")
 	}
 
 	def getCollDownloadCount(uri: URI)(implicit envri: Envri): Future[Option[Int]] = {

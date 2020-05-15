@@ -29,7 +29,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		import statisticsClient.executionContext
 		val template: StaticObject => Future[Option[String] => Html] = obj =>
 			for(
-				dlCount <- statisticsClient.getObjDownloadCount(obj.hash);
+				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield (citOpt: Option[String]) => {
 				val extras = LandingPageExtras(citOpt, dlCount, previewCount)

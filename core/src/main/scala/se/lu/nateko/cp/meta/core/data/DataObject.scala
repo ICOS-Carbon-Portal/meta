@@ -103,7 +103,7 @@ case class DataObject(
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource],
-	citationString: Option[String]
+	references: References
 ) extends StaticObject{
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),

@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.services.UploadCompletionException
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import spray.json.{JsArray, JsString}
+import se.lu.nateko.cp.meta.utils.printAsJsonArray
 
 
 private class TimeSeriesUploadCompleter(
@@ -63,8 +63,8 @@ private class TimeSeriesUploadCompleter(
 		val olds = server.getStatements(Some(objUri), Some(metaVocab.hasActualColumnNames), None).toIndexedSeq
 
 		val news = extract.actualColumns.toIndexedSeq.map { cols =>
-			val json = JsArray(cols.map(cn => JsString(cn)).toVector)
-			factory.createStatement(objUri, metaVocab.hasActualColumnNames, vocab.lit(json.compactPrint))
+			val colsJson = printAsJsonArray(cols)
+			factory.createStatement(objUri, metaVocab.hasActualColumnNames, vocab.lit(colsJson))
 		}
 		MetadataUpdater.diff(olds, news, factory) ++ acqusitionIntervalUpdates(hash, extract.interval)
 	}

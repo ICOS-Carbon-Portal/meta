@@ -126,8 +126,8 @@ object FilterPatternSearch{
 		case optUriProp: OptUriProperty =>
 			v.asOptInstanceOf[IRI].map(iri => CategFilter(optUriProp, Seq(Some(iri))))
 
-		case VariableName =>
-			v.asOptInstanceOf[Literal].flatMap(asString).map(varName => CategFilter(VariableName, Seq(varName)))
+		case strProp: StringCategProp =>
+			v.asOptInstanceOf[Literal].flatMap(asString).map(varName => CategFilter(strProp, Seq(varName)))
 
 		case dp: DateProperty =>
 			v.asOptInstanceOf[Literal].flatMap(asTsEpochMillis).map(d => ContFilter(dp, EqualsFilter(d)))

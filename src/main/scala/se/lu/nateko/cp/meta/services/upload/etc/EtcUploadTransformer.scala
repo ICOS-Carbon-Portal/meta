@@ -58,7 +58,8 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 				)
 			),
 			isNextVersionOf = getPrevVersion(meta.fileName, meta.hashSum).map(Left(_)),
-			preExistingDoi = None
+			preExistingDoi = None,
+			references = None
 		)
 	}
 

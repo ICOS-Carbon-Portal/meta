@@ -73,6 +73,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(subj == subm && isProvTime) Fixed
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
 		else if(pred === metaVocab.hasNumberOfRows) Sticky
+		else if(pred === metaVocab.hasCitationString) Sticky
 		else Plain
 	}
 

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, UploadDto, StaticCollectionDto, DataProductionDto}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -212,6 +213,7 @@ class Form(
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
+	val keywordsInput = new TextInput("keywords", () => ())
 
 	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 
@@ -288,7 +290,13 @@ class Form(
 			)
 		),
 		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
+		preExistingDoi = doi,
+		references = Some(
+			References(
+				citationString = None,
+				keywords = keywordsInput.value.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
+			)
+		)
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
 		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;

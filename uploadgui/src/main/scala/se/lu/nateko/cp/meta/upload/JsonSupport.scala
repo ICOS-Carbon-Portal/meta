@@ -34,18 +34,14 @@ object JsonSupport {
 		def reads(js: JsValue) = js.validate[String].map(Sha256Sum.fromString(_).get)
 	}
 
-	implicit val dataProductionDtoFormat = Json.format[DataProductionDto]
-	implicit def eitherWrites[L: Writes, R: Writes] = new Writes[Either[L, R]]{
+	implicit def eitherFormat[L: Format, R: Format] = new Format[Either[L, R]]{
 		def writes(e: Either[L, R]) = e.fold(Json.toJson(_), Json.toJson(_))
-	}
-
-	implicit def eitherReads[L: Reads, R: Reads] = new Reads[Either[L, R]]{
 		def reads(js: JsValue) = Json.fromJson[R](js).map(Right(_))
 			.orElse(Json.fromJson[L](js).map(Left(_)))
 	}
 
-	implicit val spatialReads = eitherReads[LatLonBox, URI]
-
+	implicit val dataProductionDtoFormat = Json.format[DataProductionDto]
+	implicit val referencesFormat = Json.format[References]
 	implicit val elaboratedProductMetadataFormat = Json.format[ElaboratedProductMetadata]
 	implicit val stationDataMetadataFormat = Json.format[StationDataMetadata]
 
@@ -56,33 +52,26 @@ object JsonSupport {
 		)
 	}
 
-	implicit val specificInfoWrites = eitherWrites[ElaboratedProductMetadata, StationDataMetadata]
-	implicit val specificInfoReads = eitherReads[ElaboratedProductMetadata, StationDataMetadata]
+	implicit val dataDtoFormat = Json.format[DataObjectDto]
+	implicit val documentDtoFormat = Json.format[DocObjectDto]
+	implicit val staticCollectionDtoFormat = Json.format[StaticCollectionDto]
 
-	implicit val dataDtoWrites = Json.writes[DataObjectDto]
-	implicit val documentDtoWrites = Json.writes[DocObjectDto]
-	implicit val staticCollectionDtoWrites = Json.writes[StaticCollectionDto]
-	implicit val UploadDtoWrites = new Writes[UploadDto] {
+	implicit val uploadDtoFormat = new Format[UploadDto] {
 		def writes(dto: UploadDto) = dto match {
 			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
 			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
 			case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
 		}
-	}
-	implicit val submitterProfileReads = Json.reads[SubmitterProfile]
-	implicit val envriReads = new Reads[Envri]{
-		def reads(js: JsValue) = js.validate[String].map(Envri.withName)
-	}
-	implicit val envriConfigReads = Json.reads[EnvriConfig]
-
-	implicit val DataObjectDtoReads = Json.reads[DataObjectDto]
-	implicit val DocObjectDtoReads = Json.reads[DocObjectDto]
-	implicit val StaticCollectionDtoReads = Json.reads[StaticCollectionDto]
-	implicit val UploadDtoReads = Reads[UploadDto] { js =>
-		Json.fromJson[DataObjectDto](js)
+		def reads(js: JsValue) = Json.fromJson[DataObjectDto](js)
 			.orElse(Json.fromJson[DocObjectDto](js))
 			.orElse(Json.fromJson[StaticCollectionDto](js))
 	}
+	implicit val submitterProfileReads = Json.reads[SubmitterProfile]
 
+	implicit val envriReads = new Reads[Envri]{
+		def reads(js: JsValue) = js.validate[String].map(Envri.withName)
+	}
+
+	implicit val envriConfigReads = Json.reads[EnvriConfig]
 
 }

@@ -128,7 +128,8 @@ class DroughtUpload2(
 			fileName = meta.fileName,
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevHash.map(Left(_)),
-			preExistingDoi = if(haveDois) Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))) else None
+			preExistingDoi = if(haveDois) Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))) else None,
+			references = None
 		)
 	}
 

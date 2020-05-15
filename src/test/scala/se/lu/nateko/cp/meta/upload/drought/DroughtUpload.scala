@@ -87,7 +87,8 @@ object DroughtUpload{
 			fileName = meta.fname,
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevVers.map(Left(_)),
-			preExistingDoi = if(isHh) None else Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash)))
+			preExistingDoi = if(isHh) None else Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))),
+			references = None
 		)
 	}
 

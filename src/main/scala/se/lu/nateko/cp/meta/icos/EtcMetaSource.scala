@@ -119,7 +119,7 @@ object EtcMetaSource{
 	val rolesLookup: Map[String, Option[Role]] = Map(
 		"PI"         -> Some(PI),
 		"CO-PI"      -> Some(Researcher),
-		"MANAGER"    -> None,
+		"MANAGER"    -> Some(Administrator),
 		"SCI"        -> Some(Researcher),
 		"SCI-FLX"    -> Some(Researcher),
 		"SCI-ANC"    -> Some(Researcher),

@@ -179,7 +179,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			Some(emptyBitmap)
 	}
 
-	private def negate(bm: ImmutableRoaringBitmap) = ImmutableRoaringBitmap.flip(bm, 0, (objs.length - 1).toLong)
+	private def negate(bm: ImmutableRoaringBitmap) = ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
 
 	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
 		var condHappened = false

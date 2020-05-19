@@ -2623,6 +2623,15 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/spectralPointCloud -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/spectralPointCloud">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES Spectral point cloud</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/resources/organizations/SITES_SLU -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/resources/organizations/SITES_SLU">

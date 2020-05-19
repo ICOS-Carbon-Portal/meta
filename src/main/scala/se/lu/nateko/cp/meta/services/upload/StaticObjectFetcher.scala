@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.parseJsonStringArray
+import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
@@ -63,7 +63,7 @@ class StaticObjectFetcher(
 			parentCollections = collFetcher.getParentCollections(dobj),
 			references = References(
 				citationString = getOptionalString(dobj, metaVocab.hasCitationString),
-				keywords = getOptionalString(dobj, metaVocab.hasKeywords).flatMap(parseJsonStringArray).map(_.toIndexedSeq)
+				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 			)
 		)
 	}

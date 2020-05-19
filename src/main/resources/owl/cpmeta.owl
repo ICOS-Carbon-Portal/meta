@@ -939,7 +939,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">String representing a JSON array with string keywords</rdfs:comment>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">String representing a comma-separated list of keywords</rdfs:comment>
     </owl:DatatypeProperty>
     
 

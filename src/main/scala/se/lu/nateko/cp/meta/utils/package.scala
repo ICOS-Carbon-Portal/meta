@@ -53,4 +53,6 @@ package object utils {
 		JsArray(ss.map(s => JsString(s)).toVector).prettyPrint
 	}
 
+	def parseCommaSepList(s: String): Array[String] = s.split(",").map(_.trim).filter(!_.isEmpty)
+
 }

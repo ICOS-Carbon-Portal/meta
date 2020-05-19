@@ -4,6 +4,7 @@
 Metadata service for hosting, mantaining and querying information about things like ICOS stations, people, instruments, archived data objects, etc.
 It is deployed to **https://meta.icos-cp.eu/** with different services accessible via different paths:
 
+- [/uploadgui/](https://meta.icos-cp.eu/uploadgui/): web application for data/document object upload and collection creation (see instructions for manual upload below). 
 - [/labeling/](https://meta.icos-cp.eu/labeling/): ICOS Station Labeling Step 1 web application
 - [/edit/stationentry/](https://meta.icos-cp.eu/edit/stationentry/): provisional station information entry app for ICOS Head Office
 - [/edit/labeling/](https://meta.icos-cp.eu/edit/labeling/): administrative interface for station labeling metadata
@@ -21,7 +22,11 @@ Additionally, this repository contains code for the following visualization web 
 - [Table with the provisional station info](https://static.icos-cp.eu/share/stations/table.html)
 
 ---
-## Data object registration and upload instructions
+## Upload instructions (manual)
+Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app. At the time of this writing, support for data objects is limited to data levels from 0 to 2 (inclusive). Elaborated products still need to be uploaded using the HTTP API (see the instructions for scripted uploads below).
+
+---
+## Upload instructions (scripting)
 
 This section describes the complete, general 2-step workflow for registering and uploading a data object to the Carbon Portal for archival, PID minting and possibly for being served by various data services.
 
@@ -65,7 +70,10 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
 	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk",
-	"preExistingDoi": "10.1594/PANGAEA.865618"
+	"preExistingDoi": "10.1594/PANGAEA.865618",
+	"references": {
+		"keywords": []
+	}
 }
 ```
 
@@ -102,6 +110,8 @@ Clarifications:
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object(s) that is(are) already present. The value is the SHA256 hashsum of the older data object (or an array of the hashsums, if they are more than one). Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.
+- `references` (optional) JSON object with additional "library-like" information; the list of its properties is planned to grow in the future.
+- `keywords` (optional) an array of strings to be used as keywords specific to this particular object. Please note that CP metadata allows specifying keywords also on the data object specification (data type) level, and on the project level. Keywords common to all data objects of a certain data type should be associated directly with the corresponding specification (this is done by CP staff on request from the data uploaders).
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 
@@ -115,7 +125,7 @@ Alternatively, the CPauth cookie can be supplied explicitly:
 Uploading the data object itself is a simple step performed against the CP's Data service **https://data.icos-cp.eu/**.
 Proceed with the upload as instructed [here](https://github.com/ICOS-Carbon-Portal/data#instruction-for-uploading-icos-data-objects)
 
-### Uploading documents
+### Uploading document objects
 In addition to data objects who have properties as data level, data object specification, acquisition and production provenance, there is a use case for uploading supplementary materials like pdf documents with hardware specifications, methodology descriptions, policies and other reference information.
 To provide for this, CP supports upload of document objects.
 The upload procedure is completely analogous to data object uploads, the only difference being the absence of `specificInfo` and `objectSpecification` properties in the metadata package.
@@ -135,6 +145,15 @@ Carbon Portal supports creation of static collections with constant lists of imm
 The fields are either self-explanatory, or have the same meaning as for the data object upload.
 
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
+
+### Reconstructing upload-metadata packages of existing objects/collections
+When scripting uploads of multiple objects, it can be convenient to use an upload-metadata package of an existing object as an example or a template. The reconstructed package can be fetched using the following request:
+
+`curl https://meta.icos-cp.eu/dtodownload?uri=<langing page URL>`
+
+In bash shell, one can also format the JSON after fetching, as in this example:
+
+`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | python3 -m json.tool`
 
 ## Metadata flow (for ATC only)
 The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form

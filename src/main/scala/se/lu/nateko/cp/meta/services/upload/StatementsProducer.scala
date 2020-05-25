@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.LatLonBox
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
@@ -108,6 +109,17 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		})
 	}
 
+	def getPositionStatements(aquisitionUri: IRI, point: Position)(implicit envri: Envri): Seq[Statement] = {
+		val samplUri = vocab.getSamplingPoint(point.lat6, point.lon6)
+
+		Seq(
+			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
+			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat)),
+			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon)),
+			makeSt(samplUri, RDF.TYPE, metaVocab.samplingPointClass)
+		)
+	}
+
 	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata)(implicit envri: Envri): Seq[Statement] = {
 		val objUri = vocab.getStaticObject(hash)
 		Seq(
@@ -139,6 +151,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
+		meta.samplingPoint.map(getPositionStatements(aquisitionUri, _)).getOrElse(Seq.empty)++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)

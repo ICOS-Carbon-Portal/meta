@@ -1930,6 +1930,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/SamplingPoint -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SamplingPoint">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sampling point</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SimpleDataObject">

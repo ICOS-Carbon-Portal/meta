@@ -67,6 +67,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative(ProdPrefix + hash.id)
 	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SubmPrefix + hash.id)
 	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SpatCovPrefix + hash.id)
+	def getSamplingPoint(lat: String, lon: String)(implicit envri: Envri) = getRelative(SamplPrefix + lat + "_" + lon)
 
 	def getObjectSpecification(lastSegment: String)(implicit envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
@@ -80,6 +81,7 @@ object CpVocab{
 	val ProdPrefix = "prod_"
 	val SubmPrefix = "subm_"
 	val SpatCovPrefix = "spcov_"
+	val SamplPrefix = "point_"
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)

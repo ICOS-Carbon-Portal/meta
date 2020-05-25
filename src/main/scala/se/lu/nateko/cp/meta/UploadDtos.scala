@@ -50,7 +50,7 @@ case class StationDataMetadata(
 	station: URI,
 	site: Option[URI],
 	instrument: OptionalOneOrSeq[URI],
-	samplingPoint: Option[Either[Position, URI]],
+	samplingPoint: Option[Position],
 	samplingHeight: Option[Float],
 	acquisitionInterval: Option[TimeInterval],
 	nRows: Option[Int],

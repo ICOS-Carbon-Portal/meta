@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, UploadDto, StaticCollectionDto, DataProductionDto}
@@ -217,6 +218,8 @@ class Form(
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
+	val latitudeInput = new DoubleOptInput("latitude", updateButton)
+	val longitudeInput = new DoubleOptInput("longitude", updateButton)
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
 	val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", updateButton)
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
@@ -268,6 +271,8 @@ class Form(
 		objSpec <- objSpecSelect.value.withMissingError("Data type not set");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
+		latitude <- latitudeInput.value.withErrorContext("Latitude");
+		longitude <- longitudeInput.value.withErrorContext("Longitude");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
 		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI");
 		production <- if(productionElements.areEnabled) dataProductionDto else Success(None)
@@ -281,7 +286,10 @@ class Form(
 				station = station.uri,
 				site = siteSelect.value.flatten.map(_.uri),
 				instrument = instrumentUri,
-				samplingPoint = None,
+				samplingPoint = (latitude, longitude) match {
+					case (Some(lat), Some(lon)) => Some(Position(lat.toDouble, lon.toDouble, None))
+					case _ => None
+				},
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
@@ -363,6 +371,10 @@ class Form(
 											acqStartInput.value = time.start
 											acqStopInput.value = time.stop
 											timeIntevalInput.value = Some(time)
+										}
+										acquisition.samplingPoint.map{ point =>
+											latitudeInput.value = Some(point.lat)
+											longitudeInput.value = Some(point.lon)
 										}
 										samplingHeightInput.value = acquisition.samplingHeight
 										instrUriInput.value = acquisition.instrument

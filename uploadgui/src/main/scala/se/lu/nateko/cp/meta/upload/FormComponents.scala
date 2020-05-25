@@ -280,7 +280,7 @@ class HashOptInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)
-			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get))))
+			else if(s.contains("\n")) Try(Some(Right(s.split("\n").toIndexedSeq.map(line => Sha256Sum.fromString(line).get))))
 			else Try(Some(Left(Sha256Sum.fromString(s).get))),
 		_ match {
 			case Left(sha) => sha.id
@@ -291,12 +291,13 @@ class HashOptListInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Seq[Sha256Sum]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)
-			else Try(Some(s.split("\n").map(Sha256Sum.fromString(_).get))),
+			else Try(Some(s.split("\n").toIndexedSeq.map(Sha256Sum.fromString(_).get))),
 		shaSeq => shaSeq.map(_.id).mkString("\n")
 	)
 
 class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)), _.toString())
 class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)), _.toString())
+class DoubleOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Double](elemId, cb)(s => Try(Some(s.toDouble)), _.toString())
 
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
 class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Either[URI, Seq[URI]]](elemId, cb)(s =>
@@ -334,7 +335,7 @@ class NonEmptyUriListInput(elemId: String, cb: () => Unit) extends GenericTextIn
 object UriListInput{
 
 	def parser(value: String): Try[Seq[URI]] = Try(
-		value.split("\n").map(_.trim).filterNot(_.isEmpty).map(line => {
+		value.split("\n").toIndexedSeq.map(_.trim).filterNot(_.isEmpty).map(line => {
 			if (line.startsWith("https://") || line.startsWith("http://")) new URI(line)
 			else throw new Exception("Malformed URL (must start with http[s]://)")
 		})

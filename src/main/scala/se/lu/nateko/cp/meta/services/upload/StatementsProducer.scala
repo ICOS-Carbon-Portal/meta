@@ -110,13 +110,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	}
 
 	def getPositionStatements(aquisitionUri: IRI, point: Position)(implicit envri: Envri): Seq[Statement] = {
-		val samplUri = vocab.getSamplingPoint(point.lat6, point.lon6)
+		val samplUri = vocab.getPosition(point)
 
 		Seq(
 			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
 			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat)),
 			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon)),
-			makeSt(samplUri, RDF.TYPE, metaVocab.samplingPointClass)
+			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
 		)
 	}
 

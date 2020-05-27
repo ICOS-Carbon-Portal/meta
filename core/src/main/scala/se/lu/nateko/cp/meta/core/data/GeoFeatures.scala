@@ -19,9 +19,13 @@ case class Position(lat: Double, lon: Double, alt: Option[Float]) extends GeoFea
 
 	def textSpecification = s"Lat: $lat6, Lon: $lon6"
 
-	private def numForm = new DecimalFormat("###.######")
-	def lat6 = numForm.format(lat)
-	def lon6 = numForm.format(lon)
+	def lat6 = Position.format6(lat)
+	def lon6 = Position.format6(lon)
+}
+
+object Position{
+	private val numForm = new DecimalFormat("###.######")
+	def format6(d: Double): String = numForm.format(d).replace(',', '.')
 }
 
 case class LatLonBox(min: Position, max: Position, label: Option[String]) extends GeoFeature{

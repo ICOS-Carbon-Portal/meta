@@ -53,6 +53,9 @@ object Backend {
 	def getSites(station: URI): Future[IndexedSeq[Site]] =
 		sparqlSelect(sites(station)).map(_.map(toSite))
 
+	def getSamplingPoints(site: URI): Future[IndexedSeq[SamplingPoint]] =
+		sparqlSelect(samplingpoints(site)).map((_.map(toSamplingPoint)))
+
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){

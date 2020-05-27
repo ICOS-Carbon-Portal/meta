@@ -19,11 +19,11 @@ case class Position(lat: Double, lon: Double, alt: Option[Float]) extends GeoFea
 
 	def textSpecification = s"Lat: $lat6, Lon: $lon6"
 
-	def lat6 = Position.format6(lat)
-	def lon6 = Position.format6(lon)
+	def lat6 = PositionUtil.format6(lat)
+	def lon6 = PositionUtil.format6(lon)
 }
 
-object Position{
+object PositionUtil{
 	private val numForm = new DecimalFormat("###.######")
 	def format6(d: Double): String = numForm.format(d).replace(',', '.')
 }

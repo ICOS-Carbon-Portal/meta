@@ -328,7 +328,6 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/prov#atLocation"/>
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">

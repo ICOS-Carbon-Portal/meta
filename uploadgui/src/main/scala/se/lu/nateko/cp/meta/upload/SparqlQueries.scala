@@ -48,6 +48,17 @@ object SparqlQueries {
 
 	def toSite(b: Binding) = Site(new URI(b("site")), b("name"))
 
+	def samplingpoints(site: URI): String = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|SELECT *
+		|WHERE {
+		|	<$site> cpmeta:hasSamplingPoint ?point .
+		|	?point rdfs:label ?name .
+		|	?point cpmeta:hasLatitude ?latitude .
+		|	?point cpmeta:hasLongitude ?longitude }
+		|order by ?name""".stripMargin
+
+	def toSamplingPoint(b: Binding) = SamplingPoint(new URI(b("point")), b("latitude").toDouble, b("longitude").toDouble, b("name"))
+
 	private def objSpecsTempl(from: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
 		|FROM <${from}>

@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.References
@@ -12,6 +13,7 @@ import scala.concurrent.Future
 import Utils._
 import FormTypeRadio._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import java.net.URI
 
 class Form(
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
@@ -23,6 +25,8 @@ class Form(
 	val fileInputElement = new HtmlElements("#fileinput")
 	val filenameElement = new HtmlElements("#filename")
 	val metadataUrlElement = new HtmlElements("#metadata-url")
+	val positionElements = new HtmlElements(".position-element")
+	val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
 	def resetForm() = {
 		val subm = submitterIdSelect.value
@@ -200,6 +204,24 @@ class Form(
 		}
 	}
 
+	private val onSiteSelected: () => Unit = () => {
+		siteSelect.value.flatten.foreach { site =>
+			whenDone(Backend.getSamplingPoints(site.uri)) { points =>
+				samplingPointInput.setOptions {
+					None +: points.map(Some(_)) :+ Some(customSamplingPoint)
+				}
+			}
+			updateButton()
+		}
+	}
+
+	private val onSamplingPointSelected: () => Unit = () => {
+		samplingPointInput.value.flatten match {
+			case Some(SamplingPoint(_, 0, 0, "Custom")) => positionElements.show()
+			case _ => positionElements.hide()
+		}
+	}
+
 	val fileInput = new FileInput("fileinput", updateButton)
 	val fileNameText = new TextInput("filename", updateButton)
 	var fileHash: Option[Sha256Sum] = None
@@ -210,7 +232,7 @@ class Form(
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio[Int]("level-radio", onLevelSelected, i => i.toString())
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
-	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = updateButton)
+	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 	val keywordsInput = new TextInput("keywords", () => ())
@@ -219,6 +241,9 @@ class Form(
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
+	val samplingPointInput = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), autoselect = false, onSamplingPointSelected)
+	val latitudeInput = new DoubleOptInput("latitude", updateButton)
+	val longitudeInput = new DoubleOptInput("longitude", updateButton)
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
 	val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", updateButton)
 	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
@@ -270,6 +295,8 @@ class Form(
 		objSpec <- objSpecSelect.value.withMissingError("Data type not set");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
 		nRows <- nRowsInput.value.withErrorContext("Number of rows");
+		latitude <- latitudeInput.value.withErrorContext("Latitude");
+		longitude <- longitudeInput.value.withErrorContext("Longitude");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
 		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI");
 		production <- if(productionElements.areEnabled) dataProductionDto else Success(None)
@@ -283,6 +310,14 @@ class Form(
 				station = station.uri,
 				site = siteSelect.value.flatten.map(_.uri),
 				instrument = instrumentUri,
+				samplingPoint = samplingPointInput.value.flatten match {
+					case Some(SamplingPoint(_, 0, 0, "Custom")) => (latitude, longitude) match {
+						case (Some(lat), Some(lon)) => Some(Position(lat.toDouble, lon.toDouble, None))
+						case _ => None
+					}
+					case Some(position) => Some(Position(position.latitude, position.longitude, None))
+					case _ => None
+				},
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
@@ -363,7 +398,25 @@ class Form(
 												else if (envri == Envri.SITES) sites.map(Some(_))
 												else None +: sites.map(Some(_))
 											}
-											acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map(site => siteSelect.value = Some(site)))
+											acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map { site =>
+												siteSelect.value = Some(site)
+												whenDone(Backend.getSamplingPoints(site.uri)) { points =>
+													samplingPointInput.setOptions {
+														None +: points.map(Some(_)) :+ Some(customSamplingPoint)
+													}
+													acquisition.samplingPoint.map{ point =>
+														points.find(p => p.latitude == point.lat && p.longitude == point.lon) match {
+															case Some(value) => samplingPointInput.value = Some(value)
+															case None => {
+																latitudeInput.value = Some(point.lat)
+																longitudeInput.value = Some(point.lon)
+																positionElements.show()
+																samplingPointInput.value = Some(customSamplingPoint)
+															}
+														}
+													}
+												}
+											})
 											updateButton()
 										}
 										acquisition.acquisitionInterval.map{ time =>

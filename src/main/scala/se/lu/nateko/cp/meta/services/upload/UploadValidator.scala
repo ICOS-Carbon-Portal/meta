@@ -259,7 +259,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	)(implicit envri: Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
-			Right(StationDataMetadata(stationUri, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
+			Right(StationDataMetadata(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _, _
 		) =>
 			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.uri === vocab.icosProject){

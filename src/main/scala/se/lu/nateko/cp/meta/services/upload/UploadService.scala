@@ -98,7 +98,7 @@ class UploadService(
 			collIri = vocab.getCollection(collHash);
 			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg);
 			oldStatements = server.getStatements(collIri);
-			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements);
+			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
 			_ <- server.applyAll(updates)
 		) yield new AccessUri(collIri.toJava)
 
@@ -124,7 +124,7 @@ class UploadService(
 			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
 			newStatements = statementProd.getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
-			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements);
+			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
 			_ <- Future.fromTry(server.applyAll(updates))
 		) yield
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))

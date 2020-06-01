@@ -24,9 +24,8 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 
 	protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability
 
-	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement])(implicit envri: Envri): Seq[RdfUpdate] = {
-		if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true))
-		else {
+	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement], server: InstanceServer)(implicit envri: Envri): Seq[RdfUpdate] = {
+		val statDiff = if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
 			val oldBySp = new BySubjPred(oldStatements)
 			val newBySp = new BySubjPred(newStatements)
 			val allSps = (oldBySp.sps ++ newBySp.sps).toSeq
@@ -42,6 +41,10 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 				case _ =>
 					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
+		}
+		statDiff.filter{//keep only non-existing ones
+			case RdfUpdate(Rdf4jStatement(s, p, o), true) => !server.hasStatement(s, p, o)
+			case _ => true
 		}
 	}
 }

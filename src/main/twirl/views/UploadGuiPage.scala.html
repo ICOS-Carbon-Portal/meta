@@ -52,6 +52,10 @@
 		display: none;
 		overflow-wrap: break-word;
 	}
+	#latitude-element,
+	#longitude-element {
+		display: none;
+	}
 	#submitbutton {
 		margin: 0;
 		pointer-events: auto;
@@ -197,6 +201,18 @@
 						<div class="form-group">
 							<label for="acqstopinput">To (UTC)</label>
 							<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+						</div>
+						<div class="form-group">
+							<label for="samplingpointselect">Sampling point <em class="text-muted">- optional</em></label>
+							<select id="samplingpointselect" class="form-element" disabled></select>
+						</div>
+						<div class="form-group position-element" id="latitude-element">
+							<label for="latitude">Sampling point (latitude) <em class="text-muted">- optional</em></label>
+							<input id="latitude" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group position-element" id="longitude-element">
+							<label for="longitude">Sampling point (longitude) <em class="text-muted">- optional</em></label>
+							<input id="longitude" type="text" class="form-element form-control">
 						</div>
 						<div class="form-group">
 							<label for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>

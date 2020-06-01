@@ -297,6 +297,7 @@ class HashOptListInput(elemId: String, cb: () => Unit)
 
 class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)), _.toString())
 class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)), _.toString())
+class DoubleOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Double](elemId, cb)(s => Try(Some(s.toDouble)), _.toString())
 
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
 class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Either[URI, Seq[URI]]](elemId, cb)(s =>

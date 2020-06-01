@@ -28,6 +28,12 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)
 
+	protected def getPosition(point: IRI) = Position(
+		lat = getSingleDouble(point, metaVocab.hasLatitude),
+		lon = getSingleDouble(point, metaVocab.hasLongitude),
+		Option.empty
+	)
+
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
@@ -147,6 +153,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				case single :: Nil => Some(Left(single))
 				case many => Some(Right(many))
 			},
+			samplingPoint = getOptionalUri(acqUri, metaVocab.hasSamplingPoint).map(getPosition),
 			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)

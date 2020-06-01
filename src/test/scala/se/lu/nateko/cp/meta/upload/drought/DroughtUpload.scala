@@ -75,6 +75,7 @@ object DroughtUpload{
 			station = meta.station,
 			site = None,
 			instrument = None,
+			samplingPoint = None,
 			samplingHeight = None,
 			acquisitionInterval = if(isHh) None else Some(TimeInterval(meta.acqStart, meta.acqEnd)),
 			nRows = meta.nPoints,

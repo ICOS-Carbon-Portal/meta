@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix, objectPathPrefix}
 import se.lu.nateko.cp.meta.core.data.{staticObjLandingPage, staticObjAccessUrl, staticCollLandingPage}
 import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.ETC
 import se.lu.nateko.cp.meta.icos.TcConf
@@ -67,6 +68,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelative(ProdPrefix + hash.id)
 	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SubmPrefix + hash.id)
 	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelative(SpatCovPrefix + hash.id)
+	def getPosition(pos: Position)(implicit envri: Envri) = getRelative(s"position_${pos.lat6}_${pos.lon6}")
 
 	def getObjectSpecification(lastSegment: String)(implicit envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)

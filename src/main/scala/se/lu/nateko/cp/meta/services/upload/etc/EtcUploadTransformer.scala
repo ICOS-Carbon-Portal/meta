@@ -51,6 +51,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 					station = vocab.getEcosystemStation(meta.station).toJava,
 					site = None,
 					instrument = Some(Left(vocab.getEtcInstrument(meta.station, meta.logger).toJava)),
+					samplingPoint = None,
 					samplingHeight = None,
 					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
 					nRows = None,

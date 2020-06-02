@@ -18,7 +18,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	def getSpecification(spec: IRI, fetcher: PlainStaticObjectFetcher) = DataObjectSpec(
 		self = getLabeledResource(spec),
-		project = getLabeledResource(spec, metaVocab.hasAssociatedProject),
+		project = getProject(getSingleUri(spec, metaVocab.hasAssociatedProject)),
 		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
@@ -84,6 +84,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		self = getLabeledResource(pers),
 		firstName = getSingleString(pers, metaVocab.hasFirstName),
 		lastName = getSingleString(pers, metaVocab.hasLastName)
+	)
+
+	private def getProject(project: IRI) = Project(
+		self = getLabeledResource(project),
+		keywords = getOptionalString(project, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 	)
 
 	private def getDataTheme(theme: IRI) = DataTheme(

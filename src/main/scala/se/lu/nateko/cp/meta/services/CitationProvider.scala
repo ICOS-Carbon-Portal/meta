@@ -104,7 +104,7 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	) yield cit
 
 	def getIcosCitation(dobj: DataObject): Option[String] = {
-		val isIcos: Option[Unit] = if(dobj.specification.project.uri === vocab.icosProject) Some(()) else None
+		val isIcos: Option[Unit] = if(dobj.specification.project.self.uri === vocab.icosProject) Some(()) else None
 		val zoneId = ZoneId.of("UTC")
 
 		def titleOpt = dobj.specificInfo.fold(

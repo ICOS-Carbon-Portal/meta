@@ -262,7 +262,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 			Right(StationDataMetadata(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _, _
 		) =>
-			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.uri === vocab.icosProject){
+			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){
 				val prevDobj = vocab.getStaticObject(prevHash)
 				server.flatMap{instServer =>
 					val prevAcqStop = instServer.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>

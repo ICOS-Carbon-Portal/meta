@@ -34,7 +34,8 @@ case class DataObjectSpec(
 	encoding: UriResource,
 	dataLevel: Int,
 	datasetSpec: Option[UriResource],
-	documentation: Seq[PlainStaticObject]
+	documentation: Seq[PlainStaticObject],
+	keywords: Option[Seq[String]]
 )
 
 case class DataAcquisition(
@@ -117,6 +118,11 @@ case class DataObject(
 		l3 => Some(l3.spatial),
 		l2 => l2.coverage.orElse(l2.acquisition.coverage)
 	)
+
+	def keywords: Option[Seq[String]] =
+		Option((references.keywords ++ specification.keywords).flatten)
+			.filter(_.nonEmpty)
+			.map(_.toSeq)
 }
 
 case class DocObject(

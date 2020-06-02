@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.util.Try
 
@@ -23,7 +24,8 @@ trait CpmetaFetcher extends FetchingHelper{
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
 		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getLabeledResource),
-		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject)
+		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
+		keywords = getOptionalString(spec, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)

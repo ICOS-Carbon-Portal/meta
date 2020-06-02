@@ -73,6 +73,9 @@
 				@if(uploadComplete) {
 					@accessUrlRow(dobj)
 				}
+				@for(keywords <- dobj.keywords){
+					@PanelRow("Keywords", keywords.mkString(", "))
+				}
 			}
 		</div>
 

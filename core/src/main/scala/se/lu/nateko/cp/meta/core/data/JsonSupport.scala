@@ -9,7 +9,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val uriResourceFormat = jsonFormat3(UriResource)
 	implicit val dataThemeFormat = jsonFormat3(DataTheme)
 	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
-	implicit val dataObjectSpecFormat = jsonFormat8(DataObjectSpec)
+	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
 	implicit val positionFormat = jsonFormat3(Position.apply)
 	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)

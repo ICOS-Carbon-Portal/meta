@@ -280,14 +280,16 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 			case `wasAssociatedWith` => subj match{
 				case CpVocab.Submission(hash) =>
 					val oe = getObjEntry(hash)
+					removeStat(oe)
 					oe.submitter = targetUri
-					if(isAssertion) addStat(oe) else removeStat(oe)
+					if(isAssertion) addStat(oe)
 					obj match{ case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx) }
 
 				case CpVocab.Acquisition(hash) =>
 					val oe = getObjEntry(hash)
+					removeStat(oe)
 					oe.station = targetUri
-					if(isAssertion) addStat(oe) else removeStat(oe)
+					if(isAssertion) addStat(oe)
 					obj match{ case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx) }
 				case _ =>
 			}

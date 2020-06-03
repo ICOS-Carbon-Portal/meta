@@ -33,5 +33,8 @@ trait CustomVocab {
 }
 
 object CustomVocab{
+
 	def urlEncode(s: String) = se.lu.nateko.cp.meta.utils.urlEncode(s)
+
+	def decodedLocName(iri: IRI) = se.lu.nateko.cp.meta.utils.urlDecode(iri.getLocalName)
 }

@@ -47,7 +47,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getRole(roleId: String)(implicit envri: Envri) = getRelative("roles/", roleId)
 
 	def getOrganization(orgId: String)(implicit envri: Envri) = getRelative("organizations/", orgId)
-	def getOrganizationId(org: IRI): String = org.getLocalName
+	def getOrganizationId(org: IRI): String = CustomVocab.decodedLocName(org)
 
 	def getIcosInstrument(id: String) = getRelative("instruments/", id)(icosBup)
 	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(getEtcInstrId(station, id))

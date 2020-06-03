@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
+import se.lu.nateko.cp.meta.api.CustomVocab.decodedLocName
 import se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Position
@@ -80,7 +81,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 				val endOpt = getOptionalInstant(uri, metaVocab.hasEndTime)
 				val weight = getOptionalInt(uri, metaVocab.hasAttributionWeight)
 				val assumedRole = new AssumedRole(role, person, org, weight)
-				Membership(uri.getLocalName, assumedRole, startOpt, endOpt)
+				Membership(decodedLocName(uri), assumedRole, startOpt, endOpt)
 			})
 		}
 		Validated.sequence(membOptSeqV).map(_.flatten)
@@ -89,14 +90,14 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
 		(tcIdOpt, uri) => Instrument[T](
-			cpId = uri.getLocalName,
+			cpId = decodedLocName(uri),
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Instrument $uri had no TC id associated with it")),
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
 			name = getOptionalString(uri, metaVocab.hasName),
 			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getOrganization(o)),
 			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getOrganization(v)),
-			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(_.getLocalName)
+			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(decodedLocName)
 		)
 	}
 
@@ -109,7 +110,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 		val tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it"))
 		val id = getSingleString(uri, metaVocab.hasStationId)
-		val cpId = uri.getLocalName
+		val cpId = decodedLocName(uri)
 		val name = getSingleString(uri, metaVocab.hasName)
 
 		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)
@@ -136,14 +137,14 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	}
 
 	private def getRole(iri: IRI): Role = {
-		val roleId = iri.getLocalName
+		val roleId = decodedLocName(iri)
 		Role.all.find(_.name == roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
 	}
 
 	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {
 		val core: data.Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
-		Person[T](uri.getLocalName, tcId, core.firstName, core.lastName, email)
+		Person[T](decodedLocName(uri), tcId, core.firstName, core.lastName, email)
 	}
 
 	private def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] =

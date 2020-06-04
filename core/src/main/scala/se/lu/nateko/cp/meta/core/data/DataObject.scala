@@ -24,17 +24,19 @@ case class Station(
 case class Location(geometry: GeoFeature, label: Option[String])
 case class Site(self: UriResource, ecosystem: UriResource, location: Option[Location])
 
+case class Project(self: UriResource, keywords: Option[Seq[String]])
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
 
 case class DataObjectSpec(
 	self: UriResource,
-	project: UriResource,
+	project: Project,
 	theme: DataTheme,
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
 	datasetSpec: Option[UriResource],
-	documentation: Seq[PlainStaticObject]
+	documentation: Seq[PlainStaticObject],
+	keywords: Option[Seq[String]]
 )
 
 case class DataAcquisition(
@@ -117,6 +119,11 @@ case class DataObject(
 		l3 => Some(l3.spatial),
 		l2 => l2.coverage.orElse(l2.acquisition.coverage)
 	)
+
+	def keywords: Option[Seq[String]] =
+		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)
+			.filter(_.nonEmpty)
+			.map(_.toSeq.sorted)
 }
 
 case class DocObject(

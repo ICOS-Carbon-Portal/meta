@@ -22,7 +22,7 @@
 					@PidPanelHtmlRow(dobj.pid, handleProxies.basic)
 					@accessUrlRow(dobj)
 				}
-				@resourcePanelRow("Data affiliation", dobj.specification.project)
+				@resourcePanelRow("Data affiliation", dobj.specification.project.self)
 				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion.flattenToSeq)}
 				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
 				@for(coll <- dobj.parentCollections){
@@ -72,6 +72,9 @@
 				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
 				@if(uploadComplete) {
 					@accessUrlRow(dobj)
+				}
+				@for(keywords <- dobj.keywords){
+					@PanelRow("Keywords", keywords.mkString(", "))
 				}
 			}
 		</div>
@@ -153,7 +156,7 @@
 }
 
 @pageHeading = @{
-	if(dobj.specification.project.uri === vocab.icosProject) {
+	if(dobj.specification.project.self.uri === vocab.icosProject) {
 		"ICOS RI Data Object Landing Page"
 	}
 	else {
@@ -201,7 +204,7 @@
 
 @template = @{
 	val spec = dobj.specification
-	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.uri === vocab.icosProject && spec.dataLevel == 1)
+	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.self.uri === vocab.icosProject && spec.dataLevel == 1)
 		AtcLandingPage(pageTitle, headerExtra) _
 	else
 		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra) _

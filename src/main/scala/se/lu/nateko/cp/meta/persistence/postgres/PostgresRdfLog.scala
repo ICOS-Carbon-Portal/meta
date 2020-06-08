@@ -110,19 +110,28 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	}
 
 	def isInitialized: Boolean = {
-		val meta = getConnection.getMetaData
-		val tblRes = meta.getTables(null, null, logName, null)
-		val tblPresent = tblRes.next()
-		tblRes.close()
-		tblPresent
+		val conn = getConnection
+		try{
+			val meta = conn.getMetaData
+			val tblRes = meta.getTables(null, null, logName, null)
+			val tblPresent = tblRes.next()
+			tblRes.close()
+			tblPresent
+		}finally{
+			conn.close()
+		}
+
 	}
 
 	private def execute(statement: String): Unit = {
 		val conn = getConnection
-		val st = conn.createStatement
-		st.execute(statement)
-		st.close()
-		conn.close()
+		try{
+			val st = conn.createStatement
+			st.execute(statement)
+			st.close()
+		}finally{
+			conn.close()
+		}
 	}
 
 	private def getConnection = Postgres.getConnection(serv, creds).get

@@ -49,7 +49,7 @@ trait LifecycleService { self: StationLabelingService =>
 		import Role._
 		role match{
 			case PI =>
-				userIsPi(user, station)
+				userIsPiOrDeputy(user, station)
 			case TC =>
 				getTcUsers(station).contains(user.email.toLowerCase)
 			case DG =>
@@ -102,7 +102,7 @@ trait LifecycleService { self: StationLabelingService =>
 			case (_, AppStatus.step2approved) | (_, AppStatus.step2rejected) if(from != AppStatus.step3approved) =>
 				val isRejected = to == AppStatus.step2rejected
 
-				val recipients = getStationPiEmails(station)
+				val recipients = getStationPiOrDeputyEmails(station)
 				val cc = getTcUsers(station) :+ config.riComEmail
 				val subject = s"Labeling Step2 ${if(isRejected) "rejected" else "approved"} for $stationId"
 				val body = views.html.LabelingEmailDecided2(stationId, isRejected).body
@@ -110,7 +110,7 @@ trait LifecycleService { self: StationLabelingService =>
 				mailer.send(recipients, subject, body, cc)
 
 			case (_, AppStatus.step3approved) =>
-				val recipients = getStationPiEmails(station)
+				val recipients = getStationPiOrDeputyEmails(station)
 				val subject = s"Labeling complete for $stationId"
 				val body = views.html.LabelingEmailApproved3(stationId).body
 				val cc = Seq(config.riComEmail)

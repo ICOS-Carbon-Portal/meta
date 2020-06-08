@@ -15,6 +15,7 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 
 	val hasShortName = getRelative("hasShortName")
 	val hasPi = getRelative("hasPi")
+	val hasDeputyPi = getRelative("hasDeputyPi")
 	val hasFirstName = getRelative("hasFirstName")
 	val hasLastName = getRelative("hasLastName")
 	val hasEmail = getRelative("hasEmail")

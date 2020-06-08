@@ -11,7 +11,11 @@ const stationPisQuery = `
 	WHERE{
 		?owlClass rdfs:subClassOf cpst:Station .
 		?s a ?owlClass .
-		?s cpst:hasPi ?pi .
+		{
+			{?s cpst:hasPi ?pi }
+			UNION
+			{?s cpst:hasDeputyPi ?pi }
+		}
 		?pi cpst:hasEmail ?email .
 		?s cpst:hasShortName ?provShortName .
 		?s cpst:hasLongName ?provLongName .

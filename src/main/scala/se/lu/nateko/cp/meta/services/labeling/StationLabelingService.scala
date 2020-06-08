@@ -28,12 +28,12 @@ class StationLabelingService(
 	}
 
 	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId): Unit =
-		if(!userIsPi(uploader, stationUri)) throw new UnauthorizedStationUpdateException(
+		if(!userIsPiOrDeputy(uploader, stationUri)) throw new UnauthorizedStationUpdateException(
 			"Only PIs are authorized to update station's info"
 		)
 
-	protected def userIsPi(user: UserId, station: IRI): Boolean = {
-		getStationPiEmails(station).contains(user.email.toLowerCase)
+	protected def userIsPiOrDeputy(user: UserId, station: IRI): Boolean = {
+		getStationPiOrDeputyEmails(station).contains(user.email.toLowerCase)
 	}
 
 	protected def getPiEmails(piUri: IRI): Seq[String] =
@@ -45,7 +45,9 @@ class StationLabelingService(
 	protected def lookupStationId(stationUri: IRI): Option[String] =
 		provisionalInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
 
-	protected def getStationPiEmails(stationUri: IRI): Seq[String] =
-		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi).flatMap(getPiEmails)
+	protected def getStationPiOrDeputyEmails(stationUri: IRI): Seq[String] = (
+		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi) ++
+		provisionalInfoServer.getUriValues(stationUri, vocab.hasDeputyPi)
+	).flatMap(getPiEmails)
 }
 

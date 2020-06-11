@@ -220,6 +220,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has column</rdfs:label>
@@ -407,9 +408,26 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">value type</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has variable</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -1789,16 +1807,10 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn">
-        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat"/>
-                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -1818,6 +1830,21 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Dataset Specification</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Dataset variable</rdfs:label>
     </owl:Class>
     
 

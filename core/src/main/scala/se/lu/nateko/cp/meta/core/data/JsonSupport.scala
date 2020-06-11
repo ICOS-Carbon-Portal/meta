@@ -76,7 +76,9 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
 
 	implicit val l2SpecificMetaFormat = jsonFormat4(L2OrLessSpecificMeta)
-	implicit val l3SpecificMetaFormat = jsonFormat5(L3SpecificMeta)
+	implicit val valueTypeFormat = jsonFormat3(ValueType)
+	implicit val l3VarInfoFormat = jsonFormat3(L3VarInfo)
+	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val TabularIngestionFormat = jsonFormat2(TabularIngestionExtract)
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)

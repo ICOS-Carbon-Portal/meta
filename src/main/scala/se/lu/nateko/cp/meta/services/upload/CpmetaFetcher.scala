@@ -141,7 +141,10 @@ trait CpmetaFetcher extends FetchingHelper{
 			description = getOptionalString(dobj, metaVocab.dcterms.description),
 			spatial = getLatLonBox(cov),
 			temporal = getTemporalCoverage(dobj),
-			productionInfo = prod
+			productionInfo = prod,
+			variables = Some(
+				server.getUriValues(dobj, metaVocab.hasVariable).map(getL3VarInfo)
+			)
 		)
 	}
 
@@ -195,4 +198,17 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
+	private def getL3VarInfo(vi: IRI) = L3VarInfo(
+		label = getSingleString(vi, RDFS.LABEL),
+		valueType = getValueType(getSingleUri(vi, metaVocab.hasValueType)),
+		minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
+			getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
+		}
+	)
+
+	private def getValueType(vt: IRI) = ValueType(
+		getLabeledResource(vt),
+		getOptionalUri(vt, metaVocab.hasQuantityKind).map(getLabeledResource),
+		getOptionalString(vt, metaVocab.hasUnit)
+	)
 }

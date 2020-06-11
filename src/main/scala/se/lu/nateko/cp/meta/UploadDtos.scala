@@ -60,7 +60,7 @@ case class StationDataMetadata(
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 }
 
-case class L3VarDto(name: String, valueType: URI, minMax: Option[(Double, Double)])
+case class L3VarDto(label: String, valueType: URI, minMax: Option[(Double, Double)])
 
 case class ElaboratedProductMetadata(
 	title: String,

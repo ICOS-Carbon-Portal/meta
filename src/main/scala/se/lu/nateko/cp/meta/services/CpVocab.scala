@@ -78,6 +78,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 object CpVocab{
 	import CustomVocab.urlEncode
+	import Sha256Sum.IdLength
 
 	val AcqPrefix = "acq_"
 	val ProdPrefix = "prod_"
@@ -98,17 +99,32 @@ object CpVocab{
 			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))
 	}
 
+	object VarInfo{
+
+		def unapply(iri: IRI): Option[(Sha256Sum, String)] = {
+			val uriSegm = iri.getLocalName
+			asPrefWithHashSuff(uriSegm, VarInfoPrefix).flatMap{hash =>
+				if(uriSegm(uriSegm.length - IdLength - 1) == '_')
+					Some(hash -> uriSegm.drop(VarInfoPrefix.length).dropRight(IdLength + 1))
+				else None
+			}
+		}
+	}
+
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
 
 	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](s"${station.id}_$id")
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
-		val segm = iri.getLocalName
-		if(segm.startsWith(prefix))
-			Sha256Sum.fromBase64Url(segm.stripPrefix(prefix)).toOption
+		val uriSegm = iri.getLocalName
+		if(uriSegm.length == prefix.length + IdLength) asPrefWithHashSuff(uriSegm, prefix) else None
+	}
+
+	private def asPrefWithHashSuff(uriSegm: String, prefix: String): Option[Sha256Sum] =
+		if(uriSegm.startsWith(prefix))
+			Sha256Sum.fromBase64Url(uriSegm.takeRight(IdLength)).toOption
 		else
 			None
-	}
 
 	def getPersonCpId(firstName: String, lastName: String) = s"${urlEncode(firstName)}_${urlEncode(lastName)}"
 }

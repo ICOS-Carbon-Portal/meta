@@ -2456,6 +2456,7 @@
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiOtcProductCsv">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2</hasGoodFlagValue>
+        <hasGoodFlagValue rdf:datatype="http://www.w3.org/2001/XMLSchema#string">9</hasGoodFlagValue>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Single-line comment, first column is UTC ISO-8601 timestamp, NaN for missing values, comma-separated.</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS OTC time series</rdfs:label>
     </owl:NamedIndividual>

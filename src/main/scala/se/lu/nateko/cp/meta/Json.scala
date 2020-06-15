@@ -83,7 +83,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 
 	implicit val dataProductionDtoFormat = jsonFormat6(DataProductionDto)
 	implicit val stationDataMetadataFormat = jsonFormat8(StationDataMetadata)
-	implicit val l3VarDtoFormat = jsonFormat3(L3VarDto)
+	implicit val l3VarDtoFormat = jsonFormat2(L3VarDto)
 	implicit val elaboratedProductMetadataFormat = jsonFormat7(ElaboratedProductMetadata)
 	implicit val dataObjectDtoFormat = jsonFormat8(DataObjectDto)
 	implicit val docObjectDtoFormat = jsonFormat5(DocObjectDto)

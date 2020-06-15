@@ -143,7 +143,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			temporal = getTemporalCoverage(dobj),
 			productionInfo = prod,
 			variables = Some(
-				server.getUriValues(dobj, metaVocab.hasVariable).map(getL3VarInfo)
+				server.getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo)
 			)
 		)
 	}

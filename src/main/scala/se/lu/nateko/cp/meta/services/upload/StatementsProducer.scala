@@ -199,10 +199,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, vInfo: L3VarDto)(implicit envri: Envri): Seq[Statement] = {
 		val vUri = vocab.getVarInfo(hash, vInfo.label)
 		Seq(
-			makeSt(objIri, metaVocab.hasVariable, vUri),
-			makeSt(vUri, RDF.TYPE, metaVocab.datasetVariableClass),
+			makeSt(objIri, metaVocab.hasActualVariable, vUri),
+			makeSt(vUri, RDF.TYPE, metaVocab.variableInfoClass),
 			makeSt(vUri, RDFS.LABEL, vocab.lit(vInfo.label)),
-			makeSt(vUri, metaVocab.hasValueType, vInfo.valueType.toRdf)
 		) ++ vInfo.minMax.toSeq.flatMap{
 			case (min, max) => Seq(
 				makeSt(vUri, metaVocab.hasMinValue, vocab.lit(min)),

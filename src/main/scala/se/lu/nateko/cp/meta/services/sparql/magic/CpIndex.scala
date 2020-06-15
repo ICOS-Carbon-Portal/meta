@@ -385,7 +385,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				updateHasVarList(oe.idx)
 			}
 
-			case `hasVariable` => obj match{
+			case `hasActualVariable` => obj match{
 				case CpVocab.VarInfo(hash, varName) =>
 					val oe = getObjEntry(hash)
 					updateCategSet(categMap(VariableName), varName, oe.idx)

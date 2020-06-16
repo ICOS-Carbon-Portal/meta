@@ -170,7 +170,8 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map(getCoverage)
 
-		L2OrLessSpecificMeta(acq, prod, nRows, coverage)
+		//TODO Read in column info
+		L2OrLessSpecificMeta(acq, prod, nRows, coverage, None)
 	}
 
 	private def getCoverage(covUri: IRI): GeoFeature = {
@@ -198,17 +199,41 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
-	private def getL3VarInfo(vi: IRI) = L3VarInfo(
-		label = getSingleString(vi, RDFS.LABEL),
-		valueType = getValueType(getSingleUri(vi, metaVocab.hasValueType)),
-		minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
-			getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
-		}
-	)
+	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]) = {
+		val label = getSingleString(vi, RDFS.LABEL)
+		val valueTypeIRI = vtLookup.lookup(label).getOrElse(
+			throw new Exception(s"Could not identify value type of variable $vi")
+		)
+		L3VarInfo(
+			label,
+			valueType = getValueType(valueTypeIRI),
+			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
+				getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
+			}
+		)
+	}
 
 	private def getValueType(vt: IRI) = ValueType(
 		getLabeledResource(vt),
 		getOptionalUri(vt, metaVocab.hasQuantityKind).map(getLabeledResource),
 		getOptionalString(vt, metaVocab.hasUnit)
 	)
+
+	private def getDatasetVars(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasVariable).map{dv =>
+		new DatasetVariable[IRI](
+			title = getSingleString(dv, metaVocab.hasVariableTitle),
+			valueType = getSingleUri(dv, metaVocab.hasValueType),
+			isRegex = getOptionalBool(ds, metaVocab.isRegexVariable).getOrElse(false),
+			isOptional = getOptionalBool(ds, metaVocab.isOptionalVariable).getOrElse(false)
+		)
+	}
+
+	private def getDatasetColumns(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasColumn).map{dv =>
+		new DatasetVariable[IRI](
+			title = getSingleString(dv, metaVocab.hasColumnTitle),
+			valueType = getSingleUri(dv, metaVocab.hasValueType),
+			isRegex = getOptionalBool(ds, metaVocab.isRegexColumn).getOrElse(false),
+			isOptional = getOptionalBool(ds, metaVocab.isOptionalColumn).getOrElse(false)
+		)
+	}
 }

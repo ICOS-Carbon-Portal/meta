@@ -54,11 +54,7 @@ object UploadDtoReader{
 					temporal = l3.temporal,
 					production = dataProductionToDto(l3.productionInfo),
 					customLandingPage = None,
-					variables = l3.variables.map(_.map(vi => L3VarDto(
-						label = vi.label,
-						valueType = vi.valueType.self.uri,
-						minMax = vi.minMax
-					)))
+					variables = l3.variables.map(_.map(vi => L3VarDto(vi.label, minMax = vi.minMax)))
 				))
 				case Right(l2) => Right(StationDataMetadata(
 					station = l2.acquisition.station.org.self.uri,

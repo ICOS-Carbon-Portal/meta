@@ -25,9 +25,8 @@ function initMap(locations) {
 			var icon = getIcon(queryParams.icon);
 
 			fg.addLayer(L.geoJson(geoJson, {
-				pointToLayer: function (feature, latlng) {
-					// return L.circleMarker(latlng, marker);
-					return L.marker(latlng, {icon});
+				pointToLayer: function (_feature, latlng) {
+					return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
 				},
 				style: function (feature) {
 					switch (feature.geometry.type) {
@@ -80,18 +79,11 @@ function getMask(geoJson){
 
 function getIcon(iconUrl){
 	return iconUrl
-		? L.icon({
+		&& L.icon({
 			iconUrl,
 			iconSize:     [23, 28],
 			iconAnchor:   [12, 28],
 			popupAnchor:  [0, -23]
-		})
-		: L.icon({
-			iconUrl:      'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-icon.png',
-			shadowUrl:    'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-shadow.png',
-			iconSize:     [25, 41],
-			iconAnchor:   [13, 41],
-			popupAnchor:  [0, -42]
 		});
 }
 

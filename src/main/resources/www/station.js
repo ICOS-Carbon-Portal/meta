@@ -1,15 +1,16 @@
 var queryParams = processQuery(window.location.search);
 var isSites = window.location.host.endsWith("fieldsites.se");
 
-if (queryParams.coverage){
-	initMap(queryParams);
+if (queryParams.coverage || queryParams.station) {
+	getGeoJson(queryParams).then(function(geoJsonArray){
+		initMap(geoJsonArray);
+	});
 }
 
-function initMap(queryParams) {
+function initMap(locations) {
 	var mapDiv = document.getElementById("map");
 
 	if (mapDiv) {
-		var geoJson = JSON.parse(queryParams.coverage);
 		var map = L.map(mapDiv, {
 			minZoom: 1,
 			maxBounds: [[-90, -180],[90, 180]]
@@ -19,38 +20,7 @@ function initMap(queryParams) {
 		map.addLayer(baseMaps.Topographic);
 		L.control.layers(baseMaps).addTo(map);
 
-		if (geoJson.type === "Polygon"){
-			L.Mask = L.Polygon.extend({
-				options: {
-					weight: 2,
-					color: 'red',
-					fillColor: '#333',
-					fillOpacity: 0.5,
-					clickable: false,
-					outerBounds: new L.LatLngBounds([-90, -360], [90, 360])
-				},
-
-				initialize: function (latLngs, options) {
-					var outerBoundsLatLngs = [
-						this.options.outerBounds.getSouthWest(),
-						this.options.outerBounds.getNorthWest(),
-						this.options.outerBounds.getNorthEast(),
-						this.options.outerBounds.getSouthEast()
-					];
-					L.Polygon.prototype.initialize.call(this, [outerBoundsLatLngs, latLngs], options);
-				},
-
-			});
-
-			L.mask = function (latLngs, options) {
-				return new L.Mask(latLngs, options);
-			};
-
-			var mask = getMask(geoJson);
-			L.mask(mask).addTo(map);
-			map.fitBounds(mask);
-
-		} else {
+		locations.map(function({label, geoJson}){
 			var fg = new L.FeatureGroup();
 			var icon = getIcon(queryParams.icon);
 
@@ -70,21 +40,30 @@ function initMap(queryParams) {
 						case 'MultiLineString':
 							return {color: "rgb(50,50,255)", weight: 2};
 
+						case 'Polygon':
+						return {color: "rgb(50,50,255)", weight: 2};
+
 						default:
 							return {color: "rgb(50,255,50)", weight: 2};
 					}
 				}
 			}));
 
+			if (label) {
+				fg.bindPopup(label);
+			}
+
 			map.addLayer(fg);
 
-			if (geoJson.type === "Point") {
-				const zoom = isSites ? 5 : 4;
-				map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], zoom);
-			} else {
-				map.fitBounds(fg.getBounds());
+			if (geoJson == locations[0].geoJson) {
+				if (locations[0].geoJson.type === "Point") {
+					const zoom = isSites ? 12 : 4;
+					map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], zoom);
+				} else {
+					map.fitBounds(fg.getBounds());
+				}
 			}
-		}
+		});
 	}
 }
 
@@ -111,7 +90,8 @@ function getIcon(iconUrl){
 			iconUrl:      'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-icon.png',
 			shadowUrl:    'https://static.icos-cp.eu/constant/leaflet/0.7.7/css/images/marker-shadow.png',
 			iconSize:     [25, 41],
-			iconAnchor:   [13, 41]
+			iconAnchor:   [13, 41],
+			popupAnchor:  [0, -42]
 		});
 }
 
@@ -170,3 +150,57 @@ function processQuery(paramsEnc) {
 	return query;
 }
 
+function getGeoJson(queryParams) {
+	return queryParams.station ?
+		getStationLocations(queryParams.station) :
+		Promise.resolve([{"geoJson": JSON.parse(queryParams.coverage)}])
+}
+
+function getStationLocations(stationUrl) {
+	return getJson(stationUrl)
+	.then(function(result){
+		try{
+			var stationCoordinates = [{
+				"label": `<b>${result.name}</b>`,
+				"geoJson": {
+					"type": "Point",
+					"coordinates": [result.coverage.lon, result.coverage.lat]
+				}
+			}];
+			return result.sites ? stationCoordinates.concat(result.sites.map(site => {
+				return {
+					"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
+					"geoJson": JSON.parse(site.location.geometry.geoJson)
+				}
+			})) : stationCoordinates;
+		} catch (err){
+			return Promise.reject(err);
+		}
+	});
+}
+
+function getJson(url){
+	return new Promise(function(resolve, reject){
+		var req = new XMLHttpRequest();
+		req.open('GET', url);
+		req.responseType = 'json';
+		req.setRequestHeader('Accept', 'application/json');
+		req.onreadystatechange = function(){
+			try {
+				if (req.readyState === 4) {
+					if (req.status < 400 && req.status >= 200) {
+
+						if (req.responseType === 'json')
+							resolve(req.response);
+							else resolve(JSON.parse(req.responseText || null));
+
+					} else reject(makeErrorReport(req));
+				}
+			} catch (e) {
+				 reject(e);
+			}
+		};
+
+		req.send();
+	});
+}

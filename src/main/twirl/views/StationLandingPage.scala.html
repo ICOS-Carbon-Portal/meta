@@ -5,29 +5,68 @@
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.stationUriShortener
 @import akka.http.scaladsl.model.Uri
+@import landpagesnips._
 
 @(station: Station)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(station.name, station.name, envri, CpMenu.default){
-	<div class="container-fluid">
-		<div class="row form-group">
-			@for(coverage <- station.coverage; geoJson = coverage.geoJson) {
-				<iframe src="/station/?theme=Other&coverage=@geoJson"></iframe>
+	<div class="row form-group">
+		<div class="col-sm-8">
+			<h2>About</h2>
+			@for(ecosystems <- station.ecosystems) {
+				@metadataRow("Main ecosystems", ecosystems.flatMap(_.label).mkString(" / "))
+			}
+			@for(climateZone <- station.climateZone.flatMap(_.label)) {
+				@metadataRow("Climate zone", climateZone)
+			}
+			@for(temperature <- station.meanAnnualTemp) {
+				@metadataRow("Mean annual temperature", s"""${temperature} °C""")
+			}
+			@for(operationalPeriod <- station.operationalPeriod) {
+				@metadataRow("Operational period", operationalPeriod)
+			}
+			@for(org <- station.responsibleOrganization) {
+				@metadataRow("Organization", org.name)
+			}
+			<h2>Locations</h2>
+			@for(coverage <- station.coverage) {
 				@coverage match {
 					case Position(lat, long, altOpt) => {
-						@PanelRow("Coordinates", s"""$lat, $long""")
+						@metadataRow("Latitude/Longitude", s"""$lat, $long""")
 						@for(alt <- altOpt){
-							@PanelRow("Elevation", s"""${alt.toInt} m""")
+							@metadataRow("Elevation", s"""${alt.toInt} m""")
 						}
 					}
 					case _ => {}
 				}
 			}
-			@for(email <- station.org.email) {
-				@PanelHtmlRow{Contact}{<a href="mailto:@email">@{email}</a>}
+			<iframe src="/station/?theme=Other&station=@station.org.self.uri" style="margin-top: 10px;"></iframe>
+			@for(pictures <- station.pictures) {
+				<h2>Pictures</h2>
+				@for(picture <- pictures) {
+					<img src="@picture" class="img-responsive" style="margin-bottom: 15px;">
+				}
 			}
 		</div>
-		<div class="row text-center form-group">
-			<a class="btn btn-lg btn-primary" href="@portalLink">Browse data from @station.name</a>
+		<div class="col-sm-4 text-center">
+			<div class="row form-group">
+				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station.name)</a>
+			</div>
+			@for(email <- station.org.email) {
+				<div class="row">
+					<div class="btn btn-link">
+						<span class="glyphicon glyphicon-envelope"></span>
+						<a href="mailto:@email">@{email}</a>
+					</div>
+				</div>
+			}
+			@for(website <- station.website) {
+				<div class="row">
+					<div class="btn btn-link">
+						<span class="glyphicon glyphicon-share"></span>
+						<a href="@website">Read more about @stationShortName(station.name)</a>
+					</div>
+				</div>
+			}
 		</div>
 	</div>
 }
@@ -35,4 +74,11 @@
 @portalLink = @{
 	val stationUri = stationUriShortener(station.org.self.uri)
 	Uri(s"https://${conf.dataHost}/portal/").withFragment(s"""{"filterCategories":{"station":["$stationUri"]}}""")
+}
+
+@stationShortName(fullName: String) = @{
+	envri match {
+		case Envri.SITES => fullName.split(" ").head
+		case _ => fullName
+	}
 }

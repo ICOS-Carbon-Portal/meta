@@ -81,6 +81,11 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasCitationString = getRelative("hasCitationString")
 	val wasPerformedAt = getRelative("wasPerformedAt")
 	val hasEcosystemType = getRelative("hasEcosystemType")
+	val hasClimateZone = getRelative("hasClimateZone")
+	val hasMeanAnnualTemp = getRelative("hasMeanAnnualTemp")
+	val hasOperationalPeriod = getRelative("hasOperationalPeriod")
+	val operatesOn = getRelative("operatesOn")
+	val hasDepiction = getRelative("hasDepiction")
 
 	val personClass = getRelative("Person")
 	val roleClass = getRelative("Role")

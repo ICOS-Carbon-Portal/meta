@@ -47,9 +47,9 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val orgFormat = jsonFormat3(Organization)
 	implicit val personFormat = jsonFormat3(Person)
-	implicit val stationFormat = jsonFormat5(Station)
 	implicit val locationFormat = jsonFormat2(Location)
 	implicit val siteFormat = jsonFormat3(Site)
+	implicit val stationFormat = jsonFormat12(Station)
 
 	implicit object agentFormat extends JsonFormat[Agent]{
 

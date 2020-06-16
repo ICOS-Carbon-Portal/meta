@@ -18,7 +18,14 @@ case class Station(
 	id: String,
 	name: String,
 	coverage: Option[GeoFeature],
-	responsibleOrganization: Option[Organization]
+	responsibleOrganization: Option[Organization],
+	sites: Option[Seq[Site]],
+	ecosystems: Option[Seq[UriResource]],
+	climateZone: Option[UriResource],
+	meanAnnualTemp: Option[Float],
+	operationalPeriod: Option[String],
+	website: Option[URI],
+	pictures: Option[Seq[URI]]
 )
 
 case class Location(geometry: GeoFeature, label: Option[String])

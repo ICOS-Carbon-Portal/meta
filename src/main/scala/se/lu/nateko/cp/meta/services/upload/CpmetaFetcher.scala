@@ -114,7 +114,23 @@ trait CpmetaFetcher extends FetchingHelper{
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
 		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation)),
-		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization)
+		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
+		sites = server.getUriValues(stat, metaVocab.operatesOn).map(getSite) match {
+			case Seq() => None
+			case seq => Some(seq)
+		},
+		ecosystems = server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource) match {
+			case Seq() => None
+			case seq => Some(seq)
+		},
+		climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
+		meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
+		operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
+		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
+		pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction) match {
+			case Seq() => None
+			case seq => Some(seq)
+		},
 	)
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption

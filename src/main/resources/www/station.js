@@ -13,7 +13,8 @@ function initMap(locations) {
 	if (mapDiv) {
 		var map = L.map(mapDiv, {
 			minZoom: 1,
-			maxBounds: [[-90, -180],[90, 180]]
+			maxBounds: [[-90, -180],[90, 180]],
+			scrollWheelZoom: window.top === window.self
 		});
 
 		var baseMaps = getBaseMaps(18);

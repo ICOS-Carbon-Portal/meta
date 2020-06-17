@@ -12,6 +12,9 @@
 	<div class="row form-group">
 		<div class="col-sm-8">
 			<h2>About</h2>
+			@if(envri==Envri.ICOS){
+				@metadataRow("Station ID", station.id)
+			}
 			@for(ecosystems <- station.ecosystems) {
 				@metadataRow("Main ecosystems", ecosystems.flatMap(_.label).mkString(" / "))
 			}
@@ -27,7 +30,7 @@
 			@for(org <- station.responsibleOrganization) {
 				@metadataRow("Organization", org.name)
 			}
-			<h2>Locations</h2>
+			<h2>Location</h2>
 			@for(coverage <- station.coverage) {
 				@coverage match {
 					case Position(lat, long, altOpt) => {

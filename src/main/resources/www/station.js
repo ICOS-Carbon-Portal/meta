@@ -175,7 +175,7 @@ function getStationLocations(stationUrl) {
 function getJson(url){
 	return new Promise(function(resolve, reject){
 		var req = new XMLHttpRequest();
-		req.open('GET', url);
+		req.open('GET', url.replace(/^http:/, 'https:'));
 		req.responseType = 'json';
 		req.setRequestHeader('Accept', 'application/json');
 		req.onreadystatechange = function(){

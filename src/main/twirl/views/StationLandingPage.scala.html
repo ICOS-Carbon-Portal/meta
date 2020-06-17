@@ -30,8 +30,8 @@
 			@for(org <- station.responsibleOrganization) {
 				@metadataRow("Organization", org.name)
 			}
-			<h2>Location</h2>
 			@for(coverage <- station.coverage) {
+				<h2>Location</h2>
 				@coverage match {
 					case Position(lat, long, altOpt) => {
 						@metadataRow("Latitude/Longitude", s"""$lat, $long""")

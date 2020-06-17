@@ -170,7 +170,8 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		val errors = scala.collection.mutable.Buffer.empty[String]
 
 		meta.specificInfo match{
-			case Left(_) =>
+			case Left(l3meta) =>
+				//TODO Add variable-name metadata validation here
 				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"
 
 			case Right(stationMeta) =>

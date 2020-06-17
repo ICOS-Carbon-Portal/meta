@@ -6,6 +6,10 @@ class DatasetVariable[IRI](val title: String, val valueType: IRI, val isRegex: B
 
 class ValueTypeLookup[IRI](varDefs: Seq[DatasetVariable[IRI]]){
 
+	def plainMandatory = varDefs.collect{
+		case varDef if !varDef.isOptional && !varDef.isRegex => varDef.title -> varDef.valueType
+	}
+
 	private val plainLookup = varDefs.collect{
 		case dv if !dv.isRegex => dv.title -> dv.valueType
 	}.toMap
@@ -18,6 +22,10 @@ class ValueTypeLookup[IRI](varDefs: Seq[DatasetVariable[IRI]]){
 		regexes.collectFirst{
 			case (reg, valueType) if reg.matches(varName) => valueType
 		}
+	)
+
+	def lookupOrFail(varName: String): IRI = lookup(varName).getOrElse(
+		throw new Exception(s"Could not identify value type of variable $varName")
 	)
 }
 

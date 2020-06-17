@@ -115,22 +115,13 @@ trait CpmetaFetcher extends FetchingHelper{
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
 		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation)),
 		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
-		sites = server.getUriValues(stat, metaVocab.operatesOn).map(getSite) match {
-			case Seq() => None
-			case seq => Some(seq)
-		},
-		ecosystems = server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource) match {
-			case Seq() => None
-			case seq => Some(seq)
-		},
+		sites = Option(server.getUriValues(stat, metaVocab.operatesOn).map(getSite)).filter(_.nonEmpty),
+		ecosystems = Option(server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource)).filter(_.nonEmpty),
 		climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
 		meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
 		operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
 		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
-		pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction) match {
-			case Seq() => None
-			case seq => Some(seq)
-		},
+		pictures = Option(server.getUriLiteralValues(stat, metaVocab.hasDepiction)).filter(_.nonEmpty)
 	)
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption

@@ -19,7 +19,7 @@ object TestConfig {
 	val factory = manager.getOWLDataFactory
 	lazy val owlOnto = {
 		getOntologyFromJarResourceFile("/../classes/owl/uiannotations.owl", manager)
-		getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
+		getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
 		getOntologyFromJarResourceFile("/owl/cpmetaui.owl", manager)
 	}
 

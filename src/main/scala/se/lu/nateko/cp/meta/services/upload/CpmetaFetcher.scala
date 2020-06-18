@@ -213,7 +213,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
-	protected def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
+	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
 		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
 
 	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): L3VarInfo = {

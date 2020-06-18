@@ -171,7 +171,16 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 		meta.specificInfo match{
 			case Left(l3meta) =>
-				//TODO Add variable-name metadata validation here
+				for(vars <- l3meta.variables; dsSpec <- spec.datasetSpec){
+					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.uri.toRdf)
+					vars.foreach{varInfo =>
+						if(valTypeLookup.lookup(varInfo.label).isEmpty) errors +=
+							s"Variable name '${varInfo.label}' is not compatible with dataset specification ${dsSpec.uri}"
+						for((min, max) <- varInfo.minMax){
+							if(min > max) errors += s"Declared min value was larger than max value for variable ${varInfo.label}"
+						}
+					}
+				}
 				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"
 
 			case Right(stationMeta) =>

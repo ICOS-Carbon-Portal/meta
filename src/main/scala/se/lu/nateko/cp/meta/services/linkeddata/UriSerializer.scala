@@ -143,7 +143,9 @@ class Rdf4jUriSerializer(
 				views.html.StationLandingPage(_),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId")
 			),
-			customJson(() => fetchStation(makeIri(uri)))
+			customJson(() => {
+				fetchStation(makeIri(uri.toString.split("\\?").head))
+			})
 		)
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(

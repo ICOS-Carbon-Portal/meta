@@ -44,6 +44,8 @@
 		margin: 5vh 0;
 	}
 	.data-section,
+	.l3-section,
+	.l3spatcover-element,
 	.collection-section,
 	.production-section {
 		display: none;
@@ -183,7 +185,7 @@
 						</div>
 					</div>
 				</section>
-				<section class="col-md-4 data-section">
+				<section class="col-md-4 data-section acq-section">
 					<div class="form-section panel panel-default">
 						<h2>Acquisition</h2>
 						<div class="form-group">
@@ -221,6 +223,55 @@
 						<div class="form-group">
 							<label for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
 							<textarea name="instrumenturi" id="instrumenturi" rows="2" cols="80" class="form-element"></textarea>
+						</div>
+					</div>
+				</section>
+				<section class="col-md-4 data-section l3-section">
+					<div class="form-section panel panel-default">
+						<h2>L3 metadata</h2>
+						<div class="form-group">
+							<label for="l3title">Title</label>
+							<input id="l3title" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3descr">Description @optional </label>
+							<textarea id="l3descr" rows="2" cols="80" class="form-element"></textarea>
+						</div>
+						<div class="form-group">
+							<label for="l3startinput">From (UTC)</label>
+							<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+						</div>
+						<div class="form-group">
+							<label for="l3stopinput">To (UTC)</label>
+							<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+						</div>
+						<div class="form-group">
+							<label for="l3tempres">Temporal resolution @optional</label>
+							<select id="l3tempres" class="form-element"></select>
+						</div>
+						<div class="form-group">
+							<label for="l3spatcoverselect">Spatial coverage</label>
+							<select id="l3spatcoverselect" class="form-element"></select>
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3minlat">Min latitude</label>
+							<input id="l3minlat" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3minlon">Min longitude</label>
+							<input id="l3minlon" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3maxlat">Max latitude</label>
+							<input id="l3maxlat" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3maxlon">Max longitude</label>
+							<input id="l3maxlon" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3landingpage">Third-party landing page @optional</label>
+							<input id="l3landingpage" type="text" class="form-element form-control">
 						</div>
 					</div>
 				</section>
@@ -291,6 +342,10 @@
 
 @optionalsite = @{
 	if (envri == Envri.ICOS) <em class="text-muted">- optional</em>
+}
+
+@optional = {
+	<em class="text-muted">- optional</em>
 }
 
 @header = {

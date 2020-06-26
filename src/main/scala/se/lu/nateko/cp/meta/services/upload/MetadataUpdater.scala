@@ -77,6 +77,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
 		else if(pred === metaVocab.hasNumberOfRows) Sticky
 		else if(pred === metaVocab.hasCitationString) Sticky
+		else if(pred === metaVocab.hasActualColumnNames) Sticky
 		else Plain
 	}
 

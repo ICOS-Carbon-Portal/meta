@@ -11,9 +11,11 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
+import se.lu.nateko.cp.meta.upload.formcomponents._
 import FormTypeRadio._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
+import UploadApp.{hideAlert, showAlert, whenDone, progressBar}
 
 class Form(
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
@@ -56,6 +58,8 @@ class Form(
 	val dataElements = new HtmlElements(".data-section")
 	val collectionElements = new HtmlElements(".collection-section")
 	val productionElements = new HtmlElements(".production-section")
+	val acquisitionSection = new HtmlElements(".acq-section")
+	val l3Section = new HtmlElements(".l3-section")
 
 	val onFormTypeSelected: FormType => Unit = formType => {
 		dataElements.hide()
@@ -82,7 +86,7 @@ class Form(
 		dom.window.scrollTo(0, 0)
 		submitButton.disable("")
 		hideAlert()
-		showProgressBar()
+		progressBar.show()
 		typeControl.formType match {
 			case Data =>
 				newUpdateControl.value match {
@@ -97,7 +101,7 @@ class Form(
 								whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
 									onUpload(dto, Some(file))
 								}.failed.foreach {
-									case _ => hideProgressBar()
+									case _ => progressBar.hide()
 								}
 							}
 						}
@@ -158,10 +162,12 @@ class Form(
 		updateButton()
 	})
 
-	val onLevelSelected: String => Unit = (level: String) =>
+	val onLevelSelected: Int => Unit = (level: Int) => {
+
 		whenDone{
-			Backend.getObjSpecs.map(_.filter(_.dataLevel == level.toInt))
+			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
 		}(objSpecSelect.setOptions)
+	}
 
 	val onSubmitterSelected: () => Unit = () =>
 		submitterIdSelect.value.foreach{submitter =>
@@ -225,12 +231,12 @@ class Form(
 	val fileInput = new FileInput("fileinput", updateButton)
 	val fileNameText = new TextInput("filename", updateButton)
 	var fileHash: Option[Sha256Sum] = None
-	val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => s)
+	val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => Some(s), s => s)
 	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
 
 	val previousVersionInput = new HashOptInput("previoushash", updateButton)
 	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
-	val levelControl = new Radio[Int]("level-radio", onLevelSelected, i => i.toString())
+	val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
 	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)

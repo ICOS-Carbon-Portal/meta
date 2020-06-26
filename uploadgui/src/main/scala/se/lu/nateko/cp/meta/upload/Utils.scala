@@ -7,11 +7,10 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import org.scalajs.dom.{document, html}
+import org.scalajs.dom.ext._
 
 object Utils {
 
-	private val progressBar = new HtmlElements("#progress-bar")
-	private val alert = getElementById[html.Div]("alert-placeholder").get
 
 	def getElementById[T <: html.Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
 		case input: T => Some(input)
@@ -23,31 +22,9 @@ object Utils {
 		case _ => None
 	}
 
-	def whenDone[T](fut: Future[T])(cb: T => Unit): Future[T] = fut.andThen{
-		case Success(res) => cb(res)
-		case Failure(err) => {
-			showAlert(err.getMessage, "alert alert-danger")
-			hideProgressBar()
-		}
-	}
-
-	def showAlert(message: String, alertType: String): Unit = {
-		alert.setAttribute("class", alertType)
-		alert.innerHTML = message
-	}
-
-	def hideAlert(): Unit = {
-		alert.setAttribute("class", "")
-		alert.innerHTML = ""
-	}
-
-	def showProgressBar(): Unit = {
-		progressBar.show()
-	}
-
-	def hideProgressBar(): Unit = {
-		progressBar.hide()
-	}
+	def querySelectorAll[T <: html.Element : ClassTag](parent: html.Element, selector: String): Seq[T] = parent.querySelectorAll(selector).collect{
+		case element: T => element
+	}.toIndexedSeq
 
 	def fail(msg: String) = Failure(new Exception(msg))
 

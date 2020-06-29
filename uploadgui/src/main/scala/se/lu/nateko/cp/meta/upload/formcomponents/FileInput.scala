@@ -29,14 +29,9 @@ class FileInput(elemId: String, cb: () => Unit){
 	def hasBeenModified: Boolean =
 		file.map(getLastModified(_)) != Success(_lastModified)
 
-	def rehash: Future[Sha256Sum] = {
-		Future.fromTry(file).flatMap { f =>
-			FileHasher.hash(f).flatMap{ hash =>
-					_hash = Success(hash)
-					_lastModified = getLastModified(f)
-					Future(hash)
-			}
-		}
+	def rehash(): Future[Unit] = for(f <- Future.fromTry(file); hash <- FileHasher.hash(f)) yield{
+		_hash = Success(hash)
+		_lastModified = getLastModified(f)
 	}
 
 	// The event is not dispatched if the file selected is the same as before

@@ -22,21 +22,19 @@ object UploadApp {
 	val progressBar = new ProgressBar("#progress-bar")
 	private val alert = getElementById[html.Div]("alert-placeholder").get
 
-	def main(args: Array[String]): Unit = {
-
-		whenDone(Backend.fetchConfig) {
-			case InitAppInfo(Some(_), envri, envriConf) => setupForm(envri, envriConf)
-			case InitAppInfo(None, _, envriConf) => displayLoginButton(envriConf.authHost)
-		}
+	def main(args: Array[String]): Unit = whenDone(Backend.fetchConfig) {
+		case InitAppInfo(Some(_), envri, envriConf) => setupForm(envri, envriConf)
+		case InitAppInfo(None, _, envriConf) => displayLoginButton(envriConf.authHost)
 	}
 
-	private def setupForm(envri: Envri, envriConf: EnvriConfig) = {
-		implicit val envr = envri
-		implicit val envrConf = envriConf
-		val form = new Form(upload _, subm => Backend.stationInfo(subm.producingOrganizationClass, subm.producingOrganization))
-		displayForm()
-
-		whenDone(Backend.submitterIds)(form.submitterIdSelect.setOptions)
+	private def setupForm(implicit envri: Envri, envriConf: EnvriConfig) = {
+		whenDone(Backend.submitterIds){subms =>
+			implicit val bus = new PubSubBus
+			val form = new Form(subms, upload _)
+			loginBlock.hide()
+			formBlock.show()
+			headerButtons.show()
+		}
 	}
 
 	private def displayLoginButton(authHost: String): Unit = {
@@ -44,12 +42,6 @@ object UploadApp {
 		val href = s"https://$authHost/login/?targetUrl=$url"
 		getElementById[html.Anchor]("login-button").get.setAttribute("href", href)
 		loginBlock.show()
-	}
-
-	private def displayForm(): Unit = {
-		loginBlock.hide()
-		formBlock.show()
-		headerButtons.show()
 	}
 
 	private def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {

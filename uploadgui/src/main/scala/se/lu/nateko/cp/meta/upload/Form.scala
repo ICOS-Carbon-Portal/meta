@@ -12,47 +12,25 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 import Utils._
 import se.lu.nateko.cp.meta.upload.formcomponents._
-import FormTypeRadio._
+import ItemTypeRadio._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
 import UploadApp.{hideAlert, showAlert, whenDone, progressBar}
+import se.lu.nateko.cp.meta.upload.subforms.AboutPanel
 
 class Form(
+	subms: IndexedSeq[SubmitterProfile],
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
-	onSubmitterSelect: SubmitterProfile => Future[IndexedSeq[Station]]
-)(implicit envri: Envri.Envri, envriConf: EnvriConfig) {
+)(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
+	val aboutPanel = new AboutPanel(subms)
 	val formElement = new FormElement("form-block")
-	val fileElement = new HtmlElements("#file-element")
-	val fileInputElement = new HtmlElements("#fileinput")
-	val filenameElement = new HtmlElements("#filename")
-	val metadataUrlElement = new HtmlElements("#metadata-url")
 	val positionElements = new HtmlElements(".position-element")
 	val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
 	def resetForm() = {
-		val subm = submitterIdSelect.value
-		val mode = newUpdateControl.value
 		formElement.reset()
-		subm.map(s => submitterIdSelect.value = s)
-		onSubmitterSelected()
-		mode.map(s => newUpdateControl.value = s)
 		updateButton()
-	}
-
-	val onNewUpdateSelected: String => Unit = _ match {
-		case "new" =>
-			resetForm()
-			fileInputElement.show()
-			filenameElement.hide()
-			metadataUrlElement.hide()
-			typeControl.enable()
-		case "update" =>
-			resetForm()
-			fileInputElement.hide()
-			filenameElement.show()
-			metadataUrlElement.show()
-			typeControl.disable()
 	}
 
 	val dataElements = new HtmlElements(".data-section")
@@ -61,70 +39,45 @@ class Form(
 	val acquisitionSection = new HtmlElements(".acq-section")
 	val l3Section = new HtmlElements(".l3-section")
 
-	val onFormTypeSelected: FormType => Unit = formType => {
-		dataElements.hide()
-		collectionElements.hide()
-		fileElement.show()
-		productionElements.hide()
-		disableProductionButton()
-
-		formType match {
-			case Data => {
-				dataElements.show()
-				enableProductionButton()
-			}
-			case Collection => {
-				collectionElements.show()
-				fileElement.hide()
-			}
-			case Document =>
-		}
-		updateButton()
-	}
-
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
 		submitButton.disable("")
 		hideAlert()
 		progressBar.show()
-		typeControl.formType match {
-			case Data =>
-				newUpdateControl.value match {
-					case Some("new") =>
-						whenDone {
-								if (fileInput.hasBeenModified)
-									fileInput.rehash
-								else
-									Future.successful(())
-						}{ _ =>
-							for(dto <- dataObjectDto; file <- fileInput.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
-								whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
-									onUpload(dto, Some(file))
-								}.failed.foreach {
-									case _ => progressBar.hide()
-								}
+		aboutPanel.itemType match {
+			case Some(Data) =>
+				if(aboutPanel.isInNewItemMode) {
+					whenDone {
+						aboutPanel.refreshFileHash()
+					}{ _ =>
+						for(dto <- dataObjectDto; file <- aboutPanel.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+								onUpload(dto, Some(file))
+							}.failed.foreach {
+								case _ => progressBar.hide()
 							}
 						}
-					case _ =>
-						for(dto <- dataObjectDto) {
-							onUpload(dto, None)
-						}
+					}
+				} else{
+					for(dto <- dataObjectDto) {
+						onUpload(dto, None)
+					}
 				}
-			case Collection =>
+			case Some(Collection) =>
 				for(dto <- staticCollectionDto) {
 					onUpload(dto, None)
 				}
-			case Document =>
-				newUpdateControl.value match {
-					case Some("new") =>
-						for(dto <- documentObjectDto; file <- fileInput.file) {
-							onUpload(dto, Some(file))
-						}
-					case _ =>
-						for(dto <- documentObjectDto) {
-							onUpload(dto, None)
-						}
+			case Some(Document) =>
+				if(aboutPanel.isInNewItemMode) {
+					for(dto <- documentObjectDto; file <- aboutPanel.file) {
+						onUpload(dto, Some(file))
+					}
+				} else {
+					for(dto <- documentObjectDto) {
+						onUpload(dto, None)
+					}
 				}
+			case _ =>
 		}
 	}
 	val submitButton = new Button("submitbutton", () => submitAction())
@@ -133,14 +86,6 @@ class Form(
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
 
-	val getMetadataButton = new Button("get-metadata", getMetadata)
-	val updateGetMetadataButton: () => Unit = () => {
-		(submitterIdSelect.value.withMissingError("Submitter Id not set"), metadataUriInput.value) match {
-			case (Success(_), Success(_)) => getMetadataButton.enable()
-			case (Failure(err), _) => getMetadataButton.disable(err.getMessage)
-			case (_, Failure(err)) => getMetadataButton.disable(err.getMessage)
-		}
-	}
 
 	val addProductionButton = new Button("addproductionbutton", () => {
 		disableProductionButton()
@@ -168,15 +113,6 @@ class Form(
 			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
 		}(objSpecSelect.setOptions)
 	}
-
-	val onSubmitterSelected: () => Unit = () =>
-		submitterIdSelect.value.foreach{submitter =>
-			whenDone(onSubmitterSelect(submitter)){stations =>
-				stationSelect.setOptions(stations)
-				updateButton()
-				updateGetMetadataButton()
-			}
-		}
 
 	private val setupSpec: ObjSpec => Unit = objSpec => {
 		if (objSpec.hasDataset) {
@@ -227,15 +163,6 @@ class Form(
 			case _ => positionElements.hide()
 		}
 	}
-
-	val fileInput = new FileInput("fileinput", updateButton)
-	val fileNameText = new TextInput("filename", updateButton)
-	var fileHash: Option[Sha256Sum] = None
-	val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => Some(s), s => s)
-	val typeControl = new FormTypeRadio("file-type-radio", onFormTypeSelected)
-
-	val previousVersionInput = new HashOptInput("previoushash", updateButton)
-	val existingDoiInput = new DoiOptInput("existingdoi", updateButton)
 	val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
@@ -243,7 +170,6 @@ class Form(
 	val nRowsInput = new IntOptInput("nrows", updateButton)
 	val keywordsInput = new TextInput("keywords", () => ())
 
-	val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 
 	val acqStartInput = new InstantInput("acqstartinput", updateButton)
 	val acqStopInput = new InstantInput("acqstopinput", updateButton)
@@ -265,14 +191,13 @@ class Form(
 	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
 	val collectionMembers = new NonEmptyUriListInput("collectionmembers", updateButton)
 
-	val metadataUriInput = new UriInput("metadata-update", updateGetMetadataButton)
 
-	def dto: Try[UploadDto] = typeControl.formType match {
-		case Data => dataObjectDto
-		case Collection => staticCollectionDto
-		case Document => documentObjectDto
+	def dto: Try[UploadDto] = aboutPanel.itemType match {
+		case Some(Data) => dataObjectDto
+		case Some(Collection) => staticCollectionDto
+		case Some(Document) => documentObjectDto
+		case _ => fail("No file type selected")
 	}
-	private def isTypeSelected = if (typeControl.value.isEmpty) fail("No file type selected") else Success(())
 
 	def dataProductionDto: Try[Option[DataProductionDto]] = for(
 		creator <- creatorInput.value.withErrorContext("Creator");
@@ -291,12 +216,11 @@ class Form(
 	))
 
 	def dataObjectDto: Try[DataObjectDto] = for(
-		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set");
-		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;
-		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
-		_ <- isTypeSelected;
-		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
-		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
+		submitter <- aboutPanel.submitter;
+		file <- aboutPanel.itemName;
+		hash <- aboutPanel.itemHash;
+		previousVersion <- aboutPanel.previousVersion;
+		doi <- aboutPanel.existingDoi;
 		station <- stationSelect.value.withMissingError("Station not chosen");
 		objSpec <- objSpecSelect.value.withMissingError("Data type not set");
 		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
@@ -340,12 +264,11 @@ class Form(
 		)
 	)
 	def documentObjectDto: Try[DocObjectDto] = for(
-		file <- if(newUpdateControl.value == Some("new")) fileInput.file.map(_.name) else fileNameText.value;
-		hash <- if(newUpdateControl.value == Some("new")) fileInput.hash else Success(fileHash.get);
-		_ <- isTypeSelected;
-		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
-		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
-		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set")
+		submitter <- aboutPanel.submitter;
+		file <- aboutPanel.itemName;
+		hash <- aboutPanel.itemHash;
+		previousVersion <- aboutPanel.previousVersion;
+		doi <- aboutPanel.existingDoi
 	) yield DocObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -357,10 +280,9 @@ class Form(
 		title <- collectionTitle.value.withErrorContext("Collection title");
 		description <- collectionDescription.value;
 		members <- collectionMembers.value.withErrorContext("Collection members (list of object urls)");
-		_ <- isTypeSelected;
-		previousVersion <- previousVersionInput.value.withErrorContext("Previous version");
-		doi <- existingDoiInput.value.withErrorContext("Pre-existing DOI");
-		submitter <- submitterIdSelect.value.withMissingError("Submitter Id not set")
+		previousVersion <- aboutPanel.previousVersion;
+		doi <- aboutPanel.existingDoi;
+		submitter <- aboutPanel.submitter
 	) yield StaticCollectionDto(
 		submitterId = submitter.id,
 		members = members,

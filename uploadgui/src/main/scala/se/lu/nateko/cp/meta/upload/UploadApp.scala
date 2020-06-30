@@ -28,9 +28,9 @@ object UploadApp {
 	}
 
 	private def setupForm(implicit envri: Envri, envriConf: EnvriConfig) = {
-		whenDone(Backend.submitterIds){subms =>
+		whenDone(Backend.submitterIds.zip(Backend.getObjSpecs)){ case (subms, objSpecs) =>
 			implicit val bus = new PubSubBus
-			val form = new Form(subms, upload _)
+			val form = new Form(subms, objSpecs, upload _)
 			loginBlock.hide()
 			formBlock.show()
 			headerButtons.show()

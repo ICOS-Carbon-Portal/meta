@@ -4,6 +4,7 @@ import scala.concurrent.Future
 import scala.util.{Try, Success, Failure}
 
 import org.scalajs.dom
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import se.lu.nateko.cp.doi.Doi
 
@@ -12,9 +13,10 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DocObjectDto, StaticCollectionDto}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection}
+import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 
@@ -32,7 +34,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 
-	private val newUpdateControl = new Radio[String]("new-update-radio", onNewUpdateSelected, s => Some(s), s => s)
+	private val newUpdateControl = new Radio[String]("new-update-radio", onModeSelected, s => Some(s), s => s)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 	private val typeControl = new ItemTypeRadio("file-type-radio", onItemTypeSelected)
 	private val fileElement = new HtmlElements("#file-element")
@@ -52,20 +54,19 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 
 	private def updateForm(): Unit = bus.publish(FormInputUpdated)
 
-	private def onNewUpdateSelected(modeName: String): Unit = modeName match {
-		case "new" =>
+	private def onModeSelected(modeName: String): Unit = if(isInNewItemMode){
 			bus.publish(NewItemMode)
 			fileInputElement.show()
 			filenameElement.hide()
 			metadataUrlElement.hide()
 			typeControl.enable()
-		case "update" =>
+		} else {
 			bus.publish(UpdateMetaMode)
 			fileInputElement.hide()
 			filenameElement.show()
 			metadataUrlElement.show()
 			typeControl.disable()
-	}
+		}
 
 	
 	private def onItemTypeSelected(itemType: ItemType): Unit = {
@@ -97,4 +98,37 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 			case Failure(err) => getMetadataButton.disable(err.getMessage)
 		}
 	}
+
+	private def getMetadata(): Unit = {
+		UploadApp.hideAlert()
+		metadataUriInput.value.foreach { metadataUri =>
+			whenDone(Backend.getMetadata(metadataUri)) {
+				case dto: DataObjectDto => {
+					typeControl.value = Data
+					fileNameText.value = dto.fileName
+					fileHash = Some(dto.hashSum)
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+				}
+				case dto: DocObjectDto =>
+					typeControl.value = Document
+					fileNameText.value = dto.fileName
+					fileHash = Some(dto.hashSum)
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+				case dto: StaticCollectionDto =>
+					typeControl.value = Collection
+					fileNameText.value = ""
+					fileHash = None
+					previousVersionInput.value = dto.isNextVersionOf
+					existingDoiInput.value = dto.preExistingDoi
+				case _ =>
+					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")
+			}.foreach{dto =>
+				typeControl.notifyListener()
+				bus.publish(GotUploadDto(dto))
+			}
+		}
+	}
+
 }

@@ -16,14 +16,17 @@ import ItemTypeRadio._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
 import UploadApp.{hideAlert, showAlert, whenDone, progressBar}
-import se.lu.nateko.cp.meta.upload.subforms.AboutPanel
+import se.lu.nateko.cp.meta.upload.subforms._
 
 class Form(
 	subms: IndexedSeq[SubmitterProfile],
+	objSpecs: IndexedSeq[ObjSpec],
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
+	val dataPanel = new DataPanel(objSpecs)
+	val acqPanel = new AcquisitionPanel
 	val formElement = new FormElement("form-block")
 	val positionElements = new HtmlElements(".position-element")
 	val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
@@ -39,6 +42,9 @@ class Form(
 	val acquisitionSection = new HtmlElements(".acq-section")
 	val l3Section = new HtmlElements(".l3-section")
 
+	bus.subscribe{
+		case GotUploadDto(dto) => handleDto(dto)
+	}
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
 		submitButton.disable("")
@@ -50,7 +56,7 @@ class Form(
 					whenDone {
 						aboutPanel.refreshFileHash()
 					}{ _ =>
-						for(dto <- dataObjectDto; file <- aboutPanel.file; nRows <- nRowsInput.value; spec <- objSpecSelect.value) {
+						for(dto <- dataObjectDto; file <- aboutPanel.file; nRows <- dataPanel.nRows; spec <- dataPanel.objSpec) {
 							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
 								onUpload(dto, Some(file))
 							}.failed.foreach {
@@ -81,7 +87,8 @@ class Form(
 		}
 	}
 	val submitButton = new Button("submitbutton", () => submitAction())
-	val updateButton: () => Unit = () => dto match {
+
+	private def updateButton(): Unit = dto match {
 		case Success(_) => submitButton.enable()
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
@@ -106,32 +113,6 @@ class Form(
 		productionElements.hide()
 		updateButton()
 	})
-
-	val onLevelSelected: Int => Unit = (level: Int) => {
-
-		whenDone{
-			Backend.getObjSpecs.map(_.filter(_.dataLevel == level))
-		}(objSpecSelect.setOptions)
-	}
-
-	private val setupSpec: ObjSpec => Unit = objSpec => {
-		if (objSpec.hasDataset) {
-			nRowsInput.enable()
-			acqStartInput.disable()
-			acqStopInput.disable()
-		} else {
-			nRowsInput.disable()
-			acqStartInput.enable()
-			acqStopInput.enable()
-		}
-	}
-
-	private val onSpecSelected: () => Unit = () => {
-		objSpecSelect.value.foreach{ objSpec =>
-			setupSpec(objSpec)
-		}
-		updateButton()
-	}
 
 	private val onStationSelected: () => Unit = () => {
 		stationSelect.value.foreach { station =>
@@ -163,22 +144,15 @@ class Form(
 			case _ => positionElements.hide()
 		}
 	}
-	val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
-	val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
-	val nRowsInput = new IntOptInput("nrows", updateButton)
-	val keywordsInput = new TextInput("keywords", () => ())
 
 
-	val acqStartInput = new InstantInput("acqstartinput", updateButton)
-	val acqStopInput = new InstantInput("acqstopinput", updateButton)
 	val samplingPointInput = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), autoselect = false, onSamplingPointSelected)
 	val latitudeInput = new DoubleOptInput("latitude", updateButton)
 	val longitudeInput = new DoubleOptInput("longitude", updateButton)
 	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
 	val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", updateButton)
-	val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 
 	val creatorInput = new UriInput("creatoruri", updateButton)
 	val contributorsInput = new UriListInput("contributors", updateButton)
@@ -222,9 +196,9 @@ class Form(
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
 		station <- stationSelect.value.withMissingError("Station not chosen");
-		objSpec <- objSpecSelect.value.withMissingError("Data type not set");
-		acqInterval <- timeIntevalInput.value.withErrorContext("Acqusition time interval");
-		nRows <- nRowsInput.value.withErrorContext("Number of rows");
+		objSpec <- dataPanel.objSpec;
+		acqInterval <- acqPanel.timeInterval;
+		nRows <- dataPanel.nRows;
 		latitude <- latitudeInput.value.withErrorContext("Latitude");
 		longitude <- longitudeInput.value.withErrorContext("Longitude");
 		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
@@ -259,7 +233,7 @@ class Form(
 		references = Some(
 			References(
 				citationString = None,
-				keywords = keywordsInput.value.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
+				keywords = dataPanel.keywords.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
 			)
 		)
 	)
@@ -292,104 +266,85 @@ class Form(
 		preExistingDoi = doi
 	)
 
-	def getMetadata(): Unit = {
+	private def handleDto(upDto: UploadDto): Unit = {
 		hideAlert()
-		metadataUriInput.value.map { metadataUri =>
-			resetForm()
-			whenDone(Backend.getMetadata(metadataUri)) {
-				case dto: DataObjectDto => {
-					typeControl.value = Data
-					onFormTypeSelected(Data)
-					fileNameText.value = dto.fileName
-					fileHash = Some(dto.hashSum)
-					previousVersionInput.value = dto.isNextVersionOf
-					existingDoiInput.value = dto.preExistingDoi
-					whenDone(Backend.getObjSpecs){ specs =>
-						specs.find(_.uri == dto.objectSpecification).map{ spec =>
-							levelControl.value = spec.dataLevel
-							objSpecSelect.setOptions(specs.filter(_.dataLevel == spec.dataLevel))
-							objSpecSelect.value = spec
-							setupSpec(spec)
-						}
+		resetForm()
+		upDto match {
+			case dto: DataObjectDto => {
+				whenDone(Backend.getObjSpecs){ specs =>
+					specs.find(_.uri == dto.objectSpecification).map{ spec =>
+						levelControl.value = spec.dataLevel
+						objSpecSelect.setOptions(specs.filter(_.dataLevel == spec.dataLevel))
+						objSpecSelect.value = spec
+						setupSpec(spec)
 					}
-					dto.specificInfo match {
-						case Left(_) =>
-						case Right(acquisition) => {
-							nRowsInput.value = acquisition.nRows
-							submitterIdSelect.value.map{ submitter =>
-								whenDone(Backend.stationInfo(submitter.producingOrganizationClass, submitter.producingOrganization)){ stations =>
-									stations.find(_.uri == acquisition.station).map{ station =>
-										stationSelect.value = station
-										whenDone(Backend.getSites(station.uri)) { sites =>
-											siteSelect.setOptions {
-												if (sites.isEmpty) IndexedSeq.empty
-												else if (envri == Envri.SITES) sites.map(Some(_))
-												else None +: sites.map(Some(_))
-											}
-											acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map { site =>
-												siteSelect.value = Some(site)
-												whenDone(Backend.getSamplingPoints(site.uri)) { points =>
-													samplingPointInput.setOptions {
-														None +: points.map(Some(_)) :+ Some(customSamplingPoint)
-													}
-													acquisition.samplingPoint.map{ point =>
-														points.find(p => p.latitude == point.lat && p.longitude == point.lon) match {
-															case Some(value) => samplingPointInput.value = Some(value)
-															case None => {
-																latitudeInput.value = Some(point.lat)
-																longitudeInput.value = Some(point.lon)
-																positionElements.show()
-																samplingPointInput.value = Some(customSamplingPoint)
-															}
+				}
+				dto.specificInfo match {
+					case Left(_) =>
+					case Right(acquisition) => {
+						nRowsInput.value = acquisition.nRows
+						aboutPanel.submitter.foreach{ submitter =>
+							whenDone(Backend.stationInfo(submitter.producingOrganizationClass, submitter.producingOrganization)){ stations =>
+								stations.find(_.uri == acquisition.station).map{ station =>
+									stationSelect.value = station
+									whenDone(Backend.getSites(station.uri)) { sites =>
+										siteSelect.setOptions {
+											if (sites.isEmpty) IndexedSeq.empty
+											else if (envri == Envri.SITES) sites.map(Some(_))
+											else None +: sites.map(Some(_))
+										}
+										acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map { site =>
+											siteSelect.value = Some(site)
+											whenDone(Backend.getSamplingPoints(site.uri)) { points =>
+												samplingPointInput.setOptions {
+													None +: points.map(Some(_)) :+ Some(customSamplingPoint)
+												}
+												acquisition.samplingPoint.map{ point =>
+													points.find(p => p.latitude == point.lat && p.longitude == point.lon) match {
+														case Some(value) => samplingPointInput.value = Some(value)
+														case None => {
+															latitudeInput.value = Some(point.lat)
+															longitudeInput.value = Some(point.lon)
+															positionElements.show()
+															samplingPointInput.value = Some(customSamplingPoint)
 														}
 													}
 												}
-											})
-											updateButton()
-										}
-										acquisition.acquisitionInterval.map{ time =>
-											acqStartInput.value = time.start
-											acqStopInput.value = time.stop
-											timeIntevalInput.value = Some(time)
-										}
-										samplingHeightInput.value = acquisition.samplingHeight
-										instrUriInput.value = acquisition.instrument
+											}
+										})
+										updateButton()
 									}
+									acquisition.acquisitionInterval.map{ time =>
+										acqStartInput.value = time.start
+										acqStopInput.value = time.stop
+										timeIntevalInput.value = Some(time)
+									}
+									samplingHeightInput.value = acquisition.samplingHeight
+									instrUriInput.value = acquisition.instrument
 								}
 							}
-							acquisition.production.map { production =>
-								disableProductionButton()
-								productionElements.show()
-								creatorInput.value = production.creator
-								contributorsInput.value = production.contributors
-								hostOrganizationInput.value = production.hostOrganization
-								commentInput.value = production.comment
-								creationDateInput.value = production.creationDate
-								sourcesInput.value = production.sources
-							}
+						}
+						acquisition.production.map { production =>
+							disableProductionButton()
+							productionElements.show()
+							creatorInput.value = production.creator
+							contributorsInput.value = production.contributors
+							hostOrganizationInput.value = production.hostOrganization
+							commentInput.value = production.comment
+							creationDateInput.value = production.creationDate
+							sourcesInput.value = production.sources
 						}
 					}
 				}
-				case dto: DocObjectDto =>
-					typeControl.value = Document
-					onFormTypeSelected(Document)
-					fileNameText.value = dto.fileName
-					fileHash = Some(dto.hashSum)
-					previousVersionInput.value = dto.isNextVersionOf
-					existingDoiInput.value = dto.preExistingDoi
-					updateButton()
-				case dto: StaticCollectionDto =>
-					typeControl.value = Collection
-					onFormTypeSelected(Collection)
-					collectionTitle.value = dto.title
-					collectionMembers.value = dto.members
-					collectionDescription.value = dto.description
-					previousVersionInput.value = dto.isNextVersionOf
-					existingDoiInput.value = dto.preExistingDoi
-					updateButton()
-				case _ =>
-					showAlert(s"$metadataUri cannot be found", "alert alert-danger")
 			}
+			case dto: DocObjectDto =>
+				updateButton()
+			case dto: StaticCollectionDto =>
+				collectionTitle.value = dto.title
+				collectionMembers.value = dto.members
+				collectionDescription.value = dto.description
+				updateButton()
+			case _ =>
 		}
 	}
 }

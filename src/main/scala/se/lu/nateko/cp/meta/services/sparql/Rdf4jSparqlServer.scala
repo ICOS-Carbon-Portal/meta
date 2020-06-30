@@ -13,6 +13,10 @@ import org.eclipse.rdf4j.query.GraphQuery
 import org.eclipse.rdf4j.query.MalformedQueryException
 import org.eclipse.rdf4j.query.Query
 import org.eclipse.rdf4j.query.TupleQuery
+import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
+import org.eclipse.rdf4j.query.parser.ParsedGraphQuery
+import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
@@ -43,6 +47,7 @@ import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
@@ -73,55 +78,39 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by sparqlExe thread pool)
 	)
 
-	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = {
-		val conn = repo.getConnection
-		val qquoter = quoter.logNewQueryStart(query.clientId)
+	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = try{
+			new SPARQLParser().parseQuery(query.query, CpmetaVocab.MetaPrefix) match {
+				case _: ParsedTupleQuery =>
+					tupleQueryProtocolOptions.map(getQueryMarshalling(query, _))
 
-		val onDone = () => {
-			qquoter.logQueryFinish()
-			conn.close()
-		}
+				case _: ParsedGraphQuery =>
+					graphQueryProtocolOptions.map(getQueryMarshalling(query, _))
 
-		try{
-			conn.prepareQuery(query.query) match {
-				case tupleQuery: TupleQuery =>
-					tupleQueryProtocolOptions.map(po =>
-						getQueryMarshalling(tupleQuery, po, qquoter, onDone)
-					)
-
-				case graphQuery: GraphQuery =>
-
-					graphQueryProtocolOptions.map(po =>
-						getQueryMarshalling(graphQuery, po, qquoter, onDone)
-					)
-
-				case _: BooleanQuery =>
-					onDone()
+				case _: ParsedBooleanQuery =>
 					plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
 			}
 		} catch {
 			case userErr: MalformedQueryException =>
-				onDone()
 				plainResponse(StatusCodes.BadRequest, userErr.getMessage)
-			case err: Throwable =>
-				onDone()
-				throw err
 		}
-	}
 
 	private def getQueryMarshalling[Q <: Query](
-		query: Q,
-		protocolOption: ProtocolOption[Q],
-		qquoter: QuotaManager.QueryQuotaManager,
-		onDone: () => Unit
+		queryStr: SparqlQuery,
+		protocolOption: ProtocolOption[Q]
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
+			val qquoter = quoter.logNewQueryStart(queryStr.clientId)
 			val entityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
+				val conn = repo.getConnection()
+
 				val sparqlFut = CompletableFuture.runAsync(
-					() => protocolOption.evaluator.evaluate(query, outStr),
+					() => {
+						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+						protocolOption.evaluator.evaluate(query, outStr)
+					},
 					sparqlExe
 				)
 
@@ -140,7 +129,10 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 
 				sparqlFut.whenComplete((_, _) =>
 					try{outStr.flush(); outStr.close()}
-					finally{onDone()}
+					finally{
+						qquoter.logQueryFinish()
+						conn.close()
+					}
 				)
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(

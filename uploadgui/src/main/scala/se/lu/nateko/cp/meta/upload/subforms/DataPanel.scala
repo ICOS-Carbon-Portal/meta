@@ -26,13 +26,25 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[String] = keywordsInput.value
 
+	private val htmlElements = new HtmlElements(".data-section")
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
-	private val nRowsInput = new IntOptInput("nrows", updateForm)
+	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val keywordsInput = new TextInput("keywords", () => ())
+
+	def resetForm(): Unit = {
+		levelControl.value = Int.MinValue
+		objSpecSelect.setOptions(IndexedSeq.empty)
+		nRowsInput.value = None
+		keywordsInput.value = ""
+	}
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
+		case ItemTypeSelected(Data) =>
+			resetForm()
+			htmlElements.show()
+		case ItemTypeSelected(_) => htmlElements.hide()
 	}
 
 	private def onLevelSelected(level: Int): Unit = {
@@ -44,10 +56,10 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 			if(objSpec.hasDataset && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
 			bus.publish(ObjSpecSelected(objSpec))
 		}
-		updateForm()
+		notifyUpdate()
 	}
 
-	private def updateForm(): Unit = bus.publish(FormInputUpdated)
+	private def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto =>
@@ -57,6 +69,14 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 				objSpecSelect.value = spec
 				onSpecSelected()
 			}
+			keywordsInput.value = dto.references.fold("")(_.keywords.fold("")(_.mkString(", ")))
+			dto.specificInfo match {
+				case Right(l2) => nRowsInput.value = l2.nRows
+				case _ =>
+			}
 
+			htmlElements.show()
+		case _ =>
+			htmlElements.hide()
 	}
 }

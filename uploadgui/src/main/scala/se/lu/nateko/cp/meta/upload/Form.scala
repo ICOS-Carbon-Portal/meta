@@ -28,8 +28,6 @@ class Form(
 	val dataPanel = new DataPanel(objSpecs)
 	val acqPanel = new AcquisitionPanel
 	val formElement = new FormElement("form-block")
-	val positionElements = new HtmlElements(".position-element")
-	val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
 	def resetForm() = {
 		formElement.reset()
@@ -44,7 +42,9 @@ class Form(
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
+		case FormInputUpdated => updateButton()
 	}
+
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
 		submitButton.disable("")
@@ -114,46 +114,6 @@ class Form(
 		updateButton()
 	})
 
-	private val onStationSelected: () => Unit = () => {
-		stationSelect.value.foreach { station =>
-			whenDone(Backend.getSites(station.uri)) { sites =>
-				siteSelect.setOptions {
-					if (sites.isEmpty) IndexedSeq.empty
-					else if (envri == Envri.SITES) sites.map(Some(_))
-					else None +: sites.map(Some(_))
-				}
-			}
-			updateButton()
-		}
-	}
-
-	private val onSiteSelected: () => Unit = () => {
-		siteSelect.value.flatten.foreach { site =>
-			whenDone(Backend.getSamplingPoints(site.uri)) { points =>
-				samplingPointInput.setOptions {
-					None +: points.map(Some(_)) :+ Some(customSamplingPoint)
-				}
-			}
-			updateButton()
-		}
-	}
-
-	private val onSamplingPointSelected: () => Unit = () => {
-		samplingPointInput.value.flatten match {
-			case Some(SamplingPoint(_, 0, 0, "Custom")) => positionElements.show()
-			case _ => positionElements.hide()
-		}
-	}
-	val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
-	val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
-
-
-	val samplingPointInput = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), autoselect = false, onSamplingPointSelected)
-	val latitudeInput = new DoubleOptInput("latitude", updateButton)
-	val longitudeInput = new DoubleOptInput("longitude", updateButton)
-	val samplingHeightInput = new FloatOptInput("sampleheight", updateButton)
-	val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", updateButton)
-
 	val creatorInput = new UriInput("creatoruri", updateButton)
 	val contributorsInput = new UriListInput("contributors", updateButton)
 	val hostOrganizationInput = new UriOptInput("hostorganisation", updateButton)
@@ -195,14 +155,13 @@ class Form(
 		hash <- aboutPanel.itemHash;
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
-		station <- stationSelect.value.withMissingError("Station not chosen");
+		station <- acqPanel.station;
 		objSpec <- dataPanel.objSpec;
 		acqInterval <- acqPanel.timeInterval;
 		nRows <- dataPanel.nRows;
-		latitude <- latitudeInput.value.withErrorContext("Latitude");
-		longitude <- longitudeInput.value.withErrorContext("Longitude");
-		samplingHeight <- samplingHeightInput.value.withErrorContext("Sampling height");
-		instrumentUri <- instrUriInput.value.withErrorContext("Instrument URI");
+		samplingPoint <- acqPanel.samplingPoint;
+		samplingHeight <- acqPanel.samplingHeight;
+		instrumentUri <- acqPanel.instrUri;
 		production <- if(productionElements.areEnabled) dataProductionDto else Success(None)
 	) yield DataObjectDto(
 		hashSum = hash,
@@ -212,16 +171,9 @@ class Form(
 		specificInfo = Right(
 			StationDataMetadata(
 				station = station.uri,
-				site = siteSelect.value.flatten.map(_.uri),
+				site = acqPanel.site.flatten.map(_.uri),
 				instrument = instrumentUri,
-				samplingPoint = samplingPointInput.value.flatten match {
-					case Some(SamplingPoint(_, 0, 0, "Custom")) => (latitude, longitude) match {
-						case (Some(lat), Some(lon)) => Some(Position(lat.toDouble, lon.toDouble, None))
-						case _ => None
-					}
-					case Some(position) => Some(Position(position.latitude, position.longitude, None))
-					case _ => None
-				},
+				samplingPoint = samplingPoint,
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
@@ -271,59 +223,9 @@ class Form(
 		resetForm()
 		upDto match {
 			case dto: DataObjectDto => {
-				whenDone(Backend.getObjSpecs){ specs =>
-					specs.find(_.uri == dto.objectSpecification).map{ spec =>
-						levelControl.value = spec.dataLevel
-						objSpecSelect.setOptions(specs.filter(_.dataLevel == spec.dataLevel))
-						objSpecSelect.value = spec
-						setupSpec(spec)
-					}
-				}
 				dto.specificInfo match {
 					case Left(_) =>
 					case Right(acquisition) => {
-						nRowsInput.value = acquisition.nRows
-						aboutPanel.submitter.foreach{ submitter =>
-							whenDone(Backend.stationInfo(submitter.producingOrganizationClass, submitter.producingOrganization)){ stations =>
-								stations.find(_.uri == acquisition.station).map{ station =>
-									stationSelect.value = station
-									whenDone(Backend.getSites(station.uri)) { sites =>
-										siteSelect.setOptions {
-											if (sites.isEmpty) IndexedSeq.empty
-											else if (envri == Envri.SITES) sites.map(Some(_))
-											else None +: sites.map(Some(_))
-										}
-										acquisition.site.map(siteUri => sites.find(_.uri == siteUri).map { site =>
-											siteSelect.value = Some(site)
-											whenDone(Backend.getSamplingPoints(site.uri)) { points =>
-												samplingPointInput.setOptions {
-													None +: points.map(Some(_)) :+ Some(customSamplingPoint)
-												}
-												acquisition.samplingPoint.map{ point =>
-													points.find(p => p.latitude == point.lat && p.longitude == point.lon) match {
-														case Some(value) => samplingPointInput.value = Some(value)
-														case None => {
-															latitudeInput.value = Some(point.lat)
-															longitudeInput.value = Some(point.lon)
-															positionElements.show()
-															samplingPointInput.value = Some(customSamplingPoint)
-														}
-													}
-												}
-											}
-										})
-										updateButton()
-									}
-									acquisition.acquisitionInterval.map{ time =>
-										acqStartInput.value = time.start
-										acqStopInput.value = time.stop
-										timeIntevalInput.value = Some(time)
-									}
-									samplingHeightInput.value = acquisition.samplingHeight
-									instrUriInput.value = acquisition.instrument
-								}
-							}
-						}
 						acquisition.production.map { production =>
 							disableProductionButton()
 							productionElements.show()

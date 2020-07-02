@@ -9,7 +9,7 @@ class Radio[T](elemId: String, cb: T => Unit, parser: String => Option[T], seria
 	private[this] val inputs: Seq[html.Input] = querySelectorAll(inputBlock, "input[type=radio]")
 
 	def value: Option[T] = selectedInput.flatMap(si => parser(si.value))
-	def value_=(t: T): Unit = inputs.iterator.filter(_.value == serializer(t)).foreach(_.checked = true)
+	def value_=(t: T): Unit = inputs.iterator.foreach(inp => inp.checked = inp.value == serializer(t))
 
 	def enable(): Unit = inputs.foreach(_.disabled = false)
 	def disable(): Unit = inputs.foreach(_.disabled = true)

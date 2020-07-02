@@ -19,7 +19,9 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 	}
 
 	def value_=(t: T): Unit = select.selectedIndex = _values.indexOf(t)
+	def reset(): Unit = select.selectedIndex = -1
 
+	def getOptions: IndexedSeq[T] = _values
 	def setOptions(values: IndexedSeq[T]): Unit = {
 		select.innerHTML = ""
 		_values = values

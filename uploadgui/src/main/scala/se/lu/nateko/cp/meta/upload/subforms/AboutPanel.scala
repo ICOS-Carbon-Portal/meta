@@ -34,6 +34,20 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 
+	def documentObjectDto: Try[DocObjectDto] = for(
+		submitter <- this.submitter;
+		file <- itemName;
+		hash <- itemHash;
+		previousVersion <- this.previousVersion;
+		doi <- existingDoi
+	) yield DocObjectDto(
+		hashSum = hash,
+		submitterId = submitter.id,
+		fileName = file,
+		isNextVersionOf = previousVersion,
+		preExistingDoi = doi
+	)
+
 	private val newUpdateControl = new Radio[String]("new-update-radio", onModeSelected, s => Some(s), s => s)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 	private val typeControl = new ItemTypeRadio("file-type-radio", onItemTypeSelected)

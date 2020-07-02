@@ -27,18 +27,11 @@ class Form(
 	val aboutPanel = new AboutPanel(subms)
 	val dataPanel = new DataPanel(objSpecs)
 	val acqPanel = new AcquisitionPanel
-	val formElement = new FormElement("form-block")
+	val prodPanel = new ProductionPanel
+	val collPanel = new CollectionPanel
+	val l3Panel = new L3Panel
 
-	def resetForm() = {
-		formElement.reset()
-		updateButton()
-	}
-
-	val dataElements = new HtmlElements(".data-section")
-	val collectionElements = new HtmlElements(".collection-section")
 	val productionElements = new HtmlElements(".production-section")
-	val acquisitionSection = new HtmlElements(".acq-section")
-	val l3Section = new HtmlElements(".l3-section")
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
@@ -56,7 +49,12 @@ class Form(
 					whenDone {
 						aboutPanel.refreshFileHash()
 					}{ _ =>
-						for(dto <- dataObjectDto; file <- aboutPanel.file; nRows <- dataPanel.nRows; spec <- dataPanel.objSpec) {
+						for(
+							dto <- dataObjectDto;
+							file <- aboutPanel.file;
+							nRows <- dataPanel.nRows;
+							spec <- dataPanel.objSpec
+						) {
 							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
 								onUpload(dto, Some(file))
 							}.failed.foreach {
@@ -64,25 +62,18 @@ class Form(
 							}
 						}
 					}
-				} else{
-					for(dto <- dataObjectDto) {
-						onUpload(dto, None)
-					}
-				}
+				} else
+					dataObjectDto.foreach(onUpload(_, None))
+
 			case Some(Collection) =>
-				for(dto <- staticCollectionDto) {
-					onUpload(dto, None)
-				}
+				staticCollectionDto.foreach(onUpload(_, None))
+
 			case Some(Document) =>
-				if(aboutPanel.isInNewItemMode) {
-					for(dto <- documentObjectDto; file <- aboutPanel.file) {
-						onUpload(dto, Some(file))
-					}
-				} else {
-					for(dto <- documentObjectDto) {
-						onUpload(dto, None)
-					}
-				}
+				for(
+					dto <- aboutPanel.documentObjectDto;
+					fileOpt <- if(aboutPanel.isInNewItemMode) aboutPanel.file.map(Some.apply) else Success(None)
+				) onUpload(dto, fileOpt)
+
 			case _ =>
 		}
 	}
@@ -94,60 +85,24 @@ class Form(
 	}
 
 
-	val addProductionButton = new Button("addproductionbutton", () => {
-		disableProductionButton()
+	val addProductionButton: Button = new Button("addproductionbutton", () => {
+		addProductionButton.disable("")
 		productionElements.show()
 		updateButton()
 	})
 
-	val disableProductionButton: () => Unit = () => {
-		addProductionButton.disable("")
-	}
-
-	val enableProductionButton: () => Unit = () => {
-		addProductionButton.enable()
-	}
-
 	val removeProductionButton = new Button("removeproductionbutton", () => {
-		enableProductionButton()
+		addProductionButton.enable()
 		productionElements.hide()
 		updateButton()
 	})
 
-	val creatorInput = new UriInput("creatoruri", updateButton)
-	val contributorsInput = new UriListInput("contributors", updateButton)
-	val hostOrganizationInput = new UriOptInput("hostorganisation", updateButton)
-	val commentInput = new TextOptInput("productioncomment", updateButton)
-	val creationDateInput = new InstantInput("creationdate", updateButton)
-	val sourcesInput = new HashOptListInput("sources", updateButton)
-
-	val collectionTitle = new TextInput("collectiontitle", updateButton)
-	val collectionDescription = new TextOptInput("collectiondescription", updateButton)
-	val collectionMembers = new NonEmptyUriListInput("collectionmembers", updateButton)
-
-
 	def dto: Try[UploadDto] = aboutPanel.itemType match {
 		case Some(Data) => dataObjectDto
 		case Some(Collection) => staticCollectionDto
-		case Some(Document) => documentObjectDto
+		case Some(Document) => aboutPanel.documentObjectDto
 		case _ => fail("No file type selected")
 	}
-
-	def dataProductionDto: Try[Option[DataProductionDto]] = for(
-		creator <- creatorInput.value.withErrorContext("Creator");
-		contributors <- contributorsInput.value.withErrorContext("Contributors");
-		hostOrganization <- hostOrganizationInput.value.withErrorContext("Host organization");
-		comment <- commentInput.value.withErrorContext("Comment");
-		creationDate <- creationDateInput.value.withErrorContext("Creation date");
-		sources <- sourcesInput.value.withErrorContext("Sources")
-	) yield Some(DataProductionDto(
-		creator = creator,
-		contributors = contributors,
-		hostOrganization = hostOrganization,
-		comment = comment,
-		sources = sources,
-		creationDate = creationDate
-	))
 
 	def dataObjectDto: Try[DataObjectDto] = for(
 		submitter <- aboutPanel.submitter;
@@ -162,7 +117,7 @@ class Form(
 		samplingPoint <- acqPanel.samplingPoint;
 		samplingHeight <- acqPanel.samplingHeight;
 		instrumentUri <- acqPanel.instrUri;
-		production <- if(productionElements.areEnabled) dataProductionDto else Success(None)
+		production <- prodPanel.dataProductionDto
 	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -189,23 +144,11 @@ class Form(
 			)
 		)
 	)
-	def documentObjectDto: Try[DocObjectDto] = for(
-		submitter <- aboutPanel.submitter;
-		file <- aboutPanel.itemName;
-		hash <- aboutPanel.itemHash;
-		previousVersion <- aboutPanel.previousVersion;
-		doi <- aboutPanel.existingDoi
-	) yield DocObjectDto(
-		hashSum = hash,
-		submitterId = submitter.id,
-		fileName = file,
-		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
-	)
+
 	def staticCollectionDto: Try[StaticCollectionDto] = for(
-		title <- collectionTitle.value.withErrorContext("Collection title");
-		description <- collectionDescription.value;
-		members <- collectionMembers.value.withErrorContext("Collection members (list of object urls)");
+		title <- collPanel.title;
+		description <- collPanel.description;
+		members <- collPanel.members;
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
 		submitter <- aboutPanel.submitter
@@ -220,32 +163,11 @@ class Form(
 
 	private def handleDto(upDto: UploadDto): Unit = {
 		hideAlert()
-		resetForm()
 		upDto match {
 			case dto: DataObjectDto => {
-				dto.specificInfo match {
-					case Left(_) =>
-					case Right(acquisition) => {
-						acquisition.production.map { production =>
-							disableProductionButton()
-							productionElements.show()
-							creatorInput.value = production.creator
-							contributorsInput.value = production.contributors
-							hostOrganizationInput.value = production.hostOrganization
-							commentInput.value = production.comment
-							creationDateInput.value = production.creationDate
-							sourcesInput.value = production.sources
-						}
-					}
-				}
+				val hasProduction = dto.specificInfo.fold(_ => true, _.production.isDefined)
+				if(hasProduction) addProductionButton.disable("")
 			}
-			case dto: DocObjectDto =>
-				updateButton()
-			case dto: StaticCollectionDto =>
-				collectionTitle.value = dto.title
-				collectionMembers.value = dto.members
-				collectionDescription.value = dto.description
-				updateButton()
 			case _ =>
 		}
 	}

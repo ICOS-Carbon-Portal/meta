@@ -8,13 +8,14 @@ import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 object StaticRoute {
 
-	private[this] val pages: PartialFunction[String, Html] = {
-		case "labeling" => views.html.LabelingPage()
-		case "sparqlclient" => views.html.SparqlClientPage()
-		case "station" => views.html.StationPage()
+	private[this] val pages: PartialFunction[(String, Envri), Html] = {
+		case ("labeling", _) => views.html.LabelingPage()
+		case ("sparqlclient", _) => views.html.SparqlClientPage()
+		case ("station", envri) => views.html.StationPage(envri)
 	}
 
 	import PageContentMarshalling.twirlHtmlEntityMarshaller
@@ -50,17 +51,19 @@ object StaticRoute {
 		uploadGuiRoute("uploadgui", false) ~
 		uploadGuiRoute("uploadguidev", true) ~
 		pathPrefix(Segment){page =>
-			if(pages.isDefinedAt(page)) {
-				pathSingleSlash{
-					complete(pages(page))
-				} ~
-				pathEnd{
-					redirect(s"/$page/", StatusCodes.Found)
-				} ~
-				path(s"$page.js"){
-					getFromResource(s"www/$page.js")
-				}
-			} else reject
+			extractEnvri{envri =>
+				if(pages.isDefinedAt(page, envri)) {
+					pathSingleSlash{
+						complete(pages(page, envri))
+					} ~
+					pathEnd{
+						redirect(s"/$page/", StatusCodes.Found)
+					} ~
+					path(s"$page.js"){
+						getFromResource(s"www/$page.js")
+					}
+				} else reject
+			}
 		}
 	}
 }

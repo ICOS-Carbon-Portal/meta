@@ -81,7 +81,7 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"org.apache.commons"     % "commons-email"                      % "1.4",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.2",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.4",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.2",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.2" % "test",

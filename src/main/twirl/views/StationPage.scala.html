@@ -1,9 +1,17 @@
+@import se.lu.nateko.cp.meta.core.data.Envri
+@import Envri.Envri
+
+@(envri: Envri)
 <!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>ICOS Station Map</title>
-	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+	<title>@envri Station Map</title>
+	@if(envri == Envri.SITES) {
+		<link rel="icon" type="image/x-icon" href="//static.icos-cp.eu/images/sites-favicon.ico">
+	} else {
+		<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
+	}
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@@1.6.0/dist/leaflet.css"
 		integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
 		crossorigin=""/>

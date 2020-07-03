@@ -22,6 +22,7 @@ object SparqlQueries {
 		|FROM <http://meta.icos-cp.eu/resources/icos/>
 		|FROM <http://meta.icos-cp.eu/resources/cpmeta/>
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|FROM <http://meta.icos-cp.eu/resources/extrastations/>
 		|WHERE {
 		| ?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
 		| $orgFilter }

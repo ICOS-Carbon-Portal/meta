@@ -21,12 +21,11 @@ import UploadApp.whenDone
 import Utils._
 
 
-class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: Envri.Envri) {
+class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[String] = keywordsInput.value
 
-	private val htmlElements = new HtmlElements(".data-section")
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
@@ -41,14 +40,11 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
-		case ItemTypeSelected(Data) =>
-			resetForm()
-			htmlElements.show()
-		case ItemTypeSelected(_) => htmlElements.hide()
 	}
 
 	private def onLevelSelected(level: Int): Unit = {
 		objSpecSelect.setOptions(objSpecs.filter(_.dataLevel == level))
+		bus.publish(LevelSelected(level))
 	}
 
 	private def onSpecSelected(): Unit = {
@@ -58,8 +54,6 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 		}
 		notifyUpdate()
 	}
-
-	private def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto =>
@@ -75,8 +69,8 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 				case _ =>
 			}
 
-			htmlElements.show()
+			show()
 		case _ =>
-			htmlElements.hide()
+			hide()
 	}
 }

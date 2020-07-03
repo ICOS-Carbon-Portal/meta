@@ -21,13 +21,13 @@ import UploadApp.whenDone
 import Utils._
 
 
-class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) {
+class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
 
 	def submitter = submitterIdSelect.value.withMissingError("Submitter Id not set")
-	def isInNewItemMode: Boolean = newUpdateControl.value.contains("new")
+	def isInNewItemMode: Boolean = modeControl.value.contains("new")
 	def itemType: Option[ItemType] = typeControl.value
 	def file: Try[dom.File] = fileInput.file
-	def itemName: Try[String] = if(isInNewItemMode) fileInput.file.map(_.name) else fileNameText.value;
+	def itemName: Try[String] = if(isInNewItemMode) fileInput.file.map(_.name) else fileNameInput.value;
 	def itemHash: Try[Sha256Sum] = if(isInNewItemMode) fileInput.hash else Success(fileHash.get)
 	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value.withErrorContext("Previous version")
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
@@ -48,16 +48,15 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 		preExistingDoi = doi
 	)
 
-	private val newUpdateControl = new Radio[String]("new-update-radio", onModeSelected, s => Some(s), s => s)
+	private val modeControl = new Radio[String]("new-update-radio", onModeSelected, s => Some(s), s => s)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 	private val typeControl = new ItemTypeRadio("file-type-radio", onItemTypeSelected)
 	private val fileElement = new HtmlElements("#file-element")
-	private val fileInputElement = new HtmlElements("#fileinput")
-	private val filenameElement = new HtmlElements("#filename")
-	private val fileInput = new FileInput("fileinput", updateForm)
-	private val fileNameText = new TextInput("filename", updateForm)
-	private val previousVersionInput = new HashOptInput("previoushash", updateForm)
-	private val existingDoiInput = new DoiOptInput("existingdoi", updateForm)
+	private val fileNameElement = new HtmlElements("#filename-element")
+	private val fileInput = new FileInput("fileinput", notifyUpdate)
+	private val fileNameInput = new TextInput("filename", notifyUpdate)
+	private val previousVersionInput = new HashOptInput("previoushash", notifyUpdate)
+	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")
 	private val metadataUriInput = new UriInput("metadata-update", updateGetMetadataButton)
 	private val getMetadataButton = new Button("get-metadata", getMetadata)
@@ -65,39 +64,67 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 	private var fileHash: Option[Sha256Sum] = None
 
 	submitterIdSelect.setOptions(subms)
+	resetForm()
 
-	private def updateForm(): Unit = bus.publish(FormInputUpdated)
+	def resetForm(): Unit = {
+		modeControl.reset()
+		modeControl.disable()
+		typeControl.reset()
+		typeControl.disable()
+		getMetadataButton.disable("Missing landing page URL")
+		fileNameElement.hide()
+		fileElement.hide()
+		metadataUrlElement.hide()
+		clearFields()
+	}
 
-	private def onModeSelected(modeName: String): Unit = if(isInNewItemMode){
-			bus.publish(NewItemMode)
-			fileInputElement.show()
-			filenameElement.hide()
+	private def clearFields(): Unit = {
+		metadataUriInput.reset()
+		fileNameInput.reset()
+		previousVersionInput.reset()
+		existingDoiInput.reset()
+		updateGetMetadataButton()
+	}
+
+	private def onModeSelected(modeName: String): Unit = {
+		if(isInNewItemMode){
+			fileNameElement.hide()
 			metadataUrlElement.hide()
 			typeControl.enable()
+			typeControl.reset()
 		} else {
-			bus.publish(UpdateMetaMode)
-			fileInputElement.hide()
-			filenameElement.show()
+			fileElement.hide()
+			fileNameElement.show()
 			metadataUrlElement.show()
+			typeControl.reset()
 			typeControl.disable()
 		}
+		bus.publish(ModeChanged)
+		clearFields()
+	}
 
 	
 	private def onItemTypeSelected(itemType: ItemType): Unit = {
 		itemType match {
 			case Collection =>
 				fileElement.hide()
+				fileNameElement.hide()
 			case _ =>
 				fileElement.show()
+				fileNameElement.hide()
 		}
 		bus.publish(ItemTypeSelected(itemType))
 	}
 
 	private def onSubmitterSelected(): Unit = submitterIdSelect.value.foreach{subm =>
 		bus.publish(GotStationsList(IndexedSeq.empty))
+		bus.publish(ModeChanged)
+		resetForm()
 		updateGetMetadataButton()
 		whenDone(Backend.stationInfo(subm.producingOrganizationClass, subm.producingOrganization)){
-			stations => bus.publish(GotStationsList(stations))
+			stations =>
+				bus.publish(GotStationsList(stations))
+				modeControl.enable()
 		}
 	}
 
@@ -119,27 +146,26 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 			whenDone(Backend.getMetadata(metadataUri)) {
 				case dto: DataObjectDto => {
 					typeControl.value = Data
-					fileNameText.value = dto.fileName
+					fileNameInput.value = dto.fileName
 					fileHash = Some(dto.hashSum)
 					previousVersionInput.value = dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				}
 				case dto: DocObjectDto =>
 					typeControl.value = Document
-					fileNameText.value = dto.fileName
+					fileNameInput.value = dto.fileName
 					fileHash = Some(dto.hashSum)
 					previousVersionInput.value = dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				case dto: StaticCollectionDto =>
 					typeControl.value = Collection
-					fileNameText.value = ""
+					fileNameInput.value = ""
 					fileHash = None
 					previousVersionInput.value = dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				case _ =>
 					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")
 			}.foreach{dto =>
-				typeControl.notifyListener()
 				bus.publish(GotUploadDto(dto))
 			}
 		}

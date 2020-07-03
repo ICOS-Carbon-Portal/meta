@@ -26,7 +26,7 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.StationDataMetadata
 
 
-class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
+class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".acq-section"){
 	def station: Try[Station] = stationSelect.value.withMissingError("Station not chosen")
 	def site = siteSelect.value
 	def timeInterval: Try[Option[TimeInterval]] = timeIntevalInput.value.withErrorContext("Acqusition time interval")
@@ -45,7 +45,6 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
 		case _ => Success(None)
 	}
 
-	private val htmlElements = new HtmlElements(".acq-section")
 	private val positionElements = new HtmlElements(".position-element")
 	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
 	private val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
@@ -61,7 +60,6 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
 	private val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
 	def resetForm(): Unit = {
-		stationSelect.setOptions(IndexedSeq.empty)
 		resetPlaceInfo()
 		acqStartInput.reset()
 		acqStopInput.reset()
@@ -70,8 +68,9 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
 	}
 
 	bus.subscribe{
+		case LevelSelected(level) => onLevelSelected(level)
 		case ObjSpecSelected(objSpec) =>
-			if(objSpec.dataLevel <= 2) htmlElements.show() else htmlElements.hide()
+			onLevelSelected(objSpec.dataLevel)
 			if (objSpec.hasDataset) {
 				acqStartInput.disable()
 				acqStopInput.disable()
@@ -85,15 +84,9 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
 
 		case GotUploadDto(dto) => handleDto(dto)
 
-		case NewItemMode => resetForm()
-
-		case ItemTypeSelected(Data) =>
-			resetForm()
-			htmlElements.show()
-		case ItemTypeSelected(_) => htmlElements.hide()
 	}
 
-	private def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
+	private def onLevelSelected(level: Int): Unit = if(level <= 2) show() else hide()
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto =>
@@ -121,14 +114,14 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) {
 						onStationSelected()
 						onSiteSelected()
 						onSamplingPointSelected()
-						htmlElements.show()
+						show()
 						notifyUpdate()
 					}
 				case _ =>
-					htmlElements.hide()
+					hide()
 			}
 		case _ =>
-			htmlElements.hide()
+			hide()
 	}
 
 	private def onStationSelected(): Unit = stationSelect.value.foreach { station =>

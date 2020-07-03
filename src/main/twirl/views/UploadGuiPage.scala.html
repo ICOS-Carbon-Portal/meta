@@ -52,7 +52,6 @@
 		display: none;
 	}
 	.filename {
-		display: none;
 		overflow-wrap: break-word;
 	}
 	#latitude-element,
@@ -89,7 +88,7 @@
 		</div>
 		<form id="form-block" class="form">
 			<div class="row">
-				<section class="col-md-4">
+				<section class="col-md-4 about-section">
 					<div class="form-section panel panel-default">
 					<h2>About</h2>
 					<div class="form-group">
@@ -138,6 +137,9 @@
 					<div class="form-group" id="file-element">
 						<label for="fileinput">File</label>
 						<input id="fileinput" type="file" placeholder="Select file for upload">
+					</div>
+					<div class="form-group" id="filename-element">
+						<label for="filename">File name</label>
 						<input id="filename" class="form-element form-control filename" type="text">
 					</div>
 					<div class="form-group">
@@ -244,15 +246,15 @@
 						</div>
 						<div class="form-group">
 							<label for="l3startinput">From (UTC)</label>
-							<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+							<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
 						</div>
 						<div class="form-group">
 							<label for="l3stopinput">To (UTC)</label>
-							<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
+							<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
 						</div>
 						<div class="form-group">
 							<label for="l3tempres">Temporal resolution @optional</label>
-							<select id="l3tempres" class="form-element"></select>
+							<input id="l3tempres" type="text" class="form-element form-control">
 						</div>
 						<div class="form-group">
 							<label for="l3spatcoverselect">Spatial coverage</label>

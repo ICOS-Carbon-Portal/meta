@@ -14,26 +14,23 @@ import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 
-class CollectionPanel(implicit bus: PubSubBus) {
+class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection-section"){
 	def title = collectionTitle.value.withErrorContext("Collection title")
 	def description = collectionDescription.value
 	def members = collectionMembers.value.withErrorContext("Collection members (list of object urls)")
 
-	private val htmlElements = new HtmlElements(".collection-section")
 	private val collectionTitle = new TextInput("collectiontitle", notifyUpdate)
 	private val collectionDescription = new TextOptInput("collectiondescription", notifyUpdate)
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
 
 	def resetForm(): Unit = {
+		collectionTitle.reset()
+		collectionDescription.reset()
+		collectionMembers.reset()
 	}
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
-		case ItemTypeSelected(Collection) =>
-			resetForm()
-			htmlElements.show()
-		case ItemTypeSelected(_) =>
-			htmlElements.hide()
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
@@ -42,11 +39,9 @@ class CollectionPanel(implicit bus: PubSubBus) {
 			collectionMembers.value = dto.members
 			collectionDescription.value = dto.description
 			notifyUpdate()
-			htmlElements.show()
+			show()
 		case _ =>
-			htmlElements.hide()
+			hide()
 	}
-
-	private def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
 
 }

@@ -108,12 +108,12 @@ class Button(elemId: String, onClick: () => Unit){
 	button.onclick = _ => onClick()
 }
 
-class HtmlElements(cssClass: String) {
+class HtmlElements(selector: String) {
 	private[this] var enabled = false
 	def areEnabled: Boolean = enabled
 
 	def show(): Unit = {
-		dom.document.querySelectorAll(cssClass).foreach {
+		dom.document.querySelectorAll(selector).foreach {
 			case section: HTMLElement =>
 				section.style.display = "block"
 		}
@@ -121,7 +121,7 @@ class HtmlElements(cssClass: String) {
 	}
 
 	def hide(): Unit = {
-		dom.document.querySelectorAll(cssClass).foreach {
+		dom.document.querySelectorAll(selector).foreach {
 			case section: HTMLElement =>
 				section.style.display = "none"
 		}

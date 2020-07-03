@@ -8,18 +8,17 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, ElaboratedProductMetadata}
+import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, ElaboratedProductMetadata}
 
 import formcomponents._
 import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 
-class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) {
+class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".l3-section"){
 
-	def meta: Try[ElaboratedProductMetadata] = ???
+	def meta(productionDto: => Try[DataProductionDto]): Try[ElaboratedProductMetadata] = ???
 
-	private val htmlElements = new HtmlElements(".l3-section")
 	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
 
 	private val titleInput = new TextInput("l3title", notifyUpdate)
@@ -36,28 +35,40 @@ class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) {
 	private val maxLonInput = new DoubleOptInput("l3maxlon", notifyUpdate)
 
 	def resetForm(): Unit = {
-		???
+		Iterable(
+			titleInput, descriptionInput, timeStartInput, timeStopInput,
+			temporalResInput, externalPageInput, minLatInput, minLonInput,
+			maxLatInput, maxLonInput
+		).foreach(_.reset())
 	}
 
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
-		case ItemTypeSelected(Data) => resetForm()
-		case ItemTypeSelected(_) => htmlElements.hide()
-		case ObjSpecSelected(spec) =>
-			if(spec.dataLevel == 3) htmlElements.show() else htmlElements.hide()
+		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
+		case LevelSelected(level) => onLevelSelected(level)
 	}
 
-	private def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
+	private def onLevelSelected(level: Int): Unit = if(level == 3) show() else hide()
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo match{
 			case Left(l3) =>
-				???
-				htmlElements.show()
+				titleInput.value = l3.title
+				descriptionInput.value = l3.description
+				timeStartInput.value = l3.temporal.interval.start
+				timeStopInput.value = l3.temporal.interval.stop
+				temporalResInput.value = l3.temporal.resolution
+				externalPageInput.value = l3.customLandingPage
+				val box = l3.spatial.left.toOption
+				minLatInput.value = box.map(_.min.lat)
+				minLonInput.value = box.map(_.min.lon)
+				maxLatInput.value = box.map(_.max.lat)
+				maxLonInput.value = box.map(_.max.lon)
+				show()
 			case _ =>
-				htmlElements.hide()
+				hide()
 		}
 		case _ =>
-			htmlElements.hide()
+			hide()
 	}
 }

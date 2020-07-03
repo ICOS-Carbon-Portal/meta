@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
 import UploadApp.{hideAlert, showAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms._
+import se.lu.nateko.cp.meta.ElaboratedProductMetadata
 
 class Form(
 	subms: IndexedSeq[SubmitterProfile],
@@ -31,12 +32,28 @@ class Form(
 	val collPanel = new CollectionPanel
 	val l3Panel = new L3Panel
 
-	val productionElements = new HtmlElements(".production-section")
-
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
 		case FormInputUpdated => updateButton()
+		case LevelSelected(3) => addProductionButton.disable("")
+		case ModeChanged => resetForm()
+		case ItemTypeSelected(itemType) =>
+			resetForm()
+			itemType match{
+				case Data => dataPanel.show()
+				case Collection => collPanel.show()
+				case _ =>
+			}
 	}
+
+	def resetForm(): Unit = {
+		subforms.foreach{sf =>
+			sf.resetForm()
+			sf.hide()
+		}
+	}
+
+	def subforms = Seq(dataPanel, acqPanel, prodPanel, collPanel, l3Panel)
 
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
@@ -87,13 +104,14 @@ class Form(
 
 	val addProductionButton: Button = new Button("addproductionbutton", () => {
 		addProductionButton.disable("")
-		productionElements.show()
+		prodPanel.show()
 		updateButton()
 	})
 
 	val removeProductionButton = new Button("removeproductionbutton", () => {
 		addProductionButton.enable()
-		productionElements.hide()
+		prodPanel.hide()
+		prodPanel.resetForm()
 		updateButton()
 	})
 
@@ -110,20 +128,35 @@ class Form(
 		hash <- aboutPanel.itemHash;
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
-		station <- acqPanel.station;
 		objSpec <- dataPanel.objSpec;
-		acqInterval <- acqPanel.timeInterval;
-		nRows <- dataPanel.nRows;
-		samplingPoint <- acqPanel.samplingPoint;
-		samplingHeight <- acqPanel.samplingHeight;
-		instrumentUri <- acqPanel.instrUri;
-		production <- prodPanel.dataProductionDto
+		specInfo <- specificInfo
 	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
 		objectSpecification = objSpec.uri,
 		fileName = file,
-		specificInfo = Right(
+		specificInfo = specInfo,
+		isNextVersionOf = previousVersion,
+		preExistingDoi = doi,
+		references = Some(
+			References(
+				citationString = None,
+				keywords = dataPanel.keywords.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
+			)
+		)
+	)
+
+	def specificInfo: Try[Either[ElaboratedProductMetadata, StationDataMetadata]] = dataPanel.objSpec.flatMap{spec =>
+		if(spec.dataLevel == 3) l3Panel.meta(prodPanel.dataProductionDto).map(Left.apply)
+		else for(
+			station <- acqPanel.station;
+			acqInterval <- acqPanel.timeInterval;
+			nRows <- dataPanel.nRows;
+			samplingPoint <- acqPanel.samplingPoint;
+			samplingHeight <- acqPanel.samplingHeight;
+			instrumentUri <- acqPanel.instrUri;
+			production <- prodPanel.dataProductionDtoOpt
+		) yield Right(
 			StationDataMetadata(
 				station = station.uri,
 				site = acqPanel.site.flatten.map(_.uri),
@@ -134,16 +167,8 @@ class Form(
 				nRows = nRows,
 				production = production
 			)
-		),
-		isNextVersionOf = previousVersion,
-		preExistingDoi = doi,
-		references = Some(
-			References(
-				citationString = None,
-				keywords = dataPanel.keywords.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
-			)
 		)
-	)
+	}
 
 	def staticCollectionDto: Try[StaticCollectionDto] = for(
 		title <- collPanel.title;

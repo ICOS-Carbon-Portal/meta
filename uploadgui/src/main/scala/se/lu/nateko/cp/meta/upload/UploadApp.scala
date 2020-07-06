@@ -28,9 +28,16 @@ object UploadApp {
 	}
 
 	private def setupForm(implicit envri: Envri, envriConf: EnvriConfig) = {
-		whenDone(Backend.submitterIds.zip(Backend.getObjSpecs)){ case (subms, objSpecs) =>
+		val submsFut = Backend.submitterIds
+		val specsFut = Backend.getObjSpecs
+		val spatCovsFut = Backend.getL3SpatialCoverages
+
+		val formFut = for(subms <- submsFut; objSpecs <- specsFut; spatCovs <- spatCovsFut) yield{
 			implicit val bus = new PubSubBus
-			val form = new Form(subms, objSpecs, upload _)
+			new Form(subms, objSpecs, spatCovs, upload _)
+		}
+
+		whenDone(formFut){ _ =>
 			loginBlock.hide()
 			formBlock.show()
 			headerButtons.show()

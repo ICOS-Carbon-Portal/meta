@@ -22,6 +22,7 @@ import se.lu.nateko.cp.meta.ElaboratedProductMetadata
 class Form(
 	subms: IndexedSeq[SubmitterProfile],
 	objSpecs: IndexedSeq[ObjSpec],
+	spatCovs: IndexedSeq[SpatialCoverage],
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
@@ -30,7 +31,7 @@ class Form(
 	val acqPanel = new AcquisitionPanel
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel
-	val l3Panel = new L3Panel
+	val l3Panel = new L3Panel(spatCovs)
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)

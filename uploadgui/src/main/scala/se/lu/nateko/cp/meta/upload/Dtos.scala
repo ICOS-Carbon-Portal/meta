@@ -14,3 +14,5 @@ case class InitAppInfo(userEmail: Option[String], envri: Envri, envriConfig: Env
 case class Site(uri: URI, name: String)
 
 case class SamplingPoint(uri: URI, latitude: Double, longitude: Double, name: String)
+
+class SpatialCoverage(val uri: URI, val label: String)

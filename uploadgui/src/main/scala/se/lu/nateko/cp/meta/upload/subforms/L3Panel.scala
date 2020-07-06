@@ -15,7 +15,7 @@ import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 
-class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".l3-section"){
+class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".l3-section"){
 
 	def meta(productionDto: => Try[DataProductionDto]): Try[ElaboratedProductMetadata] = ???
 
@@ -27,12 +27,17 @@ class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(
 	private val timeStopInput = new InstantInput("l3stopinput", notifyUpdate)
 	private val timeIntevalInput = new TimeIntevalInput(timeStartInput, timeStopInput)
 	private val temporalResInput = new TextOptInput("l3tempres", notifyUpdate)
+	private val spatialCovSelect = new Select[SpatialCoverage]("l3spatcoverselect", _.label, autoselect = false, onSpatCoverSelected)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 
 	private val minLatInput = new DoubleOptInput("l3minlat", notifyUpdate)
 	private val minLonInput = new DoubleOptInput("l3minlon", notifyUpdate)
 	private val maxLatInput = new DoubleOptInput("l3maxlat", notifyUpdate)
 	private val maxLonInput = new DoubleOptInput("l3maxlon", notifyUpdate)
+
+	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
+
+	spatialCovSelect.setOptions(customSpatCov +: covs)
 
 	def resetForm(): Unit = {
 		Iterable(
@@ -49,6 +54,11 @@ class L3Panel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(
 	}
 
 	private def onLevelSelected(level: Int): Unit = if(level == 3) show() else hide()
+
+	private def onSpatCoverSelected(): Unit = {
+		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()
+		else spatCoverElements.hide()
+	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo match{

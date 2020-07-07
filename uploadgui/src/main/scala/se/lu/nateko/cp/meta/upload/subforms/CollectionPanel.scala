@@ -19,7 +19,7 @@ class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection
 	def description = collectionDescription.value
 	def members = collectionMembers.value.withErrorContext("Collection members (list of object urls)")
 
-	private val collectionTitle = new TextInput("collectiontitle", notifyUpdate)
+	private val collectionTitle = new TextInput("collectiontitle", notifyUpdate, "collection title")
 	private val collectionDescription = new TextOptInput("collectiondescription", notifyUpdate)
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
 

@@ -26,6 +26,8 @@ object Utils {
 		case element: T => element
 	}.toIndexedSeq
 
+	def deepClone[T <: html.Element](elem: T): T = elem.cloneNode(true).asInstanceOf[T]
+
 	def fail(msg: String) = Failure(new Exception(msg))
 
 	implicit class TryWithErrorEnrichment[T](val inner: Try[T]) extends AnyVal{

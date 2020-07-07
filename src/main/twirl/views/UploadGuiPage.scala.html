@@ -276,6 +276,22 @@
 							<label for="l3maxlon">Max longitude</label>
 							<input id="l3maxlon" type="text" class="form-element form-control">
 						</div>
+						<div class="form-group" id="l3varinfo-form">
+							<label for="l3varadd-button">Variable info</label>
+							<button type="button" id="l3varadd-button" class="btn btn-default" aria-label="Add variable">
+								<span class="glyphicon glyphicon-plus"></span>
+							</button>
+							<div class="input-group l3varinfo-element" style="display: none;">
+								<input type="text" class="form-control varnameInput" placeholder="variable name">
+								<input type="text" class="form-control minValueInput" placeholder="minimum value">
+								<input type="text" class="form-control maxValueInput" placeholder="maximum value">
+								<div class="input-group-btn">
+									<button type="button" class="btn btn-default varInfoButton" aria-label="Remove variable">
+										<span class="glyphicon glyphicon-remove"></span>
+									</button>
+								</div>
+							</div>
+						</div>
 						<div class="form-group">
 							<label for="l3landingpage">Third-party landing page @optional</label>
 							<input id="l3landingpage" type="text" class="form-element form-control">

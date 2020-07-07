@@ -61,7 +61,7 @@ class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Inst
 	s => Try(Instant.parse(s)),
 	i => i.toString()
 )
-class TextInput(elemId: String, cb: () => Unit) extends GenericTextInput[String](elemId, cb, fail("Missing title"))(s => Try(s), s => s)
+class TextInput(elemId: String, cb: () => Unit, hint: String) extends GenericTextInput[String](elemId, cb, fail(s"Missing $hint"))(s => Try(s), s => s)
 
 class HashOptInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
@@ -85,6 +85,9 @@ class HashOptListInput(elemId: String, cb: () => Unit)
 class IntOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Int](elemId, cb)(s => Try(Some(s.toInt)), _.toString())
 class FloatOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Float](elemId, cb)(s => Try(Some(s.toFloat)), _.toString())
 class DoubleOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Double](elemId, cb)(s => Try(Some(s.toDouble)), _.toString())
+class DoubleInput(elemId: String, cb: () => Unit) extends GenericTextInput[Double](elemId, cb, fail("not a double number"))(
+	s => Try(s.toDouble), _.toString()
+)
 
 class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Doi](elemId, cb)(s => Doi.parse(s) match {
 	case Success(doi) => Success(Some(doi))

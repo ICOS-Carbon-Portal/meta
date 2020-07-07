@@ -29,7 +29,7 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
-	private val keywordsInput = new TextInput("keywords", () => ())
+	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -64,10 +64,10 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: E
 				onSpecSelected()
 			}
 			keywordsInput.value = dto.references.fold("")(_.keywords.fold("")(_.mkString(", ")))
-			dto.specificInfo match {
-				case Right(l2) => nRowsInput.value = l2.nRows
-				case _ =>
-			}
+			dto.specificInfo.fold(
+				_ => nRowsInput.reset(),
+				l2 => nRowsInput.value = l2.nRows
+			)
 
 			show()
 		case _ =>

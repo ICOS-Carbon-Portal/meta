@@ -54,7 +54,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 	private val fileElement = new HtmlElements("#file-element")
 	private val fileNameElement = new HtmlElements("#filename-element")
 	private val fileInput = new FileInput("fileinput", notifyUpdate)
-	private val fileNameInput = new TextInput("filename", notifyUpdate)
+	private val fileNameInput = new TextInput("filename", notifyUpdate, "file name")
 	private val previousVersionInput = new HashOptInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")

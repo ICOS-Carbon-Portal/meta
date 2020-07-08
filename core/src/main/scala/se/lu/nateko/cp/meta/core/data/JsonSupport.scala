@@ -13,7 +13,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
 	implicit val positionFormat = jsonFormat3(Position.apply)
-	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
+	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
 	implicit val geoPolygonFormat = jsonFormat1(Polygon)
 	implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)

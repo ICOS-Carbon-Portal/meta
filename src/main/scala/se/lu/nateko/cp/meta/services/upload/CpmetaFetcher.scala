@@ -48,7 +48,8 @@ trait CpmetaFetcher extends FetchingHelper{
 			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
 			Option.empty
 		),
-		label = getOptionalString(cov, RDFS.LABEL)
+		label = getOptionalString(cov, RDFS.LABEL),
+		uri = Some(cov.toJava)
 	)
 
 	protected def getDataProduction(obj: IRI, prod: IRI, fetcher: PlainStaticObjectFetcher) = DataProduction(

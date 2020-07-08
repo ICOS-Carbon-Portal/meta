@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
 import java.text.DecimalFormat
+import java.net.URI
 
 sealed trait GeoFeature{
 	def geoJson: String
@@ -28,7 +29,7 @@ object PositionUtil{
 	def format6(d: Double): String = numForm.format(d).replace(',', '.')
 }
 
-case class LatLonBox(min: Position, max: Position, label: Option[String]) extends GeoFeature{
+case class LatLonBox(min: Position, max: Position, label: Option[String], uri: Option[URI]) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Polygon",
 	|	"coordinates": [

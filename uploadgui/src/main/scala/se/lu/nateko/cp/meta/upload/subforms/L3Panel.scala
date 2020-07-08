@@ -43,13 +43,14 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 
 	def spatialCoverage: Try[Either[LatLonBox, URI]] = spatialCovSelect
 		.value.withMissingError("spatial coverage").flatMap{spCov =>
-			if(spCov == customSpatCov) {
+			if(spCov eq customSpatCov) {
 				for(
 					minLat <- minLatInput.value;
 					minLon <- minLonInput.value;
 					maxLat <- maxLatInput.value;
-					maxLon <- maxLonInput.value
-				) yield Left(LatLonBox(Position(minLat, minLon, None), Position(maxLat, maxLon, None), None))
+					maxLon <- maxLonInput.value;
+					label <- spatCovLabel.value
+				) yield Left(LatLonBox(Position(minLat, minLon, None), Position(maxLat, maxLon, None), label, None))
 			} else Success(Right(spCov.uri))
 		}
 	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
@@ -64,6 +65,7 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 
+	private val spatCovLabel = new TextOptInput("l3spatcoverlabel", () => ())
 	private val minLatInput = new DoubleInput("l3minlat", notifyUpdate)
 	private val minLonInput = new DoubleInput("l3minlon", notifyUpdate)
 	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)
@@ -76,9 +78,9 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 	def resetForm(): Unit = {
 		Iterable(
 			titleInput, descriptionInput, timeStartInput, timeStopInput,
-			temporalResInput, externalPageInput, minLatInput, minLonInput,
-			maxLatInput, maxLonInput
+			temporalResInput, externalPageInput
 		).foreach(_.reset())
+		resetLatLonBox()
 	}
 
 	bus.subscribe{
@@ -92,6 +94,7 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 	private def onSpatCoverSelected(): Unit = {
 		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()
 		else spatCoverElements.hide()
+		notifyUpdate()
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
@@ -110,12 +113,12 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 						minLonInput.value = box.min.lon
 						maxLatInput.value = box.max.lat
 						maxLonInput.value = box.max.lon
+						spatCovLabel.value = box.label
 						spatialCovSelect.value = customSpatCov
+						spatCoverElements.show()
 					case Right(covUri) =>
-						minLatInput.reset()
-						minLonInput.reset()
-						maxLatInput.reset()
-						maxLonInput.reset()
+						resetLatLonBox()
+						spatCoverElements.hide()
 						covs.find(_.uri == covUri).fold(spatialCovSelect.reset()){
 							cov => spatialCovSelect.value = cov
 						}
@@ -126,5 +129,10 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 		}
 		case _ =>
 			hide()
+	}
+
+	private def resetLatLonBox(): Unit = {
+		spatCovLabel.reset()
+		Seq(minLatInput, minLonInput, maxLatInput, maxLonInput).foreach(_.reset())
 	}
 }

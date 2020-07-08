@@ -171,7 +171,9 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 
 		meta.specificInfo match{
 			case Left(l3meta) =>
-				for(vars <- l3meta.variables; dsSpec <- spec.datasetSpec){
+				for(vars <- l3meta.variables) spec.datasetSpec.fold[Unit]{
+					errors += s"Data object specification ${spec.self} lacks a dataset specification; cannot accept variable info."
+				}{dsSpec =>
 					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.uri.toRdf)
 					vars.foreach{varInfo =>
 						if(valTypeLookup.lookup(varInfo.label).isEmpty) errors +=

@@ -67,12 +67,10 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
-		val cov = vocab.getSpatialCoverage(hash)
 		val (subj, pred) = sp
 		val isProvTime = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
 
 		if(subj == acq && isProvTime) Sticky
-		else if(pred === metaVocab.hasSpatialCoverage || subj == cov) Sticky
 		else if(subj == subm && isProvTime) Fixed
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
 		else if(pred === metaVocab.hasNumberOfRows) Sticky

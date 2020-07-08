@@ -98,7 +98,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
 		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(spatial.geoJson)) +:
 		(spatial match{
-			case LatLonBox(min, max, labelOpt) =>
+			case LatLonBox(min, max, labelOpt, _) =>
 				Seq(
 					makeSt(covUri, RDF.TYPE, metaVocab.latLonBoxClass),
 					makeSt(covUri, metaVocab.hasNothernBound, vocab.lit(max.lat)),

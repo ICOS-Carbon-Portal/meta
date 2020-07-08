@@ -18,25 +18,25 @@
     <Import>http://meta.icos-cp.eu/ontologies/cpmeta/</Import>
     <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
     <Declaration>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-    </Declaration>
-    <Declaration>
-        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty4"/>
-    </Declaration>
-    <Declaration>
-        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
-    </Declaration>
-    <Declaration>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-    </Declaration>
-    <Declaration>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
     </Declaration>
     <Declaration>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
     </Declaration>
     <Declaration>
-        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty4"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
     </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
@@ -71,6 +71,16 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetVariable</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>

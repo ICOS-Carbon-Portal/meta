@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.api
 
 import java.net.URI
 import scala.concurrent.{ ExecutionContextExecutor, Future }
+import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -16,6 +17,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
+import se.lu.nateko.cp.meta.utils.async.timeLimit
 
 case class Statistics(count: Int)
 
@@ -34,8 +36,10 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 	}
 
 	private def getStatistic(uri: Uri): Future[Option[Int]] = {
-		http.singleRequest(
-			HttpRequest(uri = uri)
+		timeLimit(
+			http.singleRequest(HttpRequest(uri = uri)),
+			2.seconds,
+			system.scheduler
 		).flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>

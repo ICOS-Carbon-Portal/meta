@@ -13,7 +13,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
 	implicit val positionFormat = jsonFormat3(Position.apply)
-	implicit val spatialCoverageFormat = jsonFormat3(LatLonBox)
+	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
 	implicit val geoPolygonFormat = jsonFormat1(Polygon)
 	implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
@@ -75,10 +75,13 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
 
-	implicit val l2SpecificMetaFormat = jsonFormat4(L2OrLessSpecificMeta)
-	implicit val l3SpecificMetaFormat = jsonFormat5(L3SpecificMeta)
+	implicit val valueTypeFormat = jsonFormat3(ValueType)
+	implicit val columnInfoFormat = jsonFormat2(ColumnInfo)
+	implicit val l3VarInfoFormat = jsonFormat3(L3VarInfo)
+	implicit val l2SpecificMetaFormat = jsonFormat5(L2OrLessSpecificMeta)
+	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
-	implicit val TabularIngestionFormat = jsonFormat2(TabularIngestionExtract)
+	implicit val tabularIngestionFormat = jsonFormat2(TabularIngestionExtract)
 	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
 	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)
 	implicit val socatUploadCompletionFormat = jsonFormat2(SpatialTimeSeriesUploadCompletion)

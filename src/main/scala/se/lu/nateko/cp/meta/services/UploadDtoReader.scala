@@ -22,7 +22,10 @@ import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.DocObjectDto
+import se.lu.nateko.cp.meta.L3VarDto
 import se.lu.nateko.cp.meta.core.data.DataProduction
+import se.lu.nateko.cp.meta.core.data.LatLonBox
+import java.net.URI
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader._
@@ -49,10 +52,12 @@ object UploadDtoReader{
 				case Left(l3) => Left(ElaboratedProductMetadata(
 					title = l3.title,
 					description = l3.description,
-					spatial = Left(l3.spatial),
+					spatial = readCoverage(l3.spatial),
 					temporal = l3.temporal,
 					production = dataProductionToDto(l3.productionInfo),
-					customLandingPage = None))
+					customLandingPage = None,
+					variables = l3.variables.map(_.map(vi => L3VarDto(vi.label, minMax = vi.minMax)))
+				))
 				case Right(l2) => Right(StationDataMetadata(
 					station = l2.acquisition.station.org.self.uri,
 					site = l2.acquisition.site.map(_.self.uri),
@@ -121,5 +126,10 @@ object UploadDtoReader{
 		}),
 		creationDate = prod.dateTime
 	)
+
+	private def readCoverage(box: LatLonBox) = box.uri.fold[Either[LatLonBox, URI]](Left(box)){
+		case CpVocab.SpatialCoverage(_) => Left(box)
+		case uri => Right(uri)
+	}
 
 }

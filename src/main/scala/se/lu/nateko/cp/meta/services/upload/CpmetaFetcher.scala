@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.util.Try
@@ -47,7 +48,8 @@ trait CpmetaFetcher extends FetchingHelper{
 			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
 			Option.empty
 		),
-		label = getOptionalString(cov, RDFS.LABEL)
+		label = getOptionalString(cov, RDFS.LABEL),
+		uri = Some(cov.toJava)
 	)
 
 	protected def getDataProduction(obj: IRI, prod: IRI, fetcher: PlainStaticObjectFetcher) = DataProduction(
@@ -137,7 +139,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getLocation)
 	)
 
-	protected def getL3Meta(dobj: IRI, prodOpt: Option[DataProduction]): L3SpecificMeta = {
+	protected def getL3Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): L3SpecificMeta = {
 
 		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
 		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
@@ -148,11 +150,14 @@ trait CpmetaFetcher extends FetchingHelper{
 			description = getOptionalString(dobj, metaVocab.dcterms.description),
 			spatial = getLatLonBox(cov),
 			temporal = getTemporalCoverage(dobj),
-			productionInfo = prod
+			productionInfo = prod,
+			variables = Some(
+				server.getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup))
+			).filter(_.nonEmpty)
 		)
 	}
 
-	protected def getL2Meta(dobj: IRI, prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
@@ -174,7 +179,21 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map(getCoverage)
 
-		L2OrLessSpecificMeta(acq, prod, nRows, coverage)
+		val columns = getOptionalString(dobj, metaVocab.hasActualColumnNames).flatMap(parseJsonStringArray)
+			.map{
+				_.map{colName =>
+					val valType = getValueType(vtLookup.lookupOrFail(colName))
+					ColumnInfo(colName, valType)
+				}.toIndexedSeq
+			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
+				Some(
+					vtLookup.plainMandatory.map{
+						case (colName, valTypeIri) => ColumnInfo(colName, getValueType(valTypeIri))
+					}
+				)
+			}.filter(_.nonEmpty)
+
+		L2OrLessSpecificMeta(acq, prod, nRows, coverage, columns)
 	}
 
 	private def getCoverage(covUri: IRI): GeoFeature = {
@@ -202,4 +221,41 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
+	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
+		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
+
+	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): L3VarInfo = {
+		val label = getSingleString(vi, RDFS.LABEL)
+		L3VarInfo(
+			label,
+			valueType = getValueType(vtLookup.lookupOrFail(label)),
+			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
+				getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
+			}
+		)
+	}
+
+	private def getValueType(vt: IRI) = ValueType(
+		getLabeledResource(vt),
+		getOptionalUri(vt, metaVocab.hasQuantityKind).map(getLabeledResource),
+		getOptionalString(vt, metaVocab.hasUnit)
+	)
+
+	private def getDatasetVars(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasVariable).map{dv =>
+		new DatasetVariable[IRI](
+			title = getSingleString(dv, metaVocab.hasVariableTitle),
+			valueType = getSingleUri(dv, metaVocab.hasValueType),
+			isRegex = getOptionalBool(dv, metaVocab.isRegexVariable).getOrElse(false),
+			isOptional = getOptionalBool(dv, metaVocab.isOptionalVariable).getOrElse(false)
+		)
+	}
+
+	private def getDatasetColumns(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasColumn).map{dv =>
+		new DatasetVariable[IRI](
+			title = getSingleString(dv, metaVocab.hasColumnTitle),
+			valueType = getSingleUri(dv, metaVocab.hasValueType),
+			isRegex = getOptionalBool(dv, metaVocab.isRegexColumn).getOrElse(false),
+			isOptional = getOptionalBool(dv, metaVocab.isOptionalColumn).getOrElse(false)
+		)
+	}
 }

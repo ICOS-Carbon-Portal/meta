@@ -49,6 +49,9 @@ trait FetchingHelper {
 	protected def getOptionalFloat(subj: IRI, pred: IRI): Option[Float] =
 		server.getFloatValues(subj, pred, InstanceServer.AtMostOne).headOption
 
+	protected def getOptionalBool(subj: IRI, pred: IRI): Option[Boolean] =
+		server.getLiteralValues(subj, pred, XMLSchema.BOOLEAN, InstanceServer.AtMostOne).headOption.map(_.toLowerCase == "true")
+
 	protected def getSingleDouble(subj: IRI, pred: IRI): Double =
 		server.getDoubleValues(subj, pred, InstanceServer.ExactlyOne).head
 

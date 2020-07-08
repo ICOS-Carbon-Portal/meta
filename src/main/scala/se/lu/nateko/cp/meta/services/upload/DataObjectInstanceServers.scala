@@ -32,7 +32,7 @@ class DataObjectInstanceServers(
 	val metaVocab = new CpmetaVocab(factory)
 	val vocab = new CpVocab(factory)
 
-	private val metaFetchers = metaServers.map{case (envri, instServer) =>
+	val metaFetchers = metaServers.map{case (envri, instServer) =>
 		envri -> new CpmetaFetcher{
 			override protected val server = instServer
 		}

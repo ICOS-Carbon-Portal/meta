@@ -74,15 +74,21 @@ case class L2OrLessSpecificMeta(
 	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction],
 	nRows: Option[Int],
-	coverage: Option[GeoFeature]
+	coverage: Option[GeoFeature],
+	columns: Option[Seq[ColumnInfo]]
 )
+
+case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
+case class L3VarInfo(label: String, valueType: ValueType, minMax: Option[(Double, Double)])
+case class ColumnInfo(label: String, valueType: ValueType)
 
 case class L3SpecificMeta(
 	title: String,
 	description: Option[String],
 	spatial: LatLonBox,
 	temporal: TemporalCoverage,
-	productionInfo: DataProduction
+	productionInfo: DataProduction,
+	variables: Option[Seq[L3VarInfo]]
 )
 
 sealed trait StaticObject{

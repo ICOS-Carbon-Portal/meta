@@ -44,12 +44,14 @@
 		margin: 5vh 0;
 	}
 	.data-section,
+	.acq-section,
+	.l3-section,
+	.l3spatcover-element,
 	.collection-section,
 	.production-section {
 		display: none;
 	}
 	.filename {
-		display: none;
 		overflow-wrap: break-word;
 	}
 	#latitude-element,
@@ -71,7 +73,7 @@
 		}
 	}
 	@if(envri == Envri.SITES) {
-		.keywords-block {
+		.keywords-block, .l3option {
 			display: none;
 		}
 	}
@@ -86,7 +88,7 @@
 		</div>
 		<form id="form-block" class="form">
 			<div class="row">
-				<section class="col-md-4">
+				<section class="col-md-4 about-section">
 					<div class="form-section panel panel-default">
 					<h2>About</h2>
 					<div class="form-group">
@@ -135,6 +137,9 @@
 					<div class="form-group" id="file-element">
 						<label for="fileinput">File</label>
 						<input id="fileinput" type="file" placeholder="Select file for upload">
+					</div>
+					<div class="form-group" id="filename-element">
+						<label for="filename">File name</label>
 						<input id="filename" class="form-element form-control filename" type="text">
 					</div>
 					<div class="form-group">
@@ -166,6 +171,10 @@
 										<input type="radio" name="level" value="2" class="js-level">
 										2
 									</label>
+									<label class="radio-inline l3option">
+										<input type="radio" name="level" value="3" class="js-level">
+										3
+									</label>
 								</div>
 							</div>
 						</div>
@@ -183,7 +192,7 @@
 						</div>
 					</div>
 				</section>
-				<section class="col-md-4 data-section">
+				<section class="col-md-4 acq-section">
 					<div class="form-section panel panel-default">
 						<h2>Acquisition</h2>
 						<div class="form-group">
@@ -221,6 +230,75 @@
 						<div class="form-group">
 							<label for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
 							<textarea name="instrumenturi" id="instrumenturi" rows="2" cols="80" class="form-element"></textarea>
+						</div>
+					</div>
+				</section>
+				<section class="col-md-4 l3-section">
+					<div class="form-section panel panel-default">
+						<h2>L3 metadata</h2>
+						<div class="form-group">
+							<label for="l3title">Title</label>
+							<input id="l3title" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3descr">Description @optional </label>
+							<textarea id="l3descr" rows="2" cols="80" class="form-element"></textarea>
+						</div>
+						<div class="form-group">
+							<label for="l3startinput">From (UTC)</label>
+							<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3stopinput">To (UTC)</label>
+							<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3tempres">Temporal resolution @optional</label>
+							<input id="l3tempres" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group">
+							<label for="l3spatcoverselect">Spatial coverage</label>
+							<select id="l3spatcoverselect" class="form-element"></select>
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3spatcoverlabel">Label @optional</label>
+							<input id="l3spatcoverlabel" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3minlat">Min latitude</label>
+							<input id="l3minlat" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3minlon">Min longitude</label>
+							<input id="l3minlon" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3maxlat">Max latitude</label>
+							<input id="l3maxlat" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group l3spatcover-element">
+							<label for="l3maxlon">Max longitude</label>
+							<input id="l3maxlon" type="text" class="form-element form-control">
+						</div>
+						<div class="form-group" id="l3varinfo-form">
+							<label for="l3varadd-button">Variable info</label>
+							<button type="button" id="l3varadd-button" class="btn btn-default" aria-label="Add variable">
+								<span class="glyphicon glyphicon-plus"></span>
+							</button>
+							<div class="input-group l3varinfo-element" style="display: none;">
+								<input type="text" class="form-control varnameInput" placeholder="variable name">
+								<input type="text" class="form-control minValueInput" placeholder="minimum value">
+								<input type="text" class="form-control maxValueInput" placeholder="maximum value">
+								<div class="input-group-btn">
+									<button type="button" class="btn btn-default varInfoButton" aria-label="Remove variable">
+										<span class="glyphicon glyphicon-remove"></span>
+									</button>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="l3landingpage">Third-party landing page @optional</label>
+							<input id="l3landingpage" type="text" class="form-element form-control">
 						</div>
 					</div>
 				</section>
@@ -291,6 +369,10 @@
 
 @optionalsite = @{
 	if (envri == Envri.ICOS) <em class="text-muted">- optional</em>
+}
+
+@optional = {
+	<em class="text-muted">- optional</em>
 }
 
 @header = {

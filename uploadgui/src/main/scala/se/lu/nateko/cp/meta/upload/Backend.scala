@@ -56,6 +56,10 @@ object Backend {
 	def getSamplingPoints(site: URI): Future[IndexedSeq[SamplingPoint]] =
 		sparqlSelect(samplingpoints(site)).map((_.map(toSamplingPoint)))
 
+	def getL3SpatialCoverages(implicit envri: Envri.Envri): Future[IndexedSeq[SpatialCoverage]] =
+		if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
+		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
+
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){

@@ -255,6 +255,11 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 				updateCategSet(categMap(prop), strVal, idx)
 			}
 
+		def updateHasVarList(idx: Int): Unit = {
+			val hasVarsBm = boolBitmap(HasVarList)
+			if(isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
+		}
+
 		pred match{
 
 			case `hasObjectSpec` => obj match{
@@ -377,8 +382,15 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 
 			case `hasActualColumnNames` => modForDobj(subj){oe =>
 				updateStrArrayProp(VariableName, parseJsonStringArray, oe.idx)
-				val hasVarsBm = boolBitmap(HasVarList)
-				if(isAssertion) hasVarsBm.add(oe.idx) else hasVarsBm.remove(oe.idx)
+				updateHasVarList(oe.idx)
+			}
+
+			case `hasActualVariable` => obj match{
+				case CpVocab.VarInfo(hash, varName) =>
+					val oe = getObjEntry(hash)
+					updateCategSet(categMap(VariableName), varName, oe.idx)
+					updateHasVarList(oe.idx)
+				case _ =>
 			}
 
 			case `hasKeywords` => modForDobj(subj){oe =>

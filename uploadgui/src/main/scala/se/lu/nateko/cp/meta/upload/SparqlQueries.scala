@@ -22,6 +22,7 @@ object SparqlQueries {
 		|FROM <http://meta.icos-cp.eu/resources/icos/>
 		|FROM <http://meta.icos-cp.eu/resources/cpmeta/>
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|FROM <http://meta.icos-cp.eu/resources/extrastations/>
 		|WHERE {
 		| ?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
 		| $orgFilter }
@@ -73,4 +74,16 @@ object SparqlQueries {
 	}
 
 	def toObjSpec(b: Binding) = ObjSpec(new URI(b("spec")), b("name"), b("dataLevel").toInt, b.contains("dataset"))
+
+	//Only for ICOS for now
+	def l3spatialCoverages = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select *
+		|from <http://meta.icos-cp.eu/resources/cpmeta/>
+		|where{
+		|	{{?cov a cpmeta:SpatialCoverage } union {?cov a cpmeta:LatLonBox}}
+		|	?cov rdfs:label ?label
+		|}
+		|""".stripMargin
+
+	def toSpatialCoverage(b: Binding) = new SpatialCoverage(new URI(b("cov")), b("label"))
 }

@@ -60,13 +60,16 @@ case class StationDataMetadata(
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 }
 
+case class L3VarDto(label: String, minMax: Option[(Double, Double)])
+
 case class ElaboratedProductMetadata(
 	title: String,
 	description: Option[String],
 	spatial: Either[LatLonBox, URI],
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
-	customLandingPage: Option[URI]
+	customLandingPage: Option[URI],
+	variables: Option[Seq[L3VarDto]]
 )
 
 case class DataProductionDto(

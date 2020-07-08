@@ -42,11 +42,13 @@ class StaticObjectFetcher(
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
 		val spec = getSpecification(specIri, plainFetcher)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
+		val valTypeLookup = getOptionalUri(specIri, metaVocab.containsDataset)
+			.fold(new ValueTypeLookup[IRI](Nil))(getValTypeLookup)
 
 		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))
-				Left(getL3Meta(dobj, production))
+				Left(getL3Meta(dobj, valTypeLookup, production))
 			else
-				Right(getL2Meta(dobj, production))
+				Right(getL2Meta(dobj, valTypeLookup, production))
 
 		DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),

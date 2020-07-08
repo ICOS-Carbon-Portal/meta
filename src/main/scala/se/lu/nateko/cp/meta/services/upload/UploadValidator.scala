@@ -170,7 +170,19 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 		val errors = scala.collection.mutable.Buffer.empty[String]
 
 		meta.specificInfo match{
-			case Left(_) =>
+			case Left(l3meta) =>
+				for(vars <- l3meta.variables) spec.datasetSpec.fold[Unit]{
+					errors += s"Data object specification ${spec.self} lacks a dataset specification; cannot accept variable info."
+				}{dsSpec =>
+					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.uri.toRdf)
+					vars.foreach{varInfo =>
+						if(valTypeLookup.lookup(varInfo.label).isEmpty) errors +=
+							s"Variable name '${varInfo.label}' is not compatible with dataset specification ${dsSpec.uri}"
+						for((min, max) <- varInfo.minMax){
+							if(min > max) errors += s"Declared min value was larger than max value for variable ${varInfo.label}"
+						}
+					}
+				}
 				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"
 
 			case Right(stationMeta) =>

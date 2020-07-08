@@ -17,6 +17,27 @@
     <Prefix name="cpmeta" IRI="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
     <Import>http://meta.icos-cp.eu/ontologies/cpmeta/</Import>
     <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty2"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty3"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:displayProperty4"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+    </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:CentralFacility</AbbreviatedIRI>
@@ -51,6 +72,31 @@
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:DatasetColumn</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetSpec</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:DatasetVariable</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:LatLonBox</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:LatLonBox</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/resources/latlonboxes/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>cpmeta:LatLonBox</AbbreviatedIRI>
+        <Literal>Lat/Lon Box</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>

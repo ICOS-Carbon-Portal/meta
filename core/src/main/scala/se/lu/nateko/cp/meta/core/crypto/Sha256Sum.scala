@@ -28,7 +28,7 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 	 * The amount of combinations (38^24 = 8.22e37) is only 4.14 times less than for a random UUID.
 	 * The number of combinations of a single symbol after upper-casing is 38 = 64 - 26 .
 	 */
-	def id: String = base64Url.substring(0, 24)
+	def id: String = base64Url.substring(0, Sha256Sum.IdLength)
 
 	override def equals(other: Any): Boolean =
 		if(other.isInstanceOf[Sha256Sum]){
@@ -46,6 +46,8 @@ class Sha256Sum(private val bytes: Array[Byte]) {
 }
 
 object Sha256Sum {
+
+	val IdLength = 24
 
 	def fromBase64(hash: String): Try[Sha256Sum] = Try{
 		new Sha256Sum(Base64.getDecoder.decode(hash))

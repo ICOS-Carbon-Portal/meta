@@ -105,15 +105,17 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 
 	
 	private def onItemTypeSelected(itemType: ItemType): Unit = {
-		itemType match {
-			case Collection =>
-				fileElement.hide()
-				fileNameElement.hide()
-			case _ =>
-				fileElement.show()
-				fileNameElement.hide()
-		}
+		setFileAndFilenameVisibility(itemType)
 		bus.publish(ItemTypeSelected(itemType))
+	}
+
+	private def setFileAndFilenameVisibility(itemType: ItemType): Unit = itemType match {
+		case Collection =>
+			fileElement.hide()
+			fileNameElement.hide()
+		case _ =>
+			fileElement.show()
+			fileNameElement.hide()
 	}
 
 	private def onSubmitterSelected(): Unit = submitterIdSelect.value.foreach{subm =>
@@ -166,6 +168,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 				case _ =>
 					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")
 			}.foreach{dto =>
+				typeControl.value.foreach(setFileAndFilenameVisibility)
 				bus.publish(GotUploadDto(dto))
 			}
 		}

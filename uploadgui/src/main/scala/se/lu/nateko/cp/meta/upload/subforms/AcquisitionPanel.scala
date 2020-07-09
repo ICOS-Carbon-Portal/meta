@@ -111,8 +111,6 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 							longitudeInput.value = customPosOpt.map(_.lon)
 							samplingPointSelect.value = sitesInfo.points.selected.map(_.fold(_ => customSamplingPoint, identity))
 					}.andThen{_ =>
-						onStationSelected()
-						onSiteSelected()
 						onSamplingPointSelected()
 						show()
 						notifyUpdate()

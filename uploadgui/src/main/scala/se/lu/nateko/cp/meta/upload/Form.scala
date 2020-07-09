@@ -32,6 +32,9 @@ class Form(
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel
 	val l3Panel = new L3Panel(spatCovs)
+	val submitButton = new Button("submitbutton", submitAction)
+	val addProductionButton = new Button("addproductionbutton", onAddProductionClick)
+	val removeProductionButton = new Button("removeproductionbutton", onRemoveProductionClick)
 
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
@@ -48,6 +51,7 @@ class Form(
 	}
 
 	def resetForm(): Unit = {
+		submitButton.disable("")
 		subforms.foreach{sf =>
 			sf.resetForm()
 			sf.hide()
@@ -95,26 +99,24 @@ class Form(
 			case _ =>
 		}
 	}
-	val submitButton = new Button("submitbutton", () => submitAction())
 
 	private def updateButton(): Unit = dto match {
 		case Success(_) => submitButton.enable()
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
 
-
-	val addProductionButton: Button = new Button("addproductionbutton", () => {
+	private def onAddProductionClick(): Unit = {
 		addProductionButton.disable("")
 		prodPanel.show()
 		updateButton()
-	})
+	}
 
-	val removeProductionButton = new Button("removeproductionbutton", () => {
+	private def onRemoveProductionClick(): Unit = {
 		addProductionButton.enable()
 		prodPanel.hide()
 		prodPanel.resetForm()
 		updateButton()
-	})
+	}
 
 	def dto: Try[UploadDto] = aboutPanel.itemType match {
 		case Some(Data) => dataObjectDto

@@ -1866,10 +1866,16 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn">
-        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable"/>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>

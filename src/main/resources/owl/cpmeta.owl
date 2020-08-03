@@ -2801,7 +2801,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ATC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmosphere thematic center</hasName>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Atmosphere Thematic Centre</hasName>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ATC</rdfs:label>
     </owl:NamedIndividual>
     
@@ -2811,7 +2811,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/ETC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem thematic center</hasName>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ecosystem Thematic Centre</hasName>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS ETC</rdfs:label>
     </owl:NamedIndividual>
     
@@ -2821,7 +2821,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/resources/organizations/OTC">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean thematic center</hasName>
+        <hasName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ocean Thematic Centre</hasName>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS OTC</rdfs:label>
     </owl:NamedIndividual>
     

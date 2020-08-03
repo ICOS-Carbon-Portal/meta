@@ -16,7 +16,7 @@ class InstOntoTests extends AnyFunSpec{
 			val uri = new URI(TestConfig.instOntUri + "atcDirector")
 			val indInfo = instOnto.getIndividual(uri)
 			
-			assert(indInfo.resource.displayName === "Director at Atmosphere thematic center")
+			assert(indInfo.resource.displayName === "Director at Atmosphere Thematic Centre")
 		}
 		
 	}

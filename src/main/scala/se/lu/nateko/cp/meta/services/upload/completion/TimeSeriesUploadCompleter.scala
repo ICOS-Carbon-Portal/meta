@@ -31,11 +31,11 @@ private class TimeSeriesUploadCompleter(
 
 	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = extract match {
 
-		case TimeSeriesUploadCompletion(ingestionExtract, rowsInfo) => Future{
+		case TimeSeriesExtract(ingestionExtract, rowsInfo) => Future{
 			tabularExtractUpdates(hash, ingestionExtract) ++ nRowsUpdates(hash, rowsInfo)
 		}
 
-		case SpatialTimeSeriesUploadCompletion(ingestionExtract, spatial) => Future{
+		case SpatialTimeSeriesExtract(ingestionExtract, spatial) => Future{
 			val news = statementsProd.getGeoFeatureStatements(hash, spatial)
 
 			val objUri = vocab.getStaticObject(hash)

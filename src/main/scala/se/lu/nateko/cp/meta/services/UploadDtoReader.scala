@@ -22,7 +22,6 @@ import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.L3VarDto
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
@@ -56,7 +55,7 @@ object UploadDtoReader{
 					temporal = l3.temporal,
 					production = dataProductionToDto(l3.productionInfo),
 					customLandingPage = None,
-					variables = l3.variables.map(_.map(vi => L3VarDto(vi.label, minMax = vi.minMax)))
+					variables = l3.variables.map(_.map(_.label))
 				))
 				case Right(l2) => Right(StationDataMetadata(
 					station = l2.acquisition.station.org.self.uri,

@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
+import se.lu.nateko.cp.meta.core.data.WdcggExtract
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
@@ -23,7 +23,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 
 private class WdcggUploadCompleter(
 	val server: InstanceServer,
-	result: WdcggUploadCompletion,
+	result: WdcggExtract,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
 )(implicit ctxt: ExecutionContext) extends FormatSpecificCompleter with FetchingHelper {
@@ -35,7 +35,7 @@ private class WdcggUploadCompleter(
 
 	def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = Future{
 		//TODO Add support for idempotence here
-		val WdcggUploadCompletion(ingestionExtract, nRows, keyValues) = result
+		val WdcggExtract(ingestionExtract, nRows, keyValues) = result
 		val facts = scala.collection.mutable.Queue.empty[(IRI, IRI, Value)]
 
 		val objUri = vocab.getStaticObject(hash)

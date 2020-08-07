@@ -64,6 +64,11 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 	import MetadataUpdater._
 	import StatementStability._
 
+	private[this] val stickyPredicates = {
+		import metaVocab._
+		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
+	}
+
 	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
@@ -73,9 +78,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		if(subj == acq && isProvTime) Sticky
 		else if(subj == subm && isProvTime) Fixed
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
-		else if(pred === metaVocab.hasNumberOfRows) Sticky
-		else if(pred === metaVocab.hasCitationString) Sticky
-		else if(pred === metaVocab.hasActualColumnNames) Sticky
+		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain
 	}
 

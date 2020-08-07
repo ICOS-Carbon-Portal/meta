@@ -5,10 +5,14 @@ sealed trait IngestionMetadataExtract
 
 case class UploadCompletionInfo(bytes: Long, ingestionResult: Option[IngestionMetadataExtract])
 
-case class WdcggUploadCompletion(tabular: TabularIngestionExtract, nRows: Int, customMetadata: Map[String, String]) extends IngestionMetadataExtract
+case class NetCdfExtract(varInfo: Seq[VarInfo]) extends IngestionMetadataExtract
 
-case class TimeSeriesUploadCompletion(tabular: TabularIngestionExtract, nRows: Option[Int]) extends IngestionMetadataExtract
+case class VarInfo(name: String, min: Double, max: Double)
 
-case class SpatialTimeSeriesUploadCompletion(tabular: TabularIngestionExtract, coverage: GeoFeature) extends IngestionMetadataExtract
+case class WdcggExtract(tabular: TabularIngestionExtract, nRows: Int, customMetadata: Map[String, String]) extends IngestionMetadataExtract
+
+case class TimeSeriesExtract(tabular: TabularIngestionExtract, nRows: Option[Int]) extends IngestionMetadataExtract
+
+case class SpatialTimeSeriesExtract(tabular: TabularIngestionExtract, coverage: GeoFeature) extends IngestionMetadataExtract
 
 case class TabularIngestionExtract(actualColumns: Option[Seq[String]], interval: TimeInterval)

@@ -18,12 +18,12 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 
 Additionally, this repository contains code for the following visualization web apps (deployed as static pages):
 
-- [Map of the provisional ICOS stations](https://static.icos-cp.eu/share/stations/)
+- [Map of the provisional ICOS stations](https://static.icos-cp.eu/share/stationsproj/)
 - [Table with the provisional station info](https://static.icos-cp.eu/share/stations/table.html)
 
 ---
 ## Upload instructions (manual)
-Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app. At the time of this writing, support for data objects is limited to data levels from 0 to 2 (inclusive). Elaborated products still need to be uploaded using the HTTP API (see the instructions for scripted uploads below).
+Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app.
 
 ---
 ## Upload instructions (scripting)

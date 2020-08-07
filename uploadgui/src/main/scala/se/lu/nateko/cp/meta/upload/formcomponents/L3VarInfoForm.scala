@@ -4,15 +4,14 @@ import scala.util.{Try, Success}
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.upload.Utils._
 import scala.collection.mutable
-import se.lu.nateko.cp.meta.L3VarDto
 
 class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
-	def varInfos: Try[Option[Seq[L3VarDto]]] = if(elems.isEmpty) Success(None) else Try{
+	def varInfos: Try[Option[Seq[String]]] = if(elems.isEmpty) Success(None) else Try{
 		Some(elems.map(_.varInfo.get).toIndexedSeq)
 	}
 
-	def setValues(vars: Option[Seq[L3VarDto]]): Unit = {
+	def setValues(vars: Option[Seq[String]]): Unit = {
 		elems.foreach(_.remove())
 		vars.foreach{vdtos =>
 			vdtos.foreach{vdto =>
@@ -40,16 +39,10 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
 	private class L3VarInfoInput{
 
-		def varInfo: Try[L3VarDto] = for(
-			varName <- varNameInput.value;
-			minOpt <- minValueInput.value;
-			maxOpt <- maxValueInput.value
-		) yield L3VarDto(varName, minOpt.flatMap(min => maxOpt.map(min -> _)))
+		def varInfo: Try[String] = varNameInput.value
 
-		def setValue(vdto: L3VarDto): Unit = {
-			varNameInput.value = vdto.label
-			minValueInput.value = vdto.minMax.map(_._1)
-			maxValueInput.value = vdto.minMax.map(_._2)
+		def setValue(varName: String): Unit = {
+			varNameInput.value = varName
 		}
 
 		def remove(): Unit = {
@@ -66,13 +59,11 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 			button.onclick = _ => remove()
 		}
 
-		Seq("varnameInput", "minValueInput", "maxValueInput").foreach{inputClass =>
+		Seq("varnameInput").foreach{inputClass =>
 			querySelector[html.Input](div, s".$inputClass").foreach{_.id = s"${inputClass}_$id"}
 		}
 
 		private val varNameInput = new TextInput(s"varnameInput_$id", notifyUpdate, "variable name")
-		private val minValueInput = new DoubleOptInput(s"minValueInput_$id", notifyUpdate)
-		private val maxValueInput = new DoubleOptInput(s"maxValueInput_$id", notifyUpdate)
 
 		div.style.display = ""
 

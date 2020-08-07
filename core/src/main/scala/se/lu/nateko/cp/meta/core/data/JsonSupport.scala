@@ -82,26 +82,31 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val l3SpecificMetaFormat = jsonFormat6(L3SpecificMeta)
 
 	implicit val tabularIngestionFormat = jsonFormat2(TabularIngestionExtract)
-	implicit val wdcggUploadCompletionFormat = jsonFormat3(WdcggUploadCompletion)
-	implicit val ecocsvUploadCompletionFormat = jsonFormat2(TimeSeriesUploadCompletion)
-	implicit val socatUploadCompletionFormat = jsonFormat2(SpatialTimeSeriesUploadCompletion)
+	implicit val wdcggExtractFormat = jsonFormat3(WdcggExtract)
+	implicit val varInfoFormat = jsonFormat3(VarInfo)
+	implicit val netCdfExtractFormat = jsonFormat1(NetCdfExtract)
+	implicit val ecocsvExtractFormat = jsonFormat2(TimeSeriesExtract)
+	implicit val socatExtractFormat = jsonFormat2(SpatialTimeSeriesExtract)
 
 	implicit object ingestionMetadataExtractFormat extends JsonFormat[IngestionMetadataExtract]{
 
 		def write(uploadInfo: IngestionMetadataExtract): JsValue = uploadInfo match{
-			case wdcgg: WdcggUploadCompletion => wdcgg.toJson
-			case ts: TimeSeriesUploadCompletion => ts.toJson
-			case sts: SpatialTimeSeriesUploadCompletion => sts.toJson
+			case wdcgg: WdcggExtract => wdcgg.toJson
+			case ts: TimeSeriesExtract => ts.toJson
+			case sts: SpatialTimeSeriesExtract => sts.toJson
+			case ncdf: NetCdfExtract => ncdf.toJson
 		}
 
 		def read(value: JsValue): IngestionMetadataExtract =  value match {
 			case JsObject(fields)  =>
 				if(fields.contains("customMetadata"))
-					value.convertTo[WdcggUploadCompletion]
+					value.convertTo[WdcggExtract]
 				else if(fields.contains("coverage"))
-					value.convertTo[SpatialTimeSeriesUploadCompletion]
+					value.convertTo[SpatialTimeSeriesExtract]
+				else if(fields.contains("varInfo"))
+					value.convertTo[NetCdfExtract]
 				else
-					value.convertTo[TimeSeriesUploadCompletion]
+					value.convertTo[TimeSeriesExtract]
 			case _ =>
 				deserializationError("Expected JS object representing upload completion info")
 		}

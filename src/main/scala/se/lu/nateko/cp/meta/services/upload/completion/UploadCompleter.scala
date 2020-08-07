@@ -10,10 +10,11 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
-import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesUploadCompletion
-import se.lu.nateko.cp.meta.core.data.TimeSeriesUploadCompletion
+import se.lu.nateko.cp.meta.core.data.NetCdfExtract
+import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
+import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.core.data.WdcggUploadCompletion
+import se.lu.nateko.cp.meta.core.data.WdcggExtract
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
@@ -44,11 +45,14 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 					new PidMinter(handles, vocab)
 
 				case Some(extract) => extract match {
-					case wdcgg: WdcggUploadCompletion =>
+					case wdcgg: WdcggExtract =>
 						new WdcggUploadCompleter(server, wdcgg, vocab, metaVocab)
 
-					case _: TimeSeriesUploadCompletion | _: SpatialTimeSeriesUploadCompletion =>
+					case _: TimeSeriesExtract | _: SpatialTimeSeriesExtract =>
 						new TimeSeriesUploadCompleter(server, extract, handles, vocab, metaVocab)
+
+					case netcdf: NetCdfExtract =>
+						new NetCdfUploadCompleter(server, netcdf, vocab, metaVocab)
 				}
 			}
 			(completer, server)

@@ -27,7 +27,6 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.core.data.L3VarInfo
-import se.lu.nateko.cp.meta.L3VarDto
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -196,19 +195,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, vInfo: L3VarDto)(implicit envri: Envri): Seq[Statement] = {
-		val vUri = vocab.getVarInfo(hash, vInfo.label)
+	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(implicit envri: Envri): Seq[Statement] = {
+		val vUri = vocab.getVarInfo(hash, varName)
 		Seq(
 			makeSt(objIri, metaVocab.hasActualVariable, vUri),
 			makeSt(vUri, RDF.TYPE, metaVocab.variableInfoClass),
-			makeSt(vUri, RDFS.LABEL, vocab.lit(vInfo.label)),
-		) ++ vInfo.minMax.toSeq.flatMap{
-			case (min, max) => Seq(
-				makeSt(vUri, metaVocab.hasMinValue, vocab.lit(min)),
-				makeSt(vUri, metaVocab.hasMaxValue, vocab.lit(max))
-			)
-		}
-
+			makeSt(vUri, RDFS.LABEL, vocab.lit(varName))
+		)
 	}
 
 	private def makeSt(subj: IRI, pred: IRI, obj: Iterable[Value]): Iterable[Statement] =

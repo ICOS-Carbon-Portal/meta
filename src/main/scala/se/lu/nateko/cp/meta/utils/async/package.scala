@@ -24,14 +24,15 @@ package object async {
 	)(implicit ec: ExecutionContext): Future[T] = if(future.isCompleted) future else {
 
 		val p = Promise[T]()
+		future.onComplete(p.tryComplete)
 
 		using.scheduleOnce(duration){
 
-			p.failure(new TimeoutException(s"Future timed out after $duration"))
+			p.tryFailure(new TimeoutException(s"Future timed out after $duration"))
 
 		}
 
-		Future.firstCompletedOf(Iterable(future, p.future))
+		p.future
 	}
 
 	def throttle(

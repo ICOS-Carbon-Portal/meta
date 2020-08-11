@@ -114,8 +114,13 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 			fileElement.hide()
 			fileNameElement.hide()
 		case _ =>
-			fileElement.show()
-			fileNameElement.hide()
+			if(isInNewItemMode) {
+				fileElement.show()
+				fileNameElement.hide()
+			} else {
+				fileElement.hide()
+				fileNameElement.show()
+			}
 	}
 
 	private def onSubmitterSelected(): Unit = submitterIdSelect.value.foreach{subm =>

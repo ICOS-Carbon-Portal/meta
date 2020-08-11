@@ -13,6 +13,7 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
 	def setValues(vars: Option[Seq[String]]): Unit = {
 		elems.foreach(_.remove())
+		elems.clear()
 		vars.foreach{vdtos =>
 			vdtos.foreach{vdto =>
 				val input = new L3VarInfoInput
@@ -28,9 +29,6 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
 	private[this] val elems = mutable.Buffer.empty[L3VarInfoInput]
 
-	private def onElemDeleted(elem: L3VarInfoInput): Unit =
-		elems.remove(elems.indexOf(elem))
-
 	querySelector[html.Button](formDiv, "#l3varadd-button").foreach{
 		_.onclick = _ => {
 			elems.append(new L3VarInfoInput)
@@ -45,10 +43,7 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 			varNameInput.value = varName
 		}
 
-		def remove(): Unit = {
-			formDiv.removeChild(div)
-			onElemDeleted(this)
-		}
+		def remove(): Unit = formDiv.removeChild(div)
 
 		private[this] val id: Long = {_ordId += 1; _ordId}
 		private[this] val div = deepClone(template)

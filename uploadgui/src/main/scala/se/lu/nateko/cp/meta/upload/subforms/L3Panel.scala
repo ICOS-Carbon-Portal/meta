@@ -80,6 +80,8 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 			titleInput, descriptionInput, timeStartInput, timeStopInput,
 			temporalResInput, externalPageInput
 		).foreach(_.reset())
+		spatialCovSelect.reset()
+		varInfoForm.setValues(None)
 		resetLatLonBox()
 	}
 

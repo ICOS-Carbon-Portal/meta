@@ -54,7 +54,7 @@ object UploadDtoReader{
 					spatial = readCoverage(l3.spatial),
 					temporal = l3.temporal,
 					production = dataProductionToDto(l3.productionInfo),
-					customLandingPage = None,
+					customLandingPage = dobj.accessUrl.filterNot(uri => uri.getPath.endsWith(dobj.hash.id)),
 					variables = l3.variables.map(_.map(_.label))
 				))
 				case Right(l2) => Right(StationDataMetadata(

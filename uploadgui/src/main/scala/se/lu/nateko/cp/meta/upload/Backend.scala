@@ -62,7 +62,7 @@ object Backend {
 
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int]
-	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset){
+	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset && spec.dataLevel <= 2){
 
 		val nRowsQuery = nRows.map(nRows => s"&nRows=$nRows").getOrElse("")
 		val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQuery"

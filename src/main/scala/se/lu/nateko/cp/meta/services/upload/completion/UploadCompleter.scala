@@ -52,7 +52,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 						new TimeSeriesUploadCompleter(server, extract, handles, vocab, metaVocab)
 
 					case netcdf: NetCdfExtract =>
-						new NetCdfUploadCompleter(server, netcdf, vocab, metaVocab)
+						new NetCdfUploadCompleter(server, netcdf, handles, vocab, metaVocab)
 				}
 			}
 			(completer, server)

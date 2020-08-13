@@ -26,6 +26,8 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import java.net.URI
+import akka.http.scaladsl.unmarshalling.Unmarshal
 
 class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSystem) extends CpmetaJsonProtocol{
 
@@ -76,6 +78,21 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 		.singleRequest(fileUploadReq(file))
 		.flatMap(responseToDone)
 
+	def getUploadDto[T <: UploadDto : RootJsonFormat](landingPage: URI): Future[T] = http
+		.singleRequest{HttpRequest(
+			uri = Uri("/dtodownload").resolvedAgainst(conf.metaBase).withQuery(Uri.Query("uri" -> landingPage.toString))
+		)}
+		.flatMap{resp =>
+			Unmarshal(resp).to[T]
+		}
+
+	def reIngestObject(hash: Sha256Sum): Future[Done] = http
+		.singleRequest(HttpRequest(
+			uri = Uri("/objects/" + hash.id).resolvedAgainst(conf.dataBase),
+			method = HttpMethods.POST,
+			headers = Seq(cookie, dataHost)
+		))
+		.flatMap(responseToDone)
 }
 
 object CpUploadClient{

@@ -10,6 +10,8 @@ import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
 import se.lu.nateko.cp.meta.core.sparql.JsonSupport._
 import java.net.URI
+import scala.util.Success
+import scala.util.Failure
 
 class SparqlClient(url: URI)(implicit system: ActorSystem) {
 	import system.dispatcher
@@ -28,8 +30,8 @@ class SparqlClient(url: URI)(implicit system: ActorSystem) {
 	}
 
 	def select(selectQuery: String): Future[SparqlSelectResult] = {
-		httpPost(selectQuery).flatMap(
-			resp => resp.status match {
+		httpPost(selectQuery).flatMap{resp =>
+			resp.status match {
 				case StatusCodes.OK =>
 					val entity = resp.entity.contentType.mediaType match {
 						case `sparqlJson` =>
@@ -37,13 +39,17 @@ class SparqlClient(url: URI)(implicit system: ActorSystem) {
 						case MediaTypes.`application/json` =>
 							resp.entity
 						case _ =>
+							resp.discardEntityBytes()
 							throw new Exception(s"Server responded with Content Type ${resp.entity.contentType}")
 					}
 					Unmarshal(entity).to[SparqlSelectResult]
 				case _ =>
-					Future.failed(new Exception(s"Got ${resp.status} from the server"))
+					Unmarshal(resp.entity).to[String].transform{
+						case Success(errMsg) => Failure(new Exception(errMsg))
+						case _ => Failure(new Exception(s"Got ${resp.status} from the server"))
+					}
 			}
-		)
+		}
 	}
 
 }

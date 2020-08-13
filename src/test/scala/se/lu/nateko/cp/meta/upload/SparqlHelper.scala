@@ -41,16 +41,32 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 		}
 	}
 
-	def emissionInventories: Future[Seq[URI]] = {
-		val query = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	def emissionInventories: Future[Seq[URI]] = getDobjList{"""
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select * where{
 		|	?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory>
-		|}"""
-		sparql.select(query).map{qr =>
-			qr.results.bindings.map{b =>
-				val BoundUri(dobj) = b("dobj")
-				dobj
-			}
+		|}""".stripMargin
+	}
+
+	def latestSpatialNetcdfs: Future[Seq[URI]] = getDobjList{"""
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|prefix prov: <http://www.w3.org/ns/prov#>
+		|select ?dobj ?fileName where {
+		|	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3> <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory>
+		|		<http://meta.icos-cp.eu/resources/cpmeta/sunInducedFluorescence> <http://meta.icos-cp.eu/resources/cpmeta/oceanPco2CarbonFluxMaps>
+		|		<http://meta.icos-cp.eu/resources/cpmeta/inversionModelingSpatial>
+		|	}
+		|	?dobj cpmeta:hasObjectSpec ?spec .
+		|	?dobj cpmeta:hasName ?fileName .
+		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+		|}""".stripMargin
+	}
+
+	private def getDobjList(query: String): Future[Seq[URI]] = sparql.select(query).map{qr =>
+		qr.results.bindings.map{b =>
+			val BoundUri(dobj) = b("dobj")
+			dobj
 		}
 	}
 }

@@ -40,4 +40,17 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 			}.toMap
 		}
 	}
+
+	def emissionInventories: Future[Seq[URI]] = {
+		val query = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select * where{
+		|	?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory>
+		|}"""
+		sparql.select(query).map{qr =>
+			qr.results.bindings.map{b =>
+				val BoundUri(dobj) = b("dobj")
+				dobj
+			}
+		}
+	}
 }

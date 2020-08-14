@@ -41,12 +41,8 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 		}
 	}
 
-	def emissionInventories: Future[Seq[URI]] = getDobjList{"""
-		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|select * where{
-		|	?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory>
-		|}""".stripMargin
-	}
+	def emissionInventories: Future[Seq[URI]] = allObjectsBySpec("http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory")
+	def c14release: Future[Seq[URI]] = allObjectsBySpec("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject")
 
 	def latestSpatialNetcdfs: Future[Seq[URI]] = getDobjList{"""
 		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -59,6 +55,15 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:hasName ?fileName .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+		|}""".stripMargin
+	}
+
+	private def allObjectsBySpec(spec: String): Future[Seq[URI]] = getDobjList{s"""
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|prefix prov: <http://www.w3.org/ns/prov#>
+		|select * where{
+		|	?dobj cpmeta:hasObjectSpec <${spec}> .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|}""".stripMargin
 	}

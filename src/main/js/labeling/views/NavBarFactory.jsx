@@ -20,8 +20,8 @@ module.exports = function(WhoAmIStore) {
 				{this.props.piMode
 					? <h1>PI Information <small>for ICOS metadata</small></h1>
 					: <div>
-							<h1>Labelled stations</h1>
-							<div>The labelling status for ICOS stations. You can read more about our data collection process <a href="https://www.icos-cp.eu/data-services/data-collection">here</a>.</div>
+							<h1>Station labelling status</h1>
+							<div>The labelling status for ICOS stations. You can read more about our data collection process <a href="https://www.icos-cp.eu/data-services/data-collection/labelling-process">here</a>.</div>
 						</div>
 				}
 			</div>;

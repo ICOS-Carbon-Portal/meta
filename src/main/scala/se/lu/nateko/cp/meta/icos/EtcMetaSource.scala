@@ -172,9 +172,10 @@ object EtcMetaSource{
 			fname <- lookUp(Vars.fname).require("person must have first name");
 			lname <- lookUp(Vars.lname).require("person must have last name");
 			tcId <- lookUp(Vars.persId).require("unique ETC's id is required for a person");
-			email <- lookUp(Vars.email).optional
+			email <- lookUp(Vars.email).optional;
+			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(urlEncode(fname + "_" + lname), Some(makeId(tcId)), fname, lname, email)
+			Person(cpId, Some(makeId(tcId)), fname, lname, email)
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 

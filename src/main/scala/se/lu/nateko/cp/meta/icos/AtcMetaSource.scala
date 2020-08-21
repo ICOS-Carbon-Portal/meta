@@ -27,6 +27,7 @@ import java.io.File
 
 import EtcMetaSource.{Lookup, lookUp}
 import se.lu.nateko.cp.meta.services.CpVocab
+import java.time.Instant
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -63,9 +64,11 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 		getDirectory().resolve(tableId)
 	}
 
-	override def readState: Validated[State] =
-		for(stations <- parseStations(getTableFile(stationsId)))
-			yield new TcState(stations, Nil, Nil)
+	override def readState: Validated[State] = for(
+			stations <- parseStations(getTableFile(stationsId));
+			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
+		) yield
+			new TcState(stations, membs, Nil)
 }
 
 object AtcMetaSource{
@@ -130,29 +133,25 @@ object AtcMetaSource{
 
 	def parseCountry(s: String): Option[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
 
-	def parseStations(path: Path): Validated[IndexedSeq[TcStationaryStation[A]]] = {
-		val stationLines = scala.io.Source.fromFile(path.toFile).getLines()
-		val colNames = parseRow(stationLines.next())
+	def parseStations(path: Path): Validated[IndexedSeq[TcStationaryStation[A]]] = parseFromCsv(path){implicit row =>
+		val demand = lookUpMandatory("stations") _
 
-		val Seq(tcIdIdx, stIdIdx, stNameIdx, countryIdx, latIdx, lonIdx, altIdx) = Seq(
-			IdCol, StationIdCol, StationNameCol, CountryCol, LatCol, LonCol, AltCol
-		).map(colName => colNames.indexOf(colName))
-
-		stationLines.map{line =>
-			val r = parseRow(line)
-			val stId = r(stIdIdx)
-			val pos = Position(r(latIdx).toDouble, r(lonIdx).toDouble, Some(r(altIdx).toFloat))
-			TcStationaryStation[A](
-				cpId = TcConf.stationId[A](stId),
-				tcId = TcConf.AtcConf.makeId(r(tcIdIdx)),
-				id = stId,
-				pos = pos,
-				name = r(stNameIdx),
-				country = parseCountry(r(countryIdx))
-			)
-		}.toIndexedSeq
-
-		???
+		for(
+			stIdStr <- demand(StationIdCol);
+			tcId <- demand(IdCol);
+			lat <- demand(LatCol).map(_.toDouble);
+			lon <- demand(LonCol).map(_.toDouble);
+			alt <- demand(AltCol).map(_.toFloat);
+			name <- demand(StationNameCol);
+			country <- demand(CountryCol).map(parseCountry)
+		) yield TcStationaryStation[A](
+			cpId = TcConf.stationId[A](stIdStr),
+			tcId = TcConf.AtcConf.makeId(tcId),
+			id = stIdStr,
+			pos = Position(lat, lon, Some(alt)),
+			name = name,
+			country = country
+		)
 	}
 
 	def parseMemberships(
@@ -166,25 +165,29 @@ object AtcMetaSource{
 			(for(pers <- ppl; id <- pers.tcIdOpt) yield id -> pers).toMap
 		}
 
-		parseFromCsv[Membership[A]](roles){implicit row =>
+		parseFromCsv(roles){implicit row =>
 			def notFoundMsg(col: String) = s"$col not found in roles table on row ${row.mkString(", ")}"
+			val demand = lookUpMandatory("roles") _
 
 			for(
 				peopleLookup <- peopleLookupVal;
-				stationIdStr <- lookUp(RoleStationIdCol).require(notFoundMsg(RoleStationIdCol));
+				stationIdStr <- demand(RoleStationIdCol);
 				station <- new Validated(stationLookup.get(makeId(stationIdStr))).require(s"Could not find station with internal ATC id $stationIdStr");
-				persIdStr <- lookUp(RolePersIdCol).require(notFoundMsg(RolePersIdCol));
+				persIdStr <- demand(RolePersIdCol);
 				person <- new Validated(peopleLookup.get(makeId(persIdStr))).require(s"Could not find person with internal ATC id persIdStr");
 				roleId <- lookUp(RoleIdCol).map(_.toInt).require("Problem parsing role id");
-				role <- new Validated(roleMap.get(roleId).flatten)
+				role <- new Validated(roleMap.get(roleId).flatten);
+				startDate <- lookUpDate(RoleStartCol);
+				endDate <- lookUpDate(RoleEndCol)
 			) yield {
 				val assumedRole = new AssumedRole[A](role, person, station, None)
-				Membership("", assumedRole, None, None)
+				Membership("", assumedRole, startDate, endDate)
 			}
 		}
-		//val Seq(persIdIdx, fnIdx, lnIdx, persEmailIdx, orcidIdx)
-		???
 	}
+
+	def lookUpMandatory(tableName: String)(varName: String)(implicit row: Lookup): Validated[String] =
+		lookUp(varName).require(s"$varName not found in $tableName table on row ${row.mkString(", ")}")
 
 	def parseFromCsv[T](path: Path)(extractor: Lookup => Validated[T]): Validated[IndexedSeq[T]] = Validated{
 
@@ -207,10 +210,13 @@ object AtcMetaSource{
 			email <- lookUp(EmailCol).optional;
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email)
+			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase))
 
-	def parseStationRoles(peopleLookup: Map[TcId[A], Person[A]]): Validated[IndexedSeq[Membership[A]]] = {
-
-		???
+	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
+		lookUp(colName).optional.map{dsOpt =>
+			dsOpt.map{ds =>
+				Instant.parse(ds.replace(' ', 'T') + "Z")
+			}
+		}
 	}
 }

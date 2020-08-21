@@ -130,7 +130,7 @@ class OtcMetaSource(
 				tcIdOpt = Some(tcId),
 				fname = fname,
 				lname = lname,
-				email = Option(b.getValue("email")).map(_.stringValue)
+				email = Option(b.getValue("email")).map(_.stringValue.toLowerCase)
 			)
 		}
 	}

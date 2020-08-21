@@ -175,7 +175,7 @@ object EtcMetaSource{
 			email <- lookUp(Vars.email).optional;
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email)
+			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase))
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 

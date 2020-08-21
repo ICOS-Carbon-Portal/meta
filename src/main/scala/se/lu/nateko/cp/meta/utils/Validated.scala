@@ -58,7 +58,7 @@ object Validated{
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
 
-	def sequence[T](valids: IterableOnce[Validated[T]]): Validated[Seq[T]] = {
+	def sequence[T](valids: IterableOnce[Validated[T]]): Validated[IndexedSeq[T]] = {
 		val res = Buffer.empty[T]
 		val errs = Buffer.empty[String]
 
@@ -67,7 +67,7 @@ object Validated{
 			errs ++= valid.errors
 		}
 
-		new Validated(Some(res.toSeq), errs.toSeq)
+		new Validated(Some(res.toIndexedSeq), errs.toSeq)
 	}
 
 	def liftFuture[T](v: Validated[Future[T]])(implicit ctxt: ExecutionContext): Future[Validated[T]] = v.result.fold(

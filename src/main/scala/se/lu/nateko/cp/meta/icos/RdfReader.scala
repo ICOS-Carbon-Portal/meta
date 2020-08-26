@@ -34,8 +34,11 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 
 	def getTcOnlyStatements(iri: IRI): IndexedSeq[Statement] = minus(
 		tcInsts.getStatements(Some(iri), None, None).map(stripContext),
-		cpInsts.getStatements(Some(iri), None, None).map(stripContext)
+		getCpStatements(iri)
 	)
+
+	def getCpStatements(iri: IRI): Iterator[Statement] =
+		cpInsts.getStatements(Some(iri), None, None).map(stripContext)
 
 	def keepMeaningful(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
 		val (adds, dels) = updates.partition(_.isAssertion)

@@ -2,15 +2,18 @@ package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	import RdfDiffCalc._
 	import SequenceDiff._
+	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T];
@@ -138,22 +141,22 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				val deletedIri = rdfMaker.getIri(toDelete)
 				val replacementIri = rdfMaker.getIri(cpMap(key))
 
-				val basicEntityStatements = rdfMaker.getStatements(toDelete).toSet
+				val cpPredicates = rdfReader.getCpStatements(replacementIri).map(_.getPredicate)
+					.filterNot(multivaluePredicates.contains).toSet //multiple-value properties are possible
 
-				val (redundantBasicStatements, extraStatements) = rdfReader.getTcOnlyStatements(deletedIri)
-					.partition(basicEntityStatements.contains)
+				val (statementsToDelete, statementsToKeep) = rdfReader.getTcOnlyStatements(deletedIri)
+					.partition(st => cpPredicates.contains(st.getPredicate)) //CP statements override TCs'
 
-				val redundantExtraStatements = if(deletedIri != replacementIri) extraStatements else Nil
-				val replacementExtraStatements = redundantExtraStatements.map(swapSubject(replacementIri))
+				val renamingUpdates = if(deletedIri === replacementIri) Nil else {
+					statementsToKeep.map(RdfUpdate(_, false)) ++ statementsToKeep.map(swapSubject(replacementIri)).map(RdfUpdate(_, true))
+				}
 
-				val usagesToRemove = if(deletedIri != replacementIri)
-						rdfReader.getTcOnlyUsages(deletedIri)
-					else Nil
+				val renamingUsages = if(deletedIri === replacementIri) Nil else {
+					val usagesToRename = rdfReader.getTcOnlyUsages(deletedIri)
+					usagesToRename.map(RdfUpdate(_, false)) ++ usagesToRename.map(swapObject(replacementIri)).map(RdfUpdate(_, true))
+				}
 
-				val replacementUsages = usagesToRemove.map(swapObject(replacementIri))
-
-				(redundantBasicStatements ++ redundantExtraStatements ++ usagesToRemove).map(RdfUpdate(_, false)) ++
-				(replacementExtraStatements ++ replacementUsages).map(RdfUpdate(_, true))
+				renamingUpdates ++ renamingUsages ++ statementsToDelete.map(RdfUpdate(_, false))
 			}
 
 			new SequenceDiff[T, E](rdfDiff, cpIdLookup(keys, fromMap))
@@ -186,6 +189,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 }
 
 object RdfDiffCalc{
+
 	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.flatMap(e => e.tcIdOpt.map(_ -> e)).toMap
 
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq

@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
 import java.time.Instant
 
-class RdfMaker(vocab: CpVocab, meta: CpmetaVocab) {
+class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 	private implicit val envri = Envri.ICOS
 

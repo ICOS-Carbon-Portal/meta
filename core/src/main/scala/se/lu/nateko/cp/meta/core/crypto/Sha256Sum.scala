@@ -4,6 +4,7 @@ import java.util.Arrays
 import java.util.Base64
 
 import scala.util.{Try, Success, Failure}
+import scala.util.control.NoStackTrace
 
 
 class Sha256Sum(private val bytes: Array[Byte]) {
@@ -63,7 +64,7 @@ object Sha256Sum {
 		if(byteLengthCorrect(bytes))
 			Success(new Sha256Sum(bytes))
 		else
-			Failure(new IllegalArgumentException(byteLengthMessage))
+			Failure(new IllegalArgumentException(byteLengthMessage) with NoStackTrace)
 
 
 	def unapply(hash: String): Option[Sha256Sum] = fromString(hash).toOption

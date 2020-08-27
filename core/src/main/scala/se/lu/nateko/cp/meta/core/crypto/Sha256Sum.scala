@@ -3,14 +3,12 @@ package se.lu.nateko.cp.meta.core.crypto
 import java.util.Arrays
 import java.util.Base64
 
-import scala.util.Failure
-import scala.util.Try
+import scala.util.{Try, Success, Failure}
 
 
 class Sha256Sum(private val bytes: Array[Byte]) {
-
-	assert(bytes.length == 32 || bytes.length == 18,
-		"SHA-256 hash sum must be 32 (complete) or 18 (truncated) bytes long")
+	import Sha256Sum._
+	assert(byteLengthCorrect(bytes), byteLengthMessage)
 
 	def getBytes: Seq[Byte] = bytes.toSeq
 	def isTruncated: Boolean = bytes.length < 32
@@ -49,17 +47,9 @@ object Sha256Sum {
 
 	val IdLength = 24
 
-	def fromBase64(hash: String): Try[Sha256Sum] = Try{
-		new Sha256Sum(Base64.getDecoder.decode(hash))
-	}
-
-	def fromBase64Url(hash: String): Try[Sha256Sum] = Try{
-		new Sha256Sum(Base64.getUrlDecoder.decode(hash))
-	}
-
-	def fromHex(hash: String): Try[Sha256Sum] = Try{
-		new Sha256Sum(parseHexArray(hash))
-	}
+	def fromBase64(hash: String): Try[Sha256Sum] = Try(Base64.getDecoder.decode(hash)).flatMap(fromBytes)
+	def fromBase64Url(hash: String): Try[Sha256Sum] = Try(Base64.getUrlDecoder.decode(hash)).flatMap(fromBytes)
+	def fromHex(hash: String): Try[Sha256Sum] = Try(parseHexArray(hash)).flatMap(fromBytes)
 
 	def fromString(hash: String): Try[Sha256Sum] = fromHex(hash).orElse(
 		fromBase64Url(hash).orElse(
@@ -68,6 +58,13 @@ object Sha256Sum {
 			)))
 		)
 	)
+
+	def fromBytes(bytes: Array[Byte]): Try[Sha256Sum] =
+		if(byteLengthCorrect(bytes))
+			Success(new Sha256Sum(bytes))
+		else
+			Failure(new IllegalArgumentException(byteLengthMessage))
+
 
 	def unapply(hash: String): Option[Sha256Sum] = fromString(hash).toOption
 
@@ -80,4 +77,7 @@ object Sha256Sum {
 			Integer.parseInt(hex.substring(i * 2, (i + 1) * 2), 16).toByte
 		}
 	}
+
+	def byteLengthCorrect(bytes: Array[Byte]): Boolean = bytes.length == 32 || bytes.length == 18
+	val byteLengthMessage = "SHA-256 hash sum must be 32 (complete) or 18 (truncated) bytes long"
 }

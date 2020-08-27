@@ -83,8 +83,8 @@ class CitationProvider(val dataCiter: CitationClient, sail: Sail, coreConf: Meta
 	def getStaticObject(maybeDobj: Resource): Option[(StaticObject, Envri)] = maybeDobj match {
 
 		case iri: IRI => for(
-			envri <- inferObjectEnvri(iri);
 			hash <- toOption("hashsum")(Sha256Sum.fromBase64Url(iri.getLocalName));
+			envri <- inferObjectEnvri(iri);
 			obj <- objFetcher.fetch(hash)(envri)
 		) yield obj -> envri
 

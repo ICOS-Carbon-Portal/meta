@@ -10,21 +10,21 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/stationentry/")
 
-	val station = getRelative("Station")
-	val atmoStationClass = getRelative("AS")
+	val station = getRelativeRaw("Station")
+	val atmoStationClass = getRelativeRaw("AS")
 
-	val hasShortName = getRelative("hasShortName")
-	val hasPi = getRelative("hasPi")
-	val hasDeputyPi = getRelative("hasDeputyPi")
-	val hasFirstName = getRelative("hasFirstName")
-	val hasLastName = getRelative("hasLastName")
-	val hasEmail = getRelative("hasEmail")
-	val hasAffiliation = getRelative("hasAffiliation")
-	val hasPhone = getRelative("hasPhone")
-	val hasAssociatedFile = getRelative("hasAssociatedFile")
-	val hasApplicationStatus = getRelative("hasApplicationStatus")
+	val hasShortName = getRelativeRaw("hasShortName")
+	val hasPi = getRelativeRaw("hasPi")
+	val hasDeputyPi = getRelativeRaw("hasDeputyPi")
+	val hasFirstName = getRelativeRaw("hasFirstName")
+	val hasLastName = getRelativeRaw("hasLastName")
+	val hasEmail = getRelativeRaw("hasEmail")
+	val hasAffiliation = getRelativeRaw("hasAffiliation")
+	val hasPhone = getRelativeRaw("hasPhone")
+	val hasAssociatedFile = getRelativeRaw("hasAssociatedFile")
+	val hasApplicationStatus = getRelativeRaw("hasApplicationStatus")
 
-	def getProperty(fieldName: String) = getRelative(fieldName)
+	def getProperty(fieldName: String) = getRelativeRaw(fieldName)
 
 	val files = new FilesVocab(factory)
 }
@@ -33,9 +33,9 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 class FilesVocab(val factory: ValueFactory) extends CustomVocab{
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/files/")
 
-	val hasType = getRelative("hasType")
-	val hasName = getRelative("hasName")
+	val hasType = getRelativeRaw("hasType")
+	val hasName = getRelativeRaw("hasName")
 
-	def getUri(hashsum: Sha256Sum) = getRelative(hashsum.id)
+	def getUri(hashsum: Sha256Sum) = getRelativeRaw(hashsum.id)
 	def getFileHash(fileUri: IRI): Sha256Sum = Sha256Sum.fromString(fileUri.getLocalName).get
 }

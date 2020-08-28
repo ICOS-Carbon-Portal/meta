@@ -3,13 +3,14 @@ package se.lu.nateko.cp.meta.icos
 import java.time.Instant
 
 import akka.stream.scaladsl.Source
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Position
 
 
 sealed trait Entity[+T <: TC]{
-	def cpId: String
+	def cpId: UriId
 	def tcIdOpt: Option[TcId[T]]
-	def bestId: String = tcIdOpt.fold(cpId)(_.id)
+	def bestId: String = tcIdOpt.fold(cpId.urlSafeString)(_.id)
 }
 
 sealed trait TcEntity[+T <: TC] extends Entity[T]{
@@ -18,21 +19,21 @@ sealed trait TcEntity[+T <: TC] extends Entity[T]{
 }
 
 trait CpIdSwapper[E]{
-	def withCpId(e: E, id: String): E
+	def withCpId(e: E, id: UriId): E
 }
 
 object Entity{
 
 	implicit class IdSwapOps[E](e: E)(implicit swapper: CpIdSwapper[E]){
-		def withCpId(id: String): E = swapper.withCpId(e, id)
+		def withCpId(id: UriId): E = swapper.withCpId(e, id)
 	}
 
 	implicit def persCpIdSwapper[T <: TC] = new CpIdSwapper[Person[T]]{
-		def withCpId(p: Person[T], id: String) = p.copy(cpId = id)
+		def withCpId(p: Person[T], id: UriId) = p.copy(cpId = id)
 	}
 
 	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
-		def withCpId(org: Organization[T], id: String) = org match{
+		def withCpId(org: Organization[T], id: UriId) = org match{
 			case ss: TcStationaryStation[T] => ss.copy(cpId = id)
 			case ms: TcMobileStation[T] => ms.copy(cpId = id)
 			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
@@ -40,12 +41,12 @@ object Entity{
 	}
 
 	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[Instrument[T]]{
-		def withCpId(instr: Instrument[T], id: String) = instr.copy(cpId = id)
+		def withCpId(instr: Instrument[T], id: UriId) = instr.copy(cpId = id)
 	}
 
 }
 
-case class Person[+T <: TC](cpId: String, tcIdOpt: Option[TcId[T]], fname: String, lname: String, email: Option[String]) extends Entity[T]
+case class Person[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], fname: String, lname: String, email: Option[String]) extends Entity[T]
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
@@ -55,7 +56,7 @@ sealed trait TcStation[+T <: TC] extends Organization[T] with TcEntity[T]{
 }
 
 case class TcStationaryStation[+T <: TC](
-	cpId: String,
+	cpId: UriId,
 	tcId: TcId[T],
 	name: String,
 	id: String,
@@ -64,7 +65,7 @@ case class TcStationaryStation[+T <: TC](
 ) extends TcStation[T]
 
 case class TcMobileStation[+T <: TC](
-	cpId: String,
+	cpId: UriId,
 	tcId: TcId[T],
 	name: String,
 	id: String,
@@ -72,10 +73,10 @@ case class TcMobileStation[+T <: TC](
 	geoJson: Option[String]
 ) extends TcStation[T]
 
-case class CompanyOrInstitution[+T <: TC](cpId: String, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
+case class CompanyOrInstitution[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
 
 case class Instrument[+T <: TC](
-	cpId: String,
+	cpId: UriId,
 	tcId: TcId[T],
 	model: String,
 	sn: String,

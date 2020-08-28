@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.icos
 import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.api.UriId
 
 
 sealed trait TcId[+T <: TC]{
@@ -56,6 +57,6 @@ object TcConf{
 	}
 
 	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
-	def stationId[T <: TC](baseId: String)(implicit tc: TcConf[T]): String = s"${tc.stationPrefix}_$baseId"
-	def tcScopedId[T <: TC](baseId: String)(implicit tc: TcConf[T]): String = s"${tc.tcPrefix}_$baseId"
+	def stationId[T <: TC](baseId: String)(implicit tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_$baseId")
+	def tcScopedId[T <: TC](baseId: String)(implicit tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_$baseId")
 }

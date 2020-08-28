@@ -13,7 +13,7 @@ import akka.stream.OverflowStrategy
 import akka.stream.ThrottleMode
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Source
-import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.utils.Validated
@@ -106,7 +106,7 @@ class OtcMetaSource(
 		|}""".stripMargin
 
 		getLookup(q, "org"){(b, tcId) => CompanyOrInstitution(
-			cpId = tcId.id,
+			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
 			name = b.getValue("name").stringValue,
 			label = Option(b.getValue("label")).map(_.stringValue)
@@ -194,21 +194,21 @@ class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
 
-	// val hasHolder = getRelative("hasHolder")
-	// val hasRole = getRelative("hasRole")
-	// val atOrganization = getRelative("atOrganization")
+	// val hasHolder = getRelativeRaw("hasHolder")
+	// val hasRole = getRelativeRaw("hasRole")
+	// val atOrganization = getRelativeRaw("atOrganization")
 
-	// val spatialReference = getRelative("hasSpatialReference")
-	// val hasStartTime = getRelative("hasStartTime")
-	// val hasEndTime = getRelative("hasEndTime")
+	// val spatialReference = getRelativeRaw("hasSpatialReference")
+	// val hasStartTime = getRelativeRaw("hasStartTime")
+	// val hasEndTime = getRelativeRaw("hasEndTime")
 
-	// val assumedRoleClass = getRelative("AssumedRole")
+	// val assumedRoleClass = getRelativeRaw("AssumedRole")
 
 	object Roles{
-		val dataSubmitter = getRelative("dataSubmitter")
-		val engineer = getRelative("engineer")
-		val pi = getRelative("pi")
-		val researcher = getRelative("researcher")
+		val dataSubmitter = getRelativeRaw("dataSubmitter")
+		val engineer = getRelativeRaw("engineer")
+		val pi = getRelativeRaw("pi")
+		val researcher = getRelativeRaw("researcher")
 
 		val map: Map[IRI, Role] = Map(
 			dataSubmitter -> DataManager,

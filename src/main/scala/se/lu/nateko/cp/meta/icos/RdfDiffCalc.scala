@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
@@ -77,17 +78,17 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
 
-		def cpIdLookup(keys: Iterable[TcId[T]], map: Map[TcId[T], E]): Map[TcId[T], String] = keys.collect{
+		def cpIdLookup(keys: Iterable[TcId[T]], map: Map[TcId[T], E]): Map[TcId[T], UriId] = keys.collect{
 			case key if map(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
 		}.toMap
 
 		val newOriginalAdded = {
 			val newEnts = toKeys.diff(fromKeys).diff(cpKeys).toSeq.map(toMap.apply)
-			val initCpIds = cpOwn.map(_.cpId).toSet
+			val initCpIds: Set[UriId] = cpOwn.map(_.cpId).toSet
 
-			val (_, dedupedEnts) = newEnts.foldLeft[(Set[String], List[E])]((initCpIds, Nil)){
+			val (_, dedupedEnts) = newEnts.foldLeft[(Set[UriId], List[E])]((initCpIds, Nil)){
 				case ((cpIds, ents), ent) =>
-					val idAttempts = Iterator(ent.cpId) ++ Iterator.from(2).map{i =>s"${ent.cpId}_$i"}
+					val idAttempts = Iterator(ent.cpId) ++ Iterator.from(2).map{i =>UriId(s"${ent.cpId}_$i")}
 					val newCpId = idAttempts.find(!cpIds.contains(_)).get //will always find something
 					(cpIds + newCpId) -> (ent.withCpId(newCpId) :: ents)
 			}

@@ -111,7 +111,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				rdfMaker.getStatements[T](to.withCpId(from.cpId))
 			)
 
-			val idLookup: Map[TcId[T], String] =
+			val idLookup: Map[TcId[T], UriId] =
 				if(from.cpId == to.cpId)
 					Map.empty
 				else
@@ -196,7 +196,7 @@ object RdfDiffCalc{
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
-class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], String]){
+class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
 
 	def ensureIdPreservation(entity: E): E = entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
 }

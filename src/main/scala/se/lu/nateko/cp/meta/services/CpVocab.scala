@@ -41,24 +41,23 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 //		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
 //	)(icosBup)
 
-	def getMembership(membId: String)(implicit envri: Envri): IRI = getRelativeRaw("memberships/" + membId)
-	def getMembership(orgId: String, roleId: String, lastName: String)(implicit envri: Envri): IRI =
-		getMembership(s"${orgId}_${roleId}_$lastName")
+	def getMembership(membId: UriId)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
+	def getMembership(orgId: UriId, roleId: UriId, lastName: String)(implicit envri: Envri): IRI =
+		getMembership(UriId(s"${orgId}_${roleId}_${UriId.escaped(lastName)}"))
 
 	def getRole(roleId: UriId)(implicit envri: Envri) = getRelative("roles/", roleId)
 
-	def getOrganization(orgId: String)(implicit envri: Envri) = getRelativeRaw("organizations/" + orgId)
-	//def getOrganizationId(org: IRI): String = CustomVocab.decodedLocName(org)
+	def getOrganization(orgId: UriId)(implicit envri: Envri) = getRelative("organizations/", orgId)
 
 	def getIcosInstrument(id: UriId) = getRelative("instruments/", id)(icosBup)
 	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(getEtcInstrId(station, id))
 
-	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(getOrganization(_)(Envri.ICOS))
+	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(Envri.ICOS))
 
 	val icosProject = getRelativeRaw("projects/icos")(icosBup)
 	val atmoTheme = getRelativeRaw("themes/atmosphere")(icosBup)
 
-	def getAncillaryEntry(valueId: UriId) = getRelative("ancillary/", valueId)(icosBup)
+	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(icosBup)
 
 	def getStaticObject(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(staticObjLandingPage(hash)(getConfig).toString)
 	def getCollection(hash: Sha256Sum)(implicit envri: Envri) = factory.createIRI(staticCollLandingPage(hash)(getConfig).toString)

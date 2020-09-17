@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.icos
 
 import scala.collection.mutable.Set
+import se.lu.nateko.cp.meta.api.UriId
 
 object RolesDiffCalc{
 
@@ -39,5 +40,5 @@ object RolesDiffCalc{
 	}
 
 
-	def newMembId = scala.util.Random.alphanumeric.take(24).mkString
+	def newMembId = UriId(scala.util.Random.alphanumeric.take(24).mkString)
 }

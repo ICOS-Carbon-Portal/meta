@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.api
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
@@ -18,14 +18,14 @@ class CustomVocabTests extends AnyFunSpec{
 
 		it("Supports non-URL-friendly characters"){
 			val nonUrl = "WITH SPACE"
-			val rel = Vocab.getRelative(nonUrl)
+			val rel = Vocab.getRelative(UriId.escaped(nonUrl))
 			assert(rel.getLocalName === Vocab.encode(nonUrl))
 		}
 
 		it("works correctly if client code does URLEncoding itself"){
 			val email = "fname lname@web-site.com"
 			val extraEncoded = Vocab.getRelativeRaw(Vocab.encode(email))
-			val simple = Vocab.getRelative(email)
+			val simple = Vocab.getRelative(UriId.escaped(email))
 			assert(simple === extraEncoded)
 		}
 	}
@@ -39,7 +39,7 @@ class CustomVocabTests extends AnyFunSpec{
 			}
 			import tempVocab.bup
 
-			assert(Vocab.getRelative("bebe") === tempVocab.getRelative("be" + "be"))
+			assert(Vocab.getRelativeRaw("bebe") === tempVocab.getRelativeRaw("bebe"))
 		}
 	}
 }

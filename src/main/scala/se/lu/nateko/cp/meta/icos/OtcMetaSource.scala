@@ -167,7 +167,7 @@ class OtcMetaSource(
 				weight = Option(b.getValue("weight")).map(_.stringValue.toInt)
 			)
 			Membership[O](
-				cpId = tcId.id,
+				cpId = UriId(tcId.id),
 				role = role,
 				start = parseDate(b.getValue("start")),
 				stop = parseDate(b.getValue("end"))

@@ -1,4 +1,3 @@
-import {badmEntries} from './queries/badmEntries';
 import {stationPis, etcClass1And2Pis} from './queries/stationPis';
 import {stationsTable} from './queries/stationsTable';
 import {activeStations} from './queries/activeStations';
@@ -27,8 +26,7 @@ const queries = [
 	{name:"Data object counts per format", query: perFormatStats},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, class 1 and 2 PIs", query: etcClass1And2Pis},
-	{name:"ETC, labelling app form values", query: etcLabelingValues},
-	{name:"ETC, BADM ancillary values", query: badmEntries}
+	{name:"ETC, labelling app form values", query: etcLabelingValues}
 ];
 
 export default queries;

@@ -20,6 +20,7 @@ import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.core.data.Position
@@ -182,7 +183,7 @@ object AtcMetaSource{
 				endDate <- lookUpDate(RoleEndCol)
 			) yield {
 				val assumedRole = new AssumedRole[A](role, person, station, None)
-				Membership("", assumedRole, startDate, endDate)
+				Membership(UriId(""), assumedRole, startDate, endDate)
 			}
 		}
 	}

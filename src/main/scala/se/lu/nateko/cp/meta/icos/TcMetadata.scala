@@ -83,7 +83,7 @@ case class Instrument[+T <: TC](
 	name: Option[String] = None,
 	vendor: Option[Organization[T]] = None,
 	owner: Option[Organization[T]] = None,
-	partsCpIds: Seq[String] = Nil
+	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]
 
 class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T], val weight: Option[Int]){
@@ -91,7 +91,7 @@ class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Orga
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }
 
-case class Membership[+T <: TC](cpId: String, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
+case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
 class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
 	def tcConf = implicitly[TcConf[T]]

@@ -6,7 +6,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.ingestion.badm.BadmIngester
 import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
@@ -34,13 +33,10 @@ object Ingestion {
 
 	def allProviders(implicit system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] = {
 		import system.dispatcher
-		val (badmSchema, badm) = new BadmIngester().getSchemaAndValuesIngesters
 		Map(
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
 			"otcMetaOnto" -> new RdfXmlFileIngester("/owl/otcmeta.owl"),
 			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
-			"badm" -> badm,
-			"badmSchema" -> badmSchema,
 			"extraStations" -> new ExtraStationsIngester("/extraStations.csv"),
 			"cpMetaInstances" -> new RemoteRdfGraphIngester(
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),

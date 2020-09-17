@@ -5,6 +5,7 @@ import java.net.URI
 import org.eclipse.rdf4j.model.Statement
 import org.scalatest.funspec.AnyFunSpec
 
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.icos._
@@ -25,12 +26,12 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	type A = ATC.type
 	import TcConf.AtcConf.{makeId => aId}
 
-	val jane = Person[A]("Jane_Doe", Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"))
+	val jane = Person[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"))
 	val CountryCode(se) = "SE"
-	val airCpStation = TcMobileStation[A]("AIR1", aId("43"), "Airplane 1", "AIR1", Some(se), None)
+	val airCpStation = TcMobileStation[A](UriId("AIR1"), aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
-		val piMemb = Membership[A]("", new AssumedRole(PI, pi, airCpStation, None), None, None)
+		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None), None, None)
 		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
@@ -69,7 +70,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("afterwards a new snapshot comes with person's last name (and consequently cpId) changed")
 
-		val jane2 = jane.copy(cpId = "Jane_Smith", lname = "Smith")
+		val jane2 = jane.copy(cpId = UriId("Jane_Smith"), lname = "Smith")
 
 		val peopleUpdates = state.calc.calcDiff(atcInitSnap(jane2)).result.get
 			.filter(_.statement.getSubject.toString.contains("people")).toIndexedSeq
@@ -94,7 +95,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("a new snapshot comes where the PI has changed")
 
-		val john = Person[A]("John_Brown", Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"))
+		val john = Person[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"))
 		val piUpdates = state.calc.calcDiff(atcInitSnap(john)).result.get.toIndexedSeq
 		state.tcServer.applyAll(piUpdates)
 
@@ -123,7 +124,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("CP creates a new person metadata and associates it with the exising TC person metadata")
 
-		val cpJane = Person[A]("Jane_CP", jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"))
+		val cpJane = Person[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"))
 		state.cpServer.addAll(state.maker.getStatements(cpJane))
 
 		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
@@ -146,15 +147,15 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		Given("starting with a single org with a single researcher and no own CP statements")
 
-		val uni = CompanyOrInstitution("uni", Some(aId("uni0")), "Just Some Uni", None)
-		val janeAtUni = Membership[A]("", new AssumedRole[A](Researcher, jane, uni, None), None, None)
+		val uni = CompanyOrInstitution(UriId("uni"), Some(aId("uni0")), "Just Some Uni", None)
+		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
 		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)
 
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
 
-		val cpUni = CompanyOrInstitution("cpuni", Some(aId("uni0")), "Properly named Uni", None)
+		val cpUni = CompanyOrInstitution(UriId("cpuni"), Some(aId("uni0")), "Properly named Uni", None)
 		state.cpServer.addAll(state.maker.getStatements(cpUni))
 
 		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){
@@ -206,6 +207,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 }
 
 object RdfDiffCalcTests{
-	class TestState(val calc: RdfDiffCalc, val reader: RdfReader, val maker: RdfMaker,
-			val tcServer: InstanceServer, val cpServer: InstanceServer)
+	class TestState(
+		val calc: RdfDiffCalc, val reader: RdfReader, val maker: RdfMaker,
+		val tcServer: InstanceServer, val cpServer: InstanceServer
+	)
 }

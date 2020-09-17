@@ -51,7 +51,7 @@ private class WdcggUploadCompleter(
 		}
 
 		for((key, value) <- keyValues if !specialPropKeys.contains(key)){
-			val keyProp = vocab.getRelative("wdcgg/", key)(vocab.icosBup)
+			val keyProp = vocab.getRelativeRaw("wdcgg/" + key)(vocab.icosBup)
 
 			if(!server.hasStatement(Some(keyProp), None, None)){
 				facts += ((keyProp, RDF.TYPE, OWL.DATATYPEPROPERTY))

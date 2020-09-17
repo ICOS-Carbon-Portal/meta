@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -23,7 +24,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 		val holder = memb.role.holder
-		val roleId = memb.role.kind.name
+		val roleId = UriId(memb.role.kind.name)
 		val org = memb.role.org
 		val label = s"${holder.lname} as $roleId at ${org.cpId}"
 
@@ -47,7 +48,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		triples.map(vocab.factory.tripleToStatement)
 	}
 
-	def getMembershipEnd(membId: String): Statement = {
+	def getMembershipEnd(membId: UriId): Statement = {
 		val uri = vocab.getMembership(membId)
 		createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
 	}

@@ -22,6 +22,7 @@ import akka.stream.Supervision
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.EtcUploadConfig
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.Badm
@@ -218,7 +219,7 @@ object EtcMetaSource{
 		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $persId")
 	) yield {
 		val assumedRole = new AssumedRole[E](role, person, station, None)
-		Membership("", assumedRole, None, roleEnd)
+		Membership(UriId(""), assumedRole, None, roleEnd)
 	}
 
 }

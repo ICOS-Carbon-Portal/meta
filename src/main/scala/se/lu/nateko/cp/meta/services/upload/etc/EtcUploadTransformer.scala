@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.TimeInterval
@@ -64,7 +65,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 		)
 	}
 
-	private def getObjSpecUrlSegment(meta: EtcFileMeta): String = {
+	private def getObjSpecUrlSegment(meta: EtcFileMeta): UriId = {
 
 		val baseSegment = meta.dtype match {
 			case DataType.BM => config.bioMeteoObjSpecId
@@ -78,7 +79,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 			case _ => if(meta.isBinary) "Bin" else "Csv"
 		}
 
-		baseSegment + binSuff
+		UriId(baseSegment + binSuff)
 	}
 
 	private def getUtcOffset(station: StationId): Try[Int] = etcMeta

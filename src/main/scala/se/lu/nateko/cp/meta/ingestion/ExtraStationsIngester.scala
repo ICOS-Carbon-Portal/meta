@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.ValueFactory
 
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -44,7 +45,7 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 		)
 
 		station => {
-			val stUri = vocab.getIcosLikeStation(s"${station.project}_${station.id}")
+			val stUri = vocab.getIcosLikeStation(UriId(s"${station.project}_${station.id}"))
 
 			val iter = projToClass.get(station.project).fold(Iterator.empty[(IRI, IRI, Value)]){stClass =>
 				Iterator(

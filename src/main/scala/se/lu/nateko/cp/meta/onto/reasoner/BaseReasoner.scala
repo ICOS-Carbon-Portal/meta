@@ -66,11 +66,11 @@ abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 
 	private def getFullDomain(owlProp: OWLProperty): OWLClassExpression = {
 		val domains: Seq[OWLClassExpression] =
-			(getParentProps(owlProp) :+ owlProp).flatMap(getOwnDomains)
+			(getParentProps(owlProp) :+ owlProp).flatMap(getOwnDomains).filterNot(_.isOWLThing)
 		domains.size match{
 			case 0 => factory.getOWLNothing
 			case 1 => domains.head
-			case _ => factory.getOWLObjectIntersectionOf(domains.asJava)
+			case _ => factory.getOWLObjectUnionOf(domains.asJava)
 		}
 	}
 

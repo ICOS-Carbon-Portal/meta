@@ -153,19 +153,19 @@ function getStationLocations(stationUrl) {
 	return getJson(stationUrl)
 	.then(function(result){
 		try{
-			var stationCoordinates = [{
+			const ownCoverage = [{
 				"label": `<b>${result.name}</b>`,
-				"geoJson": {
-					"type": "Point",
-					"coordinates": [result.coverage.lon, result.coverage.lat]
-				}
+				"geoJson": result.coverage.geoJson
 			}];
-			return result.sites ? stationCoordinates.concat(result.sites.map(site => {
-				return {
-					"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
-					"geoJson": JSON.parse(site.location.geometry.geoJson)
-				}
-			})) : stationCoordinates;
+			const sitesCoverage = result.sites
+				? result.sites.map(site => {
+					return {
+						"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
+						"geoJson":site.location.geometry.geoJson
+					}
+				})
+				: [];
+			return ownCoverage.concat(sitesCoverage);
 		} catch (err){
 			return Promise.reject(err);
 		}

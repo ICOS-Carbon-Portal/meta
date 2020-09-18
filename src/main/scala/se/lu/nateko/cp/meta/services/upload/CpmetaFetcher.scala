@@ -111,11 +111,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
-		//TODO: Add support for geoJson from station info (OTC)
-		coverage = for(
-			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
-			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation)),
+		coverage = getStationCoverage(stat),
 		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 		sites = Option(server.getUriValues(stat, metaVocab.operatesOn).map(getSite)).filter(_.nonEmpty),
 		ecosystems = Option(server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource)).filter(_.nonEmpty),
@@ -127,6 +123,15 @@ trait CpmetaFetcher extends FetchingHelper{
 	)
 
 	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
+
+	private def getStationCoverage(stat: IRI): Option[GeoFeature] = {
+		val optPoint = for(
+			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
+			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
+		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation))
+
+		optPoint.orElse(getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage))
+	}
 
 	private def getLocation(location: IRI) = Location(
 		geometry = getCoverage(location),

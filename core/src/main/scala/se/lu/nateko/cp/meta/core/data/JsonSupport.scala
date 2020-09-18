@@ -20,12 +20,15 @@ object JsonSupport extends CommonJsonSupport{
 
 	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
 
-		def write(geo: GeoFeature): JsValue = geo match {
-			case llb: LatLonBox => llb.toJson
-			case gt: GeoTrack => gt.toJson
-			case pos: Position => pos.toJson
-			case ggf: GenericGeoFeature => ggf.toJson
-			case gpoly: Polygon => gpoly.toJson
+		def write(geo: GeoFeature): JsValue = {
+			val baseJson = geo match {
+				case llb: LatLonBox => llb.toJson
+				case gt: GeoTrack => gt.toJson
+				case pos: Position => pos.toJson
+				case ggf: GenericGeoFeature => ggf.toJson
+				case gpoly: Polygon => gpoly.toJson
+			}
+			JsObject(baseJson.asJsObject.fields + ("geoJson" -> geo.geoJson.parseJson))
 		}
 
 		def read(value: JsValue): GeoFeature = value match {

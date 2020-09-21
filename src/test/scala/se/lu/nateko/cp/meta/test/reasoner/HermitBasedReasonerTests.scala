@@ -4,6 +4,7 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig
 import se.lu.nateko.cp.meta.utils.owlapi._
+import java.net.URI
 
 class HermitBasedReasonerTests extends AnyFunSpec{
 
@@ -20,4 +21,12 @@ class HermitBasedReasonerTests extends AnyFunSpec{
 		}
 	}
 
+	describe("getSubClasses"){
+		it("should return fully-defined classes that have Equivalent-To block"){
+			val spatCovClass = TestConfig.getOWLClass("SpatialCoverage")
+			val latLonClass = new URI(TestConfig.ontUri + "LatLonBox")
+			val subClasses = reasoner.getSubClasses(spatCovClass, false)
+			assert(subClasses.map(_.getIRI.toURI).contains(latLonClass))
+		}
+	}
 }

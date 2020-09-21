@@ -17,6 +17,9 @@ class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){
 		reasoner.dispose()
 	}
 
+	override def getSubClasses(owlClass: OWLClass, direct: Boolean): Seq[OWLClass] =
+		reasoner.getSubClasses(owlClass, direct).entities.iterator.asScala.toSeq
+
 	override def getTopLevelClasses: Seq[OWLClass] = reasoner
 		.getSubClasses(factory.getOWLThing, true)
 		.entities.iterator.asScala

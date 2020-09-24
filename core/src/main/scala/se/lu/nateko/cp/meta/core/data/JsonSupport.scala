@@ -28,7 +28,7 @@ object JsonSupport extends CommonJsonSupport{
 				case ggf: GenericGeoFeature => ggf.toJson
 				case gpoly: Polygon => gpoly.toJson
 			}
-			JsObject(baseJson.asJsObject.fields + ("geoJson" -> geo.geoJson.parseJson))
+			JsObject(baseJson.asJsObject.fields + ("geo" -> geo.geoJson.parseJson))
 		}
 
 		def read(value: JsValue): GeoFeature = value match {

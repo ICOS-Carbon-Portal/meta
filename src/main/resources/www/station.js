@@ -155,13 +155,13 @@ function getStationLocations(stationUrl) {
 		try{
 			const ownCoverage = [{
 				"label": `<b>${result.name}</b>`,
-				"geoJson": result.coverage.geoJson
+				"geoJson": result.coverage.geo
 			}];
 			const sitesCoverage = result.sites
 				? result.sites.map(site => {
 					return {
 						"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
-						"geoJson":site.location.geometry.geoJson
+						"geoJson":site.location.geometry.geo
 					}
 				})
 				: [];

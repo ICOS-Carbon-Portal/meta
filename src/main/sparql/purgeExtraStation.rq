@@ -1,0 +1,8 @@
+construct {
+	?station ?p ?o .
+}
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where{
+	bind (<http://meta.icos-cp.eu/resources/stations/ATMO_SAC> as ?station)
+	?station ?p ?o .
+}

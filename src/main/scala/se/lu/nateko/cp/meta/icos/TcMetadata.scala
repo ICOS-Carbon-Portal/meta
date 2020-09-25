@@ -5,6 +5,7 @@ import java.time.Instant
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 
 sealed trait Entity[+T <: TC]{
@@ -46,7 +47,14 @@ object Entity{
 
 }
 
-case class Person[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], fname: String, lname: String, email: Option[String]) extends Entity[T]
+case class Person[+T <: TC](
+	cpId: UriId,
+	tcIdOpt: Option[TcId[T]],
+	fname: String,
+	lname: String,
+	email: Option[String],
+	orcid: Option[Orcid]
+) extends Entity[T]
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 

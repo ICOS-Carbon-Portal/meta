@@ -57,7 +57,8 @@ class AttributionProvider(repo: Repository){
 	private def parsePerson(bs: BindingSet) = Person(
 		UriResource(bs.getValue("person").asInstanceOf[IRI].toJava, None, Nil),
 		bs.getValue("fname").stringValue,
-		bs.getValue("lname").stringValue
+		bs.getValue("lname").stringValue,
+		None
 	)
 }
 

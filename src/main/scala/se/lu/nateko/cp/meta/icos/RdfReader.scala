@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
@@ -147,7 +148,8 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {
 		val core: data.Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
-		Person[T](UriId(uri), tcId, core.firstName, core.lastName, email)
+		val orcid = getOptionalString(uri, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
+		Person[T](UriId(uri), tcId, core.firstName, core.lastName, email, orcid)
 	}
 
 	private def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] =

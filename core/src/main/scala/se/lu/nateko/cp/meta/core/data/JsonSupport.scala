@@ -48,8 +48,20 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
+	implicit object orcidFormat extends JsonFormat[Orcid]{
+		def write(id: Orcid): JsValue = JsString(id.shortId)
+
+		def read(value: JsValue) = value match{
+			case JsString(s) => Orcid.unapply(s) match{
+				case Some(o) => o
+				case None => deserializationError(s"Could not parse Orcid id from $s")
+			}
+			case x => deserializationError("Orcid must be represented with a JSON string, got " + x.getClass.getCanonicalName)
+		}
+	}
+
 	implicit val orgFormat = jsonFormat3(Organization)
-	implicit val personFormat = jsonFormat3(Person)
+	implicit val personFormat = jsonFormat4(Person)
 	implicit val locationFormat = jsonFormat2(Location)
 	implicit val siteFormat = jsonFormat3(Site)
 	implicit val stationFormat = jsonFormat12(Station)

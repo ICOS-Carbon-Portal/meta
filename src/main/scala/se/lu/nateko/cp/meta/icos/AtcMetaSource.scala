@@ -26,9 +26,10 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.core.data.Position
 import java.io.File
 
-import EtcMetaSource.{Lookup, lookUp}
+import EtcMetaSource.{Lookup, lookUp, lookUpOrcid}
 import se.lu.nateko.cp.meta.services.CpVocab
 import java.time.Instant
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -210,9 +211,10 @@ object AtcMetaSource{
 			lname <- lookUp(LastNameCol).require("person must have last name");
 			tcId <- lookUp(PersonIdCol).require("unique ATC's id is required for a person");
 			email <- lookUp(EmailCol).optional;
+			orcid <- lookUpOrcid(OrcidCol);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase))
+			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>

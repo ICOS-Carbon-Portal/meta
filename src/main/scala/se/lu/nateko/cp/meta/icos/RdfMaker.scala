@@ -65,6 +65,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
 				p.email.map{email =>
 					(uri, meta.hasEmail, vocab.lit(email))
+				} ++:
+				p.orcid.map{orcid =>
+					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
 				}.toList
 
 			case s: TcStationaryStation[T] =>

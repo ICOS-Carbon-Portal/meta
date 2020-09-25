@@ -35,6 +35,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -110,6 +111,7 @@ object EtcMetaSource{
 		val fname = "TEAM_MEMBER_FIRSTNAME"
 		val lname = "TEAM_MEMBER_LASTNAME"
 		val email = "TEAM_MEMBER_EMAIL"
+		val orcid = "TEAM_MEMBER_ORCID"
 		val role = "TEAM_MEMBER_ROLE"
 		val roleEnd = "TEAM_MEMBER_WORKEND"
 		val persId = "ID_TEAM"
@@ -151,6 +153,13 @@ object EtcMetaSource{
 	def lookUp(varName: String)(implicit lookup: Lookup): Validated[String] =
 		new Validated(lookup.get(varName).filter(_.length > 0))
 
+	def lookUpOrcid(varName: String)(implicit lookup: Lookup): Validated[Option[Orcid]] =
+		lookUp(varName).optional.flatMap{
+			case Some(Orcid(orc)) => Validated.ok(Some(orc))
+			case None => Validated.ok(None)
+			case Some(badOrcid) => new Validated(None, Seq(s"Could not parse Orcid id from string $badOrcid"))
+		}
+
 	def getNumber(varName: String)(implicit lookup: Lookup): Validated[Number] = lookUp(varName).flatMap{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
@@ -174,9 +183,10 @@ object EtcMetaSource{
 			lname <- lookUp(Vars.lname).require("person must have last name");
 			tcId <- lookUp(Vars.persId).require("unique ETC's id is required for a person");
 			email <- lookUp(Vars.email).optional;
+			orcid <- lookUpOrcid(Vars.orcid);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase))
+			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 

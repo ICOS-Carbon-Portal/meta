@@ -26,7 +26,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	type A = ATC.type
 	import TcConf.AtcConf.{makeId => aId}
 
-	val jane = Person[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"))
+	val jane = Person[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
 	val CountryCode(se) = "SE"
 	val airCpStation = TcMobileStation[A](UriId("AIR1"), aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
@@ -95,7 +95,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("a new snapshot comes where the PI has changed")
 
-		val john = Person[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"))
+		val john = Person[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
 		val piUpdates = state.calc.calcDiff(atcInitSnap(john)).result.get.toIndexedSeq
 		state.tcServer.applyAll(piUpdates)
 
@@ -124,7 +124,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("CP creates a new person metadata and associates it with the exising TC person metadata")
 
-		val cpJane = Person[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"))
+		val cpJane = Person[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"), None)
 		state.cpServer.addAll(state.maker.getStatements(cpJane))
 
 		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){

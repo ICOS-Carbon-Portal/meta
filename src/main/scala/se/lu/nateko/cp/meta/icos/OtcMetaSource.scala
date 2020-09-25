@@ -26,6 +26,7 @@ import java.time.Instant
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -120,6 +121,7 @@ class OtcMetaSource(
 		|	?p otc:hasFirstName ?fname .
 		|	?p otc:hasLastName ?lname .
 		|	optional{?p otc:hasEmail ?email }
+		|	optional{?p otc:hasOrcidId ?orcid }
 		|}""".stripMargin
 
 		getLookup(q, "p"){(b, tcId) =>
@@ -130,7 +132,8 @@ class OtcMetaSource(
 				tcIdOpt = Some(tcId),
 				fname = fname,
 				lname = lname,
-				email = Option(b.getValue("email")).map(_.stringValue.toLowerCase)
+				email = Option(b.getValue("email")).map(_.stringValue.toLowerCase),
+				orcid = Option(b.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
 			)
 		}
 	}

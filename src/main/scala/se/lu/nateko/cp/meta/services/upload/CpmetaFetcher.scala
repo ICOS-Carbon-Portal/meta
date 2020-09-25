@@ -85,7 +85,8 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getPerson(pers: IRI) = Person(
 		self = getLabeledResource(pers),
 		firstName = getSingleString(pers, metaVocab.hasFirstName),
-		lastName = getSingleString(pers, metaVocab.hasLastName)
+		lastName = getSingleString(pers, metaVocab.hasLastName),
+		orcid = getOptionalString(pers, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
 	)
 
 	private def getProject(project: IRI) = Project(

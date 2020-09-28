@@ -24,8 +24,4 @@ class ValueTypeLookup[IRI](varDefs: Seq[DatasetVariable[IRI]]){
 		}
 	)
 
-	def lookupOrFail(varName: String): IRI = lookup(varName).getOrElse(
-		throw new Exception(s"Could not identify value type of variable $varName")
-	)
 }
-

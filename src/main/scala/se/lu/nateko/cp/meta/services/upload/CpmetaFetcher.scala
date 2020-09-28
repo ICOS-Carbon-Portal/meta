@@ -158,7 +158,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			temporal = getTemporalCoverage(dobj),
 			productionInfo = prod,
 			variables = Some(
-				server.getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup))
+				server.getUriValues(dobj, metaVocab.hasActualVariable).flatMap(getL3VarInfo(_, vtLookup))
 			).filter(_.nonEmpty)
 		)
 	}
@@ -187,9 +187,11 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		val columns = getOptionalString(dobj, metaVocab.hasActualColumnNames).flatMap(parseJsonStringArray)
 			.map{
-				_.map{colName =>
-					val valType = getValueType(vtLookup.lookupOrFail(colName))
-					ColumnInfo(colName, valType)
+				_.flatMap{colName =>
+					vtLookup.lookup(colName).map{vtUri =>
+						val valType = getValueType(vtUri)
+						ColumnInfo(colName, valType)
+					}
 				}.toIndexedSeq
 			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
 				Some(
@@ -230,16 +232,18 @@ trait CpmetaFetcher extends FetchingHelper{
 	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
 		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
 
-	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): L3VarInfo = {
-		val label = getSingleString(vi, RDFS.LABEL)
+	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[L3VarInfo] = for(
+		varName <- getOptionalString(vi, RDFS.LABEL);
+		valTypeUri <- vtLookup.lookup(varName)
+	) yield
 		L3VarInfo(
-			label,
-			valueType = getValueType(vtLookup.lookupOrFail(label)),
+			label = varName,
+			valueType = getValueType(valTypeUri),
 			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
 				getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
 			}
 		)
-	}
+
 
 	private def getValueType(vt: IRI) = ValueType(
 		getLabeledResource(vt),

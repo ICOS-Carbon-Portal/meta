@@ -26,7 +26,13 @@ object Doi{
 	}
 }
 
-class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit system: ActorSystem, mat: Materializer) {
+trait PlainDoiCiter{
+	def getCitationEager(doi: Doi): Option[String]
+}
+
+class CitationClient(knownDois: List[Doi], config: CitationConfig)(
+	implicit system: ActorSystem, mat: Materializer
+) extends PlainDoiCiter{
 
 	private val cache = TrieMap.empty[Doi, Future[String]]
 
@@ -44,6 +50,9 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(implicit syst
 		}
 		fut
 	}
+
+	//not waiting for HTTP; only returns string if the result previously cached
+	def getCitationEager(doi: Doi): Option[String] = getCitation(doi).value.flatMap(_.toOption)
 
 	private def fetchTimeLimited(doi: Doi): Future[String] =
 		timeLimit(fetchCitation(doi), config.timeoutSec.seconds, scheduler).recoverWith{

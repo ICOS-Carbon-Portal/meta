@@ -116,7 +116,7 @@ class OtcMetaSource(
 
 	private def getPeople: Validated[Map[IRI, Person[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-		|select distinct ?p ?fname ?lname ?email where{
+		|select distinct * where{
 		|	?p a otc:Person .
 		|	?p otc:hasFirstName ?fname .
 		|	?p otc:hasLastName ?lname .

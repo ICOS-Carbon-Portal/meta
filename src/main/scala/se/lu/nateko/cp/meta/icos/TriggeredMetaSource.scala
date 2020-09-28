@@ -4,12 +4,14 @@ import scala.concurrent.duration.DurationInt
 
 import akka.event.LoggingAdapter
 import akka.actor.ActorRef
-import se.lu.nateko.cp.meta.utils.Validated
+import akka.actor.Status
 import akka.stream.scaladsl.Source
+import akka.stream.CompletionStrategy
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Keep
 import akka.stream.ThrottleMode
-import akka.actor.Status
+
+import se.lu.nateko.cp.meta.utils.Validated
 
 abstract class TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	def log: LoggingAdapter
@@ -18,7 +20,7 @@ abstract class TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	protected def registerListener(actor: ActorRef): Unit
 
 	override def state: Source[State, () => Unit] = Source
-		.actorRef(PartialFunction.empty, PartialFunction.empty, 1, OverflowStrategy.dropHead)
+		.actorRef({case _: Status.Success => CompletionStrategy.immediately}, PartialFunction.empty, 1, OverflowStrategy.dropHead)
 		.mapMaterializedValue{actor =>
 			registerListener(actor)
 			() => actor ! Status.Success

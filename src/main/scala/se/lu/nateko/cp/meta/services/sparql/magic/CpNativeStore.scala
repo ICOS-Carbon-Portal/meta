@@ -14,10 +14,8 @@ import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailException
 
-import se.lu.nateko.cp.meta.api.CitationClient
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.services.CitationProviderFactory
-import se.lu.nateko.cp.meta.services.CitationProvider
+import se.lu.nateko.cp.meta.services.citation._
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper

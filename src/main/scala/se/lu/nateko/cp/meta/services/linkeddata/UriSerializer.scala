@@ -21,11 +21,11 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpec
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
-
 import scala.concurrent.{ExecutionContext, Future}
 
 trait UriSerializer {

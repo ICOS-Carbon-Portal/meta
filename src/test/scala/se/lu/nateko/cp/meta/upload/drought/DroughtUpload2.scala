@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.doi._
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import scala.concurrent.ExecutionContext
 import java.nio.file.Files
 import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo

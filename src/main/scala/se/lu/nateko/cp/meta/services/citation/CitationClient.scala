@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.api
+package se.lu.nateko.cp.meta.services.citation
 
 import java.util.concurrent.TimeoutException
 

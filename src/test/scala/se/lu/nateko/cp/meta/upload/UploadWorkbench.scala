@@ -8,7 +8,7 @@ import scala.concurrent.Await
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker
 import scala.concurrent.duration.DurationInt
 import se.lu.nateko.cp.doi._
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.CitationConfig
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.executeSequentially

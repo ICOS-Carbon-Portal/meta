@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.citation
 
 import java.net.URI
 import java.time.Instant
@@ -14,6 +14,8 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 class AttributionProvider(repo: Repository){

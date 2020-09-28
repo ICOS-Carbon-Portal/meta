@@ -1,8 +1,8 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.citation
 
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.Resource
@@ -13,12 +13,14 @@ import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.objectPrefix
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcherLite
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.api.Doi
+import se.lu.nateko.cp.meta.services.citation.Doi
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.CpmetaConfig
 import org.eclipse.rdf4j.model.Statement

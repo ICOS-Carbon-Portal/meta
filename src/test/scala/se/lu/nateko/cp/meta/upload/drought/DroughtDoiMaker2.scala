@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import akka.Done
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 
 
 class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: ExecutionContext){

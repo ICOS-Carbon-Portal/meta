@@ -39,9 +39,9 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.services.CitationProviderFactory
+import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import org.eclipse.rdf4j.sail.Sail
 
 

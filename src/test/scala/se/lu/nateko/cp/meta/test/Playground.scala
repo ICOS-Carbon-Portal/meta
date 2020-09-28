@@ -12,7 +12,7 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
-import se.lu.nateko.cp.meta.api.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.core.data.Envri

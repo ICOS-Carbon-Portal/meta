@@ -1,5 +1,6 @@
 package org.eclipse.rdf4j.sail.nativerdf
 
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
@@ -17,7 +18,6 @@ import org.eclipse.rdf4j.common.iteration.SingletonIteration
 import org.eclipse.rdf4j.common.iteration.UnionIteration
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
-import se.lu.nateko.cp.meta.services.CitationProvider
 import org.eclipse.rdf4j.query.algebra.evaluation.impl._
 import scala.util.Try
 

@@ -9,8 +9,8 @@ import java.io.FileReader
 import java.net.URI
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import DroughtUpload.ifNotEmpty
-import se.lu.nateko.cp.meta.api.CitationClient
-import se.lu.nateko.cp.meta.api.Doi
+import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext

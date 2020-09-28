@@ -7,11 +7,12 @@ import akka.http.scaladsl.marshalling.Marshalling._
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model._
 import play.twirl.api.Html
-import se.lu.nateko.cp.meta.api.{CitationClient, Doi, StatisticsClient}
+import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
+import se.lu.nateko.cp.meta.services.citation.{Doi, CitationClient}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import se.lu.nateko.cp.meta.utils.getStackTrace

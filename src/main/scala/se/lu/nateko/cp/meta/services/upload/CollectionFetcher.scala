@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 class CollectionFetcherLite(protected val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
@@ -50,11 +51,11 @@ class CollectionFetcherLite(protected val server: InstanceServer, vocab: CpVocab
 class CollectionFetcher(
 	server: InstanceServer,
 	plainFetcher: PlainStaticObjectFetcher,
-	vocab: CpVocab
-)(implicit envri: Envri) extends CollectionFetcherLite(server, vocab) {collFetcher =>
+	citer: CitationMaker
+)(implicit envri: Envri) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
 
 	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {
-		val collUri = vocab.getCollection(hash)
+		val collUri = citer.vocab.getCollection(hash)
 		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri))
 		else None
 	}
@@ -70,7 +71,7 @@ class CollectionFetcher(
 			case dobj: PlainStaticObject => dobj.name
 		})
 
-		StaticCollection(
+		val init = StaticCollection(
 			res = coll.toJava,
 			members = members,
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
@@ -78,8 +79,10 @@ class CollectionFetcher(
 			description = getOptionalString(coll, dct.description),
 			nextVersion = getNextVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
-			doi = getOptionalString(coll, metaVocab.hasDoi)
+			doi = getOptionalString(coll, metaVocab.hasDoi),
+			references = References(None, None)
 		)
+		init.copy(references = References(citationString = citer.getCitationString(init), keywords = None))
 	}
 
 }

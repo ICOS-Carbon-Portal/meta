@@ -101,6 +101,7 @@ sealed trait StaticObject{
 	def previousVersion: OptionalOneOrSeq[URI]
 	def nextVersion: Option[URI]
 	def parentCollections: Seq[UriResource]
+	def references: References
 
 	def asDataObject: Option[DataObject] = this match{
 		case dobj: DataObject => Some(dobj)
@@ -149,5 +150,6 @@ case class DocObject(
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
-	parentCollections: Seq[UriResource]
+	parentCollections: Seq[UriResource],
+	references: References
 ) extends StaticObject

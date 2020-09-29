@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils._
 import scala.util.Success
 import se.lu.nateko.cp.meta.instanceserver.CompositeReadonlyInstanceServer
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],
@@ -117,10 +118,10 @@ class DataObjectInstanceServers(
 			new PlainStaticObjectFetcher(joint)
 		}
 
-	def collFetcher(implicit envri: Envri): Option[CollectionFetcher] = for(
+	def collFetcher(citer: CitationMaker)(implicit envri: Envri): Option[CollectionFetcher] = for(
 		collServer <- collectionServers.get(envri);
 		thePlainFetcher <- plainFetcher
-	) yield new CollectionFetcher(collServer, thePlainFetcher, vocab)
+	) yield new CollectionFetcher(collServer, thePlainFetcher, citer)
 
 	def collFetcherLite(implicit envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
 		.map(new CollectionFetcherLite(_, vocab))

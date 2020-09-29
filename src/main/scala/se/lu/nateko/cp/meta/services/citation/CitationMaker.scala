@@ -13,6 +13,8 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.StaticCollection
 
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) {
@@ -21,8 +23,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val attrProvider = new AttributionProvider(repo)
 	val vocab = new CpVocab(repo.getValueFactory)
 
-	def getDataCiteCitation(dobj: StaticObject): Option[String] = for(
-		doiStr <- dobj.doi;
+	def getCitationString(coll: StaticCollection) = getDoiCitation(coll.doi)
+
+	def getCitationString(dobj: StaticObject)(implicit envri: Envri.Value): Option[String] = {
+		val getCitation = if (envri == Envri.SITES) getSitesCitation(_) else getIcosCitation(_)
+		dobj.asDataObject.flatMap(getCitation).orElse(getDoiCitation(dobj.doi))
+	}
+
+	private def getDoiCitation(doiStrOpt: Option[String]): Option[String] = for(
+		doiStr <- doiStrOpt;
 		doi <- Doi.unapply(doiStr);
 		cit <- doiCiter.getCitationEager(doi)
 	) yield cit
@@ -54,6 +63,34 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 			val year = formatDate(productionInstant, zoneId).take(4)
 			s"${authors}ICOS RI, $year. $title, ${handleProxy}$pid"
+		}
+	}
+
+	def getSitesCitation(dobj: DataObject): Option[String] = {
+		val zoneId = ZoneId.of("UTC+01:00")
+		val titleOpt = dobj.specificInfo.fold(
+			l3 => Some(l3.title),
+			l2 => for(
+					spec <- dobj.specification.self.label;
+					acq = l2.acquisition;
+					location <- acq.site.flatMap(_.location.flatMap(_.label));
+					interval <- acq.interval;
+					productionInstant = dobj.production.fold(interval.stop)(_.dateTime)
+				) yield {
+					val station = acq.station.name
+					val time = getTimeFromInterval(interval, zoneId)
+					val year = formatDate(productionInstant, zoneId).take(4)
+					val dataType = spec.split(",").head
+					s"$station. $year. $dataType from $location, $time"
+				}
+		)
+
+		for(
+			title <- titleOpt;
+			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
+			pid <- dobj.doi.orElse(dobj.pid)
+		) yield {
+			s"$title. SITES Data Portal. ${handleProxy}$pid"
 		}
 	}
 

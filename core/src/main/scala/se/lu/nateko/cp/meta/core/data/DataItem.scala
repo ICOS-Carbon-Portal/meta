@@ -29,7 +29,8 @@ final case class StaticCollection(
 	description: Option[String],
 	previousVersion: Option[URI],
 	nextVersion: Option[URI],
-	doi: Option[String]
+	doi: Option[String],
+	references: References
 ) extends DataItemCollection with StaticDataItem {
 	type M = StaticDataItem
 }

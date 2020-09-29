@@ -128,8 +128,8 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
-	implicit val docObjectFormat = jsonFormat10(DocObject)
 	implicit val referencesFormat = jsonFormat2(References)
+	implicit val docObjectFormat = jsonFormat11(DocObject)
 
 	implicit object dataObjectFormat extends RootJsonFormat[DataObject] {
 		private val defFormat = jsonFormat13(DataObject)
@@ -162,7 +162,7 @@ object JsonSupport extends CommonJsonSupport{
 
 
 	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
-		implicit val statCollFormat = jsonFormat8(StaticCollection)
+		implicit val statCollFormat = jsonFormat9(StaticCollection)
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
 			case pdo: PlainStaticObject => pdo.toJson

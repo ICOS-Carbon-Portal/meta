@@ -68,7 +68,7 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
-	def getCitationClient: CitationClient = citer.dataCiter
+	def getCitationClient: CitationClient = citer.doiCiter
 
 	private val originalSail: Sail = new SailWrapper(nativeSail){
 		override def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)

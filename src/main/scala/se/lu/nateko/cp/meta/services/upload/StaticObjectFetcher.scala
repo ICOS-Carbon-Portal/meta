@@ -15,14 +15,17 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 class StaticObjectFetcher(
 	protected val server: InstanceServer,
-	vocab: CpVocab,
 	collFetcher: CollectionFetcherLite,
 	plainFetcher: PlainStaticObjectFetcher,
-	pidFactory: HandleNetClient.PidFactory
+	pidFactory: HandleNetClient.PidFactory,
+	citer: CitationMaker
 ) extends CpmetaFetcher {
+
+	import citer.vocab
 
 	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		val dataObjUri = vocab.getStaticObject(hash)
@@ -50,7 +53,7 @@ class StaticObjectFetcher(
 			else
 				Right(getL2Meta(dobj, valTypeLookup, production))
 
-		DataObject(
+		val init = DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
 			accessUrl = getAccessUrl(hash, spec),
 			fileName = getSingleString(dobj, metaVocab.hasName),
@@ -63,8 +66,10 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
 			parentCollections = collFetcher.getParentCollections(dobj),
-			references = References(
-				citationString = getOptionalString(dobj, metaVocab.hasCitationString),
+			references = References(None, None)
+		)
+		init.copy(references = References(
+				citationString = citer.getCitationString(init),
 				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 			)
 		)
@@ -73,7 +78,7 @@ class StaticObjectFetcher(
 	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
 		val doc = vocab.getStaticObject(hash)
 		val submission = getSubmission(getSingleUri(doc, metaVocab.wasSubmittedBy))
-		DocObject(
+		val init = DocObject(
 			hash = getHashsum(doc, metaVocab.hasSha256sum),
 			accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
 			fileName = getSingleString(doc, metaVocab.hasName),
@@ -83,8 +88,10 @@ class StaticObjectFetcher(
 			submission = submission,
 			nextVersion = getNextVersion(doc),
 			previousVersion = getPreviousVersion(doc),
-			parentCollections = collFetcher.getParentCollections(doc)
+			parentCollections = collFetcher.getParentCollections(doc),
+			references = References(None, None)
 		)
+		init.copy(references = References(citer.getCitationString(init), None))
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI)(implicit envri: Envri): Option[String] = {

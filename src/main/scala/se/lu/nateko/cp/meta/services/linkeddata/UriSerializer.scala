@@ -27,6 +27,7 @@ import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
 import scala.concurrent.{ExecutionContext, Future}
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -54,7 +55,7 @@ object UriSerializer{
 class Rdf4jUriSerializer(
 	repo: Repository,
 	servers: DataObjectInstanceServers,
-	citer: CitationClient,
+	doiCiter: CitationClient,
 	config: CpmetaConfig
 )(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
 
@@ -63,8 +64,9 @@ class Rdf4jUriSerializer(
 	import UriSerializer.Hash
 
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
+	private val citer = new CitationMaker(doiCiter, repo, config.core)
 	val stats = new StatisticsClient(config.restheart)
-	val pcm = new PageContentMarshalling(config.core.handleProxies, citer, new CpVocab(repo.getValueFactory), stats)
+	val pcm = new PageContentMarshalling(config.core.handleProxies, doiCiter, citer.vocab, stats)
 
 	import pcm.{staticObjectMarshaller, statCollMarshaller}
 
@@ -101,13 +103,13 @@ class Rdf4jUriSerializer(
 			server <- servers.getInstServerForStaticObj(hash).toOption;
 			collFetcher <- servers.collFetcherLite;
 			plainFetcher <- servers.plainFetcher;
-			objectFetcher = new StaticObjectFetcher(server, vocab, collFetcher, plainFetcher, pidFactory);
+			objectFetcher = new StaticObjectFetcher(server, collFetcher, plainFetcher, pidFactory, citer);
 			dobj <- objectFetcher.fetch(hash)
 		) yield dobj
 	}
 
 	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
-		servers.collFetcher.flatMap(_.fetchStatic(hash))
+		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
 
 	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[Station] = servers.getStation(iri)
 

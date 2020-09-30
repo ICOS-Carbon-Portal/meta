@@ -15,7 +15,9 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.core.data.Person
 
+class CitationInfo(val citationString: String, val authors: Option[Seq[Person]])
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) {
 	private implicit val envriConfs = coreConf.envriConfigs
@@ -23,20 +25,20 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val attrProvider = new AttributionProvider(repo)
 	val vocab = new CpVocab(repo.getValueFactory)
 
-	def getCitationString(coll: StaticCollection) = getDoiCitation(coll.doi)
+	def getCitationString(coll: StaticCollection) = getDoiCitation(coll.doi).map(_.citationString)
 
-	def getCitationString(dobj: StaticObject)(implicit envri: Envri.Value): Option[String] = {
+	def getCitationInfo(dobj: StaticObject)(implicit envri: Envri.Value): Option[CitationInfo] = {
 		val getCitation = if (envri == Envri.SITES) getSitesCitation(_) else getIcosCitation(_)
 		dobj.asDataObject.flatMap(getCitation).orElse(getDoiCitation(dobj.doi))
 	}
 
-	private def getDoiCitation(doiStrOpt: Option[String]): Option[String] = for(
+	private def getDoiCitation(doiStrOpt: Option[String]): Option[CitationInfo] = for(
 		doiStr <- doiStrOpt;
 		doi <- Doi.unapply(doiStr);
 		cit <- doiCiter.getCitationEager(doi)
-	) yield cit
+	) yield new CitationInfo(cit, None)
 
-	def getIcosCitation(dobj: DataObject): Option[String] = {
+	def getIcosCitation(dobj: DataObject): Option[CitationInfo] = {
 		val isIcos: Option[Unit] = if(dobj.specification.project.self.uri === vocab.icosProject) Some(()) else None
 		val zoneId = ZoneId.of("UTC")
 
@@ -59,14 +61,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			pid <- dobj.doi.orElse(dobj.pid);
 			productionInstant <- AttributionProvider.productionTime(dobj)
 		) yield {
-			val authors = attrProvider.getAuthors(dobj).map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
+			val authors = attrProvider.getAuthors(dobj)
+			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
 			val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 			val year = formatDate(productionInstant, zoneId).take(4)
-			s"${authors}ICOS RI, $year. $title, ${handleProxy}$pid"
+			new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors))
 		}
 	}
 
-	def getSitesCitation(dobj: DataObject): Option[String] = {
+	def getSitesCitation(dobj: DataObject): Option[CitationInfo] = {
 		val zoneId = ZoneId.of("UTC+01:00")
 		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
@@ -90,7 +93,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
 			pid <- dobj.doi.orElse(dobj.pid)
 		) yield {
-			s"$title. SITES Data Portal. ${handleProxy}$pid"
+			new CitationInfo(s"$title. SITES Data Portal. ${handleProxy}$pid", None)
 		}
 	}
 

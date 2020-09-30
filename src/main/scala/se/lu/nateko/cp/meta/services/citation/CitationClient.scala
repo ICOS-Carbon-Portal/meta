@@ -14,7 +14,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.utils.async.timeLimit
+import se.lu.nateko.cp.meta.utils.async.{timeLimit, errorLite}
 import se.lu.nateko.cp.meta.CitationConfig
 
 case class Doi private(val prefix: String, val suffix: String)
@@ -98,20 +98,20 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 				uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
 			)
 		).flatMap{resp =>
-			Unmarshal(resp).to[String].transform{
-				case ok @ Success(payload) =>
-					if(resp.status.isSuccess) ok
-					//the payload is the error message/page from the DataCite citation service
-					else Failure(new Exception(resp.status.defaultMessage + " " + payload))
-				case failure => failure
+			Unmarshal(resp).to[String].flatMap{payload =>
+				if(resp.status.isSuccess) Future.successful(payload)
+				//the payload is the error message/page from the citation service
+				else errorLite(resp.status.defaultMessage + " " + payload)
 			}
-			
 		}
 		.flatMap{citation =>
 			if(citation.trim.isEmpty)
-				Future.failed(new Exception("Got empty citation text from DataCite"))
+				errorLite("got empty citation text")
 			else
 				Future.successful(citation)
+		}
+		.recoverWith{
+			case err => errorLite(s"Error fetching citation string from Crosscite: ${err.getMessage}")
 		}
 		.andThen{
 			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)

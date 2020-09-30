@@ -59,10 +59,9 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		def fetchCitationOpt(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[Option[String]] =
 			dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply) match {
 				case None => Future.successful(None)
-				case Some(doi) => citer.getCitation(doi).map(Some(_)).recover {
-					case err: Throwable =>
-						Some("Error fetching the citation from DataCite: " + err.getMessage)
-				}
+				case Some(doi) => citer.getCitation(doi).recover {
+					case err => err.getMessage
+				}.map(Some(_))
 			}
 
 		def fetchHtmlMaker(citOpt: Option[String])(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
@@ -125,6 +124,7 @@ object PageContentMarshalling{
 			)
 			case None => HttpResponse(StatusCodes.NotFound)
 		}
+
 	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {
 

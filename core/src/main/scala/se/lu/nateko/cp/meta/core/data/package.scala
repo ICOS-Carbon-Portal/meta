@@ -5,8 +5,6 @@ import java.net.URI
 
 package object data{
 
-	case class References(citationString: Option[String], keywords: Option[Seq[String]])
-
 	type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
 
 	def staticObjLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(

@@ -80,9 +80,9 @@ class CollectionFetcher(
 			nextVersion = getNextVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi),
-			references = References(None, None)
+			references = References(None, None, None)
 		)
-		init.copy(references = References(citationString = citer.getCitationString(init), keywords = None))
+		init.copy(references = init.references.copy(citationString = citer.getCitationString(init)))
 	}
 
 }

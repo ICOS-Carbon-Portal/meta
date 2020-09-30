@@ -4,8 +4,7 @@ import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.References
-import se.lu.nateko.cp.meta.{StationDataMetadata, SubmitterProfile, DataObjectDto, DocObjectDto, UploadDto, StaticCollectionDto, DataProductionDto}
+import se.lu.nateko.cp.meta._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
@@ -141,12 +140,9 @@ class Form(
 		specificInfo = specInfo,
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
-		references = Some(
-			References(
-				citationString = None,
+		references = Some(ReferencesDto(
 				keywords = dataPanel.keywords.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
-			)
-		)
+		))
 	)
 
 	def specificInfo: Try[Either[ElaboratedProductMetadata, StationDataMetadata]] = dataPanel.objSpec.flatMap{spec =>

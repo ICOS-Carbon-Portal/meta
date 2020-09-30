@@ -66,10 +66,12 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
 			parentCollections = collFetcher.getParentCollections(dobj),
-			references = References(None, None)
+			references = References(None, None, None)
 		)
+		val citeInfo = citer.getCitationInfo(init)
 		init.copy(references = References(
-				citationString = citer.getCitationString(init),
+				citationString = citeInfo.map(_.citationString),
+				authors = citeInfo.flatMap(_.authors),
 				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 			)
 		)
@@ -89,9 +91,16 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(doc),
 			previousVersion = getPreviousVersion(doc),
 			parentCollections = collFetcher.getParentCollections(doc),
-			references = References(None, None)
+			references = References(None, None, None)
 		)
-		init.copy(references = References(citer.getCitationString(init), None))
+		val citeInfo = citer.getCitationInfo(init)
+		init.copy(
+			references = References(
+				citationString = citeInfo.map(_.citationString),
+				authors = citeInfo.flatMap(_.authors),
+				keywords = None
+			)
+		)
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI)(implicit envri: Envri): Option[String] = {

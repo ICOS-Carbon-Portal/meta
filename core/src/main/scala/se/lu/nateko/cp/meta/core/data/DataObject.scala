@@ -153,3 +153,5 @@ case class DocObject(
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject
+
+case class References(citationString: Option[String], keywords: Option[Seq[String]], authors: Option[Seq[Person]])

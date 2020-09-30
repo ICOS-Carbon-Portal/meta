@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.ReferencesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
@@ -76,7 +77,7 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = Some(dobj.references)
+			references = Some(ReferencesDto(dobj.references.keywords))
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",

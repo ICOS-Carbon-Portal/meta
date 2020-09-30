@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NoStackTrace
 
 import akka.actor.Scheduler
 import akka.Done
@@ -16,6 +17,7 @@ package object async {
 	def ok: Future[Done] = Future.successful(Done)
 
 	def error[T](msg: String): Future[T] = Future.failed(new Exception(msg))
+	def errorLite[T](msg: String): Future[T] = Future.failed(new Exception(msg) with NoStackTrace)
 
 	def timeLimit[T](
 		future: Future[T],

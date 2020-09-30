@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.core.data.Orcid
 
 class AttributionProvider(repo: Repository){
 	import AttributionProvider._
@@ -39,11 +40,12 @@ class AttributionProvider(repo: Repository){
 		}
 	).toSeq.flatten
 
-	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?weight ?start ?end where{
+	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?weight ?start ?end where{
 		|	?memb <${metaVocab.atOrganization}> <$station> .
 		|	?person <${metaVocab.hasMembership}> ?memb ;
 		|		<${metaVocab.hasFirstName}> ?fname ;
 		|		<${metaVocab.hasLastName}> ?lname .
+		|	OPTIONAL{?person <${metaVocab.hasOrcidId}> ?orcid }
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
 		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
@@ -60,7 +62,7 @@ class AttributionProvider(repo: Repository){
 		UriResource(bs.getValue("person").asInstanceOf[IRI].toJava, None, Nil),
 		bs.getValue("fname").stringValue,
 		bs.getValue("lname").stringValue,
-		None
+		Option(bs.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
 	)
 }
 

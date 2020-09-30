@@ -41,7 +41,7 @@ object JsonSupport {
 	}
 
 	implicit val dataProductionDtoFormat = Json.format[DataProductionDto]
-	implicit val referencesFormat = Json.format[References]
+	implicit val referencesFormat = Json.format[ReferencesDto]
 	implicit val elaboratedProductMetadataFormat = Json.format[ElaboratedProductMetadata]
 	implicit val stationDataMetadataFormat = Json.format[StationDataMetadata]
 

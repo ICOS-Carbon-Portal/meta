@@ -26,7 +26,7 @@ case class DataObjectDto(
 	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[Doi],
-	references: Option[References]
+	references: Option[ReferencesDto]
 ) extends ObjectUploadDto
 
 case class DocObjectDto(
@@ -80,3 +80,5 @@ case class DataProductionDto(
 )
 
 case class SubmitterProfile(id: String, producingOrganizationClass: Option[URI], producingOrganization: Option[URI])
+
+case class ReferencesDto(keywords: Option[Seq[String]])

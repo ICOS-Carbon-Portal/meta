@@ -127,7 +127,7 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class RdfStorageConfig(path: String, recreateAtStartup: Boolean, indices: String)
+case class RdfStorageConfig(path: String, recreateAtStartup: Boolean, indices: String, disableCpIndex: Boolean)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
 
@@ -176,7 +176,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
-	implicit val rdfStorageConfigFormat = jsonFormat3(RdfStorageConfig)
+	implicit val rdfStorageConfigFormat = jsonFormat4(RdfStorageConfig)
 	implicit val citationConfigFormat = jsonFormat3(CitationConfig)
 	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)
 

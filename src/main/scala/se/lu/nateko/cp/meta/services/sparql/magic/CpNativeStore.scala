@@ -23,12 +23,12 @@ import org.eclipse.rdf4j.sail.SailConnection
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
-	indexInit: Sail => IndexHandler,
+	indexInit: Sail => IndexProvider,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
 ) extends SailWrapper{ cpsail =>
 
-	private[this] var indexh: IndexHandler = _
+	private[this] var indexh: IndexProvider = _
 	private[this] var citer: CitationProvider = _
 	private[this] val storageDir = Paths.get(conf.path)
 
@@ -81,9 +81,10 @@ class CpNativeStore(
 		log.info("Initializing triple store...")
 		nativeSail.setForceSync(!isFreshInit)
 		nativeSail.initialize()
-		if(isFreshInit)
-			log.info("Triple store initialized, skipping Carbon Portal index initialization")
-		else {
+		if(isFreshInit || conf.disableCpIndex){
+			log.info("Triple store initialized, using a dummy as Carbon Portal index")
+			indexh = new DummyIndexProvider
+		} else {
 			log.info("Triple store initialized, initializing Carbon Portal index...")
 			indexh = indexInit(originalSail)
 			log.info(s"Carbon Portal index initialized with info on ${indexh.index.size} data objects")

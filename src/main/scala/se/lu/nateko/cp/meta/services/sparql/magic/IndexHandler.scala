@@ -10,8 +10,13 @@ import akka.actor.Scheduler
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.async.throttle
 import org.eclipse.rdf4j.sail.SailConnectionListener
+import org.eclipse.rdf4j.sail.memory.MemoryStore
 
-class IndexHandler(fromSail: Sail, scheduler: Scheduler)(implicit ctxt: ExecutionContext) extends SailConnectionListener {
+trait IndexProvider extends SailConnectionListener{
+	def index: CpIndex
+}
+
+class IndexHandler(fromSail: Sail, scheduler: Scheduler)(implicit ctxt: ExecutionContext) extends IndexProvider {
 
 	val index = new CpIndex(fromSail)
 	index.flush()
@@ -28,4 +33,14 @@ class IndexHandler(fromSail: Sail, scheduler: Scheduler)(implicit ctxt: Executio
 		flushIndex()
 	}
 
+}
+
+class DummyIndexProvider extends IndexProvider{
+	val index = {
+		val sail = new MemoryStore
+		sail.initialize()
+		new CpIndex(sail)
+	}
+	def statementAdded(s: Statement): Unit = {}
+	def statementRemoved(s: Statement): Unit = {}
 }

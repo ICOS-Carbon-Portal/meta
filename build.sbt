@@ -27,6 +27,7 @@ lazy val metaCore = (project in file("core"))
 			"URI" -> "string",
 			"Instant" -> "string",
 			"Sha256Sum" -> "string",
+			"Orcid" -> "string",
 			"JsValue" -> "object"
 		),
 		cpTsGenSources := {

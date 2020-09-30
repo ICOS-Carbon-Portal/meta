@@ -22,6 +22,8 @@ import spray.json.JsObject
 import spray.json.JsNull
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import akka.http.scaladsl.model.headers.HttpCookie
+import akka.http.scaladsl.model.headers.SameSite
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
@@ -67,9 +69,11 @@ class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit con
 			complete(JsObject(Map("email" -> JsNull)))
 		} ~
 		(path("logout") & extractEnvri){implicit envri =>
-			deleteCookie(authConfig.authCookieName, authConfig.authCookieDomain, "/"){
-				complete(StatusCodes.OK)
-			}
+			val cookie = HttpCookie(authConfig.authCookieName, "deleted")
+				.withDomain(authConfig.authCookieDomain)
+				.withSameSite(SameSite.Strict)
+				.withMaxAge(1)
+			setCookie(cookie){complete(StatusCodes.OK)}
 		}
 	}
 }
@@ -86,7 +90,7 @@ object AuthenticationRouting {
 		}.result
 
 	val ensureLocalRequest: Directive0 =
-		optionalHeaderValueByType[`X-Forwarded-For`](())
+		optionalHeaderValueByType(`X-Forwarded-For`)
 			.require(_.isEmpty)
 			.recover(_ => complete(StatusCodes.Forbidden))
 

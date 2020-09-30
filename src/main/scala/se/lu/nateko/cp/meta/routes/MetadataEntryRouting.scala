@@ -53,7 +53,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 				}
 			} ~
 			pathSuffix("getRangeValues"){
-				parameters(("classUri", "propUri")){ (classUri, propUri) =>
+				parameters("classUri", "propUri"){ (classUri, propUri) =>
 					complete(instOnto.getRangeValues(new URI(classUri), new URI(propUri)))
 				}
 			}
@@ -74,7 +74,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 					})
 				} ~
 				pathSuffix("createIndividual"){
-					parameters(("uri", "typeUri")){ (uriStr, typeUriStr) =>
+					parameters("uri", "typeUri"){ (uriStr, typeUriStr) =>
 						instOnto.createIndividual(uriStr, typeUriStr).get
 						complete(StatusCodes.OK)
 					} ~

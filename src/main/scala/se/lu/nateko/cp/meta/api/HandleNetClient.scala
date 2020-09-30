@@ -19,8 +19,7 @@ import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.HttpsConnectionContext
-import akka.http.scaladsl.UseHttp2
+import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods
@@ -75,9 +74,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 
 		sslCtxt.init(keyManFact.getKeyManagers, trustManFact.getTrustManagers, rnd)
 
-		val d = http.defaultClientHttpsContext
-
-		new HttpsConnectionContext(sslCtxt, d.sslConfig, d.enabledCipherSuites, d.enabledProtocols, d.clientAuth, d.sslParameters)
+		ConnectionContext.httpsClient(sslCtxt)
 	}
 
 	private val authHeaders = RawHeader("Authorization", "Handle clientCert=\"true\"") :: Nil

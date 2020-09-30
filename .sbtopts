@@ -1,1 +1,1 @@
--Dsbt.override.build.repos=true -Dsbt.repository.config=project/repositories
+-J-XX:MaxMetaspaceSize=512M -Dsbt.override.build.repos=true -Dsbt.repository.config=project/repositories

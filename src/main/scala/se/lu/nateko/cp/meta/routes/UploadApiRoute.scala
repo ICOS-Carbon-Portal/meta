@@ -130,7 +130,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						complete(coreConf.envriConfigs(envri))
 					} ~
 					path("permissions"){
-						parameters(("submitter", "userId"))((submitter, userId) => {
+						parameters("submitter", "userId")((submitter, userId) => {
 							val isAllowed: Boolean = service.checkPermissions(new java.net.URI(submitter), userId)
 							complete(JsBoolean(isAllowed))
 						})

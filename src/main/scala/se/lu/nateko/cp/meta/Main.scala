@@ -24,7 +24,7 @@ object Main extends App with CpmetaJsonProtocol{
 		db <- metaFactory(config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		route = MainRoute(db, metaflow, config);
-		binding <- Http().bindAndHandle(route, "localhost", config.port)
+		binding <- Http().newServerAt("localhost", config.port).bind(route)
 	) yield {
 		sys.addShutdownHook{
 			metaflow.cancel()

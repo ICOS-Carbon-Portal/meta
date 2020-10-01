@@ -91,7 +91,7 @@ case class L3SpecificMeta(
 	variables: Option[Seq[L3VarInfo]]
 )
 
-sealed trait StaticObject{
+sealed trait StaticObject extends CitableItem{
 	def hash: Sha256Sum
 	def accessUrl: Option[URI]
 	def pid: Option[String]

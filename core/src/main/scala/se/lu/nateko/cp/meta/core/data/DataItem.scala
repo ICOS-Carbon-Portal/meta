@@ -31,6 +31,11 @@ final case class StaticCollection(
 	nextVersion: Option[URI],
 	doi: Option[String],
 	references: References
-) extends DataItemCollection with StaticDataItem {
+) extends DataItemCollection with StaticDataItem with CitableItem{
 	type M = StaticDataItem
+}
+
+trait CitableItem{
+	def doi: Option[String]
+	def references: References
 }

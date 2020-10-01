@@ -24,6 +24,7 @@ import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
 
@@ -50,31 +51,38 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
 	private implicit val envriConfs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
+	private val server = new Rdf4jInstanceServer(repo)
+	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	private val citer = new CitationMaker(doiCiter, repo, coreConf)
 
-	def getCitation(maybeDobj: Resource): Option[String] =
-		getStaticObject(maybeDobj).flatMap(_.references.citationString)
+	def getCitation(maybeDobj: Resource): Option[String] = maybeDobj match {
+
+		case iri: IRI =>
+			if(
+				server.hasStatement(iri, RDF.TYPE, metaVocab.collectionClass) ||
+				server.hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
+			) {
+				server.getStringValues(iri, metaVocab.hasDoi).headOption.collect{
+					case Doi(doi) => doiCiter.getCitationEager(doi)
+				}.flatten
+			} else getStaticObject(iri).flatMap(_.references.citationString)
+
+		case _ =>
+			None
+	}
 
 	private val objFetcher = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
-		val server = new Rdf4jInstanceServer(repo)
-
 		val collFetcher = new CollectionFetcherLite(server, citer.vocab)
 		val plainFetcher = new PlainStaticObjectFetcher(server)
 		new StaticObjectFetcher(server, collFetcher, plainFetcher, pidFactory, citer)
 	}
 
-	private def getStaticObject(maybeDobj: Resource): Option[StaticObject] = maybeDobj match {
-
-		case iri: IRI => for(
-			hash <- Sha256Sum.fromBase64Url(iri.getLocalName).toOption;
-			envri <- inferObjectEnvri(iri);
-			obj <- objFetcher.fetch(hash)(envri)
-		) yield obj
-
-		case _ =>
-			None
-	}
+	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
+		hash <- Sha256Sum.fromBase64Url(maybeDobj.getLocalName).toOption;
+		envri <- inferObjectEnvri(maybeDobj);
+		obj <- objFetcher.fetch(hash)(envri)
+	) yield obj
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))

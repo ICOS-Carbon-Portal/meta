@@ -139,7 +139,7 @@
 				}
 
 				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
-					<iframe src="/station/?icon=@icon&coverage=@geoJson"></iframe>
+					<iframe src="/station/?icon=@icon&coverage=@urlEncode(geoJson)"></iframe>
 				}
 			}
 		</div>

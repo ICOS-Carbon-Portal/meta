@@ -72,25 +72,8 @@ class UploadService(
 	}
 
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
-		val collHashTry = Try{
-			val sha256 = java.security.MessageDigest.getInstance("SHA-256")
-			coll.members
-				.map(_.toString.split('/').last)
-				.sorted
-				.foreach{segm =>
-					val hash = Sha256Sum.fromBase64Url(segm).getOrElse{
-						throw new UploadUserErrorException(
-							"Static collection's members must be also static and therefore their URLs " +
-							"must end with base64Url-encoded SHA-256 hashsums (full or truncated)"
-						)
-					}
-					sha256.update(hash.truncate.getBytes.toArray)
-				}
-			new Sha256Sum(sha256.digest())
-		}
-
 		val resTry = for(
-			collHash <- collHashTry;
+			collHash <- UploadService.collectionHash(coll.members);
 			server <- Try{servers.collectionServers(envri)};
 			_ <- validator.validateCollection(coll, collHash, uploader);
 			submitterConf <- validator.getSubmitterConfig(coll);
@@ -141,4 +124,24 @@ class UploadService(
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] =
 		completer.completeUpload(hash, info)
 
+}
+
+object UploadService{
+
+	def collectionHash(items: Seq[URI]): Try[Sha256Sum] = Try{
+		val sha256 = java.security.MessageDigest.getInstance("SHA-256")
+		items
+			.map(_.toString.split('/').last)
+			.sorted
+			.foreach{segm =>
+				val hash = Sha256Sum.fromBase64Url(segm).getOrElse{
+					throw new UploadUserErrorException(
+						"Static collection's members must be also static and therefore their URLs " +
+						"must end with base64Url-encoded SHA-256 hashsums (full or truncated)"
+					)
+				}
+				sha256.update(hash.truncate.getBytes.toArray)
+			}
+		new Sha256Sum(sha256.digest())
+	}
 }

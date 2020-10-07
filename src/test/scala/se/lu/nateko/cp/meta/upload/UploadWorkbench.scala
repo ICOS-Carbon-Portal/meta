@@ -29,6 +29,9 @@ object UploadWorkbench{
 		//Some(Uri("http://127.0.0.1:9010"))
 	)
 
+	def atcColMaker(datacitePass: String, cpauthToken: String) =
+		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
+
 	val citer = new CitationClient(Nil, new CitationConfig("copernicus-publications", false, 10))
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 

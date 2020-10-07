@@ -12,6 +12,8 @@ import java.net.URI
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import scala.concurrent.Future
 import akka.Done
+import se.lu.nateko.cp.meta.services.upload.UploadService
+import scala.util.Try
 
 class DoiMaker(password: String)(implicit val system: ActorSystem){
 
@@ -31,6 +33,11 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 	}
 
 	def setDois(infos: Seq[DoiMaker.DoiInfo]): Future[Done] = executeSequentially(infos)(setDoi)
+
+	def collectionDoi(items: Seq[URI]): Try[Doi] = UploadService.collectionHash(items).map{hash =>
+		client.doi(DoiMaker.coolDoi(hash))
+	}
+
 }
 
 object DoiMaker{

@@ -29,6 +29,7 @@ import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
+import akka.event.LoggingAdapter
 
 
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
@@ -53,7 +54,7 @@ trait ObjInfo extends ObjSpecific{
 }
 
 //TODO Make the index closeable (then it can permanently hold a single connection to the Sail)
-class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
+class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
 	import CpIndex._
 
 	implicit val factory = sail.getValueFactory
@@ -241,8 +242,14 @@ class CpIndex(sail: Sail, nObjects: Int = 10000) extends ReadWriteLocking{
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
 		def handleContinuousPropUpdate[T](prop: ContProp{ type ValueType = T}, key: T, idx: Int): Unit = {
-			if(isAssertion) bitmap(prop).add(key, idx)
-			else bitmap(prop).remove(key, idx)
+			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash}"
+			if(isAssertion) {
+				if(!bitmap(prop).add(key, idx)){
+					log.warning(s"Value already exists: trying to assert $helpTxt")
+				}
+			} else if(!bitmap(prop).remove(key, idx)){
+					log.warning(s"Value not present: trying to retract $helpTxt")
+			}
 		}
 
 		def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int): Unit = {

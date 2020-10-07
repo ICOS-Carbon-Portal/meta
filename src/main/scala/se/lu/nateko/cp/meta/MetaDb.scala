@@ -148,7 +148,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 	private def makeInitRepo(config: CpmetaConfig, citationFactory: CitationProviderFactory): (Repository, Boolean, CitationClient) = {
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val indexInit: Sail => IndexHandler = new IndexHandler(_, system.scheduler)(system.dispatcher)
+		val indexInit: Sail => IndexHandler = new IndexHandler(_, system.scheduler, log)(system.dispatcher)
 		val native = new CpNativeStore(config.rdfStorage, indexInit, citationFactory, log)
 
 		val repo = new SailRepository(native)

@@ -31,17 +31,22 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 
 	describe("adding and removing values"){
 		val (bm, arr) = initRandom(1000)
+		implicit val bmimp = bm
 
-		ignore("throws exception if trying to add existing value"){
-			assertThrows[AssertionError]{
-				bm.add("bebe", 10)
-			}
+		it("adding existing value does not change their number but updates the bitmap"){
+			val idx = 10
+			val n0 = bm.all.getCardinality
+			testFilter(EqualsFilter("bebe"), Seq())
+			bm.add("bebe", idx)
+			arr(idx) = "bebe"
+			assert(bm.all.getCardinality === n0)
+			testFilter(EqualsFilter("bebe"), Seq(idx))
 		}
 
-		ignore("throws exception if trying to remove value, but supplying wrong key"){
-			assertThrows[AssertionError]{
-				bm.remove("bebe", 10)
-			}
+		it("trying to remove value, but supplying wrong key, will have no effect if the bitmap is multilevel"){
+			val idx = 11
+			bm.remove("bebe", idx)
+			assert(bm.all.contains(idx))
 		}
 
 		it("first removing a value, then adding it again with a new key works"){

@@ -27,13 +27,15 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 	def all: ImmutableRoaringBitmap = values
 
 	/**
-	 * Adds the value. The value must not be already present.
-	 * @param key must be the same as what {{{geo.keyLookup(value)}}} would return.
+	 * Adds the value. If the value is present, it is purged first
+	 * @param key must be the same as what `geo.keyLookup(value)` would return.
 	 * @throws java.lang.AssertionError if the value is already present.
+	 * @return `true` if the value was new, `false` if it had to be purged first
 	*/
-	def add(key: K, value: Int): Unit = {
+	def add(key: K, value: Int): Boolean = {
 
-		//assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
+		val wasPresent = purgeValueIfPresent(value)
+
 		values.add(value)
 		n += 1
 		if(children != null) addToChild(key, value)
@@ -44,28 +46,36 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 			children = HashMap.empty
 			values.forEach{v => addToChild(geo.keyLookup(v), v)}
 		}
-
+		!wasPresent
 	}
 
 	/**
 	 * Removes the value, returning true if value was present and false otherwise.
 	 * @param key must be the same as the one supplied when the value was added.
-	 * @throws java.lang.AssertionError if the value was present but not inserted with the key supplied.
 	 */
 	def remove(key: K, value: Int): Boolean = {
+
 		val wasPresentInSelf = values.contains(value)
-		values.remove(value)
-		if(wasPresentInSelf) n -= 1
-
-		if(children == null) wasPresentInSelf else {
+		val wasPresentInChildren = (children != null) && {
 			val coord = nextLevel(key)
-			val wasPresentInChildren = children.get(coord).map(_.remove(key, value)).getOrElse(false)
-
-			assert(wasPresentInChildren == wasPresentInSelf, "Inconsistency in Hierarchical bitmap!")
-
-			wasPresentInSelf // `|| wasPresentInChildren` is not needed due to the assertion above
+			children.get(coord).map(_.remove(key, value)).getOrElse(false)
 		}
+
+		if((wasPresentInChildren || children == null) && wasPresentInSelf){
+			values.remove(value)
+			n -= 1
+		}
+
+		wasPresentInChildren || children == null && wasPresentInSelf
 	}
+
+	private def purgeValueIfPresent(value: Int): Boolean =
+		if(values.contains(value)){
+			values.remove(value)
+			n -= 1
+			if(children != null) children.valuesIterator.foreach(_.purgeValueIfPresent(value))
+			true
+		} else false
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)

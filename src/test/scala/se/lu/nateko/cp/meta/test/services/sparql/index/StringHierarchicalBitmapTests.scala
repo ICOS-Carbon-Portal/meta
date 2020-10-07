@@ -32,13 +32,13 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	describe("adding and removing values"){
 		val (bm, arr) = initRandom(1000)
 
-		it("throws exception if trying to add existing value"){
+		ignore("throws exception if trying to add existing value"){
 			assertThrows[AssertionError]{
 				bm.add("bebe", 10)
 			}
 		}
 
-		it("throws exception if trying to remove value, but supplying wrong key"){
+		ignore("throws exception if trying to remove value, but supplying wrong key"){
 			assertThrows[AssertionError]{
 				bm.remove("bebe", 10)
 			}

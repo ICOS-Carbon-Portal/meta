@@ -33,7 +33,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 	*/
 	def add(key: K, value: Int): Unit = {
 
-		assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
+		//assert(!values.contains(value), s"value $value is already contained in a bitmap at depth $depth")
 		values.add(value)
 		n += 1
 		if(children != null) addToChild(key, value)

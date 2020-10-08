@@ -26,8 +26,12 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.core.data.JsonSupport.dataObjectFormat
 import java.net.URI
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import se.lu.nateko.cp.meta.core.data.DataObject
+import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.MediaTypes
 
 class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSystem) extends CpmetaJsonProtocol{
 
@@ -93,6 +97,15 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 			headers = Seq(cookie, dataHost)
 		))
 		.flatMap(responseToDone)
+
+	def fetchDataObject(uri: java.net.URI): Future[DataObject] = http
+		.singleRequest(HttpRequest(
+			uri = Uri(uri.toASCIIString),
+			headers = Seq(Accept(MediaTypes.`application/json`))
+		))
+		.flatMap{resp =>
+			Unmarshal(resp).to[DataObject]
+		}
 }
 
 object CpUploadClient{

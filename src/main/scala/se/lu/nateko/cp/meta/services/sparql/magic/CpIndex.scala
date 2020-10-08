@@ -242,13 +242,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
 		def handleContinuousPropUpdate[T](prop: ContProp{ type ValueType = T}, key: T, idx: Int): Unit = {
-			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash}"
+			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
 			if(isAssertion) {
 				if(!bitmap(prop).add(key, idx)){
-					log.warning(s"Value already exists: trying to assert $helpTxt")
+					log.warning(s"Value already existed: asserted $helpTxt")
 				}
 			} else if(!bitmap(prop).remove(key, idx)){
-					log.warning(s"Value not present: trying to retract $helpTxt")
+					log.warning(s"Value was not present: tried to retract $helpTxt")
 			}
 		}
 

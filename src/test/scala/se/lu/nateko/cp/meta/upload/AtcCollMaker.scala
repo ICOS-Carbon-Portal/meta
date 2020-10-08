@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.concurrent.Future
 import akka.Done
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import se.lu.nateko.cp.meta.services.upload.UploadService
 
 class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: ExecutionContext) {
 	import AtcCollMaker._
@@ -29,25 +30,75 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 
 	def makeStationColl(prevColLookup: Map[URI, URI])(station: URI, items: Seq[URI]): Future[Done] = {
 
-		uploader.fetchDataObject(items.head).map{dobj =>
-			for(
-				l2 <- dobj.specificInfo;
-				doi <- maker.collectionDoi(items)
-			){
+		uploader.fetchDataObject(items.head).flatMap{dobj =>
+			val doneFutOpt = for(
+				l2 <- dobj.specificInfo.toOption;
+				hash <- UploadService.collectionHash(items).toOption
+			) yield {
+				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
 				val dto = makeDto(l2.acquisition.station, items, doi, prevColLookup)
-				println(dto)
-				//val doiMeta = makeDoiMeta(dto, dobj)
+				val doiMeta = makeDoiMeta(dto, doi, dobj)
+				for(
+					_ <- uploader.uploadSingleCollMeta(dto);
+					_ = println(s"collection created for $station");
+					_ <- maker.client.setDoi(doiMeta, new java.net.URL(s"https://meta.icos-cp.eu/collections/${hash.id}"))
+				) yield {
+					println(s"done for $station")
+					Done
+				}
 			}
-			Done
+			doneFutOpt.getOrElse(Future.successful(Done))
 		}
 	}
 }
 
 object AtcCollMaker{
 
-	def makeDoiMeta(dto: StaticCollectionDto, sample: DataObject): DoiMeta = {
-		val title = Title(dto.title, None, None)
-		???
+	val contributors = Seq(
+		"ICOS ATC-Laboratoires Des Sciences Du Climat Et De L'Environnement (LSCE), France" -> ContributorType.DataCurator,
+		"ICOS Central Radiocarbon Laboratory (CRL), Germany" -> ContributorType.DataCurator,
+		"ICOS ERIC--Carbon Portal, Sweden" -> ContributorType.DataManager,
+		"ICOS Flask And Calibration Laboratory (FCL), Germany" -> ContributorType.DataCollector
+	).map{
+		case (name, cType) => Contributor(GenericName(name), Nil, Nil, cType)
+	}
+
+	val lampedusaCreators = Seq(
+		"Alcide" -> "di Sarra",
+		"Salvatore" -> "Piacentino",
+		"Damiano" -> "Sferlazzo"
+	).map{
+		case (fname, lname) => Creator(PersonalName(fname, lname), Nil, Seq("ENEA"))
+	}
+
+	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, sample: DataObject): DoiMeta = {
+		val creators = sample.references.authors.getOrElse(Nil).map{pers =>
+			Creator(
+				name = PersonalName(pers.firstName, pers.lastName),
+				nameIds = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+				affiliations = Nil
+			)
+		}
+		DoiMeta(
+			id = doi,
+			creators = if(creators.isEmpty && dto.title.contains("Lampedusa")) lampedusaCreators else creators,
+			titles = Seq(Title(dto.title, None, None)),
+			publisher = "ICOS ERIC -- Carbon Portal",
+			publicationYear = 2020,
+			resourceType = ResourceType("ZIP archives", ResourceTypeGeneral.Collection),
+			subjects = Seq(
+				Subject("Biogeochemical cycles, processes, and modeling"),
+				Subject("Troposphere: composition and chemistry")
+			),
+			contributors = contributors,
+			dates = Seq(
+				Date(java.time.Instant.now.toString.take(10), DateType.Issued)
+			),
+			formats = Seq("Collection of ICOS ATC ASCII files"),
+			version = Some(Version(1, 0)),
+			rights = Seq(DoiMaker.cc4by),
+			descriptions = dto.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
+		)
 	}
 
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColLookup: Map[URI, URI]) = StaticCollectionDto(

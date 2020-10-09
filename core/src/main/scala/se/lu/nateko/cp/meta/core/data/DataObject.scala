@@ -79,8 +79,12 @@ case class L2OrLessSpecificMeta(
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-case class L3VarInfo(label: String, valueType: ValueType, minMax: Option[(Double, Double)])
-case class ColumnInfo(label: String, valueType: ValueType)
+sealed trait VarMeta{
+	def label: String
+	def valueType: ValueType
+}
+case class L3VarInfo(label: String, valueType: ValueType, minMax: Option[(Double, Double)]) extends VarMeta
+case class ColumnInfo(label: String, valueType: ValueType) extends VarMeta
 
 case class L3SpecificMeta(
 	title: String,

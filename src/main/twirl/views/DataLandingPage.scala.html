@@ -79,6 +79,33 @@
 			}
 		</div>
 
+		@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
+			<div class="row">
+				@Panel("Previewable variables", 12){
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Value type</th>
+								<th>Unit</th>
+								<th>Quantity kind</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for(varInfo <- variables){
+								<tr>
+									<td>@(varInfo.label)</td>
+									<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
+									<td>@(varInfo.valueType.unit.getOrElse(""))</td>
+									<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			</div>
+		}
+
 		<div class="row">
 
 			@for(acquisition <- dobj.specificInfo.toOption.map(_.acquisition); station = acquisition.station){

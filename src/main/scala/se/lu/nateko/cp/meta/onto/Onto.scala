@@ -72,7 +72,7 @@ class Onto (owlOntology: OWLOntology) extends java.io.Closeable{
 	}
 
 	def getBottomSubClasses(owlClass: OWLClass): Seq[OWLClass] = {
-		val directSubs = reasoner.getSubClasses(owlClass, false)
+		val directSubs = reasoner.getSubClasses(owlClass, false).filterNot(_.isOWLNothing)
 		if(directSubs.isEmpty) Seq(owlClass)
 		else directSubs.flatMap(getBottomSubClasses)
 	}

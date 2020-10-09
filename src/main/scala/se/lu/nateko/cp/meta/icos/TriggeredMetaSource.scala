@@ -25,7 +25,7 @@ abstract class TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 			registerListener(actor)
 			() => actor ! Status.Success
 		}
-		.prepend(Source.single(2)) //triggering initial state reading at the stream startup
+		.prepend(Source.single[Any](akka.NotUsed)) //triggering initial state reading at the stream startup
 		.conflate(Keep.right) //swallow throttle's back-pressure
 		.throttle(2, 1.minute, 1, _ => 2, ThrottleMode.Shaping) //2 units of cost per minute
 		.mapConcat[State]{_ =>

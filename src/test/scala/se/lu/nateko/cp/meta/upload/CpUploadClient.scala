@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.ContentTypes
 import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.Sink
 import akka.http.scaladsl.model.headers.Host
 import spray.json.RootJsonFormat
 import se.lu.nateko.cp.meta.utils.akkahttp.responseToDone
@@ -105,6 +106,11 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 		))
 		.flatMap{resp =>
 			Unmarshal(resp).to[DataObject]
+		}
+
+	def getFileInfo(path: Path): Future[FileInfo] = FileIO.fromPath(path)
+		.runWith(DigestFlow.sha256.to(Sink.ignore)).map{hash =>
+			new FileInfo(path, hash)
 		}
 }
 

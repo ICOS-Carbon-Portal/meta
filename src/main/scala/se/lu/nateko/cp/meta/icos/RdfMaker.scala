@@ -24,15 +24,15 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 		val holder = memb.role.holder
-		val roleId = UriId(memb.role.kind.name)
+		val role = memb.role.kind
 		val org = memb.role.org
-		val label = s"${holder.lname} as $roleId at ${org.cpId}"
+		val label = s"${holder.lname} as ${role.name} at ${org.cpId}"
 
 		val triples: Seq[(IRI, IRI, Value)] = {
 			(uri, RDF.TYPE, meta.membershipClass) +:
 			(uri, RDFS.LABEL, vocab.lit(label)) +:
 			(uri, meta.atOrganization, getIri(org)) +:
-			(uri, meta.hasRole, vocab.getRole(roleId)) +:
+			(uri, meta.hasRole, vocab.getRole(role)) +:
 			(getIri(memb.role.holder), meta.hasMembership, uri) +:
 			memb.start.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))

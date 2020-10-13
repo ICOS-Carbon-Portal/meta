@@ -131,6 +131,13 @@ object AtcMetaSource{
 		9  -> None //Other station contact (disregarded by ICOS)
 	)
 
+	private val roleWeightMap: Map[Int, Int] = Map(
+		5  -> 100,//supervising PI
+		2  -> 70, //PI
+		12 -> 40, //Species PI
+		10 -> 20  //deputy PI
+	)
+
 	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
 	def parseCountry(s: String): Option[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
@@ -183,7 +190,7 @@ object AtcMetaSource{
 				startDate <- lookUpDate(RoleStartCol);
 				endDate <- lookUpDate(RoleEndCol)
 			) yield {
-				val assumedRole = new AssumedRole[A](role, person, station, None)
+				val assumedRole = new AssumedRole[A](role, person, station, roleWeightMap.get(roleId))
 				Membership(UriId(""), assumedRole, startDate, endDate)
 			}
 		}

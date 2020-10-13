@@ -22,8 +22,8 @@ class CitationInfo(val citationString: String, val authors: Option[Seq[Person]])
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) {
 	private implicit val envriConfs = coreConf.envriConfigs
 
-	private val attrProvider = new AttributionProvider(repo)
 	val vocab = new CpVocab(repo.getValueFactory)
+	private val attrProvider = new AttributionProvider(repo, vocab)
 
 	def getCitationString(coll: StaticCollection) = getDoiCitation(coll.doi).map(_.citationString)
 

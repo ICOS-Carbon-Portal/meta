@@ -18,8 +18,13 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.icos.Role
+import se.lu.nateko.cp.meta.core.data.DataTheme
+import se.lu.nateko.cp.meta.icos.PI
+import se.lu.nateko.cp.meta.icos.Administrator
 
-class AttributionProvider(repo: Repository){
+class AttributionProvider(repo: Repository, vocab: CpVocab){
 	import AttributionProvider._
 
 	private val sparql = new Rdf4jSparqlRunner(repo)
@@ -31,8 +36,10 @@ class AttributionProvider(repo: Repository){
 			prodTime <- productionTime(dobj)
 		) yield{
 			val query = membsQuery(l2.acquisition.station.org.self.uri)
+
 			sparql.evaluateTupleQuery(SparqlQuery(query))
-				.map(parseMembership)
+				.flatMap(parseMembership)
+				.filter(getTcSpecificFilter(dobj.specification.theme))
 				.filter(_.isRelevantAt(prodTime))
 				.toSeq
 				.sorted
@@ -40,8 +47,9 @@ class AttributionProvider(repo: Repository){
 		}
 	).toSeq.flatten
 
-	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?weight ?start ?end where{
-		|	?memb <${metaVocab.atOrganization}> <$station> .
+	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?role ?weight ?start ?end where{
+		|	?memb <${metaVocab.atOrganization}> <$station> ;
+		|		<${metaVocab.hasRole}> ?role .
 		|	?person <${metaVocab.hasMembership}> ?memb ;
 		|		<${metaVocab.hasFirstName}> ?fname ;
 		|		<${metaVocab.hasLastName}> ?lname .
@@ -49,14 +57,17 @@ class AttributionProvider(repo: Repository){
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
 		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
-		|}""".stripMargin
+	|}""".stripMargin
 
-	private def parseMembership(bs: BindingSet) = new Membership(
-		parsePerson(bs),
-		getOptInstant(bs, "start"),
-		getOptInstant(bs, "end"),
-		getOptInt(bs, "weight")
-	)
+	private def parseMembership(bs: BindingSet): Option[Membership] = parseRole(bs).map{role =>
+		new Membership(
+			parsePerson(bs),
+			role,
+			getOptInstant(bs, "start"),
+			getOptInstant(bs, "end"),
+			getOptInt(bs, "weight")
+		)
+	}
 
 	private def parsePerson(bs: BindingSet) = Person(
 		UriResource(bs.getValue("person").asInstanceOf[IRI].toJava, None, Nil),
@@ -64,6 +75,16 @@ class AttributionProvider(repo: Repository){
 		bs.getValue("lname").stringValue,
 		Option(bs.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
 	)
+
+	private def parseRole(bs: BindingSet): Option[Role] = Option(bs.getValue("role")).collect{
+		case CpVocab.IcosRole(role) => role
+	}
+
+	private def getTcSpecificFilter(theme: DataTheme): Membership => Boolean =
+		if(theme.self.uri === vocab.atmoTheme)
+			memb => memb.weight.isDefined
+		else
+			_ => true
 }
 
 object AttributionProvider{
@@ -73,7 +94,7 @@ object AttributionProvider{
 			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
 		}
 
-	class Membership(val person: Person, start: Option[Instant], end: Option[Instant], val weight: Option[Int]){
+	class Membership(val person: Person, val role: Role, start: Option[Instant], end: Option[Instant], val weight: Option[Int]){
 		def isRelevantAt(time: Instant): Boolean =
 			start.map(s => s.compareTo(time) < 0).getOrElse(true) &&
 			end.map(e => e.compareTo(time) > 0).getOrElse(true)

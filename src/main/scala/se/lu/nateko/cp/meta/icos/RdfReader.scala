@@ -142,7 +142,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 	private def getRole(iri: IRI): Role = {
 		val roleId = UriId(iri).urlSafeString
-		Role.all.find(_.name == roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
+		Role.forName(roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
 	}
 
 	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {

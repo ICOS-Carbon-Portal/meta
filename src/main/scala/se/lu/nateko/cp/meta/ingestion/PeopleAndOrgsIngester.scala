@@ -31,8 +31,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 		implicit val envri = Envri.ICOS
 		val vocab = new CpVocab(factory)
 		val metaVocab = new CpmetaVocab(factory)
-		val roleId = UriId(Researcher.name)
-		val role = vocab.getRole(roleId)
+		val role = Researcher
 
 		val info = Source
 			.fromInputStream(getClass.getResourceAsStream(pathToTextRes), "UTF-8")
@@ -71,12 +70,12 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 			case Info(lname, fname, Some(OrgInfo(_, orgId))) =>
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
-				val membership = vocab.getMembership(orgId, roleId, lname)
+				val membership = vocab.getMembership(orgId, role, lname)
 				Seq[(IRI, IRI, Value)](
 					(person, metaVocab.hasMembership, membership),
 					(membership, RDF.TYPE, metaVocab.membershipClass),
-					(membership, RDFS.LABEL, s"$lname as $roleId at $orgId".toRdf),
-					(membership, metaVocab.hasRole, role),
+					(membership, RDFS.LABEL, s"$lname as ${role.name} at $orgId".toRdf),
+					(membership, metaVocab.hasRole, vocab.getRole(role)),
 					(membership, metaVocab.atOrganization, org)
 				)
 		}.flatten

@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.ETC
 import se.lu.nateko.cp.meta.icos.TcConf
+import se.lu.nateko.cp.meta.icos.Role
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab._
@@ -42,10 +43,10 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 //	)(icosBup)
 
 	def getMembership(membId: UriId)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
-	def getMembership(orgId: UriId, roleId: UriId, lastName: String)(implicit envri: Envri): IRI =
-		getMembership(UriId(s"${orgId}_${roleId}_${UriId.escaped(lastName)}"))
+	def getMembership(orgId: UriId, role: Role, lastName: String)(implicit envri: Envri): IRI =
+		getMembership(UriId(s"${orgId}_${role.name}_${UriId.escaped(lastName)}"))
 
-	def getRole(roleId: UriId)(implicit envri: Envri) = getRelative("roles/", roleId)
+	def getRole(role: Role)(implicit envri: Envri) = getRelative(RolesPrefix, UriId(role.name))
 
 	def getOrganization(orgId: UriId)(implicit envri: Envri) = getRelative("organizations/", orgId)
 
@@ -85,6 +86,7 @@ object CpVocab{
 	val SubmPrefix = "subm_"
 	val SpatCovPrefix = "spcov_"
 	val VarInfoPrefix = "varinfo_"
+	val RolesPrefix = "roles/"
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)
@@ -101,6 +103,15 @@ object CpVocab{
 	object DataObject{
 		def unapply(iri: IRI): Option[(Sha256Sum, String)] = asPrefWithHash(iri, "")
 			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))
+	}
+
+	object IcosRole{
+		def unapply(iri: IRI): Option[Role] = {
+			val segms = iri.stringValue.split('/')
+			if(segms.length < 2 || !RolesPrefix.startsWith(segms(segms.length - 2))) None else{
+				Role.forName(segms.last)
+			}
+		}
 	}
 
 	object VarInfo{

@@ -14,6 +14,24 @@
     <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
     <Import>http://meta.icos-cp.eu/ontologies/otcmeta/</Import>
     <Import>http://meta.icos-cp.eu/ontologies/uiannotations/</Import>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty4"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty5"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+    </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution</IRI>
@@ -62,6 +80,16 @@
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Funder</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Funding</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>

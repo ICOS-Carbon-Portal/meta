@@ -18,6 +18,7 @@ import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.utils.async.timeLimit
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 
 case class Statistics(count: Int)
 
@@ -35,12 +36,17 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 		Uri(s"$baseUri/$dbName")
 	}
 
+	private[this] val connPoolSetts = {
+		val defPoolSet = ConnectionPoolSettings(system)
+		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(21.millis)
+		defPoolSet.withConnectionSettings(connSet)
+	}
+
 	private def getStatistic(uri: Uri): Future[Option[Int]] = {
-		timeLimit(
-			http.singleRequest(HttpRequest(uri = uri)),
-			2.seconds,
-			system.scheduler
-		).flatMap { res =>
+			http.singleRequest(HttpRequest(uri = uri)).andThen{
+				case scala.util.Failure(err) => println(s"${err.getMessage} for $uri")
+			}
+		.flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>
 					Unmarshal(res.entity).to[Seq[Statistics]].map(sumCounts)

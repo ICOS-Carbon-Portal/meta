@@ -61,9 +61,13 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
 		val fromSet = from.toSet
 		val toSet = to.toSet
-		val toAdd = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
-		val toRemove = fromSet.diff(toSet).toSeq.map(RdfUpdate(_, false))
-		toRemove ++ toAdd
+		val assertions = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
+		val addedPredicates = assertions.map(_.statement.getPredicate)
+		val retractions = fromSet.diff(toSet).iterator.collect{
+			//all the predicates are made "sticky", meaning one cannot remove a value, but can update
+			case st if addedPredicates.contains(st.getPredicate) => RdfUpdate(st, false)
+		}.toSeq
+		retractions ++ assertions
 	}
 
 	private def swapSubject(subj: IRI)(stat: Statement): Statement =

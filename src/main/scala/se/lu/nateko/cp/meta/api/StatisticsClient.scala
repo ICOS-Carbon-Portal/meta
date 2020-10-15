@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.utils.async.timeLimit
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 
 case class Statistics(count: Int)
 
@@ -35,12 +35,15 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 		Uri(s"$baseUri/$dbName")
 	}
 
-	private def getStatistic(uri: Uri): Future[Option[Int]] = {
-		timeLimit(
-			http.singleRequest(HttpRequest(uri = uri)),
-			2.seconds,
-			system.scheduler
-		).flatMap { res =>
+	private[this] val connPoolSetts = {
+		val defPoolSet = ConnectionPoolSettings(system)
+		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
+		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
+	}
+
+	private def getStatistic(uri: Uri): Future[Option[Int]] = http
+		.singleRequest(HttpRequest(uri = uri), settings = connPoolSetts)
+		.flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>
 					Unmarshal(res.entity).to[Seq[Statistics]].map(sumCounts)
@@ -54,7 +57,6 @@ class StatisticsClient(val config: RestheartConfig)(implicit system: ActorSystem
 				system.log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None
 		}
-	}
 
 	def getPreviewCount(dobjHash: Sha256Sum)(implicit envri: Envri): Future[Option[Int]] = {
 		getStatistic(s"$dbUri/portaluse/_aggrs/getPreviewCountForPid?avars={'pid':'${dobjHash.id}'}&np")

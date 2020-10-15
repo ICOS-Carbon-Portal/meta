@@ -59,7 +59,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			_ <- isIcos;
 			title <- titleOpt;
 			pid <- dobj.doi.orElse(dobj.pid);
-			productionInstant <- AttributionProvider.productionTime(dobj)
+			productionInstant <- productionTime(dobj)
 		) yield {
 			val authors = attrProvider.getAuthors(dobj)
 			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
@@ -110,5 +110,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	}
 
 	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
+
+	def productionTime(dobj: DataObject): Option[Instant] =
+		dobj.production.map(_.dateTime).orElse{
+			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
+		}
 
 }

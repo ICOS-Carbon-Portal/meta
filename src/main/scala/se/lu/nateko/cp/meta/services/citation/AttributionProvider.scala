@@ -32,15 +32,14 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 
 	def getAuthors(dobj: DataObject): Seq[Person] = (
 		for(
-			l2 <- dobj.specificInfo.toOption;
-			prodTime <- productionTime(dobj)
+			l2 <- dobj.specificInfo.toOption
 		) yield{
 			val query = membsQuery(l2.acquisition.station.org.self.uri)
 
 			sparql.evaluateTupleQuery(SparqlQuery(query))
 				.flatMap(parseMembership)
 				.filter(getTcSpecificFilter(dobj.specification.theme))
-				.filter(_.isRelevantAt(prodTime))
+				.filter(_.isRelevantFor(dobj))
 				.toSeq
 				.sorted
 				.map(_.person)
@@ -88,16 +87,18 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 }
 
 object AttributionProvider{
-
-	def productionTime(dobj: DataObject): Option[Instant] =
-		dobj.production.map(_.dateTime).orElse{
-			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
-		}
-
 	class Membership(val person: Person, val role: Role, start: Option[Instant], end: Option[Instant], val weight: Option[Int]){
-		def isRelevantAt(time: Instant): Boolean =
-			start.map(s => s.compareTo(time) < 0).getOrElse(true) &&
-			end.map(e => e.compareTo(time) > 0).getOrElse(true)
+		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
+			l3 => {
+				val prodTime = l3.productionInfo.dateTime
+				start.map(s => s.compareTo(prodTime) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(prodTime) > 0).getOrElse(true)
+			},
+			l2 => l2.acquisition.interval.fold(true){acqInt =>
+				start.map(s => s.compareTo(acqInt.stop) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(acqInt.start) > 0).getOrElse(true)
+			}
+		)
 	}
 
 	implicit val personOrdering: ju.Comparator[Person] = Ordering

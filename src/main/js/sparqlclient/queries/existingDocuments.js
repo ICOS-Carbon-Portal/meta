@@ -2,4 +2,5 @@ export const existingDocuments = `prefix cpmeta: <http://meta.icos-cp.eu/ontolog
 select * where{
 	?doc a cpmeta:DocumentObject .
 	?doc cpmeta:hasName ?fileName .
+	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
 }`;

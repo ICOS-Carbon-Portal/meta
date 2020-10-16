@@ -108,7 +108,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			if(citation.trim.isEmpty)
 				errorLite("got empty citation text")
 			else
-				Future.successful(citation)
+				Future.successful(citation.trim)
 		}
 		.recoverWith{
 			case err => errorLite(s"Error fetching citation string from Crosscite: ${err.getMessage}")

@@ -39,8 +39,8 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 				val dto = makeDto(l2.acquisition.station, items, doi, prevColLookup)
 				val doiMeta = makeDoiMeta(dto, doi, dobj)
 				for(
-					_ <- uploader.uploadSingleCollMeta(dto);
-					_ = println(s"collection created for $station");
+					// _ <- uploader.uploadSingleCollMeta(dto);
+					// _ = println(s"collection created for $station");
 					_ <- maker.client.setDoi(doiMeta, new java.net.URL(s"https://meta.icos-cp.eu/collections/${hash.id}"))
 				) yield {
 					println(s"done for $station")

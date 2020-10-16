@@ -11,10 +11,13 @@ import {existingDocuments} from './queries/existingDocuments';
 import {concaveHulls} from './queries/concaveHulls';
 import {perFormatStats} from './queries/perFormatStats';
 import { bySamplingHeights } from './queries/bySamplingHeights';
+import { stationRoles } from './queries/stationRoles';
+
 
 const queries = [
 	{name:"Table of stations", query: stationsTable},
 	{name:"Provisional stations' PIs", query: stationPis},
+	{name:"Stations' people and roles", query: stationRoles},
 	{name:"Stations' labelling status", query: labelingStatus},
 	{name:"Stations that used the labelling app", query: activeStations},
 	{name:"PIs of \"labelling-inactive\" stations", query: inactivePis},

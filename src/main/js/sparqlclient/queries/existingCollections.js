@@ -5,6 +5,7 @@ select * where{
 	OPTIONAL{?coll cpmeta:hasDoi ?doi}
 	?coll dcterms:title ?title .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
+	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
 }
 order by ?title
 `;

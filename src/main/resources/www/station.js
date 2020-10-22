@@ -146,7 +146,7 @@ function processQuery(paramsEnc) {
 function getGeoJson(queryParams) {
 	return queryParams.station ?
 		getStationLocations(queryParams.station) :
-		Promise.resolve([{"geoJson": JSON.parse(queryParams.coverage)}])
+		Promise.resolve([{"geoJson": JSON.parse(decodeURIComponent(queryParams.coverage))}])
 }
 
 function getStationLocations(stationUrl) {

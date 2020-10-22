@@ -135,6 +135,8 @@ case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
 }
 
+case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
+
 case class CpmetaConfig(
 	port: Int,
 	dataUploadService: UploadServiceConfig,
@@ -148,7 +150,7 @@ case class CpmetaConfig(
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig,
 	citations: CitationConfig,
-	restheart: RestheartConfig
+	statsClient: StatsClientConfig
 )
 
 object ConfigLoader extends CpmetaJsonProtocol{
@@ -179,6 +181,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val rdfStorageConfigFormat = jsonFormat4(RdfStorageConfig)
 	implicit val citationConfigFormat = jsonFormat3(CitationConfig)
 	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)
+	implicit val statsClientConfigFormat = jsonFormat2(StatsClientConfig)
 
 	implicit val cpmetaConfigFormat = jsonFormat13(CpmetaConfig)
 

@@ -53,8 +53,10 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri:
 				) yield Left(LatLonBox(Position(minLat, minLon, None), Position(maxLat, maxLon, None), label, None))
 			} else Success(Right(spCov.uri))
 		}
-	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
 
+	def varnames: Try[Option[Seq[String]]] = varInfoForm.varInfos
+
+	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
 	private val descriptionInput = new TextOptInput("l3descr", notifyUpdate)
 	private val timeStartInput = new InstantInput("l3startinput", notifyUpdate)

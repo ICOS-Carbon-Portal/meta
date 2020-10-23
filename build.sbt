@@ -147,7 +147,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 		scalaJSUseMainModuleInitializer := true,
 
 		libraryDependencies ++= Seq(
-			"org.scala-js"      %%% "scalajs-dom"       % "1.0.0",
+			"org.scala-js"      %%% "scalajs-dom"       % "1.1.0",
 			"org.scala-js"      %%% "scalajs-java-time" % "0.2.6",
 			"com.typesafe.play" %%% "play-json"         % "2.8.1",
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.2",

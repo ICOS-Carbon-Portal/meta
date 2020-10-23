@@ -74,9 +74,10 @@ class Form(
 							dto <- dataObjectDto;
 							file <- aboutPanel.file;
 							nRows <- dataPanel.nRows;
+							varnames <- l3Panel.varnames;
 							spec <- dataPanel.objSpec
 						) {
-							whenDone(Backend.tryIngestion(file, spec, nRows)){ _ =>
+							whenDone(Backend.tryIngestion(file, spec, nRows, varnames)){ _ =>
 								onUpload(dto, Some(file))
 							}.failed.foreach {
 								case _ => progressBar.hide()

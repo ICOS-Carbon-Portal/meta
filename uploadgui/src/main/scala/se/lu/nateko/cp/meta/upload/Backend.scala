@@ -4,6 +4,7 @@ import java.net.URI
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.URIUtils.encodeURIComponent
 import org.scalajs.dom.File
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.AjaxException
@@ -61,12 +62,21 @@ object Backend {
 		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
 
 	def tryIngestion(
-		file: File, spec: ObjSpec, nRows: Option[Int]
-	)(implicit envriConfig: EnvriConfig): Future[Unit] = if(spec.hasDataset && spec.dataLevel <= 2){
+		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
+	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
-		val nRowsQuery = nRows.map(nRows => s"&nRows=$nRows").getOrElse("")
-		val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQuery"
-		Ajax
+		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.dataLevel == 3)
+
+		if(spec.hasDataset && (spec.dataLevel <= 2 || firstVarName.isDefined)){
+
+			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
+			val varsQ = varnames.fold(""){vns =>
+				val varsJson = encodeURIComponent(Json.toJson(varnames).toString)
+				s"&varnames=$varsJson"
+			}
+
+			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
+			Ajax
 			.put(url, file)
 			.recoverWith {
 				case AjaxException(xhr) =>
@@ -80,7 +90,8 @@ object Backend {
 				case 200 => Future.successful(())
 				case _ => Future.failed(new Exception(xhr.responseText))
 			})
-	} else Future.successful(())
+		} else Future.successful(())
+	}
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
 		.post("/sparql", query, responseType = "application/json")

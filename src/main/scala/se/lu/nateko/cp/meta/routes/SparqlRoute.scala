@@ -48,7 +48,7 @@ object SparqlRoute {
 			}
 		}
 
-		pathPrefix("sparql"){
+		path("sparql"){
 			get{
 				parameter("query")(makeResponse)
 			} ~

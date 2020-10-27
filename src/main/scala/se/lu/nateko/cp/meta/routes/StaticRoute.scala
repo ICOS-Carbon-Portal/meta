@@ -9,22 +9,23 @@ import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import scala.language.postfixOps
 
 object StaticRoute {
 
 	private[this] val pages: PartialFunction[(String, Envri), Html] = {
 		case ("labeling", _) => views.html.LabelingPage()
-		case ("sparqlclient", _) => views.html.SparqlClientPage()
+		case ("sparqlclient", _) => views.html.SparqlClientPage(None)
 		case ("station", envri) => views.html.StationPage(envri)
 	}
 
 	import PageContentMarshalling.twirlHtmlEntityMarshaller
 
-	def apply(config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = get{
+	def apply(config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = {
 
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
-		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = pathPrefix(pathPref){
+		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = (get & pathPrefix(pathPref)){
 			extractEnvri{envri =>
 				pathSingleSlash {
 					complete(views.html.UploadGuiPage(devVersion, envri, authConf))
@@ -33,7 +34,7 @@ object StaticRoute {
 			}
 		}
 
-		pathPrefix("edit" / Segment){ontId =>
+		(get & pathPrefix("edit" / Segment)){ontId =>
 			path("metaentry.js"){
 				getFromResource("www/metaentry.js")
 			} ~ {
@@ -50,7 +51,7 @@ object StaticRoute {
 		} ~
 		uploadGuiRoute("uploadgui", false) ~
 		uploadGuiRoute("uploadguidev", true) ~
-		pathPrefix(Segment){page =>
+		(get & pathPrefix(Segment)){page =>
 			extractEnvri{envri =>
 				if(pages.isDefinedAt(page, envri)) {
 					pathSingleSlash{
@@ -64,6 +65,12 @@ object StaticRoute {
 					}
 				} else reject
 			}
+		} ~
+		(post & path("sparqlclient" /)){
+			formField("query"){query =>
+				complete(views.html.SparqlClientPage(Some(query)))
+			} ~
+			complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
 		}
 	}
 }

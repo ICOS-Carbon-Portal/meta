@@ -228,7 +228,7 @@ object EtcMetaSource{
 		person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
 		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $persId")
 	) yield {
-		val assumedRole = new AssumedRole[E](role, person, station, None)
+		val assumedRole = new AssumedRole[E](role, person, station, None, None)
 		Membership(UriId(""), assumedRole, None, roleEnd)
 	}
 

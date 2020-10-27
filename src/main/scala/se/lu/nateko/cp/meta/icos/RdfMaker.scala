@@ -43,6 +43,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			memb.role.weight.map{weight =>
 				(uri, meta.hasAttributionWeight, vocab.lit(weight))
 			} ++:
+			memb.role.extra.map{einfo =>
+				(uri, meta.hasExtraRoleInfo, vocab.lit(einfo))
+			} ++:
 			Nil
 		}
 		triples.map(vocab.factory.tripleToStatement)

@@ -102,6 +102,7 @@ object AtcMetaSource{
 	val RoleIdCol = "RoleId"
 	val RoleStartCol = "StartDate"
 	val RoleEndCol = "EndDate"
+	val SpecielListCol = "SpeciesList"
 
 	private val countryMap = Map(
 		"belgium"         -> "BE",
@@ -183,14 +184,15 @@ object AtcMetaSource{
 				stationIdStr <- demand(RoleStationIdCol);
 				station <- new Validated(stationLookup.get(makeId(stationIdStr))).require(s"Could not find station with internal ATC id $stationIdStr");
 				persIdStr <- demand(RolePersIdCol);
-				person <- new Validated(peopleLookup.get(makeId(persIdStr))).require(s"Could not find person with internal ATC id persIdStr");
+				person <- new Validated(peopleLookup.get(makeId(persIdStr))).require(s"Could not find person with internal ATC id $persIdStr");
 				roleId <- lookUp(RoleIdCol).map(_.toInt).require("Problem parsing role id");
 				roleOpt <- new Validated(roleMap.get(roleId)).require(s"Unknown ATC role with id $roleId");
 				role <- new Validated(roleOpt);
 				startDate <- lookUpDate(RoleStartCol);
-				endDate <- lookUpDate(RoleEndCol)
+				endDate <- lookUpDate(RoleEndCol);
+				extra <- lookUp(SpecielListCol).filter(_ => roleId == 12).optional //only retain for Species PIs
 			) yield {
-				val assumedRole = new AssumedRole[A](role, person, station, roleWeightMap.get(roleId))
+				val assumedRole = new AssumedRole[A](role, person, station, roleWeightMap.get(roleId), extra)
 				Membership(UriId(""), assumedRole, startDate, endDate)
 			}
 		}

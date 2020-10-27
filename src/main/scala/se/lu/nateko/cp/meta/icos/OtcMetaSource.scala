@@ -167,7 +167,8 @@ class OtcMetaSource(
 				kind = otcVocab.Roles.map(b.getValue("roleKind").asInstanceOf[IRI]),
 				holder = pers(b.getValue("person").asInstanceOf[IRI]),
 				org = orgs(b.getValue("org").asInstanceOf[IRI]),
-				weight = Option(b.getValue("weight")).map(_.stringValue.toInt)
+				weight = Option(b.getValue("weight")).map(_.stringValue.toInt),
+				extra = None
 			)
 			Membership[O](
 				cpId = UriId(tcId.id),

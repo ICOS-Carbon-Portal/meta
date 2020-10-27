@@ -31,7 +31,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	val airCpStation = TcMobileStation[A](UriId("AIR1"), aId("43"), "Airplane 1", "AIR1", Some(se), None)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
-		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None), None, None)
+		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
 		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
@@ -148,7 +148,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		Given("starting with a single org with a single researcher and no own CP statements")
 
 		val uni = CompanyOrInstitution(UriId("uni"), Some(aId("uni0")), "Just Some Uni", None)
-		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None), None, None)
+		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
 		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)

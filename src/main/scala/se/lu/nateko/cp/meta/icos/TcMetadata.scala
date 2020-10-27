@@ -94,7 +94,13 @@ case class Instrument[+T <: TC](
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]
 
-class AssumedRole[+T <: TC](val kind: Role, val holder: Person[T], val org: Organization[T], val weight: Option[Int]){
+class AssumedRole[+T <: TC](
+	val kind: Role,
+	val holder: Person[T],
+	val org: Organization[T],
+	val weight: Option[Int],
+	val extra: Option[String]
+){
 	def id = (kind.name, holder.bestId, org.bestId)
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }

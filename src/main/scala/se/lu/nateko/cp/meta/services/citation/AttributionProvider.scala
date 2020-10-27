@@ -38,7 +38,7 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 
 			sparql.evaluateTupleQuery(SparqlQuery(query))
 				.flatMap(parseMembership)
-				.filter(getTcSpecificFilter(dobj.specification.theme))
+				.filter(getTcSpecificFilter(dobj))
 				.filter(_.isRelevantFor(dobj))
 				.toSeq
 				.sorted
@@ -46,7 +46,7 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 		}
 	).toSeq.flatten
 
-	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?role ?weight ?start ?end where{
+	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?role ?weight ?extra ?start ?end where{
 		|	?memb <${metaVocab.atOrganization}> <$station> ;
 		|		<${metaVocab.hasRole}> ?role .
 		|	?person <${metaVocab.hasMembership}> ?memb ;
@@ -54,6 +54,7 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 		|		<${metaVocab.hasLastName}> ?lname .
 		|	OPTIONAL{?person <${metaVocab.hasOrcidId}> ?orcid }
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
+		|	OPTIONAL{?memb <${metaVocab.hasExtraRoleInfo}> ?extra }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
 		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
 	|}""".stripMargin
@@ -64,7 +65,8 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 			role,
 			getOptInstant(bs, "start"),
 			getOptInstant(bs, "end"),
-			getOptInt(bs, "weight")
+			getOptInt(bs, "weight"),
+			getOptLiteral(bs, "extra", XMLSchema.STRING).map(_.stringValue)
 		)
 	}
 
@@ -79,15 +81,26 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 		case CpVocab.IcosRole(role) => role
 	}
 
-	private def getTcSpecificFilter(theme: DataTheme): Membership => Boolean =
-		if(theme.self.uri === vocab.atmoTheme)
-			memb => memb.weight.isDefined
-		else
+	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
+		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.weight.isDefined && {
+			val speciesOk = for(
+				extra <- memb.extra;
+				l2 <- dobj.specificInfo.toOption;
+				cols <- l2.columns
+			) yield{
+				val colLabels = cols.map(_.label.toLowerCase)
+				extra.split(',').map(_.trim.toLowerCase).exists(species =>
+					colLabels.exists(_.contains(species)) ||
+					dobj.specification.self.label.getOrElse("").contains(species)
+				)
+			}
+			speciesOk.getOrElse(true)
+		}) else
 			_ => true
 }
 
 object AttributionProvider{
-	class Membership(val person: Person, val role: Role, start: Option[Instant], end: Option[Instant], val weight: Option[Int]){
+	class Membership(val person: Person, val role: Role, start: Option[Instant], end: Option[Instant], val weight: Option[Int],val extra: Option[String]){
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime

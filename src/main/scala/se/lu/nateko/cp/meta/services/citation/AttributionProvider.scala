@@ -43,6 +43,7 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 				.toSeq
 				.sorted
 				.map(_.person)
+				.distinct
 		}
 	).toSeq.flatten
 

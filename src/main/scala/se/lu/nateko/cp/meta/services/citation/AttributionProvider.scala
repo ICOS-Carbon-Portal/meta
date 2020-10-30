@@ -92,7 +92,7 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 				val colLabels = cols.map(_.label.toLowerCase)
 				extra.split(',').map(_.trim.toLowerCase).exists(species =>
 					colLabels.exists(_.contains(species)) ||
-					dobj.specification.self.label.getOrElse("").contains(species)
+					dobj.specification.self.label.getOrElse("").toLowerCase.contains(species)
 				)
 			}
 			speciesOk.getOrElse(true)

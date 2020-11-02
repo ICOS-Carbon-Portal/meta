@@ -1,7 +1,9 @@
+@import se.lu.nateko.cp.meta.core.data.Envri
+@import Envri.Envri
 @import landpagesnips._
 
-@(query: Option[String] = None)
-@CpCommonPage("Carbon Portal SPARQL Endpoint"){
+@(envri: Envri, query: Option[String] = None)
+@template{
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
 	<script type="text/javascript" src="sparqlclient.js"></script>
 
@@ -16,7 +18,7 @@
 		.row{margin-bottom: 5px;}
 	</style>
 }{
-	@pageHeader("Carbon Portal SPARQL Endpoint", subTitle = Some("Access to Carbon Portal metadata"))
+	@pageHeader(pageTitle, subTitle = pageSubtitle)
 	<div class="row">
 		<div class="col-md-7">
 			<textarea id="queryTA" class="form-control" rows="10">@{query.getOrElse("")}</textarea>
@@ -75,3 +77,20 @@
 	</div>
 }
 
+@pageTitle = @{
+	envri match {
+		case Envri.SITES => "SITES SPARQL Endpoint"
+		case _ => "Carbon Portal SPARQL Endpoint"
+	}
+}
+
+@pageSubtitle = @{
+	envri match {
+		case Envri.SITES => None
+		case _ => Some("Access to Carbon Portal metadata")
+	}
+}
+
+@template = @{
+	if(envri == Envri.SITES) SitesPage(pageTitle) _ else CpCommonPage(pageTitle) _
+}

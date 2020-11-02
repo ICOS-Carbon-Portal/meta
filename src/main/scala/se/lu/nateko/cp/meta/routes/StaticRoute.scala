@@ -15,7 +15,7 @@ object StaticRoute {
 
 	private[this] val pages: PartialFunction[(String, Envri), Html] = {
 		case ("labeling", _) => views.html.LabelingPage()
-		case ("sparqlclient", _) => views.html.SparqlClientPage(None)
+		case ("sparqlclient", envri) => views.html.SparqlClientPage(envri)
 		case ("station", envri) => views.html.StationPage(envri)
 	}
 
@@ -67,10 +67,12 @@ object StaticRoute {
 			}
 		} ~
 		(post & path("sparqlclient" /)){
-			formField("query"){query =>
-				complete(views.html.SparqlClientPage(Some(query)))
-			} ~
-			complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
+			extractEnvri{envri =>
+				formField("query"){query =>
+					complete(views.html.SparqlClientPage(envri, Some(query)))
+				} ~
+				complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
+			}
 		}
 	}
 }

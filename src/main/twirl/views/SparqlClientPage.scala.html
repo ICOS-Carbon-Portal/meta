@@ -6,6 +6,8 @@
 @template{
 	<script type="text/javascript" src="https://static.icos-cp.eu/constant/jquery/1.11.2/jquery.min.js"></script>
 	<script type="text/javascript" src="sparqlclient.js"></script>
+	<script type="text/javascript" src="https://static.icos-cp.eu/constant/yasqe/4.1.3/yasqe.min.js"></script>
+	<link href="https://static.icos-cp.eu/constant/yasqe/4.1.3/yasqe.min.css" rel="stylesheet" type="text/css" />
 
 	<style type="text/css">
 		#queryTA{resize: vertical;}
@@ -21,7 +23,8 @@
 	@pageHeader(pageTitle, subTitle = pageSubtitle)
 	<div class="row">
 		<div class="col-md-7">
-			<textarea id="queryTA" class="form-control" rows="10">@{query.getOrElse("")}</textarea>
+			<div id="yasqe"></div>
+			<input id="hiddenQuery" type="hidden" value="@{query.getOrElse("")}" />
 		</div>
 
 		<div class="col-md-5">
@@ -48,13 +51,7 @@
 
 			<div class="row">
 
-				<div class="col-md-2" style="min-width:130px;">
-					<label class="above">Make request</label>
-					<button id="queryBtn" class="btn btn-primary">Submit</button>
-				</div>
-
-				<div class="col-md-2">
-					<label class="above">&nbsp;</label>
+				<div class="col-md-2" style="margin-top: 10px;">
 					<button id="copyTxtBtn" class="btn btn-primary">Select result</button>
 				</div>
 			</div>

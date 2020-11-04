@@ -1,5 +1,7 @@
 export const bySamplingHeights = `prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
 select ?dobj ?spec ?fileName ?submTime ?timeStart ?timeEnd ?samplingHeight
 where {
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject>}

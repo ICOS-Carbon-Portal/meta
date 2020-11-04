@@ -1,4 +1,5 @@
 export const stationRoles = `prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select ?stId ?stationName ?fname ?lname ?roleName ?weight ?start ?end
 from <http://meta.icos-cp.eu/resources/icos/>
 from <http://meta.icos-cp.eu/resources/cpmeta/>

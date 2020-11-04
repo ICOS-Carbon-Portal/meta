@@ -1,4 +1,5 @@
 export const labelingStatus = `PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?stationTheme ?id
 (if(bound(?piName), ?piName, ?hoName) as ?name)
 (if(

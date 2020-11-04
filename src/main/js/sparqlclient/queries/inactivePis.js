@@ -3,6 +3,7 @@ const stationEntryOntUriPrefix = "http://meta.icos-cp.eu/ontologies/stationentry
 const stationLabelingUriPrevix = "http://meta.icos-cp.eu/resources/stationlabeling/";
 
 export const inactivePis = `prefix stentry: <${stationEntryOntUriPrefix}>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 select distinct ?stationTheme ?stationName ?email#(group_concat(distinct ?email; separator = ";") as ?list)
 from <${stationEntryOntUriPrefix}>

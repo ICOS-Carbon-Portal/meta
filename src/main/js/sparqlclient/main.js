@@ -1,67 +1,26 @@
 import queries from './queries';
+import { prefixes } from './prefixes';
 
 const txtReturnType = 'TSV or Turtle';
 
-function runQuery(){
-	var start;
-	var selectedReturnType = $("#returnTypeGrp > .active").text();
-	var accept = "application/json";
-
-	switch(selectedReturnType){
+function getMimeType(selectedReturnType) {
+	switch (selectedReturnType) {
 		case "JSON":
-			accept = "application/json";
-			break;
+			return "application/json";
 
 		case "CSV":
-			accept = "text/csv";
-			break;
+			return "text/csv";
 
 		case "XML":
-			accept = "application/xml";
-			break;
+			return "application/xml";
 
 		case txtReturnType:
-			accept = "text/plain";
-			break;
+			return "text/plain";
 	}
-
-	$.ajax({
-		type: "POST",
-		data: {query: $("#queryTA").val()},
-		url: "/sparql",
-		beforeSend: function(){
-			start = new Date().getTime();
-		},
-		headers: { Accept: accept },
-		success: function(result){
-			var requestTime = new Date().getTime() - start;
-
-			$("#result").show();
-			$("#copyTxtBtn").show();
-
-			postProcessing(result, selectedReturnType, requestTime);
-
-			$("#saveBtn").click(function(){
-				window.location = "/sparql?query=" + encodeURIComponent($("#queryTA").val());
-			})
-
-			$("#queryBtn").prop("class", "btn btn-primary");
-			$("#messSpan").text("Query was successfull").show().delay(3000).fadeOut();
-		},
-		error: function(req, textStatus, errorThrown) {
-			$("#result").show();
-			$("#statusSpan").text("");
-			$("#queryBtn").prop("class", "btn btn-danger");
-			$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
-			console.log(req);
-			$("#result").html(req.responseText);
-		}
-	});
 }
 
 function postProcessing(result, selectedReturnType, requestTime){
 	var highlightTime = 0;
-
 	if (selectedReturnType == "JSON") {
 		var highlightStart = new Date().getTime();
 		$("#result").html(syntaxHighlight(result));
@@ -81,10 +40,23 @@ function postProcessing(result, selectedReturnType, requestTime){
 	if (selectedReturnType == "JSON") {
 		$("#statusSpan").text(
 			result.results.bindings.length + " bindings returned (" +
-			requestTime + " ms request, " + highlightTime + " ms styling).");
+			requestTime + " ms request, " + highlightTime + " ms styling)."
+		);
+		
+	} else if (result instanceof XMLDocument) {
+		$("#statusSpan").text(
+			result.getElementsByTagName("results")[0].childElementCount + " records returned (" + requestTime + " ms request)."
+		);
+
+	} else if (selectedReturnType == "XML") {
+		$("#statusSpan").text(
+			result.split(/\n/).length - 2 + " records returned (" + requestTime + " ms request)."
+		);
+
 	} else {
 		$("#statusSpan").text(
-			result.split(/\n/).length - 2 + " rows returned (" + requestTime + " ms request).");
+			result.split(/\n/).length - 2 + " rows returned (" + requestTime + " ms request)."
+		);
 	}
 }
 
@@ -119,14 +91,6 @@ function selectText(containerid) {
 		var range = document.createRange();
 		range.selectNode(document.getElementById(containerid));
 		window.getSelection().addRange(range);
-	}
-}
-
-function toggleSubmitBtn(contentLength){
-	if (contentLength > 0){
-		$("#queryBtn").prop("disabled", false);
-	} else {
-		$("#queryBtn").prop("disabled", true);
 	}
 }
 
@@ -165,8 +129,7 @@ function initRequestDdl(queries, queryParams, state){
 
 	$ddl.change(function(){
 		if ($ddl.val() != "0") {
-			$("#queryTA").val($ddl.val());
-			toggleSubmitBtn(1);
+			window.yasqe.setValue($ddl.val());
 
 			state.q = $ddl.children("option").filter(":selected").text();
 			updateUrlBar(state);
@@ -244,24 +207,67 @@ $(function () {
 	$("#result").hide();
 	$("#messDiv").hide();
 
-	$("#queryBtn").prop("disabled", true);
-	$("#queryBtn").click(function(){
-		runQuery();
-	});
-
-	if ($("#queryTA").val().length > 0){
-		toggleSubmitBtn(1);
-	}
-
-	$("#queryTA").keyup(function(){
-		toggleSubmitBtn(this.value.length);
-	});
-
 	var queryParams = processQuery(window.location.search);
 	var state = {
 		q: undefined,
 		type: undefined
 	};
+
+	// https://github.com/TriplyDB/Yasgui
+	// https://triply.cc/docs/yasgui-api#yasqe-api
+	// http://biblio.inf.ufsc.br/sparql2/YASGUI.YASQE-gh-pages/doc/
+	// https://codemirror.net/doc/manual.html
+
+	// Use our own prefixes
+	Yasqe.defaults.autocompleters.splice(Yasqe.defaults.autocompleters.indexOf("prefixes"), 1);
+	Yasqe.forkAutocompleter("prefixes", {
+		name: "prefixes-local",
+		persistenceId: null,
+		get: prefixes
+	});
+
+	const yasqeConf = {
+		autocapitalize: true,
+		indentWithTabs: true,
+		indentUnit: 4,
+		requestConfig: {
+			endpoint: "https://meta.icos-cp.eu/sparql",
+			acceptHeaderSelect: () => getMimeType(state.type)
+		}
+	};
+	window.yasqe = new Yasqe(document.getElementById("yasqe"), yasqeConf);
+
+	function getResult(response) {
+		if (state.type === "JSON") {
+			return response.body;
+
+		} else if (state.type === "XML") {
+			return $.parseXML(response.text)
+
+		} else {
+			return response.text;
+		}
+	}
+
+	window.yasqe.on("queryResponse", function (yasqe, response, duration) {
+		
+		$("#result").show();
+
+		if (response.ok) {
+			$("#copyTxtBtn").show();
+
+			postProcessing(getResult(response), state.type, duration);
+
+			$("#messSpan").text("Query was successfull").show().delay(3000).fadeOut();
+		
+		} else {
+			$("#statusSpan").text("");
+			$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
+			$("#result").html(response.response.text);
+		}
+	});
+
+	window.yasqe.setValue(document.getElementById("hiddenQuery").value);
 
 	state = initRequestDdl(queries, queryParams, state);
 	initReturnTypeBtns(queryParams, state);

@@ -24,7 +24,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
-		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getLabeledResource),
+		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getDatasetSpec),
 		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
 		keywords = getOptionalString(spec, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 	)
@@ -268,4 +268,10 @@ trait CpmetaFetcher extends FetchingHelper{
 			isOptional = getOptionalBool(dv, metaVocab.isOptionalColumn).getOrElse(false)
 		)
 	}
+
+	private def getDatasetSpec(ds: IRI) = DatasetSpec(
+		self = getLabeledResource(ds),
+		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
+	)
+
 }

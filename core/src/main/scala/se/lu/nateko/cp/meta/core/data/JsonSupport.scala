@@ -10,6 +10,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val projectFormat = jsonFormat2(Project)
 	implicit val dataThemeFormat = jsonFormat3(DataTheme)
 	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
+	implicit val datasetSpecFormat = jsonFormat2(DatasetSpec)
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
 	implicit val positionFormat = jsonFormat3(Position.apply)

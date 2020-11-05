@@ -41,9 +41,14 @@ case class DataObjectSpec(
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
-	datasetSpec: Option[UriResource],
+	datasetSpec: Option[DatasetSpec],
 	documentation: Seq[PlainStaticObject],
 	keywords: Option[Seq[String]]
+)
+
+case class DatasetSpec(
+	self: UriResource,
+	resolution: Option[String]
 )
 
 case class DataAcquisition(

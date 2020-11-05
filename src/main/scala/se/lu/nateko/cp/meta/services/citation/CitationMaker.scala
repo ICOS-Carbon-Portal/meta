@@ -4,6 +4,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
@@ -78,10 +79,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
 					interval <- acq.interval;
+					temporalResolution = dobj.specification.datasetSpec.flatMap(_.resolution);
 					productionInstant = dobj.production.fold(interval.stop)(_.dateTime)
 				) yield {
 					val station = acq.station.name
-					val time = getTimeFromInterval(interval, zoneId)
+					val time = getTimeFromInterval(interval, zoneId, temporalResolution)
 					val year = formatDate(productionInstant, zoneId).take(4)
 					val dataType = spec.split(",").head
 					s"$station. $year. $dataType from $location, $time"
@@ -97,11 +99,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		}
 	}
 
-	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {
+	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId, temporalResolution: Option[String] = None): String = {
 		val duration = Duration.between(interval.start, interval.stop)
 		if (duration.getSeconds < 24 * 3601) { //daily data object
 			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
 			formatDate(middle, zoneId)
+		} else if (temporalResolution.map(_.toLowerCase()) == Some("annual")) {
+			val from = formatYear(interval.start, zoneId)
+			val to = formatYear(interval.stop.minus(1, ChronoUnit.DAYS), zoneId)
+			s"$from–$to"
 		} else {
 			val from = formatDate(interval.start, zoneId)
 			val to = formatDate(interval.stop, zoneId)
@@ -110,6 +116,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	}
 
 	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
+	private def formatYear(inst: Instant, zoneId: ZoneId): Int = inst.atZone(zoneId).getYear()
 
 	def productionTime(dobj: DataObject): Option[Instant] =
 		dobj.production.map(_.dateTime).orElse{

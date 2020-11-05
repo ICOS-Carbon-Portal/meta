@@ -227,6 +227,7 @@ $(function () {
 	});
 
 	const yasqeConf = {
+		editorHeight: "auto",
 		autocapitalize: true,
 		indentWithTabs: true,
 		indentUnit: 4,

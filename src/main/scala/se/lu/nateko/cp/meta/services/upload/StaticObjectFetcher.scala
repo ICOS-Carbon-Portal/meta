@@ -51,7 +51,7 @@ class StaticObjectFetcher(
 		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))
 				Left(getL3Meta(dobj, valTypeLookup, production))
 			else
-				Right(getL2Meta(dobj, valTypeLookup, production))
+				Right(getL2Meta(dobj, valTypeLookup, production, plainFetcher))
 
 		val init = DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),

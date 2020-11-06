@@ -108,7 +108,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	private def getStation(stat: IRI) = Station(
+	private def getStation(stat: IRI, fetcher: PlainStaticObjectFetcher) = Station(
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
 		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
@@ -120,10 +120,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
 		operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
 		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
+		documentation = server.getUriValues(stat, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
 		pictures = Option(server.getUriLiteralValues(stat, metaVocab.hasDepiction)).filter(_.nonEmpty)
 	)
 
-	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
+	def getOptionalStation(station: IRI, fetcher: PlainStaticObjectFetcher): Option[Station] = Try(getStation(station, fetcher)).toOption
 
 	private def getStationCoverage(stat: IRI): Option[GeoFeature] = {
 		val optPoint = for(
@@ -163,11 +164,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
-	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction], fetcher: PlainStaticObjectFetcher): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
-			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),
+			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith), fetcher),
 			site = getOptionalUri(acqUri, metaVocab.wasPerformedAt).map(getSite),
 			interval = for(
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);

@@ -25,6 +25,7 @@ case class Station(
 	meanAnnualTemp: Option[Float],
 	operationalPeriod: Option[String],
 	website: Option[URI],
+	documentation: Seq[PlainStaticObject],
 	pictures: Option[Seq[URI]]
 )
 

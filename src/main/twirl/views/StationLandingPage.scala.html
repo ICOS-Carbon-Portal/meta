@@ -29,6 +29,26 @@
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataRow("Organization", org.name)
+			} 
+			@station.documentation.toList match {
+				case Nil => {}
+				case _ => {
+					<div class="row">
+						<div class="col-md-3">
+							<label>Documentation</label>
+						</div>
+						<div class="col-md-9 mb-2">
+							<span>
+								@for((document, i) <- station.documentation.zipWithIndex){
+									@if(i > 0) {
+										<span>, </span>
+									}
+									<a href=@{document.res}>@{document.name}</a>
+								}
+							</span>
+						</div>
+					</div>
+				}
 			}
 			@for(coverage <- station.coverage) {
 				<h2>Location</h2>
@@ -41,7 +61,10 @@
 					}
 					case _ => {}
 				}
-				<iframe src="/station/?theme=Other&station=@station.org.self.uri" style="margin-top: 10px;"></iframe>
+				@defining("/station/?theme=Other&station=" + station.org.self.uri) { maplink =>
+					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
+					<a href="@maplink">Open map</a>
+				}
 			}
 			@for(pictures <- station.pictures) {
 				<h2>Pictures</h2>

@@ -4,6 +4,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.StaticObject
@@ -110,9 +111,17 @@ object CitationMaker{
 
 	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {
 		val duration = Duration.between(interval.start, interval.stop)
+		val startZonedDateTime = ZonedDateTime.ofInstant(interval.start, zoneId)
+		val stopZonedDateTime = ZonedDateTime.ofInstant(interval.stop, zoneId)
 		if (duration.getSeconds < 24 * 3601) { //daily data object
 			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
 			formatDate(middle, zoneId)
+		} else if (startZonedDateTime.getDayOfYear() == 1 && stopZonedDateTime.getDayOfYear() == 1) {
+			if (startZonedDateTime.getYear() == stopZonedDateTime.getYear() - 1) {
+				s"${startZonedDateTime.getYear()}"
+			} else {
+				s"${startZonedDateTime.getYear()}–${stopZonedDateTime.getYear()}"
+			}
 		} else {
 			val from = formatDate(interval.start, zoneId)
 			val to = formatDate(interval.stop, zoneId)

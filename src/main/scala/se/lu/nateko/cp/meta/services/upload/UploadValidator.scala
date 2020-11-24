@@ -174,10 +174,10 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 				for(vars <- l3meta.variables) spec.datasetSpec.fold[Unit]{
 					errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
 				}{dsSpec =>
-					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.uri.toRdf)
+					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.self.uri.toRdf)
 					vars.foreach{varName =>
 						if(valTypeLookup.lookup(varName).isEmpty) errors +=
-							s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.uri}"
+							s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
 					}
 				}
 				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"

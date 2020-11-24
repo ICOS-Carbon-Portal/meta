@@ -19,9 +19,14 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		format = getLabeledResource(spec, metaVocab.hasFormat),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
-		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getLabeledResource),
+		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getDatasetSpec),
 		documentation = getDocumentationObjs(spec),
 		keywords = getOptionalString(spec, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
+	)
+
+	private def getDatasetSpec(ds: IRI) = DatasetSpec(
+		self = getLabeledResource(ds),
+		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
 
 	private def getDocumentationObjs(item: IRI): Seq[PlainStaticObject] =

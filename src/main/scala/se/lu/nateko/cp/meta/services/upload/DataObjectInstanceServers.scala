@@ -33,16 +33,22 @@ class DataObjectInstanceServers(
 	val metaVocab = new CpmetaVocab(factory)
 	val vocab = new CpVocab(factory)
 
-	val metaFetchers = metaServers.map{case (envri, instServer) =>
-		envri -> new CpmetaFetcher{
-			override protected val server = instServer
+	val metaFetchers = metaServers.flatMap{case (envri, instServer) =>
+		for(
+			objsServ <- allDataObjs.get(envri);
+			docsServ <- docServers.get(envri)
+		) yield{
+			val joint = new CompositeReadonlyInstanceServer(objsServ, docsServ)
+			envri -> new DobjMetaFetcher{
+				override protected val server = instServer
+				override val plainObjFetcher = new PlainStaticObjectFetcher(joint)
+			}
 		}
 	}
 
-	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = {
-		val fetcher = plainFetcher.getOrElse(throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
-		metaFetchers(envri).getOptionalStation(station, fetcher)
-	}
+	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = metaFetchers
+		.getOrElse(envri, throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
+		.getOptionalStation(station)
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
 		val dataObjUri = vocab.getStaticObject(objHash)
@@ -59,8 +65,9 @@ class DataObjectInstanceServers(
 
 
 	def getDataObjSpecification(spec: IRI)(implicit envri: Envri): Try[DataObjectSpec] = Try{
-		val fetcher = plainFetcher.getOrElse(throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
-		metaFetchers(envri).getSpecification(spec, fetcher)
+		metaFetchers
+			.getOrElse(envri, throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
+			.getSpecification(spec)
 	}
 
 	def getInstServerForFormat(format: IRI)(implicit envri: Envri): Try[InstanceServer] =
@@ -111,18 +118,10 @@ class DataObjectInstanceServers(
 	def collectionExists(coll: IRI)(implicit envri: Envri): Boolean =
 		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
-	def plainFetcher(implicit envri: Envri): Option[PlainStaticObjectFetcher] = for(
-			objsServ <- allDataObjs.get(envri);
-			docsServ <- docServers.get(envri)
-		) yield{
-			val joint = new CompositeReadonlyInstanceServer(objsServ, docsServ)
-			new PlainStaticObjectFetcher(joint)
-		}
-
 	def collFetcher(citer: CitationMaker)(implicit envri: Envri): Option[CollectionFetcher] = for(
 		collServer <- collectionServers.get(envri);
-		thePlainFetcher <- plainFetcher
-	) yield new CollectionFetcher(collServer, thePlainFetcher, citer)
+		fetcher <- metaFetchers.get(envri)
+	) yield new CollectionFetcher(collServer, fetcher.plainObjFetcher, citer)
 
 	def collFetcherLite(implicit envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
 		.map(new CollectionFetcherLite(_, vocab))

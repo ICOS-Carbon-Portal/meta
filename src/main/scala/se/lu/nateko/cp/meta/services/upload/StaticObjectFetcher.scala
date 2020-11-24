@@ -20,10 +20,10 @@ import se.lu.nateko.cp.meta.services.citation.CitationMaker
 class StaticObjectFetcher(
 	protected val server: InstanceServer,
 	collFetcher: CollectionFetcherLite,
-	plainFetcher: PlainStaticObjectFetcher,
+	val plainObjFetcher: PlainStaticObjectFetcher,
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
-) extends CpmetaFetcher {
+) extends DobjMetaFetcher {
 
 	import citer.vocab
 
@@ -40,10 +40,10 @@ class StaticObjectFetcher(
 		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
-			.map(getDataProduction(dobj, _, plainFetcher))
+			.map(getDataProduction(dobj, _))
 
 		val specIri = getSingleUri(dobj, metaVocab.hasObjectSpec)
-		val spec = getSpecification(specIri, plainFetcher)
+		val spec = getSpecification(specIri)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 		val valTypeLookup = getOptionalUri(specIri, metaVocab.containsDataset)
 			.fold(new ValueTypeLookup[IRI](Nil))(getValTypeLookup)
@@ -51,7 +51,7 @@ class StaticObjectFetcher(
 		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))
 				Left(getL3Meta(dobj, valTypeLookup, production))
 			else
-				Right(getL2Meta(dobj, valTypeLookup, production, plainFetcher))
+				Right(getL2Meta(dobj, valTypeLookup, production))
 
 		val init = DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),

@@ -29,7 +29,7 @@
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataRow("Organization", org.name)
-			} 
+			}
 			@station.documentation.toList match {
 				case Nil => {}
 				case _ => {

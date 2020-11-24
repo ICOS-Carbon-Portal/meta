@@ -9,25 +9,12 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.util.Try
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
-
-	def getSpecification(spec: IRI, fetcher: PlainStaticObjectFetcher) = DataObjectSpec(
-		self = getLabeledResource(spec),
-		project = getProject(getSingleUri(spec, metaVocab.hasAssociatedProject)),
-		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
-		format = getLabeledResource(spec, metaVocab.hasFormat),
-		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
-		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
-		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getLabeledResource),
-		documentation = server.getUriValues(spec, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
-		keywords = getOptionalString(spec, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-	)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)
 
@@ -52,15 +39,6 @@ trait CpmetaFetcher extends FetchingHelper{
 		uri = Some(cov.toJava)
 	)
 
-	protected def getDataProduction(obj: IRI, prod: IRI, fetcher: PlainStaticObjectFetcher) = DataProduction(
-		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
-		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
-		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
-		comment = getOptionalString(prod, RDFS.COMMENT),
-		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(fetcher.getPlainStaticObject).map(_.asUriResource),
-		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
-	)
-
 	protected def getSubmission(subm: IRI): DataSubmission = {
 		val submitter: IRI = getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
 		DataSubmission(
@@ -70,7 +48,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
-	private def getAgent(uri: IRI): Agent = {
+	protected def getAgent(uri: IRI): Agent = {
 		if(getOptionalString(uri, metaVocab.hasFirstName).isDefined)
 			getPerson(uri)
 		else getOrganization(uri)
@@ -89,12 +67,12 @@ trait CpmetaFetcher extends FetchingHelper{
 		orcid = getOptionalString(pers, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
 	)
 
-	private def getProject(project: IRI) = Project(
+	protected def getProject(project: IRI) = Project(
 		self = getLabeledResource(project),
 		keywords = getOptionalString(project, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 	)
 
-	private def getDataTheme(theme: IRI) = DataTheme(
+	protected def getDataTheme(theme: IRI) = DataTheme(
 		self = getLabeledResource(theme),
 		icon = getSingleUriLiteral(theme, metaVocab.hasIcon),
 		markerIcon = getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
@@ -108,25 +86,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	private def getStation(stat: IRI, fetcher: PlainStaticObjectFetcher) = Station(
-		org = getOrganization(stat),
-		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
-		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
-		coverage = getStationCoverage(stat),
-		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
-		sites = Option(server.getUriValues(stat, metaVocab.operatesOn).map(getSite)).filter(_.nonEmpty),
-		ecosystems = Option(server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource)).filter(_.nonEmpty),
-		climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
-		meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
-		operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
-		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
-		documentation = server.getUriValues(stat, metaVocab.hasDocumentationObject).map(fetcher.getPlainStaticObject),
-		pictures = Option(server.getUriLiteralValues(stat, metaVocab.hasDepiction)).filter(_.nonEmpty)
-	)
-
-	def getOptionalStation(station: IRI, fetcher: PlainStaticObjectFetcher): Option[Station] = Try(getStation(station, fetcher)).toOption
-
-	private def getStationCoverage(stat: IRI): Option[GeoFeature] = {
+	protected def getStationCoverage(stat: IRI): Option[GeoFeature] = {
 		val optPoint = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
@@ -135,12 +95,12 @@ trait CpmetaFetcher extends FetchingHelper{
 		optPoint.orElse(getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage))
 	}
 
-	private def getLocation(location: IRI) = Location(
+	protected def getLocation(location: IRI) = Location(
 		geometry = getCoverage(location),
 		label = getOptionalString(location, RDFS.LABEL)
 	)
 
-	private def getSite(site: IRI) = Site(
+	protected def getSite(site: IRI) = Site(
 		self = getLabeledResource(site),
 		ecosystem = getLabeledResource(site, metaVocab.hasEcosystemType),
 		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getLocation)
@@ -164,48 +124,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
-	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction], fetcher: PlainStaticObjectFetcher): L2OrLessSpecificMeta = {
-		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
-
-		val acq = DataAcquisition(
-			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith), fetcher),
-			site = getOptionalUri(acqUri, metaVocab.wasPerformedAt).map(getSite),
-			interval = for(
-				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
-				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
-			) yield TimeInterval(start, stop),
-			instrument = server.getUriValues(acqUri, metaVocab.wasPerformedWith).map(_.toJava).toList match{
-				case Nil => None
-				case single :: Nil => Some(Left(single))
-				case many => Some(Right(many))
-			},
-			samplingPoint = getOptionalUri(acqUri, metaVocab.hasSamplingPoint).map(getPosition),
-			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
-		)
-		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
-
-		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map(getCoverage)
-
-		val columns = getOptionalString(dobj, metaVocab.hasActualColumnNames).flatMap(parseJsonStringArray)
-			.map{
-				_.flatMap{colName =>
-					vtLookup.lookup(colName).map{vtUri =>
-						val valType = getValueType(vtUri)
-						ColumnInfo(colName, valType)
-					}
-				}.toIndexedSeq
-			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
-				Some(
-					vtLookup.plainMandatory.map{
-						case (colName, valTypeIri) => ColumnInfo(colName, getValueType(valTypeIri))
-					}
-				)
-			}.filter(_.nonEmpty)
-
-		L2OrLessSpecificMeta(acq, prod, nRows, coverage, columns)
-	}
-
-	private def getCoverage(covUri: IRI): GeoFeature = {
+	protected def getCoverage(covUri: IRI): GeoFeature = {
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
 		if(covClass === metaVocab.latLonBoxClass)
@@ -233,7 +152,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
 		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
 
-	private def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[L3VarInfo] = for(
+	protected def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[L3VarInfo] = for(
 		varName <- getOptionalString(vi, RDFS.LABEL);
 		valTypeUri <- vtLookup.lookup(varName)
 	) yield
@@ -246,13 +165,13 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 
 
-	private def getValueType(vt: IRI) = ValueType(
+	protected def getValueType(vt: IRI) = ValueType(
 		getLabeledResource(vt),
 		getOptionalUri(vt, metaVocab.hasQuantityKind).map(getLabeledResource),
 		getOptionalString(vt, metaVocab.hasUnit)
 	)
 
-	private def getDatasetVars(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasVariable).map{dv =>
+	protected def getDatasetVars(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasVariable).map{dv =>
 		new DatasetVariable[IRI](
 			title = getSingleString(dv, metaVocab.hasVariableTitle),
 			valueType = getSingleUri(dv, metaVocab.hasValueType),
@@ -261,7 +180,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		)
 	}
 
-	private def getDatasetColumns(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasColumn).map{dv =>
+	protected def getDatasetColumns(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasColumn).map{dv =>
 		new DatasetVariable[IRI](
 			title = getSingleString(dv, metaVocab.hasColumnTitle),
 			valueType = getSingleUri(dv, metaVocab.hasValueType),
@@ -269,4 +188,5 @@ trait CpmetaFetcher extends FetchingHelper{
 			isOptional = getOptionalBool(dv, metaVocab.isOptionalColumn).getOrElse(false)
 		)
 	}
+
 }

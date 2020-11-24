@@ -66,13 +66,14 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
 			parentCollections = collFetcher.getParentCollections(dobj),
-			references = References(None, None, None)
+			references = References(None, None, None, None)
 		)
 		val citeInfo = citer.getCitationInfo(init)
 		init.copy(references = References(
 				citationString = citeInfo.map(_.citationString),
 				authors = citeInfo.flatMap(_.authors),
-				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
+				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq),
+				temporalCoverageDisplay = citeInfo.flatMap(_.tempCovDisplay)
 			)
 		)
 	}
@@ -91,14 +92,15 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(doc),
 			previousVersion = getPreviousVersion(doc),
 			parentCollections = collFetcher.getParentCollections(doc),
-			references = References(None, None, None)
+			references = References(None, None, None, None)
 		)
 		val citeInfo = citer.getCitationInfo(init)
 		init.copy(
 			references = References(
 				citationString = citeInfo.map(_.citationString),
 				authors = citeInfo.flatMap(_.authors),
-				keywords = None
+				keywords = None,
+				temporalCoverageDisplay = citeInfo.flatMap(_.tempCovDisplay)
 			)
 		)
 	}

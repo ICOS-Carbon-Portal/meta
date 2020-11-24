@@ -17,9 +17,10 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.Person
 
-class CitationInfo(val citationString: String, val authors: Option[Seq[Person]])
+class CitationInfo(val citationString: String, val authors: Option[Seq[Person]], val tempCovDisplay: Option[String])
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) {
+	import CitationMaker._
 	private implicit val envriConfs = coreConf.envriConfigs
 
 	val vocab = new CpVocab(repo.getValueFactory)
@@ -36,7 +37,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		doiStr <- doiStrOpt;
 		doi <- Doi.unapply(doiStr);
 		cit <- doiCiter.getCitationEager(doi)
-	) yield new CitationInfo(cit, None)
+	) yield new CitationInfo(cit, None, None)
 
 	def getIcosCitation(dobj: DataObject): Option[CitationInfo] = {
 		val isIcos: Option[Unit] = if(dobj.specification.project.self.uri === vocab.icosProject) Some(()) else None
@@ -47,11 +48,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			l2 => for(
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
-					interval <- acq.interval
+					time <- getTemporalCoverageDisplay(dobj, zoneId)
 				) yield {
 					val station = acq.station.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
-					val time = getTimeFromInterval(interval, zoneId)
 					s"$spec, $station$height, $time"
 				}
 		)
@@ -65,7 +65,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
 			val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 			val year = formatDate(productionInstant, zoneId).take(4)
-			new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors))
+			val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
+			new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors), tempCov)
 		}
 	}
 
@@ -78,10 +79,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
 					interval <- acq.interval;
-					productionInstant = dobj.production.fold(interval.stop)(_.dateTime)
+					productionInstant = dobj.production.fold(interval.stop)(_.dateTime);
+					time <- getTemporalCoverageDisplay(dobj, zoneId)
 				) yield {
 					val station = acq.station.name
-					val time = getTimeFromInterval(interval, zoneId)
 					val year = formatDate(productionInstant, zoneId).take(4)
 					val dataType = spec.split(",").head
 					s"$station. $year. $dataType from $location, $time"
@@ -93,9 +94,19 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
 			pid <- dobj.doi.orElse(dobj.pid)
 		) yield {
-			new CitationInfo(s"$title. SITES Data Portal. ${handleProxy}$pid", None)
+			val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
+			new CitationInfo(s"$title. SITES Data Portal. ${handleProxy}$pid", None, tempCov)
 		}
 	}
+
+}
+
+object CitationMaker{
+
+	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
+		l3 => Some(getTimeFromInterval(l3.temporal.interval, zoneId)),
+		l2 => l2.acquisition.interval.map(getTimeFromInterval(_, zoneId))
+	)
 
 	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {
 		val duration = Duration.between(interval.start, interval.stop)
@@ -111,7 +122,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
 
-	def productionTime(dobj: DataObject): Option[Instant] =
+	private def productionTime(dobj: DataObject): Option[Instant] =
 		dobj.production.map(_.dateTime).orElse{
 			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
 		}

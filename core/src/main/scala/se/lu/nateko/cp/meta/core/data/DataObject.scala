@@ -159,4 +159,9 @@ case class DocObject(
 	references: References
 ) extends StaticObject
 
-case class References(citationString: Option[String], keywords: Option[Seq[String]], authors: Option[Seq[Person]])
+case class References(
+	citationString: Option[String],
+	keywords: Option[Seq[String]],
+	authors: Option[Seq[Person]],
+	temporalCoverageDisplay: Option[String]
+)

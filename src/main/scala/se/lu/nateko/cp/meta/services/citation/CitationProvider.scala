@@ -9,9 +9,11 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.CitableItem
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.core.data.objectPrefix
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcherLite
@@ -55,6 +57,7 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	private val citer = new CitationMaker(doiCiter, repo, coreConf)
 
+	//TODO Allow for DOI citation on data objects, too; allow citations on colls/docs without DOI
 	def getCitation(maybeDobj: Resource): Option[String] = maybeDobj match {
 
 		case iri: IRI =>
@@ -69,6 +72,12 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 
 		case _ =>
 			None
+	}
+
+	//TODO Support collections, too
+	def getReferences(maybeObj: Resource): Option[References] = maybeObj match {
+		case iri: IRI => getStaticObject(iri).map(_.references)
+		case _ => None
 	}
 
 	private val objFetcher = {
@@ -87,5 +96,8 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))
 	}
+
+	//TODO Finish this method and use it for everyting in this class
+	private def getCitableItem(res: Resource): Option[CitableItem] = ???
 
 }

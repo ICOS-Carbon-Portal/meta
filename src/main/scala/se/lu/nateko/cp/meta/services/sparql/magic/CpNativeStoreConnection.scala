@@ -29,6 +29,7 @@ class CpNativeStoreConnection(
 	private val valueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
 	private val sailStore = sail.getSailStore
+	private val magicPreds = Set(metaVocab.hasBiblioInfo, metaVocab.hasCitationString)
 
 	override def evaluateInternal(
 		expr: TupleExpr,
@@ -87,19 +88,27 @@ class CpNativeStoreConnection(
 			.getStatementsInternal(subj, pred, obj, includeInferred, contexts: _*)
 			.asInstanceOf[CloseableIteration[Statement, SailException]]
 
-		if(subj == null || pred != null && pred != metaVocab.hasCitationString || obj != null) base else { //limited functionality for now
-
-			Try(citer.getCitation(subj)).getOrElse(None).fold(base){citation =>
-				val citations: CloseableIteration[Statement, SailException] = new SingletonIteration(
-					valueFactory.createStatement(
-						subj,
-						metaVocab.hasCitationString,
-						valueFactory.createStringLiteral(citation)
-					)
-				)
-				new UnionIteration(base, citations)
-			}
+		def enrichWith(vTry: => Option[String]) = Try(vTry).getOrElse(None).fold(base){v =>
+			val extras: CloseableIteration[Statement, SailException] = new SingletonIteration(
+				valueFactory.createStatement(subj, pred, valueFactory.createStringLiteral(v))
+			)
+			new UnionIteration(base, extras)
 		}
+
+		if(subj == null || obj != null || !magicPreds.contains(pred)) //limited functionality for now
+			base
+
+		else if(pred == metaVocab.hasCitationString)
+			enrichWith(citer.getCitation(subj))
+
+		else if(pred == metaVocab.hasBiblioInfo)
+			enrichWith{
+				import se.lu.nateko.cp.meta.core.data.JsonSupport.referencesFormat
+				import spray.json._
+				citer.getReferences(subj).map(_.toJson.compactPrint)
+			}
+		else
+			base
 
 	}
 

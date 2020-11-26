@@ -31,7 +31,7 @@ trait MagicTupleFuncPlugin extends SailConnectionListener{
 class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrMemoryStore) extends NotifyingSailWrapper(baseSail){
 
 	baseSail.setEvaluationStrategyFactory{
-		val fedResolver = baseSail.getFederatedServiceResolver
+		val fedResolver = baseSail.getFederatedServiceResolver()
 		val tupleFunctionReg = new TupleFunctionRegistry()
 		plugins.flatMap(_.makeFunctions).foreach(tupleFunctionReg.add)
 

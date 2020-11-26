@@ -35,7 +35,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 
 		val info = Source
 			.fromInputStream(getClass.getResourceAsStream(pathToTextRes), "UTF-8")
-			.getLines.map(_.trim).filter(!_.isEmpty).map{
+			.getLines().map(_.trim).filter(!_.isEmpty).map{
 				case ingosRegexp(lname, fname, orgName, orgId) =>
 					Info(lname, fname, Some(OrgInfo(orgName, UriId(orgId))))
 				case gcpRegexp(lname, fname) =>

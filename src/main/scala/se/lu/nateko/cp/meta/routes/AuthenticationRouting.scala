@@ -87,7 +87,7 @@ object AuthenticationRouting {
 	val authRejectionHandler = RejectionHandler.newBuilder().handle{
 			case InvalidCpauthTokenRejection(message) =>
 				forbid(message)
-		}.result
+		}.result()
 
 	val ensureLocalRequest: Directive0 =
 		optionalHeaderValueByType(`X-Forwarded-For`)

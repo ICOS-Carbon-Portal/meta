@@ -14,9 +14,10 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.References
-import se.lu.nateko.cp.meta.core.data.objectPrefix
+import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.upload.CollectionFetcherLite
+import se.lu.nateko.cp.meta.services.upload.CollectionFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j._
@@ -57,47 +58,67 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	private val citer = new CitationMaker(doiCiter, repo, coreConf)
 
-	//TODO Allow for DOI citation on data objects, too; allow citations on colls/docs without DOI
-	def getCitation(maybeDobj: Resource): Option[String] = maybeDobj match {
+	private val (objFetcher, collFetcher) = {
+		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
+		val plainFetcher = new PlainStaticObjectFetcher(server)
+		val collFetcher = new CollectionFetcher(server, plainFetcher, citer)
+		val objFetcher = new StaticObjectFetcher(server, collFetcher, plainFetcher, pidFactory, citer)
+		(objFetcher, collFetcher)
+	}
+
+	def getCitation(res: Resource): Option[String] = getDoiCitation(res).orElse{
+		getCitableItem(res).flatMap(_.references.citationString)
+	}
+
+	def getReferences(res: Resource): Option[References] =
+		(getDoiCitation(res), getCitableItem(res).map(_.references)) match{
+			case (None, None) => None
+			case (cit @ Some(_), None) => Some(References(cit, None, None, None))
+			case (None, refs @ Some(_)) => refs
+			case (cit @ Some(_), Some(refs)) => Some(refs.copy(citationString = cit))
+		}
+
+	private def getDoiCitation(res: Resource): Option[String] = res match {
+		case iri: IRI => server.getStringValues(iri, metaVocab.hasDoi).headOption.collect{
+				case Doi(doi) => doiCiter.getCitationEager(doi)
+			}.flatten
+		case _ => None
+	}
+
+	private def getCitableItem(res: Resource): Option[CitableItem] = res match {
 
 		case iri: IRI =>
-			if(
-				server.hasStatement(iri, RDF.TYPE, metaVocab.collectionClass) ||
+			if(server.hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 				server.hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
-			) {
-				server.getStringValues(iri, metaVocab.hasDoi).headOption.collect{
-					case Doi(doi) => doiCiter.getCitationEager(doi)
-				}.flatten
-			} else getStaticObject(iri).flatMap(_.references.citationString)
-
+			) getStaticObject(iri)
+			else if(server.hasStatement(iri, RDF.TYPE, metaVocab.collectionClass))
+				getStaticColl(iri)
+			else None
 		case _ =>
 			None
 	}
 
-	//TODO Support collections, too
-	def getReferences(maybeObj: Resource): Option[References] = maybeObj match {
-		case iri: IRI => getStaticObject(iri).map(_.references)
-		case _ => None
-	}
-
-	private val objFetcher = {
-		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
-		val collFetcher = new CollectionFetcherLite(server, citer.vocab)
-		val plainFetcher = new PlainStaticObjectFetcher(server)
-		new StaticObjectFetcher(server, collFetcher, plainFetcher, pidFactory, citer)
-	}
-
 	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
-		hash <- Sha256Sum.fromBase64Url(maybeDobj.getLocalName).toOption;
+		hash <- extractHash(maybeDobj);
 		envri <- inferObjectEnvri(maybeDobj);
 		obj <- objFetcher.fetch(hash)(envri)
 	) yield obj
+
+	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for(
+		hash <- extractHash(maybeColl);
+		envri <- inferCollEnvri(maybeColl);
+		coll <- collFetcher.fetchStatic(hash)(envri)
+	) yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))
 	}
 
-	//TODO Finish this method and use it for everyting in this class
-	private def getCitableItem(res: Resource): Option[CitableItem] = ???
+	private def inferCollEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
+		envri => obj.stringValue.startsWith(collectionPrefix(envriConfs(envri)))
+	}
+
+	private def extractHash(iri: IRI): Option[Sha256Sum] =
+		Sha256Sum.fromBase64Url(iri.getLocalName).toOption
 
 }

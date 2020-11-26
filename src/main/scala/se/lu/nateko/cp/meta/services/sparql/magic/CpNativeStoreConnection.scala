@@ -95,7 +95,7 @@ class CpNativeStoreConnection(
 			new UnionIteration(base, extras)
 		}
 
-		if(subj == null || obj != null || !magicPreds.contains(pred)) //limited functionality for now
+		if(subj == null || obj != null || (pred != null && !magicPreds.contains(pred))) //limited functionality for now
 			base
 
 		else if(pred == metaVocab.hasCitationString)
@@ -107,6 +107,7 @@ class CpNativeStoreConnection(
 				import spray.json._
 				citer.getReferences(subj).map(_.toJson.compactPrint)
 			}
+			//TODO Handle pred = null
 		else
 			base
 

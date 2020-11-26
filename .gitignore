@@ -1,3 +1,5 @@
+#Front end
+/webbapps/station-map/local-config.json
 /webbapps/station-map/queries.txt
 /webbapps/station-map/test.html
 /webbapps/station-map/sparql.html
@@ -46,13 +48,6 @@ nohup.out
 README.html
 *.*~
 src/test/resources/startTimes.csv
-
-#Front end
-/src/main/resources/www/sparqlclient.js
-/src/main/resources/www/metaentry.js
-/src/main/resources/www/labeling.js
-
-/webbapps/station-map/local-config.json
 
 #Environment-specific config
 /application.conf

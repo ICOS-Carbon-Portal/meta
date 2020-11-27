@@ -72,6 +72,7 @@ object UploadDtoReader{
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>
 				Uri.Path(uri.getPath) match {
 					case Hash.Object(hash) => Some(hash)
+					case _ => None
 				}
 			})),
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
@@ -86,6 +87,7 @@ object UploadDtoReader{
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>
 				Uri.Path(uri.getPath) match {
 					case Hash.Object(hash) => Some(hash)
+					case _ => None
 				}
 			})),
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{

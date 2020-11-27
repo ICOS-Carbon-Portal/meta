@@ -232,7 +232,7 @@ $(function () {
 		indentWithTabs: true,
 		indentUnit: 4,
 		requestConfig: {
-			endpoint: "https://meta.icos-cp.eu/sparql",
+			endpoint: "/sparql",
 			acceptHeaderSelect: () => getMimeType(state.type)
 		}
 	};

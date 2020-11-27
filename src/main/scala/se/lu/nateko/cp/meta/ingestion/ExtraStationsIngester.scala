@@ -23,7 +23,7 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 		val stationListInput = getClass.getResourceAsStream(extraStationsPath)
 
 		Source.fromInputStream(stationListInput, "UTF-8")
-			.getLines
+			.getLines()
 			.drop(1)
 			.collect{
 				case line if !line.trim.isEmpty => Station.parse(line.trim)

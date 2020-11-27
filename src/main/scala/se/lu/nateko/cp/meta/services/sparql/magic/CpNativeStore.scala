@@ -26,7 +26,7 @@ class CpNativeStore(
 	indexInit: Sail => IndexProvider,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
-) extends SailWrapper{ cpsail =>
+) extends SailWrapper{
 
 	private[this] var indexh: IndexProvider = _
 	private[this] var citer: CitationProvider = _

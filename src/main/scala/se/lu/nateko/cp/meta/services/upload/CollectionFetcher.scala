@@ -52,9 +52,9 @@ class CollectionFetcher(
 	server: InstanceServer,
 	plainFetcher: PlainStaticObjectFetcher,
 	citer: CitationMaker
-)(implicit envri: Envri) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
+) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
 
-	def fetchStatic(hash: Sha256Sum): Option[StaticCollection] = {
+	def fetchStatic(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] = {
 		val collUri = citer.vocab.getCollection(hash)
 		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri))
 		else None

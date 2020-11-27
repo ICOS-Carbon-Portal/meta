@@ -83,7 +83,7 @@ object SparqlRoute {
 			implicit mat: Materializer, exe: ExecutionContext
 	): Future[HttpResponse] = {
 
-		val (respMat, queue) = resp.entity.dataBytes.toMat(Sink.queue[ByteString])(Keep.both).run()
+		val (respMat, queue) = resp.entity.dataBytes.toMat(Sink.queue[ByteString]())(Keep.both).run()
 
 		def respondWith(data: Source[ByteString, Any]) = resp.withEntity(HttpEntity(resp.entity.contentType, data))
 

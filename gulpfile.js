@@ -14,7 +14,7 @@ projects.forEach(function(project){
 		jsx: ['src/main/js/' + project + '/**/*.jsx'],
 		js: ['src/main/js/' + project + '/**/*.js'],
 		common: ['src/main/js/common/**/*.js'],
-		target: 'src/main/resources/www/',
+		target: 'target/scala-2.13/classes/www/',
 		bundleFile: project + '.js'
 	};
 

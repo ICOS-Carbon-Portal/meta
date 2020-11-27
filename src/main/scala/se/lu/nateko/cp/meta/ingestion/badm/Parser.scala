@@ -34,7 +34,7 @@ object Parser {
 				.values
 				.map{
 					idAndRaw => aggregateEntries(
-						idAndRaw.headOption.map{case (StationId(id), _) => id},
+						idAndRaw.headOption.collect{case (StationId(id), _) => id},
 						idAndRaw.map(_._2).sortBy(_.id)
 					)
 				}.flatten.toSeq

@@ -16,7 +16,7 @@ class StationId private (val id: String){
 
 object StationId{
 
-	private val pattern = Pattern.compile("[A-Z]{2}\\-[A-Z][A-Za-z0-9]{2}")
+	private val pattern = Pattern.compile("[A-Z]{2}\\-[A-Za-z][A-Za-z0-9]{2}")
 
 	def unapply(s: String): Option[StationId] =
 		if(pattern.matcher(s).matches) Some(new StationId(s))

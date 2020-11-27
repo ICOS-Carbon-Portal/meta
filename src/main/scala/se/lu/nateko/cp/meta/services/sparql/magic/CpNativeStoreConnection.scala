@@ -29,7 +29,6 @@ class CpNativeStoreConnection(
 	private val valueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
 	private val sailStore = sail.getSailStore
-	private val magicPreds = Set(metaVocab.hasBiblioInfo, metaVocab.hasCitationString)
 
 	override def evaluateInternal(
 		expr: TupleExpr,
@@ -78,39 +77,47 @@ class CpNativeStoreConnection(
 			throw iae
 	}
 
-
 	override def getStatementsInternal(
 		subj: Resource, pred: IRI, obj: Value,
 		includeInferred: Boolean, contexts: Resource*
 	): CloseableIteration[_ <: Statement, SailException] = {
 
-		val base: CloseableIteration[Statement, SailException] = super
-			.getStatementsInternal(subj, pred, obj, includeInferred, contexts: _*)
-			.asInstanceOf[CloseableIteration[Statement, SailException]]
+		type StatIter = CloseableIteration[Statement, SailException]
 
-		def enrichWith(vTry: => Option[String]) = Try(vTry).getOrElse(None).fold(base){v =>
-			val extras: CloseableIteration[Statement, SailException] = new SingletonIteration(
+		def enrich(inner: StatIter, pred: IRI, vTry: => Option[String]): StatIter = Try(vTry).getOrElse(None).fold(inner){v =>
+			val extras: StatIter = new SingletonIteration(
 				valueFactory.createStatement(subj, pred, valueFactory.createStringLiteral(v))
 			)
-			new UnionIteration(base, extras)
+			new UnionIteration(inner, extras)
 		}
 
-		if(subj == null || obj != null || (pred != null && !magicPreds.contains(pred))) //limited functionality for now
+		val base: StatIter = super
+			.getStatementsInternal(subj, pred, obj, includeInferred, contexts: _*)
+			.asInstanceOf[StatIter]
+
+		if(
+			subj == null || obj != null || //limited functionality for now
+			(pred != null && !Set(metaVocab.hasBiblioInfo, metaVocab.hasCitationString).contains(pred))
+		)
 			base
+		else{
 
-		else if(pred == metaVocab.hasCitationString)
-			enrichWith(citer.getCitation(subj))
-
-		else if(pred == metaVocab.hasBiblioInfo)
-			enrichWith{
-				import se.lu.nateko.cp.meta.core.data.JsonSupport.referencesFormat
-				import spray.json._
-				citer.getReferences(subj).map(_.toJson.compactPrint)
+			val predsMap: Map[IRI, Function0[Option[String]]] = Map(
+				metaVocab.hasCitationString -> (() => citer.getCitation(subj)),
+				metaVocab.hasBiblioInfo -> (() => {
+					import se.lu.nateko.cp.meta.core.data.JsonSupport.referencesFormat
+					import spray.json._
+					citer.getReferences(subj).map(_.toJson.compactPrint)
+				})
+			)
+			if(pred == null) predsMap.foldLeft(base){
+				case (iter, (pred, thunk)) => enrich(iter, pred, thunk())
 			}
-			//TODO Handle pred = null
-		else
-			base
+			else predsMap.get(pred).fold(base){thunk =>
+				enrich(base, pred, thunk())
+			}
 
+		}
 	}
 
 }

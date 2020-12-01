@@ -116,11 +116,11 @@ object CitationMaker{
 		if (duration.getSeconds < 24 * 3601) { //daily data object
 			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
 			formatDate(middle, zoneId)
-		} else if (startZonedDateTime.getDayOfYear() == 1 && stopZonedDateTime.getDayOfYear() == 1) {
-			if (startZonedDateTime.getYear() == stopZonedDateTime.getYear() - 1) {
-				s"${startZonedDateTime.getYear()}"
+		} else if (startZonedDateTime.getDayOfYear == 1 && stopZonedDateTime.getDayOfYear == 1) {
+			if (startZonedDateTime.getYear == stopZonedDateTime.getYear - 1) {
+				s"${startZonedDateTime.getYear}"
 			} else {
-				s"${startZonedDateTime.getYear()}–${stopZonedDateTime.getYear()}"
+				s"${startZonedDateTime.getYear}–${stopZonedDateTime.getYear - 1}"
 			}
 		} else {
 			val from = formatDate(interval.start, zoneId)

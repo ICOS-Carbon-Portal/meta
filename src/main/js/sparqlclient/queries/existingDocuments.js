@@ -3,4 +3,5 @@ select * where{
 	?doc a cpmeta:DocumentObject .
 	?doc cpmeta:hasName ?fileName .
 	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
+	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
 }`;

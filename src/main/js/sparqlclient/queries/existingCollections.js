@@ -6,6 +6,7 @@ select * where{
 	?coll dcterms:title ?title .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
+	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
 }
 order by ?title
 `;

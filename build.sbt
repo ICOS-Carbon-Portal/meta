@@ -16,7 +16,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.5.3",
+		version := "0.6.0",
 		scalacOptions ++= jvmScalacOptions,
 		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(
@@ -32,7 +32,10 @@ lazy val metaCore = (project in file("core"))
 		),
 		cpTsGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
-			Seq(dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala", dir / "package.scala")
+			Seq(
+				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
+				dir / "Station.scala", dir / "package.scala"
+			)
 		},
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"

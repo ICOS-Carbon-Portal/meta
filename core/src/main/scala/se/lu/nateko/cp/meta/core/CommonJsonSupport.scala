@@ -4,7 +4,7 @@ import java.net.URI
 import java.time.Instant
 import spray.json._
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, LocalDate}
 
 trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 
@@ -12,7 +12,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 	implicit object CorrectedFloatJsonFormat extends JsonFormat[Float] {
 		def write(x: Float) = JsNumber(x.toString.toDouble)
 		def read(value: JsValue) = common.FloatJsonFormat.read(value)
-	 }
+	}
 
 	implicit object urlFormat extends RootJsonFormat[URI] {
 		def write(uri: URI): JsValue = JsString(uri.toString)
@@ -34,6 +34,16 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		def read(value: JsValue): LocalDateTime = value match{
 			case JsString(s) => LocalDateTime.parse(s)
 			case _ => deserializationError("String representation of a LocalDateTime is expected")
+		}
+	}
+
+	implicit object javaLocalDateFormat extends RootJsonFormat[LocalDate] {
+
+		def write(dt: LocalDate) = JsString(dt.toString)
+
+		def read(value: JsValue): LocalDate = value match{
+			case JsString(s) => LocalDate.parse(s)
+			case _ => deserializationError("String representation of a LocalDate is expected")
 		}
 	}
 
@@ -67,4 +77,12 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 
 }
 
-object CommonJsonSupport extends CommonJsonSupport
+object CommonJsonSupport extends CommonJsonSupport{
+	val TypeField = "_type"
+	implicit class TypeableSprayJsonableObject[T : RootJsonWriter](val v: T){
+		def toTypedJson(typ: String) = JsObject(
+			v.toJson.asJsObject.fields + (TypeField -> JsString(typ))
+		)
+	}
+
+}

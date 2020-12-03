@@ -2,6 +2,8 @@ package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
 import java.time.LocalDate
+import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import spray.json._
 
 case class Station(
 	org: Organization,
@@ -51,4 +53,30 @@ object IcosStationClass extends Enumeration{
 	val One = Value("1")
 	val Two = Value("2")
 	val Associated = Value
+}
+
+object StationSpecifics extends CommonJsonSupport{
+	import JsonSupport.{uriResourceFormat, plainStaticObjectFormat, siteFormat}
+	import CommonJsonSupport._
+	implicit val stationClassFormat = enumFormat(IcosStationClass)
+	implicit val etcStationSpecificsFormat = jsonFormat6(EtcStationSpecifics)
+	implicit val sitesStationSpecificsFormat = jsonFormat7(SitesStationSpecifics)
+
+	private val EtcSpec = "etc"
+	private val SitesSpec = "sites"
+	implicit object stationSpecificsFormat extends RootJsonFormat[StationSpecifics]{
+		def write(ss: StationSpecifics): JsValue = ss match{
+			case NoStationSpecifics => JsObject.empty
+			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
+			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
+		}
+
+		def read(value: JsValue) =
+			value.asJsObject("StationSpecifics must be a JSON object").fields.get(TypeField) match{
+				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
+				case Some(JsString(SitesSpec)) =>  value.convertTo[SitesStationSpecifics]
+				case None => NoStationSpecifics
+				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
+			}
+	}
 }

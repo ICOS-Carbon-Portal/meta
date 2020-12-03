@@ -85,13 +85,9 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		http.singleRequest(
 			HttpRequest(uri = Uri(uriStr), headers = authHeaders),
 			httpsCtxt
-		).flatMap(
-			resp => resp.status match {
-				case StatusCodes.OK =>
-					Unmarshal(resp.entity).to[HandleList].map{_.handles}
-				case _ => errorFromResp(resp)
-			}
-		)
+		).flatMap(parseIfOk("listing PIDs"){
+			Unmarshal(_).to[HandleList].map(_.handles)
+		})
 	}
 
 	def get(suffix: String)(implicit envri: Envri): Future[URL] = {
@@ -99,16 +95,14 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix)), headers = authHeaders),
 			httpsCtxt
 		).flatMap(
-			resp => resp.status match {
-				case StatusCodes.OK =>
-					Unmarshal(resp.entity).to[HandleValues].flatMap{resp =>
-						resp.values.collectFirst{
-							case UrlHandleValue(_, url) => Future.successful(url)
-						}.getOrElse(
-							error(s"Could not find URL value for $suffix")
-						)
-					}
-				case _ => errorFromResp(resp)
+			parseIfOk(s"Getting PID for $suffix"){
+				Unmarshal(_).to[HandleValues].flatMap{hvs =>
+					hvs.values.collectFirst{
+						case UrlHandleValue(_, url) => Future.successful(url)
+					}.getOrElse(
+						error(s"Could not find URL value for $suffix")
+					)
+				}
 			}
 		)
 	}
@@ -133,7 +127,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 				method = HttpMethods.PUT,
 				entity = entity
 			)
-			http.singleRequest(req, httpsCtxt).flatMap(responseToDone)
+			http.singleRequest(req, httpsCtxt).flatMap(responseToDone(s"Creating PID for $suffix"))
 		}
 	}
 
@@ -143,7 +137,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 			headers = authHeaders,
 			method = HttpMethods.DELETE
 		)
-		http.singleRequest(req, httpsCtxt).flatMap(responseToDone)
+		http.singleRequest(req, httpsCtxt).flatMap(responseToDone(s"Deleting sufix $suffix"))
 	}
 
 }

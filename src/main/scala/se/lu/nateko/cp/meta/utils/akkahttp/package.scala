@@ -1,9 +1,11 @@
 package se.lu.nateko.cp.meta.utils
 
 import akka.stream.Materializer
-import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.ResponseEntity
+import akka.http.scaladsl.model.StatusCodes
 import akka.Done
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Success
@@ -11,19 +13,23 @@ import async.{ok, error}
 
 package object akkahttp{
 
-	def responseToDone(resp: HttpResponse)(implicit ctxt: ExecutionContext, mat: Materializer): Future[Done] =
+	def responseToDone(errCtxt: String)(resp: HttpResponse)(implicit ctxt: ExecutionContext, mat: Materializer): Future[Done] =
 		if(resp.status.isSuccess) {
 			resp.discardEntityBytes()
 			ok
-		} else errorFromResp(resp)
+		} else errorFromResp(resp, errCtxt)
 
 
-	def errorFromResp[T](resp: HttpResponse)(implicit ctxt: ExecutionContext, mat: Materializer): Future[T] = resp.entity.toStrict(2.seconds)
+	def errorFromResp[T](resp: HttpResponse, errCtxt: String)(implicit ctxt: ExecutionContext, mat: Materializer): Future[T] = resp.entity.toStrict(2.seconds)
 		.transform{
-			case Success(entity) => Success(":\n" + entity.data.utf8String)
-			case _ => Success("")
+			case Success(entity) => Success(s"$errCtxt :\n" + entity.data.utf8String)
+			case _ => Success(errCtxt)
 		}.flatMap{msg =>
-			error(s"Got ${resp.status} from the server$msg")
+			error(s"Got ${resp.status} from the server: $msg")
 		}
 
+	def parseIfOk[T](errCtxt: String)(parser: ResponseEntity => Future[T])(resp: HttpResponse)(implicit ctxt: ExecutionContext, mat: Materializer): Future[T] = resp.status match{
+		case StatusCodes.OK => parser(resp.entity)
+		case _ => errorFromResp(resp, errCtxt)
+	}
 }

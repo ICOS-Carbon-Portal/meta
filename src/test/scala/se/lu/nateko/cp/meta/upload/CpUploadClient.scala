@@ -69,7 +69,7 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 
 	def uploadSingleMeta[T <: UploadDto : RootJsonFormat](dto: T): Future[Done] = metaUploadReq(dto)
 		.flatMap(req => http.singleRequest(req))
-		.flatMap(responseToDone)
+		.flatMap(responseToDone("uploading single meta"))
 
 	def uploadSingleObjMeta(dto: ObjectUploadDto) = uploadSingleMeta(dto)
 	def uploadSingleCollMeta(dto: StaticCollectionDto) = uploadSingleMeta(dto)
@@ -81,7 +81,7 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 
 	def uploadSingleFile(file: FileInfo): Future[Done] = http
 		.singleRequest(fileUploadReq(file))
-		.flatMap(responseToDone)
+		.flatMap(responseToDone("uploading single file"))
 
 	def getUploadDto[T <: UploadDto : RootJsonFormat](landingPage: URI): Future[T] = http
 		.singleRequest{HttpRequest(
@@ -97,7 +97,7 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 			method = HttpMethods.POST,
 			headers = Seq(cookie, dataHost)
 		))
-		.flatMap(responseToDone)
+		.flatMap(responseToDone(s"re-ingesting $hash"))
 
 	def fetchDataObject(uri: java.net.URI): Future[DataObject] = http
 		.singleRequest(HttpRequest(

@@ -8,38 +8,38 @@
 @import landpagesnips._
 
 @(station: Station)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(station.name, station.name, envri, CpMenu.default){
+@ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
 			<h2>About</h2>
-			@if(envri==Envri.ICOS){
+			@if(envri == Envri.ICOS){
 				@metadataRow("Station ID", station.id)
 			}
-			@for(ecosystems <- station.ecosystems) {
-				@metadataRow("Main ecosystems", ecosystems.flatMap(_.label).mkString(" / "))
+			@for(sites <- sitesSpecifics if !sites.ecosystems.isEmpty) {
+				@metadataRow("Main ecosystems", sites.ecosystems.flatMap(_.label).mkString(" / "))
 			}
-			@for(climateZone <- station.climateZone.flatMap(_.label)) {
+			@for(eco <- ecoSpecifics; climateZone <- eco.climateZone.flatMap(_.label)) {
 				@metadataRow("Climate zone", climateZone)
 			}
-			@for(temperature <- station.meanAnnualTemp) {
+			@for(eco <- ecoSpecifics; temperature <- eco.meanAnnualTemp) {
 				@metadataRow("Mean annual temperature", s"""${temperature} °C""")
 			}
-			@for(operationalPeriod <- station.operationalPeriod) {
+			@for(sites <- sitesSpecifics; operationalPeriod <- sites.operationalPeriod) {
 				@metadataRow("Operational period", operationalPeriod)
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataRow("Organization", org.name)
 			}
-			@station.documentation.toList match {
+			@sitesSpecifics.toList.flatMap(_.documentation) match {
 				case Nil => {}
-				case _ => {
+				case docs => {
 					<div class="row">
 						<div class="col-md-3">
 							<label>Documentation</label>
 						</div>
 						<div class="col-md-9 mb-2">
 							<span>
-								@for((document, i) <- station.documentation.zipWithIndex){
+								@for((document, i) <- docs.zipWithIndex){
 									@if(i > 0) {
 										<span>, </span>
 									}
@@ -66,16 +66,16 @@
 					<a href="@maplink">Open map</a>
 				}
 			}
-			@for(pictures <- station.pictures) {
+			@if(!station.pictures.isEmpty) {
 				<h2>Pictures</h2>
-				@for(picture <- pictures) {
+				@for(picture <- station.pictures) {
 					<img src="@picture" class="img-responsive" style="margin-bottom: 15px;">
 				}
 			}
 		</div>
 		<div class="col-sm-4 text-center">
 			<div class="row form-group">
-				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station.name)</a>
+				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station)</a>
 			</div>
 			@for(email <- station.org.email) {
 				<div class="row">
@@ -89,7 +89,7 @@
 				<div class="row">
 					<div class="btn btn-link">
 						<span class="glyphicon glyphicon-share"></span>
-						<a href="@website">Read more about @stationShortName(station.name)</a>
+						<a href="@website">Read more about @stationShortName(station)</a>
 					</div>
 				</div>
 			}
@@ -102,9 +102,22 @@
 	Uri(s"https://${conf.dataHost}/portal/").withFragment(s"""{"filterCategories":{"station":["$stationUri"]}}""")
 }
 
-@stationShortName(fullName: String) = @{
+@stationShortName(station: Station) = @{
+	val fullName = station.org.name
 	envri match {
 		case Envri.SITES => fullName.split(" ").head
 		case _ => fullName
+	}
+}
+
+@sitesSpecifics = @{
+	Option(station.specificInfo).collect{
+		case sites: SitesStationSpecifics => sites
+	}
+}
+
+@ecoSpecifics = @{
+	Option(station.specificInfo).collect{
+		case eco: EcoStationSpecifics => eco
 	}
 }

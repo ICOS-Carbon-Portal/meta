@@ -51,7 +51,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					acq = l2.acquisition;
 					time <- getTemporalCoverageDisplay(dobj, zoneId)
 				) yield {
-					val station = acq.station.name
+					val station = acq.station.org.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
 					s"$spec, $station$height, $time"
 				}
@@ -83,7 +83,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					productionInstant = dobj.production.fold(interval.stop)(_.dateTime);
 					time <- getTemporalCoverageDisplay(dobj, zoneId)
 				) yield {
-					val station = acq.station.name
+					val station = acq.station.org.name
 					val year = formatDate(productionInstant, zoneId).take(4)
 					val dataType = spec.split(",").head
 					s"$station. $year. $dataType from $location, $time"

@@ -77,6 +77,12 @@
     
 
 
+    <!-- http://www.w3.org/2001/XMLSchema#date -->
+
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#date"/>
+    
+
+
     <!-- http://www.w3.org/2001/XMLSchema#dateTime -->
 
     <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#dateTime"/>
@@ -1182,6 +1188,19 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">the date when the station was approved by ICOS and got labelled as an ICOS station</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">labelling date</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName">
@@ -1274,6 +1293,32 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/VariableInfo"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measured in mm</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">mean annual precipitation</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measured in W m-2</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">mean annual radiation</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1503,7 +1548,7 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass">
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
         <rdfs:range>
             <rdfs:Datatype>
                 <owl:oneOf>

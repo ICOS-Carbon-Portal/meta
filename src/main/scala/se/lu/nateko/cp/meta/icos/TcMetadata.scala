@@ -4,8 +4,8 @@ import java.time.Instant
 
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.{data => core}
+import core.{Position, Orcid, Station}
 
 
 sealed trait Entity[+T <: TC]{
@@ -35,8 +35,7 @@ object Entity{
 
 	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
 		def withCpId(org: Organization[T], id: UriId) = org match{
-			case ss: TcStationaryStation[T] => ss.copy(cpId = id)
-			case ms: TcMobileStation[T] => ms.copy(cpId = id)
+			case ss: TcStation[T] => ss.copy(cpId = id)
 			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
 		}
 	}
@@ -58,28 +57,11 @@ case class Person[+T <: TC](
 
 sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
 
-sealed trait TcStation[+T <: TC] extends Organization[T] with TcEntity[T]{
-	def id: String
-	def country: Option[CountryCode]
-}
-
-case class TcStationaryStation[+T <: TC](
+case class TcStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
-	name: String,
-	id: String,
-	country: Option[CountryCode],
-	pos: Position
-) extends TcStation[T]
-
-case class TcMobileStation[+T <: TC](
-	cpId: UriId,
-	tcId: TcId[T],
-	name: String,
-	id: String,
-	country: Option[CountryCode],
-	geoJson: Option[String]
-) extends TcStation[T]
+	core: Station
+) extends Organization[T] with TcEntity[T]
 
 case class CompanyOrInstitution[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
 

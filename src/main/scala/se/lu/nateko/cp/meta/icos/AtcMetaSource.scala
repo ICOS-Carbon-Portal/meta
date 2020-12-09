@@ -23,13 +23,15 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.{data => core}
+import core.{CountryCode, Position, Orcid}
 import java.io.File
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid}
 import se.lu.nateko.cp.meta.services.CpVocab
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.data.Station
+import se.lu.nateko.cp.meta.core.data.IcosStationClass
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -83,10 +85,12 @@ object AtcMetaSource{
 	val IdCol = "#Id"
 	val StationIdCol = "ShortName"
 	val StationNameCol = "FullName"
+	val StationClassCol = "Class"
 	val CountryCol = "Country"
 	val LatCol = "Latitude"
 	val LonCol = "Longitude"
 	val AltCol = "EAS"
+	val LabelingDateCol = "LabelingDate"
 
 	val PersonIdCol = "#ContactId"
 	val FirstNameCol = "ContactForename"
@@ -141,9 +145,14 @@ object AtcMetaSource{
 
 	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
-	def parseCountry(s: String): Option[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
+	def parseCountry(s: String): Validated[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
+	def parseStationClass(s: String): Validated[IcosStationClass.Value] = try{
+			Some(IcosStationClass.withName(s.trim))
+		} catch{
+			case nsee: NoSuchElementException => None
+		}
 
-	def parseStations(path: Path): Validated[IndexedSeq[TcStationaryStation[A]]] = parseFromCsv(path){implicit row =>
+	def parseStations(path: Path): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
 		val demand = lookUpMandatory("stations") _
 
 		for(
@@ -152,15 +161,30 @@ object AtcMetaSource{
 			lat <- demand(LatCol).map(_.toDouble);
 			lon <- demand(LonCol).map(_.toDouble);
 			alt <- demand(AltCol).map(_.toFloat);
+			stClass <- demand(StationClassCol).map(parseStationClass);
 			name <- demand(StationNameCol);
-			country <- demand(CountryCol).map(parseCountry)
-		) yield TcStationaryStation[A](
+			country <- demand(CountryCol).map(parseCountry);
+			lblDate <- demand(LabelingDateCol).map(s => LocalDate.parse(s.take(10)))
+		) yield TcStation[A](
 			cpId = TcConf.stationId[A](stIdStr),
 			tcId = TcConf.AtcConf.makeId(tcId),
-			id = stIdStr,
-			pos = Position(lat, lon, Some(alt)),
-			name = name,
-			country = country
+			core = Station(
+				org = core.Organization(
+					self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
+					name = name,
+					email = None
+				),
+				id = stIdStr,
+				coverage = Some(Position(lat, lon, Some(alt))),
+				responsibleOrganization = None,
+				website = None,
+				pictures = Nil,
+				specificInfo = core.PlainIcosSpecifics(
+					stClass = stClass,
+					country = country,
+					labelingDate = None
+				)
+			)
 		)
 	}
 

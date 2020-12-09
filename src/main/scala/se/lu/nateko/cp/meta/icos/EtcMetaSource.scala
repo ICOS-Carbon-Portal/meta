@@ -57,8 +57,8 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 
 
 	def fetchFromEtc(): Future[Validated[State]] = {
-		val peopleFut = fetchFromTsv("team", getPerson(_))
-		val stationsFut = fetchFromTsv("station", getStation(_))
+		val peopleFut = fetchFromTsv(Types.people, getPerson(_))
+		val stationsFut = fetchFromTsv(Types.stations, getStation(_))
 
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
@@ -72,7 +72,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
 				)(_)
-				fetchFromTsv("teamrole", membExtractor).map(_.map{membs =>
+				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Add instruments info
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
 					new TcState(stations, membs, Nil)
@@ -103,6 +103,14 @@ object EtcMetaSource{
 	type EtcMembership = Membership[E]
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
+
+	object Types{
+		val roles = "teamrole"
+		val people = "team"
+		val stations = "station"
+		val instruments = "logger"
+		val files = "file"
+	}
 
 	object Vars{
 		val lat = "LOCATION_LAT"

@@ -41,7 +41,6 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	) yield new CitationInfo(cit, None, None)
 
 	def getIcosCitation(dobj: DataObject): Option[CitationInfo] = {
-		val isIcos: Option[Unit] = if(dobj.specification.project.self.uri === vocab.icosProject) Some(()) else None
 		val zoneId = ZoneId.of("UTC")
 
 		def titleOpt = dobj.specificInfo.fold(
@@ -57,17 +56,21 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 		for(
-			_ <- isIcos;
 			title <- titleOpt;
 			pid <- dobj.doi.orElse(dobj.pid);
 			productionInstant <- productionTime(dobj)
 		) yield {
 			val authors = attrProvider.getAuthors(dobj)
-			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
-			val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
-			val year = formatDate(productionInstant, zoneId).take(4)
 			val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
-			new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors), tempCov)
+
+			if(dobj.specification.project.self.uri === vocab.icosProject) {
+				val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
+				val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
+				val year = formatDate(productionInstant, zoneId).take(4)
+				new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors), tempCov)
+			} else {
+				new CitationInfo("", Some(authors), tempCov)
+			}
 		}
 	}
 

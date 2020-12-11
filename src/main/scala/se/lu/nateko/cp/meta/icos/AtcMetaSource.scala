@@ -32,6 +32,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.core.data.IcosStationClass
+import java.time.LocalDate
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -145,15 +146,18 @@ object AtcMetaSource{
 
 	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
-	def parseCountry(s: String): Validated[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
-	def parseStationClass(s: String): Validated[IcosStationClass.Value] = try{
-			Some(IcosStationClass.withName(s.trim))
-		} catch{
-			case nsee: NoSuchElementException => None
-		}
+	def parseCountryCode(s: String): Validated[CountryCode] = {
+		val ccOpt = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
+		val errors = if(ccOpt.isEmpty) Seq(s"Neither a recognized country (in AtcMetaSource) nor a country code: $s") else Nil
+		new Validated(ccOpt, errors)
+	}
+
+	def parseLocalDate(ts: String): Validated[LocalDate] = Validated(LocalDate.parse(ts.take(10)))
+
+	def parseStationClass(s: String): Validated[IcosStationClass.Value] = Validated(IcosStationClass.withName(s.trim))
 
 	def parseStations(path: Path): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
-		val demand = lookUpMandatory("stations") _
+		val demand = lookUpMandatory(stationsId) _
 
 		for(
 			stIdStr <- demand(StationIdCol);
@@ -161,10 +165,10 @@ object AtcMetaSource{
 			lat <- demand(LatCol).map(_.toDouble);
 			lon <- demand(LonCol).map(_.toDouble);
 			alt <- demand(AltCol).map(_.toFloat);
-			stClass <- demand(StationClassCol).map(parseStationClass);
+			stClass <- demand(StationClassCol).flatMap(parseStationClass).optional;
 			name <- demand(StationNameCol);
-			country <- demand(CountryCol).map(parseCountry);
-			lblDate <- demand(LabelingDateCol).map(s => LocalDate.parse(s.take(10)))
+			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
+			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional
 		) yield TcStation[A](
 			cpId = TcConf.stationId[A](stIdStr),
 			tcId = TcConf.AtcConf.makeId(tcId),
@@ -172,17 +176,18 @@ object AtcMetaSource{
 				org = core.Organization(
 					self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
 					name = name,
-					email = None
+					email = None,
+					website = None
 				),
 				id = stIdStr,
 				coverage = Some(Position(lat, lon, Some(alt))),
+				//TODO Support the responsible org for ATC here
 				responsibleOrganization = None,
-				website = None,
 				pictures = Nil,
 				specificInfo = core.PlainIcosSpecifics(
-					stClass = stClass,
-					country = country,
-					labelingDate = None
+					stationClass = stClass,
+					countryCode = country,
+					labelingDate = lblDate
 				)
 			)
 		)

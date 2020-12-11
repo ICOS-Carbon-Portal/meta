@@ -23,8 +23,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.EtcUploadConfig
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.Badm
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
@@ -35,7 +33,9 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.{data => core}
+import core.{Orcid, CountryCode, Position, Station}
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -99,7 +99,7 @@ object EtcMetaSource{
 	type E = ETC.type
 	//type EtcInstrument = Instrument[E]
 	type EtcPerson = Person[E]
-	type EtcStation = TcStationaryStation[E]
+	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
@@ -126,6 +126,16 @@ object EtcMetaSource{
 		val stationTcId = "ID_STATION"
 		val siteName = "SITE_NAME"
 		val siteId = "SITE_ID"
+		val stationClass = "CLASS_ICOS"
+		val descrShort = "SITE_DESC_SHORT"
+		val descr = "SITE_DESC"
+		val labelingDate = "DATE_LABEL"
+		val utcOffset = "UTC_OFFSET"
+		val annualTemp = "MAT"
+		val annualPrecip = "MAP"
+		val annualRad = "MAR"
+		val climateZone = "CLIMATE_KOPPEN"
+		val ecosystemIGBP = "IGBP"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(
@@ -203,6 +213,12 @@ object EtcMetaSource{
 		case _ => Validated.error(s + " is not a valid country code")
 	}
 
+	private val datePattern = """^(\d{4})(\d\d)(\d\d)""".r
+	def parseDate(ds: String): Validated[LocalDate] = ds.trim match {
+		case datePattern(y, m, d) => Validated(LocalDate.parse(s"$y-$m-$d"))
+		case _ => Validated.error(ds + " is not a valid date")
+	}
+
 	def toCET(ldt: LocalDateTime): Instant = ldt.atOffset(ZoneOffset.ofHours(1)).toInstant
 	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
 
@@ -219,9 +235,41 @@ object EtcMetaSource{
 		tcId <- lookUp(Vars.stationTcId);
 		name <- lookUp(Vars.siteName);
 		id <- lookUp(Vars.siteId);
-		countryCode <- getCountryCode(id.take(2))
-	) yield
-		TcStationaryStation(TcConf.stationId[E](id), makeId(tcId), name, id, Some(countryCode), pos)
+		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
+		countryCode <- getCountryCode(id.take(2)).optional;
+		lblDate <- lookUp(Vars.labelingDate).flatMap(parseDate).optional;
+		climZone <- lookUp(Vars.climateZone).optional;
+		ecoType <- lookUp(Vars.ecosystemIGBP).optional;
+		meanTemp <- lookUp(Vars.annualTemp).map(_.trim.toFloat).optional;
+		meanPrecip <- lookUp(Vars.annualPrecip).map(_.trim.toFloat).optional;
+		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional
+	) yield TcStation[E](
+			cpId = TcConf.stationId[E](id),
+			tcId = makeId(tcId),
+			core = Station(
+				org = core.Organization(
+					self = core.UriResource(null, Some(id), Nil),
+					name = name,
+					email = None,
+					website = None
+				),
+				id = id,
+				coverage = Some(pos),
+				responsibleOrganization = None,
+				pictures = Nil,
+				specificInfo = core.EtcStationSpecifics(
+					stationClass = stClass,
+					countryCode = countryCode,
+					labelingDate = lblDate,
+					climateZone = climZone.map(cz => core.UriResource(null, Some(cz), Nil)),
+					ecosystemType = ecoType.map(eco => core.UriResource(null, Some(eco), Nil)),
+					meanAnnualTemp = meanTemp,
+					meanAnnualPrecip = meanPrecip,
+					meanAnnualRad = meanRadiation
+				)
+			)
+		)
+
 
 	def getMembership(
 		people: Map[TcId[E], EtcPerson],

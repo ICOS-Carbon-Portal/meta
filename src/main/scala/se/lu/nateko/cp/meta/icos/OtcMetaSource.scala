@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.time.Instant
+
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
@@ -13,20 +15,19 @@ import akka.stream.OverflowStrategy
 import akka.stream.ThrottleMode
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Source
+import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import org.eclipse.rdf4j.query.BindingSet
 import se.lu.nateko.cp.meta.services.CpVocab
-import org.eclipse.rdf4j.model.Value
-import java.time.Instant
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.{data => core}
+import core.{Position, Orcid, Station, CountryCode}
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -41,58 +42,54 @@ class OtcMetaSource(
 
 	override def readState: Validated[State] = for(
 		people <- getPeople;
-		mobStations <- getMobileStations;
-		statStations <- getStationaryStations;
+		stations <- getStations;
 		otherOrgs <- getCompsAndInsts;
-		orgs = mobStations ++ statStations ++ otherOrgs;
+		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people)
 		//TODO Fetch instruments
-	) yield new TcState(mobStations.values.toSeq, membs, Nil)
-
-	private def getMobileStations: Validated[Map[IRI, TcMobileStation[O]]] = {
-		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-		|select distinct ?st ?id ?name ?countryCode where{
-		|	?st otc:hasStationId ?id .
-		|	filter exists{
-		|		?depl otc:toStation ?st ; otc:ofPlatform ?plat .
-		|		values ?mobPlClass {otc:Ship otc:DriftingBuoy}
-		|		?plat a ?mobPlClass .
-		|	}
-		|	?st otc:hasName ?name .
-		|	optional {?st otc:countryCode ?countryCode }
-		|}""".stripMargin
-
-		getLookup(q, "st"){(b, tcId) => TcMobileStation(
-			cpId = stationId(b.getValue("id").stringValue),
-			tcId = tcId,
-			id = b.getValue("id").stringValue,
-			name = b.getValue("name").stringValue,
-			country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
-			geoJson = None
-		)}
-	}
+	) yield new TcState(stations.values.toSeq, membs, Nil)
 
 	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
-	private def getStationaryStations: Validated[Map[IRI, TcStationaryStation[O]]] = {
+	//TODO Add coverage for mobile stations
+	//TODO Add station class
+	//TODO Add labeling date
+	private def getStations: Validated[Map[IRI, TcStation[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?st ?id ?name ?lat ?lon ?countryCode where{
-		|	?plat a otc:Mooring .
 		|	?depl otc:ofPlatform ?plat ; otc:toStation ?st .
-		|	?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon .
+		|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
 		|	#optional {?depl otc:hasEndTime ?endTime}
 		|	?st otc:hasStationId ?id ; otc:hasName ?name .
 		|	optional {?st otc:countryCode ?countryCode }
 		|}""".stripMargin
 
 		getLookup(q, "st"){(b, tcId) =>
-			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
-			TcStationaryStation(
+
+			val pos = for(
+				lat <- Option(b.getValue("lat")).map(parseDouble);
+				lon <- Option(b.getValue("lon")).map(parseDouble)
+			) yield Position(lat, lon, None)
+			val stIdStr = b.getValue("id").stringValue
+			TcStation[O](
 				cpId = stationId(b.getValue("id").stringValue),
 				tcId = tcId,
-				id = b.getValue("id").stringValue,
-				name = b.getValue("name").stringValue,
-				pos = pos,
-				country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
+				core = Station(
+					org = core.Organization(
+						self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
+						name = b.getValue("name").stringValue,
+						email = None,
+						website = None
+					),
+					id = stIdStr,
+					coverage = pos,
+					responsibleOrganization = None,
+					pictures = Nil,
+					specificInfo = core.PlainIcosSpecifics(
+						stationClass = None,
+						countryCode = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
+						labelingDate = None
+					)
+				)
 			)
 		}
 	}

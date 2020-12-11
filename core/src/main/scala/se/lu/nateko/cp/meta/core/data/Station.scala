@@ -10,7 +10,6 @@ case class Station(
 	id: String,
 	coverage: Option[GeoFeature],
 	responsibleOrganization: Option[Organization],
-	website: Option[URI],
 	pictures: Seq[URI],
 	specificInfo: StationSpecifics
 )
@@ -68,20 +67,24 @@ object StationSpecifics extends CommonJsonSupport{
 	implicit val stationClassFormat = enumFormat(IcosStationClass)
 	implicit val etcStationSpecificsFormat = jsonFormat8(EtcStationSpecifics)
 	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
+	implicit val plainIcosSpecificsFormat = jsonFormat3(PlainIcosSpecifics)
 
 	private val EtcSpec = "etc"
 	private val SitesSpec = "sites"
+	private val PlainIcosSpec = "plainicos"
 	implicit object stationSpecificsFormat extends RootJsonFormat[StationSpecifics]{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
 			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
+			case icos: PlainIcosSpecifics => icos.toTypedJson(PlainIcosSpec)
 		}
 
 		def read(value: JsValue) =
 			value.asJsObject("StationSpecifics must be a JSON object").fields.get(TypeField) match{
 				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
-				case Some(JsString(SitesSpec)) =>  value.convertTo[SitesStationSpecifics]
+				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
+				case Some(JsString(PlainIcosSpec)) => value.convertTo[PlainIcosSpecifics]
 				case None => NoStationSpecifics
 				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
 			}

@@ -9,7 +9,12 @@ case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 sealed trait Agent{
 	val self: UriResource
 }
-case class Organization(self: UriResource, name: String, email: Option[String]) extends Agent
+case class Organization(
+	self: UriResource,
+	name: String,
+	email: Option[String],
+	website: Option[URI]
+) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, orcid: Option[Orcid]) extends Agent
 
 

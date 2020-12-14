@@ -28,24 +28,24 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
 	private val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll.doi)
+	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll)
 
 	def getCitationInfo(sobj: StaticObject)(implicit envri: Envri.Value): References = sobj match{
 		case data: DataObject =>
 			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
 			val dobj = vocab.getStaticObject(data.hash)
 			References(
-				citationString = getDoiCitation(data.doi).orElse(citInfo.citationString),
+				citationString = getDoiCitation(data).orElse(citInfo.citationString),
 				authors = citInfo.authors,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = getOptionalString(dobj, hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq),
 			)
 		case doc: DocObject =>
-			References.empty.copy(citationString = getDoiCitation(doc.doi))
+			References.empty.copy(citationString = getDoiCitation(doc))
 	}
 
-	private def getDoiCitation(doiStrOpt: Option[String]): Option[String] = for(
-		doiStr <- doiStrOpt;
+	private def getDoiCitation(item: CitableItem): Option[String] = for(
+		doiStr <- item.doi;
 		doi <- Doi.unapply(doiStr);
 		cit <- doiCiter.getCitationEager(doi)
 	) yield cit
@@ -53,6 +53,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getIcosCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC")
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
+		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
 
 		def titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
@@ -67,14 +68,18 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		val authors = attrProvider.getAuthors(dobj)
+		val authors: Seq[Person] = if(isIcosProject) attrProvider.getAuthors(dobj) else{
+			import AttributionProvider.personOrdering
+			dobj.production.toSeq.flatMap(prod => prod.contributors :+ prod.creator).collect{
+				case p: Person => p
+			}.sorted
+		}
 
 		val citString = for(
 			title <- titleOpt;
 			pidUrl <- getPidUrl(dobj);
 			productionInstant <- productionTime(dobj);
-			projName <- if(dobj.specification.project.self.uri === vocab.icosProject) Some("ICOS RI")
-				else dobj.specification.project.self.label
+			projName <- if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
 		) yield {
 			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
 			val year = formatDate(productionInstant, zoneId).take(4)
@@ -92,8 +97,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
-					interval <- acq.interval;
-					productionInstant = dobj.production.fold(interval.stop)(_.dateTime);
+					productionInstant <- productionTime(dobj);
 					time <- tempCov
 				) yield {
 					val station = acq.station.name

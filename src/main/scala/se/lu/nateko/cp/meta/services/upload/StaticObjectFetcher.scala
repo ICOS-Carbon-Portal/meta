@@ -66,16 +66,9 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
 			parentCollections = collFetcher.getParentCollections(dobj),
-			references = References(None, None, None, None)
+			references = References.empty
 		)
-		val citeInfo = citer.getCitationInfo(init)
-		init.copy(references = References(
-				citationString = citeInfo.map(_.citationString),
-				authors = citeInfo.flatMap(_.authors),
-				keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq),
-				temporalCoverageDisplay = citeInfo.flatMap(_.tempCovDisplay)
-			)
-		)
+		init.copy(references = citer.getCitationInfo(init))
 	}
 
 	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
@@ -92,17 +85,9 @@ class StaticObjectFetcher(
 			nextVersion = getNextVersion(doc),
 			previousVersion = getPreviousVersion(doc),
 			parentCollections = collFetcher.getParentCollections(doc),
-			references = References(None, None, None, None)
+			references = References.empty
 		)
-		val citeInfo = citer.getCitationInfo(init)
-		init.copy(
-			references = References(
-				citationString = citeInfo.map(_.citationString),
-				authors = citeInfo.flatMap(_.authors),
-				keywords = None,
-				temporalCoverageDisplay = citeInfo.flatMap(_.tempCovDisplay)
-			)
-		)
+		init.copy(references = citer.getCitationInfo(init))
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI)(implicit envri: Envri): Option[String] = {

@@ -170,3 +170,6 @@ case class References(
 	authors: Option[Seq[Person]],
 	temporalCoverageDisplay: Option[String]
 )
+object References{
+	def empty = References(None, None, None, None)
+}

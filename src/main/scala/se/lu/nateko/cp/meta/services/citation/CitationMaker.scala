@@ -6,76 +6,86 @@ import java.time.format.DateTimeFormatter
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
-
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.Person
 
-class CitationInfo(val citationString: String, val authors: Option[Seq[Person]], val tempCovDisplay: Option[String])
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.parseCommaSepList
+import se.lu.nateko.cp.meta.utils.rdf4j._
 
-class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) {
+private class CitationInfo(val citationString: Option[String], val authors: Option[Seq[Person]], val tempCovDisplay: Option[String])
+
+class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) extends FetchingHelper {
 	import CitationMaker._
 	private implicit val envriConfs = coreConf.envriConfigs
 
-	val vocab = new CpVocab(repo.getValueFactory)
+	protected val server = new Rdf4jInstanceServer(repo)
+	val vocab = new CpVocab(server.factory)
+	private val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
 	private val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getCitationString(coll: StaticCollection) = getDoiCitation(coll.doi).map(_.citationString)
+	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll.doi)
 
-	def getCitationInfo(dobj: StaticObject)(implicit envri: Envri.Value): Option[CitationInfo] = {
-		val getCitation = if (envri == Envri.SITES) getSitesCitation(_) else getIcosCitation(_)
-		dobj.asDataObject.flatMap(getCitation).orElse(getDoiCitation(dobj.doi))
+	def getCitationInfo(sobj: StaticObject)(implicit envri: Envri.Value): References = sobj match{
+		case data: DataObject =>
+			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
+			val dobj = vocab.getStaticObject(data.hash)
+			References(
+				citationString = getDoiCitation(data.doi).orElse(citInfo.citationString),
+				authors = citInfo.authors,
+				temporalCoverageDisplay = citInfo.tempCovDisplay,
+				keywords = getOptionalString(dobj, hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq),
+			)
+		case doc: DocObject =>
+			References.empty.copy(citationString = getDoiCitation(doc.doi))
 	}
 
-	private def getDoiCitation(doiStrOpt: Option[String]): Option[CitationInfo] = for(
+	private def getDoiCitation(doiStrOpt: Option[String]): Option[String] = for(
 		doiStr <- doiStrOpt;
 		doi <- Doi.unapply(doiStr);
 		cit <- doiCiter.getCitationEager(doi)
-	) yield new CitationInfo(cit, None, None)
+	) yield cit
 
-	def getIcosCitation(dobj: DataObject): Option[CitationInfo] = {
+	private def getIcosCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC")
+		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 
 		def titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
-					time <- getTemporalCoverageDisplay(dobj, zoneId)
+					time <- tempCov
 				) yield {
 					val station = acq.station.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
 					s"$spec, $station$height, $time"
 				}
 		)
-		for(
-			title <- titleOpt;
-			pid <- dobj.doi.orElse(dobj.pid);
-			productionInstant <- productionTime(dobj)
-		) yield {
-			val authors = attrProvider.getAuthors(dobj)
-			val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 
-			if(dobj.specification.project.self.uri === vocab.icosProject) {
-				val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
-				val handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
-				val year = formatDate(productionInstant, zoneId).take(4)
-				new CitationInfo(s"${authorsStr}ICOS RI, $year. $title, ${handleProxy}$pid", Some(authors), tempCov)
-			} else {
-				new CitationInfo("", Some(authors), tempCov)
-			}
+		val authors = attrProvider.getAuthors(dobj)
+
+		val citString = for(
+			title <- titleOpt;
+			pidUrl <- getPidUrl(dobj);
+			productionInstant <- productionTime(dobj);
+			projName <- if(dobj.specification.project.self.uri === vocab.icosProject) Some("ICOS RI")
+				else dobj.specification.project.self.label
+		) yield {
+			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
+			val year = formatDate(productionInstant, zoneId).take(4)
+			s"${authorsStr}$projName, $year. $title, $pidUrl"
 		}
+		new CitationInfo(citString, Some(authors), tempCov)
 	}
 
-	def getSitesCitation(dobj: DataObject): Option[CitationInfo] = {
+	private def getSitesCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC+01:00")
+		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(
@@ -84,7 +94,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
 					interval <- acq.interval;
 					productionInstant = dobj.production.fold(interval.stop)(_.dateTime);
-					time <- getTemporalCoverageDisplay(dobj, zoneId)
+					time <- tempCov
 				) yield {
 					val station = acq.station.name
 					val year = formatDate(productionInstant, zoneId).take(4)
@@ -93,15 +103,17 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		for(
+		val citString = for(
 			title <- titleOpt;
-			handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic;
-			pid <- dobj.doi.orElse(dobj.pid)
-		) yield {
-			val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
-			new CitationInfo(s"$title. SITES Data Portal. ${handleProxy}$pid", None, tempCov)
-		}
+			pidUrl <- getPidUrl(dobj)
+		) yield s"$title. SITES Data Portal. $pidUrl"
+		new CitationInfo(citString, None, tempCov)
 	}
+
+	private def getPidUrl(dobj: DataObject): Option[String] = for(
+		pid <- dobj.doi.orElse(dobj.pid);
+		handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
+	) yield s"$handleProxy$pid"
 
 }
 

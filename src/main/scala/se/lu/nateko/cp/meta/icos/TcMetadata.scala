@@ -61,7 +61,9 @@ case class TcStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
 	core: Station
-) extends Organization[T] with TcEntity[T]
+) extends Organization[T] with TcEntity[T]{
+	def name = core.org.name
+}
 
 case class CompanyOrInstitution[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
 

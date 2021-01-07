@@ -1,26 +1,27 @@
 package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Orcid
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
-import org.eclipse.rdf4j.model.Statement
+import se.lu.nateko.cp.meta.services.upload.DobjMetaFetcher
+import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.Orcid
 
-class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
+class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
-	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts)
-	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts)
+	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
+	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 
 	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[CompanyOrInstitution[T]]] = cpOwnMetasFetcher.getOrgs[T]
 
@@ -57,7 +58,10 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 		.createStatement(s.getSubject, s.getPredicate, s.getObject)
 }
 
-private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
+private class IcosMetaInstancesFetcher(
+	val server: InstanceServer,
+	val plainObjFetcher: PlainStaticObjectFetcher
+)(implicit envriConfigs: EnvriConfigs) extends DobjMetaFetcher{
 	val vocab = new CpVocab(server.factory)
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(
@@ -108,31 +112,15 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 
 	def getStations[T <: TC](implicit conf: TcConf[T]): Validated[Seq[TcStation[T]]] =
-		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getStation)
+		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
 
 
-	private def getStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI): TcStation[T] = {
-
-		val tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it"))
-		val id = getSingleString(uri, metaVocab.hasStationId)
-		val cpId = UriId(uri)
-		val name = getSingleString(uri, metaVocab.hasName)
-
-		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)
-		val lonOpt = getOptionalDouble(uri, metaVocab.hasLongitude)
-
-		val countryOpt = getOptionalString(uri, metaVocab.countryCode).flatMap(CountryCode.unapply)
-
-		val stationaryOpt = for(lat <- latOpt; lon <- lonOpt) yield {
-			val altOpt = getOptionalFloat(uri, metaVocab.hasElevation)
-			TcStationaryStation(cpId, tcId, name, id, countryOpt, Position(lat, lon, altOpt))
-		}
-
-		stationaryOpt.getOrElse{
-			val jsonOpt = getOptionalUri(uri, metaVocab.hasSpatialCoverage)
-				.flatMap(getOptionalString(_, metaVocab.asGeoJSON))
-			TcMobileStation(cpId, tcId, name, id, countryOpt, jsonOpt)
-		}
+	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI): TcStation[T] = {
+		TcStation(
+			cpId = UriId(uri),
+			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
+			core = getStation(uri)
+		)
 	}
 
 
@@ -155,7 +143,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 
 	private def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] =
 		if(server.hasStatement(uri, RDF.TYPE, stationClass))
-			Some(getStation(getTcId(uri), uri))
+			Some(getTcStation(getTcId(uri), uri))
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
 			Some(getCompOrInst(getTcId(uri), uri))
 		else

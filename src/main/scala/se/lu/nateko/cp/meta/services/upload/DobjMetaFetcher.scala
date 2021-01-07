@@ -44,11 +44,10 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		coverage = getStationCoverage(stat),
 		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 		specificInfo = getStationSpecifics(stat),
-		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
 		pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction)
 	)
 
-	protected def getStationSpecifics(stat: IRI): StationSpecifics = {
+	private def getStationSpecifics(stat: IRI): StationSpecifics = {
 		if(server.resourceHasType(stat, metaVocab.sites.stationClass))
 			SitesStationSpecifics(
 				sites = server.getUriValues(stat, metaVocab.operatesOn).map(getSite),
@@ -58,19 +57,31 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
 				documentation = getDocumentationObjs(stat)
 			)
-		else if(server.resourceHasType(stat, metaVocab.ecoStationClass))
+		else if(server.resourceHasType(stat, metaVocab.ecoStationClass)){
+			val icosSpecif = getIcosStationSpecifics(stat)
 			EtcStationSpecifics(
-				stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
-				labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
-					.map(LocalDate.parse).headOption,
+				stationClass = icosSpecif.stationClass,
+				labelingDate = icosSpecif.labelingDate,
+				countryCode = icosSpecif.countryCode,
 				climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
 				ecosystemType = getOptionalUri(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
 				meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
 				meanAnnualPrecip = getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip),
 				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation)
 			)
+		} else if(
+			server.resourceHasType(stat, metaVocab.atmoStationClass) ||
+			server.resourceHasType(stat, metaVocab.oceStationClass)
+		) getIcosStationSpecifics(stat)
 		else NoStationSpecifics
 	}
+
+	private def getIcosStationSpecifics(stat: IRI) = PlainIcosSpecifics(
+		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
+		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
+			.map(LocalDate.parse).headOption,
+		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply)
+	)
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)

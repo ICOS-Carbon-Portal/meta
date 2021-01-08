@@ -12,6 +12,15 @@ case class GenericGeoFeature(val geoJson: String) extends GeoFeature{
 	def textSpecification = geoJson
 }
 
+case class GeometryCollection(geometries: Seq[String]) extends GeoFeature {
+	def geoJson: String = s"""{
+	|	"type": "GeometryCollection",
+	|	"geometries": [${geometries.mkString(",")}]
+	|}""".stripMargin
+
+	def textSpecification = s"Geometries: $geometries"
+}
+
 case class Position(lat: Double, lon: Double, alt: Option[Float]) extends GeoFeature{
 	def geoJson: String = s"""{
 	|	"type": "Point",

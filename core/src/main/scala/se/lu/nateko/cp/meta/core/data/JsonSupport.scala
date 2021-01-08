@@ -13,6 +13,7 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val datasetSpecFormat = jsonFormat2(DatasetSpec)
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
+	implicit val GeometryCollectionFormat = jsonFormat1(GeometryCollection)
 	implicit val positionFormat = jsonFormat3(Position.apply)
 	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
@@ -28,6 +29,7 @@ object JsonSupport extends CommonJsonSupport{
 				case pos: Position => pos.toJson
 				case ggf: GenericGeoFeature => ggf.toJson
 				case gpoly: Polygon => gpoly.toJson
+				case geocol: GeometryCollection => geocol.toJson
 			}
 			JsObject(baseJson.asJsObject.fields + ("geo" -> geo.geoJson.parseJson))
 		}
@@ -42,6 +44,9 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[LatLonBox]
 				else if(fields.contains("lat") && fields.contains("lon"))
 					value.convertTo[Position]
+				else if(fields.contains("geometries")) {
+					value.convertTo[GeometryCollection]
+				}
 				else
 					value.convertTo[GenericGeoFeature]
 			case _ =>

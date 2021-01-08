@@ -62,6 +62,9 @@ case class DataAcquisition(
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 	def coverage: Option[GeoFeature] = samplingPoint
+		.flatMap(sp => site
+			.flatMap(_.location.map(_.geometry))
+			.map(l => GeometryCollection(Seq(sp.geoJson, l.geoJson))))
 		.orElse(site.flatMap(_.location.map(_.geometry)))
 		.orElse(station.coverage)
 }

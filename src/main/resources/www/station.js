@@ -41,7 +41,10 @@ function initMap(locations) {
 							return {color: "rgb(50,50,255)", weight: 2};
 
 						case 'Polygon':
-						return {color: "rgb(50,50,255)", weight: 2};
+							return {color: "rgb(50,50,255)", weight: 2};
+
+						case 'GeometryCollection':
+							return {color: "rgb(50,50,255)", weight: 2};
 
 						default:
 							return {color: "rgb(50,255,50)", weight: 2};

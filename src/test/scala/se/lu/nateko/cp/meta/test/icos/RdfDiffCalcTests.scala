@@ -6,8 +6,8 @@ import org.eclipse.rdf4j.model.Statement
 import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.{data => core}
+import core.{Envri, EnvriConfig, CountryCode, PlainIcosSpecifics}
 import se.lu.nateko.cp.meta.icos._
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -28,7 +28,24 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 	val jane = Person[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
 	val CountryCode(se) = "SE"
-	val airCpStation = TcMobileStation[A](UriId("AIR1"), aId("43"), "Airplane 1", "AIR1", Some(se), None)
+
+	val airCpStation = TcStation[A](
+		cpId = UriId("AIR1"),
+		tcId = aId("43"),
+		core = core.Station(
+			org = core.Organization(
+				self = core.UriResource(new URI("http://test.icos.eu/resources/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
+				name = "Airplane 1",
+				email = None,
+				website = None
+			),
+			id = "AIR1",
+			coverage = None,
+			responsibleOrganization = None,
+			pictures = Seq.empty,
+			specificInfo = PlainIcosSpecifics(None, None, Some(se))
+		)
+	)
 
 	def atcInitSnap(pi: Person[A]): TcState[A] = {
 		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
@@ -193,7 +210,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		cpServer.addAll(cpOwn(rdfMaker))
 
 		tcServer.addAll(initTcState.flatMap(getStatements(rdfMaker, _)))
-		val rdfReader = new RdfReader(cpServer, tcServer)
+		val rdfReader = new RdfReader(cpServer, tcServer, tcServer)
 		new TestState(new RdfDiffCalc(rdfMaker, rdfReader), rdfReader, rdfMaker, tcServer, cpServer)
 	}
 

@@ -13,7 +13,6 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 
 
 class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
@@ -44,8 +43,7 @@ object MetaFlow {
 
 		val rdfReader = {
 			val allIcosInstServer = db.uploadService.servers.allDataObjs(Envri.ICOS)
-			val plainFetcher = new PlainStaticObjectFetcher(allIcosInstServer)
-			new RdfReader(cpServer, icosServer, plainFetcher)
+			new RdfReader(cpServer, icosServer, allIcosInstServer)
 		}
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)

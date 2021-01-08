@@ -86,10 +86,14 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.core.id)) +:
-				//TODO pictures
-				//TODO responsible org
 				orgTriples(uri, s.core.org) ++:
 				stationTriples(uri, s.core.specificInfo) ++:
+				s.core.pictures.map{picUri =>
+					(uri, meta.hasDepiction, picUri.toRdf)
+				} ++:
+				s.core.responsibleOrganization.map{respOrg =>
+					(uri, meta.hasResponsibleOrganization, respOrg.self.uri.toRdf)
+				} ++:
 				coverageTriples(uri, s.core.coverage)
 
 			case ci: CompanyOrInstitution[T] =>

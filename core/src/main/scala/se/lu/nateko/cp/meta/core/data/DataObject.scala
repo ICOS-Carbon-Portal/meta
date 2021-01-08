@@ -61,12 +61,15 @@ case class DataAcquisition(
 	samplingHeight: Option[Float]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
+
 	def coverage: Option[GeoFeature] = samplingPoint
-		.flatMap(sp => site
-			.flatMap(_.location.map(_.geometry))
-			.map(l => GeometryCollection(Seq(sp.geoJson, l.geoJson))))
-		.orElse(site.flatMap(_.location.map(_.geometry)))
+		.map(sp => siteGeometry
+			.fold[GeoFeature](sp)(l => GeometryCollection(Seq(sp, l)))
+		)
+		.orElse(siteGeometry)
 		.orElse(station.coverage)
+
+	private def siteGeometry = site.flatMap(_.location.map(_.geometry))
 }
 
 case class DataProduction(

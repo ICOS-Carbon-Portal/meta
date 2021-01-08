@@ -12,10 +12,10 @@ case class GenericGeoFeature(val geoJson: String) extends GeoFeature{
 	def textSpecification = geoJson
 }
 
-case class GeometryCollection(geometries: Seq[String]) extends GeoFeature {
+case class GeometryCollection(geometries: Seq[GeoFeature]) extends GeoFeature {
 	def geoJson: String = s"""{
 	|	"type": "GeometryCollection",
-	|	"geometries": [${geometries.mkString(",")}]
+	|	"geometries": [${geometries.map(_.geoJson).mkString(",")}]
 	|}""".stripMargin
 
 	def textSpecification = s"Geometries: $geometries"

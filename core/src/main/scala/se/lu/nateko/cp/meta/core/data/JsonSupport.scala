@@ -13,7 +13,6 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val datasetSpecFormat = jsonFormat2(DatasetSpec)
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
-	implicit val GeometryCollectionFormat = jsonFormat1(GeometryCollection)
 	implicit val positionFormat = jsonFormat3(Position.apply)
 	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
@@ -53,6 +52,8 @@ object JsonSupport extends CommonJsonSupport{
 				deserializationError("Expected a JsObject representing a GeoFeature")
 		}
 	}
+
+	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat1(GeometryCollection)
 
 	implicit object orcidFormat extends JsonFormat[Orcid]{
 		def write(id: Orcid): JsValue = JsString(id.shortId)

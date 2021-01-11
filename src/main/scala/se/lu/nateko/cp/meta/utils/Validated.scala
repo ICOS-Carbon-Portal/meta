@@ -23,6 +23,8 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		new Validated(newRes, newErrors)
 	}
 
+	def collect[U](f: PartialFunction[T, U]): Validated[U] = new Validated(result.collect(f), errors)
+
 	def foreach[U](f: T => U): Unit = result.foreach(f)
 
 	def filter(p: T => Boolean) = tryTransform(new Validated(result.filter(p), errors))

@@ -58,7 +58,7 @@ case class EtcStationSpecifics(
 object IcosStationClass extends Enumeration{
 	val One = Value("1")
 	val Two = Value("2")
-	val Associated = Value
+	val Associated = Value("Ass")
 }
 
 object StationSpecifics extends CommonJsonSupport{

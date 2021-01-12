@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.icos
 
 import java.time.Instant
+import java.time.LocalDate
 
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
@@ -27,9 +28,8 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.{data => core}
-import core.{Position, Orcid, Station, CountryCode}
-import se.lu.nateko.cp.meta.core.data.IcosStationClass
-import java.time.LocalDate
+import core.{Position, Orcid, Station, CountryCode, IcosStationClass}
+import se.lu.nateko.cp.meta.core.data.GenericGeoFeature
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -43,33 +43,47 @@ class OtcMetaSource(
 	}
 
 	override def readState: Validated[State] = for(
+		comms <- getComments;
 		people <- getPeople;
-		stations <- getStations;
+		stations <- getStations(comms);
 		otherOrgs <- getCompsAndInsts;
 		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people)
 		//TODO Fetch instruments
 	) yield new TcState(stations.values.toSeq, membs, Nil)
 
-	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
-	//TODO Add coverage for mobile stations
-	private def getStations: Validated[Map[IRI, TcStation[O]]] = {
-		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-		|select distinct ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass where{
-		|	?depl otc:ofPlatform ?plat ; otc:toStation ?st .
-		|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
-		|	#optional {?depl otc:hasEndTime ?endTime}
-		|	?st otc:hasStationId ?id ; otc:hasName ?name .
-		|	optional {?st otc:countryCode ?countryCode }
-		|	optional {?st otc:hasLabelingDate ?labelDate}
-		|	optional {?st otc:hasStationClass ?stationClass}
-		|}""".stripMargin
+	private def getStations(comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
+		val q = """
+			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			|select  ?depl ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass ?geoJson
+			|from <http://meta.icos-cp.eu/resources/otcmeta/>
+			|where{
+			|	{
+			|		select ?st (max(?deplInfo) as ?di) where{
+			|			?depl otc:toStation ?st .
+			|			optional {?depl otc:hasEndTime ?deplEnd}
+			|			bind(if(bound(?deplEnd), concat(str(?deplEnd), str(?depl)), ?depl) as ?deplInfo)
+			|		}
+			|		group by ?st
+			|	}
+			|	?st otc:hasStationId ?id ; otc:hasName ?name .
+			|	bind(if(isIri(?di), ?di, iri(substr(?di, 11))) as ?depl)
+			|	?depl otc:ofPlatform ?plat .
+			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
+			|	optional {?plat otc:hasSpatialReference ?geoJson }
+			|	optional {?st otc:countryCode ?countryCode }
+			|	optional {?st otc:hasLabelingDate ?labelDate }
+			|	optional {?st otc:hasStationClass ?stationClass }
+			|}
+		|""".stripMargin
 
 		getLookupV(q, "st"){(b, tcId) =>
 			for(
+				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri};
 				latOpt <- qresValue(b, "lat").map(parseDouble).optional;
-				lonOpt <- qresValue(b, "lat").map(parseDouble).optional;
+				lonOpt <- qresValue(b, "lon").map(parseDouble).optional;
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
+				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
 				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.withName(v.stringValue)).optional;
 				ccode <- qresValue(b, "countryCode").map{v =>
 					val CountryCode(cc) = v.stringValue
@@ -85,21 +99,24 @@ class OtcMetaSource(
 					tcId = tcId,
 					core = Station(
 						org = core.Organization(
-							//TODO Init the uri properly
-							self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
+							self = core.UriResource(
+								uri = otcVocab.dummyUri,
+								label = Some(stIdStr),
+								comments = comments.getOrElse(stUri, Nil)
+							),
 							name = name,
 							email = None,
 							website = None
 						),
 						id = stIdStr,
-						coverage = posOpt,
+						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
 						responsibleOrganization = None,
 						pictures = Nil,
 						specificInfo = core.PlainIcosSpecifics(statClass, lblDate, ccode)
 					)
 				)
 			}
-		}
+		}.map(_.toMap)
 	}
 
 	private def getCompsAndInsts: Validated[Map[IRI, CompanyOrInstitution[O]]] = {
@@ -116,7 +133,7 @@ class OtcMetaSource(
 			tcIdOpt = Some(tcId),
 			name = b.getValue("name").stringValue,
 			label = Option(b.getValue("label")).map(_.stringValue)
-		)}
+		)}.map(_.toMap)
 	}
 
 	private def getPeople: Validated[Map[IRI, Person[O]]] = {
@@ -140,14 +157,24 @@ class OtcMetaSource(
 				email = Option(b.getValue("email")).map(_.stringValue.toLowerCase),
 				orcid = Option(b.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
 			)
-		}
+		}.map(_.toMap)
 	}
 
-	private def getLookup[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => T): Validated[Map[IRI, T]] = {
+	private def getComments: Validated[Map[IRI, Seq[String]]] = {
+		val q = """select *
+			|from <http://meta.icos-cp.eu/resources/otcmeta/>
+			|where{ ?iri rdfs:comment ?comm }
+		|""".stripMargin
+		getLookupV(q, "iri"){(b, _) =>
+			qresValueReq(b, "comm").map(_.stringValue)
+		}.map(_.groupMap(_._1)(_._2))
+	}
+
+	private def getLookup[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => T): Validated[IndexedSeq[(IRI, T)]] = {
 		getLookupV(query, entVar)((bs, id) => Validated(maker(bs, id)))
 	}
 
-	private def getLookupV[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => Validated[T]): Validated[Map[IRI, T]] = {
+	private def getLookupV[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => Validated[T]): Validated[IndexedSeq[(IRI, T)]] = {
 		Validated(sparql.evaluateTupleQuery(SparqlQuery(query))).flatMap{iter =>
 			val entValids = iter.toIndexedSeq.map{b =>
 				for(
@@ -157,7 +184,7 @@ class OtcMetaSource(
 					ent <- maker(b, TcConf.makeId[O](entIri.getLocalName))
 				) yield entIri -> ent
 			}
-			Validated.sequence(entValids).map(_.toMap)
+			Validated.sequence(entValids)
 		}
 	}
 
@@ -193,7 +220,7 @@ class OtcMetaSource(
 				start = parseDate(b.getValue("start")),
 				stop = parseDate(b.getValue("end"))
 			)
-		}.map(_.values.toSeq)
+		}.map(_.map(_._2))
 	}
 
 	private def parseDate(v: Value): Option[Instant] = v match {
@@ -214,6 +241,8 @@ class OtcMetaSource(
 class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
+
+	val dummyUri = new java.net.URI(bup.baseUri + "dummy")
 
 	// val hasHolder = getRelativeRaw("hasHolder")
 	// val hasRole = getRelativeRaw("hasRole")

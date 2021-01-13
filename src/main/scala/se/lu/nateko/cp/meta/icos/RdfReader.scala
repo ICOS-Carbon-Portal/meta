@@ -98,9 +98,8 @@ private class IcosMetaInstancesFetcher(
 	}
 
 
-	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
+	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass, true){
 		(tcIdOpt, uri) => Instrument[T](
-			cpId = UriId(uri),
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Instrument $uri had no TC id associated with it")),
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
@@ -158,10 +157,11 @@ private class IcosMetaInstancesFetcher(
 		getEntities[T, CompanyOrInstitution[T]](metaVocab.orgClass)(getCompOrInst)
 
 
-	private def getEntities[T <: TC : TcConf, E](cls: IRI)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {
+	private def getEntities[T <: TC : TcConf, E](cls: IRI, requireTcId: Boolean = false)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {
 		val seqV = for(
 			uri <- getDirectClassMembers(cls);
 			tcIdOpt = getTcId(uri)
+			if !requireTcId || tcIdOpt.isDefined
 		) yield Validated(make(tcIdOpt, uri))
 		Validated.sequence(seqV)
 	}

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.utils
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 
@@ -60,6 +61,8 @@ object Validated{
 
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
+
+	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
 
 	def sequence[T](valids: IterableOnce[Validated[T]]): Validated[IndexedSeq[T]] = {
 		val res = Buffer.empty[T]

@@ -41,7 +41,8 @@ object Entity{
 	}
 
 	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[Instrument[T]]{
-		def withCpId(instr: Instrument[T], id: UriId) = instr.copy(cpId = id)
+		//noop, because instrument cpIds are expected to be stable
+		def withCpId(instr: Instrument[T], id: UriId) = instr
 	}
 
 }
@@ -67,8 +68,7 @@ case class TcStation[+T <: TC](
 
 case class CompanyOrInstitution[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
 
-case class Instrument[+T <: TC](
-	cpId: UriId,
+case class Instrument[+T <: TC : TcConf](
 	tcId: TcId[T],
 	model: String,
 	sn: String,
@@ -76,7 +76,10 @@ case class Instrument[+T <: TC](
 	vendor: Option[Organization[T]] = None,
 	owner: Option[Organization[T]] = None,
 	partsCpIds: Seq[UriId] = Nil
-) extends TcEntity[T]
+) extends TcEntity[T]{
+	//cpId for instruments is strictly related to tcId, and is expected to be stable
+	def cpId = UriId(implicitly[TcConf[T]].tcPrefix + "_" + tcId.id)
+}
 
 class AssumedRole[+T <: TC](
 	val kind: Role,

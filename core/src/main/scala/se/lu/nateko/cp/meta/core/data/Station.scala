@@ -2,8 +2,9 @@ package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
 import java.time.LocalDate
-import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import scala.util.{Try, Success}
 import spray.json._
+import se.lu.nateko.cp.meta.core.CommonJsonSupport
 
 case class Station(
 	org: Organization,
@@ -59,6 +60,7 @@ object IcosStationClass extends Enumeration{
 	val One = Value("1")
 	val Two = Value("2")
 	val Associated = Value("Ass")
+	def parse(s: String): Try[Value] = if(s.startsWith(Associated.toString)) Success(Associated) else Try(withName(s))
 }
 
 object StationSpecifics extends CommonJsonSupport{

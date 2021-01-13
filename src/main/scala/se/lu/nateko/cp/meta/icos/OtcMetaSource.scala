@@ -247,7 +247,6 @@ class OtcMetaSource(
 				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
 			) yield
 				Instrument[O](
-					cpId = UriId(tcId.id),
 					tcId = tcId,
 					model = model,
 					sn = sn,

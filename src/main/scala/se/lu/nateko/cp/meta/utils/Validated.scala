@@ -13,6 +13,7 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		new Validated(result, errors :+ errMsg)
 
 	def optional = new Validated(Some(result), errors)
+	def orElse[U >: T](fallback: U) = new Validated[U](Some(fallback), errors)
 
 	def map[U](f: T => U): Validated[U] = tryTransform(new Validated(result.map(f), errors))
 

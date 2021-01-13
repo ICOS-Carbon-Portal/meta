@@ -22,20 +22,20 @@ import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
-import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.{data => core}
-import core.{Position, Orcid, Station, CountryCode, IcosStationClass}
-import se.lu.nateko.cp.meta.core.data.GenericGeoFeature
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import core.{Position, Orcid, Station, CountryCode, IcosStationClass, GenericGeoFeature}
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
 ) extends TriggeredMetaSource[OTC.type] {
 
 	private type O = OTC.type
+	private type OtcId = TcId[O]
 	private val otcVocab = new OtcMetaVocab(server.factory)
 
 	override def registerListener(actor: ActorRef): Unit = {
@@ -48,9 +48,10 @@ class OtcMetaSource(
 		stations <- getStations(comms);
 		otherOrgs <- getCompsAndInsts;
 		orgs = stations ++ otherOrgs;
-		membs <- getMemberships(orgs, people)
-		//TODO Fetch instruments
-	) yield new TcState(stations.values.toSeq, membs, Nil)
+		membs <- getMemberships(orgs, people);
+		sensorLookup <- getSensorDeployment;
+		instruments <- getInstruments(orgs, sensorLookup)
+	) yield new TcState(stations.values.toSeq, membs, instruments)
 
 	private def getStations(comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
 		val q = """
@@ -80,8 +81,8 @@ class OtcMetaSource(
 		getLookupV(q, "st"){(b, tcId) =>
 			for(
 				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri};
-				latOpt <- qresValue(b, "lat").map(parseDouble).optional;
-				lonOpt <- qresValue(b, "lon").map(parseDouble).optional;
+				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
+				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
 				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
 				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.withName(v.stringValue)).optional;
@@ -223,18 +224,70 @@ class OtcMetaSource(
 		}.map(_.map(_._2))
 	}
 
+	private def getInstruments(
+		orgLookup: Map[IRI, Organization[O]],
+		sensorLookup: Map[OtcId, Seq[UriId]]
+	): Validated[IndexedSeq[Instrument[O]]] = {
+		val q = """
+			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			|select ?instr ?model ?serNum ?name ?vendor where{
+			|	values ?kind {otc:Instrument otc:Sensor}
+			|	?instr a ?kind .
+			|	optional{ ?instr otc:hasModelName ?model }
+			|	optional{ ?instr otc:hasSerialNumber ?serNum }
+			|	optional{ ?instr otc:hasName ?name }
+			|	optional{ ?instr otc:hasManufacturer ?vendor }
+			|}
+		|""".stripMargin
+		getLookupV(q, "instr"){(b, tcId) =>
+			for(
+				model <- qresValue(b, "model").flatMap(parseString).orElse("N/A");
+				sn <- qresValue(b, "serNum").flatMap(parseString).orElse("N/A");
+				nameOpt <- qresValue(b, "name").flatMap(parseString).optional;
+				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
+			) yield
+				Instrument[O](
+					cpId = UriId(tcId.id),
+					tcId = tcId,
+					model = model,
+					sn = sn,
+					name = nameOpt,
+					partsCpIds = sensorLookup.getOrElse(tcId, Nil),
+					vendor = vendorOpt.flatMap(orgLookup.get)
+				)
+		}.map(_.map(_._2))
+	}
+
+	private def getSensorDeployment: Validated[Map[OtcId, Seq[UriId]]] = {
+		val q = """|
+			prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			select distinct ?instr ?sensor where{
+				?depl otc:toInstrument ?instr ; otc:ofSensor ?sensor .
+				filter not exists {?depl otc:hasEndTime ?deplEnd}
+			}
+		|""".stripMargin
+		getLookupV(q, "instr"){(b, instrId) =>
+			qresValueReq(b, "sensor")
+				.collect{case iri: IRI => instrId -> UriId(iri)}
+				.require(s"sensor not found for instrument $instrId")
+		}.map(_.groupMap(_._2._1)(_._2._2))
+	}
+
 	private def parseDate(v: Value): Option[Instant] = v match {
 		case lit: Literal if lit.getDatatype == XMLSchema.DATE =>
 			Some(Instant.parse(lit.stringValue + "T12:00:00Z"))
 		case _ => None
 	}
 
-	private def parseDouble(v: Value): Double = v match {
-		case lit: Literal if lit.getDatatype == XMLSchema.DOUBLE =>
-			lit.stringValue.toDouble
+	private def parseLiteral(v: Value, dtype: IRI): Validated[Literal] = v match {
+		case lit: Literal if lit.getDatatype === dtype =>
+			Validated.ok(lit)
 		case _ =>
-			throw new NumberFormatException(s"Expected $v to be a RDF literal of type xsd:double")
+			Validated.error(s"Expected $v to be a RDF literal of type $dtype")
 	}
+
+	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.stringValue.trim.toDouble)
+	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING).map(_.stringValue.trim)
 
 }
 

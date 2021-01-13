@@ -7,7 +7,8 @@ val commonScalacOptions = Seq(
 	"-feature",
 	"-deprecation",
 	"-Wdead-code",
-	"-Wnumeric-widen"
+	"-Wnumeric-widen",
+	"-Wunused"
 )
 val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
 val commonJavacOptions = Seq("-source", "1.8", "-target", "1.8")

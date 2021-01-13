@@ -205,7 +205,6 @@ object AtcMetaSource{
 		}
 
 		parseFromCsv(roles){implicit row =>
-			def notFoundMsg(col: String) = s"$col not found in roles table on row ${row.mkString(", ")}"
 			val demand = lookUpMandatory("roles") _
 
 			for(

@@ -96,7 +96,7 @@ class OtcMetaSource(
 			) yield{
 
 				TcStation[O](
-					cpId = stationId(stIdStr),
+					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
 					core = Station(
 						org = core.Organization(
@@ -267,7 +267,7 @@ class OtcMetaSource(
 		|""".stripMargin
 		getLookupV(q, "instr"){(b, instrId) =>
 			qresValueReq(b, "sensor")
-				.collect{case iri: IRI => instrId -> UriId(iri)}
+				.collect{case iri: IRI => instrId -> TcConf.tcScopedId[O](UriId(iri))}
 				.require(s"sensor not found for instrument $instrId")
 		}.map(_.groupMap(_._2._1)(_._2._2))
 	}

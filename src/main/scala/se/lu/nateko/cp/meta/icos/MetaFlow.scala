@@ -63,7 +63,9 @@ object MetaFlow {
 					system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
 				}
 			} else{
-				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
+				val nUpdates = diffV.result.fold(0)(_.size)
+				val errors = diffV.errors.mkString("\n")
+				system.log.warning(s"Error(s) calculating RDF diff (got $nUpdates updates) for $tip metadata:\n$errors")
 			}
 		}
 

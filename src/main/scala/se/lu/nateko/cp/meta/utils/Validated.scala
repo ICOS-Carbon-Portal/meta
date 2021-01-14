@@ -14,7 +14,10 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		new Validated(result, errors :+ errMsg)
 
 	def optional = new Validated(Some(result), errors)
-	def orElse[U >: T](fallback: U) = new Validated[U](Some(fallback), errors)
+
+	def orElse[U >: T](fallback:  => U) =
+		if(result.isDefined) this
+		else new Validated[U](Some(fallback), errors)
 
 	def map[U](f: T => U): Validated[U] = tryTransform(new Validated(result.map(f), errors))
 
@@ -45,7 +48,11 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 			body
 		}catch{
 			case err: Throwable =>
-				new Validated[U](None, errors :+ err.getMessage)
+				val msgBase = err.getMessage
+				val msg = if(msgBase != null) msgBase else {
+					("(exception message is null)" :+ err.getStackTrace()).mkString("\n")
+				}
+				new Validated[U](None, errors :+ msg)
 		}
 
 }

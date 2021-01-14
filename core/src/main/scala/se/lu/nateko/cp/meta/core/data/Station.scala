@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
 import java.time.LocalDate
-import scala.util.{Try, Success}
+import scala.util.Try
 import spray.json._
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 
@@ -59,8 +59,8 @@ case class EtcStationSpecifics(
 object IcosStationClass extends Enumeration{
 	val One = Value("1")
 	val Two = Value("2")
-	val Associated = Value("Ass")
-	def parse(s: String): Try[Value] = if(s.startsWith(Associated.toString)) Success(Associated) else Try(withName(s))
+	val Associated = Value("Associated")
+	def parse(s: String): Try[Value] = Try(withName(s))
 }
 
 object StationSpecifics extends CommonJsonSupport{

@@ -117,7 +117,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 					(uri, meta.hasVendor, getIri(vendor))
 				} ++:
 				instr.partsCpIds.map{cpId =>
-					(uri, meta.dcterms.hasPart, vocab.getIcosInstrument(cpId))
+					(uri, meta.hasInstrumentComponent, vocab.getIcosInstrument(cpId))
 				}
 		}
 

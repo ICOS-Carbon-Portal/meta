@@ -232,7 +232,7 @@ object EtcMetaSource{
 
 	def getStation(implicit lookup: Lookup): Validated[EtcStation] = for(
 		pos <- getPosition;
-		tcId <- lookUp(Vars.stationTcId);
+		tcIdStr <- lookUp(Vars.stationTcId);
 		name <- lookUp(Vars.siteName);
 		id <- lookUp(Vars.siteId);
 		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
@@ -244,10 +244,11 @@ object EtcMetaSource{
 		meanPrecip <- lookUp(Vars.annualPrecip).map(_.trim.toFloat).optional;
 		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional
 	) yield TcStation[E](
-			cpId = TcConf.stationId[E](id),
-			tcId = makeId(tcId),
+			cpId = TcConf.stationId[E](UriId.escaped(id)),
+			tcId = makeId(tcIdStr),
 			core = Station(
 				org = core.Organization(
+					//TODO Init uri with dummy
 					self = core.UriResource(null, Some(id), Nil),
 					name = name,
 					email = None,
@@ -261,7 +262,9 @@ object EtcMetaSource{
 					stationClass = stClass,
 					countryCode = countryCode,
 					labelingDate = lblDate,
+					//TODO Init URI
 					climateZone = climZone.map(cz => core.UriResource(null, Some(cz), Nil)),
+					//TODO Init URI
 					ecosystemType = ecoType.map(eco => core.UriResource(null, Some(eco), Nil)),
 					meanAnnualTemp = meanTemp,
 					meanAnnualPrecip = meanPrecip,
@@ -282,7 +285,7 @@ object EtcMetaSource{
 		role <- new Validated(roleOpt);
 		roleEnd <- getLocalDate(Vars.roleEnd).optional;
 		person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
-		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $persId")
+		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
 	) yield {
 		val assumedRole = new AssumedRole[E](role, person, station, None, None)
 		Membership(UriId(""), assumedRole, None, roleEnd)

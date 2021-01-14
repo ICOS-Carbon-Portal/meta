@@ -78,7 +78,7 @@ case class Instrument[+T <: TC : TcConf](
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	def cpId = UriId(implicitly[TcConf[T]].tcPrefix + "_" + tcId.id)
+	def cpId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 }
 
 class AssumedRole[+T <: TC](
@@ -101,5 +101,5 @@ class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq
 abstract class TcMetaSource[T <: TC : TcConf]{
 	type State = TcState[T]
 	def state: Source[State, Any]
-	def stationId(baseId: String) = TcConf.stationId[T](baseId)
+	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
 }

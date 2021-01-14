@@ -106,7 +106,7 @@ private class IcosMetaInstancesFetcher(
 			name = getOptionalString(uri, metaVocab.hasName),
 			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getOrganization(o)),
 			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getOrganization(v)),
-			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(UriId.apply)
+			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply)
 		)
 	}
 

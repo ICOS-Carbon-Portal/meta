@@ -170,10 +170,11 @@ object AtcMetaSource{
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
 			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional
 		) yield TcStation[A](
-			cpId = TcConf.stationId[A](stIdStr),
+			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = TcConf.AtcConf.makeId(tcId),
 			core = Station(
 				org = core.Organization(
+					//TODO Init uri with dummy
 					self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
 					name = name,
 					email = None,

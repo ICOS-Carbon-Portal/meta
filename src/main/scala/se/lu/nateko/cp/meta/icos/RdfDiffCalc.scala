@@ -17,9 +17,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
-		current <- rdfReader.getCurrentState[T];
-		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T];
-		cpOwnPeople <- rdfReader.getCpOwnPeople[T]
+		current <- rdfReader.getCurrentState[T].require("problem reading current state");
+		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T].require("problem reading CP own orgs");
+		cpOwnPeople <- rdfReader.getCpOwnPeople[T].require("problem reading CP own people")
 	) yield {
 
 		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten

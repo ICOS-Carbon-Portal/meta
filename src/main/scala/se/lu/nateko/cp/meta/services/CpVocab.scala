@@ -33,7 +33,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
 	def getIcosLikeStation(stationId: UriId) = getRelative(s"stations/", stationId)(icosBup)
-	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](id.id))
+	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](UriId.escaped(id.id)))
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
@@ -128,7 +128,7 @@ object CpVocab{
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
 
-	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](s"${station.id}_$id")
+	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](UriId.escaped(s"${station.id}_$id"))
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val uriSegm = iri.getLocalName

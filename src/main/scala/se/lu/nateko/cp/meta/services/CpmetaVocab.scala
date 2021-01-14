@@ -122,6 +122,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasStartTime = getRelativeRaw("hasStartTime")
 	val hasEndTime = getRelativeRaw("hasEndTime")
 	val hasInstrumentOwner = getRelativeRaw("hasInstrumentOwner")
+	val hasInstrumentComponent = getRelativeRaw("hasInstrumentComponent")
 	val hasVendor = getRelativeRaw("hasVendor")
 	val hasModel = getRelativeRaw("hasModel")
 	val hasSerialNumber = getRelativeRaw("hasSerialNumber")

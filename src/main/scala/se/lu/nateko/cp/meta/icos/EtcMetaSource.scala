@@ -36,6 +36,9 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 import se.lu.nateko.cp.meta.core.{data => core}
 import core.{Orcid, CountryCode, Position, Station}
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import java.net.URI
+import se.lu.nateko.cp.meta.core.data.UriResource
 
 class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -238,8 +241,8 @@ object EtcMetaSource{
 		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
 		countryCode <- getCountryCode(id.take(2)).optional;
 		lblDate <- lookUp(Vars.labelingDate).flatMap(parseDate).optional;
-		climZone <- lookUp(Vars.climateZone).optional;
-		ecoType <- lookUp(Vars.ecosystemIGBP).optional;
+		climZone <- lookUp(Vars.climateZone).flatMap(parseClimateZone).optional;
+		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
 		meanTemp <- lookUp(Vars.annualTemp).map(_.trim.toFloat).optional;
 		meanPrecip <- lookUp(Vars.annualPrecip).map(_.trim.toFloat).optional;
 		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional
@@ -248,8 +251,7 @@ object EtcMetaSource{
 			tcId = makeId(tcIdStr),
 			core = Station(
 				org = core.Organization(
-					//TODO Init uri with dummy
-					self = core.UriResource(null, Some(id), Nil),
+					self = core.UriResource(dummyUri, Some(id), Nil),
 					name = name,
 					email = None,
 					website = None
@@ -262,10 +264,8 @@ object EtcMetaSource{
 					stationClass = stClass,
 					countryCode = countryCode,
 					labelingDate = lblDate,
-					//TODO Init URI
-					climateZone = climZone.map(cz => core.UriResource(null, Some(cz), Nil)),
-					//TODO Init URI
-					ecosystemType = ecoType.map(eco => core.UriResource(null, Some(eco), Nil)),
+					climateZone = climZone,
+					ecosystemType = ecoType,
 					meanAnnualTemp = meanTemp,
 					meanAnnualPrecip = meanPrecip,
 					meanAnnualRad = meanRadiation
@@ -291,4 +291,28 @@ object EtcMetaSource{
 		Membership(UriId(""), assumedRole, None, roleEnd)
 	}
 
+	private val koppenZones = Set(
+		"Af", "Am", "Aw/As", "BSh", "BWh", "BWk", "Cfa", "Cfb", "Cfc", "Csa", "Csb", "Csc", "Cwa", "Cwb", "Cwc",
+		"Dfa", "Dfb", "Dfc", "Dfd", "Dsa", "Dsb", "Dsc", "Dsd", "Dwa", "Dwb", "Dwc", "Dwd", "EF", "ET"
+	)
+
+	def parseClimateZone(cz: String): Validated[UriResource] =
+		if(koppenZones.contains(cz)) Validated.ok{
+			val czUrl = cz.replace("/", "_") // Aw/As => Aw_As
+			UriResource(new URI(s"${CpmetaVocab.MetaPrefix}koppen_$czUrl"), Some(cz), Nil)
+		} else Validated.error(s"$cz is not a known Köppen-Geiger climate zone")
+
+
+	private val igbpEcosystems = Set(
+		"BSV", "CRO", "CSH", "CVM", "DBF", "DNF", "EBF", "ENF", "GRA",
+		"MF", "OSH", "SAV", "SNO", "URB", "WAT", "WET", "WSA"
+	)
+
+	def parseIgbpEcosystem(eco: String): Validated[UriResource] = {
+		if(igbpEcosystems.contains(eco)) Validated.ok(
+			UriResource(new URI(s"${CpmetaVocab.MetaPrefix}igbp_$eco"), Some(eco), Nil)
+		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
+	}
+
+	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")
 }

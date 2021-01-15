@@ -71,6 +71,7 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 
 	override def readState: Validated[State] = for(
 			stations <- parseStations(getTableFile(stationsId));
+			//TODO Add instruments
 			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
 		) yield
 			new TcState(stations, membs, Nil)
@@ -174,8 +175,7 @@ object AtcMetaSource{
 			tcId = TcConf.AtcConf.makeId(tcId),
 			core = Station(
 				org = core.Organization(
-					//TODO Init uri with dummy
-					self = core.UriResource(uri = null, label = Some(stIdStr), comments = Nil),
+					self = core.UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
 					name = name,
 					email = None,
 					website = None

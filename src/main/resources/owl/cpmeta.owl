@@ -2893,6 +2893,142 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_BSV -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_BSV">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CRO -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CRO">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CSH -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CSH">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CVM -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_CVM">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_DBF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_DBF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_DNF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_DNF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_EBF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_EBF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_ENF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_ENF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_GRA -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_GRA">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_MF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_MF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_OSH -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_OSH">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_SAV -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_SAV">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_SNO -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_SNO">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_URB -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_URB">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WAT -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WAT">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WET -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WET">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WSA -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_WSA">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType"/>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/image -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/image">
@@ -2954,6 +3090,246 @@
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat"/>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">May use space instead of &apos;T&apos; for separator</rdfs:comment>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISO-like local dateTime</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Af -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Af">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Am -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Am">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Aw_As -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Aw_As">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BSh -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BSh">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BSk -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BSk">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BWh -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BWh">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BWk -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_BWk">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cfc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Csc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Cwc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfd -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dfd">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsd -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dsd">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwa -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwa">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwb -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwb">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwc -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwc">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwd -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_Dwd">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_EF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_EF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/koppen_ET -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/koppen_ET">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone"/>
     </owl:NamedIndividual>
     
 

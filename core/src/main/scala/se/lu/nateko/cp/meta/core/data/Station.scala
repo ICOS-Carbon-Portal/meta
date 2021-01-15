@@ -53,7 +53,9 @@ case class EtcStationSpecifics(
 	ecosystemType: Option[UriResource],
 	meanAnnualTemp: Option[Float],
 	meanAnnualPrecip: Option[Float],
-	meanAnnualRad: Option[Float]
+	meanAnnualRad: Option[Float],
+	stationDocs: Seq[URI],
+	stationPubs: Seq[URI]
 ) extends IcosStationSpecifics with EcoStationSpecifics
 
 object IcosStationClass extends Enumeration{
@@ -67,7 +69,7 @@ object StationSpecifics extends CommonJsonSupport{
 	import JsonSupport.{uriResourceFormat, plainStaticObjectFormat, siteFormat, countryCodeFormat}
 	import CommonJsonSupport._
 	implicit val stationClassFormat = enumFormat(IcosStationClass)
-	implicit val etcStationSpecificsFormat = jsonFormat8(EtcStationSpecifics)
+	implicit val etcStationSpecificsFormat = jsonFormat10(EtcStationSpecifics)
 	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
 	implicit val plainIcosSpecificsFormat = jsonFormat3(PlainIcosSpecifics)
 

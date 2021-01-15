@@ -132,6 +132,7 @@ object EtcMetaSource{
 		val stationClass = "CLASS_ICOS"
 		val descrShort = "SITE_DESC_SHORT"
 		val descr = "SITE_DESC"
+		val pictureUrl = "URL_PICTURE"
 		val labelingDate = "DATE_LABEL"
 		val utcOffset = "UTC_OFFSET"
 		val annualTemp = "MAT"
@@ -245,13 +246,17 @@ object EtcMetaSource{
 		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
 		meanTemp <- lookUp(Vars.annualTemp).map(_.trim.toFloat).optional;
 		meanPrecip <- lookUp(Vars.annualPrecip).map(_.trim.toFloat).optional;
-		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional
+		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional;
+		descrShort <- lookUp(Vars.descrShort).optional;
+		descr <- lookUp(Vars.descr).optional;
+		//TODO Make sure to use the "preview" URL from fileshare, not the "download" one
+		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s)).optional
 	) yield TcStation[E](
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),
 			core = Station(
 				org = core.Organization(
-					self = core.UriResource(dummyUri, Some(id), Nil),
+					self = core.UriResource(dummyUri, Some(id), Seq(descrShort, descr).flatten),
 					name = name,
 					email = None,
 					website = None
@@ -259,7 +264,7 @@ object EtcMetaSource{
 				id = id,
 				coverage = Some(pos),
 				responsibleOrganization = None,
-				pictures = Nil,
+				pictures = picture.toSeq,
 				specificInfo = core.EtcStationSpecifics(
 					stationClass = stClass,
 					countryCode = countryCode,

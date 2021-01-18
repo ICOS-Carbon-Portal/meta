@@ -140,6 +140,8 @@ object EtcMetaSource{
 		val annualRad = "MAR"
 		val climateZone = "CLIMATE_KOPPEN"
 		val ecosystemIGBP = "IGBP"
+		val stationDocDois = "REFERENCE_DOI_D"
+		val stationDataPubDois = "REFERENCE_DOI_P"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(
@@ -244,13 +246,14 @@ object EtcMetaSource{
 		lblDate <- lookUp(Vars.labelingDate).flatMap(parseDate).optional;
 		climZone <- lookUp(Vars.climateZone).flatMap(parseClimateZone).optional;
 		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
-		meanTemp <- lookUp(Vars.annualTemp).map(_.trim.toFloat).optional;
-		meanPrecip <- lookUp(Vars.annualPrecip).map(_.trim.toFloat).optional;
-		meanRadiation <- lookUp(Vars.annualRad).map(_.trim.toFloat).optional;
+		meanTemp <- lookUp(Vars.annualTemp).map(_.toFloat).optional;
+		meanPrecip <- lookUp(Vars.annualPrecip).map(_.toFloat).optional;
+		meanRadiation <- lookUp(Vars.annualRad).map(_.toFloat).optional;
 		descrShort <- lookUp(Vars.descrShort).optional;
 		descr <- lookUp(Vars.descr).optional;
-		//TODO Make sure to use the "preview" URL from fileshare, not the "download" one
-		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s)).optional
+		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
+		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
+		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional
 	) yield TcStation[E](
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),
@@ -273,7 +276,9 @@ object EtcMetaSource{
 					ecosystemType = ecoType,
 					meanAnnualTemp = meanTemp,
 					meanAnnualPrecip = meanPrecip,
-					meanAnnualRad = meanRadiation
+					meanAnnualRad = meanRadiation,
+					stationDocs = docDois.getOrElse(Nil),
+					stationPubs = pubDois.getOrElse(Nil)
 				)
 			)
 		)
@@ -317,6 +322,13 @@ object EtcMetaSource{
 		if(igbpEcosystems.contains(eco)) Validated.ok(
 			UriResource(new URI(s"${CpmetaVocab.MetaPrefix}igbp_$eco"), Some(eco), Nil)
 		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
+	}
+
+	def parseDoiUris(s: String): Validated[Seq[URI]] = {
+		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{ustr =>
+			Validated(new URI(ustr)).require(s"Failed parsing $s as |-separated URI list")
+		}.toIndexedSeq
+		Validated.sequence(valids)
 	}
 
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")

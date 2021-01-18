@@ -67,7 +67,9 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				ecosystemType = getOptionalUri(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
 				meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
 				meanAnnualPrecip = getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip),
-				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation)
+				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation),
+				stationDocs = server.getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
+				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication)
 			)
 		} else if(
 			server.resourceHasType(stat, metaVocab.atmoStationClass) ||

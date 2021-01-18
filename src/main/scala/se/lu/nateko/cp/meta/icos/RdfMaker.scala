@@ -89,7 +89,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				orgTriples(uri, s.core.org) ++:
 				stationTriples(uri, s.core.specificInfo) ++:
 				s.core.pictures.map{picUri =>
-					(uri, meta.hasDepiction, picUri.toRdf)
+					(uri, meta.hasDepiction, vocab.lit(picUri.toString, XMLSchema.ANYURI))
 				} ++:
 				s.core.responsibleOrganization.map{respOrg =>
 					(uri, meta.hasResponsibleOrganization, respOrg.self.uri.toRdf)
@@ -157,6 +157,12 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			} ++
 			eco.meanAnnualRad.map{ meanRad =>
 				(iri, meta.hasMeanAnnualRadiation, vocab.lit(meanRad))
+			} ++
+			eco.stationPubs.map{stPub =>
+				(iri, meta.hasAssociatedPublication, vocab.lit(stPub.toString, XMLSchema.ANYURI))
+			} ++
+			eco.stationDocs.map{stDoc =>
+				(iri, meta.hasDocumentationUri, vocab.lit(stDoc.toString, XMLSchema.ANYURI))
 			} ++
 			plainIcosStationSpecTriples(iri, eco)
 		case icos: IcosStationSpecifics =>

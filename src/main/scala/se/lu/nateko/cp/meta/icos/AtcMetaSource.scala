@@ -71,10 +71,11 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 
 	override def readState: Validated[State] = for(
 			stations <- parseStations(getTableFile(stationsId));
-			//TODO Add instruments
+			instrOrgs <- parseInstrOrgs(getTableFile("instruments"));
+			instruments <- parseInstruments(getTableFile("instruments"), instrOrgs);
 			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
 		) yield
-			new TcState(stations, membs, Nil)
+			new TcState(stations, membs, instruments)
 }
 
 object AtcMetaSource{
@@ -110,22 +111,31 @@ object AtcMetaSource{
 	val RoleEndCol = "EndDate"
 	val SpecielListCol = "SpeciesList"
 
+	val InstrIdCol = "#InstrumentId"
+	val InstrNameCol = "InstrumentName"
+	val InstrSerialCol = "SerialId"
+	val InstrModelCol = "Model"
+	val InstrOwnerIdCol = "OwnerId"
+	val InstrOwnerCol = "Owner"
+	val InstrVendorCol = "Manufacturer"
+	val InstrVendorIdCol = "ManufacturerId"
+
 	private val countryMap = Map(
 		"belgium"         -> "BE",
-		"great britain"   -> "GB",
-		"italy"           -> "IT",
-		"ireland"         -> "IE",
-		"germany"         -> "DE",
+		"czech republic"  -> "CZ",
 		"denmark"         -> "DK",
+		"finland"         -> "FI",
+		"france"          -> "FR",
+		"germany"         -> "DE",
+		"great britain"   -> "GB",
+		"ireland"         -> "IE",
+		"italy"           -> "IT",
+		"norway"          -> "NO",
 		"poland"          -> "PL",
+		"spain"           -> "ES",
 		"sweden"          -> "SE",
 		"switzerland"     -> "CH",
-		"spain"           -> "ES",
-		"czech republic"  -> "CZ",
 		"the netherlands" -> "NL",
-		"france"          -> "FR",
-		"finland"         -> "FI",
-		"norway"          -> "NO"
 	)
 
 	private val roleMap: Map[Int, Option[Role]] = Map(
@@ -247,12 +257,12 @@ object AtcMetaSource{
 		for(
 			fname <- lookUp(FirstNameCol).require("person must have first name");
 			lname <- lookUp(LastNameCol).require("person must have last name");
-			tcId <- lookUp(PersonIdCol).require("unique ATC's id is required for a person");
+			tcId <- lookUp(PersonIdCol).map(makeId).require("unique ATC's id is required for a person");
 			email <- lookUp(EmailCol).optional;
 			orcid <- lookUpOrcid(OrcidCol);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
+			Person(cpId, Some(tcId), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>
@@ -261,4 +271,53 @@ object AtcMetaSource{
 			}
 		}
 	}
+
+
+	def parseInstrOrgs(instruments: Path): Validated[Map[TcId[A], CompanyOrInstitution[A]]] = {
+
+		def parseOrgs(idCol: String, nameCol: String) = parseFromCsv(instruments){implicit row =>
+			val demand = lookUpMandatory("instruments") _
+			for(id <- demand(idCol).map(makeId); name <- demand(nameCol)) yield{
+
+				val labelOpt = name match{
+					case labelParen(lbl) => Some(lbl)
+					case _ => None
+				}
+
+				val cpId = UriId.escaped(labelOpt.getOrElse(name))
+
+				id -> CompanyOrInstitution[A](tcIdOpt = Some(id), cpId = cpId, name = name, label = labelOpt)
+			}
+		}
+
+		for(
+			vendors <- parseOrgs(InstrVendorIdCol, InstrVendorCol);
+			owners <- parseOrgs(InstrOwnerIdCol, InstrOwnerCol)
+		) yield (owners ++ vendors).toMap
+
+	}
+
+	def parseInstruments(instruments: Path, orgs: Map[TcId[A], CompanyOrInstitution[A]]): Validated[Seq[Instrument[A]]] = {
+		parseFromCsv(instruments){implicit row =>
+			val demand = lookUpMandatory("instruments") _
+			for(
+				id <- demand(InstrIdCol).map(makeId);
+				nameOpt <- lookUp(InstrNameCol).optional;
+				serial <- lookUp(InstrSerialCol).orElse("N/A");
+				vendorId <- demand(InstrVendorIdCol).map(makeId);
+				ownerId <- demand(InstrOwnerIdCol).map(makeId);
+				model <- demand(InstrModelCol)
+			) yield Instrument(
+				tcId = id,
+				sn = serial,
+				model = model,
+				vendor = orgs.get(vendorId),
+				name = nameOpt,
+				owner = orgs.get(ownerId),
+				partsCpIds = Nil //TODO Get ATC to fix RelatedInstruments, parse them
+			)
+		}
+	}
+
+	private val labelParen = raw".*\(([A-Z]+)\).*".r
 }

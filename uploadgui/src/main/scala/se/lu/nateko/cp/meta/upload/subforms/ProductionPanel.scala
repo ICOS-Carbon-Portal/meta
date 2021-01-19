@@ -2,17 +2,14 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import scala.util.{Try, Success}
 
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
-import UploadApp.whenDone
 import Utils._
 
 
-class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".production-section"){
+class ProductionPanel(implicit bus: PubSubBus) extends PanelSubform(".production-section"){
 
 	def dataProductionDtoOpt: Try[Option[DataProductionDto]] =
 		if(!htmlElements.areEnabled) Success(None) else dataProductionDto.map(Some.apply)

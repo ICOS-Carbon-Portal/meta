@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.upload.formcomponents.{HtmlElements, ProgressBar}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
 import scala.concurrent.Future
-import scala.util.{ Success, Try, Failure }
+import scala.util.{ Success, Failure }
 
 object UploadApp {
 	import Utils._

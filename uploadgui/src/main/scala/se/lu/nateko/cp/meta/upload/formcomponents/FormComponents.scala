@@ -5,10 +5,9 @@ import java.time.Instant
 import scala.util.{ Success, Try, Failure }
 
 import org.scalajs.dom
-import org.scalajs.dom.{ document, html }
+import org.scalajs.dom.html
 import org.scalajs.dom.raw._
 import org.scalajs.dom.ext._
-import scala.scalajs.js
 
 import se.lu.nateko.cp.meta.upload.Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

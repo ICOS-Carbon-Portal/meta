@@ -1,17 +1,9 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-import scala.util.{Try, Success, Failure}
-
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DocObjectDto, StaticCollectionDto}
+import se.lu.nateko.cp.meta.{UploadDto, StaticCollectionDto}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
-import UploadApp.whenDone
 import Utils._
 
 class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection-section"){

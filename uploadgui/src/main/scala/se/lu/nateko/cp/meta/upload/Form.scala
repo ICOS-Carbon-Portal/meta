@@ -1,20 +1,16 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
-import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.Future
 import Utils._
 import se.lu.nateko.cp.meta.upload.formcomponents._
 import ItemTypeRadio._
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.net.URI
-import UploadApp.{hideAlert, showAlert, whenDone, progressBar}
+import UploadApp.{hideAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms._
 import se.lu.nateko.cp.meta.ElaboratedProductMetadata
 

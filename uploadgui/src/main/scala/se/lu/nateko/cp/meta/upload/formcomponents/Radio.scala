@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
 import se.lu.nateko.cp.meta.upload.Utils._
-import org.scalajs.dom.raw._
 import org.scalajs.dom.html
 
 class Radio[T](elemId: String, cb: T => Unit, parser: String => Option[T], serializer: T => String) {

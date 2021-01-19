@@ -71,7 +71,7 @@ object Backend {
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>
-				val varsJson = encodeURIComponent(Json.toJson(varnames).toString)
+				val varsJson = encodeURIComponent(Json.toJson(vns).toString)
 				s"&varnames=$varsJson"
 			}
 

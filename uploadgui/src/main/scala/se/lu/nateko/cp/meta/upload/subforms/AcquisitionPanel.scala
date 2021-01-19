@@ -3,23 +3,17 @@ package se.lu.nateko.cp.meta.upload.subforms
 import java.net.URI
 
 import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.util.{Try, Success}
 
-import org.scalajs.dom
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import se.lu.nateko.cp.doi.Doi
-
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DocObjectDto, StaticCollectionDto}
+import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 import se.lu.nateko.cp.meta.core.data.Position

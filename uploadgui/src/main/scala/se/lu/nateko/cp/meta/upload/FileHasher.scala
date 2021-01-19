@@ -34,7 +34,7 @@ object FileHasher {
 		}
 
 		reader.onerror = _ => {
-			p.failure(new Exception(reader.error.toLocaleString))
+			p.failure(new Exception(reader.error.toLocaleString()))
 		}
 
 		reader.readAsArrayBuffer(file)

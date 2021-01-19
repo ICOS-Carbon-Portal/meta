@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DocObjectDto, StaticCollectionDto}
+import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, StaticCollectionDto}
 
 import formcomponents._
 import ItemTypeRadio.{ItemType, Collection, Data, Document}
@@ -86,7 +86,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 		updateGetMetadataButton()
 	}
 
-	private def onModeSelected(modeName: String): Unit = {
+	private def onModeSelected(@annotation.unused modeName: String): Unit = {
 		if(isInNewItemMode){
 			fileNameElement.hide()
 			metadataUrlElement.hide()

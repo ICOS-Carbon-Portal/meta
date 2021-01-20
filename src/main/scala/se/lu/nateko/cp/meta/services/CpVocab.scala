@@ -68,7 +68,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(AcqPrefix + hash.id)
 	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(ProdPrefix + hash.id)
 	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(SubmPrefix + hash.id)
-	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(SpatCovPrefix + hash.id)
+	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri): IRI = getSpatialCoverage(UriId(hash.id))
+	def getSpatialCoverage(id: UriId)(implicit envri: Envri) = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
 	def getVarInfo(hash: Sha256Sum, varLabel: String)(implicit envri: Envri) = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
 	def getPosition(pos: Position)(implicit envri: Envri) = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
 

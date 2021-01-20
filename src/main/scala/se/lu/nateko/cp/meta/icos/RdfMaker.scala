@@ -179,8 +179,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				(iri, meta.hasElevation, vocab.lit(alt))
 			}.toSeq
 		case Some(cov) =>
-			val spcovUri = factory.createIRI(iri.stringValue + "_spcov")
+			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::
+			(spcovUri, RDF.TYPE, meta.spatialCoverageClass) ::
 			(spcovUri, meta.asGeoJSON, vocab.lit(cov.geoJson)) ::
 			Nil
 	}

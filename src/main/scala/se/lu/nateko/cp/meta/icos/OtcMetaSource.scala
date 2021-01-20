@@ -56,7 +56,7 @@ class OtcMetaSource(
 	private def getStations(comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-			|select  ?depl ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass ?geoJson
+			|select  ?depl ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass ?geoJson ?picture
 			|from <http://meta.icos-cp.eu/resources/otcmeta/>
 			|where{
 			|	{
@@ -72,6 +72,7 @@ class OtcMetaSource(
 			|	?depl otc:ofPlatform ?plat .
 			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
 			|	optional {?plat otc:hasSpatialReference ?geoJson }
+			|	optional {?plat otc:hasPicture ?picture }
 			|	optional {?st otc:countryCode ?countryCode }
 			|	optional {?st otc:hasLabelingDate ?labelDate }
 			|	optional {?st otc:hasStationClass ?stationClass }
@@ -92,7 +93,8 @@ class OtcMetaSource(
 				}.optional;
 				lblDate <-qresValue(b, "labelDate").map(v => LocalDate.parse(v.stringValue)).optional;
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
-				name <- qresValueReq(b, "name").map(_.stringValue)
+				name <- qresValueReq(b, "name").map(_.stringValue);
+				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional
 			) yield{
 
 				TcStation[O](
@@ -112,7 +114,7 @@ class OtcMetaSource(
 						id = stIdStr,
 						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
 						responsibleOrganization = None,
-						pictures = Nil,
+						pictures = pictUri.toSeq,
 						specificInfo = core.PlainIcosSpecifics(statClass, lblDate, ccode)
 					)
 				)
@@ -278,15 +280,16 @@ class OtcMetaSource(
 		case _ => None
 	}
 
-	private def parseLiteral(v: Value, dtype: IRI): Validated[Literal] = v match {
+	private def parseLiteral(v: Value, dtype: IRI): Validated[String] = v match {
 		case lit: Literal if lit.getDatatype === dtype =>
-			Validated.ok(lit)
+			Validated.ok(lit).map(_.stringValue.trim)
 		case _ =>
 			Validated.error(s"Expected $v to be a RDF literal of type $dtype")
 	}
 
-	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.stringValue.trim.toDouble)
-	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING).map(_.stringValue.trim)
+	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.toDouble)
+	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING)
+	private def parseUriLiteral(v: Value) = parseLiteral(v, XMLSchema.ANYURI).map(new java.net.URI(_))
 
 }
 

@@ -61,7 +61,7 @@
 					}
 					case _ => {}
 				}
-				@defining("/station/?theme=Other&station=" + station.org.self.uri) { maplink =>
+				@defining("/station/?station=" + station.org.self.uri.getPath) { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
 					<a href="@maplink">Open map</a>
 				}

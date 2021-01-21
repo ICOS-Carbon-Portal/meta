@@ -277,7 +277,7 @@ object AtcMetaSource{
 
 		def parseOrgs(idCol: String, nameCol: String) = parseFromCsv(instruments){implicit row =>
 			val demand = lookUpMandatory("instruments") _
-			for(id <- demand(idCol).map(makeId); name <- demand(nameCol)) yield{
+			for(id <- demand(idCol).map(s => makeId("org_" + s)); name <- demand(nameCol)) yield{
 
 				val labelOpt = name match{
 					case labelParen(lbl) => Some(lbl)

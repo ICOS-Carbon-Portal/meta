@@ -314,7 +314,7 @@ object AtcMetaSource{
 				vendor = orgs.get(vendorId),
 				name = nameOpt,
 				owner = orgs.get(ownerId),
-				partsCpIds = Nil //TODO Get ATC to fix RelatedInstruments, parse them
+				partsCpIds = Nil //TODO Add RelatedInstruments
 			)
 		}
 	}

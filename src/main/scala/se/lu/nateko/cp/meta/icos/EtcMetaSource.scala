@@ -62,23 +62,25 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 	def fetchFromEtc(): Future[Validated[State]] = {
 		val peopleFut = fetchFromTsv(Types.people, getPerson(_))
 		val stationsFut = fetchFromTsv(Types.stations, getStation(_))
+		val instrumentsFut = fetchFromTsv(Types.instruments, getInstrument(_))
 
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
-			stationsVal <- stationsFut
+			stationsVal <- stationsFut;
+			instrumentsVal <- instrumentsFut
 		) yield Validated.liftFuture{
 			for(
 				people <- peopleVal;
-				stations <- stationsVal
+				stations <- stationsVal;
+				instruments <- instrumentsVal
 			) yield {
 				val membExtractor: Lookup => Validated[EtcMembership] = getMembership(
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
 				)(_)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
-					//TODO Add instruments info
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, Nil)
+					new TcState(stations, membs, instruments)
 				})
 			}
 		}
@@ -100,7 +102,7 @@ object EtcMetaSource{
 	val baseEtcApiUrl = Uri("http://gaia.agraria.unitus.it:89/cpmeta")
 	type Lookup = Map[String, String]
 	type E = ETC.type
-	//type EtcInstrument = Instrument[E]
+	type EtcInstrument = Instrument[E]
 	type EtcPerson = Person[E]
 	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
@@ -142,6 +144,9 @@ object EtcMetaSource{
 		val ecosystemIGBP = "IGBP"
 		val stationDocDois = "REFERENCE_DOI_D"
 		val stationDataPubDois = "REFERENCE_DOI_P"
+		val loggerModel = "LOGGER_MODEL"
+		val loggerSerial = "LOGGER_SN"
+		val loggerId = "LOGGER_ID"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(
@@ -287,19 +292,42 @@ object EtcMetaSource{
 	def getMembership(
 		people: Map[TcId[E], EtcPerson],
 		stations: Map[TcId[E], EtcStation]
-	)(implicit lookup: Lookup): Validated[EtcMembership] = for(
-		persId <- lookUp(Vars.persId).require(s"${Vars.persId} is required for membership info");
-		stationTcId <- lookUp(Vars.stationTcId).require(s"${Vars.stationTcId} is required for membership info");
-		roleStr <- lookUp(Vars.role).require(s"${Vars.role} is required for membership info");
-		roleOpt <- new Validated(rolesLookup.get(roleStr)).require(s"Unknown ETC role: $roleStr");
-		role <- new Validated(roleOpt);
-		roleEnd <- getLocalDate(Vars.roleEnd).optional;
-		person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
-		station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
-	) yield {
-		val assumedRole = new AssumedRole[E](role, person, station, None, None)
-		Membership(UriId(""), assumedRole, None, roleEnd)
+	)(implicit lookup: Lookup): Validated[EtcMembership] = {
+		val require = requireVar("membership") _
+		for(
+			persId <- require(Vars.persId);
+			stationTcId <- require(Vars.stationTcId);
+			roleStr <- require(Vars.role);
+			roleOpt <- new Validated(rolesLookup.get(roleStr)).require(s"Unknown ETC role: $roleStr");
+			role <- new Validated(roleOpt);
+			roleEnd <- getLocalDate(Vars.roleEnd).optional;
+			person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
+			station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
+		) yield {
+			val assumedRole = new AssumedRole[E](role, person, station, None, None)
+			Membership(UriId(""), assumedRole, None, roleEnd)
+		}
 	}
+
+	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] ={
+		val require = requireVar("instrument") _
+		for(
+			stId <- require(Vars.stationTcId);
+			loggerId <- require(Vars.loggerId);
+			sn <- require(Vars.loggerSerial);
+			model <- require(Vars.loggerModel)
+		) yield {
+			val tcId = makeId(stId + "_" + loggerId)
+			Instrument[E](
+				tcId = tcId,
+				model = model,
+				sn = sn
+			)
+		}
+	}
+
+	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =
+		lookUp(varName).require(s"$varName is required for $hint info")
 
 	private val koppenZones = Set(
 		"Af", "Am", "Aw/As", "BSh", "BWh", "BWk", "Cfa", "Cfb", "Cfc", "Csa", "Csb", "Csc", "Cwa", "Cwb", "Cwc",

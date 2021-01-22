@@ -22,7 +22,7 @@ const stationPisQuery = `
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasShortName ?hasShortName}}
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasLongName ?hasLongName}}
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasApplicationStatus ?hasApplicationStatus}}
-		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasApplicationDescription ?hasApplicationDescription}}
+		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasAppStatusComment ?hasAppStatusComment}}
 	}`;
 
 function postProcessStationsList(stations){

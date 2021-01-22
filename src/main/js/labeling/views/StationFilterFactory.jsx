@@ -1,4 +1,3 @@
-import {status} from '../models/ApplicationStatus.js';
 import {statusClass, statusLabel} from './StationsListFactory.jsx';
 
 export default function(StationFilterStore, stationFiltersAction) {

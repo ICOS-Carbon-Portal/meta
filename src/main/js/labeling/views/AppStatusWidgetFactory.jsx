@@ -6,11 +6,11 @@ function getTransitionText(from, to){
 	switch(to){
 		case status.acknowledged: return ["Acknowledge Step 1", "Acknowledge the Step 1 application"];
 		case status.notSubmitted: return ["Return Step 1", "Return the Step 1 application for correction and resubmission"];
-		case status.approved: return from === status.step2started
+		case status.approved: return from === status.step2ontrack
 			? ["Cancel Step 2", "Reset the status back to \"Step 1 approved\""]
 			: ["Approve Step 1", "Approve Step 1 of labeling for this station"];
 		case status.rejected: return ["Reject Step 1", "Reject the application at Step 1"];
-		case status.step2started:
+		case status.step2ontrack:
 			return from === status.approved
 				? ["Start Step 2", "Start Step 2 of station labeling"]
 				: ["Reset Step 2", "Change application status back to \"Started Step 2\""];
@@ -18,7 +18,8 @@ function getTransitionText(from, to){
 			return from === status.step3approved
 				? ["Revoke final approval", "Reset the status back to \"Step 2 approved\""]
 				: ["Approve Step 2", "Approve Step 2 of station's labeling procedure"];
-		case status.step2rejected: return ["Reject Step 2", "Reject the application at Step 2"];
+		case status.step2delayed: return ["Delay Step 2", "Delay the application at Step 2"];
+		case status.step2stalled: return ["Stall Step 2", "Stall the application at Step 2"];
 		case status.step3approved: return ["Grant final approval", "Make this an official ICOS station"];
 		default: return ["Unsupported status", "Unsupported status: " + to];
 	}
@@ -30,9 +31,10 @@ function transitionButtonClass(to){
 		case status.notSubmitted: return "cp-btn-gray";
 		case status.approved: return "btn-success";
 		case status.rejected: return "btn-danger";
-		case status.step2started : return "btn-warning";
+		case status.step2ontrack : return "btn-warning";
 		case status.step2approved : return "btn-success";
-		case status.step2rejected : return "btn-danger";
+		case status.step2delayed: return "btn-warning";
+		case status.step2stalled : return "btn-danger";
 		case status.step3approved : return "btn-success";
 	}
 }

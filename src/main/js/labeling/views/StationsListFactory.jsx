@@ -24,9 +24,10 @@ function statusClassShort(appStatus){
 		case status.acknowledged: return "primary";
 		case status.approved: return "success";
 		case status.rejected: return "danger";
-		case status.step2started: return "warning";
+		case status.step2ontrack: return "success";
 		case status.step2approved: return "success";
-		case status.step2rejected: return "danger";
+		case status.step2stalled: return "danger";
+		case status.step2delayed: return "warning";
 		case status.step3approved: return "success";
 		default: return "danger";
 	}
@@ -47,9 +48,10 @@ export function statusLabel(appStatus){
 		case status.acknowledged: return "Step 1 acknowledged";
 		case status.approved: return "Step 1 approved";
 		case status.rejected: return "Step 1 rejected";
-		case status.step2started: return "Step 2 started";
+		case status.step2ontrack: return "Step 2 on track";
 		case status.step2approved: return "Step 2 approved";
-		case status.step2rejected: return "Step 2 rejected";
+		case status.step2stalled: return "Step 2 stalled";
+		case status.step2delayed: return "Step 2 delayed";
 		case status.step3approved: return "Label approved";
 		default: return "Invalid status: " + appStatus;
 	}
@@ -65,9 +67,10 @@ export function statusFullText(appStatus){
 		case status.acknowledged: return "Step 1 application sumbission acknowledged, waiting for review";
 		case status.approved: return "Step 1 application has been approved!";
 		case status.rejected: return "Step 1 application has been rejected!";
-		case status.step2started: return "Step 2 of labeling has started";
+		case status.step2ontrack: return "Step 2 of labeling is on track";
 		case status.step2approved: return "Step 2 of labeling has been approved";
-		case status.step2rejected: return "Step 2 of labeling has been rejected";
+		case status.step2stalled: return "Step 2 of labeling has been stalled";
+		case status.step2delayed: return "Step 2 of labeling has been delayed";
 		case status.step3approved: return "Labeling is complete!";
 		default: return `Invalid application status '${appStatus}'! Please inform Carbon Portal developers about the problem.`;
 	}
@@ -98,6 +101,24 @@ const ShowLazily = React.createClass({
 	}
 });
 
+const marginStyle = { marginLeft: 5, marginRight: 5 };
+const descriptionStyle = {
+	marginLeft: 10,
+	width: 'calc(100% - 320px)',
+	display: 'inline-block',
+	color: 'black',
+	verticalAlign: 'middle',
+	whiteSpace: 'nowrap',
+	overflow: 'hidden',
+	textOverflow: 'ellipsis'
+};
+
+function getApplicationDescription(status, description) {
+	return (status === 'STEP2DELAYED' || status === 'STEP2STALLED') && description
+		? '(' + description + ')'
+		: null;
+}
+
 export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 	return React.createClass({
@@ -122,43 +143,44 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 				</ShowLazily>;
 			} else {
 				return (
-					<ul className="list-unstyled">
-						<li>
-							<div className="panel panel-default" style={{marginLeft: 5, marginRight: 5}}>
-								<div className="panel-heading">
-									<span className="glyphicon glyphicon-info-sign"/>&nbsp;Stations count
-									<div className="pull-right">{self.state.stations.length}</div>
-								</div>
-							</div>
-						</li>{
-						_.map(self.state.stations, function(station){
+					<div>
+						<h4 style={marginStyle}>
+							<span class="label label-default">Stations count: {self.state.stations.length}</span>
+						</h4>
+						<ul className="list-unstyled">
+							{
+								_.map(self.state.stations, function (station) {
 
-							var panelClasses = 'panel panel-' + panelClass(station);
+									var panelClasses = 'panel panel-' + panelClass(station);
 
-							var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
+									var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
-							var Station = themeToStation[station.theme];
+									var Station = themeToStation[station.theme];
 
-							var applicationStatus = station.hasApplicationStatus;
-							var applicationStatusCSS = statusClass(station.hasApplicationStatus);
+									var applicationStatus = station.hasApplicationStatus;
+									var applicationDescription = station.hasApplicationDescription;
+									var applicationStatusCSS = statusClass(station.hasApplicationStatus);
 
-							return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
+									return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
 
-								<div className={panelClasses} style={{marginLeft: 5, marginRight: 5}}>
-									<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
-										<span className={icon}/>
-										&nbsp;{station.hasLongName}
-										&nbsp;<label style={{ float: 'right', height: 20, padding: '2 4' }} className={applicationStatusCSS}>
-											<span style={{fontWeight: 600, fontSize: 12, position: 'relative', top: 2}}>{statusLabel(applicationStatus)}</span>
-										</label>
-									</div>
-									{ station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName}/></div> : null }
-								</div>
+										<div className={panelClasses} style={marginStyle}>
+											<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
+												<span className={icon} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+												<span style={{ verticalAlign: 'middle' }}>{station.hasLongName}</span>
+												<span style={descriptionStyle}>{getApplicationDescription(applicationStatus, applicationDescription)}</span>
+												<label style={{ float: 'right', height: 20, padding: '2px 4px' }} className={applicationStatusCSS}>
+													<span style={{ fontWeight: 600, fontSize: 12, position: 'relative', top: 2 }}>{statusLabel(applicationStatus)}</span>
+												</label>
+											</div>
+											{station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName} /></div> : null}
+										</div>
 
-							</li>;
-							})
+									</li>;
+								})
 
-					}</ul>
+							}</ul>
+					</div>
+					
 				);
 			}
 		},

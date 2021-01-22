@@ -1,4 +1,4 @@
-module.exports = function(Backend, chooseStationAction, saveStationAction, updateStatusAction){
+module.exports = function (Backend, chooseStationAction, saveStationAction, updateStatusAction) {
 	return Reflux.createStore({
 
 		init: function(){
@@ -23,7 +23,7 @@ module.exports = function(Backend, chooseStationAction, saveStationAction, updat
 
 					var newChosenStation = _.extend({chosen: true},
 						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation'),
-						stationInfo
+						Backend.adjustAppStatus(stationInfo)
 					);
 					self.trigger({chosen: newChosenStation});
 				},

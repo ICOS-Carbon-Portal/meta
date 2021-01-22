@@ -84,6 +84,7 @@ object AtcMetaSource{
 
 	val StorageDir = "atcmeta"
 	val stationsId = "stations"
+	val undefinedOrgId = "41"
 
 	val IdCol = "#Id"
 	val StationIdCol = "ShortName"
@@ -119,6 +120,7 @@ object AtcMetaSource{
 	val InstrOwnerCol = "Owner"
 	val InstrVendorCol = "Manufacturer"
 	val InstrVendorIdCol = "ManufacturerId"
+	val InstrRelatedCol = "RelatedInstruments"
 
 	private val countryMap = Map(
 		"belgium"         -> "BE",
@@ -155,6 +157,8 @@ object AtcMetaSource{
 		10 -> 20  //deputy PI
 	)
 
+	private def makeOrgId(base: String) = makeId("org_" + base)
+
 	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
 	def parseCountryCode(s: String): Validated[CountryCode] = {
@@ -180,6 +184,7 @@ object AtcMetaSource{
 			name <- demand(StationNameCol);
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
 			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional
+			//TODO Add UTC offset property
 		) yield TcStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = TcConf.AtcConf.makeId(tcId),
@@ -277,7 +282,11 @@ object AtcMetaSource{
 
 		def parseOrgs(idCol: String, nameCol: String) = parseFromCsv(instruments){implicit row =>
 			val demand = lookUpMandatory("instruments") _
-			for(id <- demand(idCol).map(s => makeId("org_" + s)); name <- demand(nameCol)) yield{
+			for(
+				idStr <- demand(idCol) if idStr != undefinedOrgId;
+				id = makeOrgId(idStr);
+				name <- demand(nameCol)
+			) yield{
 
 				val labelOpt = name match{
 					case labelParen(lbl) => Some(lbl)
@@ -285,8 +294,9 @@ object AtcMetaSource{
 				}
 
 				val cpId = UriId.escaped(labelOpt.getOrElse(name))
+				val nameFinal = labelOpt.fold(name)(lbl => name.replace(s" ($lbl)", ""))
 
-				id -> CompanyOrInstitution[A](tcIdOpt = Some(id), cpId = cpId, name = name, label = labelOpt)
+				id -> CompanyOrInstitution[A](tcIdOpt = Some(id), cpId = cpId, name = nameFinal, label = labelOpt)
 			}
 		}
 
@@ -304,9 +314,10 @@ object AtcMetaSource{
 				id <- demand(InstrIdCol).map(makeId);
 				nameOpt <- lookUp(InstrNameCol).optional;
 				serial <- lookUp(InstrSerialCol).orElse("N/A");
-				vendorId <- demand(InstrVendorIdCol).map(makeId);
-				ownerId <- demand(InstrOwnerIdCol).map(makeId);
-				model <- demand(InstrModelCol)
+				vendorId <- demand(InstrVendorIdCol).map(makeOrgId);
+				ownerId <- demand(InstrOwnerIdCol).map(makeOrgId);
+				model <- demand(InstrModelCol);
+				related <- lookUp(InstrRelatedCol).flatMap(parseRelatedInstrs).orElse(Nil)
 			) yield Instrument(
 				tcId = id,
 				sn = serial,
@@ -314,9 +325,15 @@ object AtcMetaSource{
 				vendor = orgs.get(vendorId),
 				name = nameOpt,
 				owner = orgs.get(ownerId),
-				partsCpIds = Nil //TODO Add RelatedInstruments
+				partsCpIds = related
 			)
 		}
+	}
+
+	private def parseRelatedInstrs(list: String): Validated[Seq[UriId]] = Validated{
+		list.split(",").map{idStr =>
+			TcConf.tcScopedId(UriId.escaped(idStr.trim))(TcConf.AtcConf)
+		}.toIndexedSeq
 	}
 
 	private val labelParen = raw".*\(([A-Z]+)\).*".r

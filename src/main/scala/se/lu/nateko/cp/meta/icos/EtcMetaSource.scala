@@ -259,6 +259,7 @@ object EtcMetaSource{
 		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional
+		//TODO Add UTC offset property
 	) yield TcStation[E](
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),

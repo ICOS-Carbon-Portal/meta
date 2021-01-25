@@ -1,25 +1,20 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.time.Instant
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.{data => core}
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import java.time.Instant
-import core.{Envri, UriResource}
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-import se.lu.nateko.cp.meta.core.data.StationSpecifics
-import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
-import se.lu.nateko.cp.meta.core.data.IcosStationSpecifics
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.Position
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
@@ -71,7 +66,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 		val triples: Seq[(IRI, IRI, Value)] = e match{
 
-			case p: Person[T] =>
+			case p: TcPerson[T] =>
 				(uri, RDF.TYPE, meta.personClass) +:
 				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
 				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
@@ -91,15 +86,15 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				s.core.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri.toString, XMLSchema.ANYURI))
 				} ++:
-				s.core.responsibleOrganization.map{respOrg =>
-					(uri, meta.hasResponsibleOrganization, respOrg.self.uri.toRdf)
+				s.responsibleOrg.map{respOrg =>
+					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
 				coverageTriples(uri, s.core.coverage)
 
-			case ci: CompanyOrInstitution[T] =>
+			case ci: TcPlainOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) ::
-				(uri, meta.hasName, vocab.lit(ci.name)) ::
-				ci.label.toList.map{label =>
+				(uri, meta.hasName, vocab.lit(ci.org.name)) ::
+				ci.org.self.label.toList.map{label =>
 					(uri, RDFS.LABEL, vocab.lit(label))
 				}
 
@@ -129,12 +124,12 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 	def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
 
-		case p: Person[T] =>
+		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)
 
 		case s: TcStation[T] => vocab.getIcosLikeStation(s.cpId)
 
-		case ci: CompanyOrInstitution[T] =>
+		case ci: TcPlainOrg[T] =>
 			vocab.getOrganization(ci.cpId)
 
 		case instr: Instrument[T] =>
@@ -207,7 +202,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: core.Organization): Seq[Triple] = {
+	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
 		uriResourceTriples(iri, org.self) :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
 		org.email.map{ email =>

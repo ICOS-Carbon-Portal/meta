@@ -1,8 +1,12 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.io.File
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.LocalDate
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -21,18 +25,12 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.{data => core}
-import core.{CountryCode, Position, Orcid}
-import java.io.File
 
-import EtcMetaSource.{Lookup, lookUp, lookUpOrcid}
-import se.lu.nateko.cp.meta.services.CpVocab
-import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Station
-import se.lu.nateko.cp.meta.core.data.IcosStationClass
-import java.time.LocalDate
+import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -70,9 +68,9 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 	}
 
 	override def readState: Validated[State] = for(
-			stations <- parseStations(getTableFile(stationsId));
-			instrOrgs <- parseInstrOrgs(getTableFile("instruments"));
-			instruments <- parseInstruments(getTableFile("instruments"), instrOrgs);
+			orgs <- readAllOrgs(getTableFile("instruments"), getTableFile(stationsId));
+			stations <- parseStations(getTableFile(stationsId), orgs);
+			instruments <- parseInstruments(getTableFile("instruments"), orgs);
 			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
 		) yield
 			new TcState(stations, membs, instruments)
@@ -81,6 +79,7 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 object AtcMetaSource{
 	type A = ATC.type
 	import TcConf.AtcConf.makeId
+	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
 	val StorageDir = "atcmeta"
 	val stationsId = "stations"
@@ -95,6 +94,9 @@ object AtcMetaSource{
 	val LonCol = "Longitude"
 	val AltCol = "EAS"
 	val LabelingDateCol = "LabelingDate"
+	val StationInstNameCol = "Institution"
+	val StationInstIdCol = "InstitutionId"
+	val StationInstWeb = "InstitutionWebSite"
 
 	val PersonIdCol = "#ContactId"
 	val FirstNameCol = "ContactForename"
@@ -171,7 +173,7 @@ object AtcMetaSource{
 
 	def parseStationClass(s: String): Validated[IcosStationClass.Value] = Validated.fromTry(IcosStationClass.parse(s.trim))
 
-	def parseStations(path: Path): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
+	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
 		val demand = lookUpMandatory(stationsId) _
 
 		for(
@@ -183,29 +185,30 @@ object AtcMetaSource{
 			stClass <- demand(StationClassCol).flatMap(parseStationClass).optional;
 			name <- demand(StationNameCol);
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
-			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional
+			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional;
+			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional
 			//TODO Add UTC offset property
 		) yield TcStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
-			tcId = TcConf.AtcConf.makeId(tcId),
+			tcId = makeId(tcId),
 			core = Station(
-				org = core.Organization(
-					self = core.UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
+				org = Organization(
+					self = UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
 					name = name,
 					email = None,
 					website = None
 				),
 				id = stIdStr,
 				coverage = Some(Position(lat, lon, Some(alt))),
-				//TODO Support the responsible org for ATC here
 				responsibleOrganization = None,
 				pictures = Nil,
-				specificInfo = core.PlainIcosSpecifics(
+				specificInfo = PlainIcosSpecifics(
 					stationClass = stClass,
 					countryCode = country,
 					labelingDate = lblDate
 				)
-			)
+			),
+			responsibleOrg = orgIdOpt.flatMap(orgs.get),
 		)
 	}
 
@@ -258,7 +261,7 @@ object AtcMetaSource{
 		Validated.sequence(seqOfValidated)
 	}.flatMap(identity)
 
-	def parsePerson(implicit row: Lookup): Validated[Person[A]] =
+	def parsePerson(implicit row: Lookup): Validated[TcPerson[A]] =
 		for(
 			fname <- lookUp(FirstNameCol).require("person must have first name");
 			lname <- lookUp(LastNameCol).require("person must have last name");
@@ -267,7 +270,7 @@ object AtcMetaSource{
 			orcid <- lookUpOrcid(OrcidCol);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(tcId), fname, lname, email.map(_.toLowerCase), orcid)
+			TcPerson(cpId, Some(tcId), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>
@@ -278,14 +281,22 @@ object AtcMetaSource{
 	}
 
 
-	def parseInstrOrgs(instruments: Path): Validated[Map[TcId[A], CompanyOrInstitution[A]]] = {
+	def readAllOrgs(instruments: Path, stations: Path): Validated[OrgsMap] = {
+		for(
+			vendors <- parseOrgs(instruments, InstrVendorIdCol, InstrVendorCol);
+			owners <- parseOrgs(instruments, InstrOwnerIdCol, InstrOwnerCol);
+			respOrgs <- parseOrgs(stations, StationInstIdCol, StationInstNameCol, Some(StationInstWeb))
+		) yield (owners ++ vendors ++ respOrgs).toMap
+	}
 
-		def parseOrgs(idCol: String, nameCol: String) = parseFromCsv(instruments){implicit row =>
+	private def parseOrgs(file: Path, idCol: String, nameCol: String, websiteCol: Option[String] = None) =
+		parseFromCsv(file){implicit row =>
 			val demand = lookUpMandatory("instruments") _
 			for(
 				idStr <- demand(idCol) if idStr != undefinedOrgId;
 				id = makeOrgId(idStr);
-				name <- demand(nameCol)
+				name <- demand(nameCol);
+				websiteOpt <- new Validated(websiteCol).flatMap(lookUp).map(s => new URI(s)).optional
 			) yield{
 
 				val labelOpt = name match{
@@ -294,20 +305,20 @@ object AtcMetaSource{
 				}
 
 				val cpId = UriId.escaped(labelOpt.getOrElse(name))
-				val nameFinal = labelOpt.fold(name)(lbl => name.replace(s" ($lbl)", ""))
 
-				id -> CompanyOrInstitution[A](tcIdOpt = Some(id), cpId = cpId, name = nameFinal, label = labelOpt)
+				val nameFinal = labelOpt.fold(name)(lbl => name.replace(s" ($lbl)", ""))
+				val org = Organization(
+					self = UriResource(uri = dummyUri, label = labelOpt, comments = Nil),
+					name = nameFinal,
+					email = None,
+					website = websiteOpt
+				)
+
+				id -> TcPlainOrg[A](cpId, Some(id), org)
 			}
 		}
 
-		for(
-			vendors <- parseOrgs(InstrVendorIdCol, InstrVendorCol);
-			owners <- parseOrgs(InstrOwnerIdCol, InstrOwnerCol)
-		) yield (owners ++ vendors).toMap
-
-	}
-
-	def parseInstruments(instruments: Path, orgs: Map[TcId[A], CompanyOrInstitution[A]]): Validated[Seq[Instrument[A]]] = {
+	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[Instrument[A]]] = {
 		parseFromCsv(instruments){implicit row =>
 			val demand = lookUpMandatory("instruments") _
 			for(

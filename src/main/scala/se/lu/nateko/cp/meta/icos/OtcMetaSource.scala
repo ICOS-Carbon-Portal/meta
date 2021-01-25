@@ -21,14 +21,13 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.core.{data => core}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
-import core.{Position, Orcid, Station, CountryCode, IcosStationClass, GenericGeoFeature}
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -36,6 +35,7 @@ class OtcMetaSource(
 
 	private type O = OTC.type
 	private type OtcId = TcId[O]
+	private type OrgMap = Map[IRI, TcPlainOrg[O]]
 	private val otcVocab = new OtcMetaVocab(server.factory)
 
 	override def registerListener(actor: ActorRef): Unit = {
@@ -45,15 +45,15 @@ class OtcMetaSource(
 	override def readState: Validated[State] = for(
 		comms <- getComments;
 		people <- getPeople;
-		stations <- getStations(comms);
 		otherOrgs <- getCompsAndInsts;
+		stations <- getStations(otherOrgs, comms);
 		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
 		instruments <- getInstruments(orgs, sensorLookup)
 	) yield new TcState(stations.values.toSeq, membs, instruments)
 
-	private def getStations(comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
+	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 			|select  ?depl ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass ?geoJson ?picture
@@ -73,6 +73,8 @@ class OtcMetaSource(
 			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
 			|	optional {?plat otc:hasSpatialReference ?geoJson }
 			|	optional {?plat otc:hasPicture ?picture }
+			|	optional {?plat otc:hasOwner ?owner }
+			|	optional {?plat rdfs:seeAlso ?seeAlso }
 			|	optional {?st otc:countryCode ?countryCode }
 			|	optional {?st otc:hasLabelingDate ?labelDate }
 			|	optional {?st otc:hasStationClass ?stationClass }
@@ -94,35 +96,38 @@ class OtcMetaSource(
 				lblDate <-qresValue(b, "labelDate").map(v => LocalDate.parse(v.stringValue)).optional;
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
-				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional
+				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
+				website <- qresValue(b, "seeAlso").flatMap(parseUriLiteral).optional;
+				owner <- qresValue(b, "owner").collect{case iri: IRI => iri}.optional
 			) yield{
 
 				TcStation[O](
 					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
 					core = Station(
-						org = core.Organization(
-							self = core.UriResource(
+						org = Organization(
+							self = UriResource(
 								uri = otcVocab.dummyUri,
 								label = Some(stIdStr),
 								comments = comments.getOrElse(stUri, Nil)
 							),
 							name = name,
 							email = None,
-							website = None
+							website = website
 						),
 						id = stIdStr,
 						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = core.PlainIcosSpecifics(statClass, lblDate, ccode)
-					)
+						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode)
+					),
+					responsibleOrg = owner.flatMap(orgs.get)
 				)
 			}
 		}.map(_.toMap)
 	}
 
-	private def getCompsAndInsts: Validated[Map[IRI, CompanyOrInstitution[O]]] = {
+	private def getCompsAndInsts: Validated[Map[IRI, TcPlainOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
 		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
@@ -131,15 +136,19 @@ class OtcMetaSource(
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
-		getLookup(q, "org"){(b, tcId) => CompanyOrInstitution(
+		getLookup(q, "org"){(b, tcId) => TcPlainOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
-			name = b.getValue("name").stringValue,
-			label = Option(b.getValue("label")).map(_.stringValue)
+			org = Organization(
+				self = UriResource(EtcMetaSource.dummyUri, Option(b.getValue("label")).map(_.stringValue), Nil),
+				name = b.getValue("name").stringValue,
+				email = None,
+				website = None
+			)
 		)}.map(_.toMap)
 	}
 
-	private def getPeople: Validated[Map[IRI, Person[O]]] = {
+	private def getPeople: Validated[Map[IRI, TcPerson[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct * where{
 		|	?p a otc:Person .
@@ -152,7 +161,7 @@ class OtcMetaSource(
 		getLookup(q, "p"){(b, tcId) =>
 			val fname = b.getValue("fname").stringValue
 			val lname = b.getValue("lname").stringValue
-			Person(
+			TcPerson(
 				cpId = CpVocab.getPersonCpId(fname, lname),
 				tcIdOpt = Some(tcId),
 				fname = fname,
@@ -197,7 +206,7 @@ class OtcMetaSource(
 	private def qresValueReq(bs: BindingSet, vname: String): Validated[Value] =
 		qresValue(bs, vname).require(s"Variable $vname absent in SPARQL query results")
 
-	private def getMemberships(orgs: Map[IRI, Organization[O]], pers: Map[IRI, Person[O]]): Validated[Seq[Membership[O]]] = {
+	private def getMemberships(orgs: Map[IRI, TcOrg[O]], pers: Map[IRI, TcPerson[O]]): Validated[Seq[Membership[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select * where{
 		|	?role a otc:AssumedRole .
@@ -227,7 +236,7 @@ class OtcMetaSource(
 	}
 
 	private def getInstruments(
-		orgLookup: Map[IRI, Organization[O]],
+		orgLookup: Map[IRI, TcOrg[O]],
 		sensorLookup: Map[OtcId, Seq[UriId]]
 	): Validated[IndexedSeq[Instrument[O]]] = {
 		val q = """

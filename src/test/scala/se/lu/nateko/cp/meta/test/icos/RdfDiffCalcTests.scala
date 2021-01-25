@@ -6,8 +6,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.{data => core}
-import core.{Envri, EnvriConfig, CountryCode, PlainIcosSpecifics}
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.icos._
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -26,15 +25,15 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	type A = ATC.type
 	import TcConf.AtcConf.{makeId => aId}
 
-	val jane = Person[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
+	val jane = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
 	val CountryCode(se) = "SE"
 
 	val airCpStation = TcStation[A](
 		cpId = UriId("AIR1"),
 		tcId = aId("43"),
-		core = core.Station(
-			org = core.Organization(
-				self = core.UriResource(new URI("http://test.icos.eu/resources/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
+		core = Station(
+			org = Organization(
+				self = UriResource(new URI("http://test.icos.eu/resources/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
 				name = "Airplane 1",
 				email = None,
 				website = None
@@ -44,10 +43,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 			responsibleOrganization = None,
 			pictures = Seq.empty,
 			specificInfo = PlainIcosSpecifics(None, None, Some(se))
-		)
+		),
+		responsibleOrg = None
 	)
 
-	def atcInitSnap(pi: Person[A]): TcState[A] = {
+	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
 		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
 		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
@@ -112,7 +112,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("a new snapshot comes where the PI has changed")
 
-		val john = Person[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
+		val john = TcPerson[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
 		val piUpdates = state.calc.calcDiff(atcInitSnap(john)).result.get.toIndexedSeq
 		state.tcServer.applyAll(piUpdates)
 
@@ -141,7 +141,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("CP creates a new person metadata and associates it with the exising TC person metadata")
 
-		val cpJane = Person[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"), None)
+		val cpJane = TcPerson[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"), None)
 		state.cpServer.addAll(state.maker.getStatements(cpJane))
 
 		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
@@ -164,7 +164,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		Given("starting with a single org with a single researcher and no own CP statements")
 
-		val uni = CompanyOrInstitution(UriId("uni"), Some(aId("uni0")), "Just Some Uni", None)
+		val uniOrg = Organization(UriResource(null, Some("uni"), Nil), "Just Some Uni", None, None)
+		val uni = TcPlainOrg(UriId("uni"), Some(aId("uni0")), uniOrg)
 		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
@@ -172,7 +173,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
 
-		val cpUni = CompanyOrInstitution(UriId("cpuni"), Some(aId("uni0")), "Properly named Uni", None)
+		val cpUniOrg = Organization(UriResource(null, Some("uni proper"), Nil), "Properly named Uni", None, None)
+		val cpUni = TcPlainOrg(UriId("cpuni"), Some(aId("uni0")), cpUniOrg)
 		state.cpServer.addAll(state.maker.getStatements(cpUni))
 
 		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){

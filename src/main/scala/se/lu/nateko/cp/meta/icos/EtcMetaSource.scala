@@ -29,16 +29,14 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
 import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
+import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
-import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
-import se.lu.nateko.cp.meta.core.{data => core}
-import core.{Orcid, CountryCode, Position, Station}
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import java.net.URI
-import se.lu.nateko.cp.meta.core.data.UriResource
 
 class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -103,7 +101,7 @@ object EtcMetaSource{
 	type Lookup = Map[String, String]
 	type E = ETC.type
 	type EtcInstrument = Instrument[E]
-	type EtcPerson = Person[E]
+	type EtcPerson = TcPerson[E]
 	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
 
@@ -215,7 +213,7 @@ object EtcMetaSource{
 			orcid <- lookUpOrcid(Vars.orcid);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
+			TcPerson(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 
@@ -264,8 +262,8 @@ object EtcMetaSource{
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),
 			core = Station(
-				org = core.Organization(
-					self = core.UriResource(dummyUri, Some(id), Seq(descrShort, descr).flatten),
+				org = Organization(
+					self = UriResource(dummyUri, Some(id), Seq(descrShort, descr).flatten),
 					name = name,
 					email = None,
 					website = None
@@ -274,7 +272,7 @@ object EtcMetaSource{
 				coverage = Some(pos),
 				responsibleOrganization = None,
 				pictures = picture.toSeq,
-				specificInfo = core.EtcStationSpecifics(
+				specificInfo = EtcStationSpecifics(
 					stationClass = stClass,
 					countryCode = countryCode,
 					labelingDate = lblDate,
@@ -286,7 +284,8 @@ object EtcMetaSource{
 					stationDocs = docDois.getOrElse(Nil),
 					stationPubs = pubDois.getOrElse(Nil)
 				)
-			)
+			),
+			responsibleOrg = None
 		)
 
 

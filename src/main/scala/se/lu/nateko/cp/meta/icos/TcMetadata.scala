@@ -4,8 +4,7 @@ import java.time.Instant
 
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.{data => core}
-import core.{Position, Orcid, Station}
+import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization}
 
 
 sealed trait Entity[+T <: TC]{
@@ -29,14 +28,14 @@ object Entity{
 		def withCpId(id: UriId): E = swapper.withCpId(e, id)
 	}
 
-	implicit def persCpIdSwapper[T <: TC] = new CpIdSwapper[Person[T]]{
-		def withCpId(p: Person[T], id: UriId) = p.copy(cpId = id)
+	implicit def persCpIdSwapper[T <: TC] = new CpIdSwapper[TcPerson[T]]{
+		def withCpId(p: TcPerson[T], id: UriId) = p.copy(cpId = id)
 	}
 
-	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[Organization[T]]{
-		def withCpId(org: Organization[T], id: UriId) = org match{
+	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[TcOrg[T]]{
+		def withCpId(org: TcOrg[T], id: UriId) = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
-			case ci: CompanyOrInstitution[T] => ci.copy(cpId = id)
+			case ci: TcPlainOrg[T] => ci.copy(cpId = id)
 		}
 	}
 
@@ -47,7 +46,7 @@ object Entity{
 
 }
 
-case class Person[+T <: TC](
+case class TcPerson[+T <: TC](
 	cpId: UriId,
 	tcIdOpt: Option[TcId[T]],
 	fname: String,
@@ -56,25 +55,26 @@ case class Person[+T <: TC](
 	orcid: Option[Orcid]
 ) extends Entity[T]
 
-sealed trait Organization[+T <: TC] extends Entity[T]{ def name: String }
+sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
 case class TcStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
-	core: Station
-) extends Organization[T] with TcEntity[T]{
-	def name = core.org.name
+	core: Station,
+	responsibleOrg: Option[TcPlainOrg[T]] //needed to avoid info loss with core.responsibleOrganization
+) extends TcOrg[T] with TcEntity[T]{
+	def org = core.org
 }
 
-case class CompanyOrInstitution[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], name: String, label: Option[String]) extends Organization[T]
+case class TcPlainOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcOrg[T]
 
 case class Instrument[+T <: TC : TcConf](
 	tcId: TcId[T],
 	model: String,
 	sn: String,
 	name: Option[String] = None,
-	vendor: Option[Organization[T]] = None,
-	owner: Option[Organization[T]] = None,
+	vendor: Option[TcOrg[T]] = None,
+	owner: Option[TcOrg[T]] = None,
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
@@ -83,8 +83,8 @@ case class Instrument[+T <: TC : TcConf](
 
 class AssumedRole[+T <: TC](
 	val kind: Role,
-	val holder: Person[T],
-	val org: Organization[T],
+	val holder: TcPerson[T],
+	val org: TcOrg[T],
 	val weight: Option[Int],
 	val extra: Option[String]
 ){

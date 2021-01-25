@@ -97,6 +97,7 @@ object AtcMetaSource{
 	val StationInstNameCol = "Institution"
 	val StationInstIdCol = "InstitutionId"
 	val StationInstWeb = "InstitutionWebSite"
+	val TimeZoneCol = "TimeZone"
 
 	val PersonIdCol = "#ContactId"
 	val FirstNameCol = "ContactForename"
@@ -186,8 +187,8 @@ object AtcMetaSource{
 			name <- demand(StationNameCol);
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
 			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional;
-			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional
-			//TODO Add UTC offset property
+			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional;
+			tzOffset <- lookUp(TimeZoneCol).map(_.toInt).optional
 		) yield TcStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = makeId(tcId),
@@ -205,7 +206,8 @@ object AtcMetaSource{
 				specificInfo = PlainIcosSpecifics(
 					stationClass = stClass,
 					countryCode = country,
-					labelingDate = lblDate
+					labelingDate = lblDate,
+					timeZoneOffset = tzOffset
 				)
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),

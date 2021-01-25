@@ -142,6 +142,7 @@ object EtcMetaSource{
 		val ecosystemIGBP = "IGBP"
 		val stationDocDois = "REFERENCE_DOI_D"
 		val stationDataPubDois = "REFERENCE_DOI_P"
+		val timeZoneOffset = "UTC_OFFSET"
 		val loggerModel = "LOGGER_MODEL"
 		val loggerSerial = "LOGGER_SN"
 		val loggerId = "LOGGER_ID"
@@ -256,8 +257,8 @@ object EtcMetaSource{
 		descr <- lookUp(Vars.descr).optional;
 		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
-		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional
-		//TODO Add UTC offset property
+		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
+		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional
 	) yield TcStation[E](
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),
@@ -282,7 +283,8 @@ object EtcMetaSource{
 					meanAnnualPrecip = meanPrecip,
 					meanAnnualRad = meanRadiation,
 					stationDocs = docDois.getOrElse(Nil),
-					stationPubs = pubDois.getOrElse(Nil)
+					stationPubs = pubDois.getOrElse(Nil),
+					timeZoneOffset = tzOffset
 				)
 			),
 			responsibleOrg = None

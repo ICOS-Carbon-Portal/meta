@@ -119,7 +119,7 @@ class OtcMetaSource(
 						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode)
+						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None)
 					),
 					responsibleOrg = owner.flatMap(orgs.get)
 				)

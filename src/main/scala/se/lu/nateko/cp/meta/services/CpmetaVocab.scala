@@ -49,6 +49,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasStationId = getRelativeRaw("hasStationId")
 	val hasStationClass = getRelativeRaw("hasStationClass")
 	val hasLabelingDate = getRelativeRaw("hasLabelingDate")
+	val hasTimeZoneOffset = getRelativeRaw("hasTimeZoneOffset")
 	val hasResponsibleOrganization = getRelativeRaw("hasResponsibleOrganization")
 	val countryCode = getRelativeRaw("countryCode")
 	val country = getRelativeRaw("country")

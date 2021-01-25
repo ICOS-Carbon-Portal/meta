@@ -69,7 +69,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				meanAnnualPrecip = getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip),
 				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation),
 				stationDocs = server.getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
-				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication)
+				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
+				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 			)
 		} else if(
 			server.resourceHasType(stat, metaVocab.atmoStationClass) ||
@@ -82,7 +83,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
 		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
 			.map(LocalDate.parse).headOption,
-		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply)
+		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
+		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 	)
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {

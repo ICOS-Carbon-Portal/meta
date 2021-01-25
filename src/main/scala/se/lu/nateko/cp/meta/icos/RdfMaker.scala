@@ -190,6 +190,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		} ++
 		s.labelingDate.map{ ldate =>
 			(iri, meta.hasLabelingDate, vocab.lit(ldate.toString, XMLSchema.DATE))
+		} ++
+		s.timeZoneOffset.map{tz =>
+			(iri, meta.hasTimeZoneOffset, vocab.lit(tz))
 		}
 	}
 

@@ -56,7 +56,7 @@ class OtcMetaSource(
 	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-			|select  ?depl ?st ?id ?name ?lat ?lon ?countryCode ?labelDate ?stationClass ?geoJson ?picture
+			|select *
 			|from <http://meta.icos-cp.eu/resources/otcmeta/>
 			|where{
 			|	{

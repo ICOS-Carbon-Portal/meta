@@ -6,10 +6,8 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.Orcid
-import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.{Position, Person, Organization, Orcid}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -131,7 +129,7 @@ private class IcosMetaInstancesFetcher(
 
 
 	private def getCompOrInst[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPlainOrg[T] = {
-		val core: data.Organization = getOrganization(uri)
+		val core: Organization = getOrganization(uri)
 		TcPlainOrg[T](UriId(uri), tcId, core)
 	}
 
@@ -141,7 +139,7 @@ private class IcosMetaInstancesFetcher(
 	}
 
 	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPerson[T] = {
-		val core: data.Person = getPerson(uri)
+		val core: Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
 		val orcid = getOptionalString(uri, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
 		TcPerson[T](UriId(uri), tcId, core.firstName, core.lastName, email, orcid)

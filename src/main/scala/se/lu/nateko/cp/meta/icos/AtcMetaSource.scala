@@ -298,7 +298,10 @@ object AtcMetaSource{
 				idStr <- demand(idCol) if idStr != undefinedOrgId;
 				id = makeOrgId(idStr);
 				name <- demand(nameCol);
-				websiteOpt <- new Validated(websiteCol).flatMap(lookUp).map(s => new URI(s)).optional
+				websiteOpt <- new Validated(websiteCol).flatMap(lookUp).map{s =>
+					val uri = if(s.startsWith("http")) s else ("https://" + s)
+					new URI(uri)
+				}.optional
 			) yield{
 
 				val labelOpt = name match{
@@ -349,5 +352,5 @@ object AtcMetaSource{
 		}.toIndexedSeq
 	}
 
-	private val labelParen = raw".*\(([A-Z]+)\).*".r
+	private val labelParen = raw".*\(([A-Z]\w+)\).*".r
 }

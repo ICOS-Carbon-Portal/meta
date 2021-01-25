@@ -93,9 +93,18 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 			case ci: TcPlainOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) ::
-				(uri, meta.hasName, vocab.lit(ci.org.name)) ::
 				ci.org.self.label.toList.map{label =>
 					(uri, RDFS.LABEL, vocab.lit(label))
+				} :::
+				ci.org.self.comments.toList.map{comm =>
+					(uri, RDFS.COMMENT, vocab.lit(comm))
+				} :::
+				(uri, meta.hasName, vocab.lit(ci.org.name)) ::
+				ci.org.website.toList.map{ws =>
+					(uri, RDFS.SEEALSO, ws.toRdf)
+				} :::
+				ci.org.email.toList.map{email =>
+					(uri, meta.hasEmail, vocab.lit(email))
 				}
 
 			case instr: Instrument[T] =>

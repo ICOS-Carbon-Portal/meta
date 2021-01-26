@@ -1,8 +1,12 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.io.File
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.LocalDate
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -21,15 +25,12 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.Position
-import java.io.File
 
-import EtcMetaSource.{Lookup, lookUp, lookUpOrcid}
-import se.lu.nateko.cp.meta.services.CpVocab
-import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Orcid
+import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource._
@@ -67,26 +68,36 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 	}
 
 	override def readState: Validated[State] = for(
-			stations <- parseStations(getTableFile(stationsId));
+			orgs <- readAllOrgs(getTableFile("instruments"), getTableFile(stationsId));
+			stations <- parseStations(getTableFile(stationsId), orgs);
+			instruments <- parseInstruments(getTableFile("instruments"), orgs);
 			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
 		) yield
-			new TcState(stations, membs, Nil)
+			new TcState(stations, membs, instruments)
 }
 
 object AtcMetaSource{
 	type A = ATC.type
 	import TcConf.AtcConf.makeId
+	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
 	val StorageDir = "atcmeta"
 	val stationsId = "stations"
+	val undefinedOrgId = "41"
 
 	val IdCol = "#Id"
 	val StationIdCol = "ShortName"
 	val StationNameCol = "FullName"
+	val StationClassCol = "Class"
 	val CountryCol = "Country"
 	val LatCol = "Latitude"
 	val LonCol = "Longitude"
 	val AltCol = "EAS"
+	val LabelingDateCol = "LabelingDate"
+	val StationInstNameCol = "Institution"
+	val StationInstIdCol = "InstitutionId"
+	val StationInstWeb = "InstitutionWebSite"
+	val TimeZoneCol = "TimeZone"
 
 	val PersonIdCol = "#ContactId"
 	val FirstNameCol = "ContactForename"
@@ -104,22 +115,32 @@ object AtcMetaSource{
 	val RoleEndCol = "EndDate"
 	val SpecielListCol = "SpeciesList"
 
+	val InstrIdCol = "#InstrumentId"
+	val InstrNameCol = "InstrumentName"
+	val InstrSerialCol = "SerialId"
+	val InstrModelCol = "Model"
+	val InstrOwnerIdCol = "OwnerId"
+	val InstrOwnerCol = "Owner"
+	val InstrVendorCol = "Manufacturer"
+	val InstrVendorIdCol = "ManufacturerId"
+	val InstrRelatedCol = "RelatedInstruments"
+
 	private val countryMap = Map(
 		"belgium"         -> "BE",
-		"great britain"   -> "GB",
-		"italy"           -> "IT",
-		"ireland"         -> "IE",
-		"germany"         -> "DE",
+		"czech republic"  -> "CZ",
 		"denmark"         -> "DK",
+		"finland"         -> "FI",
+		"france"          -> "FR",
+		"germany"         -> "DE",
+		"great britain"   -> "GB",
+		"ireland"         -> "IE",
+		"italy"           -> "IT",
+		"norway"          -> "NO",
 		"poland"          -> "PL",
+		"spain"           -> "ES",
 		"sweden"          -> "SE",
 		"switzerland"     -> "CH",
-		"spain"           -> "ES",
-		"czech republic"  -> "CZ",
 		"the netherlands" -> "NL",
-		"france"          -> "FR",
-		"finland"         -> "FI",
-		"norway"          -> "NO"
 	)
 
 	private val roleMap: Map[Int, Option[Role]] = Map(
@@ -139,12 +160,22 @@ object AtcMetaSource{
 		10 -> 20  //deputy PI
 	)
 
+	private def makeOrgId(base: String) = makeId("org_" + base)
+
 	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
-	def parseCountry(s: String): Option[CountryCode] = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
+	def parseCountryCode(s: String): Validated[CountryCode] = {
+		val ccOpt = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
+		val errors = if(ccOpt.isEmpty) Seq(s"Neither a recognized country (in AtcMetaSource) nor a country code: $s") else Nil
+		new Validated(ccOpt, errors)
+	}
 
-	def parseStations(path: Path): Validated[IndexedSeq[TcStationaryStation[A]]] = parseFromCsv(path){implicit row =>
-		val demand = lookUpMandatory("stations") _
+	def parseLocalDate(ts: String): Validated[LocalDate] = Validated(LocalDate.parse(ts.take(10)))
+
+	def parseStationClass(s: String): Validated[IcosStationClass.Value] = Validated.fromTry(IcosStationClass.parse(s.trim))
+
+	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
+		val demand = lookUpMandatory(stationsId) _
 
 		for(
 			stIdStr <- demand(StationIdCol);
@@ -152,15 +183,34 @@ object AtcMetaSource{
 			lat <- demand(LatCol).map(_.toDouble);
 			lon <- demand(LonCol).map(_.toDouble);
 			alt <- demand(AltCol).map(_.toFloat);
+			stClass <- demand(StationClassCol).flatMap(parseStationClass).optional;
 			name <- demand(StationNameCol);
-			country <- demand(CountryCol).map(parseCountry)
-		) yield TcStationaryStation[A](
-			cpId = TcConf.stationId[A](stIdStr),
-			tcId = TcConf.AtcConf.makeId(tcId),
-			id = stIdStr,
-			pos = Position(lat, lon, Some(alt)),
-			name = name,
-			country = country
+			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
+			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional;
+			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional;
+			tzOffset <- lookUp(TimeZoneCol).map(_.toInt).optional
+		) yield TcStation[A](
+			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
+			tcId = makeId(tcId),
+			core = Station(
+				org = Organization(
+					self = UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
+					name = name,
+					email = None,
+					website = None
+				),
+				id = stIdStr,
+				coverage = Some(Position(lat, lon, Some(alt))),
+				responsibleOrganization = None,
+				pictures = Nil,
+				specificInfo = PlainIcosSpecifics(
+					stationClass = stClass,
+					countryCode = country,
+					labelingDate = lblDate,
+					timeZoneOffset = tzOffset
+				)
+			),
+			responsibleOrg = orgIdOpt.flatMap(orgs.get),
 		)
 	}
 
@@ -176,7 +226,6 @@ object AtcMetaSource{
 		}
 
 		parseFromCsv(roles){implicit row =>
-			def notFoundMsg(col: String) = s"$col not found in roles table on row ${row.mkString(", ")}"
 			val demand = lookUpMandatory("roles") _
 
 			for(
@@ -214,16 +263,16 @@ object AtcMetaSource{
 		Validated.sequence(seqOfValidated)
 	}.flatMap(identity)
 
-	def parsePerson(implicit row: Lookup): Validated[Person[A]] =
+	def parsePerson(implicit row: Lookup): Validated[TcPerson[A]] =
 		for(
 			fname <- lookUp(FirstNameCol).require("person must have first name");
 			lname <- lookUp(LastNameCol).require("person must have last name");
-			tcId <- lookUp(PersonIdCol).require("unique ATC's id is required for a person");
+			tcId <- lookUp(PersonIdCol).map(makeId).require("unique ATC's id is required for a person");
 			email <- lookUp(EmailCol).optional;
 			orcid <- lookUpOrcid(OrcidCol);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
-			Person(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
+			TcPerson(cpId, Some(tcId), fname, lname, email.map(_.toLowerCase), orcid)
 
 	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>
@@ -232,4 +281,76 @@ object AtcMetaSource{
 			}
 		}
 	}
+
+
+	def readAllOrgs(instruments: Path, stations: Path): Validated[OrgsMap] = {
+		for(
+			vendors <- parseOrgs(instruments, InstrVendorIdCol, InstrVendorCol);
+			owners <- parseOrgs(instruments, InstrOwnerIdCol, InstrOwnerCol);
+			respOrgs <- parseOrgs(stations, StationInstIdCol, StationInstNameCol, Some(StationInstWeb))
+		) yield (owners ++ vendors ++ respOrgs).toMap
+	}
+
+	private def parseOrgs(file: Path, idCol: String, nameCol: String, websiteCol: Option[String] = None) =
+		parseFromCsv(file){implicit row =>
+			val demand = lookUpMandatory("instruments") _
+			for(
+				idStr <- demand(idCol) if idStr != undefinedOrgId;
+				id = makeOrgId(idStr);
+				name <- demand(nameCol);
+				websiteOpt <- new Validated(websiteCol).flatMap(lookUp).map{s =>
+					val uri = if(s.startsWith("http")) s else ("https://" + s)
+					new URI(uri)
+				}.optional
+			) yield{
+
+				val labelOpt = name match{
+					case labelParen(lbl) => Some(lbl)
+					case _ => None
+				}
+
+				val cpId = UriId.escaped(labelOpt.getOrElse(name))
+
+				val nameFinal = labelOpt.fold(name)(lbl => name.replace(s" ($lbl)", ""))
+				val org = Organization(
+					self = UriResource(uri = dummyUri, label = labelOpt, comments = Nil),
+					name = nameFinal,
+					email = None,
+					website = websiteOpt
+				)
+
+				id -> TcPlainOrg[A](cpId, Some(id), org)
+			}
+		}
+
+	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[Instrument[A]]] = {
+		parseFromCsv(instruments){implicit row =>
+			val demand = lookUpMandatory("instruments") _
+			for(
+				id <- demand(InstrIdCol).map(makeId);
+				nameOpt <- lookUp(InstrNameCol).optional;
+				serial <- lookUp(InstrSerialCol).orElse("N/A");
+				vendorId <- demand(InstrVendorIdCol).map(makeOrgId);
+				ownerId <- demand(InstrOwnerIdCol).map(makeOrgId);
+				model <- demand(InstrModelCol);
+				related <- lookUp(InstrRelatedCol).flatMap(parseRelatedInstrs).orElse(Nil)
+			) yield Instrument(
+				tcId = id,
+				sn = serial,
+				model = model,
+				vendor = orgs.get(vendorId),
+				name = nameOpt,
+				owner = orgs.get(ownerId),
+				partsCpIds = related
+			)
+		}
+	}
+
+	private def parseRelatedInstrs(list: String): Validated[Seq[UriId]] = Validated{
+		list.split(",").map{idStr =>
+			TcConf.tcScopedId(UriId.escaped(idStr.trim))(TcConf.AtcConf)
+		}.toIndexedSeq
+	}
+
+	private val labelParen = raw".*\(([A-Z]\w+)\).*".r
 }

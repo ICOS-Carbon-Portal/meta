@@ -45,6 +45,8 @@ trait InstanceServer {
 	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
 		hasStatement(Some(subject), Some(predicate), Some(obj))
 
+	final def resourceHasType(res: IRI, tpe: IRI): Boolean = hasStatement(res, RDF.TYPE, tpe)
+
 	final def add(statements: Statement*): Try[Unit] = addAll(statements)
 	final def remove(statements: Statement*): Try[Unit] = removeAll(statements)
 

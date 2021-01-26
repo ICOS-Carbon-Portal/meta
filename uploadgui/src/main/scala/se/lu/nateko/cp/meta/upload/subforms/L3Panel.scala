@@ -1,25 +1,19 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Try, Success}
 
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, ElaboratedProductMetadata}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
-import UploadApp.whenDone
 import Utils._
 import se.lu.nateko.cp.meta.core.data.TemporalCoverage
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Position
 
-class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".l3-section"){
+class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
 	def meta(productionDto: => Try[DataProductionDto]): Try[ElaboratedProductMetadata] = for(
 		title <- titleInput.value;

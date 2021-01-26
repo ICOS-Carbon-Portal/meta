@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.utils
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 
@@ -14,6 +15,10 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 
 	def optional = new Validated(Some(result), errors)
 
+	def orElse[U >: T](fallback:  => U) =
+		if(result.isDefined) this
+		else new Validated[U](Some(fallback), errors)
+
 	def map[U](f: T => U): Validated[U] = tryTransform(new Validated(result.map(f), errors))
 
 	def flatMap[U](f: T => Validated[U]): Validated[U] = tryTransform{
@@ -22,6 +27,8 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		val newErrors = errors ++ valOpt.map(_.errors).getOrElse(Nil)
 		new Validated(newRes, newErrors)
 	}
+
+	def collect[U](f: PartialFunction[T, U]): Validated[U] = new Validated(result.collect(f), errors)
 
 	def foreach[U](f: T => U): Unit = result.foreach(f)
 
@@ -41,7 +48,11 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 			body
 		}catch{
 			case err: Throwable =>
-				new Validated[U](None, errors :+ err.getMessage)
+				val msgBase = err.getMessage
+				val msg = if(msgBase != null) msgBase else {
+					("(exception message is null)" :+ err.getStackTrace()).mkString("\n")
+				}
+				new Validated[U](None, errors :+ msg)
 		}
 
 }
@@ -57,6 +68,8 @@ object Validated{
 
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
+
+	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
 
 	def sequence[T](valids: IterableOnce[Validated[T]]): Validated[IndexedSeq[T]] = {
 		val res = Buffer.empty[T]

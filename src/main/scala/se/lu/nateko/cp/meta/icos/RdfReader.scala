@@ -1,30 +1,31 @@
 package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.{Position, Person, Organization, Orcid}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
-import org.eclipse.rdf4j.model.Statement
+import se.lu.nateko.cp.meta.services.upload.DobjMetaFetcher
+import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 
-class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
+class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, allObjs: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
 
-	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts)
-	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts)
+	private[this] val plainFetcher = new PlainStaticObjectFetcher(allObjs)
+	private[this] val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
+	private[this] val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 
-	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[CompanyOrInstitution[T]]] = cpOwnMetasFetcher.getOrgs[T]
+	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = cpOwnMetasFetcher.getOrgs[T]
 
-	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = cpOwnMetasFetcher.getPeople[T]
+	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[TcPerson[T]]] = cpOwnMetasFetcher.getPeople[T]
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = tcMetasFetcher.getCurrentState[T]
 
@@ -57,8 +58,12 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer)(implicit envri
 		.createStatement(s.getSubject, s.getPredicate, s.getObject)
 }
 
-private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envriConfigs: EnvriConfigs) extends CpmetaFetcher{
-	val vocab = new CpVocab(server.factory)
+private class IcosMetaInstancesFetcher(
+	val server: InstanceServer,
+	val plainObjFetcher: PlainStaticObjectFetcher
+)(implicit envriConfigs: EnvriConfigs) extends DobjMetaFetcher{
+	private[this] implicit val factory = server.factory
+	val vocab = new CpVocab(factory)
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(
 		stations <- getStations[T];
@@ -71,7 +76,7 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		val membOptSeqV = getDirectClassMembers(metaVocab.membershipClass).map{uri =>
 			Validated(for(
 				orgUri <- getOptionalUri(uri, metaVocab.atOrganization);
-				org <- getOrganization(orgUri);
+				org <- getTcOrganization(orgUri);
 				role = getRole(getSingleUri(uri, metaVocab.hasRole));
 				person <- {
 					val persons = getPropValueHolders(metaVocab.hasMembership, uri).map{persUri =>
@@ -93,52 +98,39 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 	}
 
 
-	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass){
+	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass, true){
 		(tcIdOpt, uri) => Instrument[T](
-			cpId = UriId(uri),
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Instrument $uri had no TC id associated with it")),
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
 			name = getOptionalString(uri, metaVocab.hasName),
-			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getOrganization(o)),
-			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getOrganization(v)),
-			partsCpIds = server.getUriValues(uri, metaVocab.dcterms.hasPart).map(UriId.apply)
+			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getTcOrganization(o)),
+			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getTcOrganization(v)),
+			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply)
 		)
 	}
 
 
 	def getStations[T <: TC](implicit conf: TcConf[T]): Validated[Seq[TcStation[T]]] =
-		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getStation)
+		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
 
 
-	private def getStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI): TcStation[T] = {
-
-		val tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it"))
-		val id = getSingleString(uri, metaVocab.hasStationId)
-		val cpId = UriId(uri)
-		val name = getSingleString(uri, metaVocab.hasName)
-
-		val latOpt = getOptionalDouble(uri, metaVocab.hasLatitude)
-		val lonOpt = getOptionalDouble(uri, metaVocab.hasLongitude)
-
-		val countryOpt = getOptionalString(uri, metaVocab.countryCode).flatMap(CountryCode.unapply)
-
-		val stationaryOpt = for(lat <- latOpt; lon <- lonOpt) yield {
-			val altOpt = getOptionalFloat(uri, metaVocab.hasElevation)
-			TcStationaryStation(cpId, tcId, name, id, countryOpt, Position(lat, lon, altOpt))
-		}
-
-		stationaryOpt.getOrElse{
-			val jsonOpt = getOptionalUri(uri, metaVocab.hasSpatialCoverage)
-				.flatMap(getOptionalString(_, metaVocab.asGeoJSON))
-			TcMobileStation(cpId, tcId, name, id, countryOpt, jsonOpt)
-		}
+	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI): TcStation[T] = {
+		val coreStation = getStation(uri)
+		TcStation(
+			cpId = UriId(uri),
+			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
+			core = coreStation,
+			responsibleOrg = coreStation.responsibleOrganization
+				.flatMap(ro => getTcOrganization[T](ro.self.uri.toRdf))
+				.collect{case org: TcPlainOrg[T] => org}
+		)
 	}
 
 
-	private def getCompOrInst[T <: TC](tcId: Option[TcId[T]], uri: IRI): CompanyOrInstitution[T] = {
-		val core: data.Organization = getOrganization(uri)
-		CompanyOrInstitution[T](UriId(uri), tcId, core.name, core.self.label)
+	private def getCompOrInst[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPlainOrg[T] = {
+		val core: Organization = getOrganization(uri)
+		TcPlainOrg[T](UriId(uri), tcId, core)
 	}
 
 	private def getRole(iri: IRI): Role = {
@@ -146,33 +138,34 @@ private class IcosMetaInstancesFetcher(val server: InstanceServer)(implicit envr
 		Role.forName(roleId).getOrElse(throw new Exception(s"Unrecognized role: $roleId"))
 	}
 
-	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): Person[T] = {
-		val core: data.Person = getPerson(uri)
+	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPerson[T] = {
+		val core: Person = getPerson(uri)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
 		val orcid = getOptionalString(uri, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
-		Person[T](UriId(uri), tcId, core.firstName, core.lastName, email, orcid)
+		TcPerson[T](UriId(uri), tcId, core.firstName, core.lastName, email, orcid)
 	}
 
-	private def getOrganization[T <: TC : TcConf](uri: IRI): Option[Organization[T]] =
+	private def getTcOrganization[T <: TC : TcConf](uri: IRI): Option[TcOrg[T]] =
 		if(server.hasStatement(uri, RDF.TYPE, stationClass))
-			Some(getStation(getTcId(uri), uri))
+			Some(getTcStation(getTcId(uri), uri))
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
 			Some(getCompOrInst(getTcId(uri), uri))
 		else
 			None //uri is neither a TC-specific station nor a plain organization
 
 
-	def getPeople[T <: TC : TcConf]: Validated[Seq[Person[T]]] = getEntities[T, Person[T]](metaVocab.personClass)(getPerson)
+	def getPeople[T <: TC : TcConf]: Validated[Seq[TcPerson[T]]] = getEntities[T, TcPerson[T]](metaVocab.personClass)(getPerson)
 
 
-	def getOrgs[T <: TC : TcConf]: Validated[Seq[CompanyOrInstitution[T]]] =
-		getEntities[T, CompanyOrInstitution[T]](metaVocab.orgClass)(getCompOrInst)
+	def getOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] =
+		getEntities[T, TcPlainOrg[T]](metaVocab.orgClass)(getCompOrInst)
 
 
-	private def getEntities[T <: TC : TcConf, E](cls: IRI)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {
+	private def getEntities[T <: TC : TcConf, E](cls: IRI, requireTcId: Boolean = false)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {
 		val seqV = for(
 			uri <- getDirectClassMembers(cls);
 			tcIdOpt = getTcId(uri)
+			if !requireTcId || tcIdOpt.isDefined
 		) yield Validated(make(tcIdOpt, uri))
 		Validated.sequence(seqV)
 	}

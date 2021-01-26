@@ -104,10 +104,10 @@ object AtcCollMaker{
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColLookup: Map[URI, URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.name}, release 2020-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2020-1",
 		description = Some(
 			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, and Meteorological Observations, " +
-			s"period September 2015-June 2020, station ${station.name}, final quality controlled Level 2 data, release 2020-1"
+			s"period September 2015-June 2020, station ${station.org.name}, final quality controlled Level 2 data, release 2020-1"
 		),
 		isNextVersionOf = prevColLookup.get(station.org.self.uri).flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi)

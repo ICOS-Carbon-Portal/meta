@@ -47,6 +47,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasSamplingHeight = getRelativeRaw("hasSamplingHeight")
 	val hasName = getRelativeRaw("hasName")
 	val hasStationId = getRelativeRaw("hasStationId")
+	val hasStationClass = getRelativeRaw("hasStationClass")
+	val hasLabelingDate = getRelativeRaw("hasLabelingDate")
+	val hasTimeZoneOffset = getRelativeRaw("hasTimeZoneOffset")
 	val hasResponsibleOrganization = getRelativeRaw("hasResponsibleOrganization")
 	val countryCode = getRelativeRaw("countryCode")
 	val country = getRelativeRaw("country")
@@ -65,6 +68,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasDataTheme = getRelativeRaw("hasDataTheme")
 	val hasAssociatedProject = getRelativeRaw("hasAssociatedProject")
 	val hasDocumentationObject = getRelativeRaw("hasDocumentationObject")
+	val hasDocumentationUri = getRelativeRaw("hasDocumentationUri")
+	val hasAssociatedPublication = getRelativeRaw("hasAssociatedPublication")
 	val containsDataset = getRelativeRaw("containsDataset")
 	val hasObjectSpec = getRelativeRaw("hasObjectSpec")
 	val hasFormat = getRelativeRaw("hasFormat")
@@ -90,6 +95,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasEcosystemType = getRelativeRaw("hasEcosystemType")
 	val hasClimateZone = getRelativeRaw("hasClimateZone")
 	val hasMeanAnnualTemp = getRelativeRaw("hasMeanAnnualTemp")
+	val hasMeanAnnualPrecip = getRelativeRaw("hasMeanAnnualPrecip")
+	val hasMeanAnnualRadiation = getRelativeRaw("hasMeanAnnualRadiation")
 	val hasOperationalPeriod = getRelativeRaw("hasOperationalPeriod")
 	val operatesOn = getRelativeRaw("operatesOn")
 	val hasDepiction = getRelativeRaw("hasDepiction")
@@ -118,6 +125,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasStartTime = getRelativeRaw("hasStartTime")
 	val hasEndTime = getRelativeRaw("hasEndTime")
 	val hasInstrumentOwner = getRelativeRaw("hasInstrumentOwner")
+	val hasInstrumentComponent = getRelativeRaw("hasInstrumentComponent")
 	val hasVendor = getRelativeRaw("hasVendor")
 	val hasModel = getRelativeRaw("hasModel")
 	val hasSerialNumber = getRelativeRaw("hasSerialNumber")
@@ -163,11 +171,11 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val dateSubmitted = getRelativeRaw("dateSubmitted")
 	}
 
-//	object sites extends CustomVocab {
-//		val factory = top.factory
-//		implicit val bup = makeUriProvider("https://meta.fieldsites.se/ontologies/sites/")
-//		val simpleSitesCsv = getRelativeRaw("simpleSitesCsv")
-//	}
+	object sites extends CustomVocab {
+		val factory = top.factory
+		implicit val bup = makeUriProvider("https://meta.fieldsites.se/ontologies/sites/")
+		val stationClass = getRelativeRaw("Station")
+	}
 }
 
 object CpmetaVocab{

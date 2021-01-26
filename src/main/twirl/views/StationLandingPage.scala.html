@@ -8,46 +8,63 @@
 @import landpagesnips._
 
 @(station: Station)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(station.name, station.name, envri, CpMenu.default){
+@ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
 			<h2>About</h2>
-			@if(envri==Envri.ICOS){
+			@for(icos <- icosSpecifics){
 				@metadataRow("Station ID", station.id)
+				@for(cls <- icos.stationClass){
+					@metadataRow("ICOS Station class", cls.toString)
+				}
+				@for(cc <- icos.countryCode){
+					@metadataRow("Country code", cc.code)
+				}
+				@for(lblDate <- icos.labelingDate){
+					@metadataRow("ICOS Labeling date", lblDate.toString)
+				}
+				@for(tz <- icos.timeZoneOffset){
+					@metadataRow("Time zone offset", tz.toString)
+				}
 			}
-			@for(ecosystems <- station.ecosystems) {
-				@metadataRow("Main ecosystems", ecosystems.flatMap(_.label).mkString(" / "))
+			@for(eco <- ecoSpecifics){
+				@for(climateZone <- eco.climateZone) {
+					@metadataHtmlRow{Climate zone}{@resourceLink(climateZone)}
+				}
+				@for(ecoType <- eco.ecosystems) {
+					@metadataHtmlRow{Ecosystem type}{@resourceLink(ecoType)}
+				}
+				@for(temperature <- eco.meanAnnualTemp) {
+					@metadataRow("Mean annual temperature", s"$temperature °C")
+				}
 			}
-			@for(climateZone <- station.climateZone.flatMap(_.label)) {
-				@metadataRow("Climate zone", climateZone)
+			@for(eco <- etcSpecifics){
+				@for(meanAnnualPrecip <- eco.meanAnnualPrecip){
+					@metadataRow("Mean annual precipitation", s"$meanAnnualPrecip mm")
+				}
+				@for(meanAnnualRad <- eco.meanAnnualRad){
+					@metadataHtmlRow{Mean annual radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
+				}
+				@for(doc <- eco.stationDocs){
+					@metadataHtmlRow{Documentation resource}{
+						<a target="_blank" href=@doc>@{doc.toString}</a>
+					}
+				}
+				@for(pub <- eco.stationPubs){
+					@metadataHtmlRow{Data publication}{
+						<a target="_blank" href=@pub>@{pub.toString}</a>
+					}
+				}
 			}
-			@for(temperature <- station.meanAnnualTemp) {
-				@metadataRow("Mean annual temperature", s"""${temperature} °C""")
-			}
-			@for(operationalPeriod <- station.operationalPeriod) {
-				@metadataRow("Operational period", operationalPeriod)
+			@for(sites <- sitesSpecifics){
+				@for(operationalPeriod <- sites.operationalPeriod) {
+					@metadataRow("Operational period", operationalPeriod)
+				}
+				@documentationLink(sites.documentation)
 			}
 			@for(org <- station.responsibleOrganization) {
-				@metadataRow("Organization", org.name)
-			}
-			@station.documentation.toList match {
-				case Nil => {}
-				case _ => {
-					<div class="row">
-						<div class="col-md-3">
-							<label>Documentation</label>
-						</div>
-						<div class="col-md-9 mb-2">
-							<span>
-								@for((document, i) <- station.documentation.zipWithIndex){
-									@if(i > 0) {
-										<span>, </span>
-									}
-									<a href=@{document.res}>@{document.name}</a>
-								}
-							</span>
-						</div>
-					</div>
+				@metadataHtmlRow{Organization}{
+					<a href=@{org.self.uri.getPath}>@{org.name}</a>
 				}
 			}
 			@for(coverage <- station.coverage) {
@@ -61,21 +78,21 @@
 					}
 					case _ => {}
 				}
-				@defining("/station/?theme=Other&station=" + station.org.self.uri) { maplink =>
+				@defining("/station/?station=" + station.org.self.uri.getPath) { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
 					<a href="@maplink">Open map</a>
 				}
 			}
-			@for(pictures <- station.pictures) {
+			@if(!station.pictures.isEmpty) {
 				<h2>Pictures</h2>
-				@for(picture <- pictures) {
+				@for(picture <- station.pictures) {
 					<img src="@picture" class="img-responsive" style="margin-bottom: 15px;">
 				}
 			}
 		</div>
 		<div class="col-sm-4 text-center">
 			<div class="row form-group">
-				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station.name)</a>
+				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station)</a>
 			</div>
 			@for(email <- station.org.email) {
 				<div class="row">
@@ -85,11 +102,11 @@
 					</div>
 				</div>
 			}
-			@for(website <- station.website) {
+			@for(website <- station.org.website) {
 				<div class="row">
 					<div class="btn btn-link">
 						<span class="glyphicon glyphicon-share"></span>
-						<a href="@website">Read more about @stationShortName(station.name)</a>
+						<a href="@website">Read more about @stationShortName(station)</a>
 					</div>
 				</div>
 			}
@@ -102,9 +119,34 @@
 	Uri(s"https://${conf.dataHost}/portal/").withFragment(s"""{"filterCategories":{"station":["$stationUri"]}}""")
 }
 
-@stationShortName(fullName: String) = @{
+@stationShortName(station: Station) = @{
+	val fullName = station.org.name
 	envri match {
 		case Envri.SITES => fullName.split(" ").head
 		case _ => fullName
+	}
+}
+
+@sitesSpecifics = @{
+	Option(station.specificInfo).collect{
+		case sites: SitesStationSpecifics => sites
+	}
+}
+
+@ecoSpecifics = @{
+	Option(station.specificInfo).collect{
+		case eco: EcoStationSpecifics => eco
+	}
+}
+
+@etcSpecifics = @{
+	Option(station.specificInfo).collect{
+		case eco: EtcStationSpecifics => eco
+	}
+}
+
+@icosSpecifics = @{
+	Option(station.specificInfo).collect{
+		case icos: IcosStationSpecifics => icos
 	}
 }

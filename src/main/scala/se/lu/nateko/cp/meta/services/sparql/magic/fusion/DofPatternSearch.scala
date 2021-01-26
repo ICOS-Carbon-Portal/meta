@@ -124,7 +124,8 @@ class DofPatternSearch(meta: CpmetaVocab){
 				group <- ext.getArg.asOptInstanceOf[Group];
 				grpVars = group.getGroupBindingNames.asScala.toSet;
 				countedVar <- singleVarCountGroup(group)
-				if (countedVar == dobjCandVar) && (grpVars.size == 3 || grpVars.size == 4)
+					if (countedVar == dobjCandVar) && (grpVars.size == 3 || grpVars.size == 4);
+				_ = countedVar //to prevent spurious unused warning, see https://github.com/scala/bug/issues/10287
 			) yield {
 				val statGbPatt = Some(new StatGroupByPattern(countVar, dobjCandVar, grpVars, ext))
 

@@ -10,7 +10,7 @@ class PubSubBus {
 
 	def publish(event: PubSubEvent): Unit = queue.execute{() =>
 		listeners.foreach{pf =>
-			pf.applyOrElse(event, (e: PubSubEvent) => ())
+			pf.applyOrElse(event, (_: PubSubEvent) => ())
 		}
 	}
 

@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta.upload
 
-import scala.concurrent.Future
 import scala.reflect.ClassTag
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try

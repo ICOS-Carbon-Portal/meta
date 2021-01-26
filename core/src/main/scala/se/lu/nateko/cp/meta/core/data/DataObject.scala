@@ -9,25 +9,14 @@ case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 sealed trait Agent{
 	val self: UriResource
 }
-case class Organization(self: UriResource, name: String, email: Option[String]) extends Agent
+case class Organization(
+	self: UriResource,
+	name: String,
+	email: Option[String],
+	website: Option[URI]
+) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, orcid: Option[Orcid]) extends Agent
 
-
-case class Station(
-	org: Organization,
-	id: String,
-	name: String,
-	coverage: Option[GeoFeature],
-	responsibleOrganization: Option[Organization],
-	sites: Option[Seq[Site]],
-	ecosystems: Option[Seq[UriResource]],
-	climateZone: Option[UriResource],
-	meanAnnualTemp: Option[Float],
-	operationalPeriod: Option[String],
-	website: Option[URI],
-	documentation: Seq[PlainStaticObject],
-	pictures: Option[Seq[URI]]
-)
 
 case class Location(geometry: GeoFeature, label: Option[String])
 case class Site(self: UriResource, ecosystem: UriResource, location: Option[Location])

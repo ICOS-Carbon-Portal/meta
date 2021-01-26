@@ -57,6 +57,6 @@ object TcConf{
 	}
 
 	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
-	def stationId[T <: TC](baseId: String)(implicit tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_$baseId")
-	def tcScopedId[T <: TC](baseId: String)(implicit tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_$baseId")
+	def stationId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
+	def tcScopedId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
 }

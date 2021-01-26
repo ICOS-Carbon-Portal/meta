@@ -7,7 +7,8 @@ val commonScalacOptions = Seq(
 	"-feature",
 	"-deprecation",
 	"-Wdead-code",
-	"-Wnumeric-widen"
+	"-Wnumeric-widen",
+	"-Wunused"
 )
 val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
 val commonJavacOptions = Seq("-source", "1.8", "-target", "1.8")
@@ -16,7 +17,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.5.4",
+		version := "0.6.1",
 		scalacOptions ++= jvmScalacOptions,
 		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(
@@ -26,13 +27,18 @@ lazy val metaCore = (project in file("core"))
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",
 			"Instant" -> "string",
+			"LocalDate" -> "string",
 			"Sha256Sum" -> "string",
 			"Orcid" -> "string",
-			"JsValue" -> "object"
+			"JsValue" -> "object",
+			"CountryCode" -> "string"
 		),
 		cpTsGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
-			Seq(dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala", dir / "package.scala")
+			Seq(
+				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
+				dir / "Station.scala", dir / "package.scala"
+			)
 		},
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"
@@ -62,7 +68,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.6.1",
+		version := "0.7.0",
 		scalacOptions ++= jvmScalacOptions,
 		javacOptions ++= commonJavacOptions,
 

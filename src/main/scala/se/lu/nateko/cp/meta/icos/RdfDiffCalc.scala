@@ -17,17 +17,17 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
-		current <- rdfReader.getCurrentState[T];
-		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T];
-		cpOwnPeople <- rdfReader.getCpOwnPeople[T]
+		current <- rdfReader.getCurrentState[T].require("problem reading current state");
+		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T].require("problem reading CP own orgs");
+		cpOwnPeople <- rdfReader.getCpOwnPeople[T].require("problem reading CP own people")
 	) yield {
 
-		def instrOrgs(instrs: Seq[Instrument[T]]) = instrs.map(_.owner).flatten ++ instrs.map(_.vendor).flatten
+		def allOrgs(s: TcState[T]): Seq[TcOrg[T]] = uniqBestId{
+			s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
+			s.roles.map(_.role.org) ++ s.stations ++ s.stations.flatMap(_.responsibleOrg)
+		}
 
-		val tcOrgs = uniqBestId(instrOrgs(newSnapshot.instruments) ++ newSnapshot.roles.map(_.role.org) ++ newSnapshot.stations)
-		val cpOrgs = uniqBestId(instrOrgs(current.instruments) ++ current.roles.map(_.role.org) ++ current.stations)
-
-		val orgsDiff = diff[T, Organization[T]](cpOrgs, tcOrgs, cpOwnOrgs)
+		val orgsDiff = diff[T, TcOrg[T]](allOrgs(current), allOrgs(newSnapshot), cpOwnOrgs)
 
 		def updateInstr(instr: Instrument[T]): Instrument[T] = instr.copy(
 			vendor = instr.vendor.map(orgsDiff.ensureIdPreservation),
@@ -40,7 +40,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val tcPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
 		val cpPeople = uniqBestId(current.roles.map(_.role.holder))
-		val peopleDiff = diff[T, Person[T]](cpPeople, tcPeople, cpOwnPeople)
+		val peopleDiff = diff[T, TcPerson[T]](cpPeople, tcPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
 			role.kind,
@@ -63,10 +63,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val fromSet = from.toSet
 		val toSet = to.toSet
 		val assertions = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
-		val addedPredicates = assertions.map(_.statement.getPredicate)
+		val mentionedPredicates = toSet.map(_.getPredicate)
 		val retractions = fromSet.diff(toSet).iterator.collect{
 			//all the predicates are made "sticky", meaning one cannot remove a value, but can update
-			case st if addedPredicates.contains(st.getPredicate) => RdfUpdate(st, false)
+			case st if mentionedPredicates.contains(st.getPredicate) => RdfUpdate(st, false)
 		}.toSeq
 		retractions ++ assertions
 	}

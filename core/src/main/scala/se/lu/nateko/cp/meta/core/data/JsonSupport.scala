@@ -19,6 +19,13 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val geoPolygonFormat = jsonFormat1(Polygon)
 	implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
 
+	implicit object countryCodeFormat extends JsonFormat[CountryCode]{
+		def write(cc: CountryCode): JsValue = JsString(cc.code)
+		def read(v: JsValue): CountryCode = v match{
+			case JsString(CountryCode(cc)) => cc
+			case _ => deserializationError(s"Expected an ISO ALPHA-2 country code string, got ${v.compactPrint}")
+		}
+	}
 	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
 
 		def write(geo: GeoFeature): JsValue = {
@@ -67,11 +74,11 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val orgFormat = jsonFormat3(Organization)
+	implicit val orgFormat = jsonFormat4(Organization)
 	implicit val personFormat = jsonFormat4(Person)
 	implicit val locationFormat = jsonFormat2(Location)
 	implicit val siteFormat = jsonFormat3(Site)
-	implicit val stationFormat = jsonFormat13(Station)
+	implicit val stationFormat = jsonFormat6(Station)
 
 	implicit object agentFormat extends JsonFormat[Agent]{
 

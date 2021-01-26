@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.core.data.Envri
 
 
 class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
@@ -40,7 +41,10 @@ object MetaFlow {
 			)
 		}
 
-		val rdfReader = new RdfReader(cpServer, icosServer)
+		val rdfReader = {
+			val allIcosInstServer = db.uploadService.servers.allDataObjs(Envri.ICOS)
+			new RdfReader(cpServer, icosServer, allIcosInstServer)
+		}
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 
@@ -59,7 +63,9 @@ object MetaFlow {
 					system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
 				}
 			} else{
-				system.log.warning(s"Error calculating RDF diff for $tip metadata:\n${diffV.errors.mkString("\n")}")
+				val nUpdates = diffV.result.fold(0)(_.size)
+				val errors = diffV.errors.mkString("\n")
+				system.log.warning(s"Error(s) calculating RDF diff (got $nUpdates updates) for $tip metadata:\n$errors")
 			}
 		}
 

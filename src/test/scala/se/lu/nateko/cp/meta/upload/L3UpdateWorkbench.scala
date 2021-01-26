@@ -36,7 +36,6 @@ object L3UpdateWorkbench extends CpmetaJsonProtocol{
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def sparqlUri = new java.net.URI(s"${uploadConfBase.metaBase}/sparql")
-	private val http = Http()
 
 	def updateDto(dto: DataObjectDto): DataObjectDto = {
 		val l3 = dto.specificInfo.left.getOrElse(???)

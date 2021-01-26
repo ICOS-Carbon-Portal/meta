@@ -1,12 +1,16 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Try
+import java.time.LocalDate
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -37,17 +41,50 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 	protected  def getStation(stat: IRI) = Station(
 		org = getOrganization(stat),
 		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
-		name = getOptionalString(stat, metaVocab.hasName).getOrElse("Unknown"),
 		coverage = getStationCoverage(stat),
 		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
-		sites = Option(server.getUriValues(stat, metaVocab.operatesOn).map(getSite)).filter(_.nonEmpty),
-		ecosystems = Option(server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource)).filter(_.nonEmpty),
-		climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
-		meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
-		operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
-		website = getOptionalUriLiteral(stat, RDFS.SEEALSO),
-		documentation = getDocumentationObjs(stat),
-		pictures = Option(server.getUriLiteralValues(stat, metaVocab.hasDepiction)).filter(_.nonEmpty)
+		specificInfo = getStationSpecifics(stat),
+		pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction)
+	)
+
+	private def getStationSpecifics(stat: IRI): StationSpecifics = {
+		if(server.resourceHasType(stat, metaVocab.sites.stationClass))
+			SitesStationSpecifics(
+				sites = server.getUriValues(stat, metaVocab.operatesOn).map(getSite),
+				ecosystems = server.getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
+				climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
+				meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
+				operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
+				documentation = getDocumentationObjs(stat)
+			)
+		else if(server.resourceHasType(stat, metaVocab.ecoStationClass)){
+			val icosSpecif = getIcosStationSpecifics(stat)
+			EtcStationSpecifics(
+				stationClass = icosSpecif.stationClass,
+				labelingDate = icosSpecif.labelingDate,
+				countryCode = icosSpecif.countryCode,
+				climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
+				ecosystemType = getOptionalUri(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
+				meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
+				meanAnnualPrecip = getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip),
+				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation),
+				stationDocs = server.getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
+				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
+				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
+			)
+		} else if(
+			server.resourceHasType(stat, metaVocab.atmoStationClass) ||
+			server.resourceHasType(stat, metaVocab.oceStationClass)
+		) getIcosStationSpecifics(stat)
+		else NoStationSpecifics
+	}
+
+	private def getIcosStationSpecifics(stat: IRI) = PlainIcosSpecifics(
+		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
+		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
+			.map(LocalDate.parse).headOption,
+		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
+		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 	)
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {

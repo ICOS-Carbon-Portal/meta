@@ -1,5 +1,8 @@
 package se.lu.nateko.cp.meta.icos
 
+import java.time.Instant
+import java.time.LocalDate
+
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
@@ -13,26 +16,26 @@ import akka.stream.OverflowStrategy
 import akka.stream.ThrottleMode
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Source
-import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import org.eclipse.rdf4j.query.BindingSet
-import se.lu.nateko.cp.meta.services.CpVocab
 import org.eclipse.rdf4j.model.Value
-import java.time.Instant
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
+import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
 ) extends TriggeredMetaSource[OTC.type] {
 
 	private type O = OTC.type
+	private type OtcId = TcId[O]
+	private type OrgMap = Map[IRI, TcPlainOrg[O]]
 	private val otcVocab = new OtcMetaVocab(server.factory)
 
 	override def registerListener(actor: ActorRef): Unit = {
@@ -40,64 +43,91 @@ class OtcMetaSource(
 	}
 
 	override def readState: Validated[State] = for(
+		comms <- getComments;
 		people <- getPeople;
-		mobStations <- getMobileStations;
-		statStations <- getStationaryStations;
 		otherOrgs <- getCompsAndInsts;
-		orgs = mobStations ++ statStations ++ otherOrgs;
-		membs <- getMemberships(orgs, people)
-		//TODO Fetch instruments
-	) yield new TcState(mobStations.values.toSeq, membs, Nil)
+		stations <- getStations(otherOrgs, comms);
+		orgs = stations ++ otherOrgs;
+		membs <- getMemberships(orgs, people);
+		sensorLookup <- getSensorDeployment;
+		instruments <- getInstruments(orgs, sensorLookup)
+	) yield new TcState(stations.values.toSeq, membs, instruments)
 
-	private def getMobileStations: Validated[Map[IRI, TcMobileStation[O]]] = {
-		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-		|select distinct ?st ?id ?name ?countryCode where{
-		|	?st otc:hasStationId ?id .
-		|	filter exists{
-		|		?depl otc:toStation ?st ; otc:ofPlatform ?plat .
-		|		values ?mobPlClass {otc:Ship otc:DriftingBuoy}
-		|		?plat a ?mobPlClass .
-		|	}
-		|	?st otc:hasName ?name .
-		|	optional {?st otc:countryCode ?countryCode }
-		|}""".stripMargin
+	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
+		val q = """
+			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			|select *
+			|from <http://meta.icos-cp.eu/resources/otcmeta/>
+			|where{
+			|	{
+			|		select ?st (max(?deplInfo) as ?di) where{
+			|			?depl otc:toStation ?st .
+			|			optional {?depl otc:hasEndTime ?deplEnd}
+			|			bind(if(bound(?deplEnd), concat(str(?deplEnd), str(?depl)), ?depl) as ?deplInfo)
+			|		}
+			|		group by ?st
+			|	}
+			|	?st otc:hasStationId ?id ; otc:hasName ?name .
+			|	bind(if(isIri(?di), ?di, iri(substr(?di, 11))) as ?depl)
+			|	?depl otc:ofPlatform ?plat .
+			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
+			|	optional {?plat otc:hasSpatialReference ?geoJson }
+			|	optional {?plat otc:hasPicture ?picture }
+			|	optional {?plat otc:hasOwner ?owner }
+			|	optional {?plat rdfs:seeAlso ?seeAlso }
+			|	optional {?st otc:countryCode ?countryCode }
+			|	optional {?st otc:hasLabelingDate ?labelDate }
+			|	optional {?st otc:hasStationClass ?stationClass }
+			|}
+		|""".stripMargin
 
-		getLookup(q, "st"){(b, tcId) => TcMobileStation(
-			cpId = stationId(b.getValue("id").stringValue),
-			tcId = tcId,
-			id = b.getValue("id").stringValue,
-			name = b.getValue("name").stringValue,
-			country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
-			geoJson = None
-		)}
+		getLookupV(q, "st"){(b, tcId) =>
+			for(
+				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri};
+				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
+				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
+				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
+				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
+				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.withName(v.stringValue)).optional;
+				ccode <- qresValue(b, "countryCode").map{v =>
+					val CountryCode(cc) = v.stringValue
+					cc
+				}.optional;
+				lblDate <-qresValue(b, "labelDate").map(v => LocalDate.parse(v.stringValue)).optional;
+				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
+				name <- qresValueReq(b, "name").map(_.stringValue);
+				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
+				website <- qresValue(b, "seeAlso").flatMap(parseUriLiteral).optional;
+				owner <- qresValue(b, "owner").collect{case iri: IRI => iri}.optional
+			) yield{
+
+				TcStation[O](
+					cpId = stationId(UriId.escaped(stIdStr)),
+					tcId = tcId,
+					core = Station(
+						org = Organization(
+							self = UriResource(
+								uri = otcVocab.dummyUri,
+								label = Some(stIdStr),
+								comments = comments.getOrElse(stUri, Nil)
+							),
+							name = name,
+							email = None,
+							website = website
+						),
+						id = stIdStr,
+						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
+						responsibleOrganization = None,
+						pictures = pictUri.toSeq,
+						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None)
+					),
+					responsibleOrg = owner.flatMap(orgs.get)
+				)
+			}
+		}.map(_.toMap)
 	}
 
-	//TODO Rewrite to allow for multiple platform deployments, picking the latest of them for lat/lon
-	private def getStationaryStations: Validated[Map[IRI, TcStationaryStation[O]]] = {
-		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-		|select distinct ?st ?id ?name ?lat ?lon ?countryCode where{
-		|	?plat a otc:Mooring .
-		|	?depl otc:ofPlatform ?plat ; otc:toStation ?st .
-		|	?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon .
-		|	#optional {?depl otc:hasEndTime ?endTime}
-		|	?st otc:hasStationId ?id ; otc:hasName ?name .
-		|	optional {?st otc:countryCode ?countryCode }
-		|}""".stripMargin
-
-		getLookup(q, "st"){(b, tcId) =>
-			val pos = Position(parseDouble(b.getValue("lat")), parseDouble(b.getValue("lon")), None)
-			TcStationaryStation(
-				cpId = stationId(b.getValue("id").stringValue),
-				tcId = tcId,
-				id = b.getValue("id").stringValue,
-				name = b.getValue("name").stringValue,
-				pos = pos,
-				country = Option(b.getValue("countryCode")).map(_.stringValue).flatMap(CountryCode.unapply),
-			)
-		}
-	}
-
-	private def getCompsAndInsts: Validated[Map[IRI, CompanyOrInstitution[O]]] = {
+	private def getCompsAndInsts: Validated[Map[IRI, TcPlainOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
 		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
@@ -106,15 +136,19 @@ class OtcMetaSource(
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
-		getLookup(q, "org"){(b, tcId) => CompanyOrInstitution(
+		getLookup(q, "org"){(b, tcId) => TcPlainOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
-			name = b.getValue("name").stringValue,
-			label = Option(b.getValue("label")).map(_.stringValue)
-		)}
+			org = Organization(
+				self = UriResource(EtcMetaSource.dummyUri, Option(b.getValue("label")).map(_.stringValue), Nil),
+				name = b.getValue("name").stringValue,
+				email = None,
+				website = None
+			)
+		)}.map(_.toMap)
 	}
 
-	private def getPeople: Validated[Map[IRI, Person[O]]] = {
+	private def getPeople: Validated[Map[IRI, TcPerson[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct * where{
 		|	?p a otc:Person .
@@ -127,7 +161,7 @@ class OtcMetaSource(
 		getLookup(q, "p"){(b, tcId) =>
 			val fname = b.getValue("fname").stringValue
 			val lname = b.getValue("lname").stringValue
-			Person(
+			TcPerson(
 				cpId = CpVocab.getPersonCpId(fname, lname),
 				tcIdOpt = Some(tcId),
 				fname = fname,
@@ -135,22 +169,44 @@ class OtcMetaSource(
 				email = Option(b.getValue("email")).map(_.stringValue.toLowerCase),
 				orcid = Option(b.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
 			)
-		}
+		}.map(_.toMap)
 	}
-	private def getLookup[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => T): Validated[Map[IRI, T]] = {
+
+	private def getComments: Validated[Map[IRI, Seq[String]]] = {
+		val q = """select *
+			|from <http://meta.icos-cp.eu/resources/otcmeta/>
+			|where{ ?iri rdfs:comment ?comm }
+		|""".stripMargin
+		getLookupV(q, "iri"){(b, _) =>
+			qresValueReq(b, "comm").map(_.stringValue)
+		}.map(_.groupMap(_._1)(_._2))
+	}
+
+	private def getLookup[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => T): Validated[IndexedSeq[(IRI, T)]] = {
+		getLookupV(query, entVar)((bs, id) => Validated(maker(bs, id)))
+	}
+
+	private def getLookupV[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => Validated[T]): Validated[IndexedSeq[(IRI, T)]] = {
 		Validated(sparql.evaluateTupleQuery(SparqlQuery(query))).flatMap{iter =>
 			val entValids = iter.toIndexedSeq.map{b =>
-				Validated{
-					val entIri = b.getValue(entVar).asInstanceOf[IRI]
-					val ent = maker(b, TcConf.makeId[O](entIri.getLocalName))
-					entIri -> ent
-				}
+				for(
+					entIri <- qresValueReq(b, entVar)
+						.collect{case iri: IRI => iri}
+						.require(s"Expected $entVar to be an IRI, got something else");
+					ent <- maker(b, TcConf.makeId[O](entIri.getLocalName))
+				) yield entIri -> ent
 			}
-			Validated.sequence(entValids).map(_.toMap)
+			Validated.sequence(entValids)
 		}
 	}
 
-	private def getMemberships(orgs: Map[IRI, Organization[O]], pers: Map[IRI, Person[O]]): Validated[Seq[Membership[O]]] = {
+	private def qresValue(bs: BindingSet, vname: String): Validated[Value] =
+		new Validated(Option(bs.getValue(vname)))
+
+	private def qresValueReq(bs: BindingSet, vname: String): Validated[Value] =
+		qresValue(bs, vname).require(s"Variable $vname absent in SPARQL query results")
+
+	private def getMemberships(orgs: Map[IRI, TcOrg[O]], pers: Map[IRI, TcPerson[O]]): Validated[Seq[Membership[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select * where{
 		|	?role a otc:AssumedRole .
@@ -176,7 +232,55 @@ class OtcMetaSource(
 				start = parseDate(b.getValue("start")),
 				stop = parseDate(b.getValue("end"))
 			)
-		}.map(_.values.toSeq)
+		}.map(_.map(_._2))
+	}
+
+	private def getInstruments(
+		orgLookup: Map[IRI, TcOrg[O]],
+		sensorLookup: Map[OtcId, Seq[UriId]]
+	): Validated[IndexedSeq[Instrument[O]]] = {
+		val q = """
+			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			|select ?instr ?model ?serNum ?name ?vendor where{
+			|	values ?kind {otc:Instrument otc:Sensor}
+			|	?instr a ?kind .
+			|	optional{ ?instr otc:hasModelName ?model }
+			|	optional{ ?instr otc:hasSerialNumber ?serNum }
+			|	optional{ ?instr otc:hasName ?name }
+			|	optional{ ?instr otc:hasManufacturer ?vendor }
+			|}
+		|""".stripMargin
+		getLookupV(q, "instr"){(b, tcId) =>
+			for(
+				model <- qresValue(b, "model").flatMap(parseString).orElse("N/A");
+				sn <- qresValue(b, "serNum").flatMap(parseString).orElse("N/A");
+				nameOpt <- qresValue(b, "name").flatMap(parseString).optional;
+				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
+			) yield
+				Instrument[O](
+					tcId = tcId,
+					model = model,
+					sn = sn,
+					name = nameOpt,
+					partsCpIds = sensorLookup.getOrElse(tcId, Nil),
+					vendor = vendorOpt.flatMap(orgLookup.get)
+				)
+		}.map(_.map(_._2))
+	}
+
+	private def getSensorDeployment: Validated[Map[OtcId, Seq[UriId]]] = {
+		val q = """|
+			prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			select distinct ?instr ?sensor where{
+				?depl otc:toInstrument ?instr ; otc:ofSensor ?sensor .
+				filter not exists {?depl otc:hasEndTime ?deplEnd}
+			}
+		|""".stripMargin
+		getLookupV(q, "instr"){(b, instrId) =>
+			qresValueReq(b, "sensor")
+				.collect{case iri: IRI => instrId -> TcConf.tcScopedId[O](UriId(iri))}
+				.require(s"sensor not found for instrument $instrId")
+		}.map(_.groupMap(_._2._1)(_._2._2))
 	}
 
 	private def parseDate(v: Value): Option[Instant] = v match {
@@ -185,18 +289,24 @@ class OtcMetaSource(
 		case _ => None
 	}
 
-	private def parseDouble(v: Value): Double = v match {
-		case lit: Literal if lit.getDatatype == XMLSchema.DOUBLE =>
-			lit.stringValue.toDouble
+	private def parseLiteral(v: Value, dtype: IRI): Validated[String] = v match {
+		case lit: Literal if lit.getDatatype === dtype =>
+			Validated.ok(lit).map(_.stringValue.trim)
 		case _ =>
-			throw new NumberFormatException(s"Expected $v to be a RDF literal of type xsd:double")
+			Validated.error(s"Expected $v to be a RDF literal of type $dtype")
 	}
+
+	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.toDouble)
+	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING)
+	private def parseUriLiteral(v: Value) = parseLiteral(v, XMLSchema.ANYURI).map(new java.net.URI(_))
 
 }
 
 class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
 	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
+
+	val dummyUri = new java.net.URI(bup.baseUri + "dummy")
 
 	// val hasHolder = getRelativeRaw("hasHolder")
 	// val hasRole = getRelativeRaw("hasRole")

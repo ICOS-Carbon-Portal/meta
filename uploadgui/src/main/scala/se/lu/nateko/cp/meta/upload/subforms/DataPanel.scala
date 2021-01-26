@@ -1,27 +1,15 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
-import org.scalajs.dom
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-import se.lu.nateko.cp.doi.Doi
-
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DocObjectDto, StaticCollectionDto}
+import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 
 import formcomponents._
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
-import UploadApp.whenDone
 import Utils._
 
 
-class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".data-section"){
+class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[String] = keywordsInput.value

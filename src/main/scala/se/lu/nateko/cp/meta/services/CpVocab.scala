@@ -33,7 +33,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
 	def getIcosLikeStation(stationId: UriId) = getRelative(s"stations/", stationId)(icosBup)
-	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](id.id))
+	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](UriId.escaped(id.id)))
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
@@ -68,7 +68,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getAcquisition(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(AcqPrefix + hash.id)
 	def getProduction(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(ProdPrefix + hash.id)
 	def getSubmission(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(SubmPrefix + hash.id)
-	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri) = getRelativeRaw(SpatCovPrefix + hash.id)
+	def getSpatialCoverage(hash: Sha256Sum)(implicit envri: Envri): IRI = getSpatialCoverage(UriId(hash.id))
+	def getSpatialCoverage(id: UriId)(implicit envri: Envri) = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
 	def getVarInfo(hash: Sha256Sum, varLabel: String)(implicit envri: Envri) = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
 	def getPosition(pos: Position)(implicit envri: Envri) = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
 
@@ -128,7 +129,7 @@ object CpVocab{
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
 
-	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](s"${station.id}_$id")
+	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](UriId.escaped(s"${station.id}_$id"))
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val uriSegm = iri.getLocalName

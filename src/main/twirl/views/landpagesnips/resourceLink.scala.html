@@ -1,4 +1,4 @@
 @import se.lu.nateko.cp.meta.core.data.{UriResource}
 
 @(res: UriResource)
-<a href=@{res.uri.getPath}>@{res.label.getOrElse(res.uri.getPath)}</a>
+<a href=@{res.uri.getPath}>@{res.label.getOrElse(res.uri.toString)}</a>

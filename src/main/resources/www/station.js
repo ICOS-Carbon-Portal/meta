@@ -157,11 +157,11 @@ function getStationLocations(stationUrl) {
 	.then(function(result){
 		try{
 			const ownCoverage = [{
-				"label": `<b>${result.name}</b>`,
+				"label": `<b>${result.org.name}</b>`,
 				"geoJson": result.coverage.geo
 			}];
-			const sitesCoverage = result.sites
-				? result.sites.map(site => {
+			const sitesCoverage = result.specificInfo._type === 'sites'
+				? result.specificInfo.sites.map(site => {
 					return {
 						"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
 						"geoJson":site.location.geometry.geo

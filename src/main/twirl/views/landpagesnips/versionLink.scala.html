@@ -15,7 +15,7 @@
 				@if(i > 0){
 					<span>, </span>
 				}
-				<a href=@{uri.getPath}>@{s"previous #${i + 1}"}</a>
+				<a href=@{uri.getRawPath}>@{s"previous #${i + 1}"}</a>
 			}
 		</span>
 	}

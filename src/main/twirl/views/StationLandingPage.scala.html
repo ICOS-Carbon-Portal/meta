@@ -64,7 +64,7 @@
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataHtmlRow{Organization}{
-					<a href=@{org.self.uri.getPath}>@{org.name}</a>
+					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
 			}
 			@for(coverage <- station.coverage) {
@@ -78,7 +78,7 @@
 					}
 					case _ => {}
 				}
-				@defining("/station/?station=" + station.org.self.uri.getPath) { maplink =>
+				@defining("/station/?station=" + station.org.self.uri.getRawPath) { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
 					<a href="@maplink">Open map</a>
 				}

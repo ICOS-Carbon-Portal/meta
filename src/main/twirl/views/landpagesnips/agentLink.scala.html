@@ -2,6 +2,6 @@
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.agentString
 
 @(agent: Agent)
-<a href=@{agent.self.uri.getPath}>
+<a href=@{agent.self.uri.getRawPath}>
 	<span>@{agentString(agent)}</span>
 </a>

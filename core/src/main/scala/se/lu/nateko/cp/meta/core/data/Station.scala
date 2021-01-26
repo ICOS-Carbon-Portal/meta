@@ -21,6 +21,7 @@ case object NoStationSpecifics extends StationSpecifics
 
 sealed trait EcoStationSpecifics extends StationSpecifics{
 	def climateZone: Option[UriResource]
+	def ecosystems: Seq[UriResource]
 	def meanAnnualTemp: Option[Float]
 }
 
@@ -59,7 +60,9 @@ case class EtcStationSpecifics(
 	stationDocs: Seq[URI],
 	stationPubs: Seq[URI],
 	timeZoneOffset: Option[Int]
-) extends IcosStationSpecifics with EcoStationSpecifics
+) extends IcosStationSpecifics with EcoStationSpecifics{
+	override def ecosystems = ecosystemType.toSeq
+}
 
 object IcosStationClass extends Enumeration{
 	val One = Value("1")

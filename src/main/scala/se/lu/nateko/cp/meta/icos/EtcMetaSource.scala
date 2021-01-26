@@ -163,21 +163,6 @@ object EtcMetaSource{
 		"AFFILIATED" -> None
 	)
 
-	// def getInstruments(stId: StationId, badms: Seq[BadmEntry])(implicit tcConf: TcConf[ETC.type]): Seq[Validated[EtcInstrument]] = {
-	// 	val sid = stId.id
-	// 	badms.filter(_.variable == "GRP_LOGGER").map{badm =>
-	// 		implicit val lookup = toLookup(Seq(badm))
-	// 		for(
-	// 			lid <- getNumber("GRP_LOGGER/LOGGER_ID").require(s"a logger at $sid has no id");
-	// 			model <- getString("GRP_LOGGER/LOGGER_MODEL").require(s"a logger $lid at $sid has no model");
-	// 			sn <- lookUp("GRP_LOGGER/LOGGER_SN").require(s"a logger $lid at $sid has no serial number");
-	// 			cpId = CpVocab.getEtcInstrId(stId, lid.intValue)
-	// 		) yield
-	// 			//TODO Use TC-stable station id as component of tcId
-	// 			Instrument(cpId, makeId(s"${sid}_$lid"), model, sn.valueStr)
-	// 	}
-	// }
-
 	def lookUp(varName: String)(implicit lookup: Lookup): Validated[String] =
 		new Validated(lookup.get(varName).filter(_.length > 0))
 

@@ -18,7 +18,7 @@ case class GeometryCollection(geometries: Seq[GeoFeature]) extends GeoFeature {
 	|	"geometries": [${geometries.map(_.geoJson).mkString(",")}]
 	|}""".stripMargin
 
-	def textSpecification = s"Geometries: $geometries"
+	def textSpecification = geometries.map(_.textSpecification).mkString("Geometries: ", "; ", "")
 }
 
 case class Position(lat: Double, lon: Double, alt: Option[Float]) extends GeoFeature{

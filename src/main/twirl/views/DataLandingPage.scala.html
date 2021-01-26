@@ -216,11 +216,7 @@
 @summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
 @coverageText = @{
-	dobj.coverage match{
-		case None => None
-		case Some(_: GeoTrack) | Some(_: GenericGeoFeature) => None
-		case Some(geo) => Some(geo.textSpecification)
-	}
+	dobj.coverage.map(_.textSpecification).filter(_.length < 200)
 }
 
 @headerExtra = @{

@@ -74,10 +74,11 @@ class OtcMetaSource(
 			|	optional {?plat otc:hasSpatialReference ?geoJson }
 			|	optional {?plat otc:hasPicture ?picture }
 			|	optional {?plat otc:hasOwner ?owner }
-			|	optional {?plat rdfs:seeAlso ?seeAlso }
+			|	optional {?plat rdfs:seeAlso ?seeAlsoPlat }
 			|	optional {?st otc:countryCode ?countryCode }
 			|	optional {?st otc:hasLabelingDate ?labelDate }
 			|	optional {?st otc:hasStationClass ?stationClass }
+			|	optional {?st rdfs:seeAlso ?seeAlsoSt }
 			|}
 		|""".stripMargin
 
@@ -97,7 +98,8 @@ class OtcMetaSource(
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
-				website <- qresValue(b, "seeAlso").flatMap(parseUriLiteral).optional;
+				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(parseUriLiteral).optional;
+				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(parseUriLiteral).optional;
 				owner <- qresValue(b, "owner").collect{case iri: IRI => iri}.optional
 			) yield{
 
@@ -113,7 +115,7 @@ class OtcMetaSource(
 							),
 							name = name,
 							email = None,
-							website = website
+							website = websiteSt.orElse(websitePlat)
 						),
 						id = stIdStr,
 						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),

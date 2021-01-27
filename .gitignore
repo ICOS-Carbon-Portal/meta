@@ -5,9 +5,6 @@
 /webbapps/station-map/sparql.html
 /webbapps/station-map/table.js
 /webbapps/station-map/table.html
-/src/main/resources/www/labeling.js
-/src/main/resources/www/metaentry.js
-/src/main/resources/www/sparqlclient.js
 
 #Node specific
 node_modules

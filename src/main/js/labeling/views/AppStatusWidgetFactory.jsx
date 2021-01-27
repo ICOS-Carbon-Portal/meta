@@ -80,7 +80,8 @@ export default function(updateStatusAction, updateStatusCommentAction) {
 		render: function () {
 			const status = this.props.status;
 			const value = this.state.hasAppStatusComment;
-			const disabled = !status.station.isUsersStation;
+			const disabled = !status.station.isUsersTcStation;
+
 			const updater = (errors, newValue) => {
 				if (newValue !== value)
 					this.setState({ hasAppStatusComment: newValue });

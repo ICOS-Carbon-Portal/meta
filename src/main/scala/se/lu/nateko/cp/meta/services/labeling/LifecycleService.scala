@@ -40,7 +40,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 	}
 
-	def updateStatusComment(station: URI, newStatusComment: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = Try{
+	def updateStatusComment(station: URI, newStatusComment: String, user: UserId): Try[Unit] = Try{
 		val stationUri = factory.createIRI(station)
 
 		if(!userHasRole(user, Role.TC, stationUri)) throw new UnauthorizedStationUpdateException(s"User does not have TC role")

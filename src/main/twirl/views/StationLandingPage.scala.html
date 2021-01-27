@@ -27,6 +27,9 @@
 					@metadataRow("Time zone offset", tz.toString)
 				}
 			}
+			@for(descr <- station.org.self.comments){
+				@metadataRow("Description", descr)
+			}
 			@for(eco <- ecoSpecifics){
 				@for(climateZone <- eco.climateZone) {
 					@metadataHtmlRow{Climate zone}{@resourceLink(climateZone)}

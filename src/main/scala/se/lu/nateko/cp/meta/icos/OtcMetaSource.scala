@@ -85,6 +85,7 @@ class OtcMetaSource(
 		getLookupV(q, "st"){(b, tcId) =>
 			for(
 				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri};
+				platUri <- qresValueReq(b, "plat").collect{case iri: IRI => iri};
 				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
@@ -111,7 +112,7 @@ class OtcMetaSource(
 							self = UriResource(
 								uri = otcVocab.dummyUri,
 								label = Some(stIdStr),
-								comments = comments.getOrElse(stUri, Nil)
+								comments = comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil)
 							),
 							name = name,
 							email = None,

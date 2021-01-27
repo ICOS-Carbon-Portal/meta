@@ -1,6 +1,7 @@
 import ContentPanel from './ContentPanel.jsx';
 import {statusFullText, statusClass} from './StationsListFactory.jsx';
-import {status} from '../models/ApplicationStatus.js';
+import { status } from '../models/ApplicationStatus.js';
+import Inputs from './FormInputs.jsx';
 
 function getTransitionText(from, to){
 	switch(to){
@@ -39,7 +40,7 @@ function transitionButtonClass(to){
 	}
 }
 
-export default function(updateStatusAction) {
+export default function(updateStatusAction, updateStatusCommentAction) {
 
 	const LifecycleButton = React.createClass({
 
@@ -71,9 +72,37 @@ export default function(updateStatusAction) {
 
 	});
 
+	const AppStatusCommentCtrl = React.createClass({
+		getInitialState: function () {
+			return { hasAppStatusComment: this.props.status.station['hasAppStatusComment'] };
+		},
+
+		render: function () {
+			const status = this.props.status;
+			const value = this.state.hasAppStatusComment;
+			const disabled = !status.station.isUsersStation;
+			const updater = (errors, newValue) => {
+				if (newValue !== value)
+					this.setState({ hasAppStatusComment: newValue });
+			};
+
+			return (
+				<Inputs.TextAreaWithBtn
+					value={value}
+					optional={true}
+					disabled={disabled}
+					updater={updater}
+					placeholder="Comment about application status"
+					btnTxt="Save application status comment"
+					btnAction={() => updateStatusCommentAction(status.stationWithStatusComment(value))}
+				/>
+			);
+		}
+	});
+
 	return React.createClass({
 
-		render: function() {
+		render: function () {
 			const appStatus = this.props.status.value;
 
 			return <ContentPanel panelTitle="Application status">
@@ -85,6 +114,7 @@ export default function(updateStatusAction) {
 				</h3>
 
 				<LifecycleControls status={this.props.status} />
+				<AppStatusCommentCtrl status={this.props.status} updateStatusCommentAction={this.props.updateStatusCommentAction} />
 
 			</ContentPanel>;
 		}

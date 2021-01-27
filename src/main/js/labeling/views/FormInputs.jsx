@@ -93,6 +93,33 @@ var TextArea = _.extend({
 	}
 }, InputBase);
 
+var TextAreaWithBtn = _.extend({
+	render: function () {
+		var errors = this.getErrors(this.props.value);
+
+		var style = _.extend(_.isEmpty(errors) ? {} : { backgroundColor: "pink" }, this.inputStyle);
+
+		return (
+			<div className="row" style={{marginTop: 25}}>
+				<div className="form-group col-md-12">
+					<textarea
+						rows="3"
+						className="form-control"
+						style={style}
+						onChange={this.changeHandler}
+						title={errors.join('\n')}
+						value={this.props.value}
+						disabled={this.props.disabled}
+						placeholder={this.props.placeholder}
+					/>
+					<button
+						className="btn btn-primary" disabled={this.props.disabled} style={{ marginTop: 5 }} onClick={this.props.btnAction}>{this.props.btnTxt || 'Submit'}</button>
+				</div>
+			</div>
+		);
+	}
+}, InputBase);
+
 var DropDown = _.extend({
 	render: function() {
 		var errors = this.getErrors(this.props.value);
@@ -197,6 +224,8 @@ module.exports = {
 	String: fromMixins(TextInput),
 
 	TextArea: fromMixins(TextArea),
+
+	TextAreaWithBtn: fromMixins(TextAreaWithBtn),
 
 	DropDownString: fromMixins(DropDown),
 

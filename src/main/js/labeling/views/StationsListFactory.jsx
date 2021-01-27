@@ -102,20 +102,25 @@ const ShowLazily = React.createClass({
 });
 
 const marginStyle = { marginLeft: 5, marginRight: 5 };
-const descriptionStyle = {
-	marginLeft: 10,
-	width: 'calc(100% - 320px)',
-	display: 'inline-block',
-	color: 'black',
-	verticalAlign: 'middle',
+const panelHeaderStyle = {
+	display: 'flex',
+	flexDirection: 'row',
+	justifyContent: 'space-between',
+	whiteSpace: 'nowrap'
+};
+const appStatusCommentStyle = {
+	alignSelf: 'flex-start',
+	flex: 10,
+	marginLeft: 25,
+	marginRight: 35,
 	whiteSpace: 'nowrap',
 	overflow: 'hidden',
 	textOverflow: 'ellipsis'
 };
 
-function getApplicationDescription(status, description) {
-	return (status === 'STEP2DELAYED' || status === 'STEP2STALLED') && description
-		? '(' + description + ')'
+function getAppStatusComment(status, appStatusComment) {
+	return (status === 'STEP2DELAYED' || status === 'STEP2STALLED') && appStatusComment
+		? appStatusComment
 		: null;
 }
 
@@ -158,17 +163,17 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 									var Station = themeToStation[station.theme];
 
 									var applicationStatus = station.hasApplicationStatus;
-									var applicationDescription = station.hasApplicationDescription;
+									var appStatusCommentTxt = getAppStatusComment(applicationStatus, station.hasAppStatusComment);
 									var applicationStatusCSS = statusClass(station.hasApplicationStatus);
 
 									return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
 
 										<div className={panelClasses} style={marginStyle}>
-											<div className="cp-lnk panel-heading" onClick={() => chooseStationAction(station)}>
-												<span className={icon} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-												<span style={{ verticalAlign: 'middle' }}>{station.hasLongName}</span>
-												<span style={descriptionStyle}>{getApplicationDescription(applicationStatus, applicationDescription)}</span>
-												<label style={{ float: 'right', height: 20, padding: '2px 4px' }} className={applicationStatusCSS}>
+											<div className="cp-lnk panel-heading" style={panelHeaderStyle} onClick={() => chooseStationAction(station)}>
+												<span className={icon} style={{top: 3}} />
+												<span style={{ marginLeft: 10, alignSelf: 'flex-start'}}>{station.hasLongName}</span>
+												<span className="text-muted" style={appStatusCommentStyle}>{appStatusCommentTxt}</span>
+												<label className={applicationStatusCSS}>
 													<span style={{ fontWeight: 600, fontSize: 12, position: 'relative', top: 2 }}>{statusLabel(applicationStatus)}</span>
 												</label>
 											</div>

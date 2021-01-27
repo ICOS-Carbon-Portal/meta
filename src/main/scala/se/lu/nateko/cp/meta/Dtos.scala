@@ -49,3 +49,4 @@ case class LabelingUserDto(
 )
 
 case class LabelingStatusUpdate(stationUri: URI, newStatus: String)
+case class LabelingStatusCommentUpdate(stationUri: URI, newStatusComment: String)

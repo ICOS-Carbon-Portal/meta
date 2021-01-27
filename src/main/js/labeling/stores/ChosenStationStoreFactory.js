@@ -1,16 +1,17 @@
-module.exports = function (Backend, chooseStationAction, saveStationAction, updateStatusAction) {
+module.exports = function (Backend, chooseStationAction, saveStationAction, updateStatusAction, updateStatusCommentAction) {
 	return Reflux.createStore({
 
-		init: function(){
+		init: function () {
 			this.listenTo(chooseStationAction, this.chooseStationHandler);
 			this.listenTo(saveStationAction, this.saveStationHandler);
 			this.listenTo(updateStatusAction, this.updateStatusHandler);
+			this.listenTo(updateStatusCommentAction, this.updateStatusCommentHandler);
 		},
 
-		chooseStationHandler: function(chosenStation, evenIfChosen) {
-			if(chosenStation.chosen && !evenIfChosen) {
+		chooseStationHandler: function (chosenStation, evenIfChosen) {
+			if (chosenStation.chosen && !evenIfChosen) {
 				this.chosen = null;
-				this.trigger({chosen: null});
+				this.trigger({ chosen: null });
 				return;
 			};
 
@@ -19,27 +20,27 @@ module.exports = function (Backend, chooseStationAction, saveStationAction, upda
 
 			Backend.getStationInfo(chosenStation.stationUri, chosenStation.theme).then(
 				stationInfo => {
-					if(self.chosen.stationUri !== stationInfo.stationUri) return;
+					if (self.chosen.stationUri !== stationInfo.stationUri) return;
 
-					var newChosenStation = _.extend({chosen: true},
-						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation'),
+					var newChosenStation = _.extend({ chosen: true },
+						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation', 'hasAppStatusComment'),
 						Backend.adjustAppStatus(stationInfo)
 					);
-					self.trigger({chosen: newChosenStation});
+					self.trigger({ chosen: newChosenStation });
 				},
 				err => console.log(err)
 			);
 		},
 
-		refreshIfStillRelevant: function(station){
-			if(this.isStillRelevant(station)) this.chooseStationHandler(station, true);
+		refreshIfStillRelevant: function (station) {
+			if (this.isStillRelevant(station)) this.chooseStationHandler(station, true);
 		},
 
-		isStillRelevant: function(station){
+		isStillRelevant: function (station) {
 			return this.chosen.stationUri === station.stationUri;
 		},
 
-		saveStationHandler: function(station){
+		saveStationHandler: function (station) {
 			var self = this;
 			var stationInfo = _.omit(station, 'files', 'fileExpectations', 'fileTypes', 'emails',
 				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation', 'isUsersNeedingActionStation', 'hasApplicationStatus', 'hasStationClass');
@@ -50,12 +51,19 @@ module.exports = function (Backend, chooseStationAction, saveStationAction, upda
 			);
 		},
 
-		updateStatusHandler: function(station){
+		updateStatusHandler: function (station) {
 			var self = this;
 			Backend.updateStatus(station.stationUri, station.hasApplicationStatus).then(
 				() => {
-					if(self.isStillRelevant(station)) self.trigger({chosen: station});
+					if (self.isStillRelevant(station)) self.trigger({ chosen: station });
 				},
+				err => console.log(err)
+			);
+		},
+
+		updateStatusCommentHandler: function (station) {
+			Backend.updateStatusComment(station.stationUri, station.hasAppStatusComment).then(
+				_ => _,
 				err => console.log(err)
 			);
 		}

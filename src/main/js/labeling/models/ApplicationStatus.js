@@ -82,5 +82,9 @@ export default class ApplicationStatus{
 		return _.extend({}, this.station, {hasApplicationStatus: newStatus});
 	}
 
+	stationWithStatusComment(newStatusComment) {
+		return _.extend({}, this.station, { hasAppStatusComment: newStatusComment });
+	}
+
 }
 

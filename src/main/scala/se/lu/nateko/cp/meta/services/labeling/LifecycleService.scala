@@ -12,6 +12,7 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 trait LifecycleService { self: StationLabelingService =>
 
@@ -37,6 +38,16 @@ trait LifecycleService { self: StationLabelingService =>
 			sendMailOnStatusUpdate(fromStatus, toStatus, stationUri, user)
 		}
 
+	}
+
+	def updateStatusComment(station: URI, newStatusComment: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = Try{
+		val stationUri = factory.createIRI(station)
+
+		if(!userHasRole(user, Role.TC, stationUri)) throw new UnauthorizedStationUpdateException(s"User does not have TC role")
+
+		val currentCommentStats = server.getStatements(Some(stationUri), Some(vocab.hasAppStatusComment), None).toIndexedSeq
+		val newCommentStats = Seq(factory.createStatement(stationUri, vocab.hasAppStatusComment, factory.createLiteral(newStatusComment)))
+		server.applyDiff(currentCommentStats, newCommentStats)
 	}
 
 	private def getTcUsers(station: IRI): Seq[String] = lookupStationClass(station)

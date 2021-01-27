@@ -8,6 +8,7 @@ var actions = Reflux.createActions([
 	'fileUpload',
 	'fileDelete',
 	'statusUpdate',
+	'statusCommentUpdate',
 	'savePi',
 	'stationFilters'
 ]);
@@ -18,7 +19,7 @@ var Backend = require('./backend.js')(ajax, sparql);
 
 var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, actions.savePi);
 
-var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation, actions.statusUpdate);
+var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation, actions.statusUpdate, actions.statusCommentUpdate);
 
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
 
@@ -34,7 +35,8 @@ var StationMixins = require('./views/StationMixinsFactory.jsx')(
 	actions.fileUpload,
 	actions.fileDelete,
 	actions.saveStation,
-	actions.statusUpdate
+	actions.statusUpdate,
+	actions.statusCommentUpdate
 );
 
 var themeToStation = {

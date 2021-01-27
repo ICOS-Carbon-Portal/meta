@@ -23,6 +23,7 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasPhone = getRelativeRaw("hasPhone")
 	val hasAssociatedFile = getRelativeRaw("hasAssociatedFile")
 	val hasApplicationStatus = getRelativeRaw("hasApplicationStatus")
+	val hasAppStatusComment = getRelativeRaw("hasAppStatusComment")
 
 	def getProperty(fieldName: String) = getRelativeRaw(fieldName)
 

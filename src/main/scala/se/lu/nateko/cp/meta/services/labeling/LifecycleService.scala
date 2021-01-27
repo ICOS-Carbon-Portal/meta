@@ -12,6 +12,7 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 trait LifecycleService { self: StationLabelingService =>
 
@@ -37,6 +38,16 @@ trait LifecycleService { self: StationLabelingService =>
 			sendMailOnStatusUpdate(fromStatus, toStatus, stationUri, user)
 		}
 
+	}
+
+	def updateStatusComment(station: URI, newStatusComment: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = Try{
+		val stationUri = factory.createIRI(station)
+
+		if(!userHasRole(user, Role.TC, stationUri)) throw new UnauthorizedStationUpdateException(s"User does not have TC role")
+
+		val currentCommentStats = server.getStatements(Some(stationUri), Some(vocab.hasAppStatusComment), None).toIndexedSeq
+		val newCommentStats = Seq(factory.createStatement(stationUri, vocab.hasAppStatusComment, factory.createLiteral(newStatusComment)))
+		server.applyDiff(currentCommentStats, newCommentStats)
 	}
 
 	private def getTcUsers(station: IRI): Seq[String] = lookupStationClass(station)
@@ -91,7 +102,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
-			case (AppStatus.approved, AppStatus.step2started) =>
+			case (AppStatus.approved, AppStatus.step2ontrack) =>
 				val calLabRecipients = if(stationIsAtmospheric(station)) config.calLabEmails else Nil
 				val recipients = (getTcUsers(station) :+ config.dgUserId) ++ calLabRecipients
 				val subject = s"Labeling Step2 activated for $stationId"
@@ -99,8 +110,8 @@ trait LifecycleService { self: StationLabelingService =>
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
-			case (_, AppStatus.step2approved) | (_, AppStatus.step2rejected) if(from != AppStatus.step3approved) =>
-				val isRejected = to == AppStatus.step2rejected
+			case (_, AppStatus.step2approved) | (_, AppStatus.step2stalled) if(from != AppStatus.step3approved) =>
+				val isRejected = to == AppStatus.step2stalled
 
 				val recipients = getStationPiOrDeputyEmails(station)
 				val cc = getTcUsers(station) :+ config.riComEmail
@@ -134,10 +145,12 @@ object LifecycleService{
 		val approved = Value("APPROVED")
 		val rejected = Value("REJECTED")
 		val step2started = Value("STEP2STARTED")
-		val step2approved = Value("STEP2APPROVED")
+		val step2ontrack = Value("STEP2ONTRACK")
+		val step2delayed = Value("STEP2DELAYED")
 		val step2rejected = Value("STEP2REJECTED")
+		val step2stalled = Value("STEP2STALLED")
+		val step2approved = Value("STEP2APPROVED")
 		val step3approved = Value("STEP3APPROVED")
-
 	}
 
 	object Role extends Enumeration{
@@ -166,7 +179,7 @@ object LifecycleService{
 		approved -> Map(
 			rejected -> TC,
 			notSubmitted -> TC,
-			step2started -> PI
+			step2ontrack -> PI
 		),
 		rejected -> Map(
 			approved -> TC,
@@ -175,15 +188,32 @@ object LifecycleService{
 		step2started -> Map(
 			approved -> TC,
 			step2approved -> TC,
-			step2rejected -> TC
+			step2stalled -> TC,
+			step2delayed -> TC
+		),
+		step2ontrack -> Map(
+			approved -> TC,
+			step2approved -> TC,
+			step2stalled -> TC,
+			step2delayed -> TC
 		),
 		step2approved -> Map(
-			step2started -> TC,
-			step2rejected -> TC,
+			step2ontrack -> TC,
 			step3approved -> DG
 		),
+		step2stalled -> Map(
+			step2ontrack -> TC,
+			step2delayed -> TC,
+			step2approved -> TC
+		),
 		step2rejected -> Map(
-			step2started -> TC,
+			step2ontrack -> TC,
+			step2delayed -> TC,
+			step2approved -> TC
+		),
+		step2delayed -> Map(
+			step2ontrack -> TC,
+			step2stalled -> TC,
 			step2approved -> TC
 		),
 		step3approved -> Map(step2approved -> DG)

@@ -5,9 +5,10 @@ export const status = {
 	acknowledged: 'ACKNOWLEDGED', //step 1
 	approved: 'APPROVED',         //step 1
 	rejected: 'REJECTED',         //step 1
-	step2started: 'STEP2STARTED',
+	step2ontrack: 'STEP2ONTRACK',
+	step2delayed: 'STEP2DELAYED',
+	step2stalled: 'STEP2STALLED',
 	step2approved: 'STEP2APPROVED',
-	step2rejected: 'STEP2REJECTED',
 	step3approved: 'STEP3APPROVED'
 };
 
@@ -22,17 +23,21 @@ const allowedStateTransitions = [ //from, to, role
 	[s.notSubmitted,  s.rejected,      tc],
 	[s.approved,      s.rejected,      tc],
 	[s.approved,      s.notSubmitted,  tc],
-	[s.approved,      s.step2started,  pi],
+	[s.approved,      s.step2ontrack,  pi],
 	[s.rejected,      s.approved,      tc],
 	[s.rejected,      s.notSubmitted,  tc],
-	[s.step2started,  s.approved,      tc],
-	[s.step2started,  s.step2approved, tc],
-	[s.step2started,  s.step2rejected, tc],
-	[s.step2approved, s.step2started,  tc],
-	[s.step2approved, s.step2rejected, tc],
+	[s.step2ontrack,  s.approved,      tc],
+	[s.step2ontrack,  s.step2delayed,  tc],
+	[s.step2ontrack,  s.step2stalled,  tc],
+	[s.step2ontrack,  s.step2approved, tc],
+	[s.step2delayed,  s.step2ontrack,  tc],
+	[s.step2delayed,  s.step2stalled,  tc],
+	[s.step2delayed,  s.step2approved, tc],
+	[s.step2stalled,  s.step2ontrack,  tc],
+	[s.step2stalled,  s.step2delayed,  tc],
+	[s.step2stalled,  s.step2approved, tc],
+	[s.step2approved, s.step2ontrack,  tc],
 	[s.step2approved, s.step3approved, dg],
-	[s.step2rejected, s.step2started,  tc],
-	[s.step2rejected, s.step2approved, tc],
 	[s.step3approved, s.step2approved, dg]
 ];
 
@@ -75,6 +80,10 @@ export default class ApplicationStatus{
 
 	stationWithStatus(newStatus){
 		return _.extend({}, this.station, {hasApplicationStatus: newStatus});
+	}
+
+	stationWithStatusComment(newStatusComment) {
+		return _.extend({}, this.station, { hasAppStatusComment: newStatusComment });
 	}
 
 }

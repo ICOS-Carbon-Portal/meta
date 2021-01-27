@@ -22,6 +22,7 @@ module.exports = function(WhoAmIStore) {
 					: <div>
 							<h1>Station labelling status</h1>
 							<div>The labelling status for ICOS stations. You can read more about our data collection process <a href="https://www.icos-cp.eu/data-services/data-collection/labelling-process">here</a>.</div>
+							<div><a href="https://static.icos-cp.eu/share/stations/docs/labelling/labelingStateDiagram.svg">State diagram for application process</a></div>
 						</div>
 				}
 			</div>;

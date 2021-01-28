@@ -1,0 +1,61 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix dc: <http://purl.org/dc/elements/1.1/>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dct: <http://purl.org/dc/terms/>
+construct{
+	?cat a dcat:Catalog ;
+		dct:description "ICOS Carbon Portal example dataset metadata export to DCAT vocabulary"^^xsd:string ;
+		dct:title "ICOS L2 data objects"^^xsd:string ;
+		dcat:distribution ?catDistr ;
+		dcat:dataset ?ds .
+
+	?catDistr a dcat:Distribution ;
+		dcat:accessURL <https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%7D> ;
+		dcat:mediaType <http://www.iana.org/assignments/media-types/text/html> .
+
+	?ds a dcat:Dataset .
+	?ds dcat:landingPage ?dobj .
+	?ds dct:title ?fileName .
+	?ds dct:issued ?submEnd .
+	?ds dct:modified ?modified .
+	?ds dc:type <http://purl.org/dc/dcmitype/Dataset> .
+	?ds dct:description ?description .
+	?ds dct:temporal [
+		a dct:PeriodOfTime ;
+		dcat:startDate ?timeStart ;
+		dcat:endDate ?timeEnd
+	].
+	?ds dcat:distribution [
+		a dcat:Distribution ;
+		dcat:accessURL ?dobj ;
+		dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+		dcat:byteSize ?size ;
+		dcat:downloadURL ?dlUri
+	].
+} where {
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStart .
+	?dobj cpmeta:wasAcquiredBy [
+		prov:startedAtTime ?timeStart ;
+		prov:endedAtTime ?timeEnd ;
+		prov:wasAssociatedWith/cpmeta:hasName ?station
+	] .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
+	optional{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
+	bind ( if(coalesce(?prodTime < ?submStart, false), ?prodTime, ?submStart) as ?modified)
+	bind (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objects> as ?cat )
+	bind (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objectsDistr> as ?catDistr )
+	bind (iri(replace(str(?dobj), "https://meta", "https://data")) as ?dlUri)
+	?spec rdfs:label ?specLabel .
+	optional{?spec rdfs:comment ?specComment }
+	bind (concat(?specLabel, ", station ", ?station, ". ", coalesce(?specComment, "")) as ?description)
+	bind (iri(replace(str(?dobj), "/objects/", "/dcat/objects/")) as ?ds)
+}
+#offset 0 limit 500

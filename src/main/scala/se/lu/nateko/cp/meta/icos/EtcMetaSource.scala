@@ -130,7 +130,6 @@ object EtcMetaSource{
 		val siteName = "SITE_NAME"
 		val siteId = "SITE_ID"
 		val stationClass = "CLASS_ICOS"
-		val descrShort = "SITE_DESC_SHORT"
 		val descr = "SITE_DESC"
 		val pictureUrl = "URL_PICTURE"
 		val labelingDate = "DATE_LABEL"
@@ -238,7 +237,6 @@ object EtcMetaSource{
 		meanTemp <- lookUp(Vars.annualTemp).map(_.toFloat).optional;
 		meanPrecip <- lookUp(Vars.annualPrecip).map(_.toFloat).optional;
 		meanRadiation <- lookUp(Vars.annualRad).map(_.toFloat).optional;
-		descrShort <- lookUp(Vars.descrShort).optional;
 		descr <- lookUp(Vars.descr).optional;
 		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
@@ -249,7 +247,7 @@ object EtcMetaSource{
 			tcId = makeId(tcIdStr),
 			core = Station(
 				org = Organization(
-					self = UriResource(dummyUri, Some(id), Seq(descrShort, descr).flatten),
+					self = UriResource(dummyUri, Some(id), descr.toSeq),
 					name = name,
 					email = None,
 					website = None

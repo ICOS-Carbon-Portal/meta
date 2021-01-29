@@ -12,6 +12,7 @@ import {concaveHulls} from './queries/concaveHulls';
 import {perFormatStats} from './queries/perFormatStats';
 import { bySamplingHeights } from './queries/bySamplingHeights';
 import { stationRoles } from './queries/stationRoles';
+import { dcat } from './queries/dcat.js'
 
 
 const queries = [
@@ -27,6 +28,7 @@ const queries = [
 	{name:"Collections", query: existingCollections},
 	{name:"Documents", query: existingDocuments},
 	{name:"Data object counts per format", query: perFormatStats},
+	{name: "DCAT metadata demo", query: dcat},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, class 1 and 2 PIs", query: etcClass1And2Pis},
 	{name:"ETC, labelling app form values", query: etcLabelingValues}

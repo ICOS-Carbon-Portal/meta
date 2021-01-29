@@ -23,6 +23,7 @@ construct{
 	?ds dct:modified ?modified .
 	?ds dc:type <http://purl.org/dc/dcmitype/Dataset> .
 	?ds dct:description ?description .
+	?ds dct:creator ?stationUri .
 	?ds dct:temporal [
 		a dct:PeriodOfTime ;
 		dcat:startDate ?timeStart ;
@@ -45,9 +46,10 @@ construct{
 	?dobj cpmeta:wasAcquiredBy [
 		prov:startedAtTime ?timeStart ;
 		prov:endedAtTime ?timeEnd ;
-		prov:wasAssociatedWith/cpmeta:hasName ?station
+		prov:wasAssociatedWith ?stationUri
 	] .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
+	?stationUri cpmeta:hasName ?station .
 	optional{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
 	bind ( if(coalesce(?prodTime < ?submStart, false), ?prodTime, ?submStart) as ?modified)
 	bind (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objects> as ?cat )

@@ -1,4 +1,11 @@
-@import se.lu.nateko.cp.meta.core.data.{UriResource}
+@import se.lu.nateko.cp.meta.core.data.UriResource
 
 @(res: UriResource)
-<a href=@{res.uri.getRawPath}>@{res.label.getOrElse(res.uri.toString)}</a>
+<a href=@resUri>@{res.label.getOrElse(res.uri.toString)}</a>
+
+@resUri = @{
+	val uriStr = res.uri.toString
+	if(uriStr.startsWith("https://meta.") || uriStr.startsWith("http://meta."))
+		res.uri.getRawPath
+	else uriStr
+}

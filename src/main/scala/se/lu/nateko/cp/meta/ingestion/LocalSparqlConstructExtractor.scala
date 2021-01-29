@@ -14,7 +14,8 @@ class LocalSparqlConstructExtractor(queryRes: String)(implicit ctxt: ExecutionCo
 
 	override def getStatements(repo: Repository): Ingestion.Statements = Future{
 
-		val queryStr = Files.readString(Paths.get(getClass.getResource(queryRes).toURI))
+		val src = Source.fromInputStream(getClass.getResourceAsStream(queryRes), "UTF-8")
+		val queryStr = try{src.mkString} finally{src.close()}
 
 		val query = SparqlQuery(queryStr)
 		new Rdf4jSparqlRunner(repo).evaluateGraphQuery(query)

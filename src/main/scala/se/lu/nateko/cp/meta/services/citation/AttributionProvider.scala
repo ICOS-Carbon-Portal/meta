@@ -12,74 +12,73 @@ import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.DataTheme
+import se.lu.nateko.cp.meta.core.data.Orcid
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.Orcid
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.icos.Role
-import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.icos.PI
 import se.lu.nateko.cp.meta.icos.Administrator
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
+import scala.util.Try
 
-class AttributionProvider(repo: Repository, vocab: CpVocab){
+final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
 	import AttributionProvider._
 
+	override protected val server = new Rdf4jInstanceServer(repo)
 	private val sparql = new Rdf4jSparqlRunner(repo)
-	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
 
-	def getAuthors(dobj: DataObject): Seq[Person] = (
-		for(
-			l2 <- dobj.specificInfo.toOption
-		) yield{
-			val query = membsQuery(l2.acquisition.station.org.self.uri)
+	def getAuthors(dobj: DataObject): Seq[Person] = dobj.specificInfo.fold[Seq[Person]](
+		_ => Nil,
+		l2 => getMemberships(l2.acquisition.station)
+			.filter(getTcSpecificFilter(dobj))
+			.filter(_.isRelevantFor(dobj))
+			.toIndexedSeq
+			.sorted
+			.map(_.person)
+			.distinct
+	)
 
-			sparql.evaluateTupleQuery(SparqlQuery(query))
-				.flatMap(parseMembership)
-				.filter(getTcSpecificFilter(dobj))
-				.filter(_.isRelevantFor(dobj))
-				.toSeq
-				.sorted
-				.map(_.person)
-				.distinct
-		}
-	).toSeq.flatten
+	def getMemberships(station: Station): Iterator[Membership] = {
+		val query = membsQuery(station.org.self.uri)
+		sparql.evaluateTupleQuery(SparqlQuery(query))
+			.flatMap(parseMembership)
+	}
 
-	private def membsQuery(station: URI) = s"""select distinct ?person ?fname ?lname ?orcid ?role ?weight ?extra ?start ?end where{
+	private def membsQuery(station: URI) = s"""select distinct ?person ?role ?weight ?extra ?start ?end where{
 		|	?memb <${metaVocab.atOrganization}> <$station> ;
 		|		<${metaVocab.hasRole}> ?role .
-		|	?person <${metaVocab.hasMembership}> ?memb ;
-		|		<${metaVocab.hasFirstName}> ?fname ;
-		|		<${metaVocab.hasLastName}> ?lname .
-		|	OPTIONAL{?person <${metaVocab.hasOrcidId}> ?orcid }
+		|	?person <${metaVocab.hasMembership}> ?memb .
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
 		|	OPTIONAL{?memb <${metaVocab.hasExtraRoleInfo}> ?extra }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
 		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
 	|}""".stripMargin
 
-	private def parseMembership(bs: BindingSet): Option[Membership] = parseRole(bs).map{role =>
-		new Membership(
-			parsePerson(bs),
-			role,
-			getOptInstant(bs, "start"),
-			getOptInstant(bs, "end"),
-			getOptInt(bs, "weight"),
-			getOptLiteral(bs, "extra", XMLSchema.STRING).map(_.stringValue)
-		)
-	}
-
-	private def parsePerson(bs: BindingSet) = Person(
-		UriResource(bs.getValue("person").asInstanceOf[IRI].toJava, None, Nil),
-		bs.getValue("fname").stringValue,
-		bs.getValue("lname").stringValue,
-		Option(bs.getValue("orcid")).flatMap(v => Orcid.unapply(v.stringValue))
+	private def parseMembership(bs: BindingSet): Option[Membership] = for(
+		role <- parseRole(bs);
+		person <- parsePerson(bs)
+	) yield Membership(
+		person,
+		role,
+		getOptInstant(bs, "start"),
+		getOptInstant(bs, "end"),
+		getOptInt(bs, "weight"),
+		getOptLiteral(bs, "extra", XMLSchema.STRING).map(_.stringValue)
 	)
 
-	private def parseRole(bs: BindingSet): Option[Role] = Option(bs.getValue("role")).collect{
-		case CpVocab.IcosRole(role) => role
+	private def parsePerson(bs: BindingSet) = Option(bs.getValue("person")).collect{
+		case iri: IRI => Try{getPerson(iri)}.toOption
+	}.flatten
+
+	private def parseRole(bs: BindingSet): Option[UriResource] = Option(bs.getValue("role")).collect{
+		case iri: IRI => getLabeledResource(iri)
 	}
 
 	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
@@ -101,7 +100,8 @@ class AttributionProvider(repo: Repository, vocab: CpVocab){
 }
 
 object AttributionProvider{
-	class Membership(val person: Person, val role: Role, start: Option[Instant], end: Option[Instant], val weight: Option[Int],val extra: Option[String]){
+
+	case class Membership(person: Person, role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime
@@ -116,7 +116,7 @@ object AttributionProvider{
 	}
 
 	implicit val personOrdering: ju.Comparator[Person] = Ordering
-		.by[Person, String](_.lastName)
+		.by[Person, String](_.lastName.toUpperCase)
 		.thenComparing(Ordering.by[Person, String](_.firstName))
 
 	implicit val membershipOrdering: ju.Comparator[Membership] = Ordering

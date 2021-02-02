@@ -112,7 +112,10 @@ class Rdf4jUriSerializer(
 	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
 		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
 
-	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[Station] = servers.getStation(iri)
+	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[StationExtra] = servers.getStation(iri).map{st =>
+		val membs = citer.attrProvider.getMemberships(st).toIndexedSeq
+		new StationExtra(st, membs)
+	}
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
 		implicit val envri = inferEnvri(uri)
@@ -141,9 +144,9 @@ class Rdf4jUriSerializer(
 			delegatedRepr(() => fetchStaticColl(hash))
 
 		case Slash(Segment("resources", Slash(Segment("stations", stId)))) => oneOf(
-			customHtml[Station](
+			customHtml[StationExtra](
 				() => fetchStation(makeIri(uri)),
-				views.html.StationLandingPage(_),
+				st => views.html.StationLandingPage(st),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId")
 			),
 			customJson(() => {

@@ -1,3 +1,4 @@
+@import se.lu.nateko.cp.meta.api.StationExtra
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.utils.urlEncode
@@ -7,7 +8,7 @@
 @import akka.http.scaladsl.model.Uri
 @import landpagesnips._
 
-@(station: Station)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(stExt: StationExtra)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
@@ -70,6 +71,53 @@
 					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
 			}
+			@if(!stExt.staff.isEmpty){
+				<h2>Staff and roles</h2>
+				@PanelWide("Current staff"){
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Role (ICOS vocabulary)</th>
+								<th>Start date</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for(memb <- stExt.currentStaff){
+								<tr>
+									<td>@agentLink(memb.person)</td>
+									<td>@resourceLink(memb.role)</td>
+									<td>@(memb.start.fold("")(_.toString.take(10)))</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+				@if(!stExt.formerStaff.isEmpty){
+					@PanelWide("Former staff"){
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Role (ICOS vocabulary)</th>
+									<th>Start date</th>
+									<th>End date</th>
+								</tr>
+							</thead>
+							<tbody>
+								@for(memb <- stExt.formerStaff){
+									<tr>
+										<td>@agentLink(memb.person)</td>
+										<td>@resourceLink(memb.role)</td>
+										<td>@(memb.start.fold("")(_.toString.take(10)))</td>
+										<td>@(memb.end.fold("")(_.toString.take(10)))</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					}
+				}
+			}
 			@for(coverage <- station.coverage) {
 				<h2>Location</h2>
 				@coverage match {
@@ -116,6 +164,8 @@
 		</div>
 	</div>
 }
+
+@station = @{stExt.station}
 
 @portalLink = @{
 	val stationUri = stationUriShortener(station.org.self.uri)

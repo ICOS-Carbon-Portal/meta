@@ -26,7 +26,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	protected val server = new Rdf4jInstanceServer(repo)
 	val vocab = new CpVocab(server.factory)
 	private val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
-	private val attrProvider = new AttributionProvider(repo, vocab)
+	val attrProvider = new AttributionProvider(repo, vocab)
 
 	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll)
 

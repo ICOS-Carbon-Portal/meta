@@ -7,14 +7,14 @@ function getFileExpectations(fileType, actualCount){
 		: [];
 }
 
-module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDeleteAction){
+module.exports = function (Backend, ToasterStore, ChosenStationStore, fileUploadAction, fileDeleteAction){
 	return Reflux.createStore({
 
 		getInitialState: function(){
 			return this.state;
 		},
 
-		init: function(){
+		init: function () {
 			this.state = {
 				chosen: {
 					files: [],
@@ -23,13 +23,13 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 				}
 			};
 
-			this.listenTo(ChosenStationStore, this.chosenStationHandler);  
-			this.listenTo(fileUploadAction, this.fileUploadHandler);  
-			this.listenTo(fileDeleteAction, this.fileDeleteHandler);  
+			this.listenTo(ChosenStationStore, this.chosenStationHandler);
+			this.listenTo(fileUploadAction, this.fileUploadHandler);
+			this.listenTo(fileDeleteAction, this.fileDeleteHandler);
 		},
 
 		chosenStationHandler: function(state){
-			this.state = {chosen: this.addFileTypes(state.chosen)};
+			this.state = _.extend({}, this.state, { chosen: this.addFileTypes(state.chosen) });
 			this.trigger(this.state);
 		},
 
@@ -49,7 +49,9 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 			}
 
 			function uploadFiles(files){
-				if(_.isEmpty(files)) return;
+				if (_.isEmpty(files)) return;
+				
+				ToasterStore.showToasterHandler("Uploading file...", "info");
 
 				Backend.uploadFile(makeFormData(_.first(files)))
 					.then(() =>
@@ -61,8 +63,11 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 						if(theStationIsStillChosen()) self.updateFiles(latestFileList);
 					})
 					.then(
-						() => uploadFiles(_.rest(files)),
-						err => console.log(err)
+						() => {
+							uploadFiles(_.rest(files));
+							ToasterStore.showToasterHandler("Upload was successful", "success");
+						},
+						err => ToasterStore.showToasterHandler(err.message)
 					);
 			}
 
@@ -83,14 +88,14 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 
 					self.updateFiles(newFiles);
 				},
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 
-		updateFiles: function(newFiles){
-			var newChosen = _.extend({}, this.state.chosen, {files: newFiles});
+		updateFiles: function (newFiles) {
+			var newChosen = _.extend({}, this.state.chosen, { files: newFiles });
 
-			this.state = {chosen: this.addFileTypes(newChosen)};
+			this.state = _.extend({}, this.state, { chosen: this.addFileTypes(newChosen) });
 
 			this.trigger(this.state);
 		},
@@ -100,9 +105,6 @@ module.exports = function(Backend, ChosenStationStore, fileUploadAction, fileDel
 			if(!station) return station;
 
 			var allFileTypes = themeToFiles[station.theme];
-
-			var typeNames = _.pluck(allFileTypes, 'type');
-			var byType = _.object(typeNames, allFileTypes);
 
 			var typeCounts = _.chain(station.files || [])
 				.groupBy('fileType')

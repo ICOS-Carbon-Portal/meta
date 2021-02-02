@@ -10,16 +10,21 @@ var actions = Reflux.createActions([
 	'statusUpdate',
 	'statusCommentUpdate',
 	'savePi',
-	'stationFilters'
+	'stationFilters',
+	'showToaster',
+	'removeToaster'
 ]);
 
 var ajax = require('../common/ajax.js');
 var sparql = require('../common/sparql.js')(ajax, '/sparql');
 var Backend = require('./backend.js')(ajax, sparql);
 
-var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, actions.savePi);
+var ToasterStore = require('./stores/ToasterStoreFactory.js')(actions.showToaster, actions.removeToaster);
+var Toaster = require('./views/Toaster.jsx')();
 
-var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, actions.chooseStation, actions.saveStation, actions.statusUpdate, actions.statusCommentUpdate);
+var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, ToasterStore, actions.savePi);
+
+var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, ToasterStore, actions.chooseStation, actions.saveStation, actions.statusUpdate, actions.statusCommentUpdate);
 
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
 
@@ -28,7 +33,7 @@ var StationFilteringStore = require('./stores/StationFilteringStoreFactory.js')(
 
 var StationAuthStore = require('./stores/StationAuthStoreFactory.js')(WhoAmIStore, StationFilteringStore);
 
-var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(Backend, ChosenStationStore, actions.fileUpload, actions.fileDelete);
+var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(Backend, ToasterStore, ChosenStationStore, actions.fileUpload, actions.fileDelete);
 
 var StationMixins = require('./views/StationMixinsFactory.jsx')(
 	FileAwareStationStore,
@@ -51,7 +56,7 @@ var StationsList = StationsListFactory(StationAuthStore, themeToStation, actions
 var NavBar = require('./views/NavBarFactory.jsx')(WhoAmIStore);
 var PiInfo = require('./views/PiInfoFactory.jsx')(WhoAmIStore, actions.savePi);
 
-var AppLayout = require('./views/AppLayoutFactory.jsx')(NavBar, StationsList, PiInfo, StationFilter);
+var AppLayout = require('./views/AppLayoutFactory.jsx')(NavBar, StationsList, PiInfo, StationFilter, Toaster, ToasterStore);
 
 React.render(
 	React.createElement(AppLayout, null),

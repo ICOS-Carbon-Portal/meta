@@ -1,9 +1,14 @@
 function getRoute(){
-	return {route: window.location.hash.substr(1)};
+	return {
+		route: window.location.hash.substr(1),
+		toasterState: undefined
+	};
 }
 
-module.exports = function(NavBar, StationsList, PiInfo, StationFilter){
+module.exports = function (NavBar, StationsList, PiInfo, StationFilter, Toaster, ToasterStore){
 	return React.createClass({
+
+		mixins: [Reflux.connect(ToasterStore)],
 
 		getInitialState: getRoute,
 
@@ -14,7 +19,7 @@ module.exports = function(NavBar, StationsList, PiInfo, StationFilter){
 			})
 		},
 
-		render: function() {
+		render: function () {
 			return this.state.route === "piinfo"
 				? <div>
 					<NavBar piMode={true} />
@@ -22,6 +27,7 @@ module.exports = function(NavBar, StationsList, PiInfo, StationFilter){
 				</div>
 				: <div>
 					<NavBar piMode={false} />
+					<Toaster toasters={ToasterStore.state} removeToasterHandler={ToasterStore.removeToasterHandler} />
 					<StationFilter />
 					<StationsList />
 				</div>;

@@ -17,7 +17,7 @@ export default function(Backend, chosenStationStore){
 
 			Backend.getStationPis().then(
 				_.bind(this.publishStations, this),
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 

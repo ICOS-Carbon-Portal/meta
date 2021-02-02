@@ -1,4 +1,4 @@
-module.exports = function (Backend, chooseStationAction, saveStationAction, updateStatusAction, updateStatusCommentAction) {
+module.exports = function (Backend, ToasterStore, chooseStationAction, saveStationAction, updateStatusAction, updateStatusCommentAction) {
 	return Reflux.createStore({
 
 		init: function () {
@@ -28,7 +28,7 @@ module.exports = function (Backend, chooseStationAction, saveStationAction, upda
 					);
 					self.trigger({ chosen: newChosenStation });
 				},
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 
@@ -47,7 +47,7 @@ module.exports = function (Backend, chooseStationAction, saveStationAction, upda
 
 			Backend.saveStationInfo(stationInfo).then(
 				() => self.refreshIfStillRelevant(station),
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 
@@ -57,14 +57,14 @@ module.exports = function (Backend, chooseStationAction, saveStationAction, upda
 				() => {
 					if (self.isStillRelevant(station)) self.trigger({ chosen: station });
 				},
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 
 		updateStatusCommentHandler: function (station) {
 			Backend.updateStatusComment(station.stationUri, station.hasAppStatusComment).then(
 				_ => _,
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		}
 

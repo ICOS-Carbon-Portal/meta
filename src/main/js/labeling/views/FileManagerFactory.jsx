@@ -16,11 +16,18 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 			const fileName = encodeURIComponent(this.props.stationLabel) + ".zip";
 			const url = `./filepack/${fileName}?stationId=` + encodeURIComponent(station.stationUri);
 			var uploaderNeeded = !_.isEmpty(station.fileTypes) && status.mayBeSubmitted;
-			if(_.isEmpty(station.files) && !uploaderNeeded) return null;
+			if (_.isEmpty(station.files) && !uploaderNeeded) return null;
 
 			return <ContentPanel panelTitle="Uploaded files">
 				<table className="table">
-					<thead><tr><th>#</th><th>File type</th><th>File name</th><th>Action</th></tr></thead>
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>File type</th>
+							<th>File name</th>
+							<th>Action</th>
+						</tr>
+					</thead>
 					<tbody>
 						{station.files.map((file, i) =>
 							<tr key={"file_" + i}>
@@ -34,7 +41,7 @@ module.exports = function(FileAwareStationStore, fileUploadAction, fileDeleteAct
 								</td>
 							</tr>
 						)}
-						{uploaderNeeded ? <FileUploader fileSaver={self.fileSaveHandler} fileTypes={station.fileTypes}/> : null}
+						{uploaderNeeded ? <FileUploader fileSaver={self.fileSaveHandler} fileTypes={station.fileTypes} /> : null}
 					</tbody>
 				</table>
 				{_.isEmpty(station.files) ? null : <a href={url} download><button type="button" className="btn btn-primary">Fetch all the files as a zip archive</button></a>}

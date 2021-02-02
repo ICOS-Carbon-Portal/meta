@@ -115,7 +115,7 @@ export default function(updateStatusAction, updateStatusCommentAction) {
 				</h3>
 
 				<LifecycleControls status={this.props.status} />
-				<AppStatusCommentCtrl status={this.props.status} updateStatusCommentAction={this.props.updateStatusCommentAction} />
+				<AppStatusCommentCtrl status={this.props.status} />
 
 			</ContentPanel>;
 		}

@@ -16,7 +16,7 @@ function tcsToThemes(userInfo){
 	});
 }
 
-export default function(Backend, savePiAction){
+export default function (Backend, ToasterStore, savePiAction){
 
 	return Reflux.createStore({
 
@@ -38,14 +38,14 @@ export default function(Backend, savePiAction){
 				.catch(errRep => defaultUser())
 				.then(
 					_.compose(_.bind(this.publish, this), tcsToThemes),
-					err => console.log(err)
+					err => ToasterStore.showToasterHandler(err.message)
 				);
 		},
 
 		savePiHandler: function(pi){
 			Backend.saveUserInfo(pi).then(
 				_.bind(this.publish, this, pi),
-				err => console.log(err)
+				err => ToasterStore.showToasterHandler(err.message)
 			);
 		}
 

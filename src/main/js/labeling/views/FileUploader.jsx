@@ -2,10 +2,10 @@ function fileListToArray(fileList){
 	return _.range(fileList.length).map(i => fileList[i]);
 }
 
-function stateFromProps(props){
+function stateFromProps(props, filesInState = null){
 	return {
 		fileType: props.fileTypes[0],
-		files: null
+		files: filesInState
 	};
 }
 
@@ -16,7 +16,7 @@ module.exports = React.createClass({
 	},
 
 	componentWillReceiveProps: function(newProps){
-		this.setState(stateFromProps(newProps));
+		this.setState(stateFromProps(newProps, this.state.files));
 	},
 
 	render: function() {
@@ -72,6 +72,7 @@ module.exports = React.createClass({
 	uploadHandler: function(){
 		this.props.fileSaver(this.state);
 		React.findDOMNode(this.refs.uploadedFile).value = null;
+		this.setState(stateFromProps(this.props));
 	}
 });
 

@@ -229,6 +229,17 @@
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">application status comment</rdfs:label>
     </owl:DatatypeProperty>
+
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">application status last change date</rdfs:label>
+    </owl:DatatypeProperty>
     
 
 

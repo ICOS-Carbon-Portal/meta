@@ -23,6 +23,7 @@ const stationPisQuery = `
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasLongName ?hasLongName}}
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasApplicationStatus ?hasApplicationStatus}}
 		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasAppStatusComment ?hasAppStatusComment}}
+		OPTIONAL{GRAPH <${lblUri}> {?s cpst:hasAppStatusDate ?hasAppStatusDate}}
 	}`;
 
 function postProcessStationsList(stations){
@@ -40,10 +41,15 @@ function postProcessStationsList(stations){
 				{
 					emails: _.pluck(piSpecificCopies, 'email'),
 					stationUri: station.s,
-					theme: stationOwlClassToTheme(station.owlClass)
+					theme: stationOwlClassToTheme(station.owlClass),
+					hasAppStatusDate: parseToDate(station.hasAppStatusDate)
 				}
 			);
 		});
+}
+
+function parseToDate(dateStr) {
+	return dateStr ? new Date(dateStr) : undefined;
 }
 
 function adjustAppStatus(station) {
@@ -52,7 +58,7 @@ function adjustAppStatus(station) {
 		station.hasApplicationStatus = "STEP2ONTRACK";
 	else if (station.hasApplicationStatus === "STEP2REJECTED")
 		station.hasApplicationStatus = "STEP2STALLED";
-
+	
 	return station;
 }
 

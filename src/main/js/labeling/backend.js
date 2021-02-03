@@ -29,7 +29,7 @@ const stationPisQuery = `
 function postProcessStationsList(stations){
 	return _.values(_.groupBy(stations, 's'))
 		.map(piSpecificCopies => {
-			var station = adjustAppStatus(piSpecificCopies[0]);
+			var station = piSpecificCopies[0];
 
 			return _.extend(
 				{
@@ -50,16 +50,6 @@ function postProcessStationsList(stations){
 
 function parseToDate(dateStr) {
 	return dateStr ? new Date(dateStr) : undefined;
-}
-
-function adjustAppStatus(station) {
-	// TODO: Remove this when backend no longer contain these values in hasApplicationStatus
-	if (station.hasApplicationStatus === "STEP2STARTED")
-		station.hasApplicationStatus = "STEP2ONTRACK";
-	else if (station.hasApplicationStatus === "STEP2REJECTED")
-		station.hasApplicationStatus = "STEP2STALLED";
-	
-	return station;
 }
 
 function getStationQuery(stationUri){
@@ -127,7 +117,6 @@ export default function(ajax, sparql){
 	}
 
 	return {
-		adjustAppStatus: station => adjustAppStatus(station),
 		getStationPis: () => sparql(stationPisQuery).then(postProcessStationsList),
 
 		getStationInfo: getStationLabelingInfo,

@@ -152,10 +152,8 @@ object LifecycleService{
 		val acknowledged = Value("ACKNOWLEDGED")
 		val approved = Value("APPROVED")
 		val rejected = Value("REJECTED")
-		val step2started = Value("STEP2STARTED")
 		val step2ontrack = Value("STEP2ONTRACK")
 		val step2delayed = Value("STEP2DELAYED")
-		val step2rejected = Value("STEP2REJECTED")
 		val step2stalled = Value("STEP2STALLED")
 		val step2approved = Value("STEP2APPROVED")
 		val step3approved = Value("STEP3APPROVED")
@@ -193,12 +191,6 @@ object LifecycleService{
 			approved -> TC,
 			notSubmitted -> TC
 		),
-		step2started -> Map(
-			approved -> TC,
-			step2approved -> TC,
-			step2stalled -> TC,
-			step2delayed -> TC
-		),
 		step2ontrack -> Map(
 			approved -> TC,
 			step2approved -> TC,
@@ -210,11 +202,6 @@ object LifecycleService{
 			step3approved -> DG
 		),
 		step2stalled -> Map(
-			step2ontrack -> TC,
-			step2delayed -> TC,
-			step2approved -> TC
-		),
-		step2rejected -> Map(
 			step2ontrack -> TC,
 			step2delayed -> TC,
 			step2approved -> TC

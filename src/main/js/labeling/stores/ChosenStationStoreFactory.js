@@ -24,7 +24,7 @@ module.exports = function (Backend, ToasterStore, chooseStationAction, saveStati
 
 					var newChosenStation = _.extend({ chosen: true },
 						_.pick(chosenStation, 'emails', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation', 'hasAppStatusComment'),
-						Backend.adjustAppStatus(stationInfo)
+						stationInfo
 					);
 					self.trigger({ chosen: newChosenStation });
 				},

@@ -24,6 +24,7 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasAssociatedFile = getRelativeRaw("hasAssociatedFile")
 	val hasApplicationStatus = getRelativeRaw("hasApplicationStatus")
 	val hasAppStatusComment = getRelativeRaw("hasAppStatusComment")
+	val hasAppStatusDate = getRelativeRaw("hasAppStatusDate")
 
 	def getProperty(fieldName: String) = getRelativeRaw(fieldName)
 

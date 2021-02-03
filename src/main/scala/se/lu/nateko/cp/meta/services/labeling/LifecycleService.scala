@@ -1,10 +1,14 @@
 package se.lu.nateko.cp.meta.services.labeling
 
 import java.net.URI
+
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Statement
+
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
@@ -12,7 +16,6 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 trait LifecycleService { self: StationLabelingService =>
 
@@ -34,7 +37,7 @@ trait LifecycleService { self: StationLabelingService =>
 				else
 					Failure(new UnauthorizedStationUpdateException(s"User lacks the role of $role"))
 		) yield {
-			writeStatusChange(fromStatus, toStatus, stationUri)
+			writeStatusChange(toStatus, stationUri)
 			sendMailOnStatusUpdate(fromStatus, toStatus, stationUri, user)
 		}
 
@@ -45,7 +48,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 		if(!userHasRole(user, Role.TC, stationUri)) throw new UnauthorizedStationUpdateException(s"User does not have TC role")
 
-		val currentCommentStats = server.getStatements(Some(stationUri), Some(vocab.hasAppStatusComment), None).toIndexedSeq
+		val currentCommentStats = getStatements(stationUri, vocab.hasAppStatusComment)
 		val newCommentStats = Seq(factory.createStatement(stationUri, vocab.hasAppStatusComment, factory.createLiteral(newStatusComment)))
 		server.applyDiff(currentCommentStats, newCommentStats)
 	}
@@ -80,11 +83,16 @@ trait LifecycleService { self: StationLabelingService =>
 	private def stationIsAtmospheric(station: IRI): Boolean =
 		lookupStationClass(station).map(_ == vocab.atmoStationClass).getOrElse(false)
 
-	private def writeStatusChange(from: AppStatus, to: AppStatus, station: IRI): Unit = {
-		def toStatements(status: AppStatus) = Seq(factory
-			.createStatement(station, vocab.hasApplicationStatus, vocab.lit(status.toString))
+	private def getStatements(subject: IRI, predicate: IRI): IndexedSeq[Statement] =
+		server.getStatements(Some(subject), Some(predicate), None).toIndexedSeq
+
+	private def writeStatusChange(to: AppStatus, station: IRI): Unit = {
+		val current = getStatements(station, vocab.hasApplicationStatus) ++ getStatements(station, vocab.hasAppStatusDate)
+		val newStats = Seq(
+			factory.createStatement(station, vocab.hasApplicationStatus, vocab.lit(to.toString)),
+			factory.createStatement(station, vocab.hasAppStatusDate, vocab.lit(java.time.Instant.now()))
 		)
-		server.applyDiff(toStatements(from), toStatements(to))
+		server.applyDiff(current, newStats)
 	}
 
 	private def sendMailOnStatusUpdate(

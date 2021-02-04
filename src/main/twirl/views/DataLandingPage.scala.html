@@ -228,5 +228,5 @@
 	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.self.uri === vocab.icosProject && spec.dataLevel == 1)
 		AtcLandingPage(pageTitle, headerExtra) _
 	else
-		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra) _
+		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra, extraMetaTags = Some(JsonLD(dobj, handleProxies))) _
 }

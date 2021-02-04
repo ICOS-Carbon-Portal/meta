@@ -50,9 +50,8 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[LatLonBox]
 				else if(fields.contains("lat") && fields.contains("lon"))
 					value.convertTo[Position]
-				else if(fields.contains("geometries")) {
+				else if(fields.contains("geometries"))
 					value.convertTo[GeometryCollection]
-				}
 				else
 					value.convertTo[GenericGeoFeature]
 			case _ =>

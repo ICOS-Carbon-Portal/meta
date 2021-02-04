@@ -1,0 +1,252 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.HandleProxiesConfig
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers._
+@import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
+@import scala.util.matching.Regex
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.agentString
+
+@(dobj: DataObject, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
+<script type="application/ld+json">
+{
+	"@@context": "https://schema.org",
+	"@@type": "Dataset",
+	"@@id": "@{staticObjLandingPage(dobj.hash)(conf)}",
+	"name": "@title",
+	"alternateName": "@dobj.fileName",
+	"description": "@description",
+	"url": "@{staticObjLandingPage(dobj.hash)(conf)}",
+	"identifier": [@identifiers],
+	"inLanguage": [
+		{
+			"@@type": "Language",
+			"name": "English"
+		}
+	],
+	"includedInDataCatalog": {
+		"@@type": "DataCatalog",
+		"name": "@conf.dataHost"
+	},
+	"license": "https://creativecommons.org/licenses/by/4.0/",
+	"datePublished": "@dobj.submission.stop",
+	"dateModified": "@dobj.submission.stop",
+	"keywords": [@Html(dobj.keywords.map(_.map("\"" + _ + "\"" ).mkString(", ")))],
+	"creator": @creator,
+	@contributor
+	"publisher": {
+		"@@type": "Organization",
+		"@@id": "@conf.dataHost",
+		"name": "@envri data portal",
+		"url": "@conf.dataHost"
+	},
+	"provider": @agentTemplate(dobj.submission.submitter),
+	@producer
+	"temporalCoverage": "@temporalCoverage",
+	"spatialCoverage": @Html(spatialCoverage.mkString("[", ",", "]")),
+	"variableMeasured" : [
+		@for((variable, i) <- variables.zipWithIndex){
+			{
+				"@@type": "PropertyValue",
+				"name": "@variable.label",
+				"description": "@variable.valueType.self.label.getOrElse("")",
+				"unitText": "@variable.valueType.unit.getOrElse("")"
+			}@{if(i < variables.size - 1){","}}
+		}
+	],
+	@isPartOf
+	"distribution": {
+		"contentUrl": "@dobj.accessUrl"
+	}
+}
+</script>
+
+@title = @{
+	dobj.specificInfo.fold(
+		l3 => l3.title,
+		l2 => {
+			l2.acquisition.site match {
+				case None => s"""${dobj.specification.self.label.getOrElse("")} from ${l2.acquisition.station.org.name}"""
+				case Some(site) => s"""${dobj.specification.self.label.getOrElse("")} from ${site.location.flatMap(_.label).getOrElse("")} (${l2.acquisition.station.org.name})"""
+			}
+		}
+	)
+}
+
+@description = @{
+	dobj.specificInfo.fold(
+		l3 => l3.description,
+		_ => dobj.specification.self.comments.mkString(" ")
+	)
+}
+
+@identifiers = {
+	@for(doi <- dobj.doi) {
+		"@{handleProxies.doi.toString + doi}",
+	}
+	@for(pid <- dobj.pid) {
+		"@{handleProxies.basic.toString + pid}"
+	}
+}
+
+@temporalCoverage = @{
+	dobj.specificInfo.fold(
+		l3 => s"""${l3.temporal.interval.start}/${l3.temporal.interval.stop}""",
+		l2 => l2.acquisition.interval.map(interval => s"""${interval.start}/${interval.stop}""")
+	)
+}
+
+@locationPoints(location: String) = @{
+	val locationRegexp = """type":\s*"([A-Za-z]+)",\s*"coordinates":\s*\[\s*(.+)\s*\]""".r.unanchored
+	val pointRegexp = """[\s\[]*\[*([-\d.]+),\s*([-\d.]+)[\s\]\,]*""".r.unanchored
+	location match {
+		case locationRegexp("Polygon", c) => {
+			val points = for (m <- pointRegexp.findAllMatchIn(c)) yield s"""${m.group(2)} ${m.group(1)}"""
+			s""""@type": "GeoShape", "polygon": "${points.toSeq.mkString(" ")}""""
+		}
+		case locationRegexp("Point", c) => {
+			val point = for (m <- pointRegexp.findFirstMatchIn(c)) yield (m.group(2), m.group(1))
+			point.map{case (lat, lon) => s""""@type": "GeoCoordinates", "latitude": $lat,\n\t\t\t\t"longitude": $lon"""}.getOrElse("")
+		}
+	}
+}
+
+@variables = @{dobj.specificInfo.fold(_.variables, _.columns).getOrElse(Seq())}
+
+@creator = @{
+	println(dobj.references.authors)
+	envri match {
+		case Envri.SITES => stationCreator
+		case _ => dobj.references.authors match {
+			case None | Some(Seq()) => dobj.production.map(agentCreator).getOrElse(stationCreator)
+			case Some(authors) => authorTemplate(authors)
+		}
+	}
+}
+@stationCreator = {
+	@for(station <- dobj.specificInfo.toOption.map(_.acquisition.station)){
+		{
+			"@@type": "Organization",
+			"@@id": "@station.org.self.uri",
+			"sameAs": "@station.org.self.uri",
+			"name": "@station.org.name",
+			"email": "@station.org.email"
+		}
+	}
+}
+
+@authorTemplate(authors: Seq[Person]) = {
+	[
+		@for((author, i) <- authors.zipWithIndex) {
+			@agentTemplate(author)
+			@{if(i < authors.size - 1){","}}
+		}
+	]
+}
+
+@agentCreator(production: DataProduction) = {
+	[
+		@agentTemplate(production.creator)
+	]
+}
+
+@contributor = {
+	@for(production <- dobj.production) {
+		@for((contributor, i) <- production.contributors.zipWithIndex) {
+			@if(i == 0){"contributor": [}
+			@agentTemplate(contributor)
+			@{if(i < production.contributors.size - 1){","}}
+			@{if(i == production.contributors.size - 1){"],"}}
+		}
+	}
+}
+
+@producer = {
+	@for(producer <- dobj.production.flatMap(_.host)) {
+		"producer": @agentTemplate(producer),
+	}
+}
+
+@agentTemplate(agent: Agent) = {
+	@agent match {
+		case Organization(self, name, email, _) => {{
+			"@@type": "Organization",
+			"@@id": "@self.uri",
+			"sameAs": "@self.uri",
+			"name": "@name",
+			"email": "@email"
+		}}
+		case Person(self, firstName, lastName, orcid) => {{
+			"@@type": "Person",
+			"@@id": "@self.uri",
+			"sameAs": "@orcid",
+			"givenName": "@firstName",
+			"familyName": "@lastName",
+			"name": "@firstName @lastName"
+		}}
+	}
+}
+
+@spatialCoverage = @{
+	dobj.specificInfo.fold(
+		l3 => Seq(coverageTemplate(l3.spatial)),
+		l2 => l2.coverage match {
+			case Some(coverage) => Seq(coverageTemplate(coverage))
+			case None => 
+			l2.acquisition.site.flatMap(_.location.map(l => 
+				l2.acquisition.samplingPoint
+					.map(sp => Seq(samplingPointTemplate(sp), locationTemplate(l)))
+					.getOrElse(Seq(locationTemplate(l)))
+				))
+				.getOrElse(Seq(stationTemplate(l2.acquisition.station)))
+		}
+	)
+}
+
+@coverageTemplate(coverage: GeoFeature) = {
+	{
+		"@@type": "Place",
+		"geo": {
+			@Html(locationPoints(coverage.geoJson))
+		}
+	}
+}
+
+@samplingPointTemplate(sp: Position) = {
+	{
+		"@@type": "Place",
+		"geo": {
+			"@@type": "GeoCoordinates",
+			"latitude": @sp.lat,
+			"longitude": @sp.lon
+		}
+	}
+}
+
+@locationTemplate(l: Location) = {
+	{
+		"@@type": "Place",
+		"name": "@l.label",
+		"geo": {
+			@Html(locationPoints(l.geometry.geoJson))
+		}
+	}
+}
+
+@stationTemplate(station: Station) = {
+	{
+		"@@type": "Place",
+		"name": "@station.org.name",
+		@for(coverage <- station.coverage){
+		"geo": {
+			@Html(locationPoints(coverage.geoJson))
+		}}
+	}
+}
+
+@isPartOf = {
+	@for((collection, i) <- dobj.parentCollections.zipWithIndex) {
+		@if(i == 0){"isPartOf": [}
+		"@collection.uri"
+		@{if(i < dobj.parentCollections.size - 1){","}}
+		@{if(i == dobj.parentCollections.size - 1){"],"}}
+	}
+}

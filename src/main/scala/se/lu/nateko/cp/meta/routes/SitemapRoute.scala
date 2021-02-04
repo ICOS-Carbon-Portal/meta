@@ -12,23 +12,14 @@ import se.lu.nateko.cp.meta.services.ExportService
 object SitemapRoute {
 	def apply(sparqler: SparqlRunner)(implicit configs: EnvriConfigs): Route = {
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
-		
-		get {
-			path("sitemap.xml"){
-				(extractEnvri){ implicit envri =>
-					val exportService = new ExportService(sparqler)
-					val records = exportService.getRecords()
-					complete(
-						HttpResponse(
-							status = StatusCodes.OK,
-							entity = HttpEntity(
-								ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
-								views.xml.Sitemap(records).body
-							)
-						)
-					)
-				}
-			}
+
+		(get & path("sitemap.xml") & extractEnvri){ implicit envri =>
+			complete(
+				HttpEntity(
+					ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
+					views.xml.Sitemap(ExportService.dataObjs(sparqler)).body
+				)
+			)
 		}
 	}
 }

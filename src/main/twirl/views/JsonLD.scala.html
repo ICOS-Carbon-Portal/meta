@@ -112,7 +112,6 @@
 @variables = @{dobj.specificInfo.fold(_.variables, _.columns).getOrElse(Seq())}
 
 @creator = @{
-	println(dobj.references.authors)
 	envri match {
 		case Envri.SITES => stationCreator
 		case _ => dobj.references.authors match {

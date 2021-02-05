@@ -126,12 +126,15 @@ trait CpmetaFetcher extends FetchingHelper{
 	}
 
 	protected def getCoverage(covUri: IRI): GeoFeature = {
+		import spray.json._
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
 		if(covClass === metaVocab.latLonBoxClass)
 			getLatLonBox(covUri)
 		else
-			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
+			GeoFeature.parseGeoJson(getSingleString(covUri, metaVocab.asGeoJSON)).getOrElse(
+				throw new Exception(s"Failed to parse GeoJSON for $covUri")
+			)
 	}
 
 	protected def getNextVersion(item: IRI): Option[URI] = {

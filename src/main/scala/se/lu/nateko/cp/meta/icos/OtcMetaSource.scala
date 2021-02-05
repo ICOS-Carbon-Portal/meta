@@ -119,7 +119,9 @@ class OtcMetaSource(
 							website = websiteSt.orElse(websitePlat)
 						),
 						id = stIdStr,
-						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
+						coverage = posOpt.orElse{
+							geoJsonOpt.flatMap(GeoFeature.parseGeoJson)
+						},
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
 						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None)

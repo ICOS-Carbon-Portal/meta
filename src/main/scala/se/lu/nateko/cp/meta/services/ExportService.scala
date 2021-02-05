@@ -9,10 +9,14 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.GeometryCollection
+import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
+import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.UriResource
 
 
 object ExportService{
@@ -58,11 +62,16 @@ object ExportService{
 		val title: String = dobj.specificInfo.fold(
 			l3 => l3.title,
 			l2 => {
+
 				val specName = uriResourceLabel(dobj.specification.self)
 				val stationName = l2.acquisition.station.org.name
+
 				l2.acquisition.site.fold(s"$specName from $stationName"){site =>
+
 					val siteName = site.location.flatMap(_.label).orElse(site.self.label)
+
 					val origin = siteName.fold(stationName){site => s"$site ($stationName)"}
+
 					s"$specName from $origin"
 				}
 			}
@@ -131,6 +140,19 @@ object ExportService{
 	}
 
 	private def uriResourceLabel(res: UriResource): String = res.label.getOrElse(res.uri.toString.split("/").last)
+
+	def coverageToSchemaOrg(cov: GeoFeature): JsValue = cov match{
+		case GeometryCollection(geos) =>
+			JsArray(geos.toVector.map(coverageToSchemaOrg))
+
+		//TODO Support alt/elevation
+		case Position(lat, lon, _) => JsObject(
+			"@type"     -> JsString("GeoCoordinates"),
+			"latitude"  -> JsNumber(lat),
+			"longitude" -> JsNumber(lon)
+		)
+		case LatLonBox(min, max, label, uri) => ???
+	}
 	/*
 	@coverageTemplate(coverage: GeoFeature) = {
 	{

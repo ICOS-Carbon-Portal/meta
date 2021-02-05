@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.core.data.UriResource
 
 
 object ExportService{
@@ -56,9 +57,14 @@ object ExportService{
 
 		val title: String = dobj.specificInfo.fold(
 			l3 => l3.title,
-			l2 => l2.acquisition.site match {
-				case None => s"""${dobj.specification.self.label.getOrElse("")} from ${l2.acquisition.station.org.name}"""
-				case Some(site) => s"""${dobj.specification.self.label.getOrElse("")} from ${site.location.flatMap(_.label).getOrElse("")} (${l2.acquisition.station.org.name})"""
+			l2 => {
+				val specName = uriResourceLabel(dobj.specification.self)
+				val stationName = l2.acquisition.station.org.name
+				l2.acquisition.site.fold(s"$specName from $stationName"){site =>
+					val siteName = site.location.flatMap(_.label).orElse(site.self.label)
+					val origin = siteName.fold(stationName){site => s"$site ($stationName)"}
+					s"$specName from $origin"
+				}
 			}
 		)
 
@@ -91,7 +97,12 @@ object ExportService{
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
 		)
 
-		val keywords = dobj.keywords.fold[JsValue](JsNull)(kws => JsString(kws.mkString(", ")))
+		val keywords: JsValue = {
+			val allKeywords = dobj.keywords.toSeq.flatten ++
+				dobj.specification.keywords.toSeq.flatten ++
+				dobj.specification.project.keywords.toSeq.flatten
+			if(allKeywords.isEmpty) JsNull else JsString(allKeywords.mkString(", "))
+		}
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
@@ -119,4 +130,29 @@ object ExportService{
 		)
 	}
 
+	private def uriResourceLabel(res: UriResource): String = res.label.getOrElse(res.uri.toString.split("/").last)
+	/*
+	@coverageTemplate(coverage: GeoFeature) = {
+	{
+		"@@type": "Place",
+		"geo": {
+			@Html(locationPoints(coverage.geoJson))
+		}
+	}
+}
+@locationPoints(location: String) = @{
+	val locationRegexp = """type":\s*"([A-Za-z]+)",\s*"coordinates":\s*\[\s*(.+)\s*\]""".r.unanchored
+	val pointRegexp = """[\s\[]*\[*([-\d.]+),\s*([-\d.]+)[\s\]\,]*""".r.unanchored
+	location match {
+		case locationRegexp("Polygon", c) => {
+			val points = for (m <- pointRegexp.findAllMatchIn(c)) yield s"""${m.group(2)} ${m.group(1)}"""
+			s""""@type": "GeoShape", "polygon": "${points.toSeq.mkString(" ")}""""
+		}
+		case locationRegexp("Point", c) => {
+			val point = for (m <- pointRegexp.findFirstMatchIn(c)) yield (m.group(2), m.group(1))
+			point.map{case (lat, lon) => s""""@type": "GeoCoordinates", "latitude": $lat,\n\t\t\t\t"longitude": $lon"""}.getOrElse("")
+		}
+	}
+}
+	*/
 }

@@ -120,7 +120,7 @@ class OtcMetaSource(
 						),
 						id = stIdStr,
 						coverage = posOpt.orElse{
-							geoJsonOpt.flatMap(GeoFeature.parseGeoJson)
+							geoJsonOpt.flatMap(GeoJson.toFeature)
 						},
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,

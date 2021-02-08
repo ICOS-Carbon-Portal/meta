@@ -132,7 +132,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		if(covClass === metaVocab.latLonBoxClass)
 			getLatLonBox(covUri)
 		else
-			GeoFeature.parseGeoJson(getSingleString(covUri, metaVocab.asGeoJSON)).getOrElse(
+			GeoJson.toFeature(getSingleString(covUri, metaVocab.asGeoJSON)).getOrElse(
 				throw new Exception(s"Failed to parse GeoJSON for $covUri")
 			)
 	}

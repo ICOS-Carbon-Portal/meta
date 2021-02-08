@@ -28,13 +28,17 @@ object JsonSupport extends CommonJsonSupport{
 	}
 	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
 
-		def write(geo: GeoFeature): JsValue = geo match {
-			case llb: LatLonBox => llb.toJson
-			case gt: GeoTrack => gt.toJson
-			case pos: Position => pos.toJson
-//			case ggf: GenericGeoFeature => ggf.toJson
-			case gpoly: Polygon => gpoly.toJson
-			case geocol: GeometryCollection => geocol.toJson
+		def write(geo: GeoFeature): JsValue = {
+			val base = geo match {
+				case llb: LatLonBox => llb.toJson
+				case gt: GeoTrack => gt.toJson
+				case pos: Position => pos.toJson
+				case gpoly: Polygon => gpoly.toJson
+				case geocol: GeometryCollection => geocol.toJson
+			}
+			val geoJson = GeoJson.fromFeature(geo)
+			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
+			JsObject(allFields)
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
@@ -149,7 +153,7 @@ object JsonSupport extends CommonJsonSupport{
 		def write(dobj: DataObject): JsValue = {
 			val plain = dobj.toJson(defFormat).asJsObject
 			dobj.coverage.fold(plain) { geo =>
-				JsObject(plain.fields + ("coverageGeoJson" -> JsString(geo.geoJson)))
+				JsObject(plain.fields + ("coverageGeo" -> GeoJson.fromFeature(geo)))
 			}
 		}
 	}

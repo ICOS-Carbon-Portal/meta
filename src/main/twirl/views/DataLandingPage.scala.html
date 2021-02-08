@@ -164,7 +164,7 @@
 					@PanelRow("Coverage", covText)
 				}
 
-				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+				@for(coverage <- dobj.coverage; geoJson = GeoJson.fromFeature(coverage).compactPrint){
 					<iframe src="/station/?icon=@icon&coverage=@urlEncode(geoJson)"></iframe>
 				}
 			}

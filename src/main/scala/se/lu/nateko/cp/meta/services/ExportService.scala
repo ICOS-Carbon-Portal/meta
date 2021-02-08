@@ -107,10 +107,17 @@ object ExportService{
 		)
 
 		val keywords: JsValue = {
-			val allKeywords = dobj.keywords.toSeq.flatten ++
+			val allKeywords = dobj.keywords.toVector.flatten ++
 				dobj.specification.keywords.toSeq.flatten ++
 				dobj.specification.project.keywords.toSeq.flatten
-			if(allKeywords.isEmpty) JsNull else JsString(allKeywords.mkString(", "))
+			if(allKeywords.isEmpty) JsNull else JsArray(allKeywords.map(JsString.apply))
+		}
+
+		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull){cov =>
+			JsObject(
+				"@type" -> JsString("Place"),
+				"geo"   -> coverageToSchemaOrg(cov)
+			)
 		}
 
 		JsObject(
@@ -135,46 +142,29 @@ object ExportService{
 			"license"               -> JsString("https://creativecommons.org/licenses/by/4.0/"),
 			"datePublished"         -> published,
 			"dateModified"          -> modified,
-			"keywords"              -> keywords
+			"keywords"              -> keywords,
+			"spatialCoverage"       -> spatialCoverage
 		)
 	}
 
 	private def uriResourceLabel(res: UriResource): String = res.label.getOrElse(res.uri.toString.split("/").last)
 
 	def coverageToSchemaOrg(cov: GeoFeature): JsValue = cov match{
-		case GeometryCollection(geos) =>
-			JsArray(geos.toVector.map(coverageToSchemaOrg))
 
-		//TODO Support alt/elevation
-		case Position(lat, lon, _) => JsObject(
-			"@type"     -> JsString("GeoCoordinates"),
-			"latitude"  -> JsNumber(lat),
-			"longitude" -> JsNumber(lon)
+		case GeometryCollection(geos) => JsArray(
+			geos.map(coverageToSchemaOrg).toVector
+		)
+
+		case Position(lat, lon, altOpt) => JsObject(
+			Map(
+				"@type"     -> JsString("GeoCoordinates"),
+				"latitude"  -> JsNumber(lat),
+				"longitude" -> JsNumber(lon)
+			) ++ altOpt.map{alt =>
+				"elevation" -> JsNumber(alt)
+			}
 		)
 		case LatLonBox(min, max, label, uri) => ???
 	}
-	/*
-	@coverageTemplate(coverage: GeoFeature) = {
-	{
-		"@@type": "Place",
-		"geo": {
-			@Html(locationPoints(coverage.geoJson))
-		}
-	}
-}
-@locationPoints(location: String) = @{
-	val locationRegexp = """type":\s*"([A-Za-z]+)",\s*"coordinates":\s*\[\s*(.+)\s*\]""".r.unanchored
-	val pointRegexp = """[\s\[]*\[*([-\d.]+),\s*([-\d.]+)[\s\]\,]*""".r.unanchored
-	location match {
-		case locationRegexp("Polygon", c) => {
-			val points = for (m <- pointRegexp.findAllMatchIn(c)) yield s"""${m.group(2)} ${m.group(1)}"""
-			s""""@type": "GeoShape", "polygon": "${points.toSeq.mkString(" ")}""""
-		}
-		case locationRegexp("Point", c) => {
-			val point = for (m <- pointRegexp.findFirstMatchIn(c)) yield (m.group(2), m.group(1))
-			point.map{case (lat, lon) => s""""@type": "GeoCoordinates", "latitude": $lat,\n\t\t\t\t"longitude": $lon"""}.getOrElse("")
-		}
-	}
-}
-	*/
+
 }

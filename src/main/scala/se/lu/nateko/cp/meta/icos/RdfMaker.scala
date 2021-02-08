@@ -186,7 +186,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::
 			(spcovUri, RDF.TYPE, meta.spatialCoverageClass) ::
-			(spcovUri, meta.asGeoJSON, vocab.lit(cov.geoJson)) ::
+			(spcovUri, meta.asGeoJSON, vocab.lit(GeoJson.fromFeature(cov).compactPrint)) ::
 			Nil
 	}
 

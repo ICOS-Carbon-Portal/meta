@@ -84,8 +84,8 @@ class OtcMetaSource(
 
 		getLookupV(q, "st"){(b, tcId) =>
 			for(
-				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri};
-				platUri <- qresValueReq(b, "plat").collect{case iri: IRI => iri};
+				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri}; //TODO use ensureUriValue
+				platUri <- qresValueReq(b, "plat").collect{case iri: IRI => iri}; //TODO use ensureUriValue
 				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
@@ -99,9 +99,9 @@ class OtcMetaSource(
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
-				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(parseUriLiteral).optional;
-				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(parseUriLiteral).optional;
-				respOrg <- qresValue(b, "respOrg").collect{case iri: IRI => iri}.optional
+				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(ensureUriValue).optional;
+				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(ensureUriValue).optional;
+				respOrg <- qresValue(b, "respOrg").collect{case iri: IRI => iri}.optional //TODO use ensureUriValue
 			) yield{
 
 				TcStation[O](
@@ -302,6 +302,8 @@ class OtcMetaSource(
 	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.toDouble)
 	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING)
 	private def parseUriLiteral(v: Value) = parseLiteral(v, XMLSchema.ANYURI).map(new java.net.URI(_))
+	//TODO Do more careful control of value being a URI (when rdfs:seeAlso have been corrected in production)
+	private def ensureUriValue(v: Value) = Validated(new java.net.URI(v.stringValue))
 
 }
 

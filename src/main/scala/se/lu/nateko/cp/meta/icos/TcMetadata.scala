@@ -9,7 +9,6 @@ import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization}
 
 sealed trait Entity[+T <: TC]{
 	def cpId: UriId
-	def withCpId(id: UriId): Entity[T]
 	def tcIdOpt: Option[TcId[T]]
 	def bestId: String = tcIdOpt.fold(cpId.urlSafeString)(_.id)
 }
@@ -18,7 +17,7 @@ sealed trait TcEntity[+T <: TC] extends Entity[T]{
 	def tcId: TcId[T]
 	override def tcIdOpt = Some(tcId)
 }
-/*
+
 trait CpIdSwapper[E]{
 	def withCpId(e: E, id: UriId): E
 }
@@ -43,6 +42,7 @@ object Entity{
 	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org.copy(cpId = id)
 	}
+
 	implicit def stationCpIdSwapper[T <: TC] = new CpIdSwapper[TcStation[T]]{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
@@ -53,7 +53,7 @@ object Entity{
 	}
 
 }
-*/
+
 case class TcPerson[+T <: TC](
 	cpId: UriId,
 	tcIdOpt: Option[TcId[T]],
@@ -61,9 +61,7 @@ case class TcPerson[+T <: TC](
 	lname: String,
 	email: Option[String],
 	orcid: Option[Orcid]
-) extends Entity[T] {
-	override def withCpId(id: UriId): TcPerson[T] = copy(cpId = id)
-}
+) extends Entity[T]
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
@@ -73,15 +71,10 @@ case class TcStation[+T <: TC](
 	core: Station,
 	responsibleOrg: Option[TcPlainOrg[T]] //needed to avoid info loss with core.responsibleOrganization
 ) extends TcOrg[T] with TcEntity[T]{
-	override def withCpId(id: UriId): TcStation[T] = copy(cpId = id)
 	def org = core.org
 }
 
-case class TcPlainOrg[+T <: TC](
-	cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization
-) extends TcOrg[T] with Entity[T] {
-	override def withCpId(id: UriId): TcPlainOrg[T] = copy(cpId = id)
-}
+case class TcPlainOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcOrg[T]
 
 case class Instrument[+T <: TC : TcConf](
 	tcId: TcId[T],
@@ -93,8 +86,7 @@ case class Instrument[+T <: TC : TcConf](
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	override def withCpId(id: UriId): Instrument[T] = this
-	override def cpId = TcConf.tcScopedId(UriId.escaped(tcId.id))
+	def cpId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 }
 
 class AssumedRole[+T <: TC](

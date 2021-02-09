@@ -81,6 +81,14 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 					value = value.getLabel,
 					property = onto.rdfsLabeling(prop)
 				)
+
+			//rdfs:seeAlso is special: anyURI literal on the front end, Resource on the back end
+			case Rdf4jStatement(_, RDFS.SEEALSO, value: IRI) =>
+				LiteralValueDto(
+					value = value.stringValue,
+					property = rdfsSeeAlsoInfo.resource
+				)
+
 			case Rdf4jStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
 				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred.toJava))
 				ObjectValueDto(
@@ -150,14 +158,23 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case _: ObjectPropertyDto => factory.createIRI(update.obj)
 		}
 
-		factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
+		//TODO Simplify this when wrong rdfs:seeAlso statements have been purged from production db
+		if(!update.isAssertion && update.predicate === RDFS.SEEALSO){
+			val toRemove = Seq(factory.createIRI(update.obj), factory.createLiteral(update.obj, XMLSchema.ANYURI)).map{
+				obj => factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
+			}
+			toRemove.find(st => instServer.hasStatement(update.subject.toRdf, st.getPredicate, st.getObject)).get
+		}
+		//keep this branch after simplification
+		else factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
 	}
 
 	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =
 		propUri.toRdf match {
 			case RDFS.LABEL => rdfsLabelInfo
 			case RDFS.COMMENT => rdfsCommentInfo
-			case RDFS.SEEALSO => rdfsSeeAlsoInfo
+			//rdfs:seeAlso is special: anyURI literal on the front end, Resource on the back end
+			case RDFS.SEEALSO => ObjectPropertyDto(rdfsSeeAlsoInfo.resource, rdfsSeeAlsoInfo.cardinality)
 			case _ => onto.getPropInfo(propUri, classUri)
 		}
 

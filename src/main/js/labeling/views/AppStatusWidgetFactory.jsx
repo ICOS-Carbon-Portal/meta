@@ -1,5 +1,6 @@
 import ContentPanel from './ContentPanel.jsx';
-import {statusFullText, statusClass} from './StationsListFactory.jsx';
+import { statusFullText, statusClass, statusLabel} from './StationsListFactory.jsx';
+
 import { status } from '../models/ApplicationStatus.js';
 import Inputs from './FormInputs.jsx';
 
@@ -40,63 +41,164 @@ function transitionButtonClass(to){
 	}
 }
 
-export default function(updateStatusAction, updateStatusCommentAction) {
+function transitionLabelClass(to) {
+	switch (to) {
+		case status.acknowledged: return "label-primary";
+		case status.notSubmitted: return "label-default";
+		case status.approved: return "label-success";
+		case status.rejected: return "label-danger";
+		case status.step2ontrack: return "label-warning";
+		case status.step2approved: return "label-success";
+		case status.step2delayed: return "label-warning";
+		case status.step2stalled: return "label-danger";
+		case status.step3approved: return "label-success";
+	}
+}
 
-	const LifecycleButton = React.createClass({
+const defaultAppStatusCommentPholder = 'Comment about application status';
+function getAppStatusCommentPholder(hasApplicationStatus) {
+	switch (hasApplicationStatus) {
+		case 'STEP2DELAYED':
+			return 'Provide a reason for why this station is delayed';
+		
+		case 'STEP2STALLED':
+			return 'Provide a reason for why this station is stalled';
+		
+		default:
+			return defaultAppStatusCommentPholder;
+	}
+}
 
-		render: function(){
+export default function (ToasterStore, updateStatusAction) {
+
+	const LifecycleRadioButton = React.createClass({
+
+		render: function () {
 			const props = this.props;
 
-			return <button type="button" className={'btn ' + props.buttonClass}
-					onClick={() => updateStatusAction(props.getUpdated())} title={props.tooltip} style={{marginRight: 5}}>{props.buttonName}</button>;
+			return (
+				<label className={props.buttonClass} style={{marginRight: 20, fontSize: '110%', cursor: 'pointer'}} title={props.tooltip}>
+					<input
+						type="radio"
+						name="appStatusComment"
+						checked={props.checked}
+						className="radio-inline"
+						style={{margin: '0px 5px 0px 0px'}}
+						onClick={() => props.updateStatus()}
+					/>
+					{props.buttonName}
+				</label>
+			);
 		}
 	});
 
 	const LifecycleControls = React.createClass({
 
 		render: function(){
-			let status = this.props.status;
-			if(!status.canControlLifecycle) return null;
+			const { status, updateStatus, selectedStatus } = this.props;
+			if (!status.canControlLifecycle) return null;
 
-			return <div style={{marginTop: 15}}>{
+			return <div style={{marginTop: 25}}>{
 				_.map(status.transitions, to => {
 					let [buttonLabel, helpText] = getTransitionText(status.value, to);
+					const isSelected = selectedStatus === to;
+					const buttonClass = 'label ' + transitionLabelClass(to);
 
-					return <LifecycleButton key={to} buttonClass={transitionButtonClass(to)}
-						getUpdated={() => status.stationWithStatus(to)}
-						tooltip={helpText} buttonName={buttonLabel}
-					/>;
-				})
-			}</div>;
+					return (
+						<LifecycleRadioButton
+							key={to}
+							checked={isSelected}
+							buttonClass={buttonClass}
+							updateStatus={() => updateStatus(to)}
+							tooltip={helpText}
+							buttonName={buttonLabel}
+						/>
+					);
+				})}
+				<LifecycleRadioButton
+					checked={selectedStatus === status.value}
+					buttonClass={statusClass(status.value)}
+					updateStatus={() => updateStatus(status.value)}
+					tooltip={'Keep current application status'}
+					buttonName={statusLabel(status.value)}
+				/>
+			</div>;
 		}
 
 	});
 
-	const AppStatusCommentCtrl = React.createClass({
+	const AppStatusCtrl = React.createClass({
 		getInitialState: function () {
-			return { hasAppStatusComment: this.props.status.station['hasAppStatusComment'] };
+			return {
+				hasApplicationStatus: this.props.status.station['hasApplicationStatus'],
+				hasAppStatusComment: this.props.status.station['hasAppStatusComment'],
+				appStatusCommentPholder: defaultAppStatusCommentPholder,
+				isSubmitDisabled: true
+			};
+		},
+
+		updateState: function (statePart) {
+			this.setState(Object.assign({}, this.state, statePart));
+		},
+
+		updateStatus: function (newStatus) {
+			const { hasAppStatusComment } = this.state;
+			const isSubmitDisabled = this.getIsSubmitDisabled(newStatus, hasAppStatusComment);
+			const appStatusCommentPholder = getAppStatusCommentPholder(newStatus);
+			this.updateState({ hasApplicationStatus: newStatus, appStatusCommentPholder, isSubmitDisabled });
+		},
+
+		getIsSubmitDisabled: function (hasApplicationStatus, hasAppStatusComment) {
+			return (hasApplicationStatus === 'STEP2DELAYED' || hasApplicationStatus === 'STEP2STALLED') && !hasAppStatusComment;
+		},
+
+		updateStatusComment: function (errors, newAppStatusComment) {
+			const { hasApplicationStatus, hasAppStatusComment } = this.state;
+
+			if (newAppStatusComment !== hasAppStatusComment) {
+				const isSubmitDisabled = this.getIsSubmitDisabled(hasApplicationStatus, newAppStatusComment);
+				this.updateState({ hasAppStatusComment: newAppStatusComment, isSubmitDisabled });
+			}
+		},
+
+		submitAppStatus: function () {
+			const { hasApplicationStatus, hasAppStatusComment } = this.state;
+			const currStation = this.props.status.station;
+			const newStation = this.props.status
+				.withStatus(hasApplicationStatus)
+				.stationWithStatusComment(hasAppStatusComment);
+			
+			const isUpdatedStatus = currStation.hasApplicationStatus !== newStation.hasApplicationStatus;
+			const isUpdatedStatusComment = currStation.hasAppStatusComment !== newStation.hasAppStatusComment;
+
+			if (isUpdatedStatus || isUpdatedStatusComment) {
+				updateStatusAction(newStation);
+			
+			} else {
+				ToasterStore.showToasterHandler('No changes to save', 'warning');
+			}
 		},
 
 		render: function () {
 			const status = this.props.status;
-			const value = this.state.hasAppStatusComment;
+			const { hasApplicationStatus, hasAppStatusComment, appStatusCommentPholder, isSubmitDisabled } = this.state;
 			const disabled = !status.station.isUsersTcStation;
 
-			const updater = (errors, newValue) => {
-				if (newValue !== value)
-					this.setState({ hasAppStatusComment: newValue });
-			};
-
 			return (
-				<Inputs.TextAreaWithBtn
-					value={value}
-					optional={true}
-					disabled={disabled}
-					updater={updater}
-					placeholder="Comment about application status"
-					btnTxt="Save application status comment"
-					btnAction={() => updateStatusCommentAction(status.stationWithStatusComment(value))}
-				/>
+				<div style={{ marginTop: 15 }}>
+					<LifecycleControls status={this.props.status} updateStatus={this.updateStatus} selectedStatus={hasApplicationStatus} />
+
+					<Inputs.TextAreaWithBtn
+						value={hasAppStatusComment}
+						optional={true}
+						disabled={disabled}
+						btnDisabled={isSubmitDisabled}
+						updater={this.updateStatusComment}
+						placeholder={appStatusCommentPholder}
+						btnTxt="Save application status"
+						btnAction={this.submitAppStatus}
+					/>
+				</div>
 			);
 		}
 	});
@@ -114,12 +216,10 @@ export default function(updateStatusAction, updateStatusCommentAction) {
 					</span>
 				</h3>
 
-				<LifecycleControls status={this.props.status} />
-				<AppStatusCommentCtrl status={this.props.status} />
+				<AppStatusCtrl status={this.props.status} />
 
 			</ContentPanel>;
 		}
 	});
 
 };
-

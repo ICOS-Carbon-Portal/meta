@@ -25,7 +25,7 @@ trait LifecycleService { self: StationLabelingService =>
 	private val (factory, vocab) = getFactoryAndVocab(server)
 	private val mailer = SendMail(config.mailing)
 
-	def updateStatus(station: URI, newStatus: String, user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
+	def updateStatus(station: URI, newStatus: String, newStatusComment: Option[String], user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
 		val stationUri = factory.createIRI(station)
 
 		for(
@@ -38,7 +38,7 @@ trait LifecycleService { self: StationLabelingService =>
 					Failure(new UnauthorizedStationUpdateException(s"User lacks the role of $role"))
 		) yield {
 			writeStatusChange(toStatus, stationUri)
-			sendMailOnStatusUpdate(fromStatus, toStatus, stationUri, user)
+			sendMailOnStatusUpdate(fromStatus, toStatus, newStatusComment, stationUri, user)
 		}
 
 	}
@@ -96,7 +96,7 @@ trait LifecycleService { self: StationLabelingService =>
 	}
 
 	private def sendMailOnStatusUpdate(
-		from: AppStatus, to: AppStatus,
+		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
 	)(implicit ctxt: ExecutionContext): Unit = if(config.mailing.mailSendingActive) Future{
 
@@ -118,13 +118,21 @@ trait LifecycleService { self: StationLabelingService =>
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
-			case (_, AppStatus.step2approved) | (_, AppStatus.step2stalled) if(from != AppStatus.step3approved) =>
-				val isRejected = to == AppStatus.step2stalled
+			case (_, AppStatus.step2approved) | (_, AppStatus.step2stalled) | (_, AppStatus.step2delayed) if(from != AppStatus.step3approved) =>
+				val status: String = to match{
+					case AppStatus.step2delayed => "delayed"
+					case AppStatus.step2stalled => "stalled"
+					case _ => "approved"
+				}
+				val comment = to match{
+					case AppStatus.step2delayed | AppStatus.step2stalled => statusComment
+					case _ => None
+				}
 
 				val recipients = getStationPiOrDeputyEmails(station)
 				val cc = getTcUsers(station) :+ config.riComEmail
-				val subject = s"Labeling Step2 ${if(isRejected) "rejected" else "approved"} for $stationId"
-				val body = views.html.LabelingEmailDecided2(stationId, isRejected).body
+				val subject = s"Labeling Step2 ${status} for $stationId"
+				val body = views.html.LabelingEmailDecided2(stationId, status, comment).body
 
 				mailer.send(recipients, subject, body, cc)
 

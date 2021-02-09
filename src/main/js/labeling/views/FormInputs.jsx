@@ -113,7 +113,7 @@ var TextAreaWithBtn = _.extend({
 						placeholder={this.props.placeholder}
 					/>
 					<button
-						className="btn btn-primary" disabled={this.props.disabled} style={{ marginTop: 5 }} onClick={this.props.btnAction}>{this.props.btnTxt || 'Submit'}</button>
+						className="btn btn-primary" disabled={this.props.btnDisabled} style={{ marginTop: 5 }} onClick={this.props.btnAction}>{this.props.btnTxt || 'Submit'}</button>
 				</div>
 			</div>
 		);

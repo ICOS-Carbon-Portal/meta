@@ -1,11 +1,10 @@
-module.exports = function (Backend, ToasterStore, chooseStationAction, saveStationAction, updateStatusAction, updateStatusCommentAction) {
+module.exports = function (Backend, ToasterStore, chooseStationAction, saveStationAction, updateStatusAction) {
 	return Reflux.createStore({
 
 		init: function () {
 			this.listenTo(chooseStationAction, this.chooseStationHandler);
 			this.listenTo(saveStationAction, this.saveStationHandler);
 			this.listenTo(updateStatusAction, this.updateStatusHandler);
-			this.listenTo(updateStatusCommentAction, this.updateStatusCommentHandler);
 		},
 
 		chooseStationHandler: function (chosenStation, evenIfChosen) {
@@ -46,24 +45,20 @@ module.exports = function (Backend, ToasterStore, chooseStationAction, saveStati
 				'chosen', 'isUsersStation', 'isUsersTcStation', 'isUsersDgStation', 'isUsersNeedingActionStation', 'hasApplicationStatus', 'hasStationClass');
 
 			Backend.saveStationInfo(stationInfo).then(
-				() => self.refreshIfStillRelevant(station),
+				() => {
+					self.refreshIfStillRelevant(station);
+				},
 				err => ToasterStore.showToasterHandler(err.message)
 			);
 		},
 
 		updateStatusHandler: function (station) {
 			var self = this;
-			Backend.updateStatus(station.stationUri, station.hasApplicationStatus).then(
+			Backend.updateStatus(station.stationUri, station.hasApplicationStatus, station.hasAppStatusComment).then(
 				() => {
-					if (self.isStillRelevant(station)) self.trigger({ chosen: station });
+					if (self.isStillRelevant(station))
+						self.trigger({ chosen: station });
 				},
-				err => ToasterStore.showToasterHandler(err.message)
-			);
-		},
-
-		updateStatusCommentHandler: function (station) {
-			Backend.updateStatusComment(station.stationUri, station.hasAppStatusComment).then(
-				_ => _,
 				err => ToasterStore.showToasterHandler(err.message)
 			);
 		}

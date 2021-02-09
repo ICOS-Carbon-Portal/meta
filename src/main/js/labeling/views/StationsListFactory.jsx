@@ -101,7 +101,6 @@ const ShowLazily = React.createClass({
 	}
 });
 
-const marginStyle = { marginLeft: 5, marginRight: 5 };
 const panelHeaderStyle = {
 	display: 'flex',
 	flexDirection: 'row',
@@ -148,29 +147,34 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 				</ShowLazily>;
 			} else {
 				return (
-					<div>
-						<h4 style={marginStyle}>
-							<span class="label label-default">Stations count: {self.state.stations.length}</span>
-						</h4>
-						<ul className="list-unstyled">
-							{
-								_.map(self.state.stations, function (station) {
+					<div className="container-fluid">
+						<div className="row">
+							<div className="col-md-2">
+								<h4>
+									<span class="label label-default">Stations count: {self.state.stations.length}</span>
+								</h4>
+							</div>
+						</div>
+						{
+							_.map(self.state.stations, function (station) {
 
-									var panelClasses = 'panel panel-' + panelClass(station);
+								var panelClasses = 'panel panel-' + panelClass(station);
 
-									var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
+								var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
 
-									var Station = themeToStation[station.theme];
+								var Station = themeToStation[station.theme];
 
-									var applicationStatus = station.hasApplicationStatus;
-									var appStatusCommentTxt = getAppStatusComment(applicationStatus, station.hasAppStatusComment);
-									var applicationStatusCSS = statusClass(station.hasApplicationStatus);
+								var applicationStatus = station.hasApplicationStatus;
+								var appStatusCommentTxt = getAppStatusComment(applicationStatus, station.hasAppStatusComment);
+								var applicationStatusCSS = statusClass(station.hasApplicationStatus);
 
-									return <li key={station.stationUri} ref={station.chosen ? "chosenStation" : null}>
+								return (
+									<div key={station.stationUri} className="row">
+										<div className="col-md-12" ref={station.chosen ? "chosenStation" : null}>
 
-										<div className={panelClasses} style={marginStyle}>
+										<div className={panelClasses}>
 											<div className="cp-lnk panel-heading" style={panelHeaderStyle} onClick={() => chooseStationAction(station)}>
-												<span className={icon} style={{top: 3}} />
+												<span className={icon} style={{ top: 3 }} />
 												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>{station.hasLongName}</span>
 												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>(Last status update: {getLastAppUpdate(station.hasAppStatusDate)})</span>
 												<span className="text-muted" style={appStatusCommentStyle}>{appStatusCommentTxt}</span>
@@ -181,10 +185,12 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 											{station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName} /></div> : null}
 										</div>
 
-									</li>;
-								})
+										</div>
+									</div>
+								);
+							})
 
-							}</ul>
+						}
 					</div>
 					
 				);

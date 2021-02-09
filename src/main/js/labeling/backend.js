@@ -121,8 +121,8 @@ export default function(ajax, sparql){
 
 		getStationInfo: getStationLabelingInfo,
 		saveStationInfo: info => ajax.postJson('save', info),
-		updateStatus: (stationUri, newStatus) => ajax.postJson('updatestatus', {stationUri, newStatus}),
-		updateStatusComment: (stationUri, newStatusComment) => ajax.postJson('updatestatuscomment', { stationUri, newStatusComment }),
+		updateStatus: (stationUri, newStatus, newStatusComment) => ajax.postJson('updatestatus', { stationUri, newStatus, newStatusComment}),
+		// updateStatusComment: (stationUri, newStatusComment) => ajax.postJson('updatestatuscomment', { stationUri, newStatusComment }),
 
 		getStationFiles: getStationFiles,
 		uploadFile: formData => ajax.uploadFormData('fileupload', formData),

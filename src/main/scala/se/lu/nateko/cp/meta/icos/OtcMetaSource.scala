@@ -73,11 +73,11 @@ class OtcMetaSource(
 			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
 			|	optional {?plat otc:hasSpatialReference ?geoJson }
 			|	optional {?plat otc:hasPicture ?picture }
-			|	optional {?plat otc:hasOwner ?owner }
 			|	optional {?plat rdfs:seeAlso ?seeAlsoPlat }
 			|	optional {?st otc:countryCode ?countryCode }
 			|	optional {?st otc:hasLabelingDate ?labelDate }
 			|	optional {?st otc:hasStationClass ?stationClass }
+			|	optional {?st otc:hasResponsibleOrg ?respOrg }
 			|	optional {?st rdfs:seeAlso ?seeAlsoSt }
 			|}
 		|""".stripMargin
@@ -101,7 +101,7 @@ class OtcMetaSource(
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
 				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(parseUriLiteral).optional;
 				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(parseUriLiteral).optional;
-				owner <- qresValue(b, "owner").collect{case iri: IRI => iri}.optional
+				respOrg <- qresValue(b, "respOrg").collect{case iri: IRI => iri}.optional
 			) yield{
 
 				TcStation[O](
@@ -124,7 +124,7 @@ class OtcMetaSource(
 						pictures = pictUri.toSeq,
 						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None)
 					),
-					responsibleOrg = owner.flatMap(orgs.get)
+					responsibleOrg = respOrg.flatMap(orgs.get)
 				)
 			}
 		}.map(_.toMap)

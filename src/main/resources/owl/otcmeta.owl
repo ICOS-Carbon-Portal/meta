@@ -138,6 +138,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasResponsibleOrg -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasResponsibleOrg">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">responsible organization</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasRole -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasRole">

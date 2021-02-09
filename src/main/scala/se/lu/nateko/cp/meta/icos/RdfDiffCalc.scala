@@ -22,12 +22,25 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		cpOwnPeople <- rdfReader.getCpOwnPeople[T].require("problem reading CP own people")
 	) yield {
 
-		def allOrgs(s: TcState[T]): Seq[TcOrg[T]] = uniqBestId{
-			s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
-			s.roles.map(_.role.org) ++ s.stations ++ s.stations.flatMap(_.responsibleOrg)
+		def plainOrgs(s: TcState[T]): Seq[TcPlainOrg[T]] = uniqBestId(
+			(
+				s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
+				s.roles.map(_.role.org) ++ s.stations.flatMap(_.responsibleOrg)
+			).collect{
+				case o: TcPlainOrg[T] => o
+			}
+		)
+
+		val plainOrgsDiff = diff[T, TcPlainOrg[T]](plainOrgs(current), plainOrgs(newSnapshot), cpOwnOrgs)
+
+		def updateStation(st: TcStation[T]): TcStation[T] = st.responsibleOrg.fold(st){org =>
+			val respOrg = plainOrgsDiff.ensureIdPreservation(org)
+			st.copy(responsibleOrg = Some(respOrg))
 		}
 
-		val orgsDiff = diff[T, TcOrg[T]](allOrgs(current), allOrgs(newSnapshot), cpOwnOrgs)
+		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
+
+		val orgsDiff: SequenceDiff[T, TcOrg[T]] = plainOrgsDiff.concat(stationsDiff.generalizeTo[TcOrg[T]])
 
 		def updateInstr(instr: Instrument[T]): Instrument[T] = instr.copy(
 			vendor = instr.vendor.map(orgsDiff.ensureIdPreservation),
@@ -204,6 +217,13 @@ object RdfDiffCalc{
 class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
 
 	def ensureIdPreservation(entity: E): E = entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
+
+	def generalizeTo[E2 >: E <: Entity[T] : CpIdSwapper] = new SequenceDiff[T, E2](rdfDiff, cpIdLookup)
+
+	def concat[E2 >: E <: Entity[T] : CpIdSwapper](other: SequenceDiff[T, E2]) = new SequenceDiff[T, E2](
+		rdfDiff ++ other.rdfDiff,
+		cpIdLookup ++ other.cpIdLookup
+	)
 }
 
 object SequenceDiff{

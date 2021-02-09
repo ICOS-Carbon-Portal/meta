@@ -39,6 +39,14 @@ object Entity{
 		}
 	}
 
+	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
+		def withCpId(org: TcPlainOrg[T], id: UriId) = org.copy(cpId = id)
+	}
+
+	implicit def stationCpIdSwapper[T <: TC] = new CpIdSwapper[TcStation[T]]{
+		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
+	}
+
 	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[Instrument[T]]{
 		//noop, because instrument cpIds are expected to be stable
 		def withCpId(instr: Instrument[T], id: UriId) = instr

@@ -143,7 +143,8 @@ export default function (ToasterStore, updateStatusAction) {
 		},
 
 		getIsSubmitDisabled: function (hasApplicationStatus, hasAppStatusComment) {
-			return (hasApplicationStatus === 'STEP2DELAYED' || hasApplicationStatus === 'STEP2STALLED') && !hasAppStatusComment;
+			const station = this.props.status.station;
+			return hasApplicationStatus === station.hasApplicationStatus && hasAppStatusComment === station.hasAppStatusComment;
 		},
 
 		updateStatusComment: function (errors, newAppStatusComment) {
@@ -176,7 +177,7 @@ export default function (ToasterStore, updateStatusAction) {
 		render: function () {
 			const status = this.props.status;
 			const { hasApplicationStatus, hasAppStatusComment, appStatusCommentPholder, isSubmitDisabled } = this.state;
-			const disabled = !status.station.isUsersTcStation;
+			const disabled = !status.station.isUsersTcStation && !status.station.isUsersStation;
 
 			return (
 				<div style={{ marginTop: 15 }}>

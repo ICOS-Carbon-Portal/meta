@@ -8,13 +8,13 @@
 		<tr>
 			<td style="font-size: 12pt">Step 2 of labeling of station @stationName has been @status by TC.</td>
 		</tr>
-		@commentRow(comment)
-	</table>
-}
-
-@commentRow(comment: Option[String]) = @{
-	if (Some(comment))
-		<tr>
-			<td style="font-size: 12pt; font-style: italic;">@comment</td>
-		</tr>
+		@for(comm <- comment){
+			<tr>
+				<td style="font-size: 12pt;"">
+					<span>Comment from TC: </span>
+					<span style="font-style: italic;">@comm</span>
+				</td>
+			</tr>
+		}
+		</table>
 }

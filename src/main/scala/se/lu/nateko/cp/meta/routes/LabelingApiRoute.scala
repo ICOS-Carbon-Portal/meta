@@ -11,7 +11,6 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.FileDeletionDto
 import se.lu.nateko.cp.meta.LabelingStatusUpdate
-import se.lu.nateko.cp.meta.LabelingStatusCommentUpdate
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
@@ -22,7 +21,6 @@ import java.net.URI
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import scala.concurrent.Future
 import scala.util.Try
-import se.lu.nateko.cp.meta.LabelingStatusCommentUpdate
 
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
@@ -61,7 +59,12 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				} ~
 				path("updatestatus"){
 					entity(as[LabelingStatusUpdate]){update =>
-						service.updateStatus(update.stationUri, update.newStatus, update.newStatusComment, uploader).get
+						service.updateStatus(
+							update.stationUri,
+							update.newStatus,
+							update.newStatusComment.map(_.trim).filter(!_.isEmpty),
+							uploader
+						).get
 						complete(StatusCodes.OK)
 					}
 				} ~

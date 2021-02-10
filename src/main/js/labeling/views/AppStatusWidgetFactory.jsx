@@ -15,29 +15,15 @@ function getTransitionText(from, to){
 		case status.step2ontrack:
 			return from === status.approved
 				? ["Start Step 2", "Start Step 2 of station labeling"]
-				: ["Reset Step 2", "Change application status back to \"Started Step 2\""];
+				: ["Reset Step 2", "Change application status back to \"Step 2 on track\""];
 		case status.step2approved:
 			return from === status.step3approved
-				? ["Revoke final approval", "Reset the status back to \"Step 2 approved\""]
+				? ["Revoke final approval", "Reset the status back to \"Step 2 on track\""]
 				: ["Approve Step 2", "Approve Step 2 of station's labeling procedure"];
 		case status.step2delayed: return ["Delay Step 2", "Delay the application at Step 2"];
 		case status.step2stalled: return ["Stall Step 2", "Stall the application at Step 2"];
 		case status.step3approved: return ["Grant final approval", "Make this an official ICOS station"];
 		default: return ["Unsupported status", "Unsupported status: " + to];
-	}
-}
-
-function transitionButtonClass(to){
-	switch(to){
-		case status.acknowledged: return "btn-primary";
-		case status.notSubmitted: return "cp-btn-gray";
-		case status.approved: return "btn-success";
-		case status.rejected: return "btn-danger";
-		case status.step2ontrack : return "btn-warning";
-		case status.step2approved : return "btn-success";
-		case status.step2delayed: return "btn-warning";
-		case status.step2stalled : return "btn-danger";
-		case status.step3approved : return "btn-success";
 	}
 }
 
@@ -75,9 +61,15 @@ export default function (ToasterStore, updateStatusAction) {
 
 		render: function () {
 			const props = this.props;
+			const labelStyle = {
+				marginLeft: props.marginLeft,
+				marginRight: 20,
+				fontSize: '110%',
+				cursor: 'pointer'
+			}
 
 			return (
-				<label className={props.buttonClass} style={{marginRight: 20, fontSize: '110%', cursor: 'pointer'}} title={props.tooltip}>
+				<label className={props.buttonClass} style={labelStyle} title={props.tooltip}>
 					<input
 						type="radio"
 						name="appStatusComment"
@@ -108,6 +100,7 @@ export default function (ToasterStore, updateStatusAction) {
 						<LifecycleRadioButton
 							key={to}
 							checked={isSelected}
+							marginLeft={0}
 							buttonClass={buttonClass}
 							updateStatus={() => updateStatus(to)}
 							tooltip={helpText}
@@ -117,6 +110,7 @@ export default function (ToasterStore, updateStatusAction) {
 				})}
 				<LifecycleRadioButton
 					checked={selectedStatus === status.value}
+					marginLeft={20}
 					buttonClass={statusClass(status.value)}
 					updateStatus={() => updateStatus(status.value)}
 					tooltip={'Keep current application status'}

@@ -92,20 +92,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				coverageTriples(uri, s.core.coverage)
 
 			case ci: TcPlainOrg[T] =>
-				(uri, RDF.TYPE, meta.orgClass) ::
-				ci.org.self.label.toList.map{label =>
-					(uri, RDFS.LABEL, vocab.lit(label))
-				} :::
-				ci.org.self.comments.toList.map{comm =>
-					(uri, RDFS.COMMENT, vocab.lit(comm))
-				} :::
-				(uri, meta.hasName, vocab.lit(ci.org.name)) ::
-				ci.org.website.toList.map{ws =>
-					(uri, RDFS.SEEALSO, ws.toRdf)
-				} :::
-				ci.org.email.toList.map{email =>
-					(uri, meta.hasEmail, vocab.lit(email))
-				}
+				(uri, RDF.TYPE, meta.orgClass) +:
+				orgTriples(uri, ci.org)
 
 			case instr: Instrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -221,7 +209,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			(iri, meta.hasEmail, vocab.lit(email))
 		} :++
 		org.website.map{ website =>
-			(iri, RDFS.SEEALSO, vocab.lit(website.toString, XMLSchema.ANYURI))
+			(iri, RDFS.SEEALSO, website.toRdf)
 		}
 	}
 }

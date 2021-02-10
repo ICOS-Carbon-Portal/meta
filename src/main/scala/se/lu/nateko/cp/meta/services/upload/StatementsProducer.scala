@@ -100,7 +100,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			case LatLonBox(min, max, labelOpt, _) =>
 				Seq(
 					makeSt(covUri, RDF.TYPE, metaVocab.latLonBoxClass),
-					makeSt(covUri, metaVocab.hasNothernBound, vocab.lit(max.lat)),
+					makeSt(covUri, metaVocab.hasNorthernBound, vocab.lit(max.lat)),
 					makeSt(covUri, metaVocab.hasSouthernBound, vocab.lit(min.lat)),
 					makeSt(covUri, metaVocab.hasWesternBound, vocab.lit(min.lon)),
 					makeSt(covUri, metaVocab.hasEasternBound, vocab.lit(max.lon))

@@ -38,7 +38,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	val hasElevation = getRelativeRaw("hasElevation")
 	val hasLatitude = getRelativeRaw("hasLatitude")
-	val hasNothernBound = getRelativeRaw("hasNothernBound")
+	//TODO Remove when the typo has been purged from production db
+	val hasNo_thernBound = getRelativeRaw("hasNothernBound")
+	val hasNorthernBound = getRelativeRaw("hasNorthernBound")
 	val hasSouthernBound = getRelativeRaw("hasSouthernBound")
 	val hasLongitude = getRelativeRaw("hasLongitude")
 	val hasEasternBound = getRelativeRaw("hasEasternBound")

@@ -88,7 +88,6 @@ class OtcMetaSource(
 				platUri <- qresValueReq(b, "plat").collect{case iri: IRI => iri};
 				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
-				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
 				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
 				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.withName(v.stringValue)).optional;
 				ccode <- qresValue(b, "countryCode").map{v =>
@@ -98,6 +97,7 @@ class OtcMetaSource(
 				lblDate <-qresValue(b, "labelDate").map(v => LocalDate.parse(v.stringValue)).optional;
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
+				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, Some(s"$name position"));
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
 				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(parseUriLiteral).optional;
 				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(parseUriLiteral).optional;
@@ -120,7 +120,7 @@ class OtcMetaSource(
 						),
 						id = stIdStr,
 						coverage = posOpt.orElse{
-							geoJsonOpt.flatMap(GeoJson.toFeature)
+							geoJsonOpt.flatMap(GeoJson.toFeature(_, Some(s"$name geo-coverage")))
 						},
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,

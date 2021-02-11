@@ -13,10 +13,10 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val datasetSpecFormat = jsonFormat2(DatasetSpec)
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
-	implicit val positionFormat = jsonFormat3(Position.apply)
+	implicit val positionFormat = jsonFormat4(Position.apply)
 	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
-	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
-	implicit val geoPolygonFormat = jsonFormat1(Polygon)
+	implicit val geoTrackFormat = jsonFormat2(GeoTrack)
+	implicit val geoPolygonFormat = jsonFormat2(Polygon)
 	//implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
 
 	implicit object countryCodeFormat extends JsonFormat[CountryCode]{
@@ -60,7 +60,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat1(GeometryCollection)
+	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat2(GeometryCollection)
 
 	implicit object orcidFormat extends JsonFormat[Orcid]{
 		def write(id: Orcid): JsValue = JsString(id.shortId)

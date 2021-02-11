@@ -121,7 +121,7 @@
 			@for(coverage <- station.coverage) {
 				<h2>Location</h2>
 				@coverage match {
-					case Position(lat, long, altOpt) => {
+					case Position(lat, long, altOpt, _) => {
 						@metadataRow("Latitude/Longitude", s"""$lat, $long""")
 						@for(alt <- altOpt){
 							@metadataRow("Elevation", s"""${alt.toInt} m""")

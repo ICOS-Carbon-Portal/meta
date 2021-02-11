@@ -33,9 +33,9 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 				latOpt <- latitudeInput.value.withErrorContext("Sampling point latitude");
 				lonOpt <- longitudeInput.value.withErrorContext("Sampling point longitude")
 			) yield
-				for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None)
+				for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, None)
 
-		case Some(point) => Success(Some(Position(point.latitude, point.longitude, None)))
+		case Some(point) => Success(Some(Position(point.latitude, point.longitude, None, None)))
 		case _ => Success(None)
 	}
 

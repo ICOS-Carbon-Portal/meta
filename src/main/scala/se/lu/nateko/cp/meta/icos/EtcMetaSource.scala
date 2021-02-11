@@ -187,7 +187,7 @@ object EtcMetaSource{
 			lat <- getNumber(Vars.lat).require("station must have latitude");
 			lon <- getNumber(Vars.lon).require("station must have longitude");
 			alt <- getNumber(Vars.elev).optional
-		) yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue))
+		) yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
 
 	def getPerson(implicit lookup: Lookup): Validated[EtcPerson] =
 		for(

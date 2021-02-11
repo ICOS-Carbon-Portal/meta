@@ -198,11 +198,11 @@ object ExportService{
 
 	def coverageToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 
-		case GeometryCollection(geos) => JsArray(
+		case GeometryCollection(geos, _) => JsArray(
 			geos.map(coverageToSchemaOrg).toVector
 		)
 
-		case Position(lat, lon, altOpt) => JsObject(
+		case Position(lat, lon, altOpt, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoCoordinates"),
 				"latitude"  -> JsNumber(lat),
@@ -222,14 +222,14 @@ object ExportService{
 			)
 		)
 
-		case GeoTrack(points) => JsObject(
+		case GeoTrack(points, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoShape"),
 				"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 			)
 		)
 
-		case Polygon(vertices) => JsObject(
+		case Polygon(vertices, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoShape"),
 				"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))

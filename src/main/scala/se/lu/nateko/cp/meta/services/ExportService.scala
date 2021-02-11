@@ -106,6 +106,7 @@ object ExportService{
 		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull){cov =>
 			JsObject(
 				"@type" -> JsString("Place"),
+				"name"  -> asOptJsString(cov.label),
 				"geo"   -> coverageToSchemaOrg(cov)
 			)
 		}

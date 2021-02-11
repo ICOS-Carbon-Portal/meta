@@ -84,8 +84,8 @@ class OtcMetaSource(
 
 		getLookupV(q, "st"){(b, tcId) =>
 			for(
-				stUri <- qresValueReq(b, "st").collect{case iri: IRI => iri}; //TODO use ensureUriValue
-				platUri <- qresValueReq(b, "plat").collect{case iri: IRI => iri}; //TODO use ensureUriValue
+				stUri <- qresValueReq(b, "st").flatMap(ensureIriValue);
+				platUri <- qresValueReq(b, "plat").flatMap(ensureIriValue);
 				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None);
@@ -99,9 +99,9 @@ class OtcMetaSource(
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
-				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(ensureUriValue).optional;
-				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(ensureUriValue).optional;
-				respOrg <- qresValue(b, "respOrg").collect{case iri: IRI => iri}.optional //TODO use ensureUriValue
+				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(ensureIriValue).optional;
+				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(ensureIriValue).optional;
+				respOrg <- qresValue(b, "respOrg").flatMap(ensureIriValue).optional
 			) yield{
 
 				TcStation[O](
@@ -116,7 +116,7 @@ class OtcMetaSource(
 							),
 							name = name,
 							email = None,
-							website = websiteSt.orElse(websitePlat)
+							website = websiteSt.orElse(websitePlat).map(_.toJava)
 						),
 						id = stIdStr,
 						coverage = posOpt.orElse(geoJsonOpt.map(GenericGeoFeature.apply)),
@@ -302,8 +302,10 @@ class OtcMetaSource(
 	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.toDouble)
 	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING)
 	private def parseUriLiteral(v: Value) = parseLiteral(v, XMLSchema.ANYURI).map(new java.net.URI(_))
-	//TODO Do more careful control of value being a URI (when rdfs:seeAlso have been corrected in production)
-	private def ensureUriValue(v: Value) = Validated(new java.net.URI(v.stringValue))
+	private def ensureIriValue(v: Value): Validated[IRI] = v match{
+		case iri: IRI => Validated.ok(iri)
+		case _ => Validated.error(s"expected an IRI value, got $v")
+	}
 
 }
 

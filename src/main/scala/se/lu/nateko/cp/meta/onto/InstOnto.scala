@@ -158,15 +158,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case _: ObjectPropertyDto => factory.createIRI(update.obj)
 		}
 
-		//TODO Simplify this when wrong rdfs:seeAlso statements have been purged from production db
-		if(!update.isAssertion && update.predicate === RDFS.SEEALSO){
-			val toRemove = Seq(factory.createIRI(update.obj), factory.createLiteral(update.obj, XMLSchema.ANYURI)).map{
-				obj => factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
-			}
-			toRemove.find(st => instServer.hasStatement(update.subject.toRdf, st.getPredicate, st.getObject)).get
-		}
-		//keep this branch after simplification
-		else factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
+		factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
 	}
 
 	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =

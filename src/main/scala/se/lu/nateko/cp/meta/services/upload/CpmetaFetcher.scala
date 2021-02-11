@@ -31,8 +31,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			Option.empty
 		),
 		max = Position(
-			//TODO Get rid of hasNo_thernBound when it is corrected in production
-			lat = getOptionalDouble(cov, metaVocab.hasNorthernBound).getOrElse(getSingleDouble(cov, metaVocab.hasNo_thernBound)),
+			lat = getSingleDouble(cov, metaVocab.hasNorthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
 			Option.empty
 		),
@@ -59,8 +58,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		self = getLabeledResource(org),
 		name = getSingleString(org, metaVocab.hasName),
 		email = getOptionalString(org, metaVocab.hasEmail),
-		//TODO Drop the second option when all the rdfs:seeAlso values in production have been fixed to be IRIs
-		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava).orElse(getOptionalUriLiteral(org, RDFS.SEEALSO))
+		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava)
 	)
 
 	protected def getPerson(pers: IRI) = Person(

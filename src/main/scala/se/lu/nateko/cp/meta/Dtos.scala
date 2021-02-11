@@ -48,5 +48,4 @@ case class LabelingUserDto(
 	phone: Option[String] = None
 )
 
-case class LabelingStatusUpdate(stationUri: URI, newStatus: String)
-case class LabelingStatusCommentUpdate(stationUri: URI, newStatusComment: String)
+case class LabelingStatusUpdate(stationUri: URI, newStatus: String, newStatusComment: Option[String])

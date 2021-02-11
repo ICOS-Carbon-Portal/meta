@@ -15,7 +15,7 @@ function filterByStatus(appStatus, station) {
 			return filter.value == station.hasApplicationStatus;
 		});
 
-		return filter.selected;
+		return !!filter && filter.selected;
 	}
 }
 

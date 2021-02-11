@@ -8,7 +8,6 @@ var actions = Reflux.createActions([
 	'fileUpload',
 	'fileDelete',
 	'statusUpdate',
-	'statusCommentUpdate',
 	'savePi',
 	'stationFilters',
 	'showToaster',
@@ -24,7 +23,7 @@ var Toaster = require('./views/Toaster.jsx')();
 
 var WhoAmIStore = require('./stores/WhoAmIStoreFactory.js')(Backend, ToasterStore, actions.savePi);
 
-var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, ToasterStore, actions.chooseStation, actions.saveStation, actions.statusUpdate, actions.statusCommentUpdate);
+var ChosenStationStore = require('./stores/ChosenStationStoreFactory.js')(Backend, ToasterStore, actions.chooseStation, actions.saveStation, actions.statusUpdate);
 
 var StationsListStore = require('./stores/StationsListStoreFactory.js')(Backend, ChosenStationStore);
 
@@ -37,11 +36,11 @@ var FileAwareStationStore = require('./stores/FileAwareStationStoreFactory.js')(
 
 var StationMixins = require('./views/StationMixinsFactory.jsx')(
 	FileAwareStationStore,
+	ToasterStore,
 	actions.fileUpload,
 	actions.fileDelete,
 	actions.saveStation,
-	actions.statusUpdate,
-	actions.statusCommentUpdate
+	actions.statusUpdate
 );
 
 var themeToStation = {

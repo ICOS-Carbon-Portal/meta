@@ -6,23 +6,10 @@ import spray.json._
 
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeometryCollection
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.core.data.GeoTrack
-import se.lu.nateko.cp.meta.core.data.Polygon
-import se.lu.nateko.cp.meta.core.data.Agent
-import se.lu.nateko.cp.meta.core.data.Organization
-import se.lu.nateko.cp.meta.core.data.Person
+import Envri.{Envri, EnvriConfigs}
 
 
 object ExportService{
@@ -106,13 +93,13 @@ object ExportService{
 			}
 		}
 
-		val published: JsValue = dobj.submission.stop.fold[JsValue](JsNull)(stop => JsString(stop.toString))
+		val published: JsValue = asOptJsString(dobj.submission.stop.map(_.toString))
 
 		val modified = JsString(
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
 		)
 
-		val keywords = dobj.keywords.fold[JsValue](JsNull)(k =>
+		val keywords = dobj.keywords.fold(JsArray.empty)(k =>
 			JsArray(k.map(JsString(_)).toVector)
 		)
 
@@ -124,61 +111,27 @@ object ExportService{
 		}
 
 		val temporalCoverage: JsValue = dobj.specificInfo.fold(
-			l3 => JsString(s"${l3.temporal.interval.start}/${l3.temporal.interval.stop}"),
-			l2 => l2.acquisition.interval.fold[JsValue](JsNull)(interval =>
-				JsString(s"${interval.start}/${interval.stop}")
-			)
+			l3 => timeIntToSchemaOrg(l3.temporal.interval),
+			_.acquisition.interval.map(timeIntToSchemaOrg).getOrElse(JsNull)
 		)
 
-		val accessUrl = dobj.accessUrl.fold[JsValue](JsNull)(url => JsString(url.toString))
-
-		val stationCreator = dobj.specificInfo.fold(_ => JsNull, l2 => {
-			val station = l2.acquisition.station
-			JsObject(
-				"@type"  -> JsString("Organization"),
-				"@id"    -> JsString(station.org.self.uri.toString),
-				"sameAs" -> JsString(station.org.self.uri.toString),
-				"name"   -> JsString(station.org.name),
-				"email"  -> JsString(station.org.email.getOrElse(""))
-			)
-		})
-
-		def agentTemplate(agent: Agent) = agent match {
-			case Organization(self, name, email, _) => {
-				JsObject(
-					"@type"  -> JsString("Organization"),
-					"@id"    -> JsString(self.uri.toString),
-					"sameAs" -> JsString(self.uri.toString),
-					"name"   -> JsString(name),
-					"email"  -> JsString(email.getOrElse(""))
-				)
-			}
-			case Person(self, firstName, lastName, _) => {
-				JsObject(
-					"@type"      -> JsString("Person"),
-					"@id"        -> JsString(self.uri.toString),
-					"sameAs"     -> JsString(self.uri.toString),
-					"givenName"  -> JsString(firstName),
-					"familyName" -> JsString(lastName),
-					"name"       -> JsString(s"$firstName $lastName")
-				)
-			}
-		}
+		val stationCreator = dobj.specificInfo.fold(
+			_ => JsNull,
+			l2 => orgToSchemaOrg(l2.acquisition.station.org)
+		)
 
 		val creator = envri match {
 			case Envri.SITES => stationCreator
-			case _ => dobj.references.authors match {
-				case None | Some(Seq()) => dobj.production.map(p => agentTemplate(p.creator)).getOrElse(stationCreator)
-				case Some(authors) => JsArray(authors.map(agentTemplate).toVector)
+			case _ => dobj.references.authors.toSeq.flatten match {
+				case Seq() => dobj.production.map(p => agentToSchemaOrg(p.creator)).getOrElse(stationCreator)
+				case authors => JsArray(authors.map(agentToSchemaOrg).toVector)
 			}
 		}
 
-		val producer = dobj.production.fold[JsValue](JsNull)(p =>
-			p.host.fold[JsValue](JsNull)(agentTemplate)
-		)
+		val producer = dobj.production.map(p => agentToSchemaOrg(p.host.getOrElse(p.creator))).getOrElse(JsNull)
 
 		val contributor = dobj.production.fold[JsValue](JsNull)(p =>
-			JsArray(p.contributors.map(agentTemplate).toVector)
+			JsArray(p.contributors.map(agentToSchemaOrg).toVector)
 		)
 
 		val variableMeasured = dobj.specificInfo
@@ -188,8 +141,8 @@ object ExportService{
 						JsObject(
 							"@type"       -> JsString("PropertyValue"),
 							"name"        -> JsString(variable.label),
-							"description" -> JsString(variable.valueType.self.label.getOrElse("")),
-							"unitText"    -> JsString(variable.valueType.unit.getOrElse(""))
+							"description" -> asOptJsString(variable.valueType.self.label),
+							"unitText"    -> asOptJsString(variable.valueType.unit)
 						)
 					}).toVector)
 		)
@@ -223,7 +176,7 @@ object ExportService{
 			"keywords"              -> keywords,
 			"spatialCoverage"       -> spatialCoverage,
 			"distribution"          -> JsObject(
-				"contentUrl"          -> accessUrl
+				"contentUrl"         -> asOptJsString(dobj.accessUrl.map(_.toString))
 			),
 			"temporalCoverage"      -> temporalCoverage,
 			"publisher"             -> JsObject(
@@ -233,7 +186,7 @@ object ExportService{
 				"url"   -> JsString(conf.dataHost)
 			),
 			"producer"              -> producer,
-			"provider"              -> agentTemplate(dobj.submission.submitter),
+			"provider"              -> agentToSchemaOrg(dobj.submission.submitter),
 			"creator"               -> creator,
 			"contributor"           -> contributor,
 			"variableMeasured"      -> variableMeasured,
@@ -262,23 +215,54 @@ object ExportService{
 		case LatLonBox(min, max, _, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> JsString(s"${min.lat} ${min.lon} ${max.lat} ${min.lon} ${max.lat} ${max.lon} ${min.lat} ${max.lon} ${min.lat} ${min.lon}")
+				"polygon"   -> {
+					val (minlat, minlon, maxlat, maxlon) = (min.lat6, min.lon6, max.lat6, max.lon6)
+					JsString(s"$minlat $minlon $maxlat $minlon $maxlat $maxlon $minlat $maxlon $minlat $minlon")
+				}
 			)
 		)
 
 		case GeoTrack(points) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> JsString(points.map(p => s"${p.lat} ${p.lon}").mkString(" "))
+				"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 			)
 		)
 
 		case Polygon(vertices) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> JsString(vertices.map(p => s"${p.lat} ${p.lon}").mkString(" "))
+				"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 			)
 		)
 	}
+
+	def orgToSchemaOrg(org: Organization) = JsObject(
+		"@type"  -> JsString("Organization"),
+		"@id"    -> JsString(org.self.uri.toString),
+		"sameAs" -> JsString(org.self.uri.toString),
+		"name"   -> JsString(org.name),
+		"email"  -> asOptJsString(org.email)
+	)
+
+	def agentToSchemaOrg(agent: Agent): JsObject = agent match {
+
+		case org: Organization => orgToSchemaOrg(org)
+
+		case Person(self, firstName, lastName, _) => {
+			JsObject(
+				"@type"      -> JsString("Person"),
+				"@id"        -> JsString(self.uri.toString),
+				"sameAs"     -> JsString(self.uri.toString),
+				"givenName"  -> JsString(firstName),
+				"familyName" -> JsString(lastName),
+				"name"       -> JsString(s"$firstName $lastName")
+			)
+		}
+	}
+
+	def timeIntToSchemaOrg(int: TimeInterval) =  JsString(s"${int.start}/${int.stop}")
+
+	def asOptJsString(sOpt: Option[String]): JsValue = sOpt.fold[JsValue](JsNull)(JsString.apply)
 
 }

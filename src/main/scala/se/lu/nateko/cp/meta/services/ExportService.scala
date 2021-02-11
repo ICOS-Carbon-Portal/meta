@@ -7,6 +7,7 @@ import spray.json._
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.GeoFeature
@@ -17,6 +18,11 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.core.data.GeoTrack
+import se.lu.nateko.cp.meta.core.data.Polygon
+import se.lu.nateko.cp.meta.core.data.Agent
+import se.lu.nateko.cp.meta.core.data.Organization
+import se.lu.nateko.cp.meta.core.data.Person
 
 
 object ExportService{
@@ -55,7 +61,7 @@ object ExportService{
 			.toIndexedSeq
 	}
 
-	def schemaOrg(dobj: DataObject, handleProxies: HandleProxiesConfig)(implicit conf: EnvriConfig): JsObject = {
+	def schemaOrg(dobj: DataObject, handleProxies: HandleProxiesConfig)(implicit conf: EnvriConfig, envri: Envri): JsObject = {
 
 		val landingPage = JsString(staticObjLandingPage(dobj.hash)(conf).toString)
 
@@ -106,12 +112,9 @@ object ExportService{
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
 		)
 
-		val keywords: JsValue = {
-			val allKeywords = dobj.keywords.toVector.flatten ++
-				dobj.specification.keywords.toSeq.flatten ++
-				dobj.specification.project.keywords.toSeq.flatten
-			if(allKeywords.isEmpty) JsNull else JsArray(allKeywords.map(JsString.apply))
-		}
+		val keywords = dobj.keywords.fold[JsValue](JsNull)(k =>
+			JsArray(k.map(JsString(_)).toVector)
+		)
 
 		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull){cov =>
 			JsObject(
@@ -119,6 +122,81 @@ object ExportService{
 				"geo"   -> coverageToSchemaOrg(cov)
 			)
 		}
+
+		val temporalCoverage: JsValue = dobj.specificInfo.fold(
+			l3 => JsString(s"${l3.temporal.interval.start}/${l3.temporal.interval.stop}"),
+			l2 => l2.acquisition.interval.fold[JsValue](JsNull)(interval =>
+				JsString(s"${interval.start}/${interval.stop}")
+			)
+		)
+
+		val accessUrl = dobj.accessUrl.fold[JsValue](JsNull)(url => JsString(url.toString))
+
+		val stationCreator = dobj.specificInfo.fold(_ => JsNull, l2 => {
+			val station = l2.acquisition.station
+			JsObject(
+				"@type"  -> JsString("Organization"),
+				"@id"    -> JsString(station.org.self.uri.toString),
+				"sameAs" -> JsString(station.org.self.uri.toString),
+				"name"   -> JsString(station.org.name),
+				"email"  -> JsString(station.org.email.getOrElse(""))
+			)
+		})
+
+		def agentTemplate(agent: Agent) = agent match {
+			case Organization(self, name, email, _) => {
+				JsObject(
+					"@type"  -> JsString("Organization"),
+					"@id"    -> JsString(self.uri.toString),
+					"sameAs" -> JsString(self.uri.toString),
+					"name"   -> JsString(name),
+					"email"  -> JsString(email.getOrElse(""))
+				)
+			}
+			case Person(self, firstName, lastName, _) => {
+				JsObject(
+					"@type"      -> JsString("Person"),
+					"@id"        -> JsString(self.uri.toString),
+					"sameAs"     -> JsString(self.uri.toString),
+					"givenName"  -> JsString(firstName),
+					"familyName" -> JsString(lastName),
+					"name"       -> JsString(s"$firstName $lastName")
+				)
+			}
+		}
+
+		val creator = envri match {
+			case Envri.SITES => stationCreator
+			case _ => dobj.references.authors match {
+				case None | Some(Seq()) => dobj.production.map(p => agentTemplate(p.creator)).getOrElse(stationCreator)
+				case Some(authors) => JsArray(authors.map(agentTemplate).toVector)
+			}
+		}
+
+		val producer = dobj.production.fold[JsValue](JsNull)(p =>
+			p.host.fold[JsValue](JsNull)(agentTemplate)
+		)
+
+		val contributor = dobj.production.fold[JsValue](JsNull)(p =>
+			JsArray(p.contributors.map(agentTemplate).toVector)
+		)
+
+		val variableMeasured = dobj.specificInfo
+			.fold(_.variables, _.columns)
+			.fold[JsValue](JsNull)(v => JsArray(
+					v.map(variable => {
+						JsObject(
+							"@type"       -> JsString("PropertyValue"),
+							"name"        -> JsString(variable.label),
+							"description" -> JsString(variable.valueType.self.label.getOrElse("")),
+							"unitText"    -> JsString(variable.valueType.unit.getOrElse(""))
+						)
+					}).toVector)
+		)
+
+		val isPartOf = JsArray(dobj.parentCollections.map(coll =>
+			JsString(coll.uri.toString)).toVector
+		)
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
@@ -143,7 +221,23 @@ object ExportService{
 			"datePublished"         -> published,
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,
-			"spatialCoverage"       -> spatialCoverage
+			"spatialCoverage"       -> spatialCoverage,
+			"distribution"          -> JsObject(
+				"contentUrl"          -> accessUrl
+			),
+			"temporalCoverage"      -> temporalCoverage,
+			"publisher"             -> JsObject(
+				"@type" -> JsString("Organization"),
+				"@id"   -> JsString(conf.dataHost),
+				"name"  -> JsString(s"$envri data portal"),
+				"url"   -> JsString(conf.dataHost)
+			),
+			"producer"              -> producer,
+			"provider"              -> agentTemplate(dobj.submission.submitter),
+			"creator"               -> creator,
+			"contributor"           -> contributor,
+			"variableMeasured"      -> variableMeasured,
+			"isPartOf"              -> isPartOf
 		)
 	}
 
@@ -164,7 +258,27 @@ object ExportService{
 				"elevation" -> JsNumber(alt)
 			}
 		)
-		case LatLonBox(min, max, label, uri) => ???
+
+		case LatLonBox(min, max, _, _) => JsObject(
+			Map(
+				"@type"     -> JsString("GeoShape"),
+				"polygon"   -> JsString(s"${min.lat} ${min.lon} ${max.lat} ${min.lon} ${max.lat} ${max.lon} ${min.lat} ${max.lon} ${min.lat} ${min.lon}")
+			)
+		)
+
+		case GeoTrack(points) => JsObject(
+			Map(
+				"@type"     -> JsString("GeoShape"),
+				"polygon"   -> JsString(points.map(p => s"${p.lat} ${p.lon}").mkString(" "))
+			)
+		)
+
+		case Polygon(vertices) => JsObject(
+			Map(
+				"@type"     -> JsString("GeoShape"),
+				"polygon"   -> JsString(vertices.map(p => s"${p.lat} ${p.lon}").mkString(" "))
+			)
+		)
 	}
 
 }

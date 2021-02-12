@@ -103,13 +103,7 @@ object ExportService{
 			JsArray(k.map(JsString(_)).toVector)
 		)
 
-		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull){cov =>
-			JsObject(
-				"@type" -> JsString("Place"),
-				"name"  -> asOptJsString(cov.label),
-				"geo"   -> coverageToSchemaOrg(cov)
-			)
-		}
+		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(geoFeatureToSchemaOrgPlace)
 
 		val temporalCoverage: JsValue = dobj.specificInfo.fold(
 			l3 => timeIntToSchemaOrg(l3.temporal.interval),
@@ -197,10 +191,10 @@ object ExportService{
 
 	private def uriResourceLabel(res: UriResource): String = res.label.getOrElse(res.uri.toString.split("/").last)
 
-	def coverageToSchemaOrg(cov: GeoFeature): JsValue = cov match{
+	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 
 		case GeometryCollection(geos, _) => JsArray(
-			geos.map(coverageToSchemaOrg).toVector
+			geos.map(geoFeatureToSchemaOrg).toVector
 		)
 
 		case Position(lat, lon, altOpt, _) => JsObject(
@@ -266,4 +260,14 @@ object ExportService{
 
 	def asOptJsString(sOpt: Option[String]): JsValue = sOpt.fold[JsValue](JsNull)(JsString.apply)
 
+	def geoFeatureToSchemaOrgPlace(f: GeoFeature): JsValue = f match{
+		case GeometryCollection(geoms, _) =>
+			JsArray(geoms.map(geoFeatureToSchemaOrgPlace).toVector)
+		case _ =>
+			JsObject(
+				"@type" -> JsString("Place"),
+				"name"  -> asOptJsString(f.label),
+				"geo"   -> geoFeatureToSchemaOrg(f)
+			)
+	}
 }

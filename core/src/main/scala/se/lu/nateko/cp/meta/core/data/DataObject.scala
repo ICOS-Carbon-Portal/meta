@@ -53,7 +53,7 @@ case class DataAcquisition(
 
 	def coverage: Option[GeoFeature] = samplingPoint
 		.map(sp => siteGeometry
-			.fold[GeoFeature](sp)(l => GeometryCollection(Seq(sp, l), None))
+			.fold[GeoFeature](sp)(l => GeometryCollection(Seq(sp, l), None).flatten)
 		)
 		.orElse(siteGeometry)
 		.orElse(station.coverage)

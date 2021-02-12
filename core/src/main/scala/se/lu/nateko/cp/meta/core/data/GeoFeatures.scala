@@ -10,6 +10,14 @@ sealed trait GeoFeature{
 
 case class GeometryCollection(geometries: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
 	def textSpecification = geometries.map(_.textSpecification).mkString("Geometries: ", "; ", "")
+
+	def flatten = {
+		def flattenFeature(f: GeoFeature): Seq[GeoFeature] = f match{
+			case GeometryCollection(geometries, _) => geometries
+			case _ => Seq(f)
+		}
+		copy(geometries = geometries.flatMap(flattenFeature))
+	}
 }
 
 case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String]) extends GeoFeature{

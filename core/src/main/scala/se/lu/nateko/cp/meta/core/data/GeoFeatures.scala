@@ -13,7 +13,7 @@ case class GeometryCollection(geometries: Seq[GeoFeature], label: Option[String]
 
 	def flatten = {
 		def flattenFeature(f: GeoFeature): Seq[GeoFeature] = f match{
-			case GeometryCollection(geometries, _) => geometries
+			case GeometryCollection(geometries, _) => geometries.flatMap(flattenFeature)
 			case _ => Seq(f)
 		}
 		copy(geometries = geometries.flatMap(flattenFeature))

@@ -17,11 +17,11 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.6.1",
+		version := "0.6.2",
 		scalacOptions ++= jvmScalacOptions,
 		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(
-			"io.spray"              %% "spray-json"                         % "1.3.5",
+			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
 		),
 		cpTsGenTypeMap := Map(

@@ -4,9 +4,11 @@
 
 @(
 	title: String, header: String, envri: Envri.Value,
-	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None
+	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None,
+	extraMetaTags: Option[Html] = None
 )(body: Html)
 @template{
+	@extraMetaTags
 	@LandingPageStyle()
 }{
 	@pageHeader(header, headerExtra)

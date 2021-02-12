@@ -13,11 +13,11 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val datasetSpecFormat = jsonFormat2(DatasetSpec)
 	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
 
-	implicit val positionFormat = jsonFormat3(Position.apply)
+	implicit val positionFormat = jsonFormat4(Position.apply)
 	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
-	implicit val geoTrackFormat = jsonFormat1(GeoTrack)
-	implicit val geoPolygonFormat = jsonFormat1(Polygon)
-	implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
+	implicit val geoTrackFormat = jsonFormat2(GeoTrack)
+	implicit val geoPolygonFormat = jsonFormat2(Polygon)
+	//implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
 
 	implicit object countryCodeFormat extends JsonFormat[CountryCode]{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -29,15 +29,16 @@ object JsonSupport extends CommonJsonSupport{
 	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
 
 		def write(geo: GeoFeature): JsValue = {
-			val baseJson = geo match {
+			val base = geo match {
 				case llb: LatLonBox => llb.toJson
 				case gt: GeoTrack => gt.toJson
 				case pos: Position => pos.toJson
-				case ggf: GenericGeoFeature => ggf.toJson
 				case gpoly: Polygon => gpoly.toJson
 				case geocol: GeometryCollection => geocol.toJson
 			}
-			JsObject(baseJson.asJsObject.fields + ("geo" -> geo.geoJson.parseJson))
+			val geoJson = GeoJson.fromFeature(geo)
+			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
+			JsObject(allFields)
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
@@ -50,17 +51,16 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[LatLonBox]
 				else if(fields.contains("lat") && fields.contains("lon"))
 					value.convertTo[Position]
-				else if(fields.contains("geometries")) {
+				else if(fields.contains("geometries"))
 					value.convertTo[GeometryCollection]
-				}
 				else
-					value.convertTo[GenericGeoFeature]
+					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>
 				deserializationError("Expected a JsObject representing a GeoFeature")
 		}
 	}
 
-	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat1(GeometryCollection)
+	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat2(GeometryCollection)
 
 	implicit object orcidFormat extends JsonFormat[Orcid]{
 		def write(id: Orcid): JsValue = JsString(id.shortId)
@@ -153,7 +153,7 @@ object JsonSupport extends CommonJsonSupport{
 		def write(dobj: DataObject): JsValue = {
 			val plain = dobj.toJson(defFormat).asJsObject
 			dobj.coverage.fold(plain) { geo =>
-				JsObject(plain.fields + ("coverageGeoJson" -> JsString(geo.geoJson)))
+				JsObject(plain.fields + ("coverageGeo" -> GeoJson.fromFeature(geo)))
 			}
 		}
 	}

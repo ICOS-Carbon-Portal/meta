@@ -200,7 +200,7 @@ object AtcMetaSource{
 					website = None
 				),
 				id = stIdStr,
-				coverage = Some(Position(lat, lon, Some(alt))),
+				coverage = Some(Position(lat, lon, Some(alt), Some(s"$name position"))),
 				responsibleOrganization = None,
 				pictures = Nil,
 				specificInfo = PlainIcosSpecifics(

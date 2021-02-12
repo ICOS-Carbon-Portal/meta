@@ -44,7 +44,7 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extend
 					maxLat <- maxLatInput.value;
 					maxLon <- maxLonInput.value;
 					label <- spatCovLabel.value
-				) yield Left(LatLonBox(Position(minLat, minLon, None), Position(maxLat, maxLon, None), label, None))
+				) yield Left(LatLonBox(Position(minLat, minLon, None, None), Position(maxLat, maxLon, None, None), label, None))
 			} else Success(Right(spCov.uri))
 		}
 

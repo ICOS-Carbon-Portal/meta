@@ -174,8 +174,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::
 			(spcovUri, RDF.TYPE, meta.spatialCoverageClass) ::
-			(spcovUri, meta.asGeoJSON, vocab.lit(cov.geoJson)) ::
-			Nil
+			(spcovUri, meta.asGeoJSON, vocab.lit(GeoJson.fromFeature(cov).compactPrint)) ::
+			cov.label.toList.map{lbl =>
+				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
+			}
 	}
 
 	private def plainIcosStationSpecTriples(iri: IRI, s: IcosStationSpecifics): Seq[Triple] = {

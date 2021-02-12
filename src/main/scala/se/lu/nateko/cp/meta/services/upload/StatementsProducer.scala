@@ -19,14 +19,15 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.L3VarInfo
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.core.data.L3VarInfo
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -95,23 +96,24 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		val covUri = vocab.getSpatialCoverage(hash)
 
 		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
-		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(spatial.geoJson)) +:
+		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
+		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
 		(spatial match{
-			case LatLonBox(min, max, labelOpt, _) =>
+			case LatLonBox(min, max, _, _) =>
 				Seq(
 					makeSt(covUri, RDF.TYPE, metaVocab.latLonBoxClass),
 					makeSt(covUri, metaVocab.hasNorthernBound, vocab.lit(max.lat)),
 					makeSt(covUri, metaVocab.hasSouthernBound, vocab.lit(min.lat)),
 					makeSt(covUri, metaVocab.hasWesternBound, vocab.lit(min.lon)),
 					makeSt(covUri, metaVocab.hasEasternBound, vocab.lit(max.lon))
-				) ++
-				makeSt(covUri, RDFS.LABEL, labelOpt.map(vocab.lit))
+				)
+
 			case _ =>
 				Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
 		})
 	}
 
-	def getPositionStatements(aquisitionUri: IRI, point: Position)(implicit envri: Envri): Seq[Statement] = {
+	private def getPositionStatements(aquisitionUri: IRI, point: Position)(implicit envri: Envri): Seq[Statement] = {
 		val samplUri = vocab.getPosition(point)
 
 		Seq(
@@ -119,7 +121,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat)),
 			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon)),
 			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
-		)
+		) ++
+		makeSt(samplUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++
+		makeSt(samplUri, RDFS.LABEL, point.label.map(vocab.lit))
 	}
 
 	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata)(implicit envri: Envri): Seq[Statement] = {

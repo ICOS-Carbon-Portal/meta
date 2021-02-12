@@ -21,19 +21,22 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getPosition(point: IRI) = Position(
 		lat = getSingleDouble(point, metaVocab.hasLatitude),
 		lon = getSingleDouble(point, metaVocab.hasLongitude),
-		Option.empty
+		Option.empty,
+		label = getOptionalString(point, RDFS.LABEL)
 	)
 
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasWesternBound),
-			Option.empty
+			Option.empty,
+			None
 		),
 		max = Position(
 			lat = getSingleDouble(cov, metaVocab.hasNorthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
-			Option.empty
+			Option.empty,
+			None
 		),
 		label = getOptionalString(cov, RDFS.LABEL),
 		uri = Some(cov.toJava)
@@ -90,8 +93,10 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getStationCoverage(stat: IRI): Option[GeoFeature] = {
 		val optPoint = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
-			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude)
-		) yield Position(posLat, posLon, getOptionalFloat(stat, metaVocab.hasElevation))
+			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
+			altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
+			labelOpt = getOptionalString(stat, RDFS.LABEL)
+		) yield Position(posLat, posLon, altOpt, labelOpt)
 
 		optPoint.orElse(getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage))
 	}
@@ -126,12 +131,18 @@ trait CpmetaFetcher extends FetchingHelper{
 	}
 
 	protected def getCoverage(covUri: IRI): GeoFeature = {
+		import spray.json._
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
 		if(covClass === metaVocab.latLonBoxClass)
 			getLatLonBox(covUri)
 		else
-			GenericGeoFeature(getSingleString(covUri, metaVocab.asGeoJSON))
+			GeoJson.toFeature(
+				getSingleString(covUri, metaVocab.asGeoJSON),
+				getOptionalString(covUri, RDFS.LABEL)
+			).getOrElse(
+				throw new Exception(s"Failed to parse GeoJSON for $covUri")
+			)
 	}
 
 	protected def getNextVersion(item: IRI): Option[URI] = {

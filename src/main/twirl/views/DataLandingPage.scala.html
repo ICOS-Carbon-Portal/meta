@@ -4,6 +4,7 @@
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.CpVocab
+@import se.lu.nateko.cp.meta.services.ExportService
 @import se.lu.nateko.cp.meta.utils.rdf4j._
 @import se.lu.nateko.cp.meta.utils._
 @import landpagesnips._
@@ -163,7 +164,7 @@
 					@PanelRow("Coverage", covText)
 				}
 
-				@for(coverage <- dobj.coverage; geoJson = coverage.geoJson){
+				@for(coverage <- dobj.coverage; geoJson = GeoJson.fromFeature(coverage).compactPrint){
 					<iframe src="/station/?icon=@icon&coverage=@urlEncode(geoJson)"></iframe>
 				}
 			}
@@ -223,10 +224,18 @@
 	else None
 }
 
+@schemaOrg = {
+	<script type="application/ld+json">
+		@Html(ExportService.schemaOrg(dobj, handleProxies).prettyPrint)
+	</script>
+}
+
 @template = @{
 	val spec = dobj.specification
+	//val schemaOrg = JsonLD(dobj, handleProxies)
+
 	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.self.uri === vocab.icosProject && spec.dataLevel == 1)
-		AtcLandingPage(pageTitle, headerExtra) _
+		AtcLandingPage(pageTitle, headerExtra, schemaOrg) _
 	else
-		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra) _
+		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra, extraMetaTags = Some(schemaOrg)) _
 }

@@ -101,15 +101,18 @@ export const countryCodes = {
 	CH:"Switzerland",
 	CZ:"Czech Republic",
 	DE:"Germany",
+	DK:"Denmark",
+	ES:"Spain",
 	FI:"Finland",
 	FR:"France",
+	GB:"United Kingdom of Great Britain and Northern Ireland",
 	GF:"French Guiana",
+	GL:"Greenland",
 	IE:"Ireland",
 	IT:"Italy",
 	NL:"Netherlands",
 	NO:"Norway",
 	PL:"Poland",
-	SE:"Sweden",
-	GB:"United Kingdom of Great Britain and Northern Ireland"
+	SE:"Sweden"
 };
 

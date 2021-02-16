@@ -1,9 +1,10 @@
 @import se.lu.nateko.cp.meta.core.data.UriResource
+@import se.lu.nateko.cp.meta.core.data.Envri.Envri
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views._
 @import landpagesnips.resourceLink
 
-@(info: ResourceViewInfo)
+@(info: ResourceViewInfo)(implicit envri: Envri)
 @ServerSidePage("Metadata Entity Page", info.res.uri.toString, info.infrastructure, CpMenu.default){
 	<div class="container-fluid">
 

@@ -4,6 +4,8 @@ import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import spray.json._
 
+import akka.http.scaladsl.server.directives.ContentTypeResolver
+
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data._
@@ -171,7 +173,8 @@ object ExportService{
 			"keywords"              -> keywords,
 			"spatialCoverage"       -> spatialCoverage,
 			"distribution"          -> JsObject(
-				"contentUrl"         -> asOptJsString(dobj.accessUrl.map(_.toString))
+				"contentUrl"         -> asOptJsString(dobj.accessUrl.map(_.toString)),
+				"encodingFormat"     -> JsString(implicitly[ContentTypeResolver].apply(dobj.fileName).mediaType.toString)
 			),
 			"temporalCoverage"      -> temporalCoverage,
 			"publisher"             -> JsObject(

@@ -112,7 +112,7 @@ object ExportService{
 
 		val stationCreator = dobj.specificInfo.fold(
 			_ => JsNull,
-			l2 => orgToSchemaOrg(l2.acquisition.station.org)
+			l2 => orgToSchemaOrg(l2.acquisition.station.org, l2.acquisition.station.responsibleOrganization)
 		)
 
 		val creator = envri match {
@@ -232,17 +232,21 @@ object ExportService{
 		)
 	}
 
-	def orgToSchemaOrg(org: Organization) = JsObject(
-		"@type"  -> JsString("Organization"),
-		"@id"    -> JsString(org.self.uri.toString),
-		"sameAs" -> JsString(org.self.uri.toString),
-		"name"   -> JsString(org.name),
-		"email"  -> asOptJsString(org.email)
+	def orgToSchemaOrg(org: Organization, parent: Option[Organization]) = JsObject(
+		Map(
+			"@type"  -> JsString("Organization"),
+			"@id"    -> JsString(org.self.uri.toString),
+			"sameAs" -> JsString(org.self.uri.toString),
+			"name"   -> JsString(org.name),
+			"email"  -> asOptJsString(org.email),
+		) ++ parent.map{ parent =>
+			"parentOrganization" -> JsString(parent.name)
+		}
 	)
 
 	def agentToSchemaOrg(agent: Agent): JsObject = agent match {
 
-		case org: Organization => orgToSchemaOrg(org)
+		case org: Organization => orgToSchemaOrg(org, None)
 
 		case Person(self, firstName, lastName, _) => {
 			JsObject(

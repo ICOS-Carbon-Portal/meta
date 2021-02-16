@@ -57,7 +57,7 @@ val rdf4jVersion = "2.4.6"
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
 
-val frontendBuild = taskKey[Unit]("Builds the front end apps")
+val frontendBuild = taskKey[Int]("Builds the front end apps")
 frontendBuild := {
 	import scala.sys.process.Process
 	(Process("npm ci") #&& Process("npm run gulp")).!
@@ -105,6 +105,14 @@ lazy val meta = (project in file("."))
 
 		scalacOptions += "-Wunused:-imports",
 
+		(ThisProject / assembly) := (Def.taskDyn{
+			val frontRes = frontendBuild.value
+			Def.task{
+				if(frontRes != 0) throw new IllegalStateException("Front end build error")
+				(ThisProject / assembly).value
+			}
+		}).value,
+
 		assemblyMergeStrategy in assembly := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
@@ -118,7 +126,6 @@ lazy val meta = (project in file("."))
 
 		assembledMappings.in(assembly) += {
 			val finalJsFile = fullOptJS.in(uploadgui, Compile).value.data
-			frontendBuild.value
 			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName))
 		},
 

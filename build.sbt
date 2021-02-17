@@ -96,7 +96,7 @@ lazy val meta = (project in file("."))
 		),
 
 		Test / test := {
-			(metaCore / Test / test).value
+			val _ = (metaCore / Test / test).value
 			(Test / test).value
 		},
 
@@ -104,14 +104,6 @@ lazy val meta = (project in file("."))
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 
 		scalacOptions += "-Wunused:-imports",
-
-		(ThisProject / assembly) := (Def.taskDyn{
-			val frontRes = frontendBuild.value
-			Def.task{
-				if(frontRes != 0) throw new IllegalStateException("Front end build error")
-				(ThisProject / assembly).value
-			}
-		}).value,
 
 		assemblyMergeStrategy in assembly := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
@@ -128,6 +120,12 @@ lazy val meta = (project in file("."))
 			val finalJsFile = fullOptJS.in(uploadgui, Compile).value.data
 			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName))
 		},
+
+		assembly := Def.taskDyn{
+			val original = assembly.taskValue
+			if(frontendBuild.value != 0) throw new IllegalStateException("Front end build error")
+			else Def.task(original.value)
+		}.value,
 
 		resources.in(Compile) ++= {
 			val jsFile = fastOptJS.in(uploadgui, Compile).value.data

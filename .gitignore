@@ -30,6 +30,7 @@ npm-debug.log
 .cache-main
 .metals/
 .bloop/
+.bsp/
 .vscode/
 project/metals.sbt
 /.idea

@@ -107,6 +107,14 @@ object ExportService{
 
 		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(geoFeatureToSchemaOrgPlace)
 
+		val distribution = dobj.accessUrl.fold[JsValue](JsNull){url =>
+			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
+			JsObject(
+				"contentUrl"     -> JsString(url.toString),
+				"encodingFormat" -> JsString(contType.mediaType.toString)
+			)
+		}
+
 		val temporalCoverage: JsValue = dobj.specificInfo.fold(
 			l3 => timeIntToSchemaOrg(l3.temporal.interval),
 			_.acquisition.interval.map(timeIntToSchemaOrg).getOrElse(JsNull)
@@ -172,10 +180,7 @@ object ExportService{
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,
 			"spatialCoverage"       -> spatialCoverage,
-			"distribution"          -> JsObject(
-				"contentUrl"         -> asOptJsString(dobj.accessUrl.map(_.toString)),
-				"encodingFormat"     -> JsString(implicitly[ContentTypeResolver].apply(dobj.fileName).mediaType.toString)
-			),
+			"distribution"          -> distribution,
 			"temporalCoverage"      -> temporalCoverage,
 			"publisher"             -> JsObject(
 				"@type" -> JsString("Organization"),

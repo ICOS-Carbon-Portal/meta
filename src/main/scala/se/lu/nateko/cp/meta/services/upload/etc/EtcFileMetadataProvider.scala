@@ -24,8 +24,8 @@ class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSyste
 	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value) =
 		inner.flatMap(_.lookupFile(station, loggerId, fileId, dataType))
 
-	def lookupLogger(station: StationId, loggerId: Int) =
-		inner.flatMap(_.lookupLogger(station, loggerId))
+	// def lookupLogger(station: StationId, loggerId: Int) =
+	// 	inner.flatMap(_.lookupLogger(station, loggerId))
 
 	def getUtcOffset(station: StationId) =
 		inner.flatMap(_.getUtcOffset(station))
@@ -54,4 +54,12 @@ class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSyste
 					}
 				}
 		}
+}
+
+class TsvBasedEtcFileMetadataStore extends EtcFileMetadataStore{
+
+	override def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value): Option[EtcFileMeta] = ???
+
+	override def getUtcOffset(station: StationId): Option[Int] = ???
+
 }

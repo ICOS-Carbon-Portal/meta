@@ -83,7 +83,7 @@ trait EtcFileMetadataStore {
 
 	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value): Option[EtcFileMeta]
 
-	def lookupLogger(station: StationId, loggerId: Int): Option[EtcLoggerMeta]
+	//def lookupLogger(station: StationId, loggerId: Int): Option[EtcLoggerMeta]
 
 	def getUtcOffset(station: StationId): Option[Int]
 }

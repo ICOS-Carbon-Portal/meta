@@ -37,6 +37,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import java.net.URI
+import se.lu.nateko.cp.meta.services.upload.etc.EtcFileMeta
 
 class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -86,6 +87,24 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 		futfutValVal.flatten.map(_.flatMap(identity))
 	}
 
+	def getStationIdLookup: Future[
+		Validated[(
+			Map[StationId, Int],
+			Seq[(StationId, Int, Int, EtcFileMeta)]
+		)]
+	] = {
+		val utcFut = fetchFromTsv(Types.stations, getSiteUtc(_))
+		val fileMetaFut = fetchFromTsv[(StationId, Int, Int, EtcFileMeta)](Types.files, ???)
+
+		for(utcV <- utcFut; fileMetaV <- fileMetaFut) yield
+			for(utc <- utcV; fileMeta <- fileMetaV) yield {
+				val utcMap = utc.collect{
+					case (_, id, Some(utcOffset)) => id -> utcOffset
+				}.toMap
+				utcMap -> fileMeta
+			}
+	}
+
 	private def fetchFromTsv[T](tableType: String, extractor: Lookup => Validated[T]): Future[Validated[Seq[T]]] = Http()
 		.singleRequest(HttpRequest(
 			uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
@@ -97,7 +116,7 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 
 object EtcMetaSource{
 
-	val baseEtcApiUrl = Uri("http://gaia.agraria.unitus.it:89/cpmeta")
+	private val baseEtcApiUrl = Uri("http://gaia.agraria.unitus.it:89/cpmeta")
 	type Lookup = Map[String, String]
 	type E = ETC.type
 	type EtcInstrument = Instrument[E]
@@ -206,6 +225,13 @@ object EtcMetaSource{
 		case CountryCode(cc) => Validated.ok(cc)
 		case _ => Validated.error(s + " is not a valid country code")
 	}
+
+	private def getSiteUtc(implicit lookup: Lookup): Validated[(Int, StationId, Option[Int])] =
+		for(
+			techId <- lookUp(Vars.stationTcId).map(_.toInt);
+			stationId <- lookUp(Vars.siteId).map{case StationId(sId) => sId};
+			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
+		) yield (techId, stationId, utc)
 
 	private val datePattern = """^(\d{4})(\d\d)(\d\d)""".r
 	def parseDate(ds: String): Validated[LocalDate] = ds.trim match {

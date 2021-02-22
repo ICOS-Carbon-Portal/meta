@@ -6,7 +6,7 @@ import spray.json._
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.test.ingestion.badm.BadmTestHelper
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
-import se.lu.nateko.cp.meta.services.upload.etc.{EtcFileMeta, EtcFileMetadataStore, EtcLoggerMeta}
+import se.lu.nateko.cp.meta.services.upload.etc._
 
 class EtcFileMetadataStoreTests extends AnyFunSpec {
 
@@ -27,17 +27,9 @@ class EtcFileMetadataStoreTests extends AnyFunSpec {
 	describe("EtcFileMetadataStore file lookup"){
 		it("Finds existing file info by station id/logger id/file id"){
 			val meta = getMeta
-			val file = meta.lookupFile(falsoId, loggerId = 2, fileId = 1, DataType.EC).get
+			val file = meta.lookupFile(EtcFileMetaKey(falsoId, loggerId = 2, fileId = 1, DataType.EC)).get
 
 			assert(file === EtcFileMeta(DataType.EC, isBinary = true))
-		}
-	}
-
-	describe("EtcFileMetadataStore logger lookup"){
-		it("Finds existing logger info by station id/logger id"){
-			val meta = getMeta
-			val loggerMeta = meta.lookupLogger(falsoId, 1).get
-			assert(loggerMeta === EtcLoggerMeta("x2525", "DL-CR1000"))
 		}
 	}
 

@@ -7,7 +7,7 @@ import scala.util.Try
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.EtcUploadConfig
+import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
@@ -25,7 +25,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Success
 import se.lu.nateko.cp.meta.DataObjectDto
 
-class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) {
+class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig)(implicit system: ActorSystem) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config)
 	private implicit val envri = Envri.ICOS
@@ -93,7 +93,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcUploadConfig)(impl
 			Success(EtcFileMeta(dtype = meta.dataType, isBinary = false))
 		case _ =>
 			etcMeta
-				.lookupFile(meta.station, meta.logger, meta.fileId, meta.dataType)
+				.lookupFile(EtcFileMetaKey(meta.station, meta.logger, meta.fileId, meta.dataType))
 				.toTry(new MetadataException(
 					s"Could not find ETC file metadata for $meta on Carbon Portal"
 				))

@@ -21,7 +21,7 @@ import akka.stream.Materializer
 import akka.stream.Supervision
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.EtcUploadConfig
+import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.ingestion.badm.Badm
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
@@ -31,17 +31,20 @@ import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.upload.etc._
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import java.net.URI
-import se.lu.nateko.cp.meta.services.upload.etc.EtcFileMeta
 
-class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
 	import system.dispatcher
+
+	private val baseEtcApiUrl = Uri(conf.metaService.toString)
 
 	def state: Source[State, Cancellable] = Source
 		.tick(35.seconds, 5.hours, NotUsed)
@@ -87,21 +90,22 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 		futfutValVal.flatten.map(_.flatMap(identity))
 	}
 
-	def getStationIdLookup: Future[
-		Validated[(
-			Map[StationId, Int],
-			Seq[(StationId, Int, Int, EtcFileMeta)]
-		)]
-	] = {
+	def getFileMeta: Future[Validated[EtcFileMetadataStore]] = {
 		val utcFut = fetchFromTsv(Types.stations, getSiteUtc(_))
-		val fileMetaFut = fetchFromTsv[(StationId, Int, Int, EtcFileMeta)](Types.files, ???)
+
+		val fileMetaFut = utcFut.flatMap{utcInfo =>
+			val idLookup = utcInfo.map(_.map{
+				case (tcId, id, _) => tcId -> id
+			}.toMap)
+			fetchFromTsv[(EtcFileMetaKey, EtcFileMeta)](Types.files, getSingleFileMeta(idLookup)(_))
+		}
 
 		for(utcV <- utcFut; fileMetaV <- fileMetaFut) yield
 			for(utc <- utcV; fileMeta <- fileMetaV) yield {
 				val utcMap = utc.collect{
 					case (_, id, Some(utcOffset)) => id -> utcOffset
 				}.toMap
-				utcMap -> fileMeta
+				new TsvBasedEtcFileMetadataStore(utcMap, fileMeta.toMap)
 			}
 	}
 
@@ -116,7 +120,6 @@ class EtcMetaSource(implicit system: ActorSystem, mat: Materializer) extends TcM
 
 object EtcMetaSource{
 
-	private val baseEtcApiUrl = Uri("http://gaia.agraria.unitus.it:89/cpmeta")
 	type Lookup = Map[String, String]
 	type E = ETC.type
 	type EtcInstrument = Instrument[E]
@@ -164,6 +167,10 @@ object EtcMetaSource{
 		val loggerModel = "LOGGER_MODEL"
 		val loggerSerial = "LOGGER_SN"
 		val loggerId = "LOGGER_ID"
+		val fileId = "FILE_ID"
+		val fileLoggerId = "FILE_LOGGER_ID"
+		val fileFormat = "FILE_FORMAT"
+		val fileType = "FILE_TYPE"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(
@@ -232,6 +239,26 @@ object EtcMetaSource{
 			stationId <- lookUp(Vars.siteId).map{case StationId(sId) => sId};
 			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
 		) yield (techId, stationId, utc)
+
+	private def getSingleFileMeta(
+		stationLookupV: Validated[Map[Int, StationId]]
+	)(implicit lookup: Lookup): Validated[(EtcFileMetaKey, EtcFileMeta)] =
+		for(
+			stationTcId <- lookUp(Vars.stationTcId).map(_.toInt).require("technical station id missing");
+			stationLookup <- stationLookupV;
+			stationId <- new Validated(stationLookup.get(stationTcId))
+				.require(s"Could not find ETC site id for technical station id $stationTcId");
+			fileId <- lookUp(Vars.fileId).map(_.toInt).require("wrong or missing file id");
+			loggerId <- lookUp(Vars.fileLoggerId).map(_.toInt).require("wrong or missing logger id");
+			isBinary <- lookUp(Vars.fileFormat).collect{
+					case "ASCII" => false
+					case "Binary" => true
+				}.require("file format must be 'ASCRII' or 'Binary'");
+			fileType <- lookUp(Vars.fileType).map(DataType.withName)
+		) yield {
+			EtcFileMetaKey(station = stationId, loggerId = loggerId, fileId = fileId, dataType = fileType) ->
+				EtcFileMeta(fileType, isBinary)
+		}
 
 	private val datePattern = """^(\d{4})(\d\d)(\d\d)""".r
 	def parseDate(ds: String): Validated[LocalDate] = ds.trim match {

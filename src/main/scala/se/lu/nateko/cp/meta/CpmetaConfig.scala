@@ -64,12 +64,12 @@ case class DataSubmitterConfig(
 	submittingOrganization: URI
 )
 
-case class EtcUploadConfig(
+case class EtcConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,
 	bioMeteoObjSpecId: String,
 	saheatObjSpecId: String,
-	fileMetaService: URI,
+	metaService: URI,
 	ingestFileMetaAtStart: Boolean
 )
 
@@ -80,7 +80,7 @@ case class UploadServiceConfig(
 	submitters: Map[Envri, Map[String, DataSubmitterConfig]],
 	epicPid: EpicPidConfig,
 	handle: HandleNetClientConfig,
-	etc: EtcUploadConfig
+	etc: EtcConfig
 )
 
 case class EmailConfig(
@@ -171,7 +171,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
-	implicit val etcUploadConfigFormat = jsonFormat6(EtcUploadConfig)
+	implicit val etcUploadConfigFormat = jsonFormat6(EtcConfig)
 	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
 
 	implicit val uploadServiceConfigFormat = jsonFormat7(UploadServiceConfig)

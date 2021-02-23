@@ -12,20 +12,18 @@ import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
-import se.lu.nateko.cp.meta.EtcUploadConfig
+import se.lu.nateko.cp.meta.EtcConfig
+import se.lu.nateko.cp.meta.icos.EtcMetaSource
 
-class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSystem, m: Materializer) extends EtcFileMetadataStore{
+class EtcFileMetadataProvider(conf: EtcConfig)(implicit system: ActorSystem) extends EtcFileMetadataStore{
 
 	import system.dispatcher
 
+	private[this] val metaSrc = new EtcMetaSource(conf)
 	private[this] var inner: Option[EtcFileMetadataStore] = None
 	private[this] var retryCount: Int = 0
 
-	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value) =
-		inner.flatMap(_.lookupFile(station, loggerId, fileId, dataType))
-
-	def lookupLogger(station: StationId, loggerId: Int) =
-		inner.flatMap(_.lookupLogger(station, loggerId))
+	def lookupFile(key: EtcFileMetaKey) = inner.flatMap(_.lookupFile(key))
 
 	def getUtcOffset(station: StationId) =
 		inner.flatMap(_.getUtcOffset(station))
@@ -34,16 +32,19 @@ class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSyste
 	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval
 	system.scheduler.scheduleWithFixedDelay(initDelay, fetchInterval)(() => fetchFromEtc())
 
-	private def fetchFromEtc(): Unit = Http()
-		.singleRequest(HttpRequest(uri = conf.fileMetaService.toASCIIString))
-		.flatMap(EtcEntriesFetcher.responseToJson)
-		.map(json => EtcFileMetadataStore(Parser.parseEntriesFromEtcJson(json)))
-		.onComplete{
+	private def fetchFromEtc(): Unit = metaSrc.getFileMeta.onComplete{
 
-			case Success(store) =>
-				inner = Some(store)
-				system.log.info(s"Fetched ETC logger/file metadata from ${conf.fileMetaService}")
-				retryCount = 0
+			case Success(storeV) =>
+				storeV.errors.foreach{err =>
+					system.log.warning("ETC logger/file metadata problem: " + err)
+				}
+				storeV.result.fold{
+					system.log.error("ETC logger/file metadata was not (re-)initialized")
+				}{store =>
+					inner = Some(store)
+					system.log.info(s"Fetched ETC logger/file metadata from ${conf.metaService}")
+					retryCount = 0
+				}
 
 			case Failure(err) =>
 				system.log.error(err, "Problem fetching/parsing ETC logger/file metadata")
@@ -54,4 +55,15 @@ class EtcFileMetadataProvider(conf: EtcUploadConfig)(implicit system: ActorSyste
 					}
 				}
 		}
+}
+
+class TsvBasedEtcFileMetadataStore(
+	utcOffsets: Map[StationId, Int], fileInfo: Map[EtcFileMetaKey, EtcFileMeta]
+) extends EtcFileMetadataStore{
+
+	override def lookupFile(key: EtcFileMetaKey): Option[EtcFileMeta] = fileInfo.get(key)
+
+	override def getUtcOffset(station: StationId): Option[Int] = utcOffsets.get(station)
+		.orElse(EtcFileMetadataStore.fallbackUtcOffset(station))
+
 }

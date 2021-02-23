@@ -5,13 +5,12 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmEntry, BadmValue}
 
 case class EtcFileMeta(dtype: DataType.Value, isBinary: Boolean)
+case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value)
 case class EtcLoggerMeta(serial: String, model: String)
 
 private class EtcStation(val stationId: StationId, val utcOffset: Int)
 
 class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataStore {
-	private type LoggerKey = (StationId, Int)
-	private type FileKey = (StationId, Int, Int, DataType.Value)
 
 	private val stations: Map[StationId, EtcStation] = {
 		val tuples = for {
@@ -26,26 +25,7 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 		tuples.toMap
 	}
 
-	private val loggers: Map[LoggerKey, EtcLoggerMeta] = {
-		val seq = for {
-			logger <- entries
-			if logger.variable == "GRP_LOGGER"
-			stationId <- logger.stationId
-			loggerId <- logger.values.collectFirst{
-				case BadmValue("LOGGER_ID", Badm.Numeric(id)) => id.intValue
-			}
-			loggerKey = (stationId, loggerId)
-			loggerSN <- logger.values.collectFirst{
-				case BadmValue("LOGGER_SN", sn) => sn
-			}
-			loggerModel <- logger.values.collectFirst{
-				case BadmValue("LOGGER_MODEL", sn) => sn
-			}
-		} yield (loggerKey, EtcLoggerMeta(loggerSN, loggerModel))
-		seq.toMap
-	}
-
-	private val files: Map[FileKey, EtcFileMeta] = {
+	private val files: Map[EtcFileMetaKey, EtcFileMeta] = {
 		val seq = for {
 			entry <- entries
 			if entry.variable == "GRP_FILE"
@@ -61,7 +41,7 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 				case BadmValue("FILE_TYPE", ft) =>
 					DataType.values.find(_.toString == ft.trim)
 			}.flatten
-			fileKey = (stationId, loggerId, fileId, dtype)
+			fileKey = EtcFileMetaKey(stationId, loggerId, fileId, dtype)
 			isBinary <- file.values.collectFirst {
 				case BadmValue("FILE_FORMAT", ff) => ff == "Binary"
 			}
@@ -70,20 +50,16 @@ class EtcFileMetadataStoreImpl(entries: Seq[BadmEntry]) extends EtcFileMetadataS
 		seq.toMap
 	}
 
-	def lookupLogger(station: StationId, loggerId: Int) =	loggers.get((station, loggerId))
-
 	def getUtcOffset(station: StationId) = stations.get(station)
 		.map(_.utcOffset)
 		.orElse(EtcFileMetadataStore.fallbackUtcOffset(station))
 
-	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dtype: DataType.Value) = files.get((station, loggerId, fileId, dtype))
+	def lookupFile(key: EtcFileMetaKey) = files.get(key)
 }
 
 trait EtcFileMetadataStore {
 
-	def lookupFile(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value): Option[EtcFileMeta]
-
-	def lookupLogger(station: StationId, loggerId: Int): Option[EtcLoggerMeta]
+	def lookupFile(key: EtcFileMetaKey): Option[EtcFileMeta]
 
 	def getUtcOffset(station: StationId): Option[Int]
 }
@@ -95,6 +71,7 @@ object EtcFileMetadataStore {
 
 	def fallbackUtcOffset(station: StationId): Option[Int] = station.id.take(2) match {
 		case "BE" | "CH" | "CZ" | "DE" | "DK" | "ES" | "FR" | "IT" | "NL" | "SE" => Some(1)
+		case "GB" | "PT" => Some(0)
 		case "FI" => Some(2)
 		case "RU" => Some(3)
 		case _ => None

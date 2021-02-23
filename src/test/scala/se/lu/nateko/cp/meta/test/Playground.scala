@@ -89,8 +89,6 @@ object Playground {
 		}""".stripMargin
 	}
 
-	val etcMetaSrc = new EtcMetaSource
-
 	def etcStationTable(badms: Seq[BadmEntry]): Seq[Seq[String]] = {
 		def toByVarLookup(bs: Seq[BadmEntry]): Map[String, String] =
 			bs.flatMap(b => b.values.map(v => (b.variable + "/" + v.variable) -> v.valueStr)).toMap

@@ -53,7 +53,7 @@ object MetaFlow {
 		//TODO Add ATC user to config
 		val atcSource = new AtcMetaSource(UserId("uploader@ATC"))
 		val otcSource = new OtcMetaSource(otcServer, sparql, system.log)
-		val etcSource = new EtcMetaSource
+		val etcSource = new EtcMetaSource(conf.dataUploadService.etc)
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)

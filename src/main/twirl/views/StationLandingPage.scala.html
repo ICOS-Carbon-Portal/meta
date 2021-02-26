@@ -35,8 +35,13 @@
 				@for(climateZone <- eco.climateZone) {
 					@metadataHtmlRow{Climate zone}{@resourceLink(climateZone)}
 				}
-				@for(ecoType <- eco.ecosystems) {
-					@metadataHtmlRow{Ecosystem type}{@resourceLink(ecoType)}
+				@if(!eco.ecosystems.isEmpty) {
+					@metadataHtmlRow{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
+						@for((ecoType, i) <- eco.ecosystems.zipWithIndex) {
+							@if(i > 0) {<span> / </span>}
+							@resourceLink(ecoType)
+						}
+					}
 				}
 				@for(temperature <- eco.meanAnnualTemp) {
 					@metadataRow("Mean annual temperature", s"$temperature °C")
@@ -64,7 +69,9 @@
 				@for(operationalPeriod <- sites.operationalPeriod) {
 					@metadataRow("Operational period", operationalPeriod)
 				}
-				@documentationLink(sites.documentation)
+				@for(document <- sites.documentation) {
+					@metadataHtmlRow{Documentation}{<a href=@{document.res}>@{document.name}</a>}
+				}
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataHtmlRow{Organization}{

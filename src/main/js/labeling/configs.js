@@ -98,6 +98,7 @@ export function themeToProperties(theme){
 
 export const countryCodes = {
 	BE:"Belgium",
+	CD:"Democratic Republic of the Congo",
 	CH:"Switzerland",
 	CZ:"Czech Republic",
 	DE:"Germany",

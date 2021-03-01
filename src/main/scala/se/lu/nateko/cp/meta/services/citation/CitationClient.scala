@@ -26,50 +26,66 @@ object Doi{
 	}
 }
 
+object CitationStyle extends Enumeration{
+	type CitationStyle = Value
+	val TEXT   = Value
+	val BIBTEX = Value("bibtex")
+	val RIS    = Value("ris")
+}
+
 trait PlainDoiCiter{
-	def getCitationEager(doi: Doi): Option[String]
+	import CitationStyle._
+	def getCitationEager(doi: Doi, style: CitationStyle): Option[String]
 }
 
 class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	implicit system: ActorSystem, mat: Materializer
 ) extends PlainDoiCiter{
 
-	private val cache = TrieMap.empty[Doi, Future[String]]
+	private type Key = (Doi, String)
+	private val cache = TrieMap.empty[Key, Future[String]]
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
+	import CitationStyle._
 
 	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 
-	def getCitation(doi: Doi): Future[String] = {
-		val fut = cache.getOrElseUpdate(doi, fetchTimeLimited(doi))
+	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] = {
+		val key = doi -> styleStr(citationStyle)
+		val fut = cache.getOrElseUpdate(key, fetchTimeLimited(key))
 		fut.failed.foreach{_ =>
 			scheduler.scheduleOnce(10.seconds){
-				fetchIfNeeded(doi)
+				fetchIfNeeded(key)
 			}
 		}
 		fut
 	}
 
-	//not waiting for HTTP; only returns string if the result previously cached
-	def getCitationEager(doi: Doi): Option[String] = getCitation(doi).value.flatMap(_.toOption)
+	def styleStr(citationStyle: CitationStyle): String = citationStyle match{
+		case CitationStyle.TEXT => config.style
+		case _                  => citationStyle.toString
+	}
 
-	private def fetchTimeLimited(doi: Doi): Future[String] =
-		timeLimit(fetchCitation(doi), config.timeoutSec.seconds, scheduler).recoverWith{
+	//not waiting for HTTP; only returns string if the result previously cached
+	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[String] = getCitation(doi, citationStyle).value.flatMap(_.toOption)
+
+	private def fetchTimeLimited(key: Key): Future[String] =
+		timeLimit(fetchCitation(key), config.timeoutSec.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
 				new Exception("Citation formatting service timed out")
 			)
 		}
 
-	private def fetchIfNeeded(doi: Doi): Future[String] = {
+	private def fetchIfNeeded(key: Key): Future[String] = {
 
 		def recache(): Future[String] = {
-			val res = fetchCitation(doi)
-			cache += doi -> res
+			val res = fetchCitation(key)
+			cache += key -> res
 			res
 		}
 
-		cache.get(doi).fold(recache()){fut =>
+		cache.get(key).fold(recache()){fut =>
 			fut.value match{
 				case Some(Failure(_)) =>
 					//if this citation is a completed failure at the moment
@@ -84,7 +100,9 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 		def warmUp(dois: List[Doi]): Future[Done] = dois match {
 			case Nil => Future.successful(Done)
 			case head :: tail =>
-				fetchIfNeeded(head).flatMap(_ => warmUp(tail))
+				Future.sequence(
+					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded(head -> styleStr(citStyle))}
+				).flatMap(_ => warmUp(tail))
 		}
 
 		warmUp(knownDois).failed.foreach{_ =>
@@ -92,12 +110,13 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 		}
 	}
 
-	private def fetchCitation(doi: Doi): Future[String] = http.singleRequest(
+	private def fetchCitation(key: Key): Future[String] = http.singleRequest{
+			val (doi, style) = key
 			HttpRequest(
 				//uri = s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-				uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+				uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${style}&lang=en-US"
 			)
-		).flatMap{resp =>
+		}.flatMap{resp =>
 			Unmarshal(resp).to[String].flatMap{payload =>
 				if(resp.status.isSuccess) Future.successful(payload)
 				//the payload is the error message/page from the citation service

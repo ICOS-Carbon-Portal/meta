@@ -21,6 +21,7 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.services.citation.CitationStyle
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
@@ -59,7 +60,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		def fetchCitationOpt(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[Option[String]] =
 			dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply) match {
 				case None => Future.successful(None)
-				case Some(doi) => citer.getCitation(doi).recover {
+				case Some(doi) => citer.getCitation(doi, CitationStyle.TEXT).recover {
 					case err => err.getMessage
 				}.map(Some(_))
 			}

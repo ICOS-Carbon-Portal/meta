@@ -31,6 +31,9 @@
     <Declaration>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
     </Declaration>
+    <Declaration>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+    </Declaration>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>stations:AS</AbbreviatedIRI>
@@ -39,7 +42,7 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
         <AbbreviatedIRI>stations:AS</AbbreviatedIRI>
-        <AbbreviatedIRI>stations:AS</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/stationentry/AS/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
@@ -49,7 +52,7 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
         <AbbreviatedIRI>stations:ES</AbbreviatedIRI>
-        <AbbreviatedIRI>stations:ES</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/stationentry/ES/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
@@ -59,7 +62,7 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
         <AbbreviatedIRI>stations:OS</AbbreviatedIRI>
-        <AbbreviatedIRI>stations:OS</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/stationentry/OS/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>

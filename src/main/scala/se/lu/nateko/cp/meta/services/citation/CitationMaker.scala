@@ -97,20 +97,20 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
-					productionInstant <- productionTime(dobj);
+					publicationInstant <- dobj.submission.stop;
 					time <- tempCov
 				) yield {
 					val station = acq.station.org.name
-					val year = formatDate(productionInstant, zoneId).take(4)
+					val year = formatDate(publicationInstant, zoneId).take(4)
 					val dataType = spec.split(",").head
-					s"$station. $year. $dataType from $location, $time"
+					s"$station ($year). $dataType from $location, $time"
 				}
 		)
 
 		val citString = for(
 			title <- titleOpt;
 			pidUrl <- getPidUrl(dobj)
-		) yield s"$title. SITES Data Portal. $pidUrl"
+		) yield s"$title [Data set]. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
 		new CitationInfo(citString, None, tempCov)
 	}
 

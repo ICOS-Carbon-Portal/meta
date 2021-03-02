@@ -32,7 +32,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = new CitationClient(Nil, new CitationConfig("copernicus-publications", false, 10))
+	val citer = new CitationClient(Nil, new CitationConfig("apa", false, 10))
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = DroughtUpload2.atmoUpload(citer)

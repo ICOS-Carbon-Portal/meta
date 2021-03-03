@@ -124,7 +124,7 @@ class OtcMetaSource(
 						},
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None)
+						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None, Seq.empty)
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get)
 				)

@@ -45,7 +45,8 @@ case class PlainIcosSpecifics(
 	stationClass: Option[IcosStationClass.Value],
 	labelingDate: Option[LocalDate],
 	countryCode: Option[CountryCode],
-	timeZoneOffset: Option[Int]
+	timeZoneOffset: Option[Int],
+	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics
 
 case class EtcStationSpecifics(
@@ -77,7 +78,7 @@ object StationSpecifics extends CommonJsonSupport{
 	implicit val stationClassFormat = enumFormat(IcosStationClass)
 	implicit val etcStationSpecificsFormat = jsonFormat11(EtcStationSpecifics)
 	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
-	implicit val plainIcosSpecificsFormat = jsonFormat4(PlainIcosSpecifics)
+	implicit val plainIcosSpecificsFormat = jsonFormat5(PlainIcosSpecifics)
 
 	private val EtcSpec = "etc"
 	private val SitesSpec = "sites"

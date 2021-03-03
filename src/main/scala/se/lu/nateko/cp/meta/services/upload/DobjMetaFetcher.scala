@@ -84,7 +84,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
 			.map(LocalDate.parse).headOption,
 		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
-		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
+		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
+		documentation = getDocumentationObjs(stat)
 	)
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {

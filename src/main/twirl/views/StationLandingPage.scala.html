@@ -69,9 +69,9 @@
 				@for(operationalPeriod <- sites.operationalPeriod) {
 					@metadataRow("Operational period", operationalPeriod)
 				}
-				@for(document <- sites.documentation) {
-					@metadataHtmlRow{Documentation}{<a href=@{document.res}>@{document.name}</a>}
-				}
+			}
+			@for(document <- stationDocs) {
+				@metadataHtmlRow{Documentation}{<a href=@{document.res}>@{document.name}</a>}
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataHtmlRow{Organization}{
@@ -208,5 +208,13 @@
 @icosSpecifics = @{
 	Option(station.specificInfo).collect{
 		case icos: IcosStationSpecifics => icos
+	}
+}
+
+@stationDocs = @{
+	station.specificInfo match{
+		case plain: PlainIcosSpecifics => plain.documentation
+		case sites: SitesStationSpecifics => sites.documentation
+		case _ => Nil
 	}
 }

@@ -42,8 +42,8 @@ object MetaFlow {
 		}
 
 		val rdfReader = {
-			val allIcosInstServer = db.uploadService.servers.allDataObjs(Envri.ICOS)
-			new RdfReader(cpServer, icosServer, allIcosInstServer)
+			val plainFetcher = db.uploadService.servers.metaFetchers(Envri.ICOS).plainObjFetcher
+			new RdfReader(cpServer, icosServer, plainFetcher)
 		}
 
 		val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)

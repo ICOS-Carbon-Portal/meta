@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import RdfDiffCalcTests._
+import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
@@ -212,7 +213,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		cpServer.addAll(cpOwn(rdfMaker))
 
 		tcServer.addAll(initTcState.flatMap(getStatements(rdfMaker, _)))
-		val rdfReader = new RdfReader(cpServer, tcServer, tcServer)
+		val plainFetcher = new PlainStaticObjectFetcher(tcServer)
+		val rdfReader = new RdfReader(cpServer, tcServer, plainFetcher)
 		new TestState(new RdfDiffCalc(rdfMaker, rdfReader), rdfReader, rdfMaker, tcServer, cpServer)
 	}
 

@@ -70,7 +70,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation),
 				stationDocs = server.getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
 				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
-				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
+				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
+				documentation = getDocumentationObjs(stat)
 			)
 		} else if(
 			server.resourceHasType(stat, metaVocab.atmoStationClass) ||

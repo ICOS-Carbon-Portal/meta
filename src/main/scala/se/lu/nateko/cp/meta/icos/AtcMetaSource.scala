@@ -208,7 +208,7 @@ object AtcMetaSource{
 					countryCode = country,
 					labelingDate = lblDate,
 					timeZoneOffset = tzOffset,
-					documentation = Seq.empty
+					documentation = Seq.empty//docs are not provided by the TCs
 				)
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),

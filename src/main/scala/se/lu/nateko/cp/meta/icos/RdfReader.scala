@@ -17,9 +17,8 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 
-class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, allObjs: InstanceServer)(implicit envriConfigs: EnvriConfigs) {
+class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
-	private[this] val plainFetcher = new PlainStaticObjectFetcher(allObjs)
 	private[this] val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
 	private[this] val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 

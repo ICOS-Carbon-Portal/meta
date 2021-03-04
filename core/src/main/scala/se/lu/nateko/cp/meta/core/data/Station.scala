@@ -39,6 +39,7 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def labelingDate: Option[LocalDate]
 	def countryCode: Option[CountryCode]
 	def timeZoneOffset: Option[Int]
+	def documentation: Seq[PlainStaticObject]
 }
 
 case class PlainIcosSpecifics(
@@ -60,7 +61,8 @@ case class EtcStationSpecifics(
 	meanAnnualRad: Option[Float],
 	stationDocs: Seq[URI],
 	stationPubs: Seq[URI],
-	timeZoneOffset: Option[Int]
+	timeZoneOffset: Option[Int],
+	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics with EcoStationSpecifics{
 	override def ecosystems = ecosystemType.toSeq
 }
@@ -76,7 +78,7 @@ object StationSpecifics extends CommonJsonSupport{
 	import JsonSupport.{uriResourceFormat, plainStaticObjectFormat, siteFormat, countryCodeFormat}
 	import CommonJsonSupport._
 	implicit val stationClassFormat = enumFormat(IcosStationClass)
-	implicit val etcStationSpecificsFormat = jsonFormat11(EtcStationSpecifics)
+	implicit val etcStationSpecificsFormat = jsonFormat12(EtcStationSpecifics)
 	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
 	implicit val plainIcosSpecificsFormat = jsonFormat5(PlainIcosSpecifics)
 

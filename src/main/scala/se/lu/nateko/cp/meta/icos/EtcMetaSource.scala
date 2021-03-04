@@ -321,7 +321,8 @@ object EtcMetaSource{
 					meanAnnualRad = meanRadiation,
 					stationDocs = docDois.getOrElse(Nil),
 					stationPubs = pubDois.getOrElse(Nil),
-					timeZoneOffset = tzOffset
+					timeZoneOffset = tzOffset,
+					documentation = Nil//docs are not provided by TCs
 				)
 			),
 			responsibleOrg = None

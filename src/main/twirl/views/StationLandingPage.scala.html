@@ -213,7 +213,7 @@
 
 @stationDocs = @{
 	station.specificInfo match{
-		case plain: PlainIcosSpecifics => plain.documentation
+		case icos: IcosStationSpecifics => icos.documentation
 		case sites: SitesStationSpecifics => sites.documentation
 		case _ => Nil
 	}

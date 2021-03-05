@@ -17,13 +17,15 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import CitationStyle._
+import scala.util.Failure
+import scala.util.Success
 
 case class CitationInfo(
-	val dobj: DataObject,
 	val pidUrl: Option[String],
 	val authors: Option[Seq[Person]],
 	val title: Option[String],
 	val year: Option[String],
+	val tempCovDisplay: Option[String],
 	val citText: Option[String],
 )
 
@@ -38,32 +40,39 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll, CitationStyle.TEXT)
 
+
 	def getCitationInfo(sobj: StaticObject)(implicit envri: Envri.Value): References = sobj match{
+
 		case data: DataObject =>
 			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
 			val dobj = vocab.getStaticObject(data.hash)
 			val keywords = getOptionalString(dobj, hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-			val structuredCitations = new StructuredCitations(citInfo, keywords)
+			val structuredCitations = new StructuredCitations(data, citInfo, keywords)
 
-			//TODO: Is authors relevant here?
 			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
 			References(
 				citationString = getDoiCitation(data, CitationStyle.TEXT).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(structuredCitations.toBibTex),
-				citationRis = getDoiCitation(data, CitationStyle.BIBTEX).orElse(structuredCitations.toRis),
-				authors = None,//citInfo.authors,
+				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toRis)),
+				authors = citInfo.authors,
+				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = keywords
 			)
 
-		case doc: DocObject =>
-			References.empty.copy(citationString = getDoiCitation(doc, CitationStyle.TEXT))
+		case doc: DocObject => References.empty.copy(
+			citationString = getDoiCitation(doc, CitationStyle.TEXT),
+			citationBibTex = getDoiCitation(doc, CitationStyle.BIBTEX),
+			citationRis = getDoiCitation(doc, CitationStyle.BIBTEX)
+		)
 	}
 
-	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] = for(
-		doiStr <- item.doi;
-		doi <- Doi.unapply(doiStr);
-		cit <- doiCiter.getCitationEager(doi, style)
-	) yield cit
+	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] = item.doi.collect{
+		case Doi(doi) => doiCiter.getCitationEager(doi, style) match{
+			case None => "Fetching... Try again in a few seconds"
+			case Some(Success(cit)) => cit
+			case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
+		}
+	}
 
 	private def getIcosCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC")
@@ -90,40 +99,21 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			}.sorted.distinct
 		}
 
-		val pidUrl = getPidUrl(dobj)
-		val productionInstantOpt = productionTime(dobj)
+		val pidUrlOpt = getPidUrl(dobj)
 		val projName = if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
-		val year = productionInstantOpt.fold[Option[String]](None)(productionInstant => Some(formatDate(productionInstant, zoneId).take(4)))
-
-		def getName(person: Person) = {
-			s"${person.lastName}, ${person.firstName.head}."
-		}
+		val yearOpt = productionTime(dobj).map(prodInst => formatDate(prodInst, zoneId).take(4))
 
 		val citText = for(
 			title <- titleOpt;
-			pidUrl <- pidUrl;
-			productionInstant <- productionInstantOpt;
+			pidUrl <- pidUrlOpt;
+			year <- yearOpt;
 			projName <- projName
 		) yield {
-			val authorsStr = authors.length match{
-				case 1 => getName(authors.head)
-				case 2 => s"${getName(authors.head)} & ${getName(authors.last)}"
-				case length if 3 to 20 contains length => 
-					authors
-						.take(authors.length - 1)
-						.map(p => getName(p))
-						.mkString("", ", ", s" & ${getName(authors.last)}")
-				case length if length > 20 => authors
-						.take(19)
-						.map(p => getName(p))
-						.mkString("", ", ", s", ..., ${getName(authors.last)}")
-				case _ => ""
-			}
-			val year = formatDate(productionInstant, zoneId).take(4)
-			s"$authorsStr ($year). $title, $projName, $pidUrl"
+			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
+			s"${authorsStr}$projName, $year. $title, $pidUrl"
 		}
 
-		new CitationInfo(dobj, pidUrl, Some(authors), titleOpt, year, citText)
+		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	}
 
 	private def getSitesCitation(dobj: DataObject): CitationInfo = {
@@ -145,12 +135,12 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 		val pidUrl = getPidUrl(dobj)
-		val year = productionTime(dobj).fold[Option[String]](None)(productionInstant => Some(formatDate(productionInstant, zoneId).take(4)))
+		val year = productionTime(dobj).map(productionInstant => formatDate(productionInstant, zoneId).take(4))
 		val citText = for(
 			title <- titleOpt
 		) yield s"($year). $title. SITES Data Portal. $pidUrl"
 
-		new CitationInfo(dobj, pidUrl, None, titleOpt, year, citText)
+		new CitationInfo(pidUrl, None, titleOpt, year, tempCov, citText)
 	}
 
 	private def getPidUrl(dobj: DataObject): Option[String] = for(
@@ -187,9 +177,9 @@ object CitationMaker{
 		}
 	}
 
-	def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
+	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
 
-	def productionTime(dobj: DataObject): Option[Instant] =
+	private def productionTime(dobj: DataObject): Option[Instant] =
 		dobj.production.map(_.dateTime).orElse{
 			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
 		}

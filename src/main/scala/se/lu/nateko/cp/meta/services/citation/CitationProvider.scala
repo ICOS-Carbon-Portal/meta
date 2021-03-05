@@ -73,7 +73,7 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	def getReferences(res: Resource): Option[References] =
 		(getDoiCitation(res), getCitableItem(res).map(_.references)) match{
 			case (None, None) => None
-			case (cit @ Some(_), None) => Some(References(cit, None, None, None, None))
+			case (cit @ Some(_), None) => Some(References.empty.copy(citationString = cit))
 			case (None, refs @ Some(_)) => refs
 			case (cit @ Some(_), Some(refs)) => Some(refs.copy(citationString = cit))
 		}

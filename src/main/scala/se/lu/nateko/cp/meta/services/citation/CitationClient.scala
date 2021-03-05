@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 
 import akka.Done
 import akka.actor.ActorSystem
@@ -35,7 +36,7 @@ object CitationStyle extends Enumeration{
 
 trait PlainDoiCiter{
 	import CitationStyle._
-	def getCitationEager(doi: Doi, style: CitationStyle): Option[String]
+	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 }
 
 class CitationClient(knownDois: List[Doi], config: CitationConfig)(
@@ -68,7 +69,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	}
 
 	//not waiting for HTTP; only returns string if the result previously cached
-	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[String] = getCitation(doi, citationStyle).value.flatMap(_.toOption)
+	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
 
 	private def fetchTimeLimited(key: Key): Future[String] =
 		timeLimit(fetchCitation(key), config.timeoutSec.seconds, scheduler).recoverWith{

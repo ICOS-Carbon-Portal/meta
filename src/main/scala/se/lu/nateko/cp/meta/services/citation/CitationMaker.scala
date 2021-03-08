@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import CitationStyle._
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 
 case class CitationInfo(
 	val pidUrl: Option[String],
@@ -53,7 +54,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			References(
 				citationString = getDoiCitation(data, CitationStyle.TEXT).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toRis)),
+				citationRis = getDoiCitation(data, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = keywords
@@ -62,17 +63,22 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case doc: DocObject => References.empty.copy(
 			citationString = getDoiCitation(doc, CitationStyle.TEXT),
 			citationBibTex = getDoiCitation(doc, CitationStyle.BIBTEX),
-			citationRis = getDoiCitation(doc, CitationStyle.BIBTEX)
+			citationRis = getDoiCitation(doc, CitationStyle.RIS)
 		)
 	}
 
-	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] = item.doi.collect{
-		case Doi(doi) => doiCiter.getCitationEager(doi, style) match{
-			case None => "Fetching... Try again in a few seconds"
-			case Some(Success(cit)) => cit
-			case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
-		}
+	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
+		case None => "Fetching... Try again in a few seconds"
+		case Some(Success(cit)) => cit
+		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
+
+	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] = {
+		case Doi(doi) => presentDoiCitation(doiCiter.getCitationEager(doi, style))
+	}
+
+	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
+		item.doi.collect{ extractDoiCitation(style) }
 
 	private def getIcosCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC")

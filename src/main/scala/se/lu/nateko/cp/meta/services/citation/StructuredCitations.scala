@@ -12,16 +12,11 @@ class StructuredCitations(dobj: DataObject, citInfo: CitationInfo, keywords: Opt
 	)
 	private val newLine = "\r\n"
 
-	def toText: Option[String] = citInfo.citText
-
 	def toBibTex: String = {
 		// http://www.bibtex.org/Format/
 		// http://bib-it.sourceforge.net/help/fieldsAndEntryTypes.php
 
-		val key: String = dobj.doi
-			.map(doi => s"https://doi.org/$doi")
-			.orElse(citInfo.pidUrl)
-			.getOrElse(dobj.fileName)
+		val key: String = citInfo.pidUrl.getOrElse(dobj.fileName)
 
 		val authorsOpt = citInfo.authors.map{
 			_.map(p => s"${p.lastName}, ${p.firstName.head}.").mkString(", ")

@@ -70,18 +70,11 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 		getCitableItem(res).flatMap(_.references.citationString)
 	}
 
-	def getReferences(res: Resource): Option[References] =
-		(getDoiCitation(res), getCitableItem(res).map(_.references)) match{
-			case (None, None) => None
-			case (cit @ Some(_), None) => Some(References.empty.copy(citationString = cit))
-			case (None, refs @ Some(_)) => refs
-			case (cit @ Some(_), Some(refs)) => Some(refs.copy(citationString = cit))
-		}
+	def getReferences(res: Resource): Option[References] = getCitableItem(res).map(_.references)
 
 	private def getDoiCitation(res: Resource): Option[String] = res match {
-		case iri: IRI => server.getStringValues(iri, metaVocab.hasDoi).headOption.collect{
-				case Doi(doi) => doiCiter.getCitationEager(doi, CitationStyle.TEXT)
-			}.flatten
+		case iri: IRI => server.getStringValues(iri, metaVocab.hasDoi).headOption
+			.collect{ citer.extractDoiCitation(CitationStyle.TEXT) }
 		case _ => None
 	}
 

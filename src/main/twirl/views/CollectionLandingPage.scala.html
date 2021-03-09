@@ -37,6 +37,12 @@
 				@for(cit <- coll.references.citationString.orElse(extras.citation)){
 					@PanelRow("Citation", cit)
 				}
+				@for(cit <- coll.references.citationBibTex){
+					@CitationCollapsible("BibTex", cit)
+				}
+				@for(cit <- coll.references.citationRis){
+					@CitationCollapsible("RIS", cit)
+				}
 				@for(description <- coll.description){
 					@PanelRow("Description", description)
 				}

@@ -39,8 +39,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	protected val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
 	val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getCitationString(coll: StaticCollection): Option[String] = getDoiCitation(coll, CitationStyle.TEXT)
-
+	def getItemCitationInfo(item: CitableItem) = References.empty.copy(
+		citationString = getDoiCitation(item, CitationStyle.TEXT),
+		citationBibTex = getDoiCitation(item, CitationStyle.BIBTEX),
+		citationRis    = getDoiCitation(item, CitationStyle.RIS)
+	)
 
 	def getCitationInfo(sobj: StaticObject)(implicit envri: Envri.Value): References = sobj match{
 
@@ -60,11 +63,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				keywords = keywords
 			)
 
-		case doc: DocObject => References.empty.copy(
-			citationString = getDoiCitation(doc, CitationStyle.TEXT),
-			citationBibTex = getDoiCitation(doc, CitationStyle.BIBTEX),
-			citationRis = getDoiCitation(doc, CitationStyle.RIS)
-		)
+		case doc: DocObject => getItemCitationInfo(doc)
 	}
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{

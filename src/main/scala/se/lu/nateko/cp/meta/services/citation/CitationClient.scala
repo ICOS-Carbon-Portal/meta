@@ -109,12 +109,14 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 
 	private def fetchCitation(key: Key): Future[String] = http.singleRequest{
 			val (doi, style) = key
+			val doiStr = doi.prefix + "/" + doi.suffix
+			val urlSuff = style match {
+				case CitationStyle.BIBTEX => s"application/x-bibtex/$doiStr"
+				case CitationStyle.RIS =>    s"application/x-research-info-systems/$doiStr"
+				case _ =>                    s"text/x-bibliography/$doiStr?style=${config.style}"
+			}
 			HttpRequest(
-				uri = style match {
-					case CitationStyle.BIBTEX => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
-					case CitationStyle.RIS =>    s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
-					case _ =>                    s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-				}
+				uri = s"https://api.datacite.org/dois/$urlSuff"
 				// uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${style}&lang=en-US"
 			)
 		}.flatMap{resp =>
@@ -131,7 +133,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 				Future.successful(citation.trim)
 		}
 		.recoverWith{
-			case err => errorLite(s"Error fetching citation string from Datasite: ${err.getMessage}")
+			case err => errorLite(s"Error fetching citation string from DataCite: ${err.getMessage}")
 		}
 		.andThen{
 			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)

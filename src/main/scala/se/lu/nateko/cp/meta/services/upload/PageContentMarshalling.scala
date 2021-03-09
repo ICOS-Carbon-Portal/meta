@@ -21,54 +21,43 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.services.citation.CitationStyle
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: CitationClient, vocab: CpVocab, statisticsClient: StatisticsClient) {
+class PageContentMarshalling(handleProxies: HandleProxiesConfig, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
 	import PageContentMarshalling.{getHtml, getJson}
 
 	implicit def staticObjectMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticObject]] = {
 		import statisticsClient.executionContext
-		val template: StaticObject => Future[Option[String] => Html] = obj =>
+		val template: StaticObject => Future[Html] = obj =>
 			for(
 				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
-			) yield (citOpt: Option[String]) => {
-				val extras = LandingPageExtras(citOpt, dlCount, previewCount)
+			) yield {
+				val extras = LandingPageExtras(dlCount, previewCount)
 				LandingPage(obj, extras, handleProxies, vocab)
 			}
-		makeMarshaller(template, MessagePage("Data object not found", ""), _.doi)
+		makeMarshaller(template, MessagePage("Data object not found", ""))
 	}
 
 	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] = {
 		import statisticsClient.executionContext
-		val template: StaticCollection => Future[Option[String] => Html] = coll =>
+		val template: StaticCollection => Future[Html] = coll =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
-			yield (citOpt: Option[String]) => {
-				val extras = LandingPageExtras(citOpt, dlCount, None)
+			yield {
+				val extras = LandingPageExtras(dlCount, None)
 				CollectionLandingPage(coll, extras, handleProxies)
 			}
-		makeMarshaller(template, MessagePage("Collection not found", ""), _.doi)
+		makeMarshaller(template, MessagePage("Collection not found", ""))
 	}
 
 	private def makeMarshaller[T: JsonWriter](
-		templateFetcher: T => Future[Option[String] => Html],
+		templateFetcher: T => Future[Html],
 		notFoundPage: => Html,
-		toDoi: T => Option[String]
 	): ToResponseMarshaller[() => Option[T]] = {
 
-		def fetchCitationOpt(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[Option[String]] =
-			dataItemOpt.flatMap(toDoi).flatMap(Doi.unapply) match {
-				case None => Future.successful(None)
-				case Some(doi) => citer.getCitation(doi, CitationStyle.TEXT).recover {
-					case err => err.getMessage
-				}.map(Some(_))
-			}
-
-		def fetchHtmlMaker(citOpt: Option[String])(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
+		def fetchHtmlMaker()(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
 			case Some(obj) =>
-				templateFetcher(obj).map { template =>
-					val html = template(citOpt)
+				templateFetcher(obj).map { html =>
 					charset => HttpResponse(entity = getHtml(html, charset))
 				}
 
@@ -81,8 +70,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, citer: Citation
 		Marshaller {implicit exeCtxt => producer =>
 			implicit val dataItemOpt: Option[T] = producer()
 			for (
-				citOpt <- fetchCitationOpt;
-				htmlMaker <- fetchHtmlMaker(citOpt)
+				htmlMaker <- fetchHtmlMaker()
 			) yield List(
 				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
 				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt))

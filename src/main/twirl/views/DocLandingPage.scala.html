@@ -44,15 +44,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- doc.references.citationString.orElse(extras.citation)){
-					@PanelRow("Citation", cit)
-				}
-				@for(cit <- doc.references.citationBibTex){
-					@CitationCollapsible("BibTex", cit)
-				}
-				@for(cit <- doc.references.citationRis){
-					@CitationCollapsible("RIS", cit)
-				}
+				@Citations(doc.references)
 				@PanelRow("File name", doc.fileName)
 				@for(size <- doc.size){
 					@PanelRow("Size in bytes", size.toString)

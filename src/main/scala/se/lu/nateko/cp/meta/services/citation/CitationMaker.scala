@@ -21,7 +21,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-case class CitationInfo(
+class CitationInfo(
 	val pidUrl: Option[String],
 	val authors: Option[Seq[Person]],
 	val title: Option[String],
@@ -107,7 +107,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val projName = if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
-		val yearOpt = productionTime(dobj).map(prodInst => formatDate(prodInst, zoneId).take(4))
+		val yearOpt = getYearOpt(dobj, zoneId)
 
 		val citText = for(
 			title <- titleOpt;
@@ -125,28 +125,29 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getSitesCitation(dobj: DataObject): CitationInfo = {
 		val zoneId = ZoneId.of("UTC+01:00")
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
+		val yearOpt = getYearOpt(dobj, zoneId)
+
 		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(
 					spec <- dobj.specification.self.label;
 					acq = l2.acquisition;
 					location <- acq.site.flatMap(_.location.flatMap(_.label));
-					productionInstant <- productionTime(dobj);
+					year <- yearOpt;
 					time <- tempCov
 				) yield {
 					val station = acq.station.org.name
-					val year = formatDate(productionInstant, zoneId).take(4)
 					val dataType = spec.split(",").head
 					s"$station. $year. $dataType from $location, $time"
 				}
 		)
-		val pidUrl = getPidUrl(dobj)
-		val year = productionTime(dobj).map(productionInstant => formatDate(productionInstant, zoneId).take(4))
-		val citText = for(
-			title <- titleOpt
-		) yield s"($year). $title. SITES Data Portal. $pidUrl"
+		val pidUrlOpt = getPidUrl(dobj)
+		val citString = for(
+			title <- titleOpt;
+			pidUrl <- pidUrlOpt
+		) yield s"$title. SITES Data Portal. $pidUrl"
 
-		new CitationInfo(pidUrl, None, titleOpt, year, tempCov, citText)
+		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 	}
 
 	private def getPidUrl(dobj: DataObject): Option[String] = for(
@@ -182,6 +183,9 @@ object CitationMaker{
 			s"$from–$to"
 		}
 	}
+
+	private def getYearOpt(dobj: DataObject, zoneId: ZoneId): Option[String] =
+		productionTime(dobj).map(prodInst => formatDate(prodInst, zoneId).take(4))
 
 	private def formatDate(inst: Instant, zoneId: ZoneId): String = DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId).format(inst)
 

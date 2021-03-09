@@ -109,15 +109,12 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 
 	private def fetchCitation(key: Key): Future[String] = http.singleRequest{
 			val (doi, style) = key
-			val doiStr = doi.prefix + "/" + doi.suffix
-			val urlSuff = style match {
-				case CitationStyle.BIBTEX => s"application/x-bibtex/$doiStr"
-				case CitationStyle.RIS =>    s"application/x-research-info-systems/$doiStr"
-				case _ =>                    s"text/x-bibliography/$doiStr?style=${config.style}"
-			}
 			HttpRequest(
-				uri = s"https://api.datacite.org/dois/$urlSuff"
-				// uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${style}&lang=en-US"
+				uri = style match {
+					case CitationStyle.BIBTEX => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
+					case CitationStyle.RIS =>    s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
+					case _ =>                    s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+				}
 			)
 		}.flatMap{resp =>
 			Unmarshal(resp).to[String].flatMap{payload =>

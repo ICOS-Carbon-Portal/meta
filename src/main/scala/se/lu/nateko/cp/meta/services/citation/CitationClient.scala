@@ -42,8 +42,9 @@ trait PlainDoiCiter{
 class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	implicit system: ActorSystem, mat: Materializer
 ) extends PlainDoiCiter{
+	import CitationStyle._
 
-	private type Key = (Doi, String)
+	private type Key = (Doi, CitationStyle)
 	private val cache = TrieMap.empty[Key, Future[String]]
 
 	private val http = Http()
@@ -53,7 +54,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] = {
-		val key = doi -> styleStr(citationStyle)
+		val key = doi -> citationStyle
 		val fut = cache.getOrElseUpdate(key, fetchTimeLimited(key))
 		fut.failed.foreach{_ =>
 			scheduler.scheduleOnce(10.seconds){
@@ -61,11 +62,6 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			}
 		}
 		fut
-	}
-
-	def styleStr(citationStyle: CitationStyle): String = citationStyle match{
-		case CitationStyle.TEXT => config.style
-		case _                  => citationStyle.toString
 	}
 
 	//not waiting for HTTP; only returns string if the result previously cached
@@ -102,7 +98,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			case Nil => Future.successful(Done)
 			case head :: tail =>
 				Future.sequence(
-					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded(head -> styleStr(citStyle))}
+					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded(head -> citStyle)}
 				).flatMap(_ => warmUp(tail))
 		}
 
@@ -114,8 +110,12 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	private def fetchCitation(key: Key): Future[String] = http.singleRequest{
 			val (doi, style) = key
 			HttpRequest(
-				//uri = s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-				uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${style}&lang=en-US"
+				uri = style match {
+					case CitationStyle.BIBTEX => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
+					case CitationStyle.RIS =>    s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
+					case _ =>                    s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
+				}
+				// uri = s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${style}&lang=en-US"
 			)
 		}.flatMap{resp =>
 			Unmarshal(resp).to[String].flatMap{payload =>
@@ -131,7 +131,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 				Future.successful(citation.trim)
 		}
 		.recoverWith{
-			case err => errorLite(s"Error fetching citation string from Crosscite: ${err.getMessage}")
+			case err => errorLite(s"Error fetching citation string from Datasite: ${err.getMessage}")
 		}
 		.andThen{
 			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)

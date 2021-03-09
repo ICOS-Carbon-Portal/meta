@@ -37,11 +37,12 @@ class StructuredCitations(dobj: DataObject, citInfo: CitationInfo, keywords: Opt
 			"pid" -> dobj.pid,
 		)
 
+		val separator = s",$newLine"
 		tagsOpt
 			.collect{
-				case (key, Some(value)) => s"${key}={$value}"
+				case (key, Some(value)) => s"  ${key}={$value}"
 			}
-			.mkString(s"@misc{$key,", ",", "}")
+			.mkString(s"@misc{$key,$newLine", separator, s"$newLine}")
 	}
 
 	// https://en.wikipedia.org/wiki/RIS_(file_format)

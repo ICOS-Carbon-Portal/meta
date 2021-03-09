@@ -48,6 +48,12 @@
 				@for(cit <- dobj.references.citationString.orElse(extras.citation)){
 					@PanelRow("Citation", cit)
 				}
+				@for(cit <- dobj.references.citationBibTex.orElse(extras.citation)){
+					@PanelRowCollapsible("BibTex", cit)
+				}
+				@for(cit <- dobj.references.citationRis.orElse(extras.citation)){
+					@PanelRowCollapsible("RIS", cit)
+				}
 				@PanelRow("File name", dobj.fileName)
 				@for(size <- dobj.size){
 					@PanelRow("Size in bytes", size.toString)

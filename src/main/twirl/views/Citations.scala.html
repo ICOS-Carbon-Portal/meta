@@ -1,0 +1,27 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.data.References
+
+@(refs: References)
+@for(cit <- refs.citationString){
+	@PanelRow("Citation", cit)
+}
+@for(cit <- refs.citationBibTex){
+	@citationCollapsible("BibTex", cit)
+}
+@for(cit <- refs.citationRis){
+	@citationCollapsible("RIS", cit)
+}
+
+@citationCollapsible(label: String, value: String) = {
+	<div class="row">
+		<div class="col-md-12">
+			<details>
+				<summary>
+						<label style="margin-top:5px; margin-bottom: 0;">Citation:</label>
+						<span style="cursor:pointer; color:#0a96f0;">@label</span>
+				</summary>
+				<pre style="max-width:100%; display:inline-block;">@value</pre>
+			</details>
+		</div>
+	</div>
+}

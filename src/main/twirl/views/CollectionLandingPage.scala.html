@@ -34,9 +34,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- coll.references.citationString.orElse(extras.citation)){
-					@PanelRow("Citation", cit)
-				}
+				@Citations(coll.references)
 				@for(description <- coll.description){
 					@PanelRow("Description", description)
 				}

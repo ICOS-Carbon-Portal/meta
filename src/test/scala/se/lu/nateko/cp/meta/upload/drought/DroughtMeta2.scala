@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext
 import java.time.LocalDate
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.Instant
+import se.lu.nateko.cp.meta.services.citation.CitationStyle
 
 class AffiliationEntry(val id: Int, val name: String)
 
@@ -61,7 +62,7 @@ class FileEntry(
 				Future.successful(Nil)
 			else
 				Future.sequence(
-					papers.map(doi => citer.getCitation(doi))
+					papers.map(doi => citer.getCitation(doi, CitationStyle.TEXT))
 				).map("See also:" +: _)
 
 		papersComments.map{papComms =>

@@ -161,10 +161,12 @@ case class DocObject(
 
 case class References(
 	citationString: Option[String],
+	citationBibTex: Option[String],
+	citationRis: Option[String],
 	keywords: Option[Seq[String]],
 	authors: Option[Seq[Person]],
 	temporalCoverageDisplay: Option[String]
 )
 object References{
-	def empty = References(None, None, None, None)
+	def empty = References(None, None, None, None, None, None)
 }

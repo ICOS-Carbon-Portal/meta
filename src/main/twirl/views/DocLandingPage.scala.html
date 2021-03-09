@@ -44,9 +44,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- doc.references.citationString.orElse(extras.citation)){
-					@PanelRow("Citation", cit)
-				}
+				@Citations(doc.references)
 				@PanelRow("File name", doc.fileName)
 				@for(size <- doc.size){
 					@PanelRow("Size in bytes", size.toString)

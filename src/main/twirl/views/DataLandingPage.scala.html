@@ -45,9 +45,7 @@
 
 		<div class="row">
 			@Panel("Content", 12){
-				@for(cit <- dobj.references.citationString.orElse(extras.citation)){
-					@PanelRow("Citation", cit)
-				}
+				@Citations(dobj.references)
 				@PanelRow("File name", dobj.fileName)
 				@for(size <- dobj.size){
 					@PanelRow("Size in bytes", size.toString)

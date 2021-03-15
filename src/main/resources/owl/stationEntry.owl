@@ -1054,6 +1054,18 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">URL representing the station in the &quot;final&quot;, production ICOS metadata</rdfs:comment>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">production metadata URL</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName">

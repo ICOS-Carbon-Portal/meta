@@ -52,7 +52,7 @@
 					@metadataRow("Mean annual precipitation", s"$meanAnnualPrecip mm")
 				}
 				@for(meanAnnualRad <- eco.meanAnnualRad){
-					@metadataHtmlRow{Mean annual radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
+					@metadataHtmlRow{Mean annual incoming SW radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
 				}
 				@for(doc <- eco.stationDocs){
 					@metadataHtmlRow{Documentation resource}{

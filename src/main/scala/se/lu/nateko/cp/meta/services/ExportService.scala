@@ -186,7 +186,7 @@ object ExportService{
 				"@type" -> JsString("Organization"),
 				"@id"   -> JsString(conf.dataHost),
 				"name"  -> JsString(s"$envri data portal"),
-				"url"   -> JsString(conf.dataHost)
+				"url"   -> JsString(s"https://${conf.dataHost}")
 			),
 			"producer"              -> producer,
 			"provider"              -> agentToSchemaOrg(dobj.submission.submitter),

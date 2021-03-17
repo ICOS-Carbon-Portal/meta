@@ -1,8 +1,8 @@
 construct {
 	?station ?p ?o .
 }
-from <http://meta.icos-cp.eu/resources/extrastations/>
+from <http://meta.icos-cp.eu/resources/icos/>
 where{
-	bind (<http://meta.icos-cp.eu/resources/stations/ATMO_SAC> as ?station)
+	bind (<http://meta.icos-cp.eu/resources/stations/OS_VOS%2520France-Brazil> as ?station)
 	?station ?p ?o .
 }

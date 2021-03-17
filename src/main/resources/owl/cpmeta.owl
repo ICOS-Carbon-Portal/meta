@@ -2818,7 +2818,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiEtcTimeSer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time series in ICOS ETC CSV format</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time series in ICOS Sweden format</rdfs:label>
     </owl:NamedIndividual>
     
 

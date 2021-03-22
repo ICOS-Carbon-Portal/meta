@@ -1,0 +1,13 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix stentr: <http://meta.icos-cp.eu/ontologies/stationentry/>
+construct {
+	?provSt stentr:hasProductionCounterpart ?prodUri .
+}
+from <http://meta.icos-cp.eu/resources/stationentry/>
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	?prodSt cpmeta:hasStationId ?stId .
+	?provSt stentr:hasShortName ?stId .
+	filter exists {?prodSt cpmeta:hasStationClass []}
+	bind(strdt(str(?prodSt), xsd:anyURI) as ?prodUri)
+}

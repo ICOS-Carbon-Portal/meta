@@ -25,7 +25,7 @@ trait FetchingHelper {
 	protected def getLabeledResource(subj: IRI, pred: IRI): UriResource =
 		getLabeledResource(getSingleUri(subj, pred))
 
-	protected def getLabeledResource(uri: IRI) =
+	def getLabeledResource(uri: IRI) =
 		UriResource(uri.toJava, getOptionalString(uri, RDFS.LABEL), server.getStringValues(uri, RDFS.COMMENT))
 
 	protected def getOptionalString(subj: IRI, pred: IRI): Option[String] =

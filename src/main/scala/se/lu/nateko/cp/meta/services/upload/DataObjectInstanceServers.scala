@@ -46,9 +46,12 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = metaFetchers
-		.getOrElse(envri, throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
-		.getOptionalStation(station)
+	def metaFetcher(implicit envri: Envri) = metaFetchers.get(envri).toTry{
+		new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly")
+	}
+
+	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = metaFetcher
+		.toOption.flatMap(_.getOptionalStation(station))
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
 		val dataObjUri = vocab.getStaticObject(objHash)
@@ -58,17 +61,13 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getObjSpecificationFormat(objectSpecification: IRI)(implicit envri: Envri): Try[IRI] =
-		metaFetchers(envri).getOptionalSpecificationFormat(objectSpecification).toTry{
+	def getObjSpecificationFormat(objectSpecification: IRI)(implicit envri: Envri): Try[IRI] = metaFetcher.flatMap{
+		_.getOptionalSpecificationFormat(objectSpecification).toTry{
 			new UploadUserErrorException(s"Object Specification '$objectSpecification' has no format")
 		}
-
-
-	def getDataObjSpecification(spec: IRI)(implicit envri: Envri): Try[DataObjectSpec] = Try{
-		metaFetchers
-			.getOrElse(envri, throw new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly"))
-			.getSpecification(spec)
 	}
+
+	def getDataObjSpecification(spec: IRI)(implicit envri: Envri): Try[DataObjectSpec] = metaFetcher.map(_.getSpecification(spec))
 
 	def getInstServerForFormat(format: IRI)(implicit envri: Envri): Try[InstanceServer] =
 		perFormat.get(envri).flatMap(_.get(format)).toTry{

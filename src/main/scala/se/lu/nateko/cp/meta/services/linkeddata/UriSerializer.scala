@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, api}
 import se.lu.nateko.cp.meta.api._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat, uriResourceFormat}
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
@@ -131,9 +131,11 @@ class Rdf4jUriSerializer(
 
 	private def makeIri(uri: Uri) = JavaUri.create(uri.toString).toRdf(repo.getValueFactory)
 
-	private def isObjSpec(uri: Uri)(implicit envri: Envri): Boolean = {
+	private def isObjSpec(uri: Uri)(implicit envri: Envri): Boolean =
 		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(servers.metaVocab.hasDataLevel), None)
-	}
+
+	private def isLabeledRes(uri: Uri)(implicit envri: Envri): Boolean =
+		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(RDFS.LABEL), None)
 
 	private def getMarshallings(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig, ctxt: ExecutionContext): FLMHR = uri.path match {
 
@@ -156,6 +158,11 @@ class Rdf4jUriSerializer(
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
 			customJson(() => servers.getDataObjSpecification(makeIri(uri)).toOption),
+			defaultHtml(uri)
+		)
+
+		case _ if isLabeledRes(uri) => oneOf(
+			customJson(() => servers.metaFetcher.map(_.getLabeledResource(makeIri(uri))).toOption),
 			defaultHtml(uri)
 		)
 

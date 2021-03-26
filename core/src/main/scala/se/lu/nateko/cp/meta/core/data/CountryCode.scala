@@ -21,8 +21,10 @@ object CountryCode{
 
 	private val pattern = Pattern.compile("[A-Z]{2}")
 
+	private def normalize(cc: String): String = cc.replace("UK", "GB")
+
 	def unapply(s: String): Option[CountryCode] =
-		if(pattern.matcher(s).matches) Some(new CountryCode(s))
+		if(pattern.matcher(s).matches) Some(new CountryCode(normalize(s)))
 		else None
 
 	def unapply(id: CountryCode): Option[String] = Some(id.code)

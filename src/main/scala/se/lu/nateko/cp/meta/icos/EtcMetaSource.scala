@@ -209,12 +209,13 @@ object EtcMetaSource{
 		case bv => Validated.error(s"$varName must have been a local date(Time) (was $bv)")
 	}
 
-	def getPosition(implicit lookup: Lookup): Validated[Position] =
+	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =
 		for(
-			lat <- getNumber(Vars.lat).require("station must have latitude");
-			lon <- getNumber(Vars.lon).require("station must have longitude");
+			latOpt <- getNumber(Vars.lat).optional;
+			lonOpt <- getNumber(Vars.lon).optional;
 			alt <- getNumber(Vars.elev).optional
-		) yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
+		) yield for(lat <- latOpt; lon <- lonOpt)
+			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
 
 	def getPerson(implicit lookup: Lookup): Validated[EtcPerson] =
 		for(
@@ -307,7 +308,7 @@ object EtcMetaSource{
 					website = None
 				),
 				id = id,
-				coverage = Some(pos),
+				coverage = pos,
 				responsibleOrganization = None,
 				pictures = picture.toSeq,
 				specificInfo = EtcStationSpecifics(

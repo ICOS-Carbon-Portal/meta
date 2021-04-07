@@ -36,11 +36,15 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 	private def getDocumentationObjs(item: IRI): Seq[PlainStaticObject] =
 		server.getUriValues(item, metaVocab.hasDocumentationObject).map(plainObjFetcher.getPlainStaticObject)
 
-	def getOptionalStation(station: IRI): Option[Station] = Try(getStation(station)).toOption
+	def getOptionalStation(station: IRI): Try[Option[Station]] = Try{
+		if(server.hasStatement(Some(station), Some(metaVocab.hasStationId), None))
+			Some(getStation(station))
+		else None
+	}
 
 	protected  def getStation(stat: IRI) = Station(
 		org = getOrganization(stat),
-		id = getOptionalString(stat, metaVocab.hasStationId).getOrElse("Unknown"),
+		id = getSingleString(stat, metaVocab.hasStationId),
 		coverage = getStationCoverage(stat),
 		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 		specificInfo = getStationSpecifics(stat),

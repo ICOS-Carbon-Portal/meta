@@ -21,6 +21,9 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.core.data.StaticObject
+import scala.util.Failure
+import scala.util.Try
+import scala.util.Success
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, vocab: CpVocab, statisticsClient: StatisticsClient) {
 
@@ -73,7 +76,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, vocab: CpVocab,
 				htmlMaker <- fetchHtmlMaker()
 			) yield List(
 				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
-				WithFixedContentType(ContentTypes.`application/json`, () => getJson(dataItemOpt))
+				WithFixedContentType(ContentTypes.`application/json`, () => getJson(Success(dataItemOpt)))
 			)
 		}
 	}
@@ -106,13 +109,16 @@ object PageContentMarshalling{
 		content
 	)
 
-	def getJson[T: JsonWriter](dataItemOpt: Option[T]) =
-		dataItemOpt match {
-			case Some(obj) => HttpResponse(
-				entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
-			)
-			case None => HttpResponse(StatusCodes.NotFound)
-		}
+	def getJson[T: JsonWriter](dataItemOpt: Try[Option[T]]): HttpResponse = dataItemOpt match {
+		case Success(Some(obj)) => HttpResponse(
+			entity = HttpEntity(ContentTypes.`application/json`, obj.toJson.prettyPrint)
+		)
+		case Success(None) => HttpResponse(StatusCodes.NotFound)
+		case Failure(err) => HttpResponse(
+			status = StatusCodes.InternalServerError,
+			entity = getText(err.getMessage, HttpCharsets.`UTF-8`)
+		)
+	}
 
 	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {

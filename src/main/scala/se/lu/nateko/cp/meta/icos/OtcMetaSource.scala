@@ -98,6 +98,9 @@ class OtcMetaSource(
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, Some(s"$name position"));
+				coverOpt <- (new Validated(geoJsonOpt, Nil)).flatMap{geoJson =>
+					Validated.fromTry(GeoJson.toFeature(geoJson, Some(s"$name geo-coverage")))
+				}.optional;
 				pictUri <- qresValue(b, "picture").flatMap(parseUriLiteral).optional;
 				websitePlat <- qresValue(b, "seeAlsoPlat").flatMap(ensureIriValue).optional;
 				websiteSt <- qresValue(b, "seeAlsoSt").flatMap(ensureIriValue).optional;
@@ -119,9 +122,7 @@ class OtcMetaSource(
 							website = websiteSt.orElse(websitePlat).map(_.toJava)
 						),
 						id = stIdStr,
-						coverage = posOpt.orElse{
-							geoJsonOpt.flatMap(GeoJson.toFeature(_, Some(s"$name geo-coverage")))
-						},
+						coverage = posOpt.orElse(coverOpt),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
 						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None, Seq.empty)

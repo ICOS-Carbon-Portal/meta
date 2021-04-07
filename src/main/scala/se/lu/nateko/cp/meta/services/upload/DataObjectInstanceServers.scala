@@ -50,8 +50,8 @@ class DataObjectInstanceServers(
 		new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly")
 	}
 
-	def getStation(station: IRI)(implicit envri: Envri): Option[Station] = metaFetcher
-		.toOption.flatMap(_.getOptionalStation(station))
+	def getStation(station: IRI)(implicit envri: Envri): Try[Option[Station]] = metaFetcher
+		.flatMap(_.getOptionalStation(station))
 
 	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
 		val dataObjUri = vocab.getStaticObject(objHash)

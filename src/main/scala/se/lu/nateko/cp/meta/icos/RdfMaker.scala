@@ -170,6 +170,17 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			p.alt.map{alt =>
 				(iri, meta.hasElevation, vocab.lit(alt))
 			}.toSeq
+		case Some(box: LatLonBox) =>
+			val spcovUri = box.uri.map(_.toRdf).getOrElse(vocab.getSpatialCoverage(UriId(iri)))
+			(iri, meta.hasSpatialCoverage, spcovUri) ::
+			(spcovUri, RDF.TYPE, meta.latLonBoxClass) ::
+			(spcovUri, meta.hasNorthernBound, vocab.lit(box.max.lat)) ::
+			(spcovUri, meta.hasEasternBound, vocab.lit(box.max.lon)) ::
+			(spcovUri, meta.hasSouthernBound, vocab.lit(box.min.lat)) ::
+			(spcovUri, meta.hasWesternBound, vocab.lit(box.min.lon)) ::
+			box.label.toList.map{lbl =>
+				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
+			}
 		case Some(cov) =>
 			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::

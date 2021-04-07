@@ -140,9 +140,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			GeoJson.toFeature(
 				getSingleString(covUri, metaVocab.asGeoJSON),
 				getOptionalString(covUri, RDFS.LABEL)
-			).getOrElse(
-				throw new Exception(s"Failed to parse GeoJSON for $covUri")
-			)
+			).get
 	}
 
 	protected def getNextVersion(item: IRI): Option[URI] = {

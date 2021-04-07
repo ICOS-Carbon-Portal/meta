@@ -1,10 +1,14 @@
 package se.lu.nateko.cp.meta.core.data
 
-import spray.json.JsObject
-
 import spray.json._
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NoStackTrace
 
 object GeoJson {
+
+	class FormatException(msg: String) extends IllegalArgumentException(msg) with NoStackTrace
 
 	def fromFeature(f: GeoFeature): JsObject = f match{
 
@@ -33,53 +37,65 @@ object GeoJson {
 		)
 	}
 
-	def toFeature(geoJs: String, labelOpt: Option[String]): Option[GeoFeature] =
-		scala.util.Try(geoJs.parseJson.asJsObject).toOption.flatMap(js => toFeature(js, labelOpt))
+	def toFeature(geoJs: String, labelOpt: Option[String]): Try[GeoFeature] =
+		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_, labelOpt))
 
-	def toFeature(json: JsObject, labelOpt: Option[String]): Option[GeoFeature] = {
+	def toFeature(json: JsObject, labelOpt: Option[String]): Try[GeoFeature] = {
 
-		val coords = json.fields.get("coordinates")
+		def field(name: String): Try[JsValue] = json.fields.get(name).fold[Try[JsValue]](
+				fail(s"'$name' not found in ${json.compactPrint}")
+			)(Success.apply)
 
-		json.fields.get("type").collect{ case JsString(geoType) => geoType }.flatMap{
+		def coords = field("coordinates")
+
+		field("type").collect{ case JsString(geoType) => geoType }.flatMap{
 
 			case "Point" => coords.flatMap(parsePosition(_, labelOpt))
 
 			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, labelOpt))
 
-			case "Polygon" => coords.flatMap{
-				case JsArray(Vector(pntArr)) => parsePointsArray(pntArr).filter(_.size > 1).map{points =>
-					Polygon(points.dropRight(1), labelOpt)
+			case "Polygon" => coords.map{
+				case JsArray(Vector(pntArr)) => {
+					val points = parsePointsArray(pntArr).get
+					if(points.size < 2) throw new FormatException(s"Expected polygon, got ${points.size} points: ${pntArr.compactPrint}")
+					else Polygon(points.dropRight(1), labelOpt)
 				}
-				case _ => None
+				case other =>
+					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
 			}
 
-			case "GeometryCollection" => json.fields.get("geometries").collect{
+			case "GeometryCollection" => field("geometries").collect{
 				case JsArray(elements) => GeometryCollection(
-					elements.flatMap{
-						case o: JsObject => toFeature(o, labelOpt)
-						case _ => None
+					elements.map{
+						case o: JsObject => toFeature(o, labelOpt).get
+						case other =>
+							throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 					},
 					labelOpt
 				)
+				case other =>
+					throw new FormatException(s"Expected 'geometries' to be a JsArray, got ${other.compactPrint}")
 			}
 
-			case _ => None
+			case other => fail(s"Unsupported GeoJSON feature type: $other")
 		}
 	}
 
-	private def parsePointsArray(geoJson: JsValue): Option[Vector[Position]] = geoJson match{
-		case JsArray(elements) =>
-			val points = elements.flatMap(parsePosition(_, None))
-			if(points.isEmpty) None else Some(points)
-		case _ => None
+	private def parsePointsArray(geoJson: JsValue): Try[Vector[Position]] = geoJson match{
+		case JsArray(elements) => Try{
+			elements.map(p => parsePosition(p, None).get)
+		}
+		case _ =>
+			fail(s"Expected JSON array, got ${geoJson.compactPrint}")
 	}
 
-	private def parsePosition(geoJson: JsValue, labelOpt: Option[String]): Option[Position] = geoJson match {
+	private def parsePosition(geoJson: JsValue, labelOpt: Option[String]): Try[Position] = geoJson match {
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat))) =>
-			Some(Position(lat.doubleValue, lon.doubleValue, None, labelOpt))
+			Success(Position(lat.doubleValue, lon.doubleValue, None, labelOpt))
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat), JsNumber(elev))) =>
-			Some(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), labelOpt))
-		case _ => None
+			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), labelOpt))
+		case _ =>
+			fail(s"Not a valid JSON for GeoJSON for a position: ${geoJson.compactPrint}")
 	}
 
 	private def coordinates(p: Position) = {
@@ -87,4 +103,6 @@ object GeoJson {
 		val coords = p.alt.fold(latLon){alt => latLon :+ JsNumber(alt)}
 		JsArray(coords)
 	}
+
+	private def fail(msg: String) = Failure(new FormatException(msg))
 }

@@ -28,6 +28,9 @@ import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -112,9 +115,11 @@ class Rdf4jUriSerializer(
 	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
 		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
 
-	private def fetchStation(iri: IRI)(implicit  envri: Envri): Option[StationExtra] = servers.getStation(iri).map{st =>
-		val membs = citer.attrProvider.getMemberships(st).toIndexedSeq
-		new StationExtra(st, membs)
+	private def fetchStation(iri: IRI)(implicit  envri: Envri): Try[Option[StationExtra]] = servers.getStation(iri).map{stOpt =>
+		stOpt.map{st =>
+			val membs = citer.attrProvider.getMemberships(st).toIndexedSeq
+			new StationExtra(st, membs)
+		}
 	}
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
@@ -149,7 +154,8 @@ class Rdf4jUriSerializer(
 			customHtml[StationExtra](
 				() => fetchStation(makeIri(uri)),
 				st => views.html.StationLandingPage(st),
-				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId")
+				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
+				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.getMessage}")
 			),
 			customJson(() => {
 				fetchStation(makeIri(uri.withQuery(Uri.Query.Empty)))
@@ -157,12 +163,12 @@ class Rdf4jUriSerializer(
 		)
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-			customJson(() => servers.getDataObjSpecification(makeIri(uri)).toOption),
+			customJson(() => servers.getDataObjSpecification(makeIri(uri)).map(Some(_))),
 			defaultHtml(uri)
 		)
 
 		case _ if isLabeledRes(uri) => oneOf(
-			customJson(() => servers.metaFetcher.map(_.getLabeledResource(makeIri(uri))).toOption),
+			customJson(() => servers.metaFetcher.map(_.getLabeledResource(makeIri(uri))).map(Some(_))),
 			defaultHtml(uri)
 		)
 
@@ -176,14 +182,20 @@ class Rdf4jUriSerializer(
 		implicit trm: ToResponseMarshaller[() => Option[T]], ctxt: ExecutionContext
 	): FLMHR = trm(fetchDto)
 
-	private def customJson[T : JsonWriter](fetchDto: () => Option[T]): Marshalling[HttpResponse] =
+	private def customJson[T : JsonWriter](fetchDto: () => Try[Option[T]]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
-	private def customHtml[T](fetchDto: () => Option[T], pageTemplate: T => Html, notFoundPage: => Html): Marshalling[HttpResponse] =
+	private def customHtml[T](
+		fetchDto: () => Try[Option[T]],
+		pageTemplate: T => Html,
+		notFoundPage: => Html,
+		errorPage: Throwable => Html
+	): Marshalling[HttpResponse] =
 		PageContentMarshalling.twirlStatusHtmlMarshalling{
 			() => fetchDto() match {
-				case Some(value) => StatusCodes.OK -> pageTemplate(value)
-				case None => StatusCodes.NotFound -> notFoundPage
+				case Success(Some(value)) => StatusCodes.OK -> pageTemplate(value)
+				case Success(None) => StatusCodes.NotFound -> notFoundPage
+				case Failure(err) => StatusCodes.InternalServerError -> errorPage(err)
 			}
 		}
 

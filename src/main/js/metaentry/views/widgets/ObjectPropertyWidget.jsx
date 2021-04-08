@@ -7,7 +7,7 @@ const ObjectValueWidget = React.createClass({
 		let style = this.props.orderNumber > 0 ? {marginTop: 3} : {};
 
 		return <div className="input-group" style={style}>
-			<span className="input-group-addon"><span className="glyphicon glyphicon-link"></span></span>
+			<a href={this.props.uri} className="input-group-addon"><span className="glyphicon glyphicon-link"></span></a>
 			<input type="text" className="form-control" readOnly value={this.props.label} />
 			<span className="input-group-btn">
 				<button className="btn btn-default" type="button" onClick={this.props.deleteSelf}>
@@ -37,6 +37,7 @@ export default React.createClass({
 					<ObjectValueWidget
 						key={keyBase + '_val_' + i}
 						label={value.displayName}
+						uri={value.uri}
 						deleteSelf={this.getSelfDeleter(value.uri)}
 						orderNumber={i}
 					/>

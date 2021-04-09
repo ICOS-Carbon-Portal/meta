@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
 import java.util.regex.Pattern
+import java.util.Locale
 
 /***
  * ISO ALPHA-2 country code
@@ -15,6 +16,11 @@ class CountryCode private (val code: String){
 	override def hashCode: Int = code.hashCode
 
 	override def toString = code
+
+	val name = {
+		val locale = new Locale("", code)
+		locale.getDisplayCountry()
+	}
 }
 
 object CountryCode{

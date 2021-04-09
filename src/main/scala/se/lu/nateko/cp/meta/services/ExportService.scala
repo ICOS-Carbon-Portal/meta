@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import Envri.{Envri, EnvriConfigs}
+import java.util.Locale
 
 
 object ExportService{
@@ -105,7 +106,16 @@ object ExportService{
 			JsArray(k.map(JsString(_)).toVector)
 		)
 
-		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(geoFeatureToSchemaOrgPlace)
+		val country: Option[CountryCode] = envri match {
+			case Envri.SITES => CountryCode.unapply("SE")
+			case _ => dobj.specificInfo.map(_.acquisition.station.specificInfo match {
+					case iss: IcosStationSpecifics => iss.countryCode
+					case _ => None
+				}
+			).getOrElse(None)
+		}
+
+		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(f => geoFeatureToSchemaOrgPlace(f, country))
 
 		val distribution = dobj.accessUrl.fold[JsValue](JsNull){url =>
 			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
@@ -272,14 +282,22 @@ object ExportService{
 
 	def asOptJsString(sOpt: Option[String]): JsValue = sOpt.fold[JsValue](JsNull)(JsString.apply)
 
-	def geoFeatureToSchemaOrgPlace(f: GeoFeature): JsValue = f match{
+	def geoFeatureToSchemaOrgPlace(feature: GeoFeature, country: Option[CountryCode] = None): JsValue = feature match{
 		case GeometryCollection(geoms, _) =>
-			JsArray(geoms.map(geoFeatureToSchemaOrgPlace).toVector)
+			JsArray(geoms.map(geo => geoFeatureToSchemaOrgPlace(geo, country)).toVector)
 		case _ =>
 			JsObject(
 				"@type" -> JsString("Place"),
-				"name"  -> asOptJsString(f.label),
-				"geo"   -> geoFeatureToSchemaOrg(f)
+				"name"  -> asOptJsString(feature.label),
+				"geo"   -> geoFeatureToSchemaOrg(feature),
+				"containedInPlace" -> JsObject(
+					"@type" -> JsString("Country"),
+					"identifier"  -> asOptJsString(country.map(_.toString)),
+					"name"  -> asOptJsString(country.map(country => {
+						val locale = new Locale("", country.code)
+						locale.getDisplayCountry()
+					})),
+				)
 			)
 	}
 }

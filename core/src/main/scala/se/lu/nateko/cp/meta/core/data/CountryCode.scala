@@ -6,7 +6,7 @@ import java.util.Locale
 /***
  * ISO ALPHA-2 country code
  */
-class CountryCode private (val code: String){
+class CountryCode private (val code: String, val displayCountry: String){
 
 	override def equals(other: Any) = other match{
 		case otherCc: CountryCode => otherCc.code == code
@@ -17,10 +17,6 @@ class CountryCode private (val code: String){
 
 	override def toString = code
 
-	val name = {
-		val locale = new Locale("", code)
-		locale.getDisplayCountry()
-	}
 }
 
 object CountryCode{
@@ -30,8 +26,12 @@ object CountryCode{
 	private def normalize(cc: String): String = cc.replace("UK", "GB")
 
 	def unapply(s: String): Option[CountryCode] =
-		if(pattern.matcher(s).matches) Some(new CountryCode(normalize(s)))
-		else None
+		if(pattern.matcher(s).matches) {
+			val code = normalize(s)
+			val country = new Locale("", code).getDisplayCountry
+			if(code != country) Some(new CountryCode(code, country))
+			else None
+		} else None
 
 	def unapply(id: CountryCode): Option[String] = Some(id.code)
 }

@@ -107,7 +107,8 @@ object ExportService{
 
 		val country: Option[CountryCode] = envri match {
 			case Envri.SITES => CountryCode.unapply("SE")
-			case _ => dobj.specificInfo.toOption.flatMap(_.acquisition.station.specificInfo match {
+			case _ => dobj.specificInfo.toOption.flatMap(
+				_.acquisition.station.specificInfo match {
 					case iss: IcosStationSpecifics => iss.countryCode
 					case _ => None
 				}
@@ -285,7 +286,7 @@ object ExportService{
 		JsObject(
 			"@type"      -> JsString("Country"),
 			"identifier" -> JsString(country.code),
-			"name"       -> JsString(country.name)
+			"name"       -> JsString(country.displayCountry)
 		)
 	)
 

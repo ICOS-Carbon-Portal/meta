@@ -143,6 +143,11 @@ object ExportService{
 			}
 		}
 
+		val publisherLogo = envri match {
+			case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
+			case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
+		}
+
 		val producer = dobj.production.map(p => agentToSchemaOrg(p.host.getOrElse(p.creator))).getOrElse(JsNull)
 
 		val contributor = dobj.production.fold[JsValue](JsNull)(p =>
@@ -196,7 +201,8 @@ object ExportService{
 				"@type" -> JsString("Organization"),
 				"@id"   -> JsString(conf.dataHost),
 				"name"  -> JsString(s"$envri data portal"),
-				"url"   -> JsString(s"https://${conf.dataHost}")
+				"url"   -> JsString(s"https://${conf.dataHost}"),
+				"logo"  -> publisherLogo
 			),
 			"producer"              -> producer,
 			"provider"              -> agentToSchemaOrg(dobj.submission.submitter),

@@ -119,7 +119,7 @@ class UploadService(
 
 	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[SubmitterProfile] = conf.submitters(envri).collect{
 		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => SubmitterProfile(id, submConf.producingOrganizationClass, submConf.producingOrganization)
-	}.toSeq
+	}.toSeq.sortBy(sp => sp.id)
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] =
 		completer.completeUpload(hash, info)

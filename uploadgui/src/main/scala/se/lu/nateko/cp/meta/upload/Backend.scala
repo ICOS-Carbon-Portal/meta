@@ -44,6 +44,12 @@ object Backend {
 		Ajax.get("/upload/submitterids", withCredentials = true)
 			.recoverWith(recovery("fetch the list of available submitter ids"))
 			.map(parseTo[IndexedSeq[SubmitterProfile]])
+			.flatMap{ s =>
+				if(s.isEmpty)
+					Future.failed(new Exception("""You are not authorized to upload data.
+					Please contact us to if you would like to get the permission."""))
+				else Future.successful(s)
+			}
 
 	def stationInfo(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
 		sparqlSelect(stations(orgClass, producingOrg)).map(_.map(toStation))

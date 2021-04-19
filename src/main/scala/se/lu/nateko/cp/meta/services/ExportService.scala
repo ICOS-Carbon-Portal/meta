@@ -143,9 +143,10 @@ object ExportService{
 			}
 		}
 
-		val publisherLogo = envri match {
+		val publisherLogo: JsValue = envri match {
 			case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
 			case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
+			case _ => JsNull
 		}
 
 		val producer = dobj.production.map(p => agentToSchemaOrg(p.host.getOrElse(p.creator))).getOrElse(JsNull)

@@ -155,7 +155,40 @@ In bash shell, one can also format the JSON after fetching, as in this example:
 
 `curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | python3 -m json.tool`
 
+---
+
+## Accessing the metadata
+
+Carbon Portal stores its metadata in an [RDF store](https://en.wikipedia.org/wiki/Triplestore) (also called triplestore), where every metadata entity is represented with a URL. All of these URLs are resolvable and can be visited using Web browsers and other HTTP client software. Examples of the kinds of metadata entities include data objects, document objects, collections, organizations, people, research stations, dataset specifications, variables, acquisition/creation/submission timestamps, etc.
+
+### Data objects
+
+Carbon Portal's data objects have a well-defined separation between data (the binary content of the object, viewed as a constant sequence of bytes and identified using its SHA-256 hashsum) and metadata (all the other information about the object, which existed or could have existed at the time of object creation). Examples of data object metadata include file name, size in bytes, research station, sampling height, previous/next versions, etc.
+
+The most basic and user-friendly way of accessing data object's metadata is visiting its landing page (example: <https://meta.icos-cp.eu/objects/_fJ8Skpz_lvMnAOfsRApZojG>) using a Web browser, and then possibly explore it further by navigating to the links therein. Additionally, every data object has a metadata view (see [example](https://data.icos-cp.eu/portal/#%7B%22route%22%3A%22metadata%22%2C%22id%22%3A%22_fJ8Skpz_lvMnAOfsRApZojG%22%7D)) in the [portal app](https://data.icos-cp.eu/portal/).
+
+Apart from metadata access methods intended for human consumption, CP offers a way of accessing data object metadata programmatically. All the metadata is published using CC0 licence, which means that no licence acceptance is needed, and all metadata access can be performed anonymously.
+
+Programmatic access to individual data objects' metadata is performed by sending HTTP GET request to the landing page, specifying the desired metadata format using HTTP content negotiation. For example, it is possible to download most of the data object's metadata displayed on its landing page, as a single JSON object, using command-line tool `curl` like so:
+
+`curl -H "Accept: application/json" https://meta.icos-cp.eu/objects/qZzevJN69j6rRPKxTbJZckDf`
+
+Other supported content types are intended for fetching different serializations of RDF metadata: `application/xml` or `application/rdf+xml` for RDF/XML, and `text/plain` or `text/turtle` for RDF/Turtle.
+
+### Other metadata entities
+
+Same principles and approaches to metadata access apply to document objects, collections, organizations, people, data types, variables, etc. However, the list of supported content types and richness of the corresponding metadata representations and HTML landing pages may vary.
+
+### SPARQL
+
+CP metadata service responds to arbitrary queries in W3C-standardized query language [SPARQL](https://www.w3.org/TR/sparql11-query/) sent to its SPARQL endpoint `https://meta.icos-cp.eu/sparql`. Writing the queries requires familiarity with [the query language](https://www.w3.org/TR/sparql11-query/) and with CP metadata model. The latter is [formally expressed](https://github.com/ICOS-Carbon-Portal/meta/blob/master/src/main/resources/owl/cpmeta.owl) using OWL &mdash; W3C-standard ontology language. We recognize that even for technical external users the threshold to writing SPARQL queries is rather high, and therefore invite them to get in touch with us, should they have metadata-query needs not covered by our user-friendly products.
+
+To demonstrate some of the possibilities that are accessible via SPARQL, we refer to our (semi-) user-friendly [SPARQL client app](https://meta.icos-cp.eu/sparqlclient/?type=CSV) (has a list of pre-defined queries to choose from), and to a list of [under-the-hood queries](https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%2C%22tabs%22%3A%7B%22searchTab%22%3A1%7D%7D) used in the [portal app](https://data.icos-cp.eu/portal/). (Note that the panel-heading of the Search result contains a small button redirecting to the search query for the data object list.)
+
+---
+
 ## Metadata flow (for ATC only)
+
 The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form
 
 `https://meta.icos-cp.eu/upload/atcmeta/<tableName>`
@@ -164,7 +197,10 @@ where `<tableName>` is a name used to distinguish different tables, for example 
 
 Authentication with a pre-configured CP account is required. The authentication mechanism is the same as for data object upload.
 
+---
+
 ## Administrative API for RDF updates
+
 Intended for internal use at Carbon Portal.
 All the updates need to go through the RDF logs, therefore SPARQL UPDATE protocol could not be used directly. Instead, one needs to HTTP POST a SPARQL CONSTRUCT query, that will produce the triples that need to be inserted/retracted, to a URL of the form:
 

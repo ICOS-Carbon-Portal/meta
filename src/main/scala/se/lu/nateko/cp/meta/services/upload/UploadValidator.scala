@@ -31,8 +31,9 @@ import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.StationDataMetadata
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.ConfigLoader
 
-class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceConfig){
+class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
 	implicit val factory = metaVocab.factory
 
@@ -71,7 +72,7 @@ class UploadValidator(servers: DataObjectInstanceServers, conf: UploadServiceCon
 	) yield NotUsed
 
 	def getSubmitterConfig(dto: UploadDto)(implicit envri: Envri): Try[DataSubmitterConfig] = {
-		conf.submitters(envri).get(dto.submitterId) match {
+		ConfigLoader.submittersConfig.submitters(envri).get(dto.submitterId) match {
 			case None => userFail(s"Unknown submitter: ${dto.submitterId}")
 			case Some(conf) => Success(conf)
 		}

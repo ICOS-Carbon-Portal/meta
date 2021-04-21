@@ -52,6 +52,7 @@ src/test/resources/startTimes.csv
 
 #Environment-specific config
 /application.conf
+/submitters.conf
 
 #Local file storage
 /fileStorage/

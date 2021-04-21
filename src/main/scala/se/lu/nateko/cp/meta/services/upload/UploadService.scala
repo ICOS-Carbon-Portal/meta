@@ -25,6 +25,7 @@ import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.upload.completion.Report
+import se.lu.nateko.cp.meta.ConfigLoader
 
 class AccessUri(val uri: URI)
 
@@ -39,7 +40,7 @@ class UploadService(
 	import system.dispatcher
 
 	private implicit val factory = vocab.factory
-	private val validator = new UploadValidator(servers, conf)
+	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
 	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab, sparql)
@@ -113,11 +114,11 @@ class UploadService(
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
-		conf.submitters(envri).values
+		ConfigLoader.submittersConfig.submitters(envri).values
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[SubmitterProfile] = conf.submitters(envri).collect{
+	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[SubmitterProfile] = ConfigLoader.submittersConfig.submitters(envri).collect{
 		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) => SubmitterProfile(id, submConf.producingOrganizationClass, submConf.producingOrganization)
 	}.toSeq.sortBy(sp => sp.id)
 

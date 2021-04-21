@@ -64,6 +64,8 @@ case class DataSubmitterConfig(
 	submittingOrganization: URI
 )
 
+case class SubmittersConfig(submitters: Map[Envri, Map[String, DataSubmitterConfig]])
+
 case class EtcConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,
@@ -77,7 +79,6 @@ case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	documentServers: Map[Envri, String],
-	submitters: Map[Envri, Map[String, DataSubmitterConfig]],
 	epicPid: EpicPidConfig,
 	handle: HandleNetClientConfig,
 	etc: EtcConfig
@@ -170,11 +171,12 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
 	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
+	implicit val submittersConfigFormat = jsonFormat1(SubmittersConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat6(EtcConfig)
 	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
 
-	implicit val uploadServiceConfigFormat = jsonFormat7(UploadServiceConfig)
+	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
@@ -199,6 +201,13 @@ object ConfigLoader extends CpmetaJsonProtocol{
 		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
 
 		confJson.parseJson.convertTo[CpmetaConfig]
+	}
+
+	def submittersConfig: SubmittersConfig = {
+		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
+		val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
+
+		confJson.parseJson.convertTo[SubmittersConfig]
 	}
 
 }

@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -205,9 +206,13 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	def submittersConfig: SubmittersConfig = {
 		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
-		val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
 
-		confJson.parseJson.convertTo[SubmittersConfig]
+		if(confFile.exists) {
+			val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
+			confJson.parseJson.convertTo[SubmittersConfig]
+		} else {
+			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
+		}
 	}
 
 }

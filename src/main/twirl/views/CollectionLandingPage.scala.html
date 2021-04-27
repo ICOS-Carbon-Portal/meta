@@ -6,7 +6,7 @@
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(coll.title, "Collection Landing Page at Carbon Portal", envri, CpMenu.default){
+@ServerSidePage(coll.title, pageTitle, envri, CpMenu.default){
 	<div class="container-fluid">
 
 		<div class="row">
@@ -47,6 +47,13 @@
 			}
 		</div>
 	</div>
+}
+
+@pageTitle = @{
+	envri match {
+		case Envri.SITES => "Collection Landing Page"
+		case _ => "Collection Landing Page at Carbon Portal"
+	}
 }
 
 @staticDataItemLink(item: StaticDataItem) = {

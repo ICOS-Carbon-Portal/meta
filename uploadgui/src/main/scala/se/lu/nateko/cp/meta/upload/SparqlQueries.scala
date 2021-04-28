@@ -64,8 +64,8 @@ object SparqlQueries {
 		|SELECT *
 		|FROM <${from}>
 		|WHERE {
-		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name .
-		| ?spec cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
+		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ;
+		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
 		|	OPTIONAL{?spec cpmeta:containsDataset ?dataset}
 		|} order by ?name""".stripMargin
 

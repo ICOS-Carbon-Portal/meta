@@ -125,10 +125,10 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	}
 
 	private def userAuthorizedByThemesAndProjects(spec: DataObjectSpec, submConf: DataSubmitterConfig): Try[NotUsed] = {
-		if(!submConf.authorizedThemes.isEmpty && !submConf.authorizedThemes.contains(spec.theme.self.uri))
-			authFail(s"User is not authorized to upload data linked to the '${spec.theme.self.uri}' theme")
-		else if(!submConf.authorizedProjects.isEmpty && !submConf.authorizedProjects.contains(spec.project.self.uri))
-			authFail(s"User is not authorized to upload data linked to the '${spec.project.self.uri}' project")
+		if(!submConf.authorizedThemes.fold(true)(_.contains(spec.theme.self.uri)))
+			authFail(s"Submitter is not authorized to upload data linked to the '${spec.theme.self.uri}' theme")
+		else if(!submConf.authorizedProjects.fold(true)(_.contains(spec.project.self.uri)))
+			authFail(s"Submitter is not authorized to upload data linked to the '${spec.project.self.uri}' project")
 		else ok
 	}
 

@@ -83,8 +83,8 @@ case class SubmitterProfile(
 	id: String,
 	producingOrganizationClass: Option[URI],
 	producingOrganization: Option[URI],
-	authorizedThemes: Seq[URI],
-	authorizedProjects: Seq[URI]
+	authorizedThemes: Option[Seq[URI]],
+	authorizedProjects: Option[Seq[URI]]
 )
 
 case class ReferencesDto(keywords: Option[Seq[String]])

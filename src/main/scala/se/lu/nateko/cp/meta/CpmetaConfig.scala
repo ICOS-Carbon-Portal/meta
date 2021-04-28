@@ -63,8 +63,8 @@ case class DataSubmitterConfig(
 	producingOrganizationClass: Option[URI],
 	producingOrganization: Option[URI],
 	submittingOrganization: URI,
-	authorizedThemes: Seq[URI],
-	authorizedProjects: Seq[URI]
+	authorizedThemes: Option[Seq[URI]],
+	authorizedProjects: Option[Seq[URI]]
 )
 
 case class SubmittersConfig(submitters: Map[Envri, Map[String, DataSubmitterConfig]])

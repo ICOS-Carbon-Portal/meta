@@ -36,17 +36,15 @@ class DataPanel(
 
 	private def onLevelSelected(level: Int): Unit = {
 
-		def themeOk(subm: SubmitterProfile, spec: ObjSpec): Boolean =
-			subm.authorizedThemes.isEmpty || subm.authorizedThemes.contains(spec.theme)
-
-		def projectOk(subm: SubmitterProfile, spec: ObjSpec): Boolean =
-			subm.authorizedProjects.isEmpty || subm.authorizedProjects.contains(spec.project)
-
 		val levelFilter: ObjSpec => Boolean = _.dataLevel == level
 
-		val specFilter = submitter().fold(levelFilter){
-			subm => spec => themeOk(subm, spec) && projectOk(subm, spec) && levelFilter(spec)
-		}
+		val specFilter = submitter().fold(levelFilter)(subm => {
+
+			val themeOk = (spec: ObjSpec) => subm.authorizedThemes.fold(true)(_.contains(spec.theme))
+			val projOk = (spec: ObjSpec) => subm.authorizedProjects.fold(true)(_.contains(spec.project))
+
+			spec => themeOk(spec) && projOk(spec) && levelFilter(spec)
+		})
 
 		objSpecSelect.setOptions(objSpecs.filter(specFilter))
 		bus.publish(LevelSelected(level))

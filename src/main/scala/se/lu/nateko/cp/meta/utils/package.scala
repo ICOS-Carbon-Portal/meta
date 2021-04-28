@@ -14,6 +14,9 @@ package object utils {
 			.getOrElse(Failure(error))
 	}
 
+	def transformEither[L0, R0, L, R](left: L0 => L, right: R0 => R)(either: Either[L0, R0]): Either[L, R] =
+		either.fold[Either[L, R]](l => Left(left(l)), r => Right(right(r)))
+
 	def urlEncode(s: String): String = Segment(s, Empty).toString
 
 	def urlDecode(s: String): String = Uri("/" + s).path match {

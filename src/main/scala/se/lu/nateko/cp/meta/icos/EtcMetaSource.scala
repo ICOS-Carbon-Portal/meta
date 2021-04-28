@@ -122,7 +122,7 @@ object EtcMetaSource{
 
 	type Lookup = Map[String, String]
 	type E = ETC.type
-	type EtcInstrument = Instrument[E]
+	type EtcInstrument = TcInstrument[E]
 	type EtcPerson = TcPerson[E]
 	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
@@ -360,7 +360,7 @@ object EtcMetaSource{
 			model <- require(Vars.loggerModel)
 		) yield {
 			val tcId = makeId(stId + "_" + loggerId)
-			Instrument[E](
+			TcInstrument[E](
 				tcId = tcId,
 				model = model,
 				sn = sn

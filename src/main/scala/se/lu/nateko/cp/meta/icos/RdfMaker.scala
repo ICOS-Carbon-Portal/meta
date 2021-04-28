@@ -95,7 +95,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				(uri, RDF.TYPE, meta.orgClass) +:
 				orgTriples(uri, ci.org)
 
-			case instr: Instrument[T] =>
+			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
 				(uri, meta.hasModel, vocab.lit(instr.model)) +:
 				(uri, meta.hasSerialNumber, vocab.lit(instr.sn)) +:
@@ -129,7 +129,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		case ci: TcPlainOrg[T] =>
 			vocab.getOrganization(ci.cpId)
 
-		case instr: Instrument[T] =>
+		case instr: TcInstrument[T] =>
 			vocab.getIcosInstrument(instr.cpId)
 	}
 

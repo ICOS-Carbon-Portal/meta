@@ -1,6 +1,5 @@
 # ICOS Carbon Portal metadata service
 
-
 Metadata service for hosting, mantaining and querying information about things like ICOS stations, people, instruments, archived data objects, etc.
 It is deployed to **https://meta.icos-cp.eu/** with different services accessible via different paths:
 
@@ -22,17 +21,24 @@ Additionally, this repository contains code for the following visualization web 
 - [Table with the provisional station info](https://static.icos-cp.eu/share/stations/table.html)
 
 ---
+
 ## Upload instructions (manual)
+
 Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app.
 
 ---
+
 ## Upload instructions (scripting)
 
 This section describes the complete, general 2-step workflow for registering and uploading a data object to the Carbon Portal for archival, PID minting and possibly for being served by various data services.
 
 ### Authentication
 
-Before you begin, make sure with the Carbon Portal's (CP) technical staff that the service is configured to accept your kind of data objects, and that there is a user account associated with the uploads you are going to make. Log in to [CPauth](https://cpauth.icos-cp.eu/) with this account using the username/password provided to you. You will be redirected to a page showing, among other things, your API token. This token is what your software must use to authenticate itself against CP services. It has validity period of 100000 seconds (about 27.8 hours).
+Before you begin, make sure with the Carbon Portal's (CP) technical staff that the service is configured to accept your kind of data objects, and that there is a user account associated with the uploads you are going to make.
+Log in to [CPauth](https://cpauth.icos-cp.eu/) with this account.
+You will be redirected to a page showing, among other things, your API token.
+This token is what your software must use to authenticate itself against CP services.
+It has validity period of 100000 seconds (about 27.8 hours).
 
 Alternatively, the authentication token can be fetched in an automation-friendly way by HTTP-POSTing the username and password as HTML form fields `mail` and `password` to **https://cpauth.icos-cp.eu/password/login**. For example, using a popular command-line tool `curl`, it can be done as follows:
 
@@ -122,15 +128,18 @@ Alternatively, the CPauth cookie can be supplied explicitly:
 `$ curl -H "Cookie: <cookie-assignment>" -H "Content-Type: application/json" -X POST -d @metaPackage.json https://meta.icos-cp.eu/upload`
 
 ### Uploading the data object
+
 Uploading the data object itself is a simple step performed against the CP's Data service **https://data.icos-cp.eu/**.
 Proceed with the upload as instructed [here](https://github.com/ICOS-Carbon-Portal/data#instruction-for-uploading-icos-data-objects)
 
 ### Uploading document objects
+
 In addition to data objects who have properties as data level, data object specification, acquisition and production provenance, there is a use case for uploading supplementary materials like pdf documents with hardware specifications, methodology descriptions, policies and other reference information.
 To provide for this, CP supports upload of document objects.
 The upload procedure is completely analogous to data object uploads, the only difference being the absence of `specificInfo` and `objectSpecification` properties in the metadata package.
 
 ### Creating a static collection
+
 Carbon Portal supports creation of static collections with constant lists of immutable data objects or other static collections. The process of creating a static collection is similar to step 1 of data object upload. Here are the expected contents of the metadata package for it:
 ```json
 {
@@ -147,6 +156,7 @@ The fields are either self-explanatory, or have the same meaning as for the data
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 
 ### Reconstructing upload-metadata packages of existing objects/collections
+
 When scripting uploads of multiple objects, it can be convenient to use an upload-metadata package of an existing object as an example or a template. The reconstructed package can be fetched using the following request:
 
 `curl https://meta.icos-cp.eu/dtodownload?uri=<langing page URL>`
@@ -159,7 +169,9 @@ In bash shell, one can also format the JSON after fetching, as in this example:
 
 ## Accessing the metadata
 
-Carbon Portal stores its metadata in an [RDF store](https://en.wikipedia.org/wiki/Triplestore) (also called triplestore), where every metadata entity is represented with a URL. All of these URLs are resolvable and can be visited using Web browsers and other HTTP client software. Examples of the kinds of metadata entities include data objects, document objects, collections, organizations, people, research stations, dataset specifications, variables, acquisition/creation/submission timestamps, etc.
+Carbon Portal stores its metadata in an [RDF store](https://en.wikipedia.org/wiki/Triplestore) (also called triplestore), where every metadata entity is represented with a URL.
+All of these URLs are resolvable and can be visited using Web browsers and other HTTP client software.
+Examples of the kinds of metadata entities include data objects, document objects, collections, organizations, people, research stations, dataset specifications, variables, acquisition/creation/submission provenance objects, etc.
 
 ### Data objects
 

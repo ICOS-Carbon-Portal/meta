@@ -22,7 +22,7 @@ class Form(
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
-	val dataPanel = new DataPanel(objSpecs)
+	val dataPanel = new DataPanel(objSpecs, () => aboutPanel.submitterOpt)
 	val acqPanel = new AcquisitionPanel
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel

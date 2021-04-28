@@ -62,7 +62,9 @@ case class DataSubmitterConfig(
 	authorizedUserIds: Seq[String],
 	producingOrganizationClass: Option[URI],
 	producingOrganization: Option[URI],
-	submittingOrganization: URI
+	submittingOrganization: URI,
+	authorizedThemes: Seq[URI],
+	authorizedProjects: Seq[URI]
 )
 
 case class SubmittersConfig(submitters: Map[Envri, Map[String, DataSubmitterConfig]])
@@ -171,7 +173,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
 	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
 	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
-	implicit val dataSubmitterConfigFormat = jsonFormat4(DataSubmitterConfig)
+	implicit val dataSubmitterConfigFormat = jsonFormat6(DataSubmitterConfig)
 	implicit val submittersConfigFormat = jsonFormat1(SubmittersConfig)
 	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
 	implicit val etcUploadConfigFormat = jsonFormat6(EtcConfig)

@@ -79,6 +79,12 @@ case class DataProductionDto(
 	creationDate: Instant
 )
 
-case class SubmitterProfile(id: String, producingOrganizationClass: Option[URI], producingOrganization: Option[URI])
+case class SubmitterProfile(
+	id: String,
+	producingOrganizationClass: Option[URI],
+	producingOrganization: Option[URI],
+	authorizedThemes: Seq[URI],
+	authorizedProjects: Seq[URI]
+)
 
 case class ReferencesDto(keywords: Option[Seq[String]])

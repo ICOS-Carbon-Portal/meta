@@ -73,7 +73,10 @@
 		}
 	}
 	@if(envri == Envri.SITES) {
-		.keywords-block, .l3option {
+		.keywords-block,
+		.l3option,
+		.sampling-height-block,
+		.instrument-block {
 			display: none;
 		}
 	}
@@ -223,11 +226,11 @@
 							<label for="longitude">Sampling point (longitude) <em class="text-muted">- optional</em></label>
 							<input id="longitude" type="text" class="form-element form-control">
 						</div>
-						<div class="form-group">
+						<div class="form-group sampling-height-block">
 							<label for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>
 							<input id="sampleheight" type="text" class="form-element form-control">
 						</div>
-						<div class="form-group">
+						<div class="form-group instrument-block">
 							<label for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
 							<textarea name="instrumenturi" id="instrumenturi" rows="2" cols="80" class="form-element"></textarea>
 						</div>

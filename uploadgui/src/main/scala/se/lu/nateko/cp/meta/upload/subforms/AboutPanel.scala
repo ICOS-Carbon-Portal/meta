@@ -23,7 +23,8 @@ import Utils._
 
 class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
 
-	def submitter = submitterIdSelect.value.withMissingError("Submitter Id not set")
+	def submitterOpt: Option[SubmitterProfile] = submitterIdSelect.value
+	def submitter: Try[SubmitterProfile] = submitterOpt.withMissingError("Submitter Id not set")
 	def isInNewItemMode: Boolean = modeControl.value.contains("new")
 	def itemType: Option[ItemType] = typeControl.value
 	def file: Try[dom.File] = fileInput.file
@@ -103,7 +104,6 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 		clearFields()
 	}
 
-	
 	private def onItemTypeSelected(itemType: ItemType): Unit = {
 		setFileAndFilenameVisibility(itemType)
 		bus.publish(ItemTypeSelected(itemType))

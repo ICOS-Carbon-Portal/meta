@@ -115,5 +115,5 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val labelingUserFormat = jsonFormat9(LabelingUserDto)
 	implicit val labelingStatusUpdateFormat = jsonFormat3(LabelingStatusUpdate)
 
-	implicit val submitterProfileDtoFormat = jsonFormat3(SubmitterProfile)
+	implicit val submitterProfileDtoFormat = jsonFormat5(SubmitterProfile)
 }

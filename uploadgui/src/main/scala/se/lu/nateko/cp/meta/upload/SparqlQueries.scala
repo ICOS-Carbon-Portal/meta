@@ -64,7 +64,8 @@ object SparqlQueries {
 		|SELECT *
 		|FROM <${from}>
 		|WHERE {
-		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name .
+		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ;
+		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
 		|	OPTIONAL{?spec cpmeta:containsDataset ?dataset}
 		|} order by ?name""".stripMargin
 
@@ -73,7 +74,7 @@ object SparqlQueries {
 		case Envri.ICOS => objSpecsTempl("http://meta.icos-cp.eu/resources/cpmeta/")
 	}
 
-	def toObjSpec(b: Binding) = ObjSpec(new URI(b("spec")), b("name"), b("dataLevel").toInt, b.contains("dataset"))
+	def toObjSpec(b: Binding) = ObjSpec(new URI(b("spec")), b("name"), b("dataLevel").toInt, b.contains("dataset"), new URI(b("theme")), new URI(b("project")))
 
 	//Only for ICOS for now
 	def l3spatialCoverages = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

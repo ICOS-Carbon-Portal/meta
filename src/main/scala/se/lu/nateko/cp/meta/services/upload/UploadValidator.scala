@@ -49,6 +49,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
+		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
 		_ <- validatePrevVers(meta, getInstServer(spec));
 		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
@@ -120,6 +121,14 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val userId = uploader.email
 		if(!submConf.authorizedUserIds.contains(userId))
 			authFail(s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'")
+		else ok
+	}
+
+	private def userAuthorizedByThemesAndProjects(spec: DataObjectSpec, submConf: DataSubmitterConfig): Try[NotUsed] = {
+		if(!submConf.authorizedThemes.fold(true)(_.contains(spec.theme.self.uri)))
+			authFail(s"Submitter is not authorized to upload data linked to the '${spec.theme.self.uri}' theme")
+		else if(!submConf.authorizedProjects.fold(true)(_.contains(spec.project.self.uri)))
+			authFail(s"Submitter is not authorized to upload data linked to the '${spec.project.self.uri}' project")
 		else ok
 	}
 

@@ -7,9 +7,13 @@ import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 
 import formcomponents._
 import Utils._
+import se.lu.nateko.cp.meta.SubmitterProfile
 
 
-class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
+class DataPanel(
+	objSpecs: IndexedSeq[ObjSpec],
+	submitter: () => Option[SubmitterProfile]
+)(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[String] = keywordsInput.value
@@ -31,7 +35,18 @@ class DataPanel(objSpecs: IndexedSeq[ObjSpec])(implicit bus: PubSubBus) extends 
 	}
 
 	private def onLevelSelected(level: Int): Unit = {
-		objSpecSelect.setOptions(objSpecs.filter(_.dataLevel == level))
+
+		val levelFilter: ObjSpec => Boolean = _.dataLevel == level
+
+		val specFilter = submitter().fold(levelFilter)(subm => {
+
+			val themeOk = (spec: ObjSpec) => subm.authorizedThemes.fold(true)(_.contains(spec.theme))
+			val projOk = (spec: ObjSpec) => subm.authorizedProjects.fold(true)(_.contains(spec.project))
+
+			spec => themeOk(spec) && projOk(spec) && levelFilter(spec)
+		})
+
+		objSpecSelect.setOptions(objSpecs.filter(specFilter))
 		bus.publish(LevelSelected(level))
 	}
 

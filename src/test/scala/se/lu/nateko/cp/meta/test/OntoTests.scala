@@ -25,8 +25,8 @@ class OntoTests extends AnyFunSpec{
 			}
 		}
 
-		describe("for SpatialCoverage class"){
-			val classInfo = getClassInfo("SpatialCoverage")
+		describe("for Position class"){
+			val classInfo = getClassInfo("Position")
 
 			it("should find correct value restrictions for latitude"){
 				val latitudeRestrictions = classInfo.properties.collect{

@@ -90,7 +90,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	protected def getStationCoverage(stat: IRI): Option[GeoFeature] = {
+	protected def getStationCoverage(stat: IRI, labelOpt: Option[String]): Option[GeoFeature] = {
 		val optPoint = for(
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
@@ -98,7 +98,13 @@ trait CpmetaFetcher extends FetchingHelper{
 			labelOpt = getOptionalString(stat, RDFS.LABEL)
 		) yield Position(posLat, posLon, altOpt, labelOpt)
 
-		optPoint.orElse(getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage))
+		val optCov = getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage)
+
+		List(optPoint, optCov).flatten match{
+			case Nil => None
+			case single :: Nil => Some(single)
+			case multiple => Some(GeometryCollection(multiple, labelOpt).flatten)
+		}
 	}
 
 	protected def getLocation(location: IRI) = Location(

@@ -42,14 +42,17 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		else None
 	}
 
-	protected  def getStation(stat: IRI) = Station(
-		org = getOrganization(stat),
-		id = getSingleString(stat, metaVocab.hasStationId),
-		coverage = getStationCoverage(stat),
-		responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
-		specificInfo = getStationSpecifics(stat),
-		pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction)
-	)
+	protected  def getStation(stat: IRI) = {
+		val org = getOrganization(stat)
+		Station(
+			org = org,
+			id = getSingleString(stat, metaVocab.hasStationId),
+			coverage = getStationCoverage(stat, Some(s"${org.name} geo-coverage")),
+			responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
+			specificInfo = getStationSpecifics(stat),
+			pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction)
+		)
+	}
 
 	private def getStationSpecifics(stat: IRI): StationSpecifics = {
 		if(server.resourceHasType(stat, metaVocab.sites.stationClass))

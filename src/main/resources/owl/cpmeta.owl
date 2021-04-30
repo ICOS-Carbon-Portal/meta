@@ -247,7 +247,14 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has data theme</rdfs:label>
     </owl:ObjectProperty>

@@ -312,6 +312,7 @@ object EtcMetaSource{
 				responsibleOrganization = None,
 				pictures = picture.toSeq,
 				specificInfo = EtcStationSpecifics(
+					theme = None,
 					stationClass = stClass,
 					countryCode = countryCode,
 					labelingDate = lblDate,

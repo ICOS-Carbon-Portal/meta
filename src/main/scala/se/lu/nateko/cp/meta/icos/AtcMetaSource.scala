@@ -204,6 +204,7 @@ object AtcMetaSource{
 				responsibleOrganization = None,
 				pictures = Nil,
 				specificInfo = PlainIcosSpecifics(
+					theme = None,
 					stationClass = stClass,
 					countryCode = country,
 					labelingDate = lblDate,

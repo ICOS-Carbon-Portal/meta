@@ -136,7 +136,7 @@
 					}
 					case _ => {}
 				}
-				@defining("/station/?station=" + station.org.self.uri.getRawPath) { maplink =>
+				@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
 					<a href="@maplink">Open map</a>
 				}
@@ -222,3 +222,5 @@
 		case _ => Nil
 	}
 }
+
+@icon = @{icosSpecifics.flatMap(_.theme).flatMap(_.markerIcon).getOrElse("")}

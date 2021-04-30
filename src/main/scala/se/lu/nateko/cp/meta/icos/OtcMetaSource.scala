@@ -125,7 +125,7 @@ class OtcMetaSource(
 						coverage = posOpt.orElse(coverOpt),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(statClass, lblDate, ccode, None, Seq.empty)
+						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty)
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get)
 				)

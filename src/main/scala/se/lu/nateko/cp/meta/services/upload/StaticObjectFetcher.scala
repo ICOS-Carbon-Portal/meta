@@ -25,7 +25,7 @@ class StaticObjectFetcher(
 	citer: CitationMaker
 ) extends DobjMetaFetcher {
 
-	import citer.vocab
+	override protected val vocab = citer.vocab
 
 	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
 		val dataObjUri = vocab.getStaticObject(hash)

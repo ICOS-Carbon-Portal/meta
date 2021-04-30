@@ -28,7 +28,7 @@ class DataObjectInstanceServers(
 	docServers: Map[Envri, InstanceServer],
 	val allDataObjs: Map[Envri, InstanceServer],
 	perFormat: Map[Envri, Map[IRI, InstanceServer]]
-)(implicit envriConfs: EnvriConfigs, factory: ValueFactory){
+)(implicit envriConfs: EnvriConfigs, factory: ValueFactory){dois =>
 
 	val metaVocab = new CpmetaVocab(factory)
 	val vocab = new CpVocab(factory)
@@ -41,6 +41,7 @@ class DataObjectInstanceServers(
 			val joint = new CompositeReadonlyInstanceServer(objsServ, docsServ)
 			envri -> new DobjMetaFetcher{
 				override protected val server = instServer
+				override protected val vocab = dois.vocab
 				override val plainObjFetcher = new PlainStaticObjectFetcher(joint)
 			}
 		}

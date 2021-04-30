@@ -11,10 +11,12 @@ import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Try
 import java.time.LocalDate
+import se.lu.nateko.cp.meta.services.CpVocab
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
 	def plainObjFetcher: PlainStaticObjectFetcher
+	protected def vocab: CpVocab
 
 	def getSpecification(spec: IRI) = DataObjectSpec(
 		self = getLabeledResource(spec),
@@ -65,8 +67,9 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				documentation = getDocumentationObjs(stat)
 			)
 		else if(server.resourceHasType(stat, metaVocab.ecoStationClass)){
-			val icosSpecif = getIcosStationSpecifics(stat)
+			val icosSpecif = getIcosStationSpecifics(stat, vocab.etc)
 			EtcStationSpecifics(
+				theme = icosSpecif.theme,
 				stationClass = icosSpecif.stationClass,
 				labelingDate = icosSpecif.labelingDate,
 				countryCode = icosSpecif.countryCode,
@@ -80,14 +83,15 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
 				documentation = getDocumentationObjs(stat)
 			)
-		} else if(
-			server.resourceHasType(stat, metaVocab.atmoStationClass) ||
-			server.resourceHasType(stat, metaVocab.oceStationClass)
-		) getIcosStationSpecifics(stat)
+		} else if(server.resourceHasType(stat, metaVocab.atmoStationClass))
+			getIcosStationSpecifics(stat, vocab.atc)
+		else if(server.resourceHasType(stat, metaVocab.oceStationClass))
+			getIcosStationSpecifics(stat, vocab.otc)
 		else NoStationSpecifics
 	}
 
-	private def getIcosStationSpecifics(stat: IRI) = PlainIcosSpecifics(
+	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = PlainIcosSpecifics(
+		theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
 		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
 		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
 			.map(LocalDate.parse).headOption,

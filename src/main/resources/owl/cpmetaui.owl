@@ -211,7 +211,12 @@
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:ThematicCenter</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">false</Literal>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:ThematicCenter</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/resources/organizations/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>

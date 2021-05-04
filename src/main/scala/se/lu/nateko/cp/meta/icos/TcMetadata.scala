@@ -5,6 +5,7 @@ import java.time.Instant
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization}
+import se.lu.nateko.cp.meta.services.CpVocab
 
 
 sealed trait Entity[+T <: TC]{
@@ -86,7 +87,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	def cpId = TcConf.tcScopedId(UriId.escaped(tcId.id))
+	def cpId = CpVocab.instrCpId(tcId)
 }
 
 class AssumedRole[+T <: TC](

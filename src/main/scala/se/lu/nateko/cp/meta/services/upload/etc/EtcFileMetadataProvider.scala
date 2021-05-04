@@ -8,8 +8,6 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
-import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcConfig
@@ -25,8 +23,9 @@ class EtcFileMetadataProvider(conf: EtcConfig)(implicit system: ActorSystem) ext
 
 	def lookupFile(key: EtcFileMetaKey) = inner.flatMap(_.lookupFile(key))
 
-	def getUtcOffset(station: StationId) =
-		inner.flatMap(_.getUtcOffset(station))
+	def getUtcOffset(station: StationId) = inner.flatMap(_.getUtcOffset(station))
+
+	def stationTcId(station: StationId) = inner.flatMap(_.getUtcOffset(station))
 
 	private val fetchInterval = 5.hours
 	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval
@@ -58,12 +57,14 @@ class EtcFileMetadataProvider(conf: EtcConfig)(implicit system: ActorSystem) ext
 }
 
 class TsvBasedEtcFileMetadataStore(
-	utcOffsets: Map[StationId, Int], fileInfo: Map[EtcFileMetaKey, EtcFileMeta]
+	utcOffsets: Map[StationId, Int], fileInfo: Map[EtcFileMetaKey, EtcFileMeta], tcIds: Map[StationId, Int]
 ) extends EtcFileMetadataStore{
 
 	override def lookupFile(key: EtcFileMetaKey): Option[EtcFileMeta] = fileInfo.get(key)
 
 	override def getUtcOffset(station: StationId): Option[Int] = utcOffsets.get(station)
 		.orElse(EtcFileMetadataStore.fallbackUtcOffset(station))
+
+	override def stationTcId(station: StationId): Option[Int] = tcIds.get(station)
 
 }

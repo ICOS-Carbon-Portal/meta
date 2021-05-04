@@ -39,6 +39,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig)(implicit s
 
 		for(
 			utcOffset <- getUtcOffset(meta.station);
+			tcIntId <- getTcInternalId(meta.station);
 			fileMeta <- getFileMeta(meta);
 			specUriSegment = getObjSpecUrlSegment(fileMeta);
 			objSpec = vocab.getObjectSpecification(specUriSegment)
@@ -51,7 +52,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig)(implicit s
 				StationDataMetadata(
 					station = vocab.getEcosystemStation(meta.station).toJava,
 					site = None,
-					instrument = Some(Left(vocab.getEtcInstrument(meta.station, meta.logger).toJava)),
+					instrument = Some(Left(vocab.getEtcInstrument(tcIntId, meta.logger).toJava)),
 					samplingPoint = None,
 					samplingHeight = None,
 					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
@@ -81,6 +82,12 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig)(implicit s
 
 		UriId(baseSegment + binSuff)
 	}
+
+	private def getTcInternalId(station: StationId): Try[Int] = etcMeta
+		.stationTcId(station)
+		.toTry(new MetadataException(
+			s"Could not look up internal TC id for station ${station.id}"
+		))
 
 	private def getUtcOffset(station: StationId): Try[Int] = etcMeta
 		.getUtcOffset(station)

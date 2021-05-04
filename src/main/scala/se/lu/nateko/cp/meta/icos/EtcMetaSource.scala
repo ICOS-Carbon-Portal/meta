@@ -105,7 +105,8 @@ class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Material
 				val utcMap = utc.collect{
 					case (_, id, Some(utcOffset)) => id -> utcOffset
 				}.toMap
-				new TsvBasedEtcFileMetadataStore(utcMap, fileMeta.toMap)
+				val idLookup = utc.map{case (tc, id, _) => id -> tc}.toMap
+				new TsvBasedEtcFileMetadataStore(utcMap, fileMeta.toMap, idLookup)
 			}
 	}
 
@@ -354,18 +355,16 @@ object EtcMetaSource{
 	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] ={
 		val require = requireVar("instrument") _
 		for(
-			stId <- require(Vars.stationTcId);
-			loggerId <- require(Vars.loggerId);
+			stId <- require(Vars.stationTcId).map(_.toInt);
+			loggerId <- require(Vars.loggerId).map(_.toInt);
 			sn <- require(Vars.loggerSerial);
 			model <- require(Vars.loggerModel)
-		) yield {
-			val tcId = makeId(stId + "_" + loggerId)
+		) yield
 			TcInstrument[E](
-				tcId = tcId,
+				tcId = CpVocab.getEtcInstrTcId(stId, loggerId),
 				model = model,
 				sn = sn
 			)
-		}
 	}
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =

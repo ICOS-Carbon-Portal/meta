@@ -17,7 +17,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.6.3",
+		version := "0.6.4",
 		scalacOptions ++= jvmScalacOptions,
 		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(

@@ -1,0 +1,37 @@
+@import se.lu.nateko.cp.meta.core.data.Instrument
+@import se.lu.nateko.cp.meta.core.data.Envri.Envri
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import landpagesnips.{resourceLink, agentLink}
+
+@(instr: Instrument)(implicit envri: Envri)
+@ServerSidePage(title, "ICOS RI Instrument Landing Page", envri, CpMenu.default){
+	<div class="container-fluid">
+
+		<div class="row">
+			@Panel(title, 10){
+				@for(name <- instr.name) {
+					@PanelRow("Name", name)
+				}
+				@PanelRow("Model", instr.model)
+				@PanelRow("Serial number", instr.serialNumber)
+				@for(vendor <- instr.vendor) {
+					@PanelHtmlRow{Vendor}(agentLink(vendor))
+				}
+				@for(owner <- instr.owner) {
+					@PanelHtmlRow{Owner}(agentLink(owner))
+				}
+				@for(part <- instr.parts) {
+					@PanelHtmlRow{Has component}(resourceLink(part))
+				}
+				@for(parent <- instr.partOf) {
+					@PanelHtmlRow{Is part of}(resourceLink(parent))
+				}
+			}
+		</div>
+
+	</div>
+}
+
+@title = @{
+	instr.self.label.getOrElse("Instrument")
+}

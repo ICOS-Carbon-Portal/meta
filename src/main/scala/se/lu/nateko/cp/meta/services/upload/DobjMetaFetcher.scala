@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Try
 import java.time.LocalDate
-import se.lu.nateko.cp.meta.icos.TcMetaSource
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -144,16 +143,5 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject).map(_.asUriResource),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
-
-	private def getInstrumentLite(instr: IRI): UriResource = {
-		val label = getOptionalString(instr, metaVocab.hasName).orElse{
-			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
-		}.orElse{
-			getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
-		}.getOrElse{
-			instr.getLocalName
-		}
-		UriResource(instr.toJava, Some(label), Nil)
-	}
 
 }

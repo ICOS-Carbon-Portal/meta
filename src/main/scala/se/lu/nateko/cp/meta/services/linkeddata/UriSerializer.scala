@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, api}
 import se.lu.nateko.cp.meta.api._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat, uriResourceFormat}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat, uriResourceFormat, instumentFormat}
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
@@ -124,7 +124,7 @@ class Rdf4jUriSerializer(
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
 		implicit val envri = inferEnvri(uri)
-		val viewInfo = getViewInfo(uri, repo, envri)
+		val viewInfo = getViewInfo(uri, repo)
 		HttpResponse(
 			status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
 			entity = HttpEntity(
@@ -160,6 +160,18 @@ class Rdf4jUriSerializer(
 			customJson(() => {
 				fetchStation(makeIri(uri.withQuery(Uri.Query.Empty)))
 			})
+		)
+
+		case Slash(Segment("resources", Slash(Segment("instruments", instrId)))) => oneOf(
+			customHtml[Instrument](
+				() => servers.metaFetcher.map(_.getInstrument(makeIri(uri))),
+				inst => views.html.InstrumentLandingPage(inst),
+				views.html.MessagePage("Instrument not found", s"No instrument whose URL ends with $instrId"),
+				err => views.html.MessagePage("Instrument metadata error", s"Error fetching metadata for instrument $instrId :\n${err.getMessage}")
+			),
+			customJson(() =>
+				servers.metaFetcher.map(_.getInstrument(makeIri(uri)))
+			)
 		)
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
@@ -216,7 +228,7 @@ private object Rdf4jUriSerializer{
 		own ++ about
 	}
 
-	def getViewInfo(res: Uri, repo: Repository, envri: Envri.Value): ResourceViewInfo = repo.accessEagerly{conn =>
+	def getViewInfo(res: Uri, repo: Repository): ResourceViewInfo = repo.accessEagerly{conn =>
 
 		val propInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
 
@@ -242,7 +254,7 @@ private object Rdf4jUriSerializer{
 		}.flatten.take(Limit).toIndexedSeq
 
 		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None, Nil), envri, Nil, Nil, usageInfos)
+		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos)
 
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 

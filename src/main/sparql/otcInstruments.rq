@@ -1,0 +1,22 @@
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+construct{
+	?acq cpmeta:wasPerformedWith ?icosI
+}
+from <http://meta.icos-cp.eu/resources/otcraw/>
+from <http://meta.icos-cp.eu/resources/otcmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	?icosI a cpmeta:Instrument ; cpmeta:hasOtcId ?otcInstrId .
+	bind(iri(concat("http://meta.icos-cp.eu/resources/otcmeta/", ?otcInstrId)) as ?otcI)
+	?deployment otc:ofInstrument ?otcI ; otc:toPlatform ?otcPlatf .
+	?platfDepl otc:ofPlatform ?otcPlatf ; otc:toStation ?otcS .
+	bind(replace(str(?otcS), "http://meta.icos-cp.eu/resources/otcmeta/", "") as ?otcStationId)
+	?icosS a cpmeta:OS ; cpmeta:hasOtcId ?otcStationId .
+	?acq prov:wasAssociatedWith ?icosS ; a cpmeta:DataAcquisition ; prov:startedAtTime ?astart; prov:endedAtTime ?aend .
+	optional{?deployment otc:hasStartTime ?dstart}
+	filter(!bound(?dstart) || ?dstart < ?aend)
+	optional{?deployment otc:hasEndTime ?dend}
+	filter(!bound(?dend) || ?dend > ?astart)
+}

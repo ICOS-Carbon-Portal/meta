@@ -45,11 +45,11 @@ case class DataAcquisition(
 	station: Station,
 	site: Option[Site],
 	interval: Option[TimeInterval],
-	instrument: OptionalOneOrSeq[URI],
+	instrument: OptionalOneOrSeq[UriResource],
 	samplingPoint: Option[Position],
 	samplingHeight: Option[Float]
 ){
-	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
+	def instruments: Seq[UriResource] = instrument.fold(Seq.empty[UriResource])(_.fold(Seq(_), identity))
 
 	def coverage: Option[GeoFeature] = samplingPoint
 		.map(sp => siteGeometry

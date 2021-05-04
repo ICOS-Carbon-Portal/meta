@@ -325,18 +325,18 @@ object AtcMetaSource{
 			}
 		}
 
-	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[Instrument[A]]] = {
+	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[TcInstrument[A]]] = {
 		parseFromCsv(instruments){implicit row =>
 			val demand = lookUpMandatory("instruments") _
 			for(
 				id <- demand(InstrIdCol).map(makeId);
 				nameOpt <- lookUp(InstrNameCol).optional;
-				serial <- lookUp(InstrSerialCol).orElse("N/A");
+				serial <- lookUp(InstrSerialCol).orElse(TcMetaSource.defaultSerialNum);
 				vendorId <- demand(InstrVendorIdCol).map(makeOrgId);
 				ownerId <- demand(InstrOwnerIdCol).map(makeOrgId);
 				model <- demand(InstrModelCol);
 				related <- lookUp(InstrRelatedCol).flatMap(parseRelatedInstrs).orElse(Nil)
-			) yield Instrument(
+			) yield TcInstrument(
 				tcId = id,
 				sn = serial,
 				model = model,

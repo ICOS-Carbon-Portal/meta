@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.icos.TcMetaSource
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
@@ -203,6 +204,34 @@ trait CpmetaFetcher extends FetchingHelper{
 			isRegex = getOptionalBool(dv, metaVocab.isRegexColumn).getOrElse(false),
 			isOptional = getOptionalBool(dv, metaVocab.isOptionalColumn).getOrElse(false)
 		)
+	}
+
+	protected def getInstrumentLite(instr: IRI): UriResource = {
+		val label = getOptionalString(instr, metaVocab.hasName).orElse{
+			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
+		}.orElse{
+			getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
+		}.getOrElse{
+			instr.getLocalName
+		}
+		UriResource(instr.toJava, Some(label), Nil)
+	}
+
+	def getInstrument(instr: IRI): Option[Instrument] = {
+		if(server.resourceHasType(instr, metaVocab.instrumentClass)) Some(
+			Instrument(
+				self = getInstrumentLite(instr),
+				model = getSingleString(instr, metaVocab.hasModel),
+				serialNumber = getSingleString(instr, metaVocab.hasSerialNumber),
+				name = getOptionalString(instr, metaVocab.hasName),
+				vendor = getOptionalUri(instr, metaVocab.hasVendor).map(getOrganization),
+				owner = getOptionalUri(instr, metaVocab.hasInstrumentOwner).map(getOrganization),
+				parts = server.getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite),
+				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
+					case iri: IRI => getInstrumentLite(iri)
+				}.take(1).toList.headOption
+			)
+		) else None
 	}
 
 }

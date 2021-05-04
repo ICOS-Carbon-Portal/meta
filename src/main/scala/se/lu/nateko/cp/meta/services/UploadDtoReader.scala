@@ -61,7 +61,7 @@ object UploadDtoReader{
 				case Right(l2) => Right(StationDataMetadata(
 					station = l2.acquisition.station.org.self.uri,
 					site = l2.acquisition.site.map(_.self.uri),
-					instrument = l2.acquisition.instrument,
+					instrument = l2.acquisition.instrument.map(transformEither(_.uri, _.map(_.uri))),
 					samplingPoint = l2.acquisition.samplingPoint,
 					samplingHeight = l2.acquisition.samplingHeight,
 					acquisitionInterval = l2.acquisition.interval,

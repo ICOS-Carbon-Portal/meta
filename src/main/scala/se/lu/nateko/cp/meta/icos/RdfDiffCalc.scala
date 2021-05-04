@@ -42,14 +42,14 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val orgsDiff: SequenceDiff[T, TcOrg[T]] = plainOrgsDiff.concat(stationsDiff.generalizeTo[TcOrg[T]])
 
-		def updateInstr(instr: Instrument[T]): Instrument[T] = instr.copy(
+		def updateInstr(instr: TcInstrument[T]): TcInstrument[T] = instr.copy(
 			vendor = instr.vendor.map(orgsDiff.ensureIdPreservation),
 			owner = instr.owner.map(orgsDiff.ensureIdPreservation)
 		)
 
 		val tcInstrs = newSnapshot.instruments.map(updateInstr)
 
-		val instrDiff = diff[T, Instrument[T]](current.instruments, tcInstrs, Nil)
+		val instrDiff = diff[T, TcInstrument[T]](current.instruments, tcInstrs, Nil)
 
 		val tcPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
 		val cpPeople = uniqBestId(current.roles.map(_.role.holder))

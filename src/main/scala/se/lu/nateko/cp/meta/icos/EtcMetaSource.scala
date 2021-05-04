@@ -105,7 +105,8 @@ class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Material
 				val utcMap = utc.collect{
 					case (_, id, Some(utcOffset)) => id -> utcOffset
 				}.toMap
-				new TsvBasedEtcFileMetadataStore(utcMap, fileMeta.toMap)
+				val idLookup = utc.map{case (tc, id, _) => id -> tc}.toMap
+				new TsvBasedEtcFileMetadataStore(utcMap, fileMeta.toMap, idLookup)
 			}
 	}
 
@@ -122,7 +123,7 @@ object EtcMetaSource{
 
 	type Lookup = Map[String, String]
 	type E = ETC.type
-	type EtcInstrument = Instrument[E]
+	type EtcInstrument = TcInstrument[E]
 	type EtcPerson = TcPerson[E]
 	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
@@ -355,18 +356,16 @@ object EtcMetaSource{
 	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] ={
 		val require = requireVar("instrument") _
 		for(
-			stId <- require(Vars.stationTcId);
-			loggerId <- require(Vars.loggerId);
+			stId <- require(Vars.stationTcId).map(_.toInt);
+			loggerId <- require(Vars.loggerId).map(_.toInt);
 			sn <- require(Vars.loggerSerial);
 			model <- require(Vars.loggerModel)
-		) yield {
-			val tcId = makeId(stId + "_" + loggerId)
-			Instrument[E](
-				tcId = tcId,
+		) yield
+			TcInstrument[E](
+				tcId = CpVocab.getEtcInstrTcId(stId, loggerId),
 				model = model,
 				sn = sn
 			)
-		}
 	}
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =

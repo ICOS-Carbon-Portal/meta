@@ -6,7 +6,6 @@ import ResourceViewInfo.PropValue
 
 case class ResourceViewInfo(
 	res: UriResource,
-	infrastructure: Envri.Value,
 	types: List[UriResource],
 	propValues: List[(UriResource, PropValue)],
 	usage: Seq[(UriResource, UriResource)]

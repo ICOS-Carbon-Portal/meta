@@ -13,9 +13,7 @@ import se.lu.nateko.cp.meta.core.data.{staticObjLandingPage, staticObjAccessUrl,
 import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
-import se.lu.nateko.cp.meta.icos.ETC
-import se.lu.nateko.cp.meta.icos.TcConf
-import se.lu.nateko.cp.meta.icos.Role
+import se.lu.nateko.cp.meta.icos.{TC, TcId, ETC, TcConf, Role}
 
 class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab._
@@ -51,7 +49,9 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getOrganization(orgId: UriId)(implicit envri: Envri) = getRelative("organizations/", orgId)
 
 	def getIcosInstrument(id: UriId) = getRelative("instruments/", id)(icosBup)
-	def getEtcInstrument(station: EtcStationId, id: Int) = getIcosInstrument(getEtcInstrId(station, id))
+	def getEtcInstrument(station: Int, id: Int) = getIcosInstrument{
+		instrCpId(getEtcInstrTcId(station, id))(TcConf.EtcConf)
+	}
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(Envri.ICOS))
 
@@ -129,7 +129,8 @@ object CpVocab{
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
 
-	def getEtcInstrId(station: EtcStationId, id: Int) = TcConf.tcScopedId[ETC.type](UriId.escaped(s"${station.id}_$id"))
+	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = TcConf.EtcConf.makeId(s"${station}_$id")
+	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val uriSegm = iri.getLocalName

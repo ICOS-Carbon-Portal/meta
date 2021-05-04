@@ -122,7 +122,7 @@
 						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
 					}
 					@for(instrument <- acquisition.instruments){
-						@PanelRow("Instrument", instrument.getRawPath.split("/").last)
+						@resourcePanelRow("Instrument", instrument)
 					}
 					@for(height <- acquisition.samplingHeight){
 						@PanelRow("Sampling height", height.toString)

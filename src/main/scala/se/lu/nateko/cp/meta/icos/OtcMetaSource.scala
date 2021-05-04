@@ -244,7 +244,7 @@ class OtcMetaSource(
 	private def getInstruments(
 		orgLookup: Map[IRI, TcOrg[O]],
 		sensorLookup: Map[OtcId, Seq[UriId]]
-	): Validated[IndexedSeq[Instrument[O]]] = {
+	): Validated[IndexedSeq[TcInstrument[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 			|select ?instr ?model ?serNum ?name ?vendor where{
@@ -258,12 +258,12 @@ class OtcMetaSource(
 		|""".stripMargin
 		getLookupV(q, "instr"){(b, tcId) =>
 			for(
-				model <- qresValue(b, "model").flatMap(parseString).orElse("N/A");
-				sn <- qresValue(b, "serNum").flatMap(parseString).orElse("N/A");
+				model <- qresValue(b, "model").flatMap(parseString).orElse(TcMetaSource.defaultInstrModel);
+				sn <- qresValue(b, "serNum").flatMap(parseString).orElse(TcMetaSource.defaultSerialNum);
 				nameOpt <- qresValue(b, "name").flatMap(parseString).optional;
 				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
 			) yield
-				Instrument[O](
+				TcInstrument[O](
 					tcId = tcId,
 					model = model,
 					sn = sn,

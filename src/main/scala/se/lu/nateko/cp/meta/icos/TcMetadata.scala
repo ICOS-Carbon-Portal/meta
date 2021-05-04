@@ -5,6 +5,7 @@ import java.time.Instant
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization}
+import se.lu.nateko.cp.meta.services.CpVocab
 
 
 sealed trait Entity[+T <: TC]{
@@ -47,9 +48,9 @@ object Entity{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
-	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[Instrument[T]]{
+	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[TcInstrument[T]]{
 		//noop, because instrument cpIds are expected to be stable
-		def withCpId(instr: Instrument[T], id: UriId) = instr
+		def withCpId(instr: TcInstrument[T], id: UriId) = instr
 	}
 
 }
@@ -76,7 +77,7 @@ case class TcStation[+T <: TC](
 
 case class TcPlainOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcOrg[T]
 
-case class Instrument[+T <: TC : TcConf](
+case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
 	model: String,
 	sn: String,
@@ -86,7 +87,7 @@ case class Instrument[+T <: TC : TcConf](
 	partsCpIds: Seq[UriId] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	def cpId = TcConf.tcScopedId(UriId.escaped(tcId.id))
+	def cpId = CpVocab.instrCpId(tcId)
 }
 
 class AssumedRole[+T <: TC](
@@ -102,7 +103,7 @@ class AssumedRole[+T <: TC](
 
 case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[Instrument[T]]){
+class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
 	def tcConf = implicitly[TcConf[T]]
 }
 
@@ -110,4 +111,9 @@ abstract class TcMetaSource[T <: TC : TcConf]{
 	type State = TcState[T]
 	def state: Source[State, Any]
 	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
+}
+
+object TcMetaSource{
+	val defaultInstrModel = "N/A"
+	val defaultSerialNum = "N/A"
 }

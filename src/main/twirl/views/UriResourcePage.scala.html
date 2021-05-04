@@ -5,7 +5,7 @@
 @import landpagesnips.resourceLink
 
 @(info: ResourceViewInfo)(implicit envri: Envri)
-@ServerSidePage("Metadata Entity Page", info.res.uri.toString, info.infrastructure, CpMenu.default){
+@ServerSidePage("Metadata Entity Page", info.res.uri.toString, envri, CpMenu.default){
 	<div class="container-fluid">
 
 		<div class="row">

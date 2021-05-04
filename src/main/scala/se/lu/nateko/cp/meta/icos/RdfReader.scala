@@ -97,8 +97,8 @@ private class IcosMetaInstancesFetcher(
 	}
 
 
-	def getInstruments[T <: TC : TcConf]: Validated[Seq[Instrument[T]]] = getEntities[T, Instrument[T]](metaVocab.instrumentClass, true){
-		(tcIdOpt, uri) => Instrument[T](
+	def getInstruments[T <: TC : TcConf]: Validated[Seq[TcInstrument[T]]] = getEntities[T, TcInstrument[T]](metaVocab.instrumentClass, true){
+		(tcIdOpt, uri) => TcInstrument[T](
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Instrument $uri had no TC id associated with it")),
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),

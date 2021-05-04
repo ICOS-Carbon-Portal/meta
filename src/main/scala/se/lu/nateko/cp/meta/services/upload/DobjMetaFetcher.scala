@@ -110,7 +110,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
 			) yield TimeInterval(start, stop),
-			instrument = server.getUriValues(acqUri, metaVocab.wasPerformedWith).map(_.toJava).toList match{
+			instrument = server.getUriValues(acqUri, metaVocab.wasPerformedWith).map(getInstrumentLite).toList match{
 				case Nil => None
 				case single :: Nil => Some(Left(single))
 				case many => Some(Right(many))

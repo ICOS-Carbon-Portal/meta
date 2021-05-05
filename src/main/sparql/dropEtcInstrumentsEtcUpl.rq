@@ -1,0 +1,13 @@
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?acq cpmeta:wasPerformedWith ?badInstr
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/etcmulti/>
+where{
+	?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/ETC> .
+	?dobj cpmeta:wasAcquiredBy ?acq .
+	?acq cpmeta:wasPerformedWith ?badInstr .
+	filter not exists{?badInstr a []}
+}

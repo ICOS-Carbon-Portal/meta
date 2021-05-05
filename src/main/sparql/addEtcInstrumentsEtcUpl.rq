@@ -1,0 +1,18 @@
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?acq cpmeta:wasPerformedWith ?instr
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/etcbin/>
+where{
+	?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/ETC> .
+	?dobj cpmeta:wasAcquiredBy ?acq .
+	?acq cpmeta:wasPerformedWith ?badInstr ;
+		prov:wasAssociatedWith/cpmeta:hasEtcId ?tcId .
+	filter not exists{?badInstr a []}
+	?dobj cpmeta:hasName ?fname .
+	bind(substr(?fname, 21, 2) as ?logger2)
+	bind(if(strstarts(?logger2, "0"), substr(?logger2, 2), ?logger2) as ?logger)
+	bind(iri(concat("http://meta.icos-cp.eu/resources/instruments/ETC_", ?tcId, "_", ?logger)) as ?instr)
+}

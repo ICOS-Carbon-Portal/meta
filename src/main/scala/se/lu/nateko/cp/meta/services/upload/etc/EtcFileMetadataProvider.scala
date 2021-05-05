@@ -25,7 +25,7 @@ class EtcFileMetadataProvider(conf: EtcConfig)(implicit system: ActorSystem) ext
 
 	def getUtcOffset(station: StationId) = inner.flatMap(_.getUtcOffset(station))
 
-	def stationTcId(station: StationId) = inner.flatMap(_.getUtcOffset(station))
+	def stationTcId(station: StationId) = inner.flatMap(_.stationTcId(station))
 
 	private val fetchInterval = 5.hours
 	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval

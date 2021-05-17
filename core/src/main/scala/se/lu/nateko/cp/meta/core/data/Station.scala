@@ -12,7 +12,17 @@ case class Station(
 	coverage: Option[GeoFeature],
 	responsibleOrganization: Option[Organization],
 	pictures: Seq[URI],
-	specificInfo: StationSpecifics
+	specificInfo: StationSpecifics,
+	funding: Option[Seq[Funding]]
+)
+
+case class Funding(
+	funder: Organization,
+	awardTitle: Option[String],
+	awardNumber: Option[String],
+	awardUrl: Option[URI],
+	start: Option[LocalDate],
+	stop: Option[LocalDate],
 )
 
 sealed trait StationSpecifics

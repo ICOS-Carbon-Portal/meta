@@ -52,7 +52,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			coverage = getStationCoverage(stat, Some(s"${org.name} geo-coverage")),
 			responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 			specificInfo = getStationSpecifics(stat),
-			pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction)
+			pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction),
+			funding = Option(getFundings(stat)).filterNot(_.isEmpty)
 		)
 	}
 
@@ -93,8 +94,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = PlainIcosSpecifics(
 		theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
 		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
-		labelingDate = server.getLiteralValues(stat, metaVocab.hasLabelingDate, XMLSchema.DATE, InstanceServer.AtMostOne)
-			.map(LocalDate.parse).headOption,
+		labelingDate = getOptionalLocalDate(stat, metaVocab.hasLabelingDate),
 		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
 		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
 		documentation = getDocumentationObjs(stat)
@@ -150,5 +150,18 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject).map(_.asUriResource),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
+
+	private def getFundings(stat: IRI): Seq[Funding] =
+		server.getUriValues(stat, metaVocab.hasFunding).map{furi =>
+			val funderUri = getSingleUri(furi, metaVocab.hasFunder)
+			Funding(
+				funder = getOrganization(funderUri),
+				awardTitle = getOptionalString(furi, metaVocab.awardTitle),
+				awardNumber = getOptionalString(furi, metaVocab.awardNumber),
+				awardUrl = getOptionalUriLiteral(furi, metaVocab.awardURI),
+				start = getOptionalLocalDate(furi, metaVocab.hasStartDate),
+				stop = getOptionalLocalDate(furi, metaVocab.hasEndDate)
+			)
+		}
 
 }

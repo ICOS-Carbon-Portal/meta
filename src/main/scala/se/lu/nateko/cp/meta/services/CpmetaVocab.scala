@@ -54,6 +54,14 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val countryCode = getRelativeRaw("countryCode")
 	val country = getRelativeRaw("country")
 
+	val hasFunding = getRelativeRaw("hasFunding")
+	val hasFunder = getRelativeRaw("hasFunder")
+	val funderIdentifier = getRelativeRaw("funderIdentifier")
+	val funderIdentifierType = getRelativeRaw("funderIdentifierType")
+	val awardNumber = getRelativeRaw("awardNumber")
+	val awardTitle = getRelativeRaw("awardTitle")
+	val awardURI = getRelativeRaw("awardURI")
+
 	val hasSha256sum = getRelativeRaw("hasSha256sum")
 	val hasDoi = getRelativeRaw("hasDoi")
 	val isNextVersionOf = getRelativeRaw("isNextVersionOf")
@@ -123,6 +131,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasExtraRoleInfo = getRelativeRaw("hasExtraRoleInfo")
 	val hasAttributionWeight = getRelativeRaw("hasAttributionWeight")
 	val hasStartTime = getRelativeRaw("hasStartTime")
+	val hasEndDate = getRelativeRaw("hasEndDate")
+	val hasStartDate = getRelativeRaw("hasStartDate")
 	val hasEndTime = getRelativeRaw("hasEndTime")
 	val hasInstrumentOwner = getRelativeRaw("hasInstrumentOwner")
 	val hasInstrumentComponent = getRelativeRaw("hasInstrumentComponent")

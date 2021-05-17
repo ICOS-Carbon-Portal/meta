@@ -4,7 +4,7 @@ import java.time.Instant
 
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization}
+import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization, Funding}
 import se.lu.nateko.cp.meta.services.CpVocab
 
 
@@ -70,7 +70,8 @@ case class TcStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
 	core: Station,
-	responsibleOrg: Option[TcPlainOrg[T]] //needed to avoid info loss with core.responsibleOrganization
+	responsibleOrg: Option[TcPlainOrg[T]], //needed to avoid info loss with core.responsibleOrganization
+	funding: Seq[TcFunding[T]] // needed to avoid info loss with core.funding
 ) extends TcOrg[T] with TcEntity[T]{
 	def org = core.org
 }
@@ -89,6 +90,8 @@ case class TcInstrument[+T <: TC : TcConf](
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
 	def cpId = CpVocab.instrCpId(tcId)
 }
+
+case class TcFunding[T](funder: TcPlainOrg[T], core: Funding)
 
 class AssumedRole[+T <: TC](
 	val kind: Role,

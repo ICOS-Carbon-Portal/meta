@@ -1118,6 +1118,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Funding"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">end date</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime">
@@ -1599,6 +1610,17 @@
             </rdfs:Datatype>
         </rdfs:range>
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">southern bound</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Funding"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">start date</rdfs:label>
     </owl:DatatypeProperty>
     
 

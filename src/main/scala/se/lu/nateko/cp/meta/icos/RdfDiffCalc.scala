@@ -25,7 +25,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		def plainOrgs(s: TcState[T]): Seq[TcPlainOrg[T]] = uniqBestId(
 			(
 				s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
-				s.roles.map(_.role.org) ++ s.stations.flatMap(_.responsibleOrg)
+				s.roles.map(_.role.org) ++ s.stations.flatMap(_.responsibleOrg) ++
+				s.stations.flatMap(_.funding.map(_.funder))
 			).collect{
 				case o: TcPlainOrg[T] => o
 			}
@@ -33,10 +34,12 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val plainOrgsDiff = diff[T, TcPlainOrg[T]](plainOrgs(current), plainOrgs(newSnapshot), cpOwnOrgs)
 
-		def updateStation(st: TcStation[T]): TcStation[T] = st.responsibleOrg.fold(st){org =>
-			val respOrg = plainOrgsDiff.ensureIdPreservation(org)
-			st.copy(responsibleOrg = Some(respOrg))
-		}
+		def updateStation(st: TcStation[T]): TcStation[T] = st.copy(
+			responsibleOrg = st.responsibleOrg.map(plainOrgsDiff.ensureIdPreservation),
+			funding = st.funding.map(updateFunding)
+		)
+
+		def updateFunding(f: TcFunding[T]): TcFunding[T] = ???
 
 		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
 

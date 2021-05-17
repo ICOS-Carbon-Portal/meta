@@ -136,6 +136,7 @@ object EtcMetaSource{
 		val stations = "station"
 		val instruments = "logger"
 		val files = "file"
+		val funding = "funding"
 	}
 
 	object Vars{
@@ -173,6 +174,12 @@ object EtcMetaSource{
 		val fileLoggerId = "FILE_LOGGER_ID"
 		val fileFormat = "FILE_FORMAT"
 		val fileType = "FILE_TYPE"
+		val fundingOrgName = "FUNDING_ORGANIZATION"
+		val fundingAwardNumber = "FUNDING_GRANT"
+		val fundingAwardUri = "FUNDING_GRANT_URL"
+		val fundingAwardTitle = "FUNDING_TITLE"
+		val fundingStart = "FUNDING_DATE_START"
+		val fundingEnd = "FUNDING_DATE_END"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(

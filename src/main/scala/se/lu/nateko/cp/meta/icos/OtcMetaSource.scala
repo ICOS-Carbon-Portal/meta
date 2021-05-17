@@ -125,9 +125,11 @@ class OtcMetaSource(
 						coverage = posOpt.orElse(coverOpt),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty)
+						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty),
+						funding = None
 					),
-					responsibleOrg = respOrg.flatMap(orgs.get)
+					responsibleOrg = respOrg.flatMap(orgs.get),
+					funding = Nil
 				)
 			}
 		}.map(_.toMap)

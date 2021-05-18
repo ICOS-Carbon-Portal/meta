@@ -130,3 +130,15 @@ class HtmlElements(selector: String) {
 		enabled = false
 	}
 }
+
+class TagCloud(elemId: String) {
+	private val div = getElementById[html.Div](elemId).get
+
+	def setList(keywords: Seq[String]): Unit = {
+		div.innerHTML =
+			if (keywords.isEmpty)
+				"None"
+			else
+				keywords.map(keyword => s"""<span class="label label-keyword">$keyword</span>""").mkString(" ")
+	}
+}

@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 case class Station(uri: URI, id: String, name: String)
 
-case class ObjSpec(uri: URI, name: String, dataLevel: Int, hasDataset: Boolean, theme: URI, project: URI)
+case class ObjSpec(uri: URI, name: String, dataLevel: Int, hasDataset: Boolean, theme: URI, project: URI, keywords: Seq[String])
 
 case class InitAppInfo(userEmail: Option[String], envri: Envri, envriConfig: EnvriConfig)
 

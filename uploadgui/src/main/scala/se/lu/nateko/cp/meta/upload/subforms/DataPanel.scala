@@ -21,12 +21,14 @@ class DataPanel(
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
+	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
 		objSpecSelect.setOptions(IndexedSeq.empty)
 		nRowsInput.value = None
+		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
 	}
 
@@ -47,12 +49,14 @@ class DataPanel(
 		})
 
 		objSpecSelect.setOptions(objSpecs.filter(specFilter))
+		dataTypeKeywords.setList(Seq.empty)
 		bus.publish(LevelSelected(level))
 	}
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
 			if(objSpec.hasDataset && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))
 		}
 		notifyUpdate()

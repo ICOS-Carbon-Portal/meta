@@ -137,7 +137,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				) yield {
 					val station = acq.station.org.name
 					val dataType = spec.split(",").head
-					s"$station ($year). $dataType from $location, $time"
+					val samplingPoint = acq.samplingPoint.flatMap(_.label)
+					s"$station ($year). $dataType from ${samplingPoint.getOrElse(location)}, $time"
 				}
 		)
 		val pidUrlOpt = getPidUrl(dobj)

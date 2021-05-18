@@ -43,9 +43,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 			coverage = None,
 			responsibleOrganization = None,
 			pictures = Seq.empty,
-			specificInfo = PlainIcosSpecifics(None, None, None, Some(se), None, Nil)
+			specificInfo = PlainIcosSpecifics(None, None, None, Some(se), None, Nil),
+			funding = None
 		),
-		responsibleOrg = None
+		responsibleOrg = None,
+		funding = Nil
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {

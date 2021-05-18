@@ -135,7 +135,7 @@ class OtcMetaSource(
 		}.map(_.toMap)
 	}
 
-	private def getCompsAndInsts: Validated[Map[IRI, TcPlainOrg[O]]] = {
+	private def getCompsAndInsts: Validated[Map[IRI, TcGenericOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
 		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
@@ -144,7 +144,7 @@ class OtcMetaSource(
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
-		getLookup(q, "org"){(b, tcId) => TcPlainOrg(
+		getLookup(q, "org"){(b, tcId) => TcGenericOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
 			org = Organization(

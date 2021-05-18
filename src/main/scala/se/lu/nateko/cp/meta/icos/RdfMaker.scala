@@ -55,9 +55,13 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		triples.map(factory.tripleToStatement)
 	}
 
-	def getMembershipEnd(membId: UriId): Statement = {
-		val uri = vocab.getMembership(membId)
-		createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
+	private def fundingTriples[T <: TC : TcConf](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
+		val iri = vocab.getFunding(fund.cpId)
+		(iri, RDF.TYPE, meta.fundingClass) ::
+		(iri, meta.hasFunder, getIri(fund.funder)) ::
+		(iri, meta.)
+		Nil
+		???
 	}
 
 	def getStatements[T <: TC : TcConf](e: Entity[T]): Seq[Statement] = {
@@ -89,11 +93,19 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				s.responsibleOrg.map{respOrg =>
 					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
-				coverageTriples(uri, s.core.coverage)
+				coverageTriples(uri, s.core.coverage) ++:
+				s.funding.flatMap{fund =>
+					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
+					fundingTriples(fund)
+				}
 
-			case ci: TcPlainOrg[T] =>
+			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, ci.org)
+				orgTriples(uri, go.org)
+
+			case fu: TcFunder[T] =>
+				(uri, RDF.TYPE, meta.funderClass) +:
+				orgTriples(uri, fu.org)
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:

@@ -22,7 +22,7 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: 
 	private[this] val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
 	private[this] val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 
-	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = cpOwnMetasFetcher.getOrgs[T]
+	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = cpOwnMetasFetcher.getPlainOrgs[T]
 
 	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[TcPerson[T]]] = cpOwnMetasFetcher.getPeople[T]
 
@@ -122,14 +122,31 @@ private class IcosMetaInstancesFetcher(
 			core = coreStation,
 			responsibleOrg = coreStation.responsibleOrganization
 				.flatMap(ro => getTcOrganization[T](ro.self.uri.toRdf))
-				.collect{case org: TcPlainOrg[T] => org}
+				.collect{case org: TcPlainOrg[T] => org},
+			funding = coreStation.funding.toSeq.flatten.map{coref =>
+				TcFunding[T](
+					cpId = UriId(coref.self.uri),
+					funder = getTcOrganization[T](coref.funder.self.uri.toRdf)
+						.collect{case org: TcFunder[T] => org}
+						.getOrElse{
+							val tc = implicitly[TcConf[T]].tcPrefix
+							throw new MetadataException(s"Could not get TcFunder[$tc] for ${coref.funder.self.uri}")
+						},
+					core = coref
+				)
+			}
 		)
 	}
 
 
-	private def getCompOrInst[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPlainOrg[T] = {
+	private def getGenericOrg[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcGenericOrg[T] = {
 		val core: Organization = getOrganization(uri)
-		TcPlainOrg[T](UriId(uri), tcId, core)
+		TcGenericOrg[T](UriId(uri), tcId, core)
+	}
+
+	private def getFunderOrg[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcFunder[T] = {
+		val core: Organization = getOrganization(uri)
+		TcFunder[T](UriId(uri), tcId, core)
 	}
 
 	private def getRole(iri: IRI): Role = {
@@ -148,7 +165,9 @@ private class IcosMetaInstancesFetcher(
 		if(server.hasStatement(uri, RDF.TYPE, stationClass))
 			Some(getTcStation(getTcId(uri), uri))
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
-			Some(getCompOrInst(getTcId(uri), uri))
+			Some(getGenericOrg(getTcId(uri), uri))
+		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.funderClass))
+			Some(getFunderOrg(getTcId(uri), uri))
 		else
 			None //uri is neither a TC-specific station nor a plain organization
 
@@ -156,8 +175,11 @@ private class IcosMetaInstancesFetcher(
 	def getPeople[T <: TC : TcConf]: Validated[Seq[TcPerson[T]]] = getEntities[T, TcPerson[T]](metaVocab.personClass)(getPerson)
 
 
-	def getOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] =
-		getEntities[T, TcPlainOrg[T]](metaVocab.orgClass)(getCompOrInst)
+	def getPlainOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = for(
+		gen <- getEntities[T, TcGenericOrg[T]](metaVocab.orgClass)(getGenericOrg);
+		fund <- getEntities[T, TcFunder[T]](metaVocab.funderClass)(getFunderOrg)
+	) yield gen ++ fund
+
 
 
 	private def getEntities[T <: TC : TcConf, E](cls: IRI, requireTcId: Boolean = false)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {

@@ -155,6 +155,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		server.getUriValues(stat, metaVocab.hasFunding).map{furi =>
 			val funderUri = getSingleUri(furi, metaVocab.hasFunder)
 			Funding(
+				self = getLabeledResource(funderUri),
 				funder = getOrganization(funderUri),
 				awardTitle = getOptionalString(furi, metaVocab.awardTitle),
 				awardNumber = getOptionalString(furi, metaVocab.awardNumber),

@@ -44,6 +44,8 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getMembership(orgId: UriId, role: Role, lastName: String)(implicit envri: Envri): IRI =
 		getMembership(UriId(s"${orgId}_${role.name}_${UriId.escaped(lastName)}"))
 
+	def getFunding(fundId: UriId)(implicit envri: Envri): IRI = getRelative("fundings/", fundId)
+
 	def getRole(role: Role)(implicit envri: Envri) = getRelative(RolesPrefix, UriId(role.name))
 
 	def getOrganization(orgId: UriId)(implicit envri: Envri) = getRelative("organizations/", orgId)

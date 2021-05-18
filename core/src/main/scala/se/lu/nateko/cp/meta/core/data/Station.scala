@@ -17,6 +17,7 @@ case class Station(
 )
 
 case class Funding(
+	self: UriResource,
 	funder: Organization,
 	awardTitle: Option[String],
 	awardNumber: Option[String],

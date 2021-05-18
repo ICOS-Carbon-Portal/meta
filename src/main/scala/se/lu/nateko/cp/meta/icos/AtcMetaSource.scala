@@ -323,7 +323,7 @@ object AtcMetaSource{
 					website = websiteOpt
 				)
 
-				id -> TcPlainOrg[A](cpId, Some(id), org)
+				id -> TcGenericOrg[A](cpId, Some(id), org)
 			}
 		}
 

@@ -333,9 +333,11 @@ object EtcMetaSource{
 					stationPubs = pubDois.getOrElse(Nil),
 					timeZoneOffset = tzOffset,
 					documentation = Nil//docs are not provided by TCs
-				)
+				),
+				funding = ???
 			),
-			responsibleOrg = None
+			responsibleOrg = None,
+			funding = ???
 		)
 
 

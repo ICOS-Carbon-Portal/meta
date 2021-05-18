@@ -21,6 +21,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 //	val tcClass = getRelativeRaw("ThematicCenter")
 //	val cfClass = getRelativeRaw("CentralFacility")
 	val orgClass = getRelativeRaw("Organization")
+	val funderClass = getRelativeRaw("Funder")
 	val membershipClass = getRelativeRaw("Membership")
 	val instrumentClass = getRelativeRaw("Instrument")
 

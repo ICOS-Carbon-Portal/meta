@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.api
 
+import java.net.URI
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -42,6 +43,7 @@ case class UriId(urlSafeString: String){
 }
 
 object UriId{
+	def apply(uri: URI): UriId = UriId(uri.getPath.split('/').last)
 	def apply(iri: IRI): UriId = UriId(iri.getLocalName)
 	def escaped(str: String) = UriId(CustomVocab.urlEncode(str))
 }

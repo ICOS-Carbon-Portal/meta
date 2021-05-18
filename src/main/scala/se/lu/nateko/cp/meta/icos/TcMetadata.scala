@@ -36,12 +36,16 @@ object Entity{
 	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[TcOrg[T]]{
 		def withCpId(org: TcOrg[T], id: UriId) = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
-			case ci: TcPlainOrg[T] => ci.copy(cpId = id)
+			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
 
 	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
-		def withCpId(org: TcPlainOrg[T], id: UriId) = org.copy(cpId = id)
+		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
+			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case fu: TcFunder[T] => fu.copy(cpId = id)
+		}
 	}
 
 	implicit def stationCpIdSwapper[T <: TC] = new CpIdSwapper[TcStation[T]]{
@@ -76,7 +80,9 @@ case class TcStation[+T <: TC](
 	def org = core.org
 }
 
-case class TcPlainOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcOrg[T]
+sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
+case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]
+case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]
 
 case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
@@ -91,7 +97,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	def cpId = CpVocab.instrCpId(tcId)
 }
 
-case class TcFunding[T](funder: TcPlainOrg[T], core: Funding)
+case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)
 
 class AssumedRole[+T <: TC](
 	val kind: Role,

@@ -67,6 +67,7 @@ object SparqlQueries {
 		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ;
 		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
 		|	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
+		|	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
 		|	OPTIONAL{?spec cpmeta:containsDataset ?dataset}
 		|} order by ?name""".stripMargin
 
@@ -76,16 +77,18 @@ object SparqlQueries {
 	}
 
 	def toObjSpec(b: Binding) = {
+		def keywords(varname: String) = b.get(varname).map(_.split(",").toSeq).getOrElse(Seq.empty)
+
 		ObjSpec(
-		new URI(b("spec")),
-		b("name"),
-		b("dataLevel").toInt,
-		b.contains("dataset"),
-		new URI(b("theme")),
-		new URI(b("project")),
-		if (b.contains("keywords")) b("keywords").split(",").toSeq else Seq.empty
+			new URI(b("spec")),
+			b("name"),
+			b("dataLevel").toInt,
+			b.contains("dataset"),
+			new URI(b("theme")),
+			new URI(b("project")),
+			keywords("keywords").concat(keywords("projKeywords")).distinct
 		)
-}
+	}
 
 	//Only for ICOS for now
 	def l3spatialCoverages = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

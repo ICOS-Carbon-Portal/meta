@@ -31,6 +31,7 @@ trait CustomVocab {
 	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
 	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XMLSchema.DATE)
 	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
+	def lit(litVal: URI) = factory.createLiteral(litVal.toASCIIString, XMLSchema.ANYURI)
 }
 
 object CustomVocab{

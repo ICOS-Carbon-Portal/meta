@@ -25,8 +25,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		def plainOrgs(s: TcState[T]): Seq[TcPlainOrg[T]] = uniqBestId(
 			(
 				s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
-				s.roles.map(_.role.org) ++ s.stations.flatMap(_.responsibleOrg) ++
-				s.stations.flatMap(_.funding.map(_.funder))
+				s.roles.map(_.role.org) ++ s.stations.flatMap{st =>
+					st.funding.map(_.funder) ++ st.responsibleOrg
+				}
 			).collect{
 				case o: TcPlainOrg[T] => o
 			}

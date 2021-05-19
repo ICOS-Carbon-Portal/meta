@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
+import se.lu.nateko.cp.meta.core.data.Funder
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
@@ -126,12 +127,7 @@ private class IcosMetaInstancesFetcher(
 			funding = coreStation.funding.toSeq.flatten.map{coref =>
 				TcFunding[T](
 					cpId = UriId(coref.self.uri),
-					funder = getTcOrganization[T](coref.funder.self.uri.toRdf)
-						.collect{case org: TcFunder[T] => org}
-						.getOrElse{
-							val tc = implicitly[TcConf[T]].tcPrefix
-							throw new MetadataException(s"Could not get TcFunder[$tc] for ${coref.funder.self.uri}")
-						},
+					funder = makeTcFunder(coref.funder),
 					core = coref
 				)
 			}
@@ -144,9 +140,14 @@ private class IcosMetaInstancesFetcher(
 		TcGenericOrg[T](UriId(uri), tcId, core)
 	}
 
-	private def getFunderOrg[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcFunder[T] = {
-		val core: Organization = getOrganization(uri)
+	private def getTcFunder[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcFunder[T] = {
+		val core = getFunder(uri)
 		TcFunder[T](UriId(uri), tcId, core)
+	}
+
+	private def makeTcFunder[T <: TC : TcConf](core: Funder): TcFunder[T] = {
+		val uri = core.org.self.uri.toRdf
+		TcFunder[T](UriId(uri), getTcId(uri), core)
 	}
 
 	private def getRole(iri: IRI): Role = {
@@ -167,7 +168,7 @@ private class IcosMetaInstancesFetcher(
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.orgClass))
 			Some(getGenericOrg(getTcId(uri), uri))
 		else if(server.hasStatement(uri, RDF.TYPE, metaVocab.funderClass))
-			Some(getFunderOrg(getTcId(uri), uri))
+			Some(getTcFunder(getTcId(uri), uri))
 		else
 			None //uri is neither a TC-specific station nor a plain organization
 
@@ -177,7 +178,7 @@ private class IcosMetaInstancesFetcher(
 
 	def getPlainOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = for(
 		gen <- getEntities[T, TcGenericOrg[T]](metaVocab.orgClass)(getGenericOrg);
-		fund <- getEntities[T, TcFunder[T]](metaVocab.funderClass)(getFunderOrg)
+		fund <- getEntities[T, TcFunder[T]](metaVocab.funderClass)(getTcFunder)
 	) yield gen ++ fund
 
 

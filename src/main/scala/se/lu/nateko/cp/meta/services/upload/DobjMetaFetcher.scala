@@ -156,7 +156,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			val funderUri = getSingleUri(furi, metaVocab.hasFunder)
 			Funding(
 				self = getLabeledResource(funderUri),
-				funder = getOrganization(funderUri),
+				funder = getFunder(funderUri),
 				awardTitle = getOptionalString(furi, metaVocab.awardTitle),
 				awardNumber = getOptionalString(furi, metaVocab.awardNumber),
 				awardUrl = getOptionalUriLiteral(furi, metaVocab.awardURI),
@@ -164,5 +164,14 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				stop = getOptionalLocalDate(furi, metaVocab.hasEndDate)
 			)
 		}
+
+	protected def getFunder(iri: IRI) = Funder(
+		org = getOrganization(iri),
+		id = for(
+			idStr <- getOptionalString(iri, metaVocab.funderIdentifier);
+			idTypeStr <- getOptionalString(iri, metaVocab.funderIdentifierType);
+			idType <- Try(FunderIdType.withName(idTypeStr)).toOption
+		) yield idStr -> idType
+	)
 
 }

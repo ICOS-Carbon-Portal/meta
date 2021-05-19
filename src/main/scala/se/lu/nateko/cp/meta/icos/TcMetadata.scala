@@ -4,7 +4,8 @@ import java.time.Instant
 
 import akka.stream.scaladsl.Source
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station, Organization, Funding}
+import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station}
+import se.lu.nateko.cp.meta.core.data.{Organization, Funding, Funder}
 import se.lu.nateko.cp.meta.services.CpVocab
 
 
@@ -82,7 +83,9 @@ case class TcStation[+T <: TC](
 
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
 case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]
-case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]
+case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]{
+	def org = core.org
+}
 
 case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],

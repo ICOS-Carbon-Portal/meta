@@ -38,6 +38,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.etc._
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
+import se.lu.nateko.cp.meta.utils.rdf4j._
 import java.net.URI
 
 class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
@@ -110,12 +111,15 @@ class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Material
 			}
 	}
 
-	private def fetchFromTsv[T](tableType: String, extractor: Lookup => Validated[T]): Future[Validated[Seq[T]]] = Http()
+	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
 		.singleRequest(HttpRequest(
 			uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
 		))
 		.flatMap(_.entity.toStrict(3.seconds))
-		.map(ent => Validated.sequence(parseTsv(ent.data).map(extractor)))
+		.map(ent => parseTsv(ent.data))
+
+	private def fetchFromTsv[T](tableType: String, extractor: Lookup => Validated[T]): Future[Validated[Seq[T]]] = 
+		fetchAndParseTsv(tableType).map(lookups => Validated.sequence(lookups.map(extractor)))
 
 }
 
@@ -211,10 +215,10 @@ object EtcMetaSource{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
-	def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[Instant] = lookUp(varName).flatMap{
-		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(toCET(dt))
-		case Badm.Date(BadmLocalDate(date)) => Validated.ok(toCETnoon(date))
-		case bv => Validated.error(s"$varName must have been a local date(Time) (was $bv)")
+	private def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] = lookUp(varName).flatMap{
+		//case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(toCET(dt))
+		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date)
+		case bv => Validated.error(s"$varName must have been a BADM-format local date (was $bv)")
 	}
 
 	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =
@@ -250,6 +254,30 @@ object EtcMetaSource{
 			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
 		) yield (techId, stationId, utc)
 
+	def parseFunders(vocab: CpVocab)(lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
+		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(_)))
+		.map(
+			_.distinct.map{funderName =>
+				implicit val envri = Envri.ICOS
+				val cpId = UriId.escaped(funderName)
+				val org = Organization(
+					self = UriResource(vocab.getOrganization(cpId).toJava, None, Nil),
+					name = funderName,
+					email = None,
+					website = None
+				)
+				funderName -> TcFunder[ETC.type](
+					cpId = cpId,
+					tcIdOpt = Some(makeId(s"fund_${funderName.hashCode}")),
+					core = Funder(org, None)
+				)
+			}.toMap
+		)
+
+	def parseFundings(lookups: Seq[Lookup], funders: Map[String, TcFunder[ETC.type]]): Validated[Seq[TcFunding[ETC.type]]] = {
+		???
+	}
+
 	private def getSingleFileMeta(
 		stationLookupV: Validated[Map[Int, StationId]]
 	)(implicit lookup: Lookup): Validated[(EtcFileMetaKey, EtcFileMeta)] =
@@ -270,12 +298,6 @@ object EtcMetaSource{
 				EtcFileMeta(fileType, isBinary)
 		}
 
-	private val datePattern = """^(\d{4})(\d\d)(\d\d)""".r
-	def parseDate(ds: String): Validated[LocalDate] = ds.trim match {
-		case datePattern(y, m, d) => Validated(LocalDate.parse(s"$y-$m-$d"))
-		case _ => Validated.error(ds + " is not a valid date")
-	}
-
 	def toCET(ldt: LocalDateTime): Instant = ldt.atOffset(ZoneOffset.ofHours(1)).toInstant
 	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
 
@@ -294,7 +316,7 @@ object EtcMetaSource{
 		id <- lookUp(Vars.siteId);
 		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
 		countryCode <- getCountryCode(id.take(2)).optional;
-		lblDate <- lookUp(Vars.labelingDate).flatMap(parseDate).optional;
+		lblDate <- getLocalDate(Vars.labelingDate).optional;
 		climZone <- lookUp(Vars.climateZone).flatMap(parseClimateZone).optional;
 		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
 		meanTemp <- lookUp(Vars.annualTemp).map(_.toFloat).optional;
@@ -352,8 +374,8 @@ object EtcMetaSource{
 			roleStr <- require(Vars.role);
 			roleOpt <- new Validated(rolesLookup.get(roleStr)).require(s"Unknown ETC role: $roleStr");
 			role <- new Validated(roleOpt);
-			roleEnd <- getLocalDate(Vars.roleEnd).optional;
-			roleStart <- getLocalDate(Vars.roleStart).optional;
+			roleEnd <- getLocalDate(Vars.roleEnd).map(toCETnoon).optional;
+			roleStart <- getLocalDate(Vars.roleStart).map(toCETnoon).optional;
 			person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
 			station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
 		) yield {

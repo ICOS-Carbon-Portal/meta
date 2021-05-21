@@ -168,7 +168,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		Given("starting with a single org with a single researcher and no own CP statements")
 
 		val uniOrg = Organization(UriResource(null, Some("uni"), Nil), "Just Some Uni", None, None)
-		val uni = TcPlainOrg(UriId("uni"), Some(aId("uni0")), uniOrg)
+		val uni = TcGenericOrg(UriId("uni"), Some(aId("uni0")), uniOrg)
 		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
@@ -177,7 +177,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
 
 		val cpUniOrg = Organization(UriResource(null, Some("uni proper"), Nil), "Properly named Uni", None, None)
-		val cpUni = TcPlainOrg(UriId("cpuni"), Some(aId("uni0")), cpUniOrg)
+		val cpUni = TcGenericOrg(UriId("cpuni"), Some(aId("uni0")), cpUniOrg)
 		state.cpServer.addAll(state.maker.getStatements(cpUni))
 
 		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){

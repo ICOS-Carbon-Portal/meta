@@ -41,7 +41,7 @@ import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import java.net.URI
 
-class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
 	import system.dispatcher
 
@@ -64,12 +64,11 @@ class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Material
 
 	def fetchFromEtc(): Future[Validated[State]] = {
 		val peopleFut = fetchFromTsv(Types.people, getPerson(_))
-		val stationsFut = fetchFromTsv(Types.stations, getStation(_))
 		val instrumentsFut = fetchFromTsv(Types.instruments, getInstrument(_))
 
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
-			stationsVal <- stationsFut;
+			stationsVal <- fetchStations();
 			instrumentsVal <- instrumentsFut
 		) yield Validated.liftFuture{
 			for(
@@ -89,6 +88,18 @@ class EtcMetaSource(conf: EtcConfig)(implicit system: ActorSystem, mat: Material
 		}
 
 		futfutValVal.flatten.map(_.flatMap(identity))
+	}
+
+	def fetchStations(): Future[Validated[Seq[TcStation[ETC.type]]]] = {
+		for(
+			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
+				for(
+					fundersLookup <- parseFunders(vocab, lookups);
+					fundings <- parseFundings(lookups, fundersLookup, vocab)
+				) yield fundings
+			};
+			stations <- fetchFromTsv(Types.stations, getStation(fundLookupV)(_))
+		) yield stations
 	}
 
 	def getFileMeta: Future[Validated[EtcFileMetadataStore]] = {
@@ -131,6 +142,8 @@ object EtcMetaSource{
 	type EtcPerson = TcPerson[E]
 	type EtcStation = TcStation[E]
 	type EtcMembership = Membership[E]
+	implicit val envri = Envri.ICOS
+
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
 
@@ -184,6 +197,7 @@ object EtcMetaSource{
 		val fundingAwardTitle = "FUNDING_TITLE"
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
+		val fundingComment = "FUNDING_COMMENT"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(
@@ -254,11 +268,10 @@ object EtcMetaSource{
 			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
 		) yield (techId, stationId, utc)
 
-	def parseFunders(vocab: CpVocab)(lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
+	def parseFunders(vocab: CpVocab, lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
 		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(_)))
 		.map(
 			_.distinct.map{funderName =>
-				implicit val envri = Envri.ICOS
 				val cpId = UriId.escaped(funderName)
 				val org = Organization(
 					self = UriResource(vocab.getOrganization(cpId).toJava, None, Nil),
@@ -274,8 +287,41 @@ object EtcMetaSource{
 			}.toMap
 		)
 
-	def parseFundings(lookups: Seq[Lookup], funders: Map[String, TcFunder[ETC.type]]): Validated[Seq[TcFunding[ETC.type]]] = {
-		???
+	def parseFundings(
+		lookups: Seq[Lookup], funders: Map[String, TcFunder[ETC.type]], vocab: CpVocab
+	): Validated[Map[String, Seq[TcFunding[ETC.type]]]] = {
+		val tcIdToFundingVs = lookups.map{implicit lookup =>
+			for(
+				stationTcId <- lookUp(Vars.stationTcId);
+				funderName <- lookUp(Vars.fundingOrgName);
+				awardTitle <- lookUp(Vars.fundingAwardTitle);
+				awardNumber <- lookUp(Vars.fundingAwardNumber);
+				fStart <- getLocalDate(Vars.fundingStart);
+				fEnd <- getLocalDate(Vars.fundingEnd);
+				comment <- lookUp(Vars.fundingComment);
+				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr));
+				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
+			) yield {
+				val cpId = UriId.escaped(s"${stationTcId}_$awardNumber")
+				val core = Funding(
+					self = UriResource(
+						uri = vocab.getFunding(cpId).toJava,
+						label = None, //will be enriched later
+						comments = List(comment).filterNot(_.isEmpty)
+					),
+					awardNumber = Some(awardNumber),
+					awardTitle = Some(awardTitle),
+					funder = tcFunder.core,
+					awardUrl = Some(url),
+					start = Some(fStart),
+					stop = Some(fEnd)
+				)
+				stationTcId -> TcFunding[ETC.type](cpId, tcFunder, core)
+			}
+		}
+		Validated.sequence(tcIdToFundingVs).map{tcToFundings =>
+			tcToFundings.distinctBy(_._2.cpId).groupMap(_._1)(_._2)
+		}
 	}
 
 	private def getSingleFileMeta(
@@ -309,9 +355,12 @@ object EtcMetaSource{
 		}.toSeq
 	}
 
-	def getStation(implicit lookup: Lookup): Validated[EtcStation] = for(
+	def getStation(
+		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
+	)(implicit lookup: Lookup): Validated[EtcStation] = for(
 		pos <- getPosition;
 		tcIdStr <- lookUp(Vars.stationTcId);
+		fundingsLookup <- fundingsV;
 		name <- lookUp(Vars.siteName);
 		id <- lookUp(Vars.siteId);
 		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
@@ -327,7 +376,13 @@ object EtcMetaSource{
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
 		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional
-	) yield TcStation[E](
+	) yield {
+		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
+			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
+			val coreFunding = orig.core.copy(self = orig.core.self.copy(label = Some(label)))
+			orig.copy(core = coreFunding)
+		}
+		TcStation[E](
 			cpId = TcConf.stationId[E](UriId.escaped(id)),
 			tcId = makeId(tcIdStr),
 			core = Station(
@@ -356,11 +411,12 @@ object EtcMetaSource{
 					timeZoneOffset = tzOffset,
 					documentation = Nil//docs are not provided by TCs
 				),
-				funding = ???
+				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
 			),
 			responsibleOrg = None,
-			funding = ???
+			funding = fundings
 		)
+	}
 
 
 	def getMembership(

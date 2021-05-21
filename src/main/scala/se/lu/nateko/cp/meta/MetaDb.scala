@@ -184,9 +184,9 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		val uploadConf = config.dataUploadService
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
-		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc)
 		implicit val envriConfs = config.core.envriConfigs
 		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
+		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
 	}

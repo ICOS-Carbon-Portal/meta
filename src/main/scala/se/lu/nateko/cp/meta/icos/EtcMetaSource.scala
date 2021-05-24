@@ -298,7 +298,7 @@ object EtcMetaSource{
 				awardNumber <- lookUp(Vars.fundingAwardNumber);
 				fStart <- getLocalDate(Vars.fundingStart);
 				fEnd <- getLocalDate(Vars.fundingEnd);
-				comment <- lookUp(Vars.fundingComment);
+				comment <- lookUp(Vars.fundingComment).optional;
 				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr));
 				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
 			) yield {
@@ -307,7 +307,7 @@ object EtcMetaSource{
 					self = UriResource(
 						uri = vocab.getFunding(cpId).toJava,
 						label = None, //will be enriched later
-						comments = List(comment).filterNot(_.isEmpty)
+						comments = comment.toSeq
 					),
 					awardNumber = Some(awardNumber),
 					awardTitle = Some(awardTitle),

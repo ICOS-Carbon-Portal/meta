@@ -67,7 +67,7 @@ class UploadService(
 	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[AccessUri] = {
 		implicit val envri = Envri.ICOS
 		for(
-			meta <- Future.fromTry(etcHelper.transform(etcMeta, vocab));
+			meta <- Future.fromTry(etcHelper.transform(etcMeta));
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		) yield accessUri
 	}

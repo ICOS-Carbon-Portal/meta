@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import java.net.URI
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
@@ -60,6 +60,9 @@ trait FetchingHelper {
 
 	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
 		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(parseInstant).head
+
+	protected def getOptionalLocalDate(subj: IRI, pred: IRI): Option[LocalDate] =
+		server.getLiteralValues(subj, pred, XMLSchema.DATE, InstanceServer.AtMostOne).headOption.map(LocalDate.parse)
 
 	protected def getSingleUriLiteral(subj: IRI, pred: IRI): URI =
 		server.getUriLiteralValues(subj, pred, InstanceServer.ExactlyOne).head

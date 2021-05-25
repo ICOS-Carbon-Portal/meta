@@ -125,15 +125,17 @@ class OtcMetaSource(
 						coverage = posOpt.orElse(coverOpt),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty)
+						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty),
+						funding = None
 					),
-					responsibleOrg = respOrg.flatMap(orgs.get)
+					responsibleOrg = respOrg.flatMap(orgs.get),
+					funding = Nil
 				)
 			}
 		}.map(_.toMap)
 	}
 
-	private def getCompsAndInsts: Validated[Map[IRI, TcPlainOrg[O]]] = {
+	private def getCompsAndInsts: Validated[Map[IRI, TcGenericOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
 		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
@@ -142,7 +144,7 @@ class OtcMetaSource(
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
-		getLookup(q, "org"){(b, tcId) => TcPlainOrg(
+		getLookup(q, "org"){(b, tcId) => TcGenericOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
 			org = Organization(

@@ -12,12 +12,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
+import se.lu.nateko.cp.meta.services.CpVocab
 
-class EtcFileMetadataProvider(conf: EtcConfig)(implicit system: ActorSystem) extends EtcFileMetadataStore{
+class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) extends EtcFileMetadataStore{
 
 	import system.dispatcher
 
-	private[this] val metaSrc = new EtcMetaSource(conf)
+	private[this] val metaSrc = new EtcMetaSource(conf, vocab)
 	private[this] var inner: Option[EtcFileMetadataStore] = None
 	private[this] var retryCount: Int = 0
 

@@ -25,12 +25,12 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.util.Success
 import se.lu.nateko.cp.meta.DataObjectDto
 
-class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig)(implicit system: ActorSystem) {
+class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) {
 
-	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config)
+	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config, vocab)
 	private implicit val envri = Envri.ICOS
 
-	def transform(meta: EtcUploadMetadata, vocab: CpVocab): Try[DataObjectDto] = {
+	def transform(meta: EtcUploadMetadata): Try[DataObjectDto] = {
 
 		def getAcquisitionInterval(offset: Int) = {
 			def getInstant(dt: LocalDateTime) = dt.atOffset(ZoneOffset.ofHours(offset)).toInstant

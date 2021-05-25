@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.api
 
+import java.net.URI
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -30,6 +31,7 @@ trait CustomVocab {
 	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
 	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XMLSchema.DATE)
 	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
+	def lit(litVal: URI) = factory.createLiteral(litVal.toASCIIString, XMLSchema.ANYURI)
 }
 
 object CustomVocab{
@@ -42,6 +44,7 @@ case class UriId(urlSafeString: String){
 }
 
 object UriId{
+	def apply(uri: URI): UriId = UriId(uri.getPath.split('/').last)
 	def apply(iri: IRI): UriId = UriId(iri.getLocalName)
 	def escaped(str: String) = UriId(CustomVocab.urlEncode(str))
 }

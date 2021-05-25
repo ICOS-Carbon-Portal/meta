@@ -55,9 +55,27 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		triples.map(factory.tripleToStatement)
 	}
 
-	def getMembershipEnd(membId: UriId): Statement = {
-		val uri = vocab.getMembership(membId)
-		createStatement(uri, meta.hasEndTime, vocab.lit(Instant.now))
+	private def fundingTriples[T <: TC : TcConf](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
+		val iri = vocab.getFunding(fund.cpId)
+		(iri, RDF.TYPE, meta.fundingClass) +:
+		(iri, meta.hasFunder, getIri(fund.funder)) +:
+		fund.core.awardNumber.map{anum =>
+			(iri, meta.awardNumber, vocab.lit(anum))
+		} ++:
+		fund.core.awardTitle.map{atit =>
+			(iri, meta.awardTitle, vocab.lit(atit))
+		} ++:
+		fund.core.awardUrl.map{auri =>
+			(iri, meta.awardURI, vocab.lit(auri))
+		} ++:
+		fund.core.start.map{startD => 
+			(iri, meta.hasStartDate, vocab.lit(startD))
+		} ++:
+		fund.core.stop.map{endD => 
+			(iri, meta.hasEndDate, vocab.lit(endD))
+		} ++:
+		uriResourceTriples(iri, fund.core.self) ++:
+		Nil
 	}
 
 	def getStatements[T <: TC : TcConf](e: Entity[T]): Seq[Statement] = {
@@ -84,16 +102,30 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				orgTriples(uri, s.core.org) ++:
 				stationTriples(uri, s.core.specificInfo) ++:
 				s.core.pictures.map{picUri =>
-					(uri, meta.hasDepiction, vocab.lit(picUri.toString, XMLSchema.ANYURI))
+					(uri, meta.hasDepiction, vocab.lit(picUri))
 				} ++:
 				s.responsibleOrg.map{respOrg =>
 					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
-				coverageTriples(uri, s.core.coverage)
+				coverageTriples(uri, s.core.coverage) ++:
+				s.funding.flatMap{fund =>
+					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
+					fundingTriples(fund)
+				}
 
-			case ci: TcPlainOrg[T] =>
+			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, ci.org)
+				orgTriples(uri, go.org)
+
+			case fu: TcFunder[T] =>
+				(uri, RDF.TYPE, meta.funderClass) +:
+				fu.core.id.toSeq.flatMap{
+					case (id, idType) => Seq(
+						(uri, meta.funderIdentifier, vocab.lit(id)),
+						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
+					)
+				} ++:
+				orgTriples(uri, fu.org)
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -151,10 +183,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				(iri, meta.hasMeanAnnualRadiation, vocab.lit(meanRad))
 			} ++
 			eco.stationPubs.map{stPub =>
-				(iri, meta.hasAssociatedPublication, vocab.lit(stPub.toString, XMLSchema.ANYURI))
+				(iri, meta.hasAssociatedPublication, vocab.lit(stPub))
 			} ++
 			eco.stationDocs.map{stDoc =>
-				(iri, meta.hasDocumentationUri, vocab.lit(stDoc.toString, XMLSchema.ANYURI))
+				(iri, meta.hasDocumentationUri, vocab.lit(stDoc))
 			} ++
 			plainIcosStationSpecTriples(iri, eco)
 		case icos: IcosStationSpecifics =>

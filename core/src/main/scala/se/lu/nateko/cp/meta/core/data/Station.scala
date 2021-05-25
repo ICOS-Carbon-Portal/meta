@@ -12,8 +12,26 @@ case class Station(
 	coverage: Option[GeoFeature],
 	responsibleOrganization: Option[Organization],
 	pictures: Seq[URI],
-	specificInfo: StationSpecifics
+	specificInfo: StationSpecifics,
+	funding: Option[Seq[Funding]]
 )
+
+case class Funding(
+	self: UriResource,
+	funder: Funder,
+	awardTitle: Option[String],
+	awardNumber: Option[String],
+	awardUrl: Option[URI],
+	start: Option[LocalDate],
+	stop: Option[LocalDate],
+)
+
+object FunderIdType extends Enumeration{
+	val Crossref = Value("Crossref Funder ID")
+	val GRID, ISNI, ROR, Other = Value
+}
+
+case class Funder(org: Organization, id: Option[(String,FunderIdType.Value)])
 
 sealed trait StationSpecifics
 

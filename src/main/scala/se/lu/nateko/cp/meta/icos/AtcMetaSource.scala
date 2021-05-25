@@ -210,9 +210,11 @@ object AtcMetaSource{
 					labelingDate = lblDate,
 					timeZoneOffset = tzOffset,
 					documentation = Seq.empty//docs are not provided by the TCs
-				)
+				),
+				funding = None
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),
+			funding = Nil
 		)
 	}
 
@@ -321,7 +323,7 @@ object AtcMetaSource{
 					website = websiteOpt
 				)
 
-				id -> TcPlainOrg[A](cpId, Some(id), org)
+				id -> TcGenericOrg[A](cpId, Some(id), org)
 			}
 		}
 

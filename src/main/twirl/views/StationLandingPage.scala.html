@@ -78,6 +78,35 @@
 					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
 			}
+			@for(fundings <- station.funding){
+				<h2>Acknowledgements</h2>
+				@PanelWide("Funding"){
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Funder</th>
+								<th>Award number</th>
+								<th>Award</th>
+								<th>Start date</th>
+								<th>End date</th>
+								<th>Comment</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for(funding <- fundings){
+								<tr>
+									<td>@agentLink(funding.funder.org)</td>
+									<td>@optLinkText(funding.awardNumber, funding.awardUrl)</td>
+									<td>@optLinkText(funding.awardTitle, funding.awardUrl)</td>
+									<td>@(funding.start.fold("")(_.toString))</td>
+									<td>@(funding.stop.fold("")(_.toString))</td>
+									<td>@{funding.self.comments.headOption.getOrElse("")}</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			}
 			@if(!stExt.staff.isEmpty){
 				<h2>Staff and roles</h2>
 				@PanelWide("Current staff"){
@@ -224,3 +253,21 @@
 }
 
 @icon = @{icosSpecifics.flatMap(_.theme).flatMap(_.markerIcon).getOrElse("")}
+
+@optLinkText(text: Option[String], url: Option[URI]) = {
+	@text match{
+		case Some(text) => {
+			@url match{
+				case Some(url) => {
+					<a href=@{url}>@{text}</a>
+				}
+				case None => {
+					<span>@{text}</span>
+				}
+			}
+		}
+		case None => {
+			<span></span>
+		}
+	}
+}

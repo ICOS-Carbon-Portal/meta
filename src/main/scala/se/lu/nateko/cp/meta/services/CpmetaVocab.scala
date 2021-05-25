@@ -21,6 +21,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 //	val tcClass = getRelativeRaw("ThematicCenter")
 //	val cfClass = getRelativeRaw("CentralFacility")
 	val orgClass = getRelativeRaw("Organization")
+	val funderClass = getRelativeRaw("Funder")
+	val fundingClass = getRelativeRaw("Funding")
 	val membershipClass = getRelativeRaw("Membership")
 	val instrumentClass = getRelativeRaw("Instrument")
 
@@ -53,6 +55,14 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasResponsibleOrganization = getRelativeRaw("hasResponsibleOrganization")
 	val countryCode = getRelativeRaw("countryCode")
 	val country = getRelativeRaw("country")
+
+	val hasFunding = getRelativeRaw("hasFunding")
+	val hasFunder = getRelativeRaw("hasFunder")
+	val funderIdentifier = getRelativeRaw("funderIdentifier")
+	val funderIdentifierType = getRelativeRaw("funderIdentifierType")
+	val awardNumber = getRelativeRaw("awardNumber")
+	val awardTitle = getRelativeRaw("awardTitle")
+	val awardURI = getRelativeRaw("awardURI")
 
 	val hasSha256sum = getRelativeRaw("hasSha256sum")
 	val hasDoi = getRelativeRaw("hasDoi")
@@ -123,6 +133,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasExtraRoleInfo = getRelativeRaw("hasExtraRoleInfo")
 	val hasAttributionWeight = getRelativeRaw("hasAttributionWeight")
 	val hasStartTime = getRelativeRaw("hasStartTime")
+	val hasEndDate = getRelativeRaw("hasEndDate")
+	val hasStartDate = getRelativeRaw("hasStartDate")
 	val hasEndTime = getRelativeRaw("hasEndTime")
 	val hasInstrumentOwner = getRelativeRaw("hasInstrumentOwner")
 	val hasInstrumentComponent = getRelativeRaw("hasInstrumentComponent")

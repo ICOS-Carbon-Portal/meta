@@ -49,6 +49,11 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:Funding</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
         <AbbreviatedIRI>cpmeta:Instrument</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasAtcId</AbbreviatedIRI>

@@ -68,6 +68,12 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		fund.core.awardUrl.map{auri =>
 			(iri, meta.awardURI, vocab.lit(auri))
 		} ++:
+		fund.core.start.map{startD => 
+			(iri, meta.hasStartDate, vocab.lit(startD))
+		} ++:
+		fund.core.stop.map{endD => 
+			(iri, meta.hasEndDate, vocab.lit(endD))
+		} ++:
 		uriResourceTriples(iri, fund.core.self) ++:
 		Nil
 	}

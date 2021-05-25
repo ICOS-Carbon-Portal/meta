@@ -292,14 +292,14 @@ object EtcMetaSource{
 	): Validated[Map[String, Seq[TcFunding[ETC.type]]]] = {
 		val tcIdToFundingVs = lookups.map{implicit lookup =>
 			for(
-				stationTcId <- lookUp(Vars.stationTcId);
-				funderName <- lookUp(Vars.fundingOrgName);
-				awardTitle <- lookUp(Vars.fundingAwardTitle);
-				awardNumber <- lookUp(Vars.fundingAwardNumber);
-				fStart <- getLocalDate(Vars.fundingStart);
-				fEnd <- getLocalDate(Vars.fundingEnd);
+				stationTcId <- lookUp(Vars.stationTcId).require("missing ETC technical station id in funding table");
+				funderName <- lookUp(Vars.fundingOrgName).require(s"missing funder name for funding of station $stationTcId");
+				awardTitle <- lookUp(Vars.fundingAwardTitle).optional;
+				awardNumber <- lookUp(Vars.fundingAwardNumber).require(s"Award number missing for funding of station $stationTcId");
+				fStart <- getLocalDate(Vars.fundingStart).optional;
+				fEnd <- getLocalDate(Vars.fundingEnd).optional;
 				comment <- lookUp(Vars.fundingComment).optional;
-				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr));
+				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr)).optional;
 				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
 			) yield {
 				val cpId = UriId.escaped(s"${stationTcId}_$awardNumber")
@@ -310,11 +310,11 @@ object EtcMetaSource{
 						comments = comment.toSeq
 					),
 					awardNumber = Some(awardNumber),
-					awardTitle = Some(awardTitle),
+					awardTitle = awardTitle,
 					funder = tcFunder.core,
-					awardUrl = Some(url),
-					start = Some(fStart),
-					stop = Some(fEnd)
+					awardUrl = url,
+					start = fStart,
+					stop = fEnd
 				)
 				stationTcId -> TcFunding[ETC.type](cpId, tcFunder, core)
 			}

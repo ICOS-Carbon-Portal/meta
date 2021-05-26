@@ -167,6 +167,7 @@ object EtcMetaSource{
 		val role = "TEAM_MEMBER_ROLE"
 		val roleStart = "TEAM_MEMBER_WORKSTART"
 		val roleEnd = "TEAM_MEMBER_WORKEND"
+		val authorOrder = "TEAM_MEMBER_AUTHORDER"
 		val persId = "ID_TEAM"
 		val stationTcId = "ID_STATION"
 		val siteName = "SITE_NAME"
@@ -433,9 +434,10 @@ object EtcMetaSource{
 			roleEnd <- getLocalDate(Vars.roleEnd).map(toCETnoon).optional;
 			roleStart <- getLocalDate(Vars.roleStart).map(toCETnoon).optional;
 			person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
+			contribWeight <- lookUp(Vars.authorOrder).map(s => - s.toInt).optional;
 			station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
 		) yield {
-			val assumedRole = new AssumedRole[E](role, person, station, None, None)
+			val assumedRole = new AssumedRole[E](role, person, station, contribWeight, None)
 			Membership(UriId(""), assumedRole, roleStart, roleEnd)
 		}
 	}

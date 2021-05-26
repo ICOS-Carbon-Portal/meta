@@ -29,6 +29,9 @@
 				@for(coll <- dobj.parentCollections){
 					@resourcePanelRow("Part of", coll)
 				}
+				@for(ack <- dobj.references.acknowledgements){
+					@PanelRow("Acknowledgement", ack)
+				}
 			}
 			@Panel("Metadata download", 4){
 				@objMetaDownloadButton(dobj, "JSON", "json")

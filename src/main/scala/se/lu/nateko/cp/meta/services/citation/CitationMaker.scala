@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -60,7 +61,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationRis = getDoiCitation(data, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
-				keywords = keywords
+				keywords = keywords,
+				acknowledgements = getFundingAcknowledgements(data)
 			)
 
 		case doc: DocObject => getItemCitationInfo(doc)
@@ -155,6 +157,26 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 	) yield s"$handleProxy$pid"
 
+	private def getFundingAcknowledgements(dobj: DataObject): Seq[String] = dobj.specificInfo match{
+		case Right(l2) =>
+			val acq = l2.acquisition
+			acq.station.funding.toSeq.flatten.filter{funding =>
+				funding.start.fold(true){
+					fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
+				} &&
+				funding.stop.fold(true){
+					fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
+				}
+			}.map{funding =>
+				val grantTitle = List(funding.awardTitle, funding.awardNumber).flatten match{
+					case only :: Nil => s" $only"
+					case title :: number :: Nil => s" $title ($number)"
+					case _ => ""
+				}
+				s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
+			}
+		case _ => Seq.empty
+	}
 }
 
 object CitationMaker{

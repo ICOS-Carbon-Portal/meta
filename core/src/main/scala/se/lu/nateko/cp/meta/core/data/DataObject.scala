@@ -165,8 +165,9 @@ case class References(
 	citationRis: Option[String],
 	keywords: Option[Seq[String]],
 	authors: Option[Seq[Person]],
-	temporalCoverageDisplay: Option[String]
+	temporalCoverageDisplay: Option[String],
+	acknowledgements: Seq[String]
 )
 object References{
-	def empty = References(None, None, None, None, None, None)
+	def empty = References(None, None, None, None, None, None, Nil)
 }

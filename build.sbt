@@ -10,7 +10,7 @@ val commonScalacOptions = Seq(
 	"-Wnumeric-widen",
 	"-Wunused"
 )
-val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.8"
+val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.11"
 val commonJavacOptions = Seq("-source", "1.8", "-target", "1.8")
 
 lazy val metaCore = (project in file("core"))

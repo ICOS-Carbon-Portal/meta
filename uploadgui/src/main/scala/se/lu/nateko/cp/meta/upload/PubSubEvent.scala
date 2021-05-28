@@ -12,5 +12,7 @@ final case class ObjSpecSelected(spec: ObjSpec) extends PubSubEvent
 
 final case class GotStationsList(stations: IndexedSeq[Station]) extends PubSubEvent
 final case class GotUploadDto(dto: UploadDto) extends PubSubEvent
+final case class GotAgentList(agents: IndexedSeq[Agent]) extends PubSubEvent
+final case class GotOrganizationList(people: IndexedSeq[Organization]) extends PubSubEvent
 
 final case object FormInputUpdated extends PubSubEvent

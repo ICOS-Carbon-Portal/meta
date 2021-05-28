@@ -99,6 +99,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 			metadataUrlElement.show()
 			typeControl.reset()
 			typeControl.disable()
+			metadataUriInput.focus()
 		}
 		bus.publish(ModeChanged)
 		clearFields()

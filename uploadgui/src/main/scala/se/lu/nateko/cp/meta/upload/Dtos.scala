@@ -16,3 +16,12 @@ case class Site(uri: URI, name: String)
 case class SamplingPoint(uri: URI, latitude: Double, longitude: Double, name: String)
 
 class SpatialCoverage(val uri: URI, val label: String)
+
+trait Agent {
+	val uri: URI
+	val name: String
+}
+
+case class Person(uri: URI, name: String) extends Agent
+case class Organization(uri: URI, name: String) extends Agent
+

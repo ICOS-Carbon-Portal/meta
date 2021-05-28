@@ -34,13 +34,21 @@ class Form(
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
 		case FormInputUpdated => updateButton()
-		case LevelSelected(3) => addProductionButton.disable("")
+		case LevelSelected(level) =>
+			if(level == 0 || level == 3)
+				addProductionButton.disable(s"Production metedata is not available for data level $level")
+			else
+				addProductionButton.enable()
 		case ModeChanged => resetForm()
 		case ItemTypeSelected(itemType) =>
 			resetForm()
 			itemType match{
 				case Data => dataPanel.show()
-				case Collection => collPanel.show()
+				case Collection => {
+					collPanel.show()
+					addProductionButton.disable("Production metedata is not available for collections")
+				}
+				case Document => addProductionButton.disable("Production metedata is not available for documents")
 				case _ =>
 			}
 	}
@@ -101,10 +109,18 @@ class Form(
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
 
-	private def onAddProductionClick(): Unit = {
+	private def onAddProductionClick()(implicit envri: Envri.Envri): Unit = {
 		addProductionButton.disable("")
 		prodPanel.show()
 		updateButton()
+		for(
+			people <- Backend.getPeople;
+			organizations <- Backend.getOrganizations
+		)
+		yield {
+			bus.publish(GotAgentList(organizations.concat(people)))
+			bus.publish(GotOrganizationList(organizations))
+		}
 	}
 
 	private def onRemoveProductionClick(): Unit = {

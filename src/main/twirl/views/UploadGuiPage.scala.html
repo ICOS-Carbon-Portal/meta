@@ -89,7 +89,7 @@
 				Uploading...
 			</div>
 		</div>
-		<form id="form-block" class="form">
+		<form id="form-block" class="form" autocomplete="off">
 			<div class="row">
 				<section class="col-md-4 about-section">
 					<div class="form-section panel panel-default">
@@ -307,20 +307,32 @@
 						</div>
 					</div>
 				</section>
-				<section class="col-md-8 production-section">
+				<section class="col-md-4 production-section">
 					<div class="form-section panel panel-default">
 						<h2>Production</h2>
 						<div class="form-group">
-							<label for="creatoruri">Creator (url)</label>
-							<input id="creatoruri" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="contributors">List of contributors (one url per line)</label>
-							<textarea name="contributors" id="contributors" rows="8" cols="80" class="form-element"></textarea>
-						</div>
-						<div class="form-group">
-							<label for="hostorganisation">Host organisation (url) <em class="text-muted">- optional</em></label>
-							<input id="hostorganisation" type="text" class="form-element form-control">
+							<label for="creatoruri">Creator</label>
+							<input id="creatoruri" list="agent-list" class="form-element form-control">
+							<datalist id="agent-list"></datalist>
+							</div>
+							<div class="form-group">
+							<label for="contributors">Contributors</label>
+							<div id="contributors">
+								<div class="input-group contributors-element" style="display: none;">
+									<input list="agent-list" class="form-element form-control data-list-input">
+									<div class="input-group-btn">
+										<button type="button" class="btn btn-default remove-data-list-input" aria-label="Remove variable">
+											<span class="glyphicon glyphicon-remove"></span>
+										</button>
+									</div>
+								</div>
+								<button type="button" id="add-contributor" class="btn btn-block btn-default" aria-label="Add contributor">Add contributor</button>
+							</div>
+							</div>
+							<div class="form-group">
+							<label for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
+							<input id="hostorganisation" list="organization-list" class="form-element form-control">
+							<datalist id="organization-list"></datalist>
 						</div>
 						<div class="form-group">
 							<label for="productioncomment">Comment <em class="text-muted">- optional</em></label>
@@ -332,7 +344,7 @@
 						</div>
 						<div class="form-group">
 							<label for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
-							<textarea name="sources" id="sources" rows="8" cols="80" class="form-element"></textarea>
+							<textarea name="sources" id="sources" rows="2" cols="80" class="form-element"></textarea>
 						</div>
 						<button id="removeproductionbutton" type="button" class="btn btn-link">Remove production metadata</button>
 						</div>
@@ -382,7 +394,7 @@
 
 @header = {
 	<div id="header-buttons" style="float: right;">
-		<button id="addproductionbutton" type="button" class="btn btn-default">Add production metadata</button>
+		<button id="addproductionbutton" type="button" class="btn btn-default" disabled>Add production metadata</button>
 		<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
 	</div>
 }

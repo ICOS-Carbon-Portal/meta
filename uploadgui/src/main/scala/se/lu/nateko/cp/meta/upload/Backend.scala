@@ -67,6 +67,17 @@ object Backend {
 		if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
 		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
 
+	private def disambiguateNames[T <: Agent](list: IndexedSeq[T], factory: (URI, String) => T): IndexedSeq[T] =
+		list.groupBy(_.name).view.mapValues( g =>
+			if (g.length > 1) g.map(p => factory(p.uri, s"${p.name} (${p.uri.getPath().split('/').last})")) else g
+		).values.toIndexedSeq.flatten.sortBy(_.name)
+
+	def getPeople(implicit envri: Envri.Envri): Future[IndexedSeq[Person]] =
+		sparqlSelect(people).map(_.map(toPerson)).map(disambiguateNames(_, (uri, name) => new Person(uri, name)))
+
+	def getOrganizations(implicit envri: Envri.Envri): Future[IndexedSeq[Organization]] =
+		sparqlSelect(organizations).map(_.map(toOrganization)).map(disambiguateNames(_, (uri, name) => new Organization(uri, name)))
+
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {

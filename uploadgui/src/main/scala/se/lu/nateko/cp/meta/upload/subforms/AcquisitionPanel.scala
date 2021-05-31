@@ -41,7 +41,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 
 	private val positionElements = new HtmlElements(".position-element")
 	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
-	private val siteSelect = new Select[Option[Site]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
+	private val siteSelect = new Select[Option[NamedUri]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
 	private val acqStartInput = new InstantInput("acqstartinput", notifyUpdate)
 	private val acqStopInput = new InstantInput("acqstopinput", notifyUpdate)
 	private val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
@@ -121,7 +121,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 		notifyUpdate()
 	}
 
-	private def initSitesOptions(sites: IndexedSeq[Site]): Unit = siteSelect.setOptions {
+	private def initSitesOptions(sites: IndexedSeq[NamedUri]): Unit = siteSelect.setOptions {
 		if (sites.isEmpty) IndexedSeq.empty
 		else if (envri == Envri.SITES) sites.map(Some(_))
 		else None +: sites.map(Some(_))
@@ -158,7 +158,7 @@ object AcquisitionPanel{
 		val all: IndexedSeq[SamplingPoint],
 		val selected: Option[Either[Position, SamplingPoint]]
 	)
-	class Sites(val all: IndexedSeq[Site], val selected: Option[Site], val points: SamplingPoints)
+	class Sites(val all: IndexedSeq[NamedUri], val selected: Option[NamedUri], val points: SamplingPoints)
 
 	def getStationInfo(l2: StationDataMetadata, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
 		stations.find(_.uri == l2.station).fold(

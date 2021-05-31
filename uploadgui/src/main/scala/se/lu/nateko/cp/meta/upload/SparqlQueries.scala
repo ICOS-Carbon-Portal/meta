@@ -47,7 +47,7 @@ object SparqlQueries {
 		|	?site rdfs:label ?name }
 		|order by ?name""".stripMargin
 
-	def toSite(b: Binding) = Site(new URI(b("site")), b("name"))
+	def toSite(b: Binding) = NamedUri(new URI(b("site")), b("name"))
 
 	def samplingpoints(site: URI): String = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
@@ -117,7 +117,7 @@ object SparqlQueries {
 		case Envri.ICOS => peopleQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
 	}
 
-	def toPerson(b: Binding) = new Person(new URI(b("pers")), s"""${b("fname")} ${b("lname")}""")
+	def toPerson(b: Binding) = NamedUri(new URI(b("pers")), s"""${b("fname")} ${b("lname")}""")
 
 	def organizationsQuery(from: Seq[String]) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -134,5 +134,5 @@ object SparqlQueries {
 		case Envri.ICOS => organizationsQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
 	}
 
-	def toOrganization(b: Binding) = new Organization(new URI(b("org")), b("orgName"))
+	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
 }

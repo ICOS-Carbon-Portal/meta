@@ -5,27 +5,35 @@ import se.lu.nateko.cp.meta.upload.Utils._
 import scala.util.Success
 import scala.util.Try
 import scala.collection.mutable
+import DataListInput.listFailure
 
-class DataListInput[T](elemId: String, list: DataList[T], cb: () => Unit) extends GenericTextInput[T](elemId, cb, DataListInput.failure)(
-	s => list.values.find(v => list.labeller(v) == s).map(Success(_)).getOrElse(DataListInput.failure),
+class DataListInput[T](elemId: String, list: DataList[T], cb: () => Unit) extends GenericTextInput[T](elemId, cb, listFailure(""))(
+	s => list.lookupValue(s).map(Success(_)).getOrElse(listFailure(s)),
 	list.labeller
 )
 
 object DataListInput {
-	def failure = fail("This value is not in the list")
+	def listFailure(label: String) =
+		if(label.trim.isEmpty) fail(s"No value chosen")
+		else fail(s"'$label' not found")
 }
 
 class DataList[T](elemId: String, val labeller: T => String) {
 	private val list = getElementById[html.DataList](elemId).get
-	private var _values: IndexedSeq[T] = IndexedSeq.empty
+	private[this] var _values = IndexedSeq.empty[T]
+	private val valLookup = mutable.Map.empty[String, T]
 
-	def values: IndexedSeq[T] = _values
+	def lookupValue(label: String): Option[T] = valLookup.get(label)
 
-	def setOptions(values: IndexedSeq[T]): Unit = {
+	def values = _values
+
+	def values_=(values: IndexedSeq[T]): Unit = {
 		list.innerHTML = ""
 		_values = values
+		valLookup.clear()
 
 		values.foreach{ value =>
+			valLookup.addOne(labeller(value), value)
 			val opt = document.createElement("option")
 			opt.textContent = labeller(value)
 			list.appendChild(opt)
@@ -36,7 +44,7 @@ class DataList[T](elemId: String, val labeller: T => String) {
 class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Unit) {
 
 	def values: Try[Seq[T]] = if(elems.isEmpty) Success(Seq()) else Try{
-		elems.filter(!_.isEmpty).map(_.value.get).toIndexedSeq
+		elems.map(_.value.get).toIndexedSeq
 	}
 
 	def setValues(vars: Seq[T]): Unit = {
@@ -58,6 +66,7 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 
 	addButton.onclick = _ => {
 		elems.append(new DataListEditableInput(list)).foreach(_.focus())
+		notifyUpdate()
 	}
 
 	private class DataListEditableInput[T](list: DataList[T]) {
@@ -86,6 +95,7 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 			button.onclick = _ => {
 				elems.remove(elems.indexOf(this))
 				remove()
+				notifyUpdate()
 			}
 		}
 

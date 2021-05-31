@@ -20,8 +20,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 
 	def dataProductionDto: Try[DataProductionDto] =
 		 for(
-			creator <- creatorInput.value;
-			contributors <- contributorsInput.values;
+			creator <- creatorInput.value.withErrorContext("Creator");
+			contributors <- contributorsInput.values.withErrorContext("Contributors");
 			hostOrganization = hostOrganizationInput.value.toOption;
 			comment <- commentInput.value.withErrorContext("Comment");
 			creationDate <- creationDateInput.value.withErrorContext("Creation date");
@@ -35,11 +35,11 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			creationDate = creationDate
 		)
 
-	private val agentList = new DataList[Agent]("agent-list", _.name)
-	private val creatorInput = new DataListInput[Agent]("creatoruri", agentList, notifyUpdate)
+	private val agentList = new DataList[NamedUri]("agent-list", _.name)
+	private val creatorInput = new DataListInput("creatoruri", agentList, notifyUpdate)
 	private val contributorsInput = new DataListForm("contributors", agentList, notifyUpdate)
-	private val organizationList = new DataList[Organization]("organization-list", _.name)
-	private val hostOrganizationInput = new DataListInput[Organization]("hostorganisation", organizationList, notifyUpdate)
+	private val organizationList = new DataList[NamedUri]("organization-list", _.name)
+	private val hostOrganizationInput = new DataListInput("hostorganisation", organizationList, notifyUpdate)
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
@@ -57,8 +57,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 		case GotUploadDto(upDto) => handleDto(upDto)
 		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
 		case LevelSelected(level) => onLevelSelected(level)
-		case GotAgentList(agents) => agentList.setOptions(agents)
-		case GotOrganizationList(orgs) => organizationList.setOptions(orgs)
+		case GotAgentList(agents) => agentList.values = agents
+		case GotOrganizationList(orgs) => organizationList.values = orgs
 	}
 
 	private def onLevelSelected(level: Int): Unit = if(level == 0) hide() else if(level == 3) show()
@@ -75,8 +75,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 					organizations <- Backend.getOrganizations
 				)
 				yield {
-					agentList.setOptions(organizations.concat(people))
-					organizationList.setOptions(organizations)
+					agentList.values = organizations.concat(people)
+					organizationList.values = organizations
 
 					agentList.values.find(_.uri == production.creator).map(agent => {
 						creatorInput.value = agent

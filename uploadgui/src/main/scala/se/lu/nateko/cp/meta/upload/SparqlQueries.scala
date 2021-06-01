@@ -47,7 +47,7 @@ object SparqlQueries {
 		|	?site rdfs:label ?name }
 		|order by ?name""".stripMargin
 
-	def toSite(b: Binding) = Site(new URI(b("site")), b("name"))
+	def toSite(b: Binding) = NamedUri(new URI(b("site")), b("name"))
 
 	def samplingpoints(site: URI): String = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
@@ -101,4 +101,38 @@ object SparqlQueries {
 		|""".stripMargin
 
 	def toSpatialCoverage(b: Binding) = new SpatialCoverage(new URI(b("cov")), b("label"))
+
+	private def peopleQuery(from: Seq[String]) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select *
+		|${from.map(graph => s"""FROM <$graph>""").mkString("\n")}
+		|where{
+		|	?pers a cpmeta:Person ;
+		|	cpmeta:hasFirstName ?fname ;
+		|	cpmeta:hasLastName ?lname .
+		|	optional {?pers cpmeta:hasEmail ?email}
+		|}""".stripMargin
+
+	def people(implicit envri: Envri): String = envri match {
+		case Envri.SITES => peopleQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
+		case Envri.ICOS => peopleQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
+	}
+
+	def toPerson(b: Binding) = NamedUri(new URI(b("pers")), s"""${b("fname")} ${b("lname")}""")
+
+	def organizationsQuery(from: Seq[String]) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?org ?orgName ?label
+		|${from.map(graph => s"""FROM <$graph>""").mkString("\n")}
+		|where{
+		|	values ?orgClass {cpmeta:Organization cpmeta:CentralFacility cpmeta:ThematicCenter}
+		|	?org a ?orgClass ; cpmeta:hasName ?orgName .
+		|	optional {?org rdfs:label ?label }
+		|}""".stripMargin
+
+	def organizations(implicit envri: Envri): String = envri match {
+		case Envri.SITES => organizationsQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
+		case Envri.ICOS => organizationsQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
+	}
+
+	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
 }

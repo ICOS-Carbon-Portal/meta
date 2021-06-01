@@ -50,7 +50,12 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 		input.disabled = true
 	}
 
+	def focus(): Unit = {
+		input.focus()
+	}
+
 	def isDisabled: Boolean = input.disabled
+	def isEmpty: Boolean = input.value.isEmpty()
 
 }
 

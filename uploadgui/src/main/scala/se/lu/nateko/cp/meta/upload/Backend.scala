@@ -57,8 +57,8 @@ object Backend {
 	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
-	def getSites(station: URI): Future[IndexedSeq[Site]] =
-		sparqlSelect(sites(station)).map(_.map(toSite))
+	def getSites(station: URI): Future[IndexedSeq[NamedUri]] =
+		sparqlSelect(sites(station)).map(_.map(toSite)).map(disambiguateNames)
 
 	def getSamplingPoints(site: URI): Future[IndexedSeq[SamplingPoint]] =
 		sparqlSelect(samplingpoints(site)).map((_.map(toSamplingPoint)))
@@ -66,6 +66,21 @@ object Backend {
 	def getL3SpatialCoverages(implicit envri: Envri.Envri): Future[IndexedSeq[SpatialCoverage]] =
 		if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
 		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
+
+	private def disambiguateNames(list: IndexedSeq[NamedUri]): IndexedSeq[NamedUri] =
+		list.groupBy(_.name).valuesIterator.flatMap( g =>
+			if (g.length <= 1) g
+			else g.map{nUri =>
+				val uriSegm = nUri.uri.getPath().split('/').last
+				nUri.copy(name = s"${nUri.name} ($uriSegm)")
+			}
+		).toIndexedSeq.sortBy(_.name)
+
+	def getPeople(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
+		sparqlSelect(people).map(_.map(toPerson)).map(disambiguateNames)
+
+	def getOrganizations(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
+		sparqlSelect(organizations).map(_.map(toOrganization)).map(disambiguateNames)
 
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]

@@ -25,7 +25,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 	def createStatement(subj: Resource, pred: IRI, v: Value): Statement =
 		factory.createStatement(subj, pred, v)
 
-	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
+	def getStatements[T <: TC](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 		val holder = memb.role.holder
 		val role = memb.role.kind
@@ -55,7 +55,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		triples.map(factory.tripleToStatement)
 	}
 
-	private def fundingTriples[T <: TC : TcConf](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
+	private def fundingTriples[T <: TC](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
 		val iri = vocab.getFunding(fund.cpId)
 		(iri, RDF.TYPE, meta.fundingClass) +:
 		(iri, meta.hasFunder, getIri(fund.funder)) +:
@@ -151,7 +151,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		(triples ++ tcIdTriple).map(factory.tripleToStatement)
 	}
 
-	def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
+	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
 
 		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)

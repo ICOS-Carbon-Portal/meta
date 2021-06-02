@@ -196,7 +196,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp).join
 	}
 
-	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
+	def rolesDiff[T <: TC](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
 		val cpMap = cp.groupBy(m => m.role.id)
 		val tcMap = tc.groupBy(m => m.role.id)
 		val newIds = tcMap.keySet.diff(cpMap.keySet).toSeq

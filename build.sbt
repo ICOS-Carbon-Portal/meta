@@ -1,5 +1,5 @@
 organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.13.4"
+scalaVersion in ThisBuild := "2.13.6"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -11,7 +11,6 @@ val commonScalacOptions = Seq(
 	"-Wunused"
 )
 val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.11"
-val commonJavacOptions = Seq("-source", "1.8", "-target", "1.8")
 
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
@@ -19,7 +18,6 @@ lazy val metaCore = (project in file("core"))
 		name := "meta-core",
 		version := "0.6.5",
 		scalacOptions ++= jvmScalacOptions,
-		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
@@ -70,7 +68,6 @@ lazy val meta = (project in file("."))
 		name := "meta",
 		version := "0.7.0",
 		scalacOptions ++= jvmScalacOptions,
-		javacOptions ++= commonJavacOptions,
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
@@ -153,7 +150,6 @@ lazy val uploadgui = (project in file("uploadgui"))
 		version := "0.1.2",
 		scalacOptions ++= commonScalacOptions,
 		scalacOptions += "-P:scalajs:sjsDefinedByDefault",
-		javacOptions ++= commonJavacOptions,
 
 		scalaJSUseMainModuleInitializer := true,
 
@@ -173,7 +169,6 @@ lazy val jobAd = (project in file("jobAd"))
 		name := "jobAd",
 		version := "1.0",
 		scalacOptions ++= jvmScalacOptions,
-		javacOptions ++= commonJavacOptions,
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % akkaVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,

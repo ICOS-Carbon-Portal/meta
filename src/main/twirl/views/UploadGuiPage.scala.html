@@ -3,7 +3,7 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header)){
+@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapVersion = Some("5.0.1")){
 	<style type="text/css">
 	#main {
 		max-width: 1280px;

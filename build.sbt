@@ -1,5 +1,5 @@
 organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.13.6"
+scalaVersion in ThisBuild := "2.13.4"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",

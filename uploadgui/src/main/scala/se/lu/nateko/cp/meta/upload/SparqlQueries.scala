@@ -131,7 +131,9 @@ object SparqlQueries {
 
 	def organizations(implicit envri: Envri): String = envri match {
 		case Envri.SITES => organizationsQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
-		case Envri.ICOS => organizationsQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
+		case Envri.ICOS => organizationsQuery(Seq(
+			"http://meta.icos-cp.eu/ontologies/cpmeta/", "http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"
+		))
 	}
 
 	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))

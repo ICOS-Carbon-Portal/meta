@@ -76,15 +76,15 @@
 
 @pageTitle = @{
 	envri match {
-		case Envri.SITES => "SITES SPARQL Endpoint"
-		case _ => "Carbon Portal SPARQL Endpoint"
+		case Envri.SITES => "SITES SPARQL Client"
+		case _ => "Carbon Portal SPARQL Client"
 	}
 }
 
 @pageSubtitle = @{
 	envri match {
 		case Envri.SITES => None
-		case _ => Some("Access to Carbon Portal metadata")
+		case _ => Some("Access to SPARQL endpoint")
 	}
 }
 

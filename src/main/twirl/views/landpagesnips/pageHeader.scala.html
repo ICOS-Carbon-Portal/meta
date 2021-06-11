@@ -1,7 +1,7 @@
 @(header: String, headerExtra: Option[Html] = None, subTitle: Option[String] = None)
 @headerExtra match{
 	case None => {
-		<div class="page-header">
+		<div class="mt-4 page-header">
 			<h1>
 				@header
 				@for(sub <- subTitle){
@@ -11,9 +11,10 @@
 		</div>
 	}
 	case Some(extra) => {
-		<div class="row page-header">
-			<div class="col-md-9">
-				<h1 style="margin-top: 0px">@header</h1>
+		<div class="row align-items-center border-bottom page-header">
+			@* Use col-md-9 and w-auto to make it work in both Bootstrap 3 and 5 *@
+			<div class="col-md-9 w-auto mt-4">
+				<h1 style="margin-top: 0">@header</h1>
 			</div>
 			@extra
 		</div>

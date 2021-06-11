@@ -3,40 +3,22 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header)){
+@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapVersion = Some(5)){
 	<style type="text/css">
 	#main {
 		max-width: 1280px;
-		margin: 0 auto;
+		margin: 1.5rem auto;
 	}
 	.form,
 	#header-buttons {
 		display: none;
 	}
-	.form-container {
-		display: flex;
-		flex-flow: row wrap;
-	}
 	.form h2 {
 		font-size: 24px;
 		border-bottom: 1px solid #eee;
 	}
-	.form-section {
-		padding: 0 2em 2em;
-	}
-	.collection-section {
-		width: auto;
-	}
-	.form-element {
-		display: block;
-		margin-bottom: 5px;
-	}
-	select {
-		width: 100%;
-	}
-	textarea {
-		resize: vertical;
-		width: 100%;
+	.form-label {
+		font-weight: 700;
 	}
 	.login-block {
 		display: none;
@@ -48,25 +30,16 @@
 	.l3-section,
 	.l3spatcover-element,
 	.collection-section,
-	.production-section {
-		display: none;
-	}
-	.filename {
-		overflow-wrap: break-word;
-	}
+	.production-section,
 	#latitude-element,
 	#longitude-element {
 		display: none;
 	}
 	#submitbutton {
 		margin: 0;
-		pointer-events: auto;
 		width: 100%;
 	}
 	@@media (min-width: 480px) {
-		.form-container {
-			margin: 0 -1em;
-		}
 		#submitbutton {
 			margin: 0 1.5em;
 			width: auto;
@@ -90,279 +63,303 @@
 			</div>
 		</div>
 		<form id="form-block" class="form" autocomplete="off">
-			<div class="row">
+			<div class="row g-4">
 				<section class="col-md-4 about-section">
-					<div class="form-section panel panel-default">
-					<h2>About</h2>
-					<div class="form-group">
-						<label for="submitteridselect">Submitter ID</label>
-						<select id="submitteridselect" class="form-element"></select>
-					</div>
-					<div class="form-group">
-						<label for="new-update-radio">New item/Update</label>
-						<div>
-							<div id="new-update-radio">
-								<label class="radio-inline">
-									<input type="radio" name="new-update" value="new" class="js-new-update" checked>
-									New item
-								</label>
-								<label class="radio-inline">
-									<input type="radio" name="new-update" value="update" class="js-new-update">
-									Update metadata
-								</label>
+					<div class="card">
+						<div class="card-body">
+							<h2>About</h2>
+							<div class="mb-3">
+								<label class="form-label" for="submitteridselect">Submitter ID</label>
+								<select class="form-select" id="submitteridselect"></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="new-update-radio">New item/Update</label>
+								<div>
+									<div id="new-update-radio">
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="new-update" value="new" class="js-new-update form-check-input" checked>
+												New item
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="new-update" value="update" class="js-new-update form-check-input">
+												Update metadata
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="mb-3" id="metadata-url" style="display: none;">
+								<label class="form-label" for="metadata-update">Metadata url</label>
+								<div class="input-group">
+									<input type="text" id="metadata-update" class="form-control" placeholder="Metadata URL">
+									<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get</button>
+								</div>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="file-type-radio">Item type</label>
+								<div>
+									<div id="file-type-radio">
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="type" value="data" class="js-file-type form-check-input">
+												Data
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="type" value="document" class="js-file-type form-check-input">
+												Document
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="type" value="collection" class="js-file-type form-check-input">
+												Collection
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="mb-3" id="file-element">
+								<label class="form-label" for="fileinput">File</label>
+								<input class="form-control" id="fileinput" type="file" placeholder="Select file for upload">
+							</div>
+							<div class="mb-3" id="filename-element">
+								<label class="form-label" for="filename">File name</label>
+								<input id="filename" class="form-control filename" type="text">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) <em class="text-muted">- optional</em></label>
+								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="existingdoi">Pre-existing DOI <em class="text-muted">- optional</em></label>
+								<input type="text" id="existingdoi" class="form-control" placeholder="DOI">
 							</div>
 						</div>
-					</div>
-					<div class="form-group" id="metadata-url" style="display: none;">
-						<label for="metadata-update">Metadata url</label>
-						<input type="text" id="metadata-update" class="form-element form-control" placeholder="Metadata URL">
-						<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get Metadata</button>
-					</div>
-					<div class="form-group">
-						<label for="file-type-radio">Item type</label>
-						<div>
-							<div id="file-type-radio">
-								<label class="radio-inline">
-									<input type="radio" name="type" value="data" class="js-file-type">
-									Data
-								</label>
-								<label class="radio-inline">
-									<input type="radio" name="type" value="document" class="js-file-type">
-									Document
-								</label>
-								<label class="radio-inline">
-									<input type="radio" name="type" value="collection" class="js-file-type">
-									Collection
-								</label>
-							</div>
-						</div>
-					</div>
-					<div class="form-group" id="file-element">
-						<label for="fileinput">File</label>
-						<input id="fileinput" type="file" placeholder="Select file for upload">
-					</div>
-					<div class="form-group" id="filename-element">
-						<label for="filename">File name</label>
-						<input id="filename" class="form-element form-control filename" type="text">
-					</div>
-					<div class="form-group">
-						<label>Previous versions (one hex or base64 hashsum per line) <em class="text-muted">- optional</em></label>
-						<textarea name="previoushash" id="previoushash" rows="2" cols="80" class="form-element"></textarea>
-					</div>
-					<div class="form-group">
-						<label>Pre-existing DOI <em class="text-muted">- optional</em></label>
-						<input type="text" id="existingdoi" class="form-element form-control" placeholder="DOI">
-					</div>
 					</div>
 				</section>
 				<section class="col-md-4 data-section">
-					<div class="form-section panel panel-default">
-						<h2>Data</h2>
-						<div class="form-group">
-							<label for="level-radio">Level</label>
-							<div>
-								<div id="level-radio">
-									<label class="radio-inline">
-										<input type="radio" name="level" value="0" class="js-level">
-										0
-									</label>
-									<label class="radio-inline">
-										<input type="radio" name="level" value="1" class="js-level">
-										1
-									</label>
-									<label class="radio-inline">
-										<input type="radio" name="level" value="2" class="js-level">
-										2
-									</label>
-									<label class="radio-inline l3option">
-										<input type="radio" name="level" value="3" class="js-level">
-										3
-									</label>
+					<div class="card">
+						<div class="card-body">
+							<h2>Data</h2>
+							<div class="mb-3">
+								<label class="form-label" for="level-radio">Level</label>
+								<div>
+									<div id="level-radio">
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="level" value="0" class="form-check-input js-level">
+												0
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="level" value="1" class="form-check-input js-level">
+												1
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="level" value="2" class="form-check-input js-level">
+												2
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label l3option">
+												<input type="radio" name="level" value="3" class="form-check-input js-level">
+												3
+											</label>
+										</div>
+									</div>
 								</div>
 							</div>
-						</div>
-						<div class="form-group">
-							<label for="objspecselect">Data type</label>
-							<select id="objspecselect" class="form-element" disabled></select>
-						</div>
-						<div class="form-group">
-							<label>Keywords linked to this data type</label>
-							<div id="data-keywords">None</div>
-						</div>
-						<div class="form-group keywords-block">
-							<label>Extra keywords <em class="text-muted">- optional</em></label>
-							<input type="text" id="keywords" class="form-element form-control" placeholder="comma-separated, case-sensitive!">
-						</div>
-						<div class="form-group">
-							<label>Number of rows <em class="text-muted">- required for some data types</em></label>
-							<input id="nrows" type="text" class="form-element form-control" min="0" disabled>
+							<div class="mb-3">
+								<label class="form-label" for="objspecselect">Data type</label>
+								<select class="form-select" id="objspecselect" disabled></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Keywords linked to this data type</label>
+								<div id="data-keywords">None</div>
+							</div>
+							<div class="mb-3 keywords-block">
+								<label class="form-label" for="keywords">Extra keywords <em class="text-muted">- optional</em></label>
+								<input type="text" id="keywords" class="form-control" placeholder="comma-separated, case-sensitive!">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>
+								<input id="nrows" type="text" class="form-control" min="0" disabled>
+							</div>
 						</div>
 					</div>
 				</section>
 				<section class="col-md-4 acq-section">
-					<div class="form-section panel panel-default">
-						<h2>Acquisition</h2>
-						<div class="form-group">
-							<label for="stationselect">Station</label>
-							<select id="stationselect" class="form-element" disabled></select>
-						</div>
-						<div class="form-group">
-							<label for="siteselect">Location/Ecosystem @optionalsite</label>
-							<select id="siteselect" class="form-element" disabled></select>
-						</div>
-						<div class="form-group">
-							<label for="acqstartinput">From (UTC)</label>
-							<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
-						</div>
-						<div class="form-group">
-							<label for="acqstopinput">To (UTC)</label>
-							<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control" disabled>
-						</div>
-						<div class="form-group">
-							<label for="samplingpointselect">Sampling point <em class="text-muted">- optional</em></label>
-							<select id="samplingpointselect" class="form-element" disabled></select>
-						</div>
-						<div class="form-group position-element" id="latitude-element">
-							<label for="latitude">Sampling point (latitude) <em class="text-muted">- optional</em></label>
-							<input id="latitude" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group position-element" id="longitude-element">
-							<label for="longitude">Sampling point (longitude) <em class="text-muted">- optional</em></label>
-							<input id="longitude" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group sampling-height-block">
-							<label for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>
-							<input id="sampleheight" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group instrument-block">
-							<label for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
-							<textarea name="instrumenturi" id="instrumenturi" rows="2" cols="80" class="form-element"></textarea>
+					<div class="card">
+						<div class="card-body">
+							<h2>Acquisition</h2>
+							<div class="mb-3">
+								<label class="form-label" for="stationselect">Station</label>
+								<select class="form-select" id="stationselect" disabled></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="siteselect">Location/Ecosystem @optionalsite</label>
+								<select class="form-select" id="siteselect" disabled></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="acqstartinput">From (UTC)</label>
+								<input id="acqstartinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control" disabled>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="acqstopinput">To (UTC)</label>
+								<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control" disabled>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="samplingpointselect">Sampling point <em class="text-muted">- optional</em></label>
+								<select class="form-select" id="samplingpointselect" disabled></select>
+							</div>
+							<div class="mb-3 position-element" id="latitude-element">
+								<label class="form-label" for="latitude">Sampling point (latitude) <em class="text-muted">- optional</em></label>
+								<input id="latitude" type="text" class="form-control">
+							</div>
+							<div class="mb-3 position-element" id="longitude-element">
+								<label class="form-label" for="longitude">Sampling point (longitude) <em class="text-muted">- optional</em></label>
+								<input id="longitude" type="text" class="form-control">
+							</div>
+							<div class="mb-3 sampling-height-block">
+								<label class="form-label" for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>
+								<input id="sampleheight" type="text" class="form-control">
+							</div>
+							<div class="mb-3 instrument-block">
+								<label class="form-label" for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
+								<textarea class="form-control" name="instrumenturi" id="instrumenturi" rows="2" cols="80"></textarea>
+							</div>
 						</div>
 					</div>
 				</section>
 				<section class="col-md-4 l3-section">
-					<div class="form-section panel panel-default">
-						<h2>L3 metadata</h2>
-						<div class="form-group">
-							<label for="l3title">Title</label>
-							<input id="l3title" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="l3descr">Description @optional </label>
-							<textarea id="l3descr" rows="2" cols="80" class="form-element"></textarea>
-						</div>
-						<div class="form-group">
-							<label for="l3startinput">From (UTC)</label>
-							<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="l3stopinput">To (UTC)</label>
-							<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="l3tempres">Temporal resolution @optional</label>
-							<input id="l3tempres" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="l3spatcoverselect">Spatial coverage</label>
-							<select id="l3spatcoverselect" class="form-element"></select>
-						</div>
-						<div class="form-group l3spatcover-element">
-							<label for="l3spatcoverlabel">Label @optional</label>
-							<input id="l3spatcoverlabel" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group l3spatcover-element">
-							<label for="l3minlat">Min latitude</label>
-							<input id="l3minlat" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group l3spatcover-element">
-							<label for="l3minlon">Min longitude</label>
-							<input id="l3minlon" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group l3spatcover-element">
-							<label for="l3maxlat">Max latitude</label>
-							<input id="l3maxlat" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group l3spatcover-element">
-							<label for="l3maxlon">Max longitude</label>
-							<input id="l3maxlon" type="text" class="form-element form-control">
-						</div>
-						<div class="form-group" id="l3varinfo-form">
-							<label for="l3varadd-button">Previewable variables</label>
-							<button type="button" id="l3varadd-button" class="btn btn-default" aria-label="Add variable">
-								<span class="glyphicon glyphicon-plus"></span>
-							</button>
-							<div class="input-group l3varinfo-element" style="display: none;">
-								<input type="text" class="form-control varnameInput" placeholder="variable name">
-								<div class="input-group-btn">
-									<button type="button" class="btn btn-default varInfoButton" aria-label="Remove variable">
-										<span class="glyphicon glyphicon-remove"></span>
-									</button>
+					<div class="card">
+						<div class="card-body">
+							<h2>L3 metadata</h2>
+							<div class="mb-3">
+								<label class="form-label" for="l3title">Title</label>
+								<input id="l3title" type="text" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="l3descr">Description @optional </label>
+								<textarea class="form-control" id="l3descr" rows="2" cols="80"></textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="l3startinput">From (UTC)</label>
+								<input id="l3startinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="l3stopinput">To (UTC)</label>
+								<input id="l3stopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="l3tempres">Temporal resolution @optional</label>
+								<input id="l3tempres" type="text" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="l3spatcoverselect">Spatial coverage</label>
+								<select class="form-select" id="l3spatcoverselect"></select>
+							</div>
+							<div class="mb-3 l3spatcover-element">
+								<label class="form-label" for="l3spatcoverlabel">Label @optional</label>
+								<input id="l3spatcoverlabel" type="text" class="form-control">
+							</div>
+							<div class="mb-3 l3spatcover-element">
+								<label class="form-label" for="l3minlat">Min latitude</label>
+								<input id="l3minlat" type="text" class="form-control">
+							</div>
+							<div class="mb-3 l3spatcover-element">
+								<label class="form-label" for="l3minlon">Min longitude</label>
+								<input id="l3minlon" type="text" class="form-control">
+							</div>
+							<div class="mb-3 l3spatcover-element">
+								<label class="form-label" for="l3maxlat">Max latitude</label>
+								<input id="l3maxlat" type="text" class="form-control">
+							</div>
+							<div class="mb-3 l3spatcover-element">
+								<label class="form-label" for="l3maxlon">Max longitude</label>
+								<input id="l3maxlon" type="text" class="form-control">
+							</div>
+							<div class="mb-3" id="l3varinfo-form">
+								<label class="form-label" for="l3varadd-button">Previewable variables</label>
+								<button type="button" id="l3varadd-button" class="btn btn-secondary btn-sm" aria-label="Add variable"><i class="fas fa-plus"></i></button>
+								<div class="input-group l3varinfo-element" style="display: none;">
+									<input type="text" class="form-control varnameInput" placeholder="variable name">
+									<button type="button" class="btn btn-secondary varInfoButton" aria-label="Remove variable"><i class="fas fa-times"></i></button>
 								</div>
 							</div>
-						</div>
-						<div class="form-group">
-							<label for="l3landingpage">Third-party landing page @optional</label>
-							<input id="l3landingpage" type="text" class="form-element form-control">
+							<div class="mb-3">
+								<label class="form-label" for="l3landingpage">Third-party landing page @optional</label>
+								<input id="l3landingpage" type="text" class="form-control">
+							</div>
 						</div>
 					</div>
 				</section>
 				<section class="col-md-4 production-section">
-					<div class="form-section panel panel-default">
-						<h2>Production</h2>
-						<div class="form-group">
-							<label for="creatoruri">Creator</label>
-							<input id="creatoruri" list="agent-list" class="form-element form-control" placeholder="(type to search)">
-							<datalist id="agent-list"></datalist>
+					<div class="card">
+						<div class="card-body">
+							<h2>Production</h2>
+							<div class="mb-3">
+								<label class="form-label" for="creatoruri">Creator</label>
+								<input id="creatoruri" list="agent-list" class="form-control" placeholder="(type to search)">
+								<datalist id="agent-list"></datalist>
 							</div>
-							<div class="form-group">
-							<label for="contributors">Contributors</label>
-							<div id="contributors">
-								<div class="input-group contributors-element" style="display: none;">
-									<input list="agent-list" class="form-element form-control data-list-input" placeholder="(type to search)">
-									<div class="input-group-btn">
-										<button type="button" class="btn btn-default remove-data-list-input" aria-label="Remove variable">
-											<span class="glyphicon glyphicon-remove"></span>
-										</button>
+							<div class="mb-3">
+								<label class="form-label" for="contributors">Contributors</label>
+								<div id="contributors">
+									<div class="input-group contributors-element" style="display: none;">
+										<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
+										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+									</div>
+									<div class="d-grid gap-2">
+										<button type="button" id="add-contributor" class="btn btn-block btn-secondary" aria-label="Add contributor">Add contributor</button>
 									</div>
 								</div>
-								<button type="button" id="add-contributor" class="btn btn-block btn-default" aria-label="Add contributor">Add contributor</button>
 							</div>
+							<div class="mb-3">
+								<label class="form-label" for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
+								<input id="hostorganisation" list="organization-list" class="form-control" placeholder="(type to search)">
+								<datalist id="organization-list"></datalist>
 							</div>
-							<div class="form-group">
-							<label for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
-							<input id="hostorganisation" list="organization-list" class="form-element form-control" placeholder="(type to search)">
-							<datalist id="organization-list"></datalist>
+							<div class="mb-3">
+								<label class="form-label" for="productioncomment">Comment <em class="text-muted">- optional</em></label>
+								<textarea class="form-control" name="productioncomment" id="productioncomment" rows="8" cols="80"></textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="creationdate">Creation date (UTC)</label>
+								<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
+								<textarea class="form-control" name="sources" id="sources" rows="2" cols="80"></textarea>
+							</div>
+							<button id="removeproductionbutton" type="button" class="btn btn-link">Remove production metadata</button>
 						</div>
-						<div class="form-group">
-							<label for="productioncomment">Comment <em class="text-muted">- optional</em></label>
-							<textarea name="productioncomment" id="productioncomment" rows="8" cols="80" class="form-element"></textarea>
-						</div>
-						<div class="form-group">
-							<label for="creationdate">Creation date (UTC)</label>
-							<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
-							<textarea name="sources" id="sources" rows="2" cols="80" class="form-element"></textarea>
-						</div>
-						<button id="removeproductionbutton" type="button" class="btn btn-link">Remove production metadata</button>
 						</div>
 					</section>
 					<section class="col-md-8 collection-section">
-					<div class="form-section panel panel-default">
-						<h2>Collection</h2>
-						<div class="form-group">
-							<label for="collectionmembers">List of object urls (one per line)</label>
-							<textarea name="collectionmembers" id="collectionmembers" rows="8" cols="80" class="form-element"></textarea>
-						</div>
-						<div class="form-group">
-							<label for="collectiontitle">Title</label>
-							<input id="collectiontitle" type="text" placeholder="Collection title" class="form-element form-control">
-						</div>
-						<div class="form-group">
-							<label for="collectiondescription">Description</label>
-							<textarea name="collectiondescription" id="collectiondescription" rows="8" cols="80" class="form-element"></textarea>
+					<div class="card">
+						<div class="card-body">
+							<h2>Collection</h2>
+							<div class="mb-3">
+								<label class="form-label" for="collectionmembers">List of object urls (one per line)</label>
+								<textarea class="form-control" name="collectionmembers" id="collectionmembers" rows="8" cols="80"></textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="collectiontitle">Title</label>
+								<input id="collectiontitle" type="text" placeholder="Collection title" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="collectiondescription">Description</label>
+								<textarea class="form-control" name="collectiondescription" id="collectiondescription" rows="8" cols="80"></textarea>
+							</div>
 						</div>
 					</div>
 				</section>
@@ -377,7 +374,7 @@
 			<div id="javascript-error-block" class="javascript-error-block">Please enable javascript to use this page.</div>
 		</noscript>
 	</div>
-	<script src=@jspath></script>
+	<script src="@jspath"></script>
 }
 
 @jspath = @{
@@ -393,8 +390,8 @@
 }
 
 @header = {
-	<div id="header-buttons" style="float: right;">
-		<button id="addproductionbutton" type="button" class="btn btn-default" disabled>Add production metadata</button>
+	<div id="header-buttons" class="col-md text-md-end my-2">
+		<button id="addproductionbutton" type="button" class="btn btn-outline-primary" disabled>Add production metadata</button>
 		<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
 	</div>
 }

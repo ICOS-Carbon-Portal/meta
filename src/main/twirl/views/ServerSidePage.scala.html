@@ -5,7 +5,8 @@
 @(
 	title: String, header: String, envri: Envri.Value,
 	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None,
-	extraMetaTags: Option[Html] = None
+	extraMetaTags: Option[Html] = None,
+	bootstrapVersion: Option[Int] = None
 )(body: Html)
 @template{
 	@extraMetaTags
@@ -16,5 +17,6 @@
 }
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title) _ else CpCommonPage(title, menu, cpauthHostOpt) _
+	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion = bootstrapVersion) _
+	else CpCommonPage(title, menu, cpauthHostOpt, bootstrapVersion = bootstrapVersion) _
 }

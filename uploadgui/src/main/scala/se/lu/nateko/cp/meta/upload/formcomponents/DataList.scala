@@ -89,7 +89,7 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 		private[this] val id: Long = {_ordId += 1; _ordId}
 		val div = deepClone(template)
 
-		formDiv.insertBefore(div, addButton)
+		formDiv.insertBefore(div, addButton.parentElement)
 
 		querySelector[html.Button](div, ".remove-data-list-input").foreach{button =>
 			button.onclick = _ => {

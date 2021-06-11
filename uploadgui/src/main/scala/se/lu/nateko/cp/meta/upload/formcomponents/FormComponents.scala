@@ -139,6 +139,6 @@ class TagCloud(elemId: String) {
 			if (keywords.isEmpty)
 				"None"
 			else
-				keywords.map(keyword => s"""<span class="label label-keyword">$keyword</span>""").mkString(" ")
+				keywords.map(keyword => s"""<span class="badge rounded-pill bg-secondary">$keyword</span>""").mkString(" ")
 	}
 }

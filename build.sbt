@@ -1,5 +1,5 @@
 organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.13.4"
+scalaVersion in ThisBuild := "2.13.6"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -20,7 +20,7 @@ lazy val metaCore = (project in file("core"))
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
-			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",
@@ -87,9 +87,9 @@ lazy val meta = (project in file("."))
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.6",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
-			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.2",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.2" % "test",
-			"org.scalatest"         %% "scalatest"                          % "3.1.0" % "test"
+			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.3",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.3" % "test",
+			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
 		),
 
 		Test / test := {
@@ -149,16 +149,15 @@ lazy val uploadgui = (project in file("uploadgui"))
 		name := "uploadgui",
 		version := "0.1.2",
 		scalacOptions ++= commonScalacOptions,
-		scalacOptions += "-P:scalajs:sjsDefinedByDefault",
 
 		scalaJSUseMainModuleInitializer := true,
 
 		libraryDependencies ++= Seq(
 			"org.scala-js"      %%% "scalajs-dom"       % "1.1.0",
 			"org.scala-js"      %%% "scalajs-java-time" % "0.2.6",
-			"com.typesafe.play" %%% "play-json"         % "2.8.1",
-			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.2",
-			"org.scalatest"     %%% "scalatest"         % "3.1.0" % "test"
+			"com.typesafe.play" %%% "play-json"         % "2.9.2",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.3",
+			"org.scalatest"     %%% "scalatest"         % "3.2.9" % "test"
 		)
 	)
 

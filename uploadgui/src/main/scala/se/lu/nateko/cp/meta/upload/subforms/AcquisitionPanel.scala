@@ -40,7 +40,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 	}
 
 	private val positionElements = new HtmlElements(".position-element")
-	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.name})", autoselect = true, cb = onStationSelected)
+	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.namedUri.name})", autoselect = true, cb = onStationSelected)
 	private val siteSelect = new Select[Option[NamedUri]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
 	private val acqStartInput = new InstantInput("acqstartinput", notifyUpdate)
 	private val acqStopInput = new InstantInput("acqstopinput", notifyUpdate)
@@ -117,7 +117,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 	}
 
 	private def onStationSelected(): Unit = stationSelect.value.foreach { station =>
-		whenDone(Backend.getSites(station.uri))(initSitesOptions)
+		whenDone(Backend.getSites(station.namedUri.uri))(initSitesOptions)
 		notifyUpdate()
 	}
 
@@ -161,10 +161,10 @@ object AcquisitionPanel{
 	class Sites(val all: IndexedSeq[NamedUri], val selected: Option[NamedUri], val points: SamplingPoints)
 
 	def getStationInfo(l2: StationDataMetadata, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
-		stations.find(_.uri == l2.station).fold(
+		stations.find(_.namedUri.uri == l2.station).fold(
 			Future.successful[Option[(Station, Sites)]](None)
 		){station =>
-			Backend.getSites(station.uri).flatMap{allSites =>
+			Backend.getSites(station.namedUri.uri).flatMap{allSites =>
 				val selected = l2.site.flatMap{uri => allSites.find(_.uri == uri)}
 				val pointsFut: Future[SamplingPoints] = selected.fold(
 					Future.successful(new SamplingPoints(IndexedSeq.empty, None))

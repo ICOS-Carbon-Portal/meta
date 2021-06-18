@@ -170,7 +170,7 @@ class Form(
 			production <- prodPanel.dataProductionDtoOpt
 		) yield Right(
 			StationDataMetadata(
-				station = station.uri,
+				station = station.namedUri.uri,
 				site = acqPanel.site.flatten.map(_.uri),
 				instrument = instrumentUri,
 				samplingPoint = samplingPoint,

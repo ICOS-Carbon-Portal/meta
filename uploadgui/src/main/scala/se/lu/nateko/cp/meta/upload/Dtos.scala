@@ -5,7 +5,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
-case class Station(uri: URI, id: String, name: String)
+case class Station(namedUri: NamedUri, id: String)
 
 case class ObjSpec(uri: URI, name: String, dataLevel: Int, hasDataset: Boolean, theme: URI, project: URI, keywords: Seq[String])
 

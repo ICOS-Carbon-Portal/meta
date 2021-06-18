@@ -57,8 +57,13 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 		case GotUploadDto(upDto) => handleDto(upDto)
 		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
 		case LevelSelected(level) => onLevelSelected(level)
-		case GotAgentList(agents) => agentList.values = agents
-		case GotOrganizationList(orgs) => organizationList.values = orgs
+		case GotStationsList(stations) => {
+			val stationsNamedUri = stations.map(_.namedUri)
+			agentList.values = stationsNamedUri
+			organizationList.values = stationsNamedUri
+		}
+		case GotAgentList(agents) => agentList.values = agents ++: agentList.values
+		case GotOrganizationList(orgs) => organizationList.values = orgs ++: organizationList.values
 	}
 
 	private def onLevelSelected(level: Int): Unit = if(level == 0) hide() else if(level == 3) show()

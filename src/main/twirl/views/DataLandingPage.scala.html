@@ -65,6 +65,9 @@
 					}
 				}
 				@resourcePanelRow("Data type", dobj.specification.self)
+				@for(specComm <- dobj.specification.self.comments){
+					@PanelRow("Description", specComm)
+				}
 				@PanelRow("Data level", dobj.specification.dataLevel.toString)
 				@resourcePanelRow("Format", dobj.specification.format)
 				@resourcePanelRow("Encoding", dobj.specification.encoding)

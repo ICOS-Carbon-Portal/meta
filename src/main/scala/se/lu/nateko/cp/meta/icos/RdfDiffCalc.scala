@@ -114,7 +114,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val newOriginalAdded = {
 			val newEnts = toKeys.diff(fromKeys).diff(cpKeys).toSeq.map(toMap.apply)
-			val initCpIds: Set[UriId] = cpOwn.map(_.cpId).toSet
+			val initCpIds: Set[UriId] = (from ++ cpOwn).map(_.cpId).toSet
 
 			val (_, dedupedEnts) = newEnts.foldLeft[(Set[UriId], List[E])]((initCpIds, Nil)){
 				case ((cpIds, ents), ent) =>

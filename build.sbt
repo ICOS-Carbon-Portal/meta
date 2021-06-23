@@ -1,5 +1,5 @@
-organization in ThisBuild := "se.lu.nateko.cp"
-scalaVersion in ThisBuild := "2.13.6"
+ThisBuild / organization := "se.lu.nateko.cp"
+ThisBuild / scalaVersion := "2.13.6"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -102,19 +102,19 @@ lazy val meta = (project in file("."))
 
 		scalacOptions += "-Wunused:-imports",
 
-		assemblyMergeStrategy in assembly := {
+		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
 			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
 			case "application.conf" => MergeStrategy.concat
 			case PathList(name) if name.contains("-fastopt.js") => MergeStrategy.discard
-			case x => ((assemblyMergeStrategy in assembly).value)(x)
+			case x => ((assembly / assemblyMergeStrategy).value)(x)
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		assembledMappings.in(assembly) += {
-			val finalJsFile = fullOptJS.in(uploadgui, Compile).value.data
+		assembly / assembledMappings += {
+			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
 			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName))
 		},
 
@@ -124,21 +124,21 @@ lazy val meta = (project in file("."))
 			else Def.task(original.value)
 		}.value,
 
-		resources.in(Compile) ++= {
-			val jsFile = fastOptJS.in(uploadgui, Compile).value.data
+		Compile / resources ++= {
+			val jsFile = (uploadgui / Compile / fastOptJS).value.data
 			val srcMap = new java.io.File(jsFile.getAbsolutePath + ".map")
 			Seq(jsFile, srcMap)
 		},
 
-		watchSources ++= watchSources.in(uploadgui, Compile).value,
+		watchSources ++= (uploadgui / Compile / watchSources).value,
 
 		reStart / aggregate := false,
 
-		initialCommands in console in Test := """
+		Test / console / initialCommands := """
 			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
 		""",
 
-		cleanupCommands in console in Test := """
+		Test / console / cleanupCommands := """
 			system.terminate()
 		"""
 	)

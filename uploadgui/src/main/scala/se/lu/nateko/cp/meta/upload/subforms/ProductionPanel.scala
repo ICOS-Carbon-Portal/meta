@@ -53,6 +53,18 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 		sourcesInput.reset()
 	}
 
+	override def show(): Unit = {
+		super.show()
+		for(
+			people <- Backend.getPeople;
+			organizations <- Backend.getOrganizations
+		)
+		yield {
+			bus.publish(GotAgentList(organizations.concat(people)))
+			bus.publish(GotOrganizationList(organizations))
+		}
+	}
+
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
 		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)

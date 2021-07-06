@@ -109,18 +109,10 @@ class Form(
 		case Failure(err) => submitButton.disable(err.getMessage)
 	}
 
-	private def onAddProductionClick()(implicit envri: Envri.Envri): Unit = {
+	private def onAddProductionClick(): Unit = {
 		addProductionButton.disable("")
 		prodPanel.show()
 		updateButton()
-		for(
-			people <- Backend.getPeople;
-			organizations <- Backend.getOrganizations
-		)
-		yield {
-			bus.publish(GotAgentList(organizations.concat(people)))
-			bus.publish(GotOrganizationList(organizations))
-		}
 	}
 
 	private def onRemoveProductionClick(): Unit = {

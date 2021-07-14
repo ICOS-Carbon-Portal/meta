@@ -54,6 +54,6 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 		}
 	}
 
-	def writeContextsView = new Rdf4jInstanceServer(repo, writeContexts, writeContexts)
+	def withContexts(read: Seq[IRI], write: Seq[IRI]) = new Rdf4jInstanceServer(repo, read, write)
 
 }

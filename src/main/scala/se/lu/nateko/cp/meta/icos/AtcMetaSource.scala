@@ -93,7 +93,6 @@ object AtcMetaSource{
 	val LatCol = "Latitude"
 	val LonCol = "Longitude"
 	val AltCol = "EAS"
-	val LabelingDateCol = "LabelingDate"
 	val StationInstNameCol = "Institution"
 	val StationInstIdCol = "InstitutionId"
 	val StationInstWeb = "InstitutionWebSite"
@@ -186,7 +185,6 @@ object AtcMetaSource{
 			stClass <- demand(StationClassCol).flatMap(parseStationClass).optional;
 			name <- demand(StationNameCol);
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
-			lblDate <- demand(LabelingDateCol).flatMap(parseLocalDate).optional;
 			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional;
 			tzOffset <- lookUp(TimeZoneCol).map(_.toInt).optional
 		) yield TcStation[A](
@@ -207,7 +205,7 @@ object AtcMetaSource{
 					theme = None,
 					stationClass = stClass,
 					countryCode = country,
-					labelingDate = lblDate,
+					labelingDate = None, //not provided by TCs
 					timeZoneOffset = tzOffset,
 					documentation = Seq.empty//docs are not provided by the TCs
 				),

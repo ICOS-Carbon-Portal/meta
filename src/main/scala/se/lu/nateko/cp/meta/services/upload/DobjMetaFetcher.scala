@@ -1,17 +1,22 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.time.LocalDate
+import java.time.ZoneId
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+
+import scala.util.Try
+
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import scala.util.Try
-import java.time.LocalDate
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -94,11 +99,35 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = PlainIcosSpecifics(
 		theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
 		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
-		labelingDate = getOptionalLocalDate(stat, metaVocab.hasLabelingDate),
+		labelingDate = getLabelingDate(stat),
 		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
 		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
 		documentation = getDocumentationObjs(stat)
 	)
+
+	private def getLabelingDate(stat: IRI): Option[LocalDate] = {
+		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
+
+		val ctxts = Seq(
+			"http://meta.icos-cp.eu/resources/stationentry/",
+			"http://meta.icos-cp.eu/resources/stationlabeling/"
+		).map(server.factory.createIRI)
+
+		val instServ = server.withContexts(ctxts, Nil)
+
+		val Seq(prodStLink, appStatus, statusDate) = Seq("hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate")
+			.map(server.factory.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
+
+		instServ
+			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
+			.collect{
+				case Rdf4jStatement(provSt, _, _) if instServ.hasStatement(provSt, appStatus, vocab.lit("STEP3APPROVED")) => provSt
+			}.flatMap{labeledSt =>
+				new FetchingHelper{def server = instServ}
+					.getOptionalInstant(labeledSt, statusDate)
+					.map(_.atZone(ZoneId.of("UTC")).toLocalDate)
+			}.toIndexedSeq.headOption
+	}
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)

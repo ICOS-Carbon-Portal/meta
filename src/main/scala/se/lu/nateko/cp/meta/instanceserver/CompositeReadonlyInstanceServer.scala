@@ -35,6 +35,6 @@ class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceSer
 
 	def writeContexts: Seq[IRI] = Nil
 
-	def writeContextsView: InstanceServer = ???
+	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer = ???
 
 }

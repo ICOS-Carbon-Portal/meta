@@ -75,7 +75,6 @@ class OtcMetaSource(
 			|	optional {?plat otc:hasPicture ?picture }
 			|	optional {?plat rdfs:seeAlso ?seeAlsoPlat }
 			|	optional {?st otc:countryCode ?countryCode }
-			|	optional {?st otc:hasLabelingDate ?labelDate }
 			|	optional {?st otc:hasStationClass ?stationClass }
 			|	optional {?st otc:hasResponsibleOrg ?respOrg }
 			|	optional {?st rdfs:seeAlso ?seeAlsoSt }
@@ -94,7 +93,6 @@ class OtcMetaSource(
 					val CountryCode(cc) = v.stringValue
 					cc
 				}.optional;
-				lblDate <-qresValue(b, "labelDate").map(v => LocalDate.parse(v.stringValue)).optional;
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
 				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, Some(s"$name position"));
@@ -125,7 +123,7 @@ class OtcMetaSource(
 						coverage = posOpt.orElse(coverOpt),
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(None, statClass, lblDate, ccode, None, Seq.empty),
+						specificInfo = PlainIcosSpecifics(None, statClass, None, ccode, None, Seq.empty),
 						funding = None
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get),

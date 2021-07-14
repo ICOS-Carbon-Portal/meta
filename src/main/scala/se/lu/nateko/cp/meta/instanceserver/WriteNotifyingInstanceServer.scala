@@ -26,5 +26,5 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)
 	def readContexts = inner.readContexts
 	def writeContexts = inner.writeContexts
-	def writeContextsView = inner.writeContextsView
+	def withContexts(read: Seq[IRI], write: Seq[IRI]) = inner.withContexts(read, write)
 }

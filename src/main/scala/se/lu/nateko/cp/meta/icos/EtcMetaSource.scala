@@ -175,7 +175,6 @@ object EtcMetaSource{
 		val stationClass = "CLASS_ICOS"
 		val descr = "SITE_DESC"
 		val pictureUrl = "URL_PICTURE"
-		val labelingDate = "DATE_LABEL"
 		val utcOffset = "UTC_OFFSET"
 		val annualTemp = "MAT"
 		val annualPrecip = "MAP"
@@ -366,7 +365,6 @@ object EtcMetaSource{
 		id <- lookUp(Vars.siteId);
 		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
 		countryCode <- getCountryCode(id.take(2)).optional;
-		lblDate <- getLocalDate(Vars.labelingDate).optional;
 		climZone <- lookUp(Vars.climateZone).flatMap(parseClimateZone).optional;
 		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
 		meanTemp <- lookUp(Vars.annualTemp).map(_.toFloat).optional;
@@ -401,7 +399,7 @@ object EtcMetaSource{
 					theme = None,
 					stationClass = stClass,
 					countryCode = countryCode,
-					labelingDate = lblDate,
+					labelingDate = None, //not provided by TCs
 					climateZone = climZone,
 					ecosystemType = ecoType,
 					meanAnnualTemp = meanTemp,

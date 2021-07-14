@@ -32,5 +32,5 @@ class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends In
 		log.close()
 	}
 
-	def writeContextsView = new LoggingInstanceServer(inner.writeContextsView, log)
+	def withContexts(read: Seq[IRI], write: Seq[IRI]) = new LoggingInstanceServer(inner.withContexts(read, write), log)
 }

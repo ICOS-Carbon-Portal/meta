@@ -22,7 +22,8 @@ trait InstanceServer {
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
-	def writeContextsView: InstanceServer
+	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer
+	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
 
 	def shutDown(): Unit = {}
 

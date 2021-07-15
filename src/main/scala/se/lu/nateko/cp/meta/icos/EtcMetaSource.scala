@@ -230,9 +230,9 @@ object EtcMetaSource{
 	}
 
 	private def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] = lookUp(varName).flatMap{
-		//case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(toCET(dt))
+		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt.toLocalDate)
 		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date)
-		case bv => Validated.error(s"$varName must have been a BADM-format local date (was $bv)")
+		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
 	}
 
 	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =

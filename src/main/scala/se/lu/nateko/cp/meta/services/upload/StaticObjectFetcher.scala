@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 class StaticObjectFetcher(
-	protected val server: InstanceServer,
+	val server: InstanceServer,
 	collFetcher: CollectionFetcherLite,
 	val plainObjFetcher: PlainStaticObjectFetcher,
 	pidFactory: HandleNetClient.PidFactory,
@@ -108,9 +108,9 @@ class StaticObjectFetcher(
 	}
 }
 
-class PlainStaticObjectFetcher(private val allDataObjServer: InstanceServer) extends FetchingHelper{
+class PlainStaticObjectFetcher(allDataObjServer: InstanceServer) extends FetchingHelper{
 	private val metaVocab = new CpmetaVocab(allDataObjServer.factory)
-	override protected def server = allDataObjServer
+	override def server = allDataObjServer
 
 	def getPlainStaticObject(dobj: IRI) = PlainStaticObject(
 		dobj.toJava,

@@ -35,7 +35,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	import CitationMaker._
 	private implicit val envriConfs = coreConf.envriConfigs
 
-	protected val server = new Rdf4jInstanceServer(repo)
+	val server = new Rdf4jInstanceServer(repo)
 	val vocab = new CpVocab(server.factory)
 	protected val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
 	val attrProvider = new AttributionProvider(repo, vocab)

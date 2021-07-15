@@ -56,6 +56,7 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def theme: Option[DataTheme]
 	def stationClass: Option[IcosStationClass.Value]
 	def labelingDate: Option[LocalDate]
+	def discontinued: Boolean
 	def countryCode: Option[CountryCode]
 	def timeZoneOffset: Option[Int]
 	def documentation: Seq[PlainStaticObject]
@@ -65,6 +66,7 @@ case class PlainIcosSpecifics(
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass.Value],
 	labelingDate: Option[LocalDate],
+	discontinued: Boolean,
 	countryCode: Option[CountryCode],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
@@ -74,6 +76,7 @@ case class EtcStationSpecifics(
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass.Value],
 	labelingDate: Option[LocalDate],
+	discontinued: Boolean,
 	countryCode: Option[CountryCode],
 	climateZone: Option[UriResource],
 	ecosystemType: Option[UriResource],
@@ -99,9 +102,9 @@ object StationSpecifics extends CommonJsonSupport{
 	import JsonSupport.{uriResourceFormat, plainStaticObjectFormat, siteFormat, countryCodeFormat, dataThemeFormat}
 	import CommonJsonSupport._
 	implicit val stationClassFormat = enumFormat(IcosStationClass)
-	implicit val etcStationSpecificsFormat = jsonFormat13(EtcStationSpecifics)
+	implicit val etcStationSpecificsFormat = jsonFormat14(EtcStationSpecifics)
 	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
-	implicit val plainIcosSpecificsFormat = jsonFormat6(PlainIcosSpecifics)
+	implicit val plainIcosSpecificsFormat = jsonFormat7(PlainIcosSpecifics)
 
 	private val EtcSpec = "etc"
 	private val SitesSpec = "sites"

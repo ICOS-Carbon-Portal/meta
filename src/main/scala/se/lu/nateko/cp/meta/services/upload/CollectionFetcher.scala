@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
-class CollectionFetcherLite(protected val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
+class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
 	val memberProp = metaVocab.dcterms.hasPart
 

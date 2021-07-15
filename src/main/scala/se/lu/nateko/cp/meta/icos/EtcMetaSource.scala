@@ -400,6 +400,7 @@ object EtcMetaSource{
 					stationClass = stClass,
 					countryCode = countryCode,
 					labelingDate = None, //not provided by TCs
+					discontinued = false, //not provided by TCs
 					climateZone = climZone,
 					ecosystemType = ecoType,
 					meanAnnualTemp = meanTemp,

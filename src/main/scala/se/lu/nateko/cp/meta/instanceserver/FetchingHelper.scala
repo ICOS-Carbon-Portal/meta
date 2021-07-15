@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 
 
 trait FetchingHelper {
-	protected def server: InstanceServer
+	def server: InstanceServer
 
 	protected def getSingleUri(subj: IRI, pred: IRI): IRI =
 		server.getUriValues(subj, pred, InstanceServer.ExactlyOne).head

@@ -59,6 +59,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 
 	val icosProject = getRelativeRaw("projects/icos")(icosBup)
 	val atmoTheme = getRelativeRaw("themes/atmosphere")(icosBup)
+	val oceanTheme = getRelativeRaw("themes/ocean")(icosBup)
 
 	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(icosBup)
 

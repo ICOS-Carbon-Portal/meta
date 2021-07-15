@@ -1,19 +1,24 @@
+@import java.net.URI
 @import se.lu.nateko.cp.meta.api.StationExtra
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.urlEncode
-@import java.net.URI
+@import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.stationUriShortener
 @import akka.http.scaladsl.model.Uri
 @import landpagesnips._
 
-@(stExt: StationExtra)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
 			<h2>About</h2>
 			@for(icos <- icosSpecifics){
+				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
+					@metadataRow("Discontinued", "(former ICOS station)")
+				}
 				@metadataRow("Station ID", station.id)
 				@for(cls <- icos.stationClass){
 					@metadataRow("ICOS Station class", cls.toString)

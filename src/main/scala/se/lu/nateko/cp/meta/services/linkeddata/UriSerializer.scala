@@ -153,7 +153,7 @@ class Rdf4jUriSerializer(
 		case Slash(Segment("resources", Slash(Segment("stations", stId)))) => oneOf(
 			customHtml[StationExtra](
 				() => fetchStation(makeIri(uri)),
-				st => views.html.StationLandingPage(st),
+				st => views.html.StationLandingPage(st, citer.vocab),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
 				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.getMessage}")
 			),

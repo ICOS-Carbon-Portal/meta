@@ -40,7 +40,7 @@ class DataObjectInstanceServers(
 		) yield{
 			val joint = new CompositeReadonlyInstanceServer(objsServ, docsServ)
 			envri -> new DobjMetaFetcher{
-				override protected val server = instServer
+				override val server = instServer
 				override protected val vocab = dois.vocab
 				override val plainObjFetcher = new PlainStaticObjectFetcher(joint)
 			}

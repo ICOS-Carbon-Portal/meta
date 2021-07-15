@@ -31,7 +31,7 @@ import scala.util.Try
 final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
 	import AttributionProvider._
 
-	override protected val server = new Rdf4jInstanceServer(repo)
+	override val server = new Rdf4jInstanceServer(repo)
 	private val sparql = new Rdf4jSparqlRunner(repo)
 
 	def getAuthors(dobj: DataObject): Seq[Person] = dobj.specificInfo.fold[Seq[Person]](

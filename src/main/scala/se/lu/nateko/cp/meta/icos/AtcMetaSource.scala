@@ -206,6 +206,7 @@ object AtcMetaSource{
 					stationClass = stClass,
 					countryCode = country,
 					labelingDate = None, //not provided by TCs
+					discontinued = false, //not provided by TCs
 					timeZoneOffset = tzOffset,
 					documentation = Seq.empty//docs are not provided by the TCs
 				),

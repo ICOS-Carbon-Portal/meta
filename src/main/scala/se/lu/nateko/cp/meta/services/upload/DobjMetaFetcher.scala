@@ -78,6 +78,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				theme = icosSpecif.theme,
 				stationClass = icosSpecif.stationClass,
 				labelingDate = icosSpecif.labelingDate,
+				discontinued = icosSpecif.discontinued,
 				countryCode = icosSpecif.countryCode,
 				climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
 				ecosystemType = getOptionalUri(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
@@ -96,16 +97,20 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		else NoStationSpecifics
 	}
 
-	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = PlainIcosSpecifics(
-		theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
-		stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
-		labelingDate = getLabelingDate(stat),
-		countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
-		timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
-		documentation = getDocumentationObjs(stat)
-	)
+	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = {
+		val (lblDate, discont) = getLabelingDateAndDiscontinuation(stat)
+		PlainIcosSpecifics(
+			theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
+			stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
+			labelingDate = lblDate,
+			discontinued = discont,
+			countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
+			timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
+			documentation = getDocumentationObjs(stat)
+		)
+	}
 
-	private def getLabelingDate(stat: IRI): Option[LocalDate] = {
+	private def getLabelingDateAndDiscontinuation(stat: IRI): (Option[LocalDate], Boolean) = {
 		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
 
 		val ctxts = Seq(
@@ -113,20 +118,31 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			"http://meta.icos-cp.eu/resources/stationlabeling/"
 		).map(server.factory.createIRI)
 
-		val instServ = server.withContexts(ctxts, Nil)
+		val fetcher = FetchingHelper(server.withContexts(ctxts, Nil))
 
-		val Seq(prodStLink, appStatus, statusDate) = Seq("hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate")
+		val Seq(prodStLink, appStatus, statusDate, stationId) = Seq(
+				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate", "hasShortName"
+			)
 			.map(server.factory.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
 
-		instServ
+		val provStOpt: Option[IRI] = fetcher.server
 			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
 			.collect{
-				case Rdf4jStatement(provSt, _, _) if instServ.hasStatement(provSt, appStatus, vocab.lit("STEP3APPROVED")) => provSt
-			}.flatMap{labeledSt =>
-				new FetchingHelper{def server = instServ}
-					.getOptionalInstant(labeledSt, statusDate)
-					.map(_.atZone(ZoneId.of("UTC")).toLocalDate)
-			}.toIndexedSeq.headOption
+				case Rdf4jStatement(provSt, _, _) if fetcher.server.hasStatement(provSt, appStatus, vocab.lit("STEP3APPROVED")) => provSt
+			}
+			.toIndexedSeq.headOption
+
+		val labelingDate = provStOpt.flatMap{labeledSt =>
+			fetcher
+				.getOptionalInstant(labeledSt, statusDate)
+				.map(_.atZone(ZoneId.of("UTC")).toLocalDate)
+		}
+
+		val discontinued: Boolean = provStOpt.fold(true){provSt =>
+			!fetcher.server.hasStatement(Some(provSt), Some(stationId), None)
+		}
+
+		labelingDate -> discontinued
 	}
 
 	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {

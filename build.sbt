@@ -83,7 +83,7 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
-			"org.apache.commons"     % "commons-email"                      % "1.4",
+			"com.sun.mail"           % "javax.mail"                         % "1.6.2",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.6",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",

@@ -43,6 +43,7 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
+	private val agentAgg = new AgentAggregator
 
 	def resetForm(): Unit = {
 		creatorInput.reset()
@@ -58,12 +59,16 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
 		case LevelSelected(level) => onLevelSelected(level)
 		case GotStationsList(stations) => {
-			val stationsNamedUri = stations.map(_.namedUri)
-			agentList.values = stationsNamedUri
-			organizationList.values = stationsNamedUri
+			agentAgg.stations = stations.map(_.namedUri)
+			agentList.values = agentAgg.agents
+			organizationList.values = agentAgg.orgs
 		}
-		case GotAgentList(agents) => agentList.values = agents ++: agentList.values
-		case GotOrganizationList(orgs) => organizationList.values = orgs ++: organizationList.values
+		case GotAgentList(agents) =>
+			agentAgg.agents = agents
+			agentList.values = agentAgg.agents
+		case GotOrganizationList(orgs) =>
+			agentAgg.orgs = orgs
+			organizationList.values = agentAgg.orgs
 	}
 
 	private def onLevelSelected(level: Int): Unit = if(level == 0) hide() else if(level == 3) show()
@@ -99,4 +104,16 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 		case _ =>
 			hide()
 	}
+}
+
+private class AgentAggregator{
+	var stations: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private[this] var _agents: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private[this] var _orgs: IndexedSeq[NamedUri] = IndexedSeq.empty
+
+	def agents_=(agents: IndexedSeq[NamedUri]): Unit = _agents = agents
+	def orgs_=(orgs: IndexedSeq[NamedUri]): Unit = _orgs = orgs
+
+	def agents = _agents ++ stations
+	def orgs = _orgs ++ stations
 }

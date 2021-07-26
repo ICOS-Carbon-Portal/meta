@@ -89,6 +89,7 @@ lazy val meta = (project in file("."))
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.3",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.3" % "test",
+			"com.github.workingDog" %% "scalakml"                           % "1.5"   % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
 		),
 
@@ -135,12 +136,10 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := """
-			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
+			import se.lu.nateko.cp.meta.KmlGeoJsonWorkbench._
 		""",
 
-		Test / console / cleanupCommands := """
-			system.terminate()
-		"""
+		Test / console / cleanupCommands := ""//"system.terminate()"
 	)
 
 lazy val uploadgui = (project in file("uploadgui"))

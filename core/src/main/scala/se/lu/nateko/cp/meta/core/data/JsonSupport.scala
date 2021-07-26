@@ -17,7 +17,6 @@ object JsonSupport extends CommonJsonSupport{
 	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
 	implicit val geoTrackFormat = jsonFormat2(GeoTrack)
 	implicit val geoPolygonFormat = jsonFormat2(Polygon)
-	//implicit val genericGeoFeatureFormat = jsonFormat1(GenericGeoFeature)
 
 	implicit object countryCodeFormat extends JsonFormat[CountryCode]{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)

@@ -22,7 +22,7 @@ case class GeometryCollection(geometries: Seq[GeoFeature], label: Option[String]
 
 case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String]) extends GeoFeature{
 
-	def textSpecification = s"Lat: $lat6, Lon: $lon6"
+	def textSpecification = s"Lat: $lat6, Lon: $lon6" + alt.fold("")(alt => s", Alt: $alt m")
 
 	def lat6 = PositionUtil.format6(lat)
 	def lon6 = PositionUtil.format6(lon)
@@ -55,4 +55,9 @@ case class GeoTrack(points: Seq[Position], label: Option[String]) extends GeoFea
 case class Polygon(vertices: Seq[Position], label: Option[String]) extends GeoFeature{
 
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
+}
+
+case class Circle(center: Position, radius: Float, label: Option[String]){// extends GeoFeature{
+
+	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
 }

@@ -38,7 +38,7 @@ object SparqlQueries {
 		}
 	}
 
-	def toStation(b: Binding) = Station(new URI(b("station")), b("id"), b("name"))
+	def toStation(b: Binding) = Station(new NamedUri(new URI(b("station")), b("name")), b("id"))
 
 	def sites(station: URI): String = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT ?site ?name

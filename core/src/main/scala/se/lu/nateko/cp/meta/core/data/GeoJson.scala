@@ -17,7 +17,7 @@ object GeoJson {
 			"coordinates" -> JsArray(points.map(coordinates).toVector)
 		)
 
-		case GeometryCollection(geometries, _) => JsObject(
+		case FeatureCollection(geometries, _) => JsObject(
 			"type"       -> JsString("GeometryCollection"),
 			"geometries" -> JsArray(geometries.map(fromFeature).toVector)
 		)
@@ -36,6 +36,54 @@ object GeoJson {
 			)
 		)
 	}
+
+	private def toGeometryOrFeature(f: GeoFeature): Either[JsObject, JsObject] = f match{
+
+		case GeoTrack(points, _) => Right(JsObject(
+			"type"        -> JsString("LineString"),
+			"coordinates" -> JsArray(points.map(coordinates).toVector)
+		))
+
+		case p: Position => Right(JsObject(
+			"type"        -> JsString("Point"),
+			"coordinates" -> coordinates(p)
+		))
+
+		case box: LatLonBox => toGeometryOrFeature(box.asPolygon)
+
+		case Polygon(vertices, _) => Right(JsObject(
+			"type"        -> JsString("Polygon"),
+			"coordinates" -> JsArray(
+				JsArray((vertices ++ vertices.headOption).map(coordinates).toVector)
+			)
+		))
+
+		case FeatureCollection(features, _) =>
+			val geomsOrFeats = features.map(toGeometryOrFeature).toVector
+			if(geomsOrFeats.forall(_.isRight))
+				Right(JsObject(
+					"type"       -> JsString("GeometryCollection"),
+					"geometries" -> JsArray(geomsOrFeats.flatMap(_.toOption))
+				))
+			else{
+				val featuresJs: Vector[JsObject] = geomsOrFeats.zip(features).map{
+					case (geoOrFeat, feat) => geoOrFeat.fold(
+						geom => wrapGeoInFeature(geom, feat.label),
+						identity
+					)
+				}
+				Left(JsObject(
+					"type"     -> JsString("FeatureCollection"),
+					"features" -> JsArray(featuresJs)
+				))
+			}
+	}
+
+	private def wrapGeoInFeature(geo: JsObject, labelOpt: Option[String]) = JsObject(
+		"type" -> JsString("Feature"),
+		"geometry" -> geo,
+		"properties" -> labelOpt.fold[JsValue](JsNull)(lbl => JsObject("label" -> JsString(lbl)))
+	)
 
 	def toFeature(geoJs: String, labelOpt: Option[String]): Try[GeoFeature] =
 		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_, labelOpt))
@@ -65,9 +113,9 @@ object GeoJson {
 			}
 
 			case "GeometryCollection" => field("geometries").collect{
-				case JsArray(elements) => GeometryCollection(
+				case JsArray(elements) => FeatureCollection(
 					elements.map{
-						case o: JsObject => toFeature(o, labelOpt).get
+						case o: JsObject => toFeature(o, None).get
 						case other =>
 							throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 					},
@@ -76,6 +124,10 @@ object GeoJson {
 				case other =>
 					throw new FormatException(s"Expected 'geometries' to be a JsArray, got ${other.compactPrint}")
 			}
+
+			case "FeatureCollection" => ???
+
+			case "Feature" => ???
 
 			case other => fail(s"Unsupported GeoJSON feature type: $other")
 		}

@@ -44,9 +44,8 @@ object KmlGeoJsonWorkbench {
 		println("KML written")
 	}
 
-	def getCircle(pos: Seq[Position]): Option[Circle] = {
+	def getCircle(pos: Seq[Position]): Option[Circle] = if(pos.size < 8) None else{
 		val n = pos.size
-		assert(n > 0, "Expected non-empty sequence of positions")
 
 		val centerLat = pos.map(_.lat).sum / n
 		val centerLon = pos.map(_.lon).sum / n

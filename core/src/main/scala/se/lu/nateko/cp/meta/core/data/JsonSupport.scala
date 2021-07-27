@@ -33,7 +33,7 @@ object JsonSupport extends CommonJsonSupport{
 				case gt: GeoTrack => gt.toJson
 				case pos: Position => pos.toJson
 				case gpoly: Polygon => gpoly.toJson
-				case geocol: GeometryCollection => geocol.toJson
+				case geocol: FeatureCollection => geocol.toJson
 			}
 			val geoJson = GeoJson.fromFeature(geo)
 			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
@@ -51,7 +51,7 @@ object JsonSupport extends CommonJsonSupport{
 				else if(fields.contains("lat") && fields.contains("lon"))
 					value.convertTo[Position]
 				else if(fields.contains("geometries"))
-					value.convertTo[GeometryCollection]
+					value.convertTo[FeatureCollection]
 				else
 					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>
@@ -59,7 +59,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val geometryCollectionFormat: JsonFormat[GeometryCollection] = jsonFormat2(GeometryCollection)
+	implicit val geometryCollectionFormat: JsonFormat[FeatureCollection] = jsonFormat2(FeatureCollection)
 
 	implicit object orcidFormat extends JsonFormat[Orcid]{
 		def write(id: Orcid): JsValue = JsString(id.shortId)

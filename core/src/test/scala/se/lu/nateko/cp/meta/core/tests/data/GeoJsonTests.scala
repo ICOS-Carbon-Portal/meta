@@ -7,7 +7,7 @@ class GeoJsonTests extends AnyFunSuite{
 
 	def roundTripTest(descr: String)(f: GeoFeature) =
 		test(s"$descr GeoJSON (de-)/serialization round trip"){
-			assert(toFeature(fromFeature(f), None).get === f)
+			assert(toFeature(fromFeature(f)).get === f)
 		}
 
 	roundTripTest("Position"){Position(-89.999999, 70.123456, Some(156.45f), None)}

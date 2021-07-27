@@ -218,7 +218,7 @@ object ExportService{
 
 	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 
-		case GeometryCollection(geos, _) => JsArray(
+		case FeatureCollection(geos, _) => JsArray(
 			geos.map(geoFeatureToSchemaOrg).toVector
 		)
 
@@ -298,7 +298,7 @@ object ExportService{
 	)
 
 	def geoFeatureToSchemaOrgPlace(feature: GeoFeature, country: Option[CountryCode] = None): JsValue = feature match{
-		case GeometryCollection(geoms, _) =>
+		case FeatureCollection(geoms, _) =>
 			JsArray(geoms.map(geo => geoFeatureToSchemaOrgPlace(geo, country)).toVector)
 		case _ =>
 			JsObject(

@@ -104,7 +104,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		List(optPoint, optCov).flatten match{
 			case Nil => None
 			case single :: Nil => Some(single)
-			case multiple => Some(GeometryCollection(multiple, labelOpt).flatten)
+			case multiple => Some(FeatureCollection(multiple, labelOpt).flatten)
 		}
 	}
 
@@ -145,9 +145,8 @@ trait CpmetaFetcher extends FetchingHelper{
 			getLatLonBox(covUri)
 		else
 			GeoJson.toFeature(
-				getSingleString(covUri, metaVocab.asGeoJSON),
-				getOptionalString(covUri, RDFS.LABEL)
-			).get
+				getSingleString(covUri, metaVocab.asGeoJSON)
+			).get.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
 	}
 
 	protected def getNextVersion(item: IRI): Option[URI] = {

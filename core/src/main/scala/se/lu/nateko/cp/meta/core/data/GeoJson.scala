@@ -85,10 +85,10 @@ object GeoJson {
 		"properties" -> labelOpt.fold[JsValue](JsNull)(lbl => JsObject("label" -> JsString(lbl)))
 	)
 
-	def toFeature(geoJs: String, labelOpt: Option[String]): Try[GeoFeature] =
-		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_, labelOpt))
+	def toFeature(geoJs: String): Try[GeoFeature] =
+		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_))
 
-	def toFeature(json: JsObject, labelOpt: Option[String]): Try[GeoFeature] = {
+	def toFeature(json: JsObject): Try[GeoFeature] = {
 
 		def field(name: String): Try[JsValue] = json.fields.get(name).fold[Try[JsValue]](
 				fail(s"'$name' not found in ${json.compactPrint}")
@@ -98,15 +98,15 @@ object GeoJson {
 
 		field("type").collect{ case JsString(geoType) => geoType }.flatMap{
 
-			case "Point" => coords.flatMap(parsePosition(_, labelOpt))
+			case "Point" => coords.flatMap(parsePosition(_))
 
-			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, labelOpt))
+			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None))
 
 			case "Polygon" => coords.map{
 				case JsArray(Vector(pntArr)) => {
 					val points = parsePointsArray(pntArr).get
 					if(points.size < 2) throw new FormatException(s"Expected polygon, got ${points.size} points: ${pntArr.compactPrint}")
-					else Polygon(points.dropRight(1), labelOpt)
+					else Polygon(points.dropRight(1), None)
 				}
 				case other =>
 					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
@@ -115,11 +115,11 @@ object GeoJson {
 			case "GeometryCollection" => field("geometries").collect{
 				case JsArray(elements) => FeatureCollection(
 					elements.map{
-						case o: JsObject => toFeature(o, None).get
+						case o: JsObject => toFeature(o).get
 						case other =>
 							throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 					},
-					labelOpt
+					None
 				)
 				case other =>
 					throw new FormatException(s"Expected 'geometries' to be a JsArray, got ${other.compactPrint}")
@@ -135,17 +135,17 @@ object GeoJson {
 
 	private def parsePointsArray(geoJson: JsValue): Try[Vector[Position]] = geoJson match{
 		case JsArray(elements) => Try{
-			elements.map(p => parsePosition(p, None).get)
+			elements.map(p => parsePosition(p).get)
 		}
 		case _ =>
 			fail(s"Expected JSON array, got ${geoJson.compactPrint}")
 	}
 
-	private def parsePosition(geoJson: JsValue, labelOpt: Option[String]): Try[Position] = geoJson match {
+	private def parsePosition(geoJson: JsValue): Try[Position] = geoJson match {
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat))) =>
-			Success(Position(lat.doubleValue, lon.doubleValue, None, labelOpt))
+			Success(Position(lat.doubleValue, lon.doubleValue, None, None))
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat), JsNumber(elev))) =>
-			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), labelOpt))
+			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), None))
 		case _ =>
 			fail(s"Not a valid JSON for GeoJSON for a position: ${geoJson.compactPrint}")
 	}

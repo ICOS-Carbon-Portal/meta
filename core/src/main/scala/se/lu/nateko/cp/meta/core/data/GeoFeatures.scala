@@ -10,15 +10,15 @@ sealed trait GeoFeature{
 	def withLabel(label: String): GeoFeature = withOptLabel(Some(label))
 }
 
-case class FeatureCollection(geometries: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
-	def textSpecification = geometries.map(_.textSpecification).mkString("Geometries: ", "; ", "")
+case class FeatureCollection(features: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
+	def textSpecification = features.map(_.textSpecification).mkString("Geometries: ", "; ", "")
 
 	def flatten = {
 		def flattenFeature(f: GeoFeature): Seq[GeoFeature] = f match{
 			case FeatureCollection(geometries, _) => geometries.flatMap(flattenFeature)
 			case _ => Seq(f)
 		}
-		copy(geometries = geometries.flatMap(flattenFeature))
+		copy(features = features.flatMap(flattenFeature))
 	}
 
 	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
@@ -69,7 +69,7 @@ case class Polygon(vertices: Seq[Position], label: Option[String]) extends GeoFe
 	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
-case class Circle(center: Position, radius: Float, label: Option[String]){// extends GeoFeature{
+case class Circle(center: Position, radius: Float, label: Option[String]) extends GeoFeature{
 
 	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
 

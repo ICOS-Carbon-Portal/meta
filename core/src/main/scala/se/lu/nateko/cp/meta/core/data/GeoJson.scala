@@ -10,33 +10,21 @@ object GeoJson {
 
 	class FormatException(msg: String) extends IllegalArgumentException(msg) with NoStackTrace
 
-	def fromFeature(f: GeoFeature): JsObject = f match{
+	def fromFeatureWithLabels(f: GeoFeature): JsObject = toGeometryOrFeatureWithLabels(f).fold(identity, identity)
+	def fromFeature(f: GeoFeature): JsObject = toGeometryOrFeature(f).fold(identity, identity)
 
-		case GeoTrack(points, _) => JsObject(
-			"type"        -> JsString("LineString"),
-			"coordinates" -> JsArray(points.map(coordinates).toVector)
+	//Right means Geometry or GeometryCollection was enough (i.e. no labels or Circles)
+	//Left means Feature or FeatureCollection was necessary (Circle or label present)
+	private def toGeometryOrFeatureWithLabels(f: GeoFeature): Either[JsObject, JsObject] =
+		toGeometryOrFeature(f).fold(Left(_),
+			geo => f.label match{
+				case Some(_) => Left(wrapGeoInFeature(geo, f.label))
+				case None => Right(geo)
+			}
 		)
 
-		case FeatureCollection(geometries, _) => JsObject(
-			"type"       -> JsString("GeometryCollection"),
-			"geometries" -> JsArray(geometries.map(fromFeature).toVector)
-		)
-
-		case p: Position => JsObject(
-			"type"        -> JsString("Point"),
-			"coordinates" -> coordinates(p)
-		)
-
-		case box: LatLonBox => fromFeature(box.asPolygon)
-
-		case Polygon(vertices, _) => JsObject(
-			"type"        -> JsString("Polygon"),
-			"coordinates" -> JsArray(
-				JsArray((vertices ++ vertices.headOption).map(coordinates).toVector)
-			)
-		)
-	}
-
+	//Right means Geometry or GeometryCollection was enough (i.e. no Circles and no labels inside colls)
+	//Left means Feature or FeatureCollection was necessary (Circle, or coll with Circle, or coll with label inside)
 	private def toGeometryOrFeature(f: GeoFeature): Either[JsObject, JsObject] = f match{
 
 		case GeoTrack(points, _) => Right(JsObject(
@@ -58,12 +46,25 @@ object GeoJson {
 			)
 		))
 
+		case Circle(center, radius, labelOpt) => Left(JsObject(
+			"type"       -> JsString("Feature"),
+			"geometry"   -> fromFeature(center),
+			"properties" -> JsObject(
+				Map("radius" -> JsNumber(radius)) ++ labelOpt.map(
+					lbl => "label" -> JsString(lbl)
+				)
+			)
+		))
+
 		case FeatureCollection(features, _) =>
-			val geomsOrFeats = features.map(toGeometryOrFeature).toVector
-			if(geomsOrFeats.forall(_.isRight))
+			val geomsOrFeats = features.map(toGeometryOrFeatureWithLabels).toVector
+
+			val geomsOnly = geomsOrFeats.flatMap(_.toOption)
+
+			if(geomsOnly.size == geomsOrFeats.size)
 				Right(JsObject(
 					"type"       -> JsString("GeometryCollection"),
-					"geometries" -> JsArray(geomsOrFeats.flatMap(_.toOption))
+					"geometries" -> JsArray(geomsOnly)
 				))
 			else{
 				val featuresJs: Vector[JsObject] = geomsOrFeats.zip(features).map{
@@ -86,7 +87,7 @@ object GeoJson {
 	)
 
 	def toFeature(geoJs: String): Try[GeoFeature] =
-		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_))
+		Try(geoJs.parseJson.asJsObject).flatMap(toFeature)
 
 	def toFeature(json: JsObject): Try[GeoFeature] = {
 
@@ -96,9 +97,22 @@ object GeoJson {
 
 		def coords = field("coordinates")
 
+		def featuresColl(fieldName: String): Try[FeatureCollection] = field(fieldName).collect{
+			case JsArray(elements) => FeatureCollection(
+				elements.map{
+					case o: JsObject => toFeature(o).get
+					case other =>
+						throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
+				},
+				None
+			)
+			case other =>
+				throw new FormatException(s"Expected '$fieldName' to be a JsArray, got ${other.compactPrint}")
+		}
+
 		field("type").collect{ case JsString(geoType) => geoType }.flatMap{
 
-			case "Point" => coords.flatMap(parsePosition(_))
+			case "Point" => coords.flatMap(parsePosition)
 
 			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None))
 
@@ -112,24 +126,30 @@ object GeoJson {
 					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
 			}
 
-			case "GeometryCollection" => field("geometries").collect{
-				case JsArray(elements) => FeatureCollection(
-					elements.map{
-						case o: JsObject => toFeature(o).get
-						case other =>
-							throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
-					},
-					None
-				)
-				case other =>
-					throw new FormatException(s"Expected 'geometries' to be a JsArray, got ${other.compactPrint}")
+			case "GeometryCollection" => featuresColl("geometries")
+			case "FeatureCollection" => featuresColl("features")
+
+			case "Feature" => for(
+				geoJs <- field("geometry");
+				geo   <- toFeature(geoJs.asJsObject);
+				props <- field("properties")
+			) yield {
+				val lblOpt = props match{
+					case o: JsObject => o.fields.get("label").collect{case JsString(lbl) => lbl}
+					case _ => None
+				}
+				(geo, props) match{
+					case (p: Position, prop: JsObject) if prop.fields.contains("radius") =>
+						val radius = prop.fields.get("radius").collect{case JsNumber(value) => value.floatValue}.getOrElse{
+							throw new FormatException("Expected numeric 'radius' propert in " + json.prettyPrint)
+						}
+						Circle(p, radius, lblOpt)
+					case _ =>
+						geo.withOptLabel(lblOpt)
+				}
 			}
 
-			case "FeatureCollection" => ???
-
-			case "Feature" => ???
-
-			case other => fail(s"Unsupported GeoJSON feature type: $other")
+			case other => fail(s"Unsupported GeoJSON object type: $other")
 		}
 	}
 

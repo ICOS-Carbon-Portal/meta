@@ -30,25 +30,12 @@ function initMap(locations) {
 					return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
 				},
 				style: function (feature) {
-					switch (feature.geometry.type) {
-						case 'Line':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'LineString':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'MultiLineString':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'Polygon':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'GeometryCollection':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						default:
-							return {color: "rgb(50,255,50)", weight: 2};
-					}
+					//TODO Look into Feature/Geometry handling in L.geoJson
+					var supported = ['Line', 'LineString', 'MultiLineString', 'Polygon', 'GeometryCollection', 'Feature', 'FeatureCollection'];
+					if(supported.includes(feature.geometry.type))
+						return {color: "rgb(50,50,255)", weight: 2};
+					else
+						return {color: "rgb(50,255,50)", weight: 2};
 				}
 			}));
 

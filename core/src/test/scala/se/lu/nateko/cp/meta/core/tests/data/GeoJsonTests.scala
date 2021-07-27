@@ -24,4 +24,13 @@ class GeoJsonTests extends AnyFunSuite{
 		), None)
 	}
 
+	roundTripTest("Circle"){
+		Circle(Position(24.12345, -179.99999, None, None), 25.0432f, Some("blabla"))
+	}
+
+	roundTripTest("FeatureCollection (with inner labels)"){
+		val p1 = Position(13.45, 0, None, Some("point 1"))
+		val p2 = Position(-13.45, 179.99, None, Some("point 2"))
+		FeatureCollection(Seq(p1, p2), None)
+	}
 }

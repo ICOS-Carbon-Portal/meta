@@ -50,7 +50,7 @@ object GeoJson {
 			"type"       -> JsString("Feature"),
 			"geometry"   -> fromFeature(center),
 			"properties" -> JsObject(
-				Map("radius" -> JsNumber(radius)) ++ labelOpt.map(
+				Map("radius" -> JsNumber(Math.round(radius*100).toFloat / 100)) ++ labelOpt.map(
 					lbl => "label" -> JsString(lbl)
 				)
 			)
@@ -69,8 +69,8 @@ object GeoJson {
 			else{
 				val featuresJs: Vector[JsObject] = geomsOrFeats.zip(features).map{
 					case (geoOrFeat, feat) => geoOrFeat.fold(
-						geom => wrapGeoInFeature(geom, feat.label),
-						identity
+						identity,
+						geom => wrapGeoInFeature(geom, feat.label)
 					)
 				}
 				Left(JsObject(

@@ -21,6 +21,7 @@ import CitationStyle._
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import java.time.temporal.ChronoUnit
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -199,6 +200,10 @@ object CitationMaker{
 			} else {
 				s"${startZonedDateTime.getYear}–${stopZonedDateTime.getYear - 1}"
 			}
+		} else if (isMidnight(startZonedDateTime) && isMidnight(stopZonedDateTime)) {
+			val from = formatDate(interval.start, zoneId)
+			val to = formatDate(interval.stop.minus(1, ChronoUnit.DAYS), zoneId)
+			s"$from–$to"
 		} else {
 			val from = formatDate(interval.start, zoneId)
 			val to = formatDate(interval.stop, zoneId)
@@ -214,5 +219,7 @@ object CitationMaker{
 		dobj.production.map(_.dateTime).orElse{
 			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
 		}
+
+	private def isMidnight(dateTime: ZonedDateTime): Boolean = dateTime.format(DateTimeFormatter.ISO_LOCAL_TIME) == "00:00:00"
 
 }

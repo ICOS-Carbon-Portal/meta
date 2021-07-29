@@ -52,13 +52,13 @@ case class DataAcquisition(
 	def instruments: Seq[UriResource] = instrument.fold(Seq.empty[UriResource])(_.fold(Seq(_), identity))
 
 	def coverage: Option[GeoFeature] = samplingPoint
-		.map(sp => siteGeometry
-			.fold[GeoFeature](sp)(l => GeometryCollection(Seq(sp, l), None).flatten)
+		.map(sp => siteFeature
+			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None).flatten)
 		)
-		.orElse(siteGeometry)
+		.orElse(siteFeature)
 		.orElse(station.coverage)
 
-	private def siteGeometry = site.flatMap(_.location.map(_.geometry))
+	private def siteFeature = site.flatMap(_.location.map(_.geometry))
 }
 
 case class DataProduction(

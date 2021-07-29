@@ -5,27 +5,33 @@ import java.net.URI
 
 sealed trait GeoFeature{
 	def label: Option[String]
+	def withOptLabel(label: Option[String]): GeoFeature
 	def textSpecification: String
+	def withLabel(label: String): GeoFeature = withOptLabel(Some(label))
 }
 
-case class GeometryCollection(geometries: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
-	def textSpecification = geometries.map(_.textSpecification).mkString("Geometries: ", "; ", "")
+case class FeatureCollection(features: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
+	def textSpecification = features.map(_.textSpecification).mkString("Geometries: ", "; ", "")
 
 	def flatten = {
 		def flattenFeature(f: GeoFeature): Seq[GeoFeature] = f match{
-			case GeometryCollection(geometries, _) => geometries.flatMap(flattenFeature)
+			case FeatureCollection(geometries, _) => geometries.flatMap(flattenFeature)
 			case _ => Seq(f)
 		}
-		copy(geometries = geometries.flatMap(flattenFeature))
+		copy(features = features.flatMap(flattenFeature))
 	}
+
+	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
 case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String]) extends GeoFeature{
 
-	def textSpecification = s"Lat: $lat6, Lon: $lon6"
+	def textSpecification = s"Lat: $lat6, Lon: $lon6" + alt.fold("")(alt => s", Alt: $alt m")
 
 	def lat6 = PositionUtil.format6(lat)
 	def lon6 = PositionUtil.format6(lon)
+
+	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
 object PositionUtil{
@@ -44,15 +50,28 @@ case class LatLonBox(min: Position, max: Position, label: Option[String], uri: O
 	)
 
 	def textSpecification = s"S: ${min.lat6}, W: ${min.lon6}, N: ${max.lat6}, E: ${max.lon6}"
+
+	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
 case class GeoTrack(points: Seq[Position], label: Option[String]) extends GeoFeature{
 
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
+	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
+
 }
 
 case class Polygon(vertices: Seq[Position], label: Option[String]) extends GeoFeature{
 
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
+
+	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
+}
+
+case class Circle(center: Position, radius: Float, label: Option[String]) extends GeoFeature{
+
+	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
+
+	def withOptLabel(label: Option[String]) = copy(label = label)
 }

@@ -218,8 +218,8 @@ object ExportService{
 
 	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 
-		case GeometryCollection(geos, _) => JsArray(
-			geos.map(geoFeatureToSchemaOrg).toVector
+		case FeatureCollection(feats, _) => JsArray(
+			feats.map(geoFeatureToSchemaOrg).toVector
 		)
 
 		case Position(lat, lon, altOpt, _) => JsObject(
@@ -232,28 +232,28 @@ object ExportService{
 			}
 		)
 
+		case Circle(center, radius, _) => JsObject(
+			"@type"       -> JsString("GeoCircle"),
+			"geoMidpoint" -> geoFeatureToSchemaOrg(center),
+			"geoRadius"   -> JsNumber(radius)
+		)
+
 		case LatLonBox(min, max, _, _) => JsObject(
-			Map(
-				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> {
-					val (minlat, minlon, maxlat, maxlon) = (min.lat6, min.lon6, max.lat6, max.lon6)
-					JsString(s"$minlat $minlon $maxlat $minlon $maxlat $maxlon $minlat $maxlon $minlat $minlon")
-				}
-			)
+			"@type"     -> JsString("GeoShape"),
+			"polygon"   -> {
+				val (minlat, minlon, maxlat, maxlon) = (min.lat6, min.lon6, max.lat6, max.lon6)
+				JsString(s"$minlat $minlon $maxlat $minlon $maxlat $maxlon $minlat $maxlon $minlat $minlon")
+			}
 		)
 
 		case GeoTrack(points, _) => JsObject(
-			Map(
-				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
-			)
+			"@type"     -> JsString("GeoShape"),
+			"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 
 		case Polygon(vertices, _) => JsObject(
-			Map(
-				"@type"     -> JsString("GeoShape"),
-				"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
-			)
+			"@type"     -> JsString("GeoShape"),
+			"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 	}
 
@@ -298,7 +298,7 @@ object ExportService{
 	)
 
 	def geoFeatureToSchemaOrgPlace(feature: GeoFeature, country: Option[CountryCode] = None): JsValue = feature match{
-		case GeometryCollection(geoms, _) =>
+		case FeatureCollection(geoms, _) =>
 			JsArray(geoms.map(geo => geoFeatureToSchemaOrgPlace(geo, country)).toVector)
 		case _ =>
 			JsObject(

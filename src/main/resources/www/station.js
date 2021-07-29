@@ -1,7 +1,7 @@
 var queryParams = processQuery(window.location.search);
 var isSites = window.location.host.endsWith("fieldsites.se");
 
-if (queryParams.coverage || queryParams.station) {
+if (queryParams.coverage || queryParams.station || queryParams.dobj) {
 	getGeoJson(queryParams).then(function(geoJsonArray){
 		initMap(geoJsonArray);
 	});
@@ -9,65 +9,85 @@ if (queryParams.coverage || queryParams.station) {
 
 function initMap(locations) {
 	var mapDiv = document.getElementById("map");
+	if (!mapDiv) return;
 
-	if (mapDiv) {
-		var map = L.map(mapDiv, {
-			minZoom: 1,
-			maxBounds: [[-90, -180],[90, 180]],
-			scrollWheelZoom: window.top === window.self
-		});
+	var map = L.map(mapDiv, {
+		minZoom: 1,
+		maxBounds: [[-90, -180],[90, 180]],
+		scrollWheelZoom: window.top === window.self
+	});
 
-		var baseMaps = getBaseMaps(18);
-		map.addLayer(baseMaps.Topographic);
-		L.control.layers(baseMaps).addTo(map);
+	var baseMaps = getBaseMaps(18);
+	map.addLayer(baseMaps.Topographic);
+	L.control.layers(baseMaps).addTo(map);
+	const icon = getIcon(queryParams.icon);
 
-		locations.map(function({label, geoJson}){
-			var fg = new L.FeatureGroup();
-			var icon = getIcon(queryParams.icon);
+	const featureGroups = locations.map(function({label, geoJson}){
+		const fg = new L.FeatureGroup();
 
-			fg.addLayer(L.geoJson(geoJson, {
-				pointToLayer: function (_feature, latlng) {
-					return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
+		fg.addLayer(
+			L.geoJson(geoJson, {
+
+				pointToLayer: function (feature, latlng) {
+					var featLabel = feature.properties && feature.properties.label;
+
+					if(feature.properties && feature.properties.radius){ //this point is a circle
+						var marker = L.circle(latlng, {
+							radius: feature.properties.radius,
+							color: "rgb(50,50,255)",
+							weight: 1,
+							fillOpacity: 0.4
+						}).addTo(map);
+						if(featLabel) marker.bindPopup(featLabel);
+						return null;
+					} else {
+						var marker = icon ? L.marker(latlng, {icon}) : L.marker(latlng);
+						if(featLabel) marker.bindPopup(featLabel);
+						return marker;
+					}
 				},
 				style: function (feature) {
-					switch (feature.geometry.type) {
-						case 'Line':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'LineString':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'MultiLineString':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'Polygon':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						case 'GeometryCollection':
-							return {color: "rgb(50,50,255)", weight: 2};
-
-						default:
-							return {color: "rgb(50,255,50)", weight: 2};
-					}
+					var supported = ['Line', 'LineString', 'MultiLineString', 'Polygon', 'GeometryCollection'];
+					if(supported.includes(feature.geometry.type))
+						return {color: "rgb(50,50,255)", weight: 2};
+					else
+						return {color: "rgb(50,255,50)", weight: 2};
 				}
-			}));
+			})
+		);
 
-			if (label) {
-				fg.bindPopup(label);
-			}
+		if (!hasFeatureLabels(geoJson) && label) fg.bindPopup(label);
 
-			map.addLayer(fg);
+		map.addLayer(fg);
+		return fg;
+	});
 
-			if (geoJson == locations[0].geoJson) {
-				if (locations[0].geoJson.type === "Point") {
-					const zoom = isSites ? 12 : 4;
-					map.setView([geoJson.coordinates[1], geoJson.coordinates[0]], zoom);
-				} else {
-					map.fitBounds(fg.getBounds());
-				}
-			}
-		});
-	}
+	var allGeoms = locations.flatMap(loc => collectGeometries(loc.geoJson));
+
+	if(allGeoms.length === 1 && allGeoms[0].type === 'Point'){
+		const zoom = isSites ? 12 : 4;
+		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
+	} else
+		featureGroups.forEach(fg => map.fitBounds(fg.getBounds()));
+
+}
+
+function hasFeatureLabels(geoJson){
+	if(geoJson.type === 'FeatureCollection')
+		return geoJson.features.some(hasFeatureLabels);
+	else if(geoJson.type === 'Feature')
+		return geoJson.properties && !!(geoJson.properties.label);
+	else return false;
+}
+
+function collectGeometries(geoJson){
+	if(geoJson.type === 'FeatureCollection')
+		return geoJson.features.flatMap(collectGeometries);
+	else if(geoJson.type === 'Feature')
+		return collectGeometries(geoJson.geometry);
+	else if(geoJson.type === 'GeometryCollection')
+		return geoJson.geometries.flatMap(collectGeometries);
+	else return geoJson;
 }
 
 function getMask(geoJson){
@@ -147,9 +167,17 @@ function processQuery(paramsEnc) {
 }
 
 function getGeoJson(queryParams) {
-	return queryParams.station ?
-		getStationLocations(queryParams.station) :
-		Promise.resolve([{"geoJson": JSON.parse(decodeURIComponent(queryParams.coverage))}])
+	return queryParams.station
+		? getStationLocations(queryParams.station)
+		: queryParams.dobj
+			? getDobjLocations(queryParams.dobj)
+			: Promise.resolve([{"geoJson": JSON.parse(decodeURIComponent(queryParams.coverage))}]);
+}
+
+function getDobjLocations(dobjUrl){
+	return getJson(dobjUrl).then(res => {
+		return [{geoJson: res.coverageGeo}];
+	});
 }
 
 function getStationLocations(stationUrl) {

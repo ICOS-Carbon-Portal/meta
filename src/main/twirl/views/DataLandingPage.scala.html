@@ -168,8 +168,8 @@
 					@PanelRow("Coverage", covText)
 				}
 
-				@for(coverage <- dobj.coverage; geoJson = GeoJson.fromFeatureWithLabels(coverage).compactPrint){
-					<iframe src="/station/?icon=@icon&coverage=@urlEncode(geoJson)"></iframe>
+				@defining(s"/objects/${dobj.hash.id}"){dobjLink =>
+					<iframe src="/station/?icon=@icon&dobj=@dobjLink"></iframe>
 				}
 			}
 		</div>

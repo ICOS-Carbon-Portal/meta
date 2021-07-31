@@ -49,6 +49,8 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[Position]
 				else if(fields.contains("features"))
 					value.convertTo[FeatureCollection]
+				else if(fields.contains("radius"))
+					value.convertTo[Circle]
 				else
 					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>

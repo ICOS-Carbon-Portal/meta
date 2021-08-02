@@ -142,3 +142,17 @@ class TagCloud(elemId: String) {
 				keywords.map(keyword => s"""<span class="badge rounded-pill bg-secondary">$keyword</span>""").mkString(" ")
 	}
 }
+
+class Modal(elemId: String) {
+	private val modal = getElementById[html.Div](elemId).get
+	private val title = querySelector[html.Heading](modal, ".modal-title").get
+	private val body = querySelector[html.Div](modal, ".modal-body").get
+
+	def setTitle(text: String): Unit = {
+		title.innerText = text
+	}
+
+	def setBody(html: String): Unit = {
+		body.innerHTML = html
+	}
+}

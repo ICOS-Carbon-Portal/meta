@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 import formcomponents._
 import Utils._
 import se.lu.nateko.cp.meta.SubmitterProfile
+import UploadApp.whenDone
 
 
 class DataPanel(
@@ -23,6 +24,8 @@ class DataPanel(
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
+	private val dataTypeButton = new Button("data-type-variable-list-button", showDataTypeModal)
+	private val dataTypeInfoModal = new Modal("data-type-info-modal")
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -55,11 +58,23 @@ class DataPanel(
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
-			if(objSpec.hasDataset && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			if(objSpec.dataset.nonEmpty && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			if(objSpec.dataset.nonEmpty) dataTypeButton.enable() else dataTypeButton.disable("No data type information available")
 			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))
 		}
 		notifyUpdate()
+	}
+
+	private def showDataTypeModal(): Unit = {
+		objSpecSelect.value.map(spec => spec.dataset.map(datasetUri => whenDone(Backend.getDatasetVariables(datasetUri)){ datasetColumns =>
+			val tableHeader = """<table class="table"><thead><th>Label</th><th>Name</th><th>Unit</th><th>Required</th></thead><tbody>"""
+			val checkIcon = """<i class="fas fa-check"></i>"""
+			dataTypeInfoModal.setTitle(spec.name)
+			dataTypeInfoModal.setBody(datasetColumns.map { column =>
+				s"""<tr><td>${column.label}</td><td>${column.name}</td><td>${column.unit}</td><td>${if(column.isOptionalColumn) "" else checkIcon}</td></tr>"""
+			}.mkString(tableHeader, "", "</tbody></table>"))
+		}))
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {

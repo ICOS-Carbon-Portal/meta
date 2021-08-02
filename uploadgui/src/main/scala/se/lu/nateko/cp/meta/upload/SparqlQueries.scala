@@ -83,7 +83,7 @@ object SparqlQueries {
 			new URI(b("spec")),
 			b("name"),
 			b("dataLevel").toInt,
-			b.contains("dataset"),
+			if(b.contains("dataset")) Some(new URI(b("dataset"))) else None,
 			new URI(b("theme")),
 			new URI(b("project")),
 			keywords("keywords").concat(keywords("projKeywords")).distinct
@@ -137,4 +137,23 @@ object SparqlQueries {
 	}
 
 	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
+
+	def datasetColumnQuery(dataset: URI) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?label ?name ?unit ?optional
+		|where{
+		|	values ?dataset {<$dataset>} .
+		|	?dataset cpmeta:hasColumn ?columns .
+		|	?columns rdfs:label ?label ; cpmeta:hasValueType ?valueType .
+		|	?valueType rdfs:label ?name .
+		|	optional { ?columns cpmeta:isOptionalColumn ?optional }
+		|	optional { ?valueType cpmeta:hasUnit ?unit }
+		|}""".stripMargin
+
+	def toDatasetColumn(b: Binding) = DatasetColumn(
+		b("label"),
+		b("name"),
+		if(b.contains("unit")) b("unit") else "",
+		if(b.contains("optional")) b("optional").toBoolean else false
+	)
 }

@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 case class Station(namedUri: NamedUri, id: String)
 
-case class ObjSpec(uri: URI, name: String, dataLevel: Int, hasDataset: Boolean, theme: URI, project: URI, keywords: Seq[String])
+case class ObjSpec(uri: URI, name: String, dataLevel: Int, dataset: Option[URI], theme: URI, project: URI, keywords: Seq[String])
 
 case class InitAppInfo(userEmail: Option[String], envri: Envri, envriConfig: EnvriConfig)
 
@@ -16,3 +16,5 @@ case class NamedUri(uri: URI, name: String)
 case class SamplingPoint(uri: URI, latitude: Double, longitude: Double, name: String)
 
 class SpatialCoverage(val uri: URI, val label: String)
+
+case class DatasetColumn(label: String, name: String, unit: String, isOptionalColumn: Boolean)

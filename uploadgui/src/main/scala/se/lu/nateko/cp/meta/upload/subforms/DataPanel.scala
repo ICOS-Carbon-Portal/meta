@@ -24,8 +24,8 @@ class DataPanel(
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
-	private val dataTypeButton = new Button("data-type-variable-list-button", showDataTypeModal)
-	private val dataTypeInfoModal = new Modal("data-type-info-modal")
+	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
+	private val varInfoModal = new Modal("data-type-info-modal")
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -33,6 +33,7 @@ class DataPanel(
 		nRowsInput.value = None
 		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
+		disableVarInfoButton()
 	}
 
 	bus.subscribe{
@@ -53,28 +54,48 @@ class DataPanel(
 
 		objSpecSelect.setOptions(objSpecs.filter(specFilter))
 		dataTypeKeywords.setList(Seq.empty)
+		disableVarInfoButton()
 		bus.publish(LevelSelected(level))
 	}
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
 			if(objSpec.dataset.nonEmpty && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
-			if(objSpec.dataset.nonEmpty) dataTypeButton.enable() else dataTypeButton.disable("No data type information available")
+			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))
 		}
 		notifyUpdate()
 	}
 
-	private def showDataTypeModal(): Unit = {
-		objSpecSelect.value.map(spec => spec.dataset.map(datasetUri => whenDone(Backend.getDatasetVariables(datasetUri)){ datasetColumns =>
-			val tableHeader = """<table class="table"><thead><th>Label</th><th>Name</th><th>Unit</th><th>Required</th></thead><tbody>"""
-			val checkIcon = """<i class="fas fa-check"></i>"""
-			dataTypeInfoModal.setTitle(spec.name)
-			dataTypeInfoModal.setBody(datasetColumns.map { column =>
-				s"""<tr><td>${column.label}</td><td>${column.name}</td><td>${column.unit}</td><td>${if(column.isOptionalColumn) "" else checkIcon}</td></tr>"""
-			}.mkString(tableHeader, "", "</tbody></table>"))
-		}))
+	private def disableVarInfoButton(): Unit = {
+		varInfoButton.disable("No data type with variable info is selected")
+	}
+
+	private def showVarInfoModal(): Unit = for(
+		spec <- objSpecSelect.value;
+		datasetUri <- spec.dataset
+	){
+		val variablesInfo = if(spec.dataLevel > 2)
+				Backend.getDatasetVariables(datasetUri)
+			else
+				Backend.getDatasetColumns(datasetUri)
+		whenDone(variablesInfo){ datasetVars =>
+			val tableHeader = """<table class="table"><thead><th>Title</th><th>Regex?</th><th>Value type</th><th>Unit</th><th>Required</th></thead><tbody>"""
+			varInfoModal.setTitle(s"Variables in ${spec.name}:")
+			varInfoModal.setBody(
+				datasetVars
+					.map{ column => s"""<tr>
+						|	<td>${column.title}</td>
+						|	<td>${if(column.isRegex) "yes" else "no"}</td>
+						|	<td>${column.valueType}</td>
+						|	<td>${column.unit}</td>
+						|	<td>${if(column.isOptional) "" else """<i class="fas fa-check"></i>"""}</td>
+						|</tr>""".stripMargin
+					}
+					.mkString(tableHeader, "", "</tbody></table>")
+			)
+		}
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {

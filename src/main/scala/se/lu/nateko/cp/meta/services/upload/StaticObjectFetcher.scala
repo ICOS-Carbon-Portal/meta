@@ -97,7 +97,7 @@ class StaticObjectFetcher(
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(implicit envri: Envri): Option[URI] = {
 
 		if(metaVocab.wdcggFormat === spec.format.uri)
-			Some(new URI("http://ds.data.jma.go.jp/gmd/wdcgg/wdcgg.html"))
+			Some(new URI("https://gaw.kishou.go.jp/"))
 		else {
 			val dobj = vocab.getStaticObject(hash)
 			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(

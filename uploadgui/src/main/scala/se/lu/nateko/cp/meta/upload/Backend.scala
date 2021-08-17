@@ -82,8 +82,10 @@ object Backend {
 	def getOrganizations(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
 		sparqlSelect(organizations).map(_.map(toOrganization)).map(disambiguateNames)
 
-	def getDatasetVariables(dataset: URI): Future[IndexedSeq[DatasetColumn]] =
-		sparqlSelect(datasetColumnQuery(dataset)).map(_.map(toDatasetColumn))
+	def getDatasetColumns(dataset: URI): Future[IndexedSeq[DatasetVar]] =
+		sparqlSelect(datasetColumnQuery(dataset)).map(_.map(toDatasetVar))
+	def getDatasetVariables(dataset: URI): Future[IndexedSeq[DatasetVar]] =
+		sparqlSelect(datasetVariableQuery(dataset)).map(_.map(toDatasetVar))
 
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]

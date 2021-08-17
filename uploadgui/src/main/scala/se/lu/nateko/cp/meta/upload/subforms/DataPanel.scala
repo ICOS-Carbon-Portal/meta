@@ -81,16 +81,17 @@ class DataPanel(
 			else
 				Backend.getDatasetColumns(datasetUri)
 		whenDone(variablesInfo){ datasetVars =>
-			val tableHeader = """<table class="table"><thead><th>Title</th><th>Regex?</th><th>Value type</th><th>Unit</th><th>Required</th></thead><tbody>"""
-			varInfoModal.setTitle(s"Variables in ${spec.name}:")
+			val tableHeader = """<table class="table"><thead><th>Label</th><th>Value type</th><th>Unit</th><th>Required</th><th>Regex</th><th>Title</th></thead><tbody>"""
+			varInfoModal.setTitle(s"Variables in ${spec.name}")
 			varInfoModal.setBody(
 				datasetVars
 					.map{ column => s"""<tr>
-						|	<td>${column.title}</td>
-						|	<td>${if(column.isRegex) "yes" else "no"}</td>
+						|	<td>${column.label}</td>
 						|	<td>${column.valueType}</td>
 						|	<td>${column.unit}</td>
 						|	<td>${if(column.isOptional) "" else """<i class="fas fa-check"></i>"""}</td>
+						|	<td>${if(column.isRegex) """<i class="fas fa-check"></i>""" else ""}</td>
+						|	<td>${column.title}</td>
 						|</tr>""".stripMargin
 					}
 					.mkString(tableHeader, "", "</tbody></table>")

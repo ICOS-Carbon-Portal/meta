@@ -189,6 +189,16 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:SpatialCoverage</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:SpatialCoverage</AbbreviatedIRI>
+        <IRI>http://meta.icos-cp.eu/resources/spcov_</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
         <AbbreviatedIRI>cpmeta:StaticObject</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>

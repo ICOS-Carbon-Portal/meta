@@ -159,16 +159,13 @@
 					}
 				}
 			}
-			@for(coverage <- station.coverage) {
+			@if(station.coverage.isDefined) {
 				<h2>Location</h2>
-				@coverage match {
-					case Position(lat, long, altOpt, _) => {
-						@metadataRow("Latitude/Longitude", s"""$lat, $long""")
-						@for(alt <- altOpt){
-							@metadataRow("Elevation", s"""${alt.toInt} m""")
-						}
+				@for(pos <- stExt.mainGeoPoint){
+					@metadataRow("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
+					@for(alt <- pos.alt){
+						@metadataRow("Elevation", s"${alt.toInt} m")
 					}
-					case _ => {}
 				}
 				@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>

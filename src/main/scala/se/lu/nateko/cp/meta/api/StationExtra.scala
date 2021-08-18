@@ -2,6 +2,9 @@ package se.lu.nateko.cp.meta.api
 
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import spray.json._
+import se.lu.nateko.cp.meta.core.data.FeatureCollection
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.icos.Role
 import java.time.Instant
@@ -12,6 +15,15 @@ class StationExtra(val station: Station, val staff: Seq[Membership]){
 	val (currentStaff, formerStaff) = {
 		val now = Instant.now()
 		staff.sortBy(_.person).partition(m => m.end.fold(true)(end => end.isAfter(now)))
+	}
+
+	def mainGeoPoint: Option[Position] = {
+		def collectMainPoint(geo: GeoFeature): Option[Position] = geo match{
+			case p @ Position(_, _, Some(_), Some(_)) => Some(p)
+			case FeatureCollection(features, _) => features.view.flatMap(collectMainPoint).headOption
+			case _ => None
+		}
+		station.coverage.flatMap(collectMainPoint)
 	}
 }
 

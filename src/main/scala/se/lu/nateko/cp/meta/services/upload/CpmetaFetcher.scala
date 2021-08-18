@@ -96,8 +96,8 @@ trait CpmetaFetcher extends FetchingHelper{
 			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
 			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
 			altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
-			labelOpt = getOptionalString(stat, RDFS.LABEL)
-		) yield Position(posLat, posLon, altOpt, labelOpt)
+			stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
+		) yield Position(posLat, posLon, altOpt, stLabel)
 
 		val optCov = getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage)
 

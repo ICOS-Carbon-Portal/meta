@@ -65,7 +65,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 		case LevelSelected(level) => onLevelSelected(level)
 		case ObjSpecSelected(objSpec) =>
 			onLevelSelected(objSpec.dataLevel)
-			if (objSpec.hasDataset) {
+			if(objSpec.dataset.isDefined) {
 				acqStartInput.disable()
 				acqStopInput.disable()
 			} else {

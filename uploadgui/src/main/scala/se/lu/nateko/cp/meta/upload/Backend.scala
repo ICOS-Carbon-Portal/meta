@@ -82,13 +82,18 @@ object Backend {
 	def getOrganizations(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
 		sparqlSelect(organizations).map(_.map(toOrganization)).map(disambiguateNames)
 
+	def getDatasetColumns(dataset: URI): Future[IndexedSeq[DatasetVar]] =
+		sparqlSelect(datasetColumnQuery(dataset)).map(_.map(toDatasetVar))
+	def getDatasetVariables(dataset: URI): Future[IndexedSeq[DatasetVar]] =
+		sparqlSelect(datasetVariableQuery(dataset)).map(_.map(toDatasetVar))
+
 	def tryIngestion(
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
 		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.dataLevel == 3)
 
-		if(spec.hasDataset && (spec.dataLevel <= 2 || firstVarName.isDefined)){
+		if(spec.dataset.nonEmpty && (spec.dataLevel <= 2 || firstVarName.isDefined)){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>

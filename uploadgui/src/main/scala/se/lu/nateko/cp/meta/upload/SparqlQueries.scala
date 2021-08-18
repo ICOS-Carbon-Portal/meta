@@ -83,7 +83,7 @@ object SparqlQueries {
 			new URI(b("spec")),
 			b("name"),
 			b("dataLevel").toInt,
-			b.contains("dataset"),
+			if(b.contains("dataset")) Some(new URI(b("dataset"))) else None,
 			new URI(b("theme")),
 			new URI(b("project")),
 			keywords("keywords").concat(keywords("projKeywords")).distinct
@@ -137,4 +137,28 @@ object SparqlQueries {
 	}
 
 	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
+
+	def datasetColumnQuery(dataset: URI) = datasetVarOrColQuery(dataset, "Column")
+	def datasetVariableQuery(dataset: URI) = datasetVarOrColQuery(dataset, "Variable")
+
+	private def datasetVarOrColQuery(dataset: URI, typ: String) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?label ?title ?valueType ?unit ?optional ?regex
+		|where{
+		|	<$dataset> cpmeta:has${typ} ?var .
+		|	?var rdfs:label ?label; cpmeta:has${typ}Title ?title ; cpmeta:hasValueType ?valueTypeRes .
+		|	?valueTypeRes rdfs:label ?valueType .
+		|	optional { ?var cpmeta:isOptional${typ} ?optional }
+		|	optional { ?var cpmeta:isRegex${typ} ?regex }
+		|	optional { ?valueTypeRes cpmeta:hasUnit ?unit }
+		|}""".stripMargin
+
+	def toDatasetVar(b: Binding) = DatasetVar(
+		b("label"),
+		b("title"),
+		b("valueType"),
+		b.getOrElse("unit", ""),
+		if(b.contains("optional")) b("optional").toBoolean else false,
+		if(b.contains("regex")) b("regex").toBoolean else false
+	)
 }

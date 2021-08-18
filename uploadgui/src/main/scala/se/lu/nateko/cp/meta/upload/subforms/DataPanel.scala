@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 import formcomponents._
 import Utils._
 import se.lu.nateko.cp.meta.SubmitterProfile
+import UploadApp.whenDone
 
 
 class DataPanel(
@@ -23,6 +24,8 @@ class DataPanel(
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
+	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
+	private val varInfoModal = new Modal("data-type-info-modal")
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -30,6 +33,7 @@ class DataPanel(
 		nRowsInput.value = None
 		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
+		disableVarInfoButton()
 	}
 
 	bus.subscribe{
@@ -50,16 +54,49 @@ class DataPanel(
 
 		objSpecSelect.setOptions(objSpecs.filter(specFilter))
 		dataTypeKeywords.setList(Seq.empty)
+		disableVarInfoButton()
 		bus.publish(LevelSelected(level))
 	}
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
-			if(objSpec.hasDataset && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			if(objSpec.dataset.nonEmpty && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))
 		}
 		notifyUpdate()
+	}
+
+	private def disableVarInfoButton(): Unit = {
+		varInfoButton.disable("No data type with variable info is selected")
+	}
+
+	private def showVarInfoModal(): Unit = for(
+		spec <- objSpecSelect.value;
+		datasetUri <- spec.dataset
+	){
+		val variablesInfo = if(spec.dataLevel > 2)
+				Backend.getDatasetVariables(datasetUri)
+			else
+				Backend.getDatasetColumns(datasetUri)
+		whenDone(variablesInfo){ datasetVars =>
+			val tableHeader = """<table class="table"><thead><th>Label</th><th>Value type</th><th>Unit</th><th>Required</th><th>Regex</th><th>Title</th></thead><tbody>"""
+			varInfoModal.setTitle(s"Variables in ${spec.name}")
+			varInfoModal.setBody(
+				datasetVars
+					.map{ column => s"""<tr>
+						|	<td>${column.label}</td>
+						|	<td>${column.valueType}</td>
+						|	<td>${column.unit}</td>
+						|	<td>${if(column.isOptional) "" else """<i class="fas fa-check"></i>"""}</td>
+						|	<td>${if(column.isRegex) """<i class="fas fa-check"></i>""" else ""}</td>
+						|	<td>${column.title}</td>
+						|</tr>""".stripMargin
+					}
+					.mkString(tableHeader, "", "</tbody></table>")
+			)
+		}
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {

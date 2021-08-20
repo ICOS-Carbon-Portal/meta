@@ -159,7 +159,7 @@
 					}
 				}
 			}
-			@if(station.coverage.isDefined) {
+			@if(station.fullCoverage.isDefined) {
 				<h2>Location</h2>
 				@for(pos <- station.location){
 					@metadataRow("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")

@@ -40,6 +40,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 				website = None
 			),
 			id = "AIR1",
+			location = None,
 			coverage = None,
 			responsibleOrganization = None,
 			pictures = Seq.empty,

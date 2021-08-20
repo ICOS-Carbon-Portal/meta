@@ -107,6 +107,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				s.responsibleOrg.map{respOrg =>
 					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
+				s.core.location.toSeq.flatMap(positionTriples(_, uri)) ++:
 				coverageTriples(uri, s.core.coverage) ++:
 				s.funding.flatMap{fund =>
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
@@ -194,14 +195,15 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		case _ => Seq.empty
 	}
 
+	private def positionTriples(p: Position, iri: IRI): Seq[Triple] =
+		(iri, meta.hasLatitude, vocab.lit(p.lat)) +:
+		(iri, meta.hasLongitude, vocab.lit(p.lon)) +:
+		p.alt.map{alt =>
+			(iri, meta.hasElevation, vocab.lit(alt))
+		}.toSeq
+
 	private def coverageTriples(iri: IRI, covOpt: Option[GeoFeature]): Seq[Triple] = covOpt match{
 		case None => Seq.empty
-		case Some(p: Position) =>
-			(iri, meta.hasLatitude, vocab.lit(p.lat)) +:
-			(iri, meta.hasLongitude, vocab.lit(p.lon)) +:
-			p.alt.map{alt =>
-				(iri, meta.hasElevation, vocab.lit(alt))
-			}.toSeq
 		case Some(box: LatLonBox) =>
 			val spcovUri = box.uri.map(_.toRdf).getOrElse(vocab.getSpatialCoverage(UriId(iri)))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::

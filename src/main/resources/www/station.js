@@ -184,15 +184,24 @@ function getStationLocations(stationUrl) {
 	return getJson(stationUrl)
 	.then(function(result){
 		try{
-			const ownCoverage = [{
+			const ownCoverage = [];
+			if(result.location) ownCoverage.push({
 				"label": `<b>${result.org.name}</b>`,
+				"geoJson": {
+					"type": "Point",
+					"coordinates": [result.location.lon, result.location.lat]
+				}
+			});
+			if(result.coverage) ownCoverage.push({
+				"label": `<b>${result.coverage.label}</b>`,
 				"geoJson": result.coverage.geo
-			}];
+			})
+
 			const sitesCoverage = result.specificInfo._type === 'sites'
 				? result.specificInfo.sites.map(site => {
 					return {
 						"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
-						"geoJson":site.location.geometry.geo
+						"geoJson": site.location.geo
 					}
 				})
 				: [];

@@ -120,7 +120,8 @@ class OtcMetaSource(
 							website = websiteSt.orElse(websitePlat).map(_.toJava)
 						),
 						id = stIdStr,
-						coverage = posOpt.orElse(coverOpt),
+						location = posOpt,
+						coverage = coverOpt,
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
 						specificInfo = PlainIcosSpecifics(None, statClass, None, false, ccode, None, Seq.empty),

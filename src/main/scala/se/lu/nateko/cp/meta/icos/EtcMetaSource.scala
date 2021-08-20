@@ -392,7 +392,8 @@ object EtcMetaSource{
 					website = None
 				),
 				id = id,
-				coverage = pos,
+				location = pos,
+				coverage = None,
 				responsibleOrganization = None,
 				pictures = picture.toSeq,
 				specificInfo = EtcStationSpecifics(

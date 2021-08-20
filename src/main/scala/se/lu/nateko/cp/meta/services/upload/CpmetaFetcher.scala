@@ -91,32 +91,17 @@ trait CpmetaFetcher extends FetchingHelper{
 		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
 	)
 
-	protected def getStationCoverage(stat: IRI, labelOpt: Option[String]): Option[GeoFeature] = {
-		val optPoint = for(
-			posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
-			posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
-			altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
-			stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
-		) yield Position(posLat, posLon, altOpt, stLabel)
-
-		val optCov = getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage)
-
-		List(optPoint, optCov).flatten match{
-			case Nil => None
-			case single :: Nil => Some(single)
-			case multiple => Some(FeatureCollection(multiple, labelOpt).flatten)
-		}
-	}
-
-	protected def getLocation(location: IRI) = Location(
-		geometry = getCoverage(location),
-		label = getOptionalString(location, RDFS.LABEL)
-	)
+	protected def getStationLocation(stat: IRI, labelOpt: Option[String]): Option[Position] = for(
+		posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
+		posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
+		altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
+		stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
+	) yield Position(posLat, posLon, altOpt, stLabel)
 
 	protected def getSite(site: IRI) = Site(
 		self = getLabeledResource(site),
 		ecosystem = getLabeledResource(site, metaVocab.hasEcosystemType),
-		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getLocation)
+		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
 	)
 
 	protected def getL3Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): L3SpecificMeta = {
@@ -138,7 +123,6 @@ trait CpmetaFetcher extends FetchingHelper{
 	}
 
 	protected def getCoverage(covUri: IRI): GeoFeature = {
-		import spray.json._
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
 		if(covClass === metaVocab.latLonBoxClass)

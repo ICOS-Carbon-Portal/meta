@@ -17,9 +17,7 @@ case class Organization(
 ) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, orcid: Option[Orcid]) extends Agent
 
-
-case class Location(geometry: GeoFeature, label: Option[String])
-case class Site(self: UriResource, ecosystem: UriResource, location: Option[Location])
+case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoFeature])
 
 case class Project(self: UriResource, keywords: Option[Seq[String]])
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
@@ -56,9 +54,9 @@ case class DataAcquisition(
 			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None).flatten)
 		)
 		.orElse(siteFeature)
-		.orElse(station.coverage)
+		.orElse(station.fullCoverage)
 
-	private def siteFeature = site.flatMap(_.location.map(_.geometry))
+	private def siteFeature = site.flatMap(_.location)
 }
 
 case class DataProduction(

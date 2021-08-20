@@ -9,12 +9,19 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport
 case class Station(
 	org: Organization,
 	id: String,
+	location: Option[Position],
 	coverage: Option[GeoFeature],
 	responsibleOrganization: Option[Organization],
 	pictures: Seq[URI],
 	specificInfo: StationSpecifics,
 	funding: Option[Seq[Funding]]
-)
+){
+	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
+		case Nil => None
+		case single :: Nil => Some(single)
+		case multiple => Some(FeatureCollection(multiple, Some(org.name)).flatten)
+	}
+}
 
 case class Funding(
 	self: UriResource,

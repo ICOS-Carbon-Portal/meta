@@ -54,7 +54,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		Station(
 			org = org,
 			id = getSingleString(stat, metaVocab.hasStationId),
-			coverage = getStationCoverage(stat, Some(s"${org.name} geo-coverage")),
+			location = getStationLocation(stat, Some(org.name)),
+			coverage = getOptionalUri(stat, metaVocab.hasSpatialCoverage).map(getCoverage),
 			responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 			specificInfo = getStationSpecifics(stat),
 			pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction),

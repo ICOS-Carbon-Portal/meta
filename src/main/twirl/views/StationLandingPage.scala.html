@@ -161,7 +161,7 @@
 			}
 			@if(station.coverage.isDefined) {
 				<h2>Location</h2>
-				@for(pos <- stExt.mainGeoPoint){
+				@for(pos <- station.location){
 					@metadataRow("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
 					@for(alt <- pos.alt){
 						@metadataRow("Elevation", s"${alt.toInt} m")

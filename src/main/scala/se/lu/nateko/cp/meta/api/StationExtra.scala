@@ -16,15 +16,6 @@ class StationExtra(val station: Station, val staff: Seq[Membership]){
 		val now = Instant.now()
 		staff.sortBy(_.person).partition(m => m.end.fold(true)(end => end.isAfter(now)))
 	}
-
-	def mainGeoPoint: Option[Position] = {
-		def collectMainPoint(geo: GeoFeature): Option[Position] = geo match{
-			case p @ Position(_, _, Some(_), Some(_)) => Some(p)
-			case FeatureCollection(features, _) => features.view.flatMap(collectMainPoint).headOption
-			case _ => None
-		}
-		station.coverage.flatMap(collectMainPoint)
-	}
 }
 
 object StationExtra extends DefaultJsonProtocol{

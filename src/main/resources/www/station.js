@@ -67,8 +67,16 @@ function initMap(locations) {
 	if(allGeoms.length === 1 && allGeoms[0].type === 'Point'){
 		const zoom = isSites ? 12 : 4;
 		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
-	} else
-		featureGroups.forEach(fg => map.fitBounds(fg.getBounds()));
+
+	} else if(allGeoms.length > 0){
+		const bounds = featureGroups.reduce(
+			function(acc, curr){
+				return acc.extend(curr.getBounds());
+			},
+			featureGroups[0].getBounds()
+		);
+		map.fitBounds(bounds);
+	}
 
 }
 

@@ -27,19 +27,17 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 	val sparqlHelper = new SparqlHelper(new URI("https://meta.icos-cp.eu/sparql"))
 
-	def setDoi(info: DoiMaker.DoiInfo): Future[Done] = {
-		val (meta, target) = info
-		client.setDoi(meta, target.toURL).map(_ => Done)
+	def saveDoi(meta: DoiMeta): Future[Done] = {
+		client.putMetadata(meta).map(_ => Done)
 	}
 
-	def setDois(infos: Seq[DoiMaker.DoiInfo]): Future[Done] = executeSequentially(infos)(setDoi)
+	def saveDois(infos: Seq[DoiMeta]): Future[Done] = executeSequentially(infos)(saveDoi)
 
 }
 
 object DoiMaker{
-	type DoiInfo = (DoiMeta, URI)
 
-	val cc4by = Rights("CC4.0BY", Some("https://creativecommons.org/licenses/by/4.0"))
+	val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
 	val etc = GenericName("ICOS Ecosystem Thematic Centre")
 	val atc = GenericName("ICOS Atmosphere Thematic Centre")
 

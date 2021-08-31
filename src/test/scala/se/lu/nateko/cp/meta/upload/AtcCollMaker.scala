@@ -41,7 +41,7 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 				for(
 					// _ <- uploader.uploadSingleCollMeta(dto);
 					// _ = println(s"collection created for $station");
-					_ <- maker.client.setDoi(doiMeta, new java.net.URL(s"https://meta.icos-cp.eu/collections/${hash.id}"))
+					_ <- maker.client.putMetadata(doiMeta.copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}")))
 				) yield {
 					println(s"done for $station")
 					Done
@@ -60,7 +60,7 @@ object AtcCollMaker{
 		"ICOS ERIC--Carbon Portal, Sweden" -> ContributorType.DataManager,
 		"ICOS Flask And Calibration Laboratory (FCL), Germany" -> ContributorType.DataCollector
 	).map{
-		case (name, cType) => Contributor(GenericName(name), Nil, Nil, cType)
+		case (name, cType) => Contributor(GenericName(name), Nil, Nil, Some(cType))
 	}
 
 	val lampedusaCreators = Seq(
@@ -75,17 +75,17 @@ object AtcCollMaker{
 		val creators = sample.references.authors.getOrElse(Nil).map{pers =>
 			Creator(
 				name = PersonalName(pers.firstName, pers.lastName),
-				nameIds = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
-				affiliations = Nil
+				nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+				affiliation = Nil
 			)
 		}
 		DoiMeta(
-			id = doi,
+			doi = doi,
 			creators = if(creators.isEmpty && dto.title.contains("Lampedusa")) lampedusaCreators else creators,
-			titles = Seq(Title(dto.title, None, None)),
-			publisher = "ICOS ERIC -- Carbon Portal",
-			publicationYear = 2020,
-			resourceType = ResourceType("ZIP archives", ResourceTypeGeneral.Collection),
+			titles = Some(Seq(Title(dto.title, None, None))),
+			publisher = Some("ICOS ERIC -- Carbon Portal"),
+			publicationYear = Some(2020),
+			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
@@ -96,7 +96,7 @@ object AtcCollMaker{
 			),
 			formats = Seq("Collection of ICOS ATC ASCII files"),
 			version = Some(Version(1, 0)),
-			rights = Seq(DoiMaker.cc4by),
+			rightsList = Some(Seq(DoiMaker.ccby4)),
 			descriptions = dto.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 		)
 	}

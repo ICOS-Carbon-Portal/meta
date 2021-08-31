@@ -19,8 +19,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 
 	def publishDoi(meta: FluxMeta): Future[Doi] = {
 		val doiMeta = makeDoiMeta(meta)
-		val target = UploadWorkbench.toCpDobj(meta.hash)
-		maker.setDoi(doiMeta -> target).map(_ => doiMeta.id)
+		maker.saveDoi(doiMeta).map(_ => doiMeta.doi)
 	}
 
 	def publishDois(metas: Seq[FluxMeta]): Future[Done] = executeSequentially(metas){meta =>
@@ -31,7 +30,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 	}
 
 	def publishCollDoi(suffix: String, target: URI): Future[Done] =
-		maker.setDoi(collDoiMeta(suffix) -> target)
+		maker.saveDoi(collDoiMeta(suffix).copy(url = Some(target.toString)))
 
 	def makeDoiMeta(meta: FluxMeta): DoiMeta = {
 		val stationName = names(meta.station)
@@ -41,12 +40,12 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		val minorVersion = if(meta.prevVers.isDefined) 1 else 0
 
 		DoiMeta(
-			id = maker.client.doi(coolDoi(meta.hash)),
+			doi = maker.client.doi(coolDoi(meta.hash)),
 			creators = Seq(etcCreator, creatorStation(stationName, meta.stationId)),
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2019,
-			resourceType = ResourceType("FLUXNET zip archive", ResourceTypeGeneral.Dataset),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2019),
+			types = Some(ResourceType(Some("FLUXNET zip archive"), Some(ResourceTypeGeneral.Dataset))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
@@ -61,10 +60,11 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(1, minorVersion)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None)) ++ meta.comment.toSeq.map(comm =>
 				Description(comm, DescriptionType.Other, None)
-			)
+			),
+			url = Some(UploadWorkbench.toCpDobj(meta.hash).toString)
 		)
 	}
 
@@ -77,12 +77,12 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		val descr = s"This is the first public release of the observational data product for eddy covariance fluxes at ${metas.size} stations " +
 			"in the ecosystem domain from the Drought-2018 team, covering the period 1989-2018."
 		DoiMeta(
-			id = maker.client.doi(suffix),
+			doi = maker.client.doi(suffix),
 			creators = Seq(Creator(GenericName("Drought 2018 Team"), Nil, Nil), etcCreator),
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2019,
-			resourceType = ResourceType("ZIP archives", ResourceTypeGeneral.Collection),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2019),
+			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
@@ -93,13 +93,13 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 			),
 			formats = Seq("Collection of FLUXNET product ZIP archives"),
 			version = Some(Version(1, 1)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None))
 		)
 	}
 
 	def contributorPi(piId: URI, stIds: Seq[URI]) = Contributor(
-		peeps(piId), Nil, stIds.map(stId => "Principal investigator at " + names(stId)), ContributorType.DataCollector
+		peeps(piId), Nil, stIds.map(stId => "Principal investigator at " + names(stId)), Some(ContributorType.DataCollector)
 	)
 }
 
@@ -119,17 +119,17 @@ object DroughtDoiMaker{
 
 	def creatorStation(longName: String, id: StationId) = Creator(
 		name = GenericName(longName),
-		nameIds = Seq(NameIdentifier(id.id, NameIdentifierScheme.Fluxnet)),
-		affiliations = Nil
+		nameIdentifiers = Seq(NameIdentifier(id.id, NameIdentifierScheme.Fluxnet)),
+		affiliation = Nil
 	)
 
 	def contributorStation(longName: String, id: StationId, typ: ContributorType.Value): Contributor = {
 		val cr = creatorStation(longName, id)
-		Contributor(cr.name, cr.nameIds, cr.affiliations, typ)
+		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(typ))
 	}
 
 	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) =
-		Contributor(PersonalName(fname, lname), Nil, Seq(etc.name), typ)
+		Contributor(PersonalName(fname, lname), Nil, Seq(etc.name), Some(typ))
 
 	val etcPeople: Seq[Contributor] = Seq(
 		etcPerson("Eleonora", "Canfora", ContributorType.DataCurator),
@@ -138,5 +138,5 @@ object DroughtDoiMaker{
 	)
 
 	val etcCreator = Creator(etc, Nil, Nil)
-	val etcContrib = Contributor(etc, Nil, Nil, ContributorType.Producer)
+	val etcContrib = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
 }

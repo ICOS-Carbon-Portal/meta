@@ -21,7 +21,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 
 	def publishDoi(doiMeta: DoiMeta, objHash: Sha256Sum): Future[Doi] = {
 		val target = UploadWorkbench.toCpDobj(objHash)
-		maker.setDoi(doiMeta -> target).map(_ => doiMeta.id)
+		maker.saveDoi(doiMeta.copy(url = Some(target.toString))).map(_ => doiMeta.doi)
 	}
 
 	def publishDois(metas: Seq[FileEntry], doiMetaMaker: FileEntry => Future[DoiMeta]): Future[Done] =
@@ -43,12 +43,12 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val majorVersion = if(meta.prevHash.isDefined) 2 else 1
 
 		DoiMeta(
-			id = maker.client.doi(coolDoi(meta.hash)),
+			doi = maker.client.doi(coolDoi(meta.hash)),
 			creators = meta.authors.map(creatorPerson) :+ etcCreator,
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2020,
-			resourceType = ResourceType("FLUXNET zip archive", ResourceTypeGeneral.Dataset),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2020),
+			types = Some(ResourceType(Some("FLUXNET zip archive"), Some(ResourceTypeGeneral.Dataset))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
@@ -63,7 +63,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(majorVersion, 0)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None)) ++ commentOpt.toSeq.map(comm =>
 				Description(comm, DescriptionType.Other, None)
 			)
@@ -77,12 +77,12 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val descr = s"Public release of the observational data product for atmospheric CO2 molar fraction at $stationName"
 
 		DoiMeta(
-			id = maker.client.doi(coolDoi(meta.hash)),
+			doi = maker.client.doi(coolDoi(meta.hash)),
 			creators = meta.authors.map(creatorPerson) :+ atcCreator,
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2020,
-			resourceType = ResourceType("ICOS ATC time series", ResourceTypeGeneral.Dataset),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2020),
+			types = Some(ResourceType(Some("ICOS ATC time series"), Some(ResourceTypeGeneral.Dataset))),
 			subjects = Seq(
 				Subject("Carbon dioxide")
 			),
@@ -96,7 +96,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(1, 0)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None)) ++ commentOpt.toSeq.map(comm =>
 				Description(comm, DescriptionType.Other, None)
 			)
@@ -110,12 +110,12 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val title = Title("Drought-2018 ecosystem eddy covariance flux product for 52 stations in FLUXNET-Archive format—release 2019-2", None, None)
 		val descr = "This is the release of the observational data product for eddy covariance fluxes at 52 stations in the ecosystem domain, part of them outside the ICOS network, from the Drought-2018 team and covering the period 1989-2018. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."
 		DoiMeta(
-			id = maker.client.doi(suffix),
+			doi = maker.client.doi(suffix),
 			creators = Seq(Creator(GenericName("Drought 2018 Team"), Nil, Nil), etcCreator),
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2020,
-			resourceType = ResourceType("ZIP archives", ResourceTypeGeneral.Collection),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2020),
+			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
@@ -126,7 +126,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			formats = Seq("Collection of FLUXNET product ZIP archives"),
 			version = Some(Version(2, 0)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None))
 		)
 	}
@@ -139,12 +139,12 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 		val descr = s"Atmospheric Greenhouse Gas Mole Fractions of CO2 collected by the Drought-2018 team, covering the period 1979-2018. Final quality controlled Level 2 data, release 2019-1. During the most recent period,  a selected set of stations, after being labelled as ICOS stations, follow the ICOS Atmospheric Station specification V1.3 (https://www.icos-ri.eu/fetch/ba12290c-3714-4dd5-a9f0-c431b9900ad1;1.0). Measurements and data processing for all time series is described in Ramonet, 2019 (doi:xxxxx). All concentrations are calibrated to the WMO X2007 CO2 mole fraction scale in µmole/mole (ppm)."
 
 		DoiMeta(
-			id = maker.client.doi(suffix),
+			doi = maker.client.doi(suffix),
 			creators = Seq(Creator(GenericName("Drought 2018 Team"), Nil, Nil), atcCreator),
-			titles = Seq(title),
-			publisher = "ICOS Carbon Portal",
-			publicationYear = 2020,
-			resourceType = ResourceType("ASCII Files", ResourceTypeGeneral.Collection),
+			titles = Some(Seq(title)),
+			publisher = Some("ICOS Carbon Portal"),
+			publicationYear = Some(2020),
+			types = Some(ResourceType(Some("ASCII Files"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("carbon dioxide")
 			),
@@ -154,7 +154,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			formats = Seq("Collection of ICOS ATC ASCII files"),
 			version = Some(Version(1, 0)),
-			rights = Seq(cc4by),
+			rightsList = Some(Seq(ccby4)),
 			descriptions = Seq(Description(descr, DescriptionType.Abstract, None))
 		)
 	}
@@ -166,28 +166,28 @@ object DroughtDoiMaker2{
 
 	def creatorPerson(p: PersonEntry) = Creator(
 		name = PersonalName(p.firstName, p.lastName),
-		nameIds = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.Orcid)),
-		affiliations = Seq(p.affiliation.name)
+		nameIdentifiers = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.Orcid)),
+		affiliation = Seq(p.affiliation.name)
 	)
 
 	def dataCollectorPerson(p: PersonEntry) = {
 		val cr = creatorPerson(p)
-		Contributor(cr.name, cr.nameIds, cr.affiliations, ContributorType.DataCollector)
+		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(ContributorType.DataCollector))
 	}
 
 	def creatorStation(longName: String, stationId: String) = Creator(
 		name = GenericName(longName),
-		nameIds = Seq(NameIdentifier(stationId, NameIdentifierScheme.Fluxnet)),
-		affiliations = Nil
+		nameIdentifiers = Seq(NameIdentifier(stationId, NameIdentifierScheme.Fluxnet)),
+		affiliation = Nil
 	)
 
 	def contributorStation(longName: String, stationId: String, typ: ContributorType.Value): Contributor = {
 		val cr = creatorStation(longName, stationId)
-		Contributor(cr.name, cr.nameIds, cr.affiliations, typ)
+		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(typ))
 	}
 
 	private def tcPerson(fname: String, lname: String, typ: ContributorType.Value, tc: GenericName) =
-		Contributor(PersonalName(fname, lname), Nil, Seq(tc.name), typ)
+		Contributor(PersonalName(fname, lname), Nil, Seq(tc.name), Some(typ))
 
 	private def atcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, atc)
 	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, etc)
@@ -204,6 +204,6 @@ object DroughtDoiMaker2{
 
 	val atcCreator = Creator(atc, Nil, Nil)
 	val etcCreator = Creator(etc, Nil, Nil)
-	val atcContrib = Contributor(atc, Nil, Nil, ContributorType.Producer)
-	val etcContrib = Contributor(etc, Nil, Nil, ContributorType.Producer)
+	val atcContrib = Contributor(atc, Nil, Nil, Some(ContributorType.Producer))
+	val etcContrib = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
 }

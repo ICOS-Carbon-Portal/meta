@@ -87,8 +87,8 @@ lazy val meta = (project in file("."))
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.6",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
-			"se.lu.nateko.cp"       %% "doi-common"                         % "0.1.3",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.1.3" % "test",
+			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0" % "test",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"   % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
 		),

@@ -64,14 +64,18 @@ object UploadWorkbench{
 
 	def registerAtmoCollDoi(password: String): Future[Done] = {
 		val (client, maker) = doiMachinery(password)
-		val doiMeta = maker.atmoCollDoiMeta("ERE9-9D85", atmoUpload.allFileMetaEntries)
-		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/yZecOZ-jPa8nw8JVOTHtlaYN"))
+		val doiMeta = maker.atmoCollDoiMeta("ERE9-9D85", atmoUpload.allFileMetaEntries).copy(
+			url = Some("https://meta.icos-cp.eu/collections/yZecOZ-jPa8nw8JVOTHtlaYN")
+		)
+		client.saveDoi(doiMeta)
 	}
 
 	def registerFluxCollDoi(password: String): Future[Done] = {
 		val (client, maker) = doiMachinery(password)
-		val doiMeta = maker.fluxCollDoiMeta("YVR0-4898", fluxUpload.allFileMetaEntries)
-		client.setDoi(doiMeta -> new URI("https://meta.icos-cp.eu/collections/ueb_7FcyEcbG6y9-UGo5HUqV"))
+		val doiMeta = maker.fluxCollDoiMeta("YVR0-4898", fluxUpload.allFileMetaEntries).copy(
+			url = Some("https://meta.icos-cp.eu/collections/ueb_7FcyEcbG6y9-UGo5HUqV")
+		)
+		client.saveDoi(doiMeta)
 	}
 
 	def registerAtmoDois(password: String): Future[Done] = {

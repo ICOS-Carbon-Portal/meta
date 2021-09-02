@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.concurrent.Future
 import akka.Done
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import se.lu.nateko.cp.meta.utils.async._
 import se.lu.nateko.cp.meta.services.upload.UploadService
 
 class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: ExecutionContext) {
@@ -28,31 +28,46 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 		}
 	) yield done
 
-	def makeStationColl(prevColLookup: Map[URI, URI])(station: URI, items: Seq[URI]): Future[Done] = {
-
-		uploader.fetchDataObject(items.head).flatMap{dobj =>
+	def makeStationColl(prevColLookup: Map[URI, URI])(station: URI, items: SpecDobjs): Future[Done] = {
+		val sampleUris = items.map.values.map(_.head)
+		traverseFut(sampleUris)(uploader.fetchDataObject).flatMap{dobjs =>
+			val dobjUris = items.map.values.flatten.toSeq
 			val doneFutOpt = for(
-				l2 <- dobj.specificInfo.toOption;
-				hash <- UploadService.collectionHash(items).toOption
+				l2 <- dobjs.head.specificInfo.toOption;
+				hash <- UploadService.collectionHash(dobjUris).toOption
 			) yield {
 				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
-				val dto = makeDto(l2.acquisition.station, items, doi, prevColLookup)
-				val doiMeta = makeDoiMeta(dto, doi, dobj)
+				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevColLookup)
+				val doiMeta = makeDoiMeta(dto, doi, dobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
+				println(dto)
+				println(doiMeta)
+				println(s"done for $station")
+				ok
+				/*
 				for(
-					// _ <- uploader.uploadSingleCollMeta(dto);
-					// _ = println(s"collection created for $station");
-					_ <- maker.client.putMetadata(doiMeta.copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}")))
+					_ <- uploader.uploadSingleCollMeta(dto);
+					_ = println(s"collection created for $station");
+					_ <- maker.client.putMetadata(doiMeta)
 				) yield {
 					println(s"done for $station")
 					Done
 				}
+				*/
 			}
-			doneFutOpt.getOrElse(Future.successful(Done))
+			doneFutOpt.getOrElse(ok)
 		}
 	}
 }
 
 object AtcCollMaker{
+
+	class SpecDobjs(val map: Map[URI, Seq[URI]]){
+		def this(spec: URI, dobj: URI) = this(Map(spec -> Seq(dobj)))
+
+		def merge(other: SpecDobjs) = new SpecDobjs(
+			map.toSeq.concat(other.map).groupMapReduce(_._1)(_._2)(_ :++ _)
+		)
+	}
 
 	val contributors = Seq(
 		"ICOS ATC-Laboratoires Des Sciences Du Climat Et De L'Environnement (LSCE), France" -> ContributorType.DataCurator,
@@ -63,16 +78,8 @@ object AtcCollMaker{
 		case (name, cType) => Contributor(GenericName(name), Nil, Nil, Some(cType))
 	}
 
-	val lampedusaCreators = Seq(
-		"Alcide" -> "di Sarra",
-		"Salvatore" -> "Piacentino",
-		"Damiano" -> "Sferlazzo"
-	).map{
-		case (fname, lname) => Creator(PersonalName(fname, lname), Nil, Seq("ENEA"))
-	}
-
-	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, sample: DataObject): DoiMeta = {
-		val creators = sample.references.authors.getOrElse(Nil).map{pers =>
+	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, samples: Seq[DataObject]): DoiMeta = {
+		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.map{pers =>
 			Creator(
 				name = PersonalName(pers.firstName, pers.lastName),
 				nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
@@ -81,10 +88,10 @@ object AtcCollMaker{
 		}
 		DoiMeta(
 			doi = doi,
-			creators = if(creators.isEmpty && dto.title.contains("Lampedusa")) lampedusaCreators else creators,
+			creators = creators,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(2020),
+			publicationYear = Some(2021),
 			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
@@ -104,36 +111,38 @@ object AtcCollMaker{
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColLookup: Map[URI, URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2020-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2021-1",
 		description = Some(
-			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, and Meteorological Observations, " +
-			s"period September 2015-June 2020, station ${station.org.name}, final quality controlled Level 2 data, release 2020-1"
+			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, and Meteorological Observations, " +
+			s"period up to January 2021, station ${station.org.name}, final quality controlled Level 2 data, release 2021-1"
 		),
 		isNextVersionOf = prevColLookup.get(station.org.self.uri).flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi)
 	)
 
-	def parseStationObjs(spRes: SparqlSelectResult): Map[URI, Seq[URI]] = 
-		getUriPairs(spRes, "station", "dobj").groupMap(_._1)(_._2)
+	def parseStationObjs(spRes: SparqlSelectResult): Map[URI, SpecDobjs] =
+		getUriSeqs(spRes, "station", "spec", "dobj").groupMapReduce(_.apply(0)){
+			case Seq(_, spec, dobj) => new SpecDobjs(spec, dobj)
+		}(_ merge _)
 
 	val dobjStationQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix prov: <http://www.w3.org/ns/prov#>
-select ?dobj ?station #?fileName
+select ?dobj ?station ?spec #?fileName
 where {
-	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject>}
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject>}
 	?dobj cpmeta:hasObjectSpec ?spec .
 	?dobj cpmeta:hasSizeInBytes ?size .
 	#?dobj cpmeta:hasName ?fileName .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-}
-order by ?stationName"""
+}"""
 
 	def parseStationColls(spRes: SparqlSelectResult): Map[URI, URI] = 
-		getUriPairs(spRes, "station", "coll")
-			.groupBy(_._2) //group by collection
+		getUriSeqs(spRes, "station", "coll")
+			.groupBy(_.apply(1)) //group by collection
 			.filter(_._2.length == 1) //keep only collections with single station
 			.toSeq.flatMap(_._2) //unwrap back to list of pairs
+			.map{case Seq(station, coll) => (station, coll)}
 			.toMap //to map staion -> collection, with single-station collections only
 
 	val colStationQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -151,12 +160,13 @@ select distinct ?coll ?station where{
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 }"""
 
-	def getUriPairs(spRes: SparqlSelectResult, var1: String, var2: String): Seq[(URI, URI)] = spRes
+	def getUriSeqs(spRes: SparqlSelectResult, varNames: String*): Seq[Seq[URI]] = spRes
 		.results.bindings.flatMap{b =>
-			for(
-				uri1 <- b.get(var1).collect{case BoundUri(uri) => uri};
-				uri2 <- b.get(var2).collect{case BoundUri(uri) => uri}
-			) yield uri1 -> uri2
+			varNames.map(
+				vName => b.get(vName).collect{case BoundUri(uri) => Seq(uri)}
+			).reduce{(opSeq1, opSeq2) =>
+				for(s1 <- opSeq1; s2 <- opSeq2) yield s1 ++ s2
+			}
 		}
 
 	def getHashSuff(uri: URI): Option[Sha256Sum] = Sha256Sum.fromBase64Url(uri.toString.split('/').last).toOption

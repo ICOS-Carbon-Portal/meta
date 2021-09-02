@@ -31,7 +31,7 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 		client.putMetadata(meta).map(_ => Done)
 	}
 
-	def saveDois(infos: Seq[DoiMeta]): Future[Done] = executeSequentially(infos)(saveDoi)
+	def saveDois(infos: Seq[DoiMeta]): Future[Done] = executeSequentially(infos)(saveDoi).map(_ => Done)
 
 }
 

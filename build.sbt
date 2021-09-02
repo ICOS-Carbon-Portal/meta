@@ -1,3 +1,4 @@
+Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
 ThisBuild / scalaVersion := "2.13.6"
 
@@ -136,7 +137,7 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := """
-			import se.lu.nateko.cp.meta.KmlGeoJsonWorkbench._
+			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
 		""",
 
 		Test / console / cleanupCommands := ""//"system.terminate()"

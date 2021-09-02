@@ -53,6 +53,14 @@ package object async {
 		}
 	}
 
+	def traverseFut[T, R](on: Iterable[T])(thunk: T => Future[R])(implicit ctxt: ExecutionContext): Future[Seq[R]] =
+		on.foldLeft(Future.successful(Seq.empty[R])){(acc, next) =>
+			for(
+				accRes <- acc;
+				nextRes <- thunk(next)
+			) yield accRes :+ nextRes
+		}
+
 	def executeSequentially[T](on: Iterable[T])(thunk: T => Future[Done])(implicit ctxt: ExecutionContext): Future[Done] =
-		on.foldLeft(ok){(acc, next) => acc.flatMap(_ => thunk(next))}
+		traverseFut(on)(thunk).map(_ => Done)
 }

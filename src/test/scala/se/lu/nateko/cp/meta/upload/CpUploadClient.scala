@@ -76,7 +76,7 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 
 	def uploadSingleObject(dto: ObjectUploadDto, file: FileInfo): Future[Done] = uploadSingleMeta(dto).flatMap(_ => uploadSingleFile(file))
 
-	def uploadMultiMetas(dtos: Seq[ObjectUploadDto]): Future[Done] = executeSequentially(dtos)(uploadSingleMeta)
+	def uploadMultiMetas(dtos: Seq[ObjectUploadDto]): Future[Done] = executeSequentially(dtos)(dto => uploadSingleMeta(dto)).map(_ => Done)
 	def uploadMultiObjs(objs: Seq[ObjectUploadInfo]) = executeSequentially(objs){case (dto, file) => uploadSingleObject(dto, file)}
 
 	def uploadSingleFile(file: FileInfo): Future[Done] = http

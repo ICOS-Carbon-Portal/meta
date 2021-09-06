@@ -140,7 +140,7 @@ lazy val meta = (project in file("."))
 			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
 		""",
 
-		Test / console / cleanupCommands := ""//"system.terminate()"
+		Test / console / cleanupCommands := "system.terminate()"
 	)
 
 lazy val uploadgui = (project in file("uploadgui"))

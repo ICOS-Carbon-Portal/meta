@@ -21,7 +21,7 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 	import maker.sparqlHelper.sparql
 
 	def makeColls(): Future[Done] = for(
-		stationToColl <- sparql.select(colStationQuery).map(parseStationColls);
+		stationToColl <- sparql.select(stationCollsQuery("2020-09-01", "2020-09-15")).map(parseStationColls);
 		stationToItems <- sparql.select(dobjStationQuery).map(parseStationObjs);
 		done <- executeSequentially(stationToItems){
 			(makeStationColl(stationToColl) _).tupled
@@ -30,29 +30,27 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 
 	def makeStationColl(prevColLookup: Map[URI, URI])(station: URI, items: SpecDobjs): Future[Done] = {
 		val sampleUris = items.map.values.map(_.head)
-		traverseFut(sampleUris)(uploader.fetchDataObject).flatMap{dobjs =>
+		traverseFut(sampleUris)(uploader.fetchDataObject).flatMap{sampleDobjs =>
 			val dobjUris = items.map.values.flatten.toSeq
 			val doneFutOpt = for(
-				l2 <- dobjs.head.specificInfo.toOption;
+				l2 <- sampleDobjs.head.specificInfo.toOption;
 				hash <- UploadService.collectionHash(dobjUris).toOption
 			) yield {
 				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
 				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevColLookup)
-				val doiMeta = makeDoiMeta(dto, doi, dobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
-				println(dto)
-				println(doiMeta)
-				println(s"done for $station")
-				ok
-				/*
+				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
+				//println(dto)
+				//println(doiMeta)
+				// println(s"done for $station")
+				// ok
 				for(
 					_ <- uploader.uploadSingleCollMeta(dto);
 					_ = println(s"collection created for $station");
 					_ <- maker.client.putMetadata(doiMeta)
 				) yield {
-					println(s"done for $station")
+					println(s"minted DOI; done for $station")
 					Done
 				}
-				*/
 			}
 			doneFutOpt.getOrElse(ok)
 		}
@@ -78,6 +76,8 @@ object AtcCollMaker{
 		case (name, cType) => Contributor(GenericName(name), Nil, Nil, Some(cType))
 	}
 
+	val icosRiCreator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.Ror)), Nil)
+
 	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, samples: Seq[DataObject]): DoiMeta = {
 		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.map{pers =>
 			Creator(
@@ -88,7 +88,7 @@ object AtcCollMaker{
 		}
 		DoiMeta(
 			doi = doi,
-			creators = creators,
+			creators = creators :+ icosRiCreator,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
 			publicationYear = Some(2021),
@@ -104,7 +104,9 @@ object AtcCollMaker{
 			formats = Seq("Collection of ICOS ATC ASCII files"),
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(DoiMaker.ccby4)),
-			descriptions = dto.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
+			descriptions = dto.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
+			state = DoiPublicationState.findable,
+			event = Some(DoiPublicationEvent.publish)
 		)
 	}
 
@@ -145,12 +147,11 @@ where {
 			.map{case Seq(station, coll) => (station, coll)}
 			.toMap //to map staion -> collection, with single-station collections only
 
-	val colStationQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	def stationCollsQuery(submFrom: String, submTo: String) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix dcterms: <http://purl.org/dc/terms/>
 prefix prov: <http://www.w3.org/ns/prov#>
 select distinct ?coll ?station where{
 	?coll a cpmeta:Collection .
-	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 	?coll dcterms:hasPart ?dobj .
 	?dobj cpmeta:hasObjectSpec [
 		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
@@ -158,6 +159,8 @@ select distinct ?coll ?station where{
 		cpmeta:hasDataLevel "2"^^xsd:integer
 	] .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	FILTER( ?submTime >= '${submFrom}T00:00:00.000Z'^^xsd:dateTime && ?submTime <= '${submTo}T00:00:00.000Z'^^xsd:dateTime )
 }"""
 
 	def getUriSeqs(spRes: SparqlSelectResult, varNames: String*): Seq[Seq[URI]] = spRes

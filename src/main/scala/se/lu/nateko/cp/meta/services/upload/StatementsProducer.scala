@@ -118,8 +118,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 		Seq(
 			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
-			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat)),
-			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon)),
+			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XMLSchema.DOUBLE)),
+			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XMLSchema.DOUBLE)),
 			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
 		) ++
 		makeSt(samplUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++

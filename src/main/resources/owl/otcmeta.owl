@@ -1257,6 +1257,12 @@
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationClass"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>

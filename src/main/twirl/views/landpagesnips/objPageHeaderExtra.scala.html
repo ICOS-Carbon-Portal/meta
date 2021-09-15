@@ -1,8 +1,12 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.core.data.DataObject
 
-@(objectId: String)(implicit envriConf: EnvriConfig)
+@(dobj: DataObject)(implicit envriConf: EnvriConfig)
 <div class="col-md-3 text-right">
-	<a class="btn btn-primary" href="@dataURL(objectId)">View in the data portal</a>
+	@dobj.accessUrl.map{link =>
+		<a class="btn btn-default" href="@link">Download</a>
+	}
+	<a class="btn btn-primary" href="@dataURL(dobj.hash.id)">View in the data portal</a>
 </div>
 
 @dataURL(id: String) = @{

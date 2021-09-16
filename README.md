@@ -15,11 +15,6 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 - (example) [/ontologies/cpmeta/DataObjectSpec](https://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec): "landing pages" for metadata-schema concepts from Carbon Portal's ontologies
 - **/upload**: the HTTP API to upload metadata packages for data object registration (see below)
 
-Additionally, this repository contains code for the following visualization web apps (deployed as static pages):
-
-- [Map of the provisional ICOS stations](https://static.icos-cp.eu/share/stationsproj/)
-- [Table with the provisional station info](https://static.icos-cp.eu/share/stations/table.html)
-
 ---
 
 ## Upload instructions (manual)

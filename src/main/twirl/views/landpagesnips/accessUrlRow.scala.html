@@ -2,7 +2,7 @@
 @import views.html.PanelHtmlRow
 
 @(obj: StaticObject)
-@PanelHtmlRow{Access URL}{
+@PanelHtmlRow{Download}{
 	<span>
 		@obj.accessUrl match {
 			case Some(url) => {

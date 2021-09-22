@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="252.11652mm"
+   height="67.684868mm"
+   viewBox="0 0 252.11652 67.684868"
+   version="1.1"
+   id="svg96263"
+   inkscape:version="1.1 (ce6663b3b7, 2021-05-25)"
+   sodipodi:docname="dataObjectBasicMeta.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview96265"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.69753788"
+     inkscape:cx="432.9514"
+     inkscape:cy="68.09666"
+     inkscape:window-width="1848"
+     inkscape:window-height="1009"
+     inkscape:window-x="72"
+     inkscape:window-y="34"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     fit-margin-top="3"
+     lock-margins="true"
+     fit-margin-left="3"
+     fit-margin-right="3"
+     fit-margin-bottom="3" />
+  <defs
+     id="defs96260" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-0.44014991,-51.433482)">
+    <rect
+       style="fill:#f4c1c1;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.2;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect100137"
+       width="81.891907"
+       height="7.7514129"
+       x="167.56476"
+       y="54.533482"
+       rx="1.0658131e-14"
+       ry="1.0658132e-14" />
+    <rect
+       style="fill:#f4c1c1;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.2;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect100137-2"
+       width="81.891907"
+       height="7.7514129"
+       x="157.451"
+       y="72.977379"
+       rx="1.0658131e-14"
+       ry="1.0658132e-14" />
+    <g
+       id="g108312">
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="58.98288"
+         y="60.060356"
+         id="text97261"><tspan
+           sodipodi:role="line"
+           id="tspan97259"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
+           x="58.98288"
+           y="60.060356">https://meta.icos-cp.eu/objects/zFf-_y7HHNXh821kwRq4auds</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="2.886179"
+         y="60.138905"
+         id="text101230"><tspan
+           sodipodi:role="line"
+           id="tspan101228"
+           style="stroke-width:0.264583"
+           x="2.886179"
+           y="60.138905">Landing page</tspan></text>
+    </g>
+    <g
+       id="g108318"
+       transform="translate(0,0.37457339)">
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="58.98288"
+         y="77.969398"
+         id="text98675"><tspan
+           sodipodi:role="line"
+           id="tspan98673"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
+           x="58.98288"
+           y="77.969398">https://hdl.handle.net/11676/zFf-_y7HHNXh821kwRq4auds</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="31.88835"
+         y="78.533012"
+         id="text103082"><tspan
+           sodipodi:role="line"
+           id="tspan103080"
+           style="stroke-width:0.264583"
+           x="31.88835"
+           y="78.533012">PID</tspan></text>
+    </g>
+    <g
+       id="g108324"
+       transform="translate(0,-3.5941766)">
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="56.038651"
+         y="100.19144"
+         id="text100033"><tspan
+           sodipodi:role="line"
+           id="tspan100031"
+           style="stroke-width:0.264583"
+           x="56.038651"
+           y="100.19144">	ICOS_ATC_L2_L2-2021.1_HPB_131.0_CTS_CO2.zip </tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="14.023476"
+         y="100.81707"
+         id="text105022"><tspan
+           sodipodi:role="line"
+           id="tspan105020"
+           style="stroke-width:0.264583"
+           x="14.023476"
+           y="100.81707">File name</tspan></text>
+    </g>
+    <g
+       id="g108330">
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="58.900196"
+         y="115.44173"
+         id="text100420"><tspan
+           sodipodi:role="line"
+           id="tspan100418"
+           style="stroke-width:0.264583"
+           x="58.900196"
+           y="115.44173">1021496</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:5.64444px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+         x="5.3749137"
+         y="114.94426"
+         id="text106602"><tspan
+           sodipodi:role="line"
+           id="tspan106600"
+           style="stroke-width:0.264583"
+           x="5.3749137"
+           y="114.94426">Size in bytes</tspan></text>
+    </g>
+  </g>
+</svg>

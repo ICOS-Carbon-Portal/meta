@@ -2,22 +2,22 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="804.00037"
    height="595.53638"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
-   sodipodi:docname="ICOS_infoFlow_updated_generalized.svg"
+   inkscape:version="1.1 (ce6663b3b7, 2021-05-25)"
+   sodipodi:docname="infoFlow.svg"
    inkscape:export-filename="D:\Carbon Portal\data flow\ICOS_InfoFlow_updated.png"
    inkscape:export-xdpi="300.02203"
-   inkscape:export-ydpi="300.02203">
+   inkscape:export-ydpi="300.02203"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs4">
     <marker
@@ -210,22 +210,23 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="490.72684"
-     inkscape:cy="332.99344"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="191.92898"
+     inkscape:cy="318.19805"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1099"
-     inkscape:window-x="0"
-     inkscape:window-y="28"
+     inkscape:window-width="1848"
+     inkscape:window-height="1009"
+     inkscape:window-x="72"
+     inkscape:window-y="34"
      inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     showborder="true" />
+     showborder="true"
+     inkscape:pagecheckerboard="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -234,7 +235,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -299,110 +299,109 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="-76.314133"
        y="234.26602"
        id="text4549"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.72814637,-0.68542166,0.68542166,0.72814637,0,0)"
+       transform="rotate(-43.268778)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551"
          x="-76.314133"
-         y="234.26602">1. Metadata submission</tspan></text>
+         y="234.26602"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">1. Metadata submission</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="-89.828857"
        y="283.17719"
        id="text4549-5"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.73409999,-0.67904138,0.67904138,0.73409999,0,0)"
+       transform="rotate(-42.768779)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-6"
          x="-89.828857"
-         y="283.17719">2. Return URL for file upload</tspan></text>
+         y="283.17719"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">2. Return URL for file upload</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="345.30444"
        y="99.115219"
        id="text4549-7"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.66962049,0.74270344,-0.74270344,0.66962049,0,0)"
+       transform="rotate(47.962219)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-2"
          x="345.30444"
-         y="99.115219">3. Upload the file</tspan></text>
+         y="99.115219"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">3. Upload the file</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="266.07376"
        y="555.60919"
        id="text4549-7-0"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.96873245,-0.24810772,0.24810772,0.96873245,0,0)"
+       transform="rotate(-14.365565)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-2-4"
          x="266.07376"
-         y="555.60919">4. Forward the file upload</tspan></text>
+         y="555.60919"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">4. Forward the file upload</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="274.24997"
        y="600.66162"
        id="text4549-7-0-4"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.96723704,-0.25387499,0.25387499,0.96723704,0,0)"
+       transform="rotate(-14.706933)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-2-4-2"
          x="274.24997"
-         y="600.66162">5. Return OK + hashsum</tspan></text>
+         y="600.66162"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">5. Return OK + hashsum</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="418.88239"
        y="-63.216446"
        id="text4549-7-4"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.96457771,0.26379886,-0.26379886,0.96457771,0,0)"
+       transform="rotate(15.295593)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-2-1"
          x="418.88239"
-         y="-63.216446">7. Request PID minting</tspan></text>
+         y="-63.216446"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">7. Request PID minting</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="496.12238"
        y="-21.0306"
        id="text4549-7-4-6"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.96457771,0.26379886,-0.26379886,0.96457771,0,0)"
+       transform="rotate(15.295593)"
        inkscape:export-xdpi="300.02203"
        inkscape:export-ydpi="300.02203"><tspan
          sodipodi:role="line"
          id="tspan4551-2-1-9"
          x="496.12238"
-         y="-21.0306">8. Return PID</tspan></text>
+         y="-21.0306"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">8. Return PID</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="369.04962"
        y="141.90547"
        id="text4549-7-4-6-9-2"
-       sodipodi:linespacing="125%"
-       transform="matrix(0.64334223,0.76557872,-0.76557872,0.64334223,0,0)"
+       transform="rotate(49.958505)"
        inkscape:transform-center-x="4.9856772"
        inkscape:transform-center-y="3.7817118"
        inkscape:export-xdpi="300.02203"
@@ -410,7 +409,8 @@
          sodipodi:role="line"
          id="tspan4551-2-1-9-5-6"
          x="369.04962"
-         y="141.90547">10. Return PID</tspan></text>
+         y="141.90547"
+         style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">10. Return PID</tspan></text>
     <g
        id="g4381"
        transform="translate(4.9999695,0)"
@@ -450,29 +450,29 @@
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4250"
          y="59.612137"
          x="311.70895"
-         style="font-size:22.32963181px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="59.612137"
            x="311.70895"
            id="tspan4252"
-           sodipodi:role="line">Meta</tspan></text>
+           sodipodi:role="line"
+           style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">Meta</tspan></text>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4250-0"
          y="499.64771"
          x="308.38416"
-         style="font-size:22.32963181px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="499.64771"
            x="308.38416"
            id="tspan4252-0"
-           sodipodi:role="line">Data</tspan></text>
+           sodipodi:role="line"
+           style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">Data</tspan></text>
       <path
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
@@ -492,42 +492,41 @@
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         transform="matrix(0.00550117,-0.99998487,0.99998487,0.00550117,0,0)"
-         sodipodi:linespacing="125%"
+         transform="rotate(-89.684805)"
          id="text4549-7-0-4-0"
          y="323.63626"
          x="-318.42142"
-         style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="323.63626"
            x="-318.42142"
            id="tspan4551-2-4-2-4"
-           sodipodi:role="line">6. Upload done</tspan></text>
+           sodipodi:role="line"
+           style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">6. Upload done</tspan></text>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
          inkscape:transform-center-x="-6.3718014"
-         transform="matrix(-0.0339712,-0.99942281,0.99942281,-0.0339712,0,0)"
-         sodipodi:linespacing="125%"
+         transform="rotate(-91.946781)"
          id="text4549-7-4-6-9"
          y="360.21719"
          x="-305.37308"
-         style="font-size:15.20059586px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="360.21719"
            x="-305.37308"
            id="tspan4551-2-1-9-5"
-           sodipodi:role="line">9. Return PID</tspan></text>
+           sodipodi:role="line"
+           style="font-size:15.2006px;line-height:1.25;font-family:sans-serif">9. Return PID</tspan></text>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4209"
          y="569.50507"
          x="271.42859"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
-           style="font-size:20px;fill:#fa8300;fill-opacity:1;stroke:none"
+           style="font-size:20px;line-height:1.25;fill:#fa8300;fill-opacity:1;stroke:none"
            y="569.50507"
            x="271.42859"
            id="tspan4211"
@@ -552,16 +551,16 @@
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4250-0-6"
          y="298.66797"
          x="-20.481438"
-         style="font-size:22.32963181px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="298.66797"
            x="-20.481438"
            id="tspan4252-0-3"
-           sodipodi:role="line">Uploader</tspan></text>
+           sodipodi:role="line"
+           style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">Uploader</tspan></text>
       <rect
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
@@ -574,13 +573,12 @@
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4209-5"
          y="568.72058"
          x="-35.285713"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
-           style="font-size:20px;fill:#008000;fill-opacity:1;stroke:none"
+           style="font-size:20px;line-height:1.25;fill:#008000;fill-opacity:1;stroke:none"
            y="568.72058"
            x="-35.285713"
            id="tspan4211-67"
@@ -617,25 +615,27 @@
            inkscape:export-ydpi="300.02203" />
         <text
            xml:space="preserve"
-           style="font-size:22.32963181px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+           style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
            x="671.21289"
            y="112.64674"
            id="text4250-0-0"
-           sodipodi:linespacing="125%"
            inkscape:export-xdpi="300.02203"
            inkscape:export-ydpi="300.02203"><tspan
              sodipodi:role="line"
              id="tspan4252-0-6"
              x="671.21289"
-             y="112.64674">PID</tspan><tspan
+             y="112.64674"
+             style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">PID</tspan><tspan
              id="tspan4276"
              sodipodi:role="line"
              x="671.21289"
-             y="140.55878">registry</tspan><tspan
+             y="140.55878"
+             style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">registry</tspan><tspan
              sodipodi:role="line"
              x="671.21289"
              y="168.47083"
-             id="tspan3120">API</tspan></text>
+             id="tspan3120"
+             style="font-size:22.3296px;line-height:1.25;font-family:sans-serif">API</tspan></text>
       </g>
       <g
          inkscape:export-ydpi="300.02203"
@@ -655,76 +655,72 @@
            inkscape:export-ydpi="300.02203" />
         <text
            xml:space="preserve"
-           style="font-size:20.97037315px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+           style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
            x="668.45312"
            y="408.0314"
            id="text4250-0-1"
-           sodipodi:linespacing="125%"
            inkscape:export-xdpi="300.02203"
            inkscape:export-ydpi="300.02203"><tspan
              sodipodi:role="line"
              x="668.45312"
              y="408.0314"
              id="tspan3074"
-             style="font-size:20.96999931px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;font-family:Sans;-inkscape-font-specification:'Sans, Normal'">ICOS</tspan><tspan
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20.97px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'Sans, Normal';text-align:center;writing-mode:lr-tb;text-anchor:middle">ICOS</tspan><tspan
              sodipodi:role="line"
              x="668.45312"
-             y="434.2439"
+             y="434.24435"
              id="tspan4302"
-             style="font-size:20.96999931px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;font-family:Sans;-inkscape-font-specification:'Sans, Normal'">Repository</tspan></text>
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20.97px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'Sans, Normal';text-align:center;writing-mode:lr-tb;text-anchor:middle">Repository</tspan></text>
       </g>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4209-2"
          y="571.24683"
          x="632.22571"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
-           style="font-size:20px;fill:#000080;fill-opacity:1;stroke:none"
+           style="font-size:20px;line-height:1.25;fill:#000080;fill-opacity:1;stroke:none"
            y="571.24683"
            x="632.22571"
            id="tspan4211-6"
            sodipodi:role="line">e-Service</tspan><tspan
            id="tspan4333"
-           style="font-size:20px;fill:#000080;fill-opacity:1;stroke:none"
-           y="596.24683"
+           style="font-size:20px;line-height:1.25;fill:#000080;fill-opacity:1;stroke:none"
+           y="626.44214"
            x="632.22571"
            sodipodi:role="line">providers</tspan></text>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4209-9"
          y="488.38965"
-         x="643.09711"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+         x="680.14301"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
-           style="font-size:20px;fill:#000000;fill-opacity:1;stroke:none"
+           style="font-size:20px;line-height:1.25;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
            y="488.38965"
-           x="643.09711"
+           x="680.14301"
            id="tspan4211-9"
-           sodipodi:role="line">EUDAT</tspan></text>
+           sodipodi:role="line">EUDAT</tspan><tspan
+           style="font-size:20px;line-height:1.25;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+           y="513.38965"
+           x="680.14301"
+           sodipodi:role="line"
+           id="tspan156135">B2SAFE</tspan></text>
       <text
          inkscape:export-ydpi="300.02203"
          inkscape:export-xdpi="300.02203"
-         sodipodi:linespacing="125%"
          id="text4209-9-1"
          y="207.36775"
          x="673.51141"
-         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none;font-family:sans-serif"
+         style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#fa8300;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
-           style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal'"
+           id="tspan4371"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
            y="207.36775"
            x="673.51141"
-           id="tspan4211-9-0"
-           sodipodi:role="line">ePIC or</tspan><tspan
-           id="tspan4371"
-           style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal'"
-           y="232.36775"
-           x="673.51141"
-           sodipodi:role="line">DataCite</tspan></text>
+           sodipodi:role="line">Handle.net</tspan></text>
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:1.03217077px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend-93)"

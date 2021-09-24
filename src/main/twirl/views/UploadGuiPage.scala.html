@@ -3,7 +3,7 @@
 @import Envri.Envri
 
 @(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapVersion = Some(5)){
+@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapJavascript = true){
 	<style type="text/css">
 	#main {
 		max-width: 1280px;
@@ -389,7 +389,6 @@
 		</noscript>
 	</div>
 	<script src="@jspath"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 }
 
 @jspath = @{

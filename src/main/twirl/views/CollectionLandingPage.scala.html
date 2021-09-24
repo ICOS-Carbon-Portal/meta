@@ -7,45 +7,46 @@
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(coll.title, pageTitle, envri, CpMenu.default){
-	<div class="container-fluid">
-
-		<div class="row">
-			@Panel("Summary", 8, "success"){
-				@PanelRow("Title", coll.title)
-				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
-				@PanelHtmlRow{Download URL}{
-					<span><a target="_blank" href=@{staticCollAccessUrl(coll.res)}>@{coll.title + ".zip"}</a></span>
+	<div class="row">
+		@Panel("Summary", 8, "success"){
+			@PanelRow("Title", coll.title)
+			@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
+			@PanelHtmlRow{Download URL}{
+				<span><a target="_blank" href=@{staticCollAccessUrl(coll.res)}>@{coll.title + ".zip"}</a></span>
+			}
+			@PanelHtmlRow{Collection creator}{
+				@agentLink(coll.creator)
+			}
+			@PanelHtmlRow{Previous version}{@versionLink(coll.previousVersion)}
+			@PanelHtmlRow{Next version}{@versionLink(coll.nextVersion)}
+		}
+		<div class="col-md-4">
+			<div class="row">
+				@Panel("Metadata download", 12){
+					@collMetaDownloadButton(coll, "JSON", "json")
+					@collMetaDownloadButton(coll, "RDF/XML", "xml")
+					@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")
 				}
-				@PanelHtmlRow{Collection creator}{
-					@agentLink(coll.creator)
+				@Panel("Download count", 6){
+					@extras.downloadStats.getOrElse("Not available")
 				}
-				@PanelHtmlRow{Previous version}{@versionLink(coll.previousVersion)}
-				@PanelHtmlRow{Next version}{@versionLink(coll.nextVersion)}
-			}
-			@Panel("Metadata download", 4){
-				@collMetaDownloadButton(coll, "JSON", "json")
-				@collMetaDownloadButton(coll, "RDF/XML", "xml")
-				@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")
-			}
-			@Panel("Download count", 2){
-				@extras.downloadStats.getOrElse("Not available")
-			}
+			</div>
 		</div>
+	</div>
 
-		<div class="row">
-			@Panel("Content", 12){
-				@Citations(coll.references)
-				@for(description <- coll.description){
-					@PanelRow("Description", description)
-				}
-				@PanelRow("Number of items", coll.members.size.toString)
-				@for(item <- coll.members){
-					@PanelHtmlRow{Item}{
-						@staticDataItemLink(item)
-					}
+	<div class="row">
+		@Panel("Content", 12){
+			@Citations(coll.references)
+			@for(description <- coll.description){
+				@PanelRow("Description", description)
+			}
+			@PanelRow("Number of items", coll.members.size.toString)
+			@for(item <- coll.members){
+				@PanelHtmlRow{Item}{
+					@staticDataItemLink(item)
 				}
 			}
-		</div>
+		}
 	</div>
 }
 

@@ -30,7 +30,7 @@ module.exports = function () {
             return (
                 <div className={toastCls} style={toastStyle}>
                     <span style={{ position: 'relative', top: -10, right: -10, float: 'right', fontSize: '150%', cursor: 'pointer' }}
-                        className="glyphicon glyphicon-remove-sign"
+                        className="fas fa-times-circle"
                         onClick={() => onClick(id)}
                     />
                     <span>{message}</span>
@@ -39,7 +39,7 @@ module.exports = function () {
 		}
 
     });
-    
+
     return React.createClass({
 
         getInitialState: function () {

@@ -11,178 +11,181 @@
 
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @template{
-	<div class="container-fluid">
-
-		<div class="row">
-			@Panel("Summary", 8, summaryStyleContext){
-				@if(!uploadComplete) {
-					@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
-				}
-				@DoiPanelHtmlRow(dobj.doi, handleProxies.doi)
-				@if(uploadComplete) {
-					@PidPanelHtmlRow(dobj.pid, handleProxies.basic)
-					@accessUrlRow(dobj)
-				}
-				@resourcePanelRow("Data affiliation", dobj.specification.project.self)
-				@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion.flattenToSeq)}
-				@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
-				@for(coll <- dobj.parentCollections){
-					@resourcePanelRow("Part of", coll)
-				}
-				@for(ack <- dobj.references.acknowledgements){
-					@PanelRow("Acknowledgement", ack)
-				}
+	<div class="row">
+		@Panel("Summary", 8, summaryStyleContext){
+			@if(!uploadComplete) {
+				@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
 			}
-			@Panel("Metadata download", 4){
-				@objMetaDownloadButton(dobj, "JSON", "json")
-				@objMetaDownloadButton(dobj, "RDF/XML", "xml")
-				@objMetaDownloadButton(dobj, "RDF/Turtle", "ttl")
+			@DoiPanelHtmlRow(dobj.doi, handleProxies.doi)
+			@if(uploadComplete) {
+				@PidPanelHtmlRow(dobj.pid, handleProxies.basic)
+				@accessUrlRow(dobj)
 			}
-			@Panel("Download count", 2){
-				@extras.downloadStats.getOrElse("Not available")
+			@resourcePanelRow("Data affiliation", dobj.specification.project.self)
+			@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion.flattenToSeq)}
+			@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
+			@for(coll <- dobj.parentCollections){
+				@resourcePanelRow("Part of", coll)
 			}
-			@Panel("Preview count", 2){
-				@extras.previewStats.getOrElse("Not available")
+			@for(ack <- dobj.references.acknowledgements){
+				@PanelRow("Acknowledgement", ack)
 			}
+		}
+		<div class="col-md-4">
+			<div class="row">
+				@Panel("Metadata download", 12){
+					<div class="d-flex flex-wrap gap-1">
+						@objMetaDownloadButton(dobj, "JSON", "json")
+						@objMetaDownloadButton(dobj, "RDF/XML", "xml")
+						@objMetaDownloadButton(dobj, "RDF/Turtle", "ttl")
+					</div>
+				}
+				@Panel("Download count", 6){
+					@extras.downloadStats.getOrElse("Not available")
+				}
+				@Panel("Preview count", 6){
+					@extras.previewStats.getOrElse("Not available")
+				}
+			</div>
 		</div>
+	</div>
 
-		<div class="row">
-			@Panel("Content", 12){
-				@Citations(dobj.references)
-				@PanelRow("File name", dobj.fileName)
-				@for(size <- dobj.size){
-					@PanelRow("Size in bytes", size.toString)
+	<div class="row">
+		@Panel("Content", 12){
+			@Citations(dobj.references)
+			@PanelRow("File name", dobj.fileName)
+			@for(size <- dobj.size){
+				@PanelRow("Size in bytes", size.toString)
+			}
+			@for(l3meta <- dobj.specificInfo.left.toOption){
+				@PanelRow("Title", l3meta.title)
+				@for(description <- l3meta.description){
+					@PanelRow("Description", description)
 				}
-				@for(l3meta <- dobj.specificInfo.left.toOption){
-					@PanelRow("Title", l3meta.title)
-					@for(description <- l3meta.description){
-						@PanelRow("Description", description)
-					}
-					@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
-					@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
-					@for(resolution <- l3meta.temporal.resolution){
-						@PanelRow("Temporal resolution", resolution)
-					}
-				}
-				@resourcePanelRow("Data type", dobj.specification.self)
-				@for(specComm <- dobj.specification.self.comments){
-					@PanelRow("Description", specComm)
-				}
-				@PanelRow("Data level", dobj.specification.dataLevel.toString)
-				@resourcePanelRow("Format", dobj.specification.format)
-				@resourcePanelRow("Encoding", dobj.specification.encoding)
-
-				@documentationLink(dobj.specification.documentation)
-				@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
-				@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
-				@if(uploadComplete) {
-					@accessUrlRow(dobj)
-				}
-				@for(keywords <- dobj.keywords){
-					@PanelRow("Keywords", keywords.mkString(", "))
+				@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
+				@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
+				@for(resolution <- l3meta.temporal.resolution){
+					@PanelRow("Temporal resolution", resolution)
 				}
 			}
-		</div>
+			@resourcePanelRow("Data type", dobj.specification.self)
+			@for(specComm <- dobj.specification.self.comments){
+				@PanelRow("Description", specComm)
+			}
+			@PanelRow("Data level", dobj.specification.dataLevel.toString)
+			@resourcePanelRow("Format", dobj.specification.format)
+			@resourcePanelRow("Encoding", dobj.specification.encoding)
 
-		@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
-			@PanelWide("Previewable variables"){
-				<table class="table">
-					<thead>
+			@documentationLink(dobj.specification.documentation)
+			@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+			@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
+			@if(uploadComplete) {
+				@accessUrlRow(dobj)
+			}
+			@for(keywords <- dobj.keywords){
+				@PanelRow("Keywords", keywords.mkString(", "))
+			}
+		}
+	</div>
+
+	@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
+		@PanelWide("Previewable variables"){
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Value type</th>
+						<th>Unit</th>
+						<th>Quantity kind</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for(varInfo <- variables){
 						<tr>
-							<th>Name</th>
-							<th>Value type</th>
-							<th>Unit</th>
-							<th>Quantity kind</th>
+							<td>@(varInfo.label)</td>
+							<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
+							<td>@(varInfo.valueType.unit.getOrElse(""))</td>
+							<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
 						</tr>
-					</thead>
-					<tbody>
-						@for(varInfo <- variables){
-							<tr>
-								<td>@(varInfo.label)</td>
-								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
-								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
-								<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
-							</tr>
-						}
-					</tbody>
-				</table>
+					}
+				</tbody>
+			</table>
+		}
+	}
+
+	<div class="row">
+
+		@for(acquisition <- dobj.specificInfo.toOption.map(_.acquisition); station = acquisition.station){
+			@Panel("Acquisition", 4){
+				@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
+					@PanelRow("Location", location)
+				}
+				@agentPanelRow("Station", station.org)
+				@for(responsibleOrganization <- station.responsibleOrganization){
+					@agentPanelRow("Responsible organization", responsibleOrganization)
+				}
+				@for(site <- acquisition.site){
+					@resourcePanelRow("Ecosystem", site.ecosystem)
+				}
+				@for(interval <- acquisition.interval){
+					@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
+					@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
+				}
+				@for(instrument <- acquisition.instruments){
+					@resourcePanelRow("Instrument", instrument)
+				}
+				@for(height <- acquisition.samplingHeight){
+					@PanelRow("Sampling height", height.toString)
+				}
 			}
 		}
 
-		<div class="row">
-
-			@for(acquisition <- dobj.specificInfo.toOption.map(_.acquisition); station = acquisition.station){
-				@Panel("Acquisition", 4){
-					@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
-						@PanelRow("Location", location)
-					}
-					@agentPanelRow("Station", station.org)
-					@for(responsibleOrganization <- station.responsibleOrganization){
-						@agentPanelRow("Responsible organization", responsibleOrganization)
-					}
-					@for(site <- acquisition.site){
-						@resourcePanelRow("Ecosystem", site.ecosystem)
-					}
-					@for(interval <- acquisition.interval){
-						@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
-						@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
-					}
-					@for(instrument <- acquisition.instruments){
-						@resourcePanelRow("Instrument", instrument)
-					}
-					@for(height <- acquisition.samplingHeight){
-						@PanelRow("Sampling height", height.toString)
-					}
+		@for(production <- dobj.production){
+			@Panel("Production", 4){
+				@agentPanelRow("File made by", production.creator)
+				@for(host <- production.host){
+					@agentPanelRow("Host organization", host)
+				}
+				@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
+				@for(comment <- production.comment){
+					@PanelRow("Comment", comment)
+				}
+				@for(contributor <- production.contributors.sorted){
+					@agentPanelRow("Contributor", contributor)
+				}
+				@for(source <- production.sources.sorted){
+					@resourcePanelRow("Source object", source)
 				}
 			}
+		}
 
-			@for(production <- dobj.production){
-				@Panel("Production", 4){
-					@agentPanelRow("File made by", production.creator)
-					@for(host <- production.host){
-						@agentPanelRow("Host organization", host)
-					}
-					@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
-					@for(comment <- production.comment){
-						@PanelRow("Comment", comment)
-					}
-					@for(contributor <- production.contributors.sorted){
-						@agentPanelRow("Contributor", contributor)
-					}
-					@for(source <- production.sources.sorted){
-						@resourcePanelRow("Source object", source)
-					}
-				}
+		@Panel("Submission", 4){
+			@agentPanelRow("Submitted by", dobj.submission.submitter)
+			@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
+			@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+		}
+	</div>
+
+	<div class="row">
+		@Panel("Spatial coverage", 6){
+			@for(covText <- coverageText){
+				@PanelRow("Coverage", covText)
 			}
 
-			@Panel("Submission", 4){
-				@agentPanelRow("Submitted by", dobj.submission.submitter)
-				@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
-				@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
+			@defining(s"/objects/${dobj.hash.id}"){dobjLink =>
+				<iframe src="/station/?icon=@icon&dobj=@dobjLink"></iframe>
 			}
-		</div>
-
-		<div class="row">
-			@Panel("Spatial coverage", 6){
-				@for(covText <- coverageText){
-					@PanelRow("Coverage", covText)
-				}
-
-				@defining(s"/objects/${dobj.hash.id}"){dobjLink =>
-					<iframe src="/station/?icon=@icon&dobj=@dobjLink"></iframe>
-				}
-			}
-		</div>
+		}
+	</div>
 
 @*** uncomment for debug ****
-		<div class="row">
-			<div class="col-md-12">
-				<label>Debug</label>
-				<pre>@printToJson(dobj)</pre>
-			</div>
+	<div class="row">
+		<div class="col-md-12">
+			<label>Debug</label>
+			<pre>@printToJson(dobj)</pre>
 		</div>
-****************************@
 	</div>
+****************************@
 }
 
 @pageHeading = @{

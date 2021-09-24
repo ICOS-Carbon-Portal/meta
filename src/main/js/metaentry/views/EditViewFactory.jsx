@@ -23,7 +23,7 @@ export default function(editStore, updateRequestAction){
 				updateRequestAction(fullRequest);
 			}
 
-			return <Widget widgetType="primary" widgetTitle="Entry editor">
+			return <Widget widgetTitle="Entry editor">
 				<ScreenHeightColumn>
 					<StaticWidget widgetTitle="Entry">{individ.getLabel()} (<a href={uri} target="_blank">{uri}</a>)</StaticWidget>{
 

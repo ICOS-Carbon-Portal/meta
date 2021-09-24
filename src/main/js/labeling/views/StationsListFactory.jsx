@@ -1,4 +1,4 @@
-import {themeGlyphs} from '../configs.js';
+import {themeIcons} from '../configs.js';
 import {status} from '../models/ApplicationStatus.js';
 
 function panelClass(station){
@@ -18,23 +18,23 @@ function panelClass(station){
 function statusClassShort(appStatus){
 	if(!appStatus) return "default";
 	switch(appStatus){
-		case status.neverSubmitted: return "default";
+		case status.neverSubmitted: return "secondary";
 		case status.notSubmitted: return "info";
-		case status.submitted: return "warning";
+		case status.submitted: return "warning text-body";
 		case status.acknowledged: return "primary";
 		case status.approved: return "success";
 		case status.rejected: return "danger";
 		case status.step2ontrack: return "success";
 		case status.step2approved: return "success";
 		case status.step2stalled: return "danger";
-		case status.step2delayed: return "warning";
+		case status.step2delayed: return "warning text-body";
 		case status.step3approved: return "success";
 		default: return "danger";
 	}
 }
 
 export function statusClass(appStatus){
-	return "label label-" + statusClassShort(appStatus);
+	return "badge bg-" + statusClassShort(appStatus);
 }
 
 export function statusLabel(appStatus){
@@ -135,32 +135,24 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 			if (self.state.stations.length == 0){
 				return <ShowLazily delay={100}>
-					<div className="container-fluid">
-						<div className="row">
-							<div className="col-md-2">
-								<h4>
-									<span className="label label-danger">No stations match your search criteria</span>
-								</h4>
-							</div>
-						</div>
+					<div className="text-center">
+						<h4 className="mt-5">No station match your search criteria</h4>
 					</div>
 				</ShowLazily>;
 			} else {
 				return (
-					<div className="container-fluid">
+					<div className="mt-4">
 						<div className="row">
-							<div className="col-md-2">
-								<h4>
-									<span class="label label-default">Stations count: {self.state.stations.length}</span>
-								</h4>
+							<div className="col-md">
+								<h4>{self.state.stations.length} stations</h4>
 							</div>
 						</div>
 						{
 							_.map(self.state.stations, function (station) {
 
-								var panelClasses = 'panel panel-' + panelClass(station);
+								var cardStyle = panelClass(station);
 
-								var icon = 'glyphicon glyphicon-' + (themeGlyphs[station.theme] || 'question-sign');
+								var icon = 'fas fa-' + (themeIcons[station.theme] || 'question-circle');
 
 								var Station = themeToStation[station.theme];
 
@@ -169,12 +161,12 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 								var applicationStatusCSS = statusClass(station.hasApplicationStatus);
 
 								return (
-									<div key={station.stationUri} className="row">
+									<div key={station.stationUri} className="row mb-3">
 										<div className="col-md-12" ref={station.chosen ? "chosenStation" : null}>
 
-										<div className={panelClasses}>
-											<div className="cp-lnk panel-heading" style={panelHeaderStyle} onClick={() => chooseStationAction(station)}>
-												<span className={icon} style={{ top: 3 }} />
+										<div className="card">
+											<div className={"cp-lnk card-header bg-" + cardStyle} style={panelHeaderStyle} onClick={() => chooseStationAction(station)}>
+												<span className={icon} style={{ marginTop: 3 }} />
 												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>{station.hasLongName}</span>
 												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>(Last status update: {getLastAppUpdate(station.hasAppStatusDate)})</span>
 												<span className="text-muted" style={appStatusCommentStyle}>{appStatusCommentTxt}</span>
@@ -182,7 +174,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 													<span style={{ fontWeight: 600, fontSize: 12, position: 'relative', top: 2 }}>{statusLabel(applicationStatus)}</span>
 												</label>
 											</div>
-											{station.chosen ? <div className="panel-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName} /></div> : null}
+											{station.chosen ? <div className="card-body"><Station stationUri={station.stationUri} stationLabel={station.hasLongName} /></div> : null}
 										</div>
 
 										</div>
@@ -192,7 +184,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 
 						}
 					</div>
-					
+
 				);
 			}
 		},

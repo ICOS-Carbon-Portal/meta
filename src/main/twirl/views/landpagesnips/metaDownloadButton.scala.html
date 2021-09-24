@@ -1,7 +1,7 @@
 @import se.lu.nateko.cp.meta.utils.urlEncode
 
 @(id: String, fileName: String, title: String, ext: String)
-<a class="btn btn-default" style="margin-right: 2%;" href=@{s"./${id}/${fnameEncoded}.$ext"}>
+<a class="btn btn-outline-secondary" href=@{s"./${id}/${fnameEncoded}.$ext"}>
 	@title
 </a>
 

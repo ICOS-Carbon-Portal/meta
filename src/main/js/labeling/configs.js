@@ -12,7 +12,7 @@ export function stationOwlClassToTheme(owlClass){
 		return 'Ocean';
 };
 
-export const themeGlyphs = {
+export const themeIcons = {
 	Atmosphere: 'cloud',
 	Ecosystem: 'leaf',
 	Ocean: 'tint'

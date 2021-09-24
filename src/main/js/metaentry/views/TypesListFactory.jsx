@@ -11,7 +11,7 @@ module.exports = function(typesStore, chooseTypeAction){
 		render: function(){
 			var self = this;
 
-			return <Widget widgetType="primary" widgetTitle="Types">
+			return <Widget widgetTitle="Types">
 				<ScreenHeightColumn>
 					<div className="list-group" role="menu">{
 
@@ -22,7 +22,7 @@ module.exports = function(typesStore, chooseTypeAction){
 							var fullName = theType.displayName;
 
 							return <li
-								className={"cp-lnk list-group-item list-group-item-" + (isChosen ? "info" : "default")}
+								className={"cp-lnk list-group-item" + (isChosen ? " list-group-item-info" : "")}
 								key={theType.uri} title={fullName} onClick={clickHandler} role="menuitem">
 								{capped(fullName)}
 							</li>;

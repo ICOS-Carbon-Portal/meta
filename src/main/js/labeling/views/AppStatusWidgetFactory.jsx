@@ -27,17 +27,17 @@ function getTransitionText(from, to){
 	}
 }
 
-function transitionLabelClass(to) {
+function transitionBadgeClass(to) {
 	switch (to) {
-		case status.acknowledged: return "label-primary";
-		case status.notSubmitted: return "label-default";
-		case status.approved: return "label-success";
-		case status.rejected: return "label-danger";
-		case status.step2ontrack: return "label-warning";
-		case status.step2approved: return "label-success";
-		case status.step2delayed: return "label-warning";
-		case status.step2stalled: return "label-danger";
-		case status.step3approved: return "label-success";
+		case status.acknowledged: return "bg-primary";
+		case status.notSubmitted: return "bg-secondary";
+		case status.approved: return "bg-success";
+		case status.rejected: return "bg-danger";
+		case status.step2ontrack: return "bg-warning text-body";
+		case status.step2approved: return "bg-success";
+		case status.step2delayed: return "bg-warning text-body";
+		case status.step2stalled: return "bg-danger";
+		case status.step3approved: return "bg-success";
 	}
 }
 
@@ -46,10 +46,10 @@ function getAppStatusCommentPholder(hasApplicationStatus) {
 	switch (hasApplicationStatus) {
 		case 'STEP2DELAYED':
 			return 'Provide a reason for why this station is delayed';
-		
+
 		case 'STEP2STALLED':
 			return 'Provide a reason for why this station is stalled';
-		
+
 		default:
 			return defaultAppStatusCommentPholder;
 	}
@@ -94,7 +94,7 @@ export default function (ToasterStore, updateStatusAction) {
 				_.map(status.transitions, to => {
 					let [buttonLabel, helpText] = getTransitionText(status.value, to);
 					const isSelected = selectedStatus === to;
-					const buttonClass = 'label ' + transitionLabelClass(to);
+					const buttonClass = 'badge ' + transitionBadgeClass(to);
 
 					return (
 						<LifecycleRadioButton
@@ -162,13 +162,13 @@ export default function (ToasterStore, updateStatusAction) {
 			const newStation = this.props.status
 				.withStatus(hasApplicationStatus)
 				.stationWithStatusComment(hasAppStatusComment);
-			
+
 			const isUpdatedStatus = currStation.hasApplicationStatus !== newStation.hasApplicationStatus;
 			const isUpdatedStatusComment = currStation.hasAppStatusComment !== newStation.hasAppStatusComment;
 
 			if (isUpdatedStatus || isUpdatedStatusComment) {
 				updateStatusAction(newStation);
-			
+
 			} else {
 				ToasterStore.showToasterHandler('No changes to save', 'warning');
 			}

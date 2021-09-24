@@ -2,9 +2,9 @@
 @import se.lu.nateko.cp.meta.core.data.DataObject
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
-<div class="col-md-3 text-right">
+<div>
 	@dobj.accessUrl.map{link =>
-		<a class="btn btn-default" href="@link">Download</a>
+		<a class="btn btn-secondary" href="@link">Download</a>
 	}
 	<a class="btn btn-primary" href="@dataURL(dobj.hash.id)">View in the data portal</a>
 </div>

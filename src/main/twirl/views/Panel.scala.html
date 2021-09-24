@@ -1,10 +1,8 @@
 @(title: String, width: Int = 3, styleContext: String = "default")(body: Html)
-<div class="col-md-@width">
-	<div class="panel panel-@styleContext">
-		<div class="panel-heading">
-			<h3 class="panel-title" style="color: #333">@title</h3>
-		</div>
-		<div class="panel-body" style="max-height: 450px;overflow-y:auto">
+<div class="col-md-@width mb-3">
+	<div class="card border-@styleContext">
+		<h3 class="card-header bg-@styleContext border-@styleContext fs-6">@title</h3>
+		<div class="card-body">
 		@body
 		</div>
 	</div>

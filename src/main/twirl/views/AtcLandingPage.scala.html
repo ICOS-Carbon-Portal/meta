@@ -3,7 +3,7 @@
 @import landpagesnips._
 
 @(title: String, headerExtra: Option[Html], headExtra: Html)(body: Html)
-@IcosPage(title, CpMenu.default, None, AtcStyleConfig){
+@IcosPage(title, CpMenu.default, None, AtcStyleConfig, bootstrapVersion = Some(5)){
 	<link rel="shortcut icon" type="image/png" href="https://static.icos-cp.eu/images/favicon.png"/>
 	@headExtra
 	@LandingPageStyle()

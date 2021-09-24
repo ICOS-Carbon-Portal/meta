@@ -8,7 +8,7 @@ module.exports = function(typesStore, checkSuffixAction, createIndividualAction)
 		render: function(){
 
 			var suffixValid = !!this.state.suffixAvailable;
-			var icon = suffixValid ? 'plus' : 'remove';
+			var icon = suffixValid ? 'plus' : 'times';
 			var inputStyle = suffixValid ? {} : {backgroundColor: 'pink'};
 
 			return <div className="input-group" style={{marginBottom: '10px'}}>
@@ -19,8 +19,8 @@ module.exports = function(typesStore, checkSuffixAction, createIndividualAction)
 					onKeyDown={this.keyDownHandler}
 				/>
 
-				<span className="input-group-addon" onClick={this.clickHandler}>
-					<span className={'glyphicon glyphicon-' + icon}></span>
+				<span className="input-group-text" onClick={this.clickHandler}>
+					<span className={'fas fa-' + icon}></span>
 				</span>
 			</div>;
 		},

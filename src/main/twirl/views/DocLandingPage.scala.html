@@ -9,64 +9,61 @@
 
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value)
 @ServerSidePage(doc.fileName, pageHeading, envri){
-	<div class="container-fluid">
-
-		<div class="row">
-			@Panel("Summary", 8, summaryStyleContext){
-				@if(!uploadComplete) {
-					@PanelRow("Status - Not complete", "Metadata uploaded. Document not uploaded. No PID assigned.")
-				}
-				@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
-				@if(uploadComplete) {
-					@PidPanelHtmlRow(doc.pid, handleProxies.basic)
-					@accessUrlRow(doc)
-				}
-				@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion.flattenToSeq)}
-				@PanelHtmlRow{Next version}{@versionLink(doc.nextVersion)}
-				@for(coll <- doc.parentCollections){
-					@PanelHtmlRow{Part of}{
-						@resourceLink(coll)
-					}
+	<div class="row">
+		@Panel("Summary", 8, summaryStyleContext){
+			@if(!uploadComplete) {
+				@PanelRow("Status - Not complete", "Metadata uploaded. Document not uploaded. No PID assigned.")
+			}
+			@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
+			@if(uploadComplete) {
+				@PidPanelHtmlRow(doc.pid, handleProxies.basic)
+				@accessUrlRow(doc)
+			}
+			@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion.flattenToSeq)}
+			@PanelHtmlRow{Next version}{@versionLink(doc.nextVersion)}
+			@for(coll <- doc.parentCollections){
+				@PanelHtmlRow{Part of}{
+					@resourceLink(coll)
 				}
 			}
-			@Panel("Metadata download", 4){
-				@objMetaDownloadButton(doc, "JSON", "json")
-				@objMetaDownloadButton(doc, "RDF/XML", "xml")
-				@objMetaDownloadButton(doc, "RDF/Turtle", "ttl")
-			}
-			@Panel("Download count", 2){
-				@extras.downloadStats.getOrElse("Not available")
-			}
-			@Panel("Preview count", 2){
-				Not applicable
-			}
+		}
+		<div class="col-md-4">
+			<div class="row">
+				@Panel("Metadata download", 12){
+					@objMetaDownloadButton(doc, "JSON", "json")
+					@objMetaDownloadButton(doc, "RDF/XML", "xml")
+					@objMetaDownloadButton(doc, "RDF/Turtle", "ttl")
+				}
+				@Panel("Download count", 6){
+					@extras.downloadStats.getOrElse("Not available")
+				}
+			</div>
 		</div>
+	</div>
 
-		<div class="row">
-			@Panel("Content", 12){
-				@Citations(doc.references)
-				@PanelRow("File name", doc.fileName)
-				@for(size <- doc.size){
-					@PanelRow("Size in bytes", size.toString)
-				}
-				@PanelRow("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
-				@PanelRow("SHA-256 hashsum (base64)", doc.hash.base64)
-				@if(uploadComplete) {
-					@accessUrlRow(doc)
-				}
+	<div class="row">
+		@Panel("Content", 12){
+			@Citations(doc.references)
+			@PanelRow("File name", doc.fileName)
+			@for(size <- doc.size){
+				@PanelRow("Size in bytes", size.toString)
 			}
-		</div>
-
-		<div class="row">
-			@Panel("Submission", 4){
-				@PanelHtmlRow{Submitted by}{
-					@agentLink(doc.submission.submitter)
-				}
-				@PanelRow("Submission started (UTC)", doc.submission.start.getDateTimeStr)
-				@PanelRow("Submission ended (UTC)", doc.submission.stop.getDateTimeStr)
+			@PanelRow("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
+			@PanelRow("SHA-256 hashsum (base64)", doc.hash.base64)
+			@if(uploadComplete) {
+				@accessUrlRow(doc)
 			}
-		</div>
+		}
+	</div>
 
+	<div class="row">
+		@Panel("Submission", 4){
+			@PanelHtmlRow{Submitted by}{
+				@agentLink(doc.submission.submitter)
+			}
+			@PanelRow("Submission started (UTC)", doc.submission.start.getDateTimeStr)
+			@PanelRow("Submission ended (UTC)", doc.submission.stop.getDateTimeStr)
+		}
 	</div>
 }
 

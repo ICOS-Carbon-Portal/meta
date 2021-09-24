@@ -35,7 +35,7 @@ module.exports = React.createClass({
 
 		if(state.isDisabled) return null;
 
-		var cssClasses = "glyphicon glyphicon-" + state.glyphicon;
+		var cssClasses = "fas fa-" + state.icon;
 		return <span className={cssClasses} onClick={state.clickHandler} role="button"></span>;
 	}
 });

@@ -57,10 +57,10 @@ var GroupRow = React.createClass({
 		var className = this.props.required ? "cp-required-header" : "cp-not-required-header";
 
 		return <div className="row">
-			<div className="form-group col-md-2">
-				<label className={className}>{this.props.header}</label>
+			<div className="form-group col-md-2 mb-2">
+				<label className={className + " col-form-label"}>{this.props.header}</label>
 			</div>
-			<div className="form-group col-md-10">
+			<div className="form-group col-md-10 mb-2">
 				{this.props.children}
 			</div>
 		</div>;
@@ -233,12 +233,7 @@ module.exports = {
 
 	Header: React.createClass({
 		render: function() {
-			return <div className="row">
-				<div className="col-md-2">&nbsp;</div>
-				<div className="col-md-10">
-					<h4>{this.props.txt}</h4>
-				</div>
-			</div>;
+			return <h4 className="mb-3">{this.props.txt}</h4>;
 		}
 	}),
 

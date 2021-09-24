@@ -12,7 +12,7 @@ module.exports = function(individualsStore, chooseAction, removeAction, Individu
 			var self = this;
 
 			var buttons = [{
-				glyphicon: 'plus',
+				icon: 'plus',
 				isDisabled: this.state.addingInstance,
 				clickHandler: function(){
 					self.setState({addingInstance: true});
@@ -30,7 +30,7 @@ module.exports = function(individualsStore, chooseAction, removeAction, Individu
 				.sortBy("displayName")
 				.value();
 
-			return <Widget widgetType="primary" widgetTitle="Entries" buttons={buttons}>
+			return <Widget widgetTitle="Entries" buttons={buttons}>
 
 				{this.state.addingInstance ? <IndividualAdder cancelHandler={this.hideAdder}/> : null}
 

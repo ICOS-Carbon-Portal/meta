@@ -25,7 +25,7 @@ var FileExpectations = React.createClass({
 var CertifyingClaim = React.createClass({
 	render: function(){
 		return <div className="input-group" style={{marginTop: 10}}>
-			<span className="input-group-addon">
+			<span className="input-group-text">
 				<input type="checkbox" onChange={this.changeHandler} />
 			</span>
 			<input type="text" className="form-control" title={this.props.claim} value={this.props.claim} readOnly />

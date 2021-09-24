@@ -31,11 +31,9 @@ module.exports = React.createClass({
 				onBlur={this.persistUpdate} value={content} onChange={this.changeHandler}
 				onKeyDown={this.keyDownHandler}
 			/>
-			<span className="input-group-btn">
-				<button className="btn btn-default" type="button" onClick={this.deleteSelf}>
-					<span className="glyphicon glyphicon-remove"></span>
-				</button>
-			</span>
+			<button className="btn btn-outline-secondary" type="button" onClick={this.deleteSelf}>
+				<span className="fas fa-times"></span>
+			</button>
 		</div>;
 	},
 
@@ -48,7 +46,7 @@ module.exports = React.createClass({
 			this.setState({dataValue: updatedValue});
 		}
 	},
-	
+
 	keyDownHandler: function(event){
 		if(event.keyCode == 13){
 			var elem = React.findDOMNode(this.refs.dataValueInput);

@@ -27,7 +27,7 @@ module.exports = React.createClass({
 		var tip = uploadDisabled ? this.state.fileType.tip : `Picked ${this.state.files.length} file(s)`;
 
 		return <tr>
-			<th><span className="glyphicon glyphicon-upload"/></th>
+			<th><span className="fas fa-upload"/></th>
 			<td style={{width: '20%'}}>
 				<select className="form-control" ref="fileType" value={fileTypeIndex} onChange={this.updateFileInfo}>{
 					_.map(this.props.fileTypes, (fileType, i) =>
@@ -38,15 +38,13 @@ module.exports = React.createClass({
 			<td>
 				<input type="file" multiple={multifile} ref="uploadedFile" onChange={this.updateFileInfo} style={{display: 'none'}} />
 				<div className="input-group">
-					<span className="input-group-btn">
-						<button className="btn btn-info" type="button" onClick={this.filePickHandler}>{filesLabel}</button>
-					</span>
+					<button className="btn btn-secondary" type="button" onClick={this.filePickHandler}>{filesLabel}</button>
 					<input type="text" className="form-control" value={tip} readonly />
 				</div>
 			</td>
 			<td>
-				<button type="button" className="btn btn-info" onClick={this.uploadHandler} disabled={uploadDisabled}>
-					<span className="glyphicon glyphicon-upload"/> Upload
+				<button type="button" className="btn btn-secondary" onClick={this.uploadHandler} disabled={uploadDisabled}>
+					<span className="fas fa-upload"/> Upload
 				</button>
 			</td>
 		</tr>;

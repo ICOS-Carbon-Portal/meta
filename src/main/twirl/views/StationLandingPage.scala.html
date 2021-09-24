@@ -175,28 +175,26 @@
 			@if(!station.pictures.isEmpty) {
 				<h2>Pictures</h2>
 				@for(picture <- station.pictures) {
-					<img src="@picture" class="img-responsive" style="margin-bottom: 15px;">
+					<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">
 				}
 			}
 		</div>
 		<div class="col-sm-4 text-center">
-			<div class="row form-group">
-				<a class="btn btn-lg btn-primary" href="@portalLink" style="margin-top: 20px">Browse data from @stationShortName(station)</a>
+			<div>
+				<a class="btn btn-lg btn-primary my-3" href="@portalLink">
+					Browse data from @stationShortName(station)
+				</a>
 			</div>
 			@for(email <- station.org.email) {
-				<div class="row">
-					<div class="btn btn-link">
-						<span class="glyphicon glyphicon-envelope"></span>
-						<a href="mailto:@email">@{email}</a>
-					</div>
+				<div class="btn btn-link">
+					<span class="fas fa-envelope"></span>
+					<a href="mailto:@email">@{email}</a>
 				</div>
 			}
 			@for(website <- station.org.website) {
-				<div class="row">
-					<div class="btn btn-link">
-						<span class="glyphicon glyphicon-share"></span>
-						<a href="@website">Read more about @stationShortName(station)</a>
-					</div>
+				<div class="btn btn-link">
+					<span class="fas fa-external-link-alt"></span>
+					<a href="@website">Read more about @stationShortName(station)</a>
 				</div>
 			}
 		</div>

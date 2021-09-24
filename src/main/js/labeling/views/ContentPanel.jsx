@@ -1,8 +1,8 @@
 module.exports = React.createClass({
 	render: function(){
-		return <div className="panel panel-info">
-			<div className="panel-heading"><h3 className="panel-title">{this.props.panelTitle}</h3></div>
-			<div className="panel-body">{this.props.children}</div>
+		return <div className="card mb-3">
+			<div className="card-header"><h3 className="fs-6 d-inline">{this.props.panelTitle}</h3></div>
+			<div className="card-body">{this.props.children}</div>
 		</div>
 	}
 });

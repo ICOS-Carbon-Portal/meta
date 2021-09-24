@@ -8,14 +8,14 @@ export default {
 		return {
 
 			widgetType: validity.valid
-				? (propValues.isRequired() ? "warning" : "info")
+				? (propValues.isRequired() ? "warning" : "light")
 				: "danger",
 
 			widgetTitle: propInfo.displayName,
 			headerTitle: propInfo.comment,
 
 			buttons: [{
-				glyphicon: 'plus',
+				icon: 'plus',
 				isDisabled: !propValues.canHaveMoreValues() || !this.newValueCanBeAdded(),
 				clickHandler: _.bind(this.addNewValue, this)
 			}]

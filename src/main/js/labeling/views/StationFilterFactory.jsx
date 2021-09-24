@@ -8,88 +8,74 @@ export default function(StationFilterStore, stationFiltersAction) {
 		render: function() {
 			var self = this;
 
-			var rowStyle = {marginBottom: 15};
-			var labelStyle = {float: 'left', height: 22, padding: '0 10px 0 0', margin: '0 20px 10px 0'};
-			var inputStyle = {position:'relative', top: 2, left: 3, margin: '0 7px 0 0'};
-			var glyphStyle = {top: 4, fontSize: 16};
-			var spanStyle = {position:'relative', top:-2, left:3, fontWeight:700, fontFamily:'"Helvetica Neue",Helvetica,Arial,sans-serif'};
-
 			return (
-				<div className="container-fluid">
+				<div>
 
-					<div className="row" style={rowStyle}>
+					<div className="row mb-3">
 						<div className="col-md-12">
-							<label style={labelStyle} className="label label-info">
-								<input type="checkbox"
-									   style={inputStyle}
-									   checked={self.state.stationType.Atmosphere}
-									   onChange={() => self.toggleTypeChkBx('Atmosphere')}>
-									<span className="glyphicon glyphicon-cloud" style={glyphStyle} aria-hidden="true">
-										<span style={spanStyle}>Atmosphere</span>
-									</span>
-								</input>
-							</label>
-							<label style={labelStyle} className="label label-info">
-								<input type="checkbox"
-									   style={inputStyle}
-									   checked={self.state.stationType.Ecosystem}
-									   onChange={() => self.toggleTypeChkBx('Ecosystem')}>
-									<span className="glyphicon glyphicon-leaf" style={glyphStyle} aria-hidden="true">
-										<span style={spanStyle}>Ecosystem</span>
-									</span>
-								</input>
-							</label>
-							<label style={labelStyle} className="label label-info">
-								<input type="checkbox"
-									   style={inputStyle}
-									   checked={self.state.stationType.Ocean}
-									   onChange={() => self.toggleTypeChkBx('Ocean')}>
-									<span className="glyphicon glyphicon-tint" style={glyphStyle} aria-hidden="true">
-										<span style={spanStyle}>Ocean</span>
-									</span>
-								</input>
-							</label>
+							<h5>Theme</h5>
+							<div className="form-check form-check-inline">
+								<input className="form-check-input" type="checkbox" id="atccheckbox"
+									checked={self.state.stationType.Atmosphere}
+									onChange={() => self.toggleTypeChkBx('Atmosphere')} />
+								<label className="form-check-label" htmlFor="atccheckbox">
+									<i className="fas fa-cloud"></i> Atmosphere
+								</label>
+							</div>
+							<div className="form-check form-check-inline">
+								<input className="form-check-input" type="checkbox" id="etccheckbox"
+									checked={self.state.stationType.Ecosystem}
+									onChange={() => self.toggleTypeChkBx('Ecosystem')} />
+								<label className="form-check-label" htmlFor="etccheckbox">
+									<i className="fas fa-leaf"></i> Ecosystem
+								</label>
+							</div>
+							<div className="form-check form-check-inline">
+								<input className="form-check-input" type="checkbox" id="otccheckbox"
+									checked={self.state.stationType.Ocean}
+									onChange={() => self.toggleTypeChkBx('Ocean')} />
+								<label className="form-check-label" htmlFor="otccheckbox">
+									<i className="fas fa-tint"></i> Ocean
+								</label>
+							</div>
 						</div>
 					</div>
 
-					<div className="row" style={rowStyle}>
-						<div className="col-md-12">{
+					<div className="row mb-4">
+						<h5>Status</h5>
+						<div className="col-md-12 fs-5">{
 							_.map(self.state.appStatus, (item, index) =>
 								<label key={item.value}
-									style={{float: 'left', height: 20, padding: '0 5px 0 0', margin: '0 15px 10px 0'}}
-									className={statusClass(item.value)}>
+									className={statusClass(item.value) + " me-2"}>
 									<input type="checkbox"
-										style={{position:'relative', top: 2, left: 3, margin: '2px 7px 0 0'}}
+										className="me-2"
 										onChange={() => self.toggleStatusChkBx(index)}
 										checked={item.selected}
 										name={item.value}>
-										<span style={{fontWeight: 600, fontSize: 12}}>{statusLabel(item.value)}</span>
+										<span>{statusLabel(item.value)}</span>
 									</input>
 								</label>
 							)
 						}</div>
 					</div>
 
-					<div className="row" style={rowStyle}>
-						<div className="col-md-3" style={rowStyle}>
-							<div className="input-group">
+					<div className="d-sm-flex justify-content-between ">
+						<div>
+							<div className="input-group mb-3">
 								<input type="text" className="form-control"
 									onChange={self.stationNameSearch}
 									placeholder="Station name text search"
 									value={self.state.stationName}>
 								</input>
-								<span className="input-group-btn">
-									<button className="btn btn-primary" onClick={self.clearStationName} type="button">Clear text</button>
-								</span>
+								<button className="btn btn-secondary" onClick={self.clearStationName} type="button">Clear text</button>
 							</div>
 						</div>
 
-						<div className="col-md-1" style={rowStyle}>
-							<button className="btn btn-primary" onClick={self.resetAllFilters} type="button">Reset all filters</button>
-						</div>
-
-						<div className="col-md-2" style={rowStyle}>
-							<button className="btn btn-primary" onClick={self.unselectStatuses} type="button">Unselect all statuses</button>
+						<div >
+							<div className="d-flex mb-3">
+								<button className="btn btn-secondary me-2" onClick={self.unselectStatuses} type="button">Unselect all statuses</button>
+								<button className="btn btn-secondary" onClick={self.resetAllFilters} type="button">Reset all filters</button>
+							</div>
 						</div>
 					</div>
 

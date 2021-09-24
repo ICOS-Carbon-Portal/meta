@@ -6,59 +6,55 @@
 
 @(info: ResourceViewInfo)(implicit envri: Envri)
 @ServerSidePage("Metadata Entity Page", info.res.uri.toString, envri, CpMenu.default){
-	<div class="container-fluid">
-
-		<div class="row">
-			@Panel("Basic information", 10){
-				@PanelRow("URI", info.res.uri.toString)
-				@for(label <- info.res.label) {
-					@PanelRow("Label", label)
-				}
-				@for(comment <- info.res.comments) {
-					@PanelRow("Comment", comment)
-				}
-				@for((rdfType, idx) <- info.types.zipWithIndex){
-					@PanelHtmlRow{
-						@if(info.types.size > 1){
-							@{"Type " + (idx + 1)}
-						} else {Type}
-					}{
-						@resourceLink(rdfType)
-					}
+	<div class="row">
+		@Panel("Basic information", 10){
+			@PanelRow("URI", info.res.uri.toString)
+			@for(label <- info.res.label) {
+				@PanelRow("Label", label)
+			}
+			@for(comment <- info.res.comments) {
+				@PanelRow("Comment", comment)
+			}
+			@for((rdfType, idx) <- info.types.zipWithIndex){
+				@PanelHtmlRow{
+					@if(info.types.size > 1){
+						@{"Type " + (idx + 1)}
+					} else {Type}
+				}{
+					@resourceLink(rdfType)
 				}
 			}
-		</div>
+		}
+	</div>
 
-		<div class="row">
-			@Panel("Property values", 10){
-				@for((prop, value) <- info.propValues){
-					@PanelHtmlRow{
-						@resourceLink(prop)
-					}{
-						@value match {
-							case Left(objValue) => {
-								@resourceLink(objValue)
-							}
-							case Right(litValue) => {
-								@litValue
-							}
+	<div class="row">
+		@Panel("Property values", 10){
+			@for((prop, value) <- info.propValues){
+				@PanelHtmlRow{
+					@resourceLink(prop)
+				}{
+					@value match {
+						case Left(objValue) => {
+							@resourceLink(objValue)
+						}
+						case Right(litValue) => {
+							@litValue
 						}
 					}
 				}
 			}
-		</div>
+		}
+	</div>
 
-		<div class="row">
-			@Panel("Usages of this Resource by others", 10){
-				@for((subject, prop) <- info.usage){
-					@PanelHtmlRow{
-						@resourceLink(subject)
-					}{
-						@resourceLink(prop)
-					}
+	<div class="row">
+		@Panel("Usages of this Resource by others", 10){
+			@for((subject, prop) <- info.usage){
+				@PanelHtmlRow{
+					@resourceLink(subject)
+				}{
+					@resourceLink(prop)
 				}
 			}
-		</div>
-
+		}
 	</div>
 }

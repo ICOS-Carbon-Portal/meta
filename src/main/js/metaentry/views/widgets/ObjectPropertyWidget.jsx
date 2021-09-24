@@ -7,13 +7,11 @@ const ObjectValueWidget = React.createClass({
 		let style = this.props.orderNumber > 0 ? {marginTop: 3} : {};
 
 		return <div className="input-group" style={style}>
-			<a href={this.props.uri} className="input-group-addon"><span className="glyphicon glyphicon-link"></span></a>
+			<a href={this.props.uri} className="input-group-text"><span className="fas fa-link"></span></a>
 			<input type="text" className="form-control" readOnly value={this.props.label} />
-			<span className="input-group-btn">
-				<button className="btn btn-default" type="button" onClick={this.props.deleteSelf}>
-					<span className="glyphicon glyphicon-remove"></span>
-				</button>
-			</span>
+			<button className="btn btn-outline-secondary" type="button" onClick={this.props.deleteSelf}>
+				<span className="fas fa-times"></span>
+			</button>
 		</div>;
 	}
 });

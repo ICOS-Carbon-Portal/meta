@@ -4,7 +4,7 @@
 @import Envri.Envri
 
 @(pageTitle: String, envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Metadata Editor", pageTitle, envri, cpauthHostOpt = Some(authConf.authHost)){
+@ServerSidePage("Metadata Editor", pageTitle, envri, cpauthHostOpt = Some(authConf.authHost), bootstrapJavascript = true){
 	<script src="https://static.icos-cp.eu/constant/react/0.13.3/react.min.js"></script>
 	<script src="https://static.icos-cp.eu/constant/reflux/0.2.7/reflux.min.js"></script>
 	<!--[if IE]>
@@ -18,6 +18,9 @@
 		}
 		.cp-lnk:hover{
 			cursor: pointer;
+		}
+		.dropdown-toggle::after {
+			display: none;
 		}
 	</style>
 

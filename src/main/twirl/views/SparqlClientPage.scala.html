@@ -11,7 +11,6 @@
 
 	<style type="text/css">
 		#queryTA{resize: vertical;}
-		label.above { display: block; }
 		.string { color: green; }
 		.number { color: darkorange; }
 		.boolean { color: blue; }
@@ -22,36 +21,37 @@
 }{
 	@pageHeader(pageTitle, subTitle = pageSubtitle)
 	<div class="row">
-		<div class="col-md-7">
+		<div class="col-lg-7">
 			<div id="yasqe"></div>
 			<input id="hiddenQuery" type="hidden" value="@{query.getOrElse("")}" />
 		</div>
 
-		<div class="col-md-5">
+		<div class="col-lg-5">
 			<div class="row">
 
 				<div class="col-md-5">
-					<label class="above">Select predefined request</label>
-					<select id="selReqDdl" class="form-control">
+					<label class="form-label">Select predefined request</label>
+					<select id="selReqDdl" class="form-select">
 						<option value="0">Select request</option>
 					</select>
 				</div>
 
 				<div class="col-md-7">
-					<label class="above">Return type</label>
-					<div id="returnTypeGrp" class="btn-group" role="group">
-						<button type="button" class="btn btn-default">JSON</button>
-						<button type="button" class="btn btn-default">CSV</button>
-						<button type="button" class="btn btn-default">XML</button>
-						<button type="button" class="btn btn-default">TSV or Turtle</button>
+					<label class="form-label">Return type</label>
+					<div>
+						<div id="returnTypeGrp" class="btn-group" role="group">
+							<button type="button" class="btn btn-outline-secondary">JSON</button>
+							<button type="button" class="btn btn-outline-secondary">CSV</button>
+							<button type="button" class="btn btn-outline-secondary">XML</button>
+							<button type="button" class="btn btn-outline-secondary">TSV or Turtle</button>
+						</div>
 					</div>
 				</div>
 
 			</div>
 
 			<div class="row">
-
-				<div class="col-md-2" style="margin-top: 10px;">
+				<div class="col" style="margin-top: 10px;">
 					<button id="copyTxtBtn" class="btn btn-primary">Select result</button>
 				</div>
 			</div>
@@ -69,7 +69,11 @@
 
 	<div class="row">
 		<div class="col-md-12">
-			<pre id="result"></pre>
+			<div class="card bg-light">
+				<div class="card-body">
+					<pre id="result"></pre>
+				</div>
+			</div>
 		</div>
 	</div>
 }
@@ -89,5 +93,5 @@
 }
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(pageTitle) _ else CpCommonPage(pageTitle) _
+	if(envri == Envri.SITES) SitesPage(pageTitle, Some(5)) _ else CpCommonPage(pageTitle, bootstrapVersion = Some(5)) _
 }

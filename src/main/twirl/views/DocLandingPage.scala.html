@@ -8,7 +8,7 @@
 @import landpagesnips._
 
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value)
-@ServerSidePage(doc.fileName, pageHeading, envri){
+@ServerSidePage(doc.fileName, pageHeading, envri, headerExtra = headerExtra){
 	<div class="row">
 		@Panel("Summary", 8, summaryStyleContext){
 			@if(!uploadComplete) {
@@ -72,6 +72,16 @@
 		case Envri.SITES => "SITES Document Landing Page"
 		case _ => "Document Landing Page at Carbon Portal"
 	}
+}
+
+@accessUrl(link: URI) = {
+	<a class="btn btn-secondary" href="@link">Download</a>
+}
+
+@headerExtra = @{
+	if(uploadComplete)
+		doc.accessUrl.map(url => accessUrl(url))
+	else None
 }
 
 @uploadComplete = @{doc.submission.stop.isDefined}

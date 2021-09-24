@@ -6,13 +6,13 @@
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(coll.title, pageTitle, envri, CpMenu.default){
+@ServerSidePage(coll.title, pageTitle, envri, CpMenu.default, headerExtra = Some(headerExtra)){
 	<div class="row">
 		@Panel("Summary", 8, "success"){
 			@PanelRow("Title", coll.title)
 			@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
 			@PanelHtmlRow{Download URL}{
-				<span><a target="_blank" href=@{staticCollAccessUrl(coll.res)}>@{coll.title + ".zip"}</a></span>
+				<span><a target="_blank" href=@{accessUrl}>@{coll.title + ".zip"}</a></span>
 			}
 			@PanelHtmlRow{Collection creator}{
 				@agentLink(coll.creator)
@@ -48,6 +48,12 @@
 			}
 		}
 	</div>
+}
+
+@accessUrl = @{staticCollAccessUrl(coll.res)}
+
+@headerExtra = {
+	<a class="btn btn-secondary" href="@accessUrl">Download</a>
 }
 
 @pageTitle = @{

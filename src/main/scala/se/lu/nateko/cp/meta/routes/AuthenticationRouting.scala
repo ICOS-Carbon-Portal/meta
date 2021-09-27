@@ -56,7 +56,7 @@ class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit con
 	def allowUsers(userIds: Seq[String])(inner: => Route): Route =
 		if(userIds.isEmpty) inner else {
 			mustBeLoggedIn{ uid =>
-				if(userIds.contains(uid.email.toLowerCase))
+				if(userIds.exists(uid.email.equalsIgnoreCase))
 					inner
 				else
 					forbid(s"User ${uid.email} is not authorized to perform this operation")

@@ -1,15 +1,9 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import java.time.Duration
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.ZoneId
-import java.time.ZonedDateTime
-
 import org.eclipse.rdf4j.repository.Repository
-
-import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -17,11 +11,19 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import CitationStyle._
+
+import java.net.URI
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import java.time.temporal.ChronoUnit
+
+import CitationStyle._
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -63,11 +65,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				authors = citInfo.authors,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = keywords,
-				acknowledgements = getFundingAcknowledgements(data)
+				acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
+				licence = getLicence
 			)
 
 		case doc: DocObject => getItemCitationInfo(doc)
 	}
+
+	//will depend on other things in the future
+	def getLicence(implicit envri: Envri): Option[Licence] = defaultLicences.get(envri)
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
 		case None => "Fetching... try [refreshing the page] again in a few seconds"
@@ -181,6 +187,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 }
 
 object CitationMaker{
+
+	val defaultLicences: Map[Envri, Licence] = Map(
+		Envri.ICOS -> Licence("ICOS CCBY4 Data Licence", new URI("https://data.icos-cp.eu/licence")),
+		Envri.SITES -> Licence("SITES CCBY4 Data Licence",new URI("https://data.fieldsites.se/licence"))
+	)
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
 		l3 => Some(getTimeFromInterval(l3.temporal.interval, zoneId)),

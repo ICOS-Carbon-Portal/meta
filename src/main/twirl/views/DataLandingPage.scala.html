@@ -27,7 +27,7 @@
 			@for(coll <- dobj.parentCollections){
 				@resourcePanelRow("Part of", coll)
 			}
-			@for(ack <- dobj.references.acknowledgements){
+			@for(ack <- dobj.references.acknowledgements.toSeq.flatten){
 				@PanelRow("Acknowledgement", ack)
 			}
 		}

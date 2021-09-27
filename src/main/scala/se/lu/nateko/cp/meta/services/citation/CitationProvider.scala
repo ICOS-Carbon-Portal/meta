@@ -2,32 +2,34 @@ package se.lu.nateko.cp.meta.services.citation
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Resource
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix}
+import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.collectionPrefix
+import se.lu.nateko.cp.meta.core.data.objectPrefix
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcher
-import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
+import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import java.net.URI
 
 class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
 
@@ -72,24 +74,28 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 
 	def getReferences(res: Resource): Option[References] = getCitableItem(res).map(_.references)
 
-	private def getDoiCitation(res: Resource): Option[String] = res match {
-		case iri: IRI => server.getStringValues(iri, metaVocab.hasDoi).headOption
+	def getLicence(res: Resource): Option[Licence] = for(
+		iri <- toIRI(res);
+		_ <- extractHash(iri);
+		envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri));
+		lic <- citer.getLicence(envri)
+	) yield lic
+
+	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>
+		server.getStringValues(iri, metaVocab.hasDoi).headOption
 			.collect{ citer.extractDoiCitation(CitationStyle.TEXT) }
-		case _ => None
 	}
 
-	private def getCitableItem(res: Resource): Option[CitableItem] = res match {
-
-		case iri: IRI =>
-			if(server.hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
-				server.hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
-			) getStaticObject(iri)
-			else if(server.hasStatement(iri, RDF.TYPE, metaVocab.collectionClass))
-				getStaticColl(iri)
-			else None
-		case _ =>
-			None
+	private def getCitableItem(res: Resource): Option[CitableItem] = toIRI(res).flatMap{iri =>
+		if(server.hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
+			server.hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
+		) getStaticObject(iri)
+		else if(server.hasStatement(iri, RDF.TYPE, metaVocab.collectionClass))
+			getStaticColl(iri)
+		else None
 	}
+
+	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
 	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
 		hash <- extractHash(maybeDobj);
@@ -113,5 +119,4 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 
 	private def extractHash(iri: IRI): Option[Sha256Sum] =
 		Sha256Sum.fromBase64Url(iri.getLocalName).toOption
-
 }

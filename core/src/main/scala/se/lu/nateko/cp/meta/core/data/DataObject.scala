@@ -157,6 +157,8 @@ case class DocObject(
 	references: References
 ) extends StaticObject
 
+case class Licence(name: String, url: URI)
+
 case class References(
 	citationString: Option[String],
 	citationBibTex: Option[String],
@@ -164,8 +166,9 @@ case class References(
 	keywords: Option[Seq[String]],
 	authors: Option[Seq[Person]],
 	temporalCoverageDisplay: Option[String],
-	acknowledgements: Seq[String]
+	acknowledgements: Option[Seq[String]],
+	licence: Option[Licence]
 )
 object References{
-	def empty = References(None, None, None, None, None, None, Nil)
+	def empty = References(None, None, None, None, None, None, None, None)
 }

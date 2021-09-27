@@ -180,6 +180,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val creator = getRelativeRaw("creator")
 		val hasPart = getRelativeRaw("hasPart")
 		val dateSubmitted = getRelativeRaw("dateSubmitted")
+		val license = getRelativeRaw("license")
 	}
 
 	object sites extends CustomVocab {

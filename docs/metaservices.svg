@@ -9,6 +9,9 @@
    id="svg4262"
    inkscape:version="1.1 (ce6663b3b7, 2021-05-25)"
    sodipodi:docname="metaservices.svg"
+   inkscape:export-filename="/home/oleg/workspace/meta/docs/metaservices.png"
+   inkscape:export-xdpi="150.02"
+   inkscape:export-ydpi="150.02"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -94,7 +97,10 @@
      id="layer1"
      transform="translate(29.500219,-113.88753)">
     <g
-       id="g142777">
+       id="g5841"
+       inkscape:export-filename="/home/oleg/workspace/meta/docs/metaservices.png"
+       inkscape:export-xdpi="150.02"
+       inkscape:export-ydpi="150.02">
       <rect
          id="rect4264"
          width="209.74876"
@@ -258,101 +264,122 @@
            style="font-size:8.46667px;stroke-width:0.264583"
            x="54.058033"
            y="128.43269">SPARQL endpoint</tspan></text>
-      <g
-         id="g2703"
-         transform="translate(-2.1166667,11.641668)"
-         inkscape:connector-avoid="true">
-        <rect
-           style="fill:#e9bbac;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           id="rect45077"
-           width="94.599663"
-           height="34.250515"
-           x="46.000423"
-           y="186.84358"
-           rx="4.99999"
-           ry="4.99999" />
-        <text
-           xml:space="preserve"
-           style="font-style:normal;font-weight:normal;font-size:7.76111px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           x="93.666702"
-           y="201.65895"
-           id="text2331"><tspan
-             sodipodi:role="line"
-             id="tspan2329"
-             style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="93.666702"
-             y="201.65895">OOP metadata model</tspan><tspan
-             sodipodi:role="line"
-             style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="93.666702"
-             y="211.36034"
-             id="tspan2333">(Scala classes)</tspan></text>
-      </g>
+      <rect
+         style="fill:#e9bbac;fill-opacity:1;stroke:#000000;stroke-width:0.265;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="rect45077"
+         width="127.47412"
+         height="34.250515"
+         x="11.009302"
+         y="198.48524"
+         rx="4.99999"
+         ry="4.99999"
+         inkscape:connector-avoid="true" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:7.76111px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="80.437538"
+         y="213.30061"
+         id="text2331"><tspan
+           sodipodi:role="line"
+           id="tspan2329"
+           style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+           x="80.437538"
+           y="213.30061">OOP metadata model</tspan><tspan
+           sodipodi:role="line"
+           style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+           x="80.437538"
+           y="223.002"
+           id="tspan2333">(Scala classes)</tspan></text>
       <path
          style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow1Lstart)"
          d="m 96.517336,198.48525 7.871874,-25.27451"
          id="path2727"
          inkscape:connector-type="polyline"
          inkscape:connector-curvature="3"
-         inkscape:connection-start="#g2703"
          inkscape:connection-end="#g44944" />
       <g
-         id="g7508"
-         transform="translate(4.7625002)">
+         id="g5760">
         <rect
            style="fill:#ace9bb;fill-opacity:1;stroke:#000000;stroke-width:0.237949;stroke-miterlimit:4;stroke-dasharray:none"
            id="rect3107"
-           width="44.300426"
+           width="38.046146"
            height="30.579412"
-           x="38.902813"
+           x="53.623764"
            y="233.0697"
            rx="4.99999"
            ry="4.99999" />
         <text
            xml:space="preserve"
            style="font-style:normal;font-weight:normal;font-size:7.76111px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           x="61.219288"
+           x="73.390121"
            y="245.96405"
            id="text4969"><tspan
              sodipodi:role="line"
              id="tspan4967"
              style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="61.219288"
+             x="73.390121"
              y="245.96405">Landing</tspan><tspan
              sodipodi:role="line"
              style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="61.219288"
+             x="73.390121"
              y="255.66544"
              id="tspan4971">pages</tspan></text>
       </g>
       <g
-         id="g7514"
-         transform="translate(0.52916667)">
+         id="g5754">
         <rect
            style="fill:#ace9bb;fill-opacity:1;stroke:#000000;stroke-width:0.251755;stroke-miterlimit:4;stroke-dasharray:none"
            id="rect3107-3"
-           width="49.612469"
+           width="44.364288"
            height="30.565607"
-           x="87.957848"
+           x="92.676857"
            y="233.16942"
            rx="4.99999"
            ry="4.99999" />
         <text
            xml:space="preserve"
            style="font-style:normal;font-weight:normal;font-size:7.76111px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           x="112.29382"
+           x="115.4688"
            y="246.05687"
            id="text4969-6"><tspan
              sodipodi:role="line"
              style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="112.29382"
+             x="115.4688"
              y="246.05687"
              id="tspan4971-5">JSON</tspan><tspan
              sodipodi:role="line"
              style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
-             x="112.29382"
+             x="115.4688"
              y="255.75826"
              id="tspan7342">metadata</tspan></text>
+      </g>
+      <g
+         id="g5766">
+        <rect
+           style="fill:#ace9bb;fill-opacity:1;stroke:#000000;stroke-width:0.251755;stroke-miterlimit:4;stroke-dasharray:none"
+           id="rect3107-3-3"
+           width="39.157509"
+           height="30.565607"
+           x="13.093466"
+           y="233.16426"
+           rx="4.99999"
+           ry="4.99999" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-weight:normal;font-size:7.76111px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+           x="33.853642"
+           y="246.05171"
+           id="text4969-6-67"><tspan
+             sodipodi:role="line"
+             style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+             x="33.853642"
+             y="246.05171"
+             id="tspan7342-3">Upload</tspan><tspan
+             sodipodi:role="line"
+             style="font-size:7.76111px;text-align:center;text-anchor:middle;stroke-width:0.264583"
+             x="33.853642"
+             y="255.7531"
+             id="tspan5322">GUI</tspan></text>
       </g>
       <g
          id="g8329"
@@ -385,7 +412,7 @@
       </g>
       <path
          style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow1Lstart)"
-         d="m 159.53031,233.38302 -13.65168,-34.17127 c -0.15856,-0.39688 -0.58426,-1.19063 -0.85141,-1.5875 l -1.75198,-2.60277 c -0.26715,-0.39688 -0.85812,-1.19063 -1.18195,-1.5875 l -16.50165,-20.22399"
+         d="m 159.53032,233.38302 -13.65169,-34.17128 c -0.15856,-0.39687 -0.58426,-1.19062 -0.8514,-1.5875 l -1.75199,-2.60277 c -0.26715,-0.39687 -0.85812,-1.19062 -1.18195,-1.5875 l -16.50164,-20.22398"
          id="path8353"
          inkscape:connector-type="polyline"
          inkscape:connector-curvature="3"

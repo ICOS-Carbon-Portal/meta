@@ -21,6 +21,8 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import scala.util.Try
+import se.lu.nateko.cp.meta.core.data.References
+import scala.collection.immutable.SeqMap
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
@@ -96,29 +98,36 @@ class CpNativeStoreConnection(
 			.getStatementsInternal(subj, pred, obj, includeInferred, contexts: _*)
 			.asInstanceOf[StatIter]
 
-		if(
-			subj == null || obj != null || //limited functionality for now
-			(pred != null && !magicPredValueFactories.contains(pred))
-		)
-			base
-		else if(pred == null) magicPredValueFactories.foldLeft(base){
-			case (iter, (pred, thunk)) => enrich(iter, pred, thunk(subj))
-		}
-		else magicPredValueFactories.get(pred).fold(base){thunk =>
-			enrich(base, pred, thunk(subj))
+		if(subj == null || obj != null) base //lookup by magic values/predicates not possible
+		else{
+			val magicFactories = magicPredValueFactories(subj)
+			if(pred != null && !magicFactories.contains(pred)) base //not a magic predicate
+			else if(pred == null) magicFactories.foldLeft(base){
+				case (iter, (pred, thunk)) => enrich(iter, pred, thunk())
+			}
+			else magicFactories.get(pred).fold(base){thunk =>
+				enrich(base, pred, thunk())
+			}
 		}
 	}
 
-	private val magicPredValueFactories: Map[IRI, Resource => Option[Value]] = Map(
-		metaVocab.hasCitationString -> (
-			subj => citer.getCitation(subj).map(valueFactory.createStringLiteral)
-		),
-		metaVocab.hasBiblioInfo -> (subj => {
-			import se.lu.nateko.cp.meta.core.data.JsonSupport.referencesFormat
-			import spray.json._
-			citer.getReferences(subj).map(js => valueFactory.createStringLiteral(js.toJson.compactPrint))
-		}),
-		metaVocab.dcterms.license -> (subj => citer.getLicence(subj).map(_.url.toRdf))
-	)
+	private def magicPredValueFactories(subj: Resource): Map[IRI, () => Option[Value]] = {
+		var refsCache: Option[Option[References]] = None
+		SeqMap(
+			metaVocab.hasBiblioInfo -> (() => {
+				import se.lu.nateko.cp.meta.core.data.JsonSupport.referencesFormat
+				import spray.json._
+				val refs = citer.getReferences(subj)
+				refsCache = Some(refs)
+				refs.map(js => valueFactory.createStringLiteral(js.toJson.compactPrint))
+			}),
+			metaVocab.hasCitationString -> (
+				() => refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(valueFactory.createStringLiteral)
+			),
+			metaVocab.dcterms.license -> (
+				() => refsCache.fold(citer.getLicence(subj))(_.flatMap(_.licence)).map(_.url.toRdf)
+			)
+		)
+	}
 
 }

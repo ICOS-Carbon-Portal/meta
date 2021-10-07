@@ -2,7 +2,12 @@ package se.lu.nateko.cp.meta.services.citation
 
 import se.lu.nateko.cp.meta.core.data._
 
-class StructuredCitations(dobj: DataObject, citInfo: CitationInfo, keywords: Option[IndexedSeq[String]]){
+class StructuredCitations(
+	dobj: DataObject,
+	citInfo: CitationInfo,
+	keywords: Option[IndexedSeq[String]],
+	theLicence: Option[Licence]
+){
 
 	private type TagOpt = (String, Option[String])
 
@@ -32,7 +37,7 @@ class StructuredCitations(dobj: DataObject, citInfo: CitationInfo, keywords: Opt
 			"keywords" -> kwords,
 			"url" -> citInfo.pidUrl,
 			"publisher" -> Some(dobj.submission.submitter.name),
-			"copyright" -> Some("https://creativecommons.org/licenses/by/4.0/"),
+			"copyright" -> theLicence.map(_.url.toString),
 			"doi" -> dobj.doi,
 			"pid" -> dobj.pid,
 		)

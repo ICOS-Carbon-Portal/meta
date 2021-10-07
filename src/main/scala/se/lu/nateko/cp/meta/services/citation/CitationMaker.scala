@@ -55,7 +55,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
 			val dobj = vocab.getStaticObject(data.hash)
 			val keywords = getOptionalString(dobj, hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-			val structuredCitations = new StructuredCitations(data, citInfo, keywords)
+			val theLicence = getLicence
+			val structuredCitations = new StructuredCitations(data, citInfo, keywords, theLicence)
 
 			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
 			References(
@@ -66,7 +67,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = keywords,
 				acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
-				licence = getLicence
+				licence = theLicence
 			)
 
 		case doc: DocObject => getItemCitationInfo(doc)

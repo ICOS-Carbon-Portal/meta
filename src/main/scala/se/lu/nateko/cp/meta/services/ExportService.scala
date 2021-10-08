@@ -54,24 +54,6 @@ object ExportService{
 
 		val landingPage = JsString(staticObjLandingPage(dobj.hash)(conf).toString)
 
-		val title: String = dobj.specificInfo.fold(
-			l3 => l3.title,
-			l2 => {
-
-				val specName = uriResourceLabel(dobj.specification.self)
-				val stationName = l2.acquisition.station.org.name
-
-				l2.acquisition.site.fold(s"$specName from $stationName"){site =>
-
-					val siteName = site.location.flatMap(_.label).orElse(site.self.label)
-
-					val origin = siteName.fold(stationName){site => s"$site ($stationName)"}
-
-					s"$specName from $origin"
-				}
-			}
-		)
-
 		val description: JsValue = {
 			val l3Descr = dobj.specificInfo.left.toSeq.flatMap(_.description)
 			val specComments = dobj.specification.self.comments
@@ -176,7 +158,7 @@ object ExportService{
 			"@context"              -> JsString("https://schema.org"),
 			"@type"                 -> JsString("Dataset"),
 			"@id"                   -> landingPage,
-			"name"                  -> JsString(title),
+			"name"                  -> asOptJsString(dobj.references.title),
 			"alternateName"         -> JsString(dobj.fileName),
 			"description"           -> description,
 			"url"                   -> landingPage,
@@ -213,8 +195,6 @@ object ExportService{
 			"isPartOf"              -> isPartOf
 		)
 	}
-
-	private def uriResourceLabel(res: UriResource): String = res.label.getOrElse(res.uri.toString.split("/").last)
 
 	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 

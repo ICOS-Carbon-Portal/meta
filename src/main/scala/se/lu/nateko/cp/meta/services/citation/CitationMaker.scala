@@ -64,6 +64,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
 				citationRis = getDoiCitation(data, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,
+				title = citInfo.title,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
 				keywords = keywords,
 				acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
@@ -139,23 +140,28 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		val titleOpt = dobj.specificInfo.fold(
 			l3 => Some(l3.title),
 			l2 => for(
-					spec <- dobj.specification.self.label;
-					acq = l2.acquisition;
-					location <- acq.site.flatMap(_.location.flatMap(_.label));
-					year <- yearOpt;
-					time <- tempCov
-				) yield {
-					val station = acq.station.org.name
-					val dataType = spec.split(",").head
-					val samplingPoint = acq.samplingPoint.flatMap(_.label)
-					s"$station ($year). $dataType from ${samplingPoint.getOrElse(location)}, $time"
-				}
+				spec <- dobj.specification.self.label;
+				acq = l2.acquisition;
+				location <- acq.site.flatMap(_.location.flatMap(_.label));
+				time <- tempCov
+			) yield {
+				val dataType = spec.split(",").head
+				val samplingPoint = acq.samplingPoint.flatMap(_.label)
+				s"$dataType from ${samplingPoint.getOrElse(location)}, $time"
+			}
+		)
+
+		val authors = dobj.specificInfo.fold(
+			_ => "",
+			l2 => s"${l2.acquisition.station.org.name}, "
 		)
 		val pidUrlOpt = getPidUrl(dobj)
 		val citString = for(
+			year <- yearOpt;
 			title <- titleOpt;
 			pidUrl <- pidUrlOpt
-		) yield s"$title [Data set]. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
+		) yield s"$authors($year). $title [Data set]. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
+
 		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 
 	}

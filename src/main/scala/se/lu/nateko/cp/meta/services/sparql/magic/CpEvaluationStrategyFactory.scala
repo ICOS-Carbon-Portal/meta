@@ -117,7 +117,7 @@ class CpEvaluationStrategyFactory(
 }
 
 
-class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
+private class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
 
 	def enrichWithFilters(orig: DataObjectFetch): DataObjectFetch = {
 

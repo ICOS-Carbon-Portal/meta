@@ -158,4 +158,24 @@ object TestQueries{
 	|	?dobj cpmeta:hasObjectSpec ?spec .
 	|	FILTER(regex(?varName, "^SWC_\\d_5_\\d$"))
 	|}""".stripMargin
+
+	val samplHeightStats = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select * where{
+	|	{
+	|		select ?station (group_concat(?height; separator=";") as ?heights) where {
+	|			{
+	|				select ?station ?height where{
+	|					?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> .
+	|					FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	|					?dobj cpmeta:wasAcquiredBy [prov:wasAssociatedWith ?station ; cpmeta:hasSamplingHeight ?height] .
+	|					?dobj cpmeta:hasSizeInBytes ?size .
+	|				}
+	|				limit 10
+	|			}
+	|		}
+	|		group by ?station
+	|	}
+	|	?station cpmeta:hasStationId ?id .
+	|}""".stripMargin
 }

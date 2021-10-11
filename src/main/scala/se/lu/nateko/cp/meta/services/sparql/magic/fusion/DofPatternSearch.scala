@@ -76,8 +76,10 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 		case slice: Slice => find0(slice.getArg) match{
 			case pdofp: ProjectionDofPattern =>
-				val newOffset = if (pdofp.offset.isEmpty) Some(new OffsetPattern(slice)) else None
-				pdofp.copy(offset = newOffset)
+				if(!slice.hasOffset) pdofp else {
+					val newOffset = if (pdofp.offset.isEmpty) Some(new OffsetPattern(slice)) else None
+					pdofp.copy(offset = newOffset)
+				}
 			case other => other
 		}
 
@@ -142,6 +144,9 @@ class DofPatternSearch(meta: CpmetaVocab){
 				mergeWithInner(find0(group.getArg))
 			}
 			groupByOpt.getOrElse(find0(ext.getArg))
+
+		case grp: Group =>
+			find0(grp.getArg)
 
 		case _ => DofPattern.Empty
 

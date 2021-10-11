@@ -119,7 +119,7 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolean)
 
 final class OffsetPattern(val slice: Slice){
-	def offset = slice.getOffset.toInt
+	def offset = if(slice.hasOffset) slice.getOffset.toInt else 0
 }
 
 final class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)

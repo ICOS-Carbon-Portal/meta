@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.Tag
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
@@ -11,6 +12,8 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
 import se.lu.nateko.cp.meta.services.sparql.index._
 import PatternFinder._
+
+//object ChosenTest extends Tag("se.lu.nateko.cp.meta.test.services.sparql.magic.fusion.ChosenTest")
 
 class DofPatternFusionTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
@@ -29,6 +32,17 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		val fetchOpt = takeNode.ifIs[DataObjectFetchNode].recursive(query)
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
+	}
+
+	describe("Doubly-nested query with group-by on the middle level"){
+		it("Correctly detects the dof pattern in the innermost query"){
+			val (_, dofNode) = getFetchNode(TestQueries.samplHeightStats)
+			val req = dofNode.fetchRequest
+			assert(req.offset === 0)
+			assert(req.sort.isEmpty)
+			//println(query)
+		}
+
 	}
 
 	describe("Portal app's filtered data objects query optimization"){

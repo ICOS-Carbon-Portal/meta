@@ -178,4 +178,15 @@ object TestQueries{
 	|	}
 	|	?station cpmeta:hasStationId ?id .
 	|}""".stripMargin
+
+	val distinctOfMagicQuery = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select distinct ?stationId ?stationName
+	|where{
+	|	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject>}
+	|	?dobj cpmeta:hasObjectSpec ?spec .
+	|	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	|	?station cpmeta:hasStationId ?stationId .
+	|	?station cpmeta:hasName ?stationName .
+	|}""".stripMargin
 }

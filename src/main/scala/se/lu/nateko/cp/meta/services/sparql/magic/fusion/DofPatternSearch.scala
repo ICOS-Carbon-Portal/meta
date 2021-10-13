@@ -148,6 +148,9 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case grp: Group =>
 			find0(grp.getArg)
 
+		case dist: Distinct =>
+			find0(dist.getArg)
+
 		case _ => DofPattern.Empty
 
 	}

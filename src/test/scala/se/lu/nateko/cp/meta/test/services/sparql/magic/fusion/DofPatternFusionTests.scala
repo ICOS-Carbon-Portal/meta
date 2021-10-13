@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFil
 import se.lu.nateko.cp.meta.services.sparql.index._
 import PatternFinder._
 
-//object ChosenTest extends Tag("se.lu.nateko.cp.meta.test.services.sparql.magic.fusion.ChosenTest")
+//object ChosenTest extends Tag("fusion.ChosenTest")
 
 class DofPatternFusionTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
@@ -34,9 +34,20 @@ class DofPatternFusionTests extends AnyFunSpec{
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 	}
 
+	describe("Query with 'select distinct'"){
+		val (query @ _, dofNode) = getFetchNode(TestQueries.distinctOfMagicQuery)
+
+		it("Is recognized as a magic pattern"){
+			assert(dofNode.fetchRequest.filter.exists{
+				case CategFilter(_, values) => assert(values.length === 2); ()
+			})
+		}
+	}
+
 	describe("Doubly-nested query with group-by on the middle level"){
+		val (_, dofNode) = getFetchNode(TestQueries.samplHeightStats)
+
 		it("Correctly detects the dof pattern in the innermost query"){
-			val (_, dofNode) = getFetchNode(TestQueries.samplHeightStats)
 			val req = dofNode.fetchRequest
 			assert(req.offset === 0)
 			assert(req.sort.isEmpty)

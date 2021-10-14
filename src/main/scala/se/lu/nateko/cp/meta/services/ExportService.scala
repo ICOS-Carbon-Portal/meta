@@ -99,11 +99,14 @@ object ExportService{
 
 		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(f => geoFeatureToSchemaOrgPlace(f, country))
 
-		val distribution = dobj.accessUrl.fold[JsValue](JsNull){url =>
+		val distribution = dobj.accessUrl.fold[JsValue](JsNull){_ =>
 			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
+			val accessUrl = s"https://${conf.dataHost}/licence_accept?ids=%5B%22${dobj.hash.base64Url}%22%5D"
 			JsObject(
-				"contentUrl"     -> JsString(url.toString),
-				"encodingFormat" -> JsString(contType.mediaType.toString)
+				"contentUrl"     -> JsString(accessUrl),
+				"encodingFormat" -> JsString(contType.mediaType.toString),
+				"sha256" -> JsString(dobj.hash.hex),
+				"contentSize" -> dobj.size.fold[JsValue](JsNull){size => JsString(s"$size B")}
 			)
 		}
 
@@ -174,6 +177,7 @@ object ExportService{
 				"name"  -> JsString(conf.dataHost)
 			),
 			"license"               -> JsString("https://creativecommons.org/licenses/by/4.0/"),
+			"acquireLicensePage"    -> JsString(s"https://${conf.dataHost}/licence"),
 			"datePublished"         -> published,
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,

@@ -50,7 +50,13 @@ object SparqlRoute {
 
 		path("sparql"){
 			get{
-				parameter("query")(makeResponse)
+				parameter("query")(makeResponse) ~
+				complete(StatusCodes.BadRequest -> (
+					"Expected a SPARQL query provided as 'query' URL parameter.\n" +
+					"Alternatively, the query can be HTTP POSTed as 'query' Form field or as a plain text payload\n" +
+					"See the specification at https://www.w3.org/TR/sparql11-protocol/#query-operation\n" +
+					"Human users may want to use the Web app at https://meta.icos-cp.eu/sparqlclient/"
+				))
 			} ~
 			post{
 				formField("query")(makeResponse) ~

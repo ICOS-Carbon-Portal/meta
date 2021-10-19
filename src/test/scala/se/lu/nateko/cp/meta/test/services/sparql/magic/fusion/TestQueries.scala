@@ -189,4 +189,14 @@ object TestQueries{
 	|	?station cpmeta:hasStationId ?stationId .
 	|	?station cpmeta:hasName ?stationName .
 	|}""".stripMargin
+
+	val mandatoryStationQuery = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select ?dobj ?fileName ?station ?site
+	|where {
+	|	?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/globalCarbonBudget> .
+	|	?dobj cpmeta:hasName ?fileName .
+	|	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	|	OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
+	|}""".stripMargin
 }

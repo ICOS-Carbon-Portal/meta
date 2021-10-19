@@ -114,8 +114,11 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val categFilts: Seq[Filter] = categFiltsAndExprs.map(_._1)
 			val categExprs = categFiltsAndExprs.flatMap(_._2)
-			val reqContProps = varProps.valuesIterator.collect{case cp: ContProp => cp}.distinct.toSeq
-			val allFilts = And(categFilts ++ filts ++ reqContProps.map(index.Exists(_)))
+			val reqProps = varProps.valuesIterator.collect{
+					case cp: ContProp => cp
+					case optp: OptUriProperty => optp
+				}.distinct.toSeq
+			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_)))
 
 			val namedVarProps = varProps.collect{
 				case (nv: NamedVar, prop) => nv -> prop

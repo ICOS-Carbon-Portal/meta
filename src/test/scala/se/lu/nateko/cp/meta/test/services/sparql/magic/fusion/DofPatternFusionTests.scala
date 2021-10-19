@@ -34,6 +34,16 @@ class DofPatternFusionTests extends AnyFunSpec{
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 	}
 
+	describe("Query where station is mandatory"){
+		val (query @ _, dofNode) = getFetchNode(TestQueries.mandatoryStationQuery)
+
+		it("has a filter demanding station to be present"){
+			val dofFilter = dofNode.fetchRequest.filter
+			val stationExistsFilterExists = dofFilter.exists{case Exists(Station) =>}
+			assert(stationExistsFilterExists)
+		}
+	}
+
 	describe("Query with 'select distinct'"){
 		val (query @ _, dofNode) = getFetchNode(TestQueries.distinctOfMagicQuery)
 

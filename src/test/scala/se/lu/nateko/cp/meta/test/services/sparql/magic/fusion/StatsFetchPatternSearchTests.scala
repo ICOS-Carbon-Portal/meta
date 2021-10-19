@@ -13,6 +13,9 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DobjStatFusion
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternRewrite
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.ProjectionDofPattern
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.LeftJoinDofPattern
 
 class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
@@ -29,12 +32,16 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 		}
 	}
 
-	// it("prints query"){
-	// 	val q = query
-	// 	val patt = sfps.search(q).get
-	// 	patt.fuse()
-	// 	println(q)
-	// }
+	it("applies a filter when station is required, allowing easy joining of extra station properties"){
+		val qStr = StatsFetchPatternSearchTests.nestedAndWithExtraStationInfoInTheOuter
+		val nodeOpt = groupSearch(parseQuery(qStr))
+		assert(nodeOpt.isDefined)
+
+		val statFilter = nodeOpt.get.group.filter
+
+		val stationExistsFilterExists = statFilter.exists{case Exists(Station) =>}
+		assert(stationExistsFilterExists)
+	}
 
 	it("detects the GROUP BY clause without the site pattern/variable"){
 		val groupOpt = groupSearch(query).map(_.group)
@@ -137,4 +144,22 @@ object StatsFetchPatternSearchTests{
 		?project rdfs:label ?projectLabel .
 	}
 	"""
+
+	val nestedAndWithExtraStationInfoInTheOuter = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select ?station
+	where{
+		{
+			select ?station ?site ?submitter ?spec (count(?dobj) as ?count) where{
+				?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
+				?dobj cpmeta:hasObjectSpec ?spec .
+				?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+				OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
+				?dobj cpmeta:hasSizeInBytes ?size .
+			}
+			group by ?spec ?submitter ?station ?site
+		}
+		FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+		?station cpmeta:hasName ?name
+	}"""
 }

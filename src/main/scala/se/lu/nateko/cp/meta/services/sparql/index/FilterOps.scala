@@ -33,16 +33,17 @@ final class FilterOps(val self: Filter) extends AnyVal{
 	}
 
 	def removeRedundantReqProps: Filter = {
-		val alreadyRequired = propsRequiredByContFilters
+		val alreadyRequired = propsRequiredByFilters
 		replace{
-			case Exists(prop: ContProp) if alreadyRequired.contains(prop) => All
+			case Exists(prop) if alreadyRequired.contains(prop) => All
 		}
 	}
 
-	def propsRequiredByContFilters: Set[ContProp] = self match{
-		case And(subs) => subs.map(_.propsRequiredByContFilters).reduce(_ union _)
+	def propsRequiredByFilters: Set[Property] = self match{
+		case And(subs) => subs.map(_.propsRequiredByFilters).reduce(_ union _)
 		case ContFilter(prop, _) => Set(prop)
-		case Or(subs) => subs.map(_.propsRequiredByContFilters).reduce(_ intersect _)
+		case CategFilter(prop, _) => Set(prop)
+		case Or(subs) => subs.map(_.propsRequiredByFilters).reduce(_ intersect _)
 		case _ => Set.empty
 	}
 

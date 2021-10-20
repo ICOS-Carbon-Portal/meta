@@ -34,6 +34,23 @@ class DofPatternFusionTests extends AnyFunSpec{
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 	}
 
+	ignore("todo: magic handling of FILTER EXISTS{?dobj cpmeta:hasSizeInBytes ?size}"){
+
+	}
+
+	describe("Query with regex filter on 'magic' continuous string property (file name)"){
+		val (query @ _, dofNode) = getFetchNode(TestQueries.filenameRegex)
+
+		it("is not supposed to treat the filter 'magically'"){
+			val magicRegexExists = dofNode.fetchRequest.filter.exists{case GeneralCategFilter(_, _) =>}
+			assert(!magicRegexExists)
+		}
+		it("the 'magic' query node is not supposed to produce fileName bindings"){
+			val bindsFileName = dofNode.getBindingNames().contains("fileName")
+			assert(!bindsFileName)
+		}
+	}
+
 	describe("Query where station is mandatory"){
 		val (query @ _, dofNode) = getFetchNode(TestQueries.mandatoryStationQuery)
 
@@ -167,7 +184,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("Expected variables are detected and dealt with"){
 			val actualVars = fetchNode.varNames.values.toSet
-			val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "fileName", "height")
+			val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "height")
 			assert(actualVars === expectedVars)
 		}
 
@@ -177,10 +194,6 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("Sampling height is optimized"){
 			assert(fetchNode.varNames(SamplingHeight) === "height")
-		}
-
-		it("File name is optimized"){
-			assert(fetchNode.varNames(FileName) === "fileName")
 		}
 
 		it("wasAcquiredBy-pattern is left in the query"){

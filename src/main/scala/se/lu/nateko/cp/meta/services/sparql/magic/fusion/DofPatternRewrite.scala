@@ -9,6 +9,7 @@ import org.eclipse.rdf4j.query.algebra.Order
 import org.eclipse.rdf4j.query.algebra.Group
 import org.eclipse.rdf4j.query.algebra.Filter
 import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
+import se.lu.nateko.cp.meta.services.sparql.index.FileName
 
 object DofPatternRewrite{
 
@@ -22,7 +23,6 @@ object DofPatternRewrite{
 
 	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}
-		val propVars = fusion.propVars.map{case (qvar, prop) => (prop, qvar.name)}
 
 		val subsumingParents = exprs.filter{
 			case _: BinaryTupleOperator => true
@@ -37,6 +37,8 @@ object DofPatternRewrite{
 
 		exprs.filter(_ ne deepest).foreach(replaceNode)
 
+		//excluding FileName property, as it is supposed to be bound by vanilla SPARQL execution
+		val propVars = fusion.propVars.collect{case (qvar, prop) if prop != FileName => (prop, qvar.name)}
 		val fetchExpr = new DataObjectFetchNode(fusion.fetch, propVars)
 
 		deepest.replaceWith(fetchExpr)

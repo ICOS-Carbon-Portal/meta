@@ -199,4 +199,14 @@ object TestQueries{
 	|	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 	|	OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
 	|}""".stripMargin
+
+	val filenameRegex = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+	|select ?dobj ?fileName where{
+	|	VALUES ?spec { cpres:inversionModelingTimeseries cpres:inversionModelingSpatial }
+	|	?dobj cpmeta:hasObjectSpec ?spec ; cpmeta:hasName ?fileName .
+	|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	|	FILTER EXISTS {?dobj cpmeta:hasSizeInBytes ?size}
+	|	FILTER regex(?fileName, "lumia", "i")
+	}""".stripMargin
 }

@@ -1,25 +1,25 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
+import org.eclipse.rdf4j.query.algebra.Exists
+import org.eclipse.rdf4j.query.algebra.Extension
+import org.eclipse.rdf4j.query.algebra.Not
+import org.eclipse.rdf4j.query.algebra.QueryModelNode
+import org.eclipse.rdf4j.query.algebra.SingletonSet
+import org.eclipse.rdf4j.query.algebra.StatementPattern
+import org.eclipse.rdf4j.query.algebra.TupleExpr
+import org.eclipse.rdf4j.query.algebra.Union
+import org.eclipse.rdf4j.query.algebra.ValueExpr
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, _}
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import DofPatternFusion._
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.query.algebra.Exists
-import org.eclipse.rdf4j.query.algebra.Not
-import org.eclipse.rdf4j.query.algebra.StatementPattern
-import org.eclipse.rdf4j.query.algebra.TupleExpr
-import org.eclipse.rdf4j.query.algebra.ValueExpr
-import org.eclipse.rdf4j.query.algebra.Union
-import org.eclipse.rdf4j.query.algebra.SingletonSet
-import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
-import org.eclipse.rdf4j.query.algebra.Extension
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Value
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -28,10 +28,11 @@ case class DobjListFusion(
 	fetch: DataObjectFetch,
 	exprsToFuse: Seq[TupleExpr],
 	propVars: Map[NamedVar, Property],
-	isPureCpIndexQuery: Boolean
+	nonMagicQMNodes: Seq[QueryModelNode]
 ) extends FusionPattern{
 	def essentials = copy(exprsToFuse = Nil)
 	def essentiallyEqual(other: DobjListFusion): Boolean = this.essentials == other.essentials
+	def isPureCpIndexQuery: Boolean = nonMagicQMNodes.isEmpty
 }
 
 class DofPatternFusion(meta: CpmetaVocab){
@@ -56,25 +57,31 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val subSeqs = union.subs.map(findFusions)
 			val subs = subSeqs.flatten.collect{case dlf: DobjListFusion => dlf}
 
-			val isValid = !subs.isEmpty && subSeqs.forall(_.size == 1) && subs.forall(
-				dof => dof.fetch.sort.isEmpty && dof.fetch.offset == 0 && dof.isPureCpIndexQuery
-			)
+			def allMergable: Boolean = subs.distinctBy{sub =>
+				val nonMagicNodeIds = sub.nonMagicQMNodes.map(System.identityHashCode).toSet
+				(sub.fetch.sort, sub.fetch.offset, nonMagicNodeIds)
+			}.size == 1
 
-			if(!isValid) subSeqs.flatten else{
-				val newExprsToFuse = subs.flatMap(_.exprsToFuse) :+ union.union
-				val allSame = if(subs.length < 2) true else subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
+			val oneListFusionPerSubPatt: Boolean = subSeqs.forall(_.size == 1) && subs.size == subSeqs.size
 
-				if(allSame){
+			if(oneListFusionPerSubPatt && allMergable){
+				val newExprsToFuse = subs.flatMap(_.exprsToFuse).distinctBy(System.identityHashCode) :+ union.union
+				val allSame = subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
+				if(allSame)
 					Seq(subs.head.copy(exprsToFuse = newExprsToFuse))
-				} else unionVarProps(subs.map(_.propVars)).fold(subSeqs.flatten){propVars =>
-					Seq(DobjListFusion(
-						fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), None, 0),
-						exprsToFuse = newExprsToFuse,
-						propVars = propVars,
-						isPureCpIndexQuery = true
-					))
+				else {
+					unionVarProps(subs.map(_.propVars)).fold(Seq.empty[FusionPattern]){propVars =>
+						val sampleFetch = subs.head.fetch
+						Seq(DobjListFusion(
+							fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), sampleFetch.sort, sampleFetch.offset),
+							exprsToFuse = newExprsToFuse,
+							propVars = propVars,
+							nonMagicQMNodes = subs.head.nonMagicQMNodes
+						))
+					}
 				}
 			}
+			else subSeqs.flatten
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
@@ -136,12 +143,14 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val allExprs = filtExprs ++ categExprs ++ statPattExprs ++ assignmentExprs
 
-			val allRecognized = patt.propPaths.flatMap(_._2).forall{sp2 =>
+			val nonMagicFilterExprs = patt.filters.map(_.getParentNode).filter(f => !filtExprs.contains(f))
+			val nonMagicStatPatts = patt.propPaths.flatMap(_._2).filterNot{sp2 =>
 				val objVar = sp2.sp.getObjectVar
 				varProps.contains(sp2.targetVar) || (objVar.isAnonymous && !objVar.hasValue)
-			} && (patt.filters.size == filts.size)
+			}.map(_.sp)
+			val nonMagicQMNodes = nonMagicFilterExprs ++ nonMagicStatPatts
 
-			DobjListFusion(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, allRecognized)
+			DobjListFusion(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, nonMagicQMNodes)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {
@@ -178,8 +187,8 @@ class DofPatternFusion(meta: CpmetaVocab){
 	}
 
 	def findStatsFusion(groupBy: StatGroupByPattern, inner: LeftJoinDofPattern): Option[DobjStatFusion] = findFusions(inner.left) match{
-		case Seq(DobjListFusion(DataObjectFetch(filter, None, 0), _, propVars, true))
-			if propVars.get(NamedVar(groupBy.dobjVar)).contains(DobjUri) =>
+		case Seq(DobjListFusion(DataObjectFetch(filter, None, 0), _, propVars, nonMagics))
+			if nonMagics.isEmpty && propVars.get(NamedVar(groupBy.dobjVar)).contains(DobjUri) =>
 
 			val optionals = inner.optionals.collect{
 				case pdp @ PlainDofPattern(None, _, _, Nil) =>

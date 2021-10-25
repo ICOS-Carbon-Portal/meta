@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFil
 import se.lu.nateko.cp.meta.services.sparql.index._
 import PatternFinder._
 
-//object ChosenTest extends Tag("fusion.ChosenTest")
+object ChosenTest extends Tag("fusion.ChosenTest")
 
 class DofPatternFusionTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
@@ -38,8 +38,22 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 	}
 
+	describe("Union query with a non-magic joined property"){
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.unionWithNonMagicProp)
+		lazy val req = dofNode.fetchRequest
+		it("union is fused correctly"){
+			assert(req.filter.isInstanceOf[And])
+		}
+		it("sorting is applied to the magic node"){
+			assert(req.sort == Some(SortBy(DataStart, false)))
+		}
+		it("offset is not applied (because of non-magic extra pattern joined)"){
+			assert(req.offset == 0)
+		}
+	}
+
 	describe("Query with regex filter on 'magic' continuous string property (file name)"){
-		val (query @ _, dofNode) = getFetchNode(TestQueries.filenameRegex)
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.filenameRegex)
 
 		it("is not supposed to treat the filter 'magically'"){
 			val magicRegexExists = dofNode.fetchRequest.filter.exists{case GeneralCategFilter(_, _) =>}
@@ -52,7 +66,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 	}
 
 	describe("Query where station is mandatory"){
-		val (query @ _, dofNode) = getFetchNode(TestQueries.mandatoryStationQuery)
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.mandatoryStationQuery)
 
 		it("has a filter demanding station to be present"){
 			val dofFilter = dofNode.fetchRequest.filter
@@ -62,7 +76,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 	}
 
 	describe("Query with 'select distinct'"){
-		val (query @ _, dofNode) = getFetchNode(TestQueries.distinctOfMagicQuery)
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.distinctOfMagicQuery)
 
 		it("Is recognized as a magic pattern"){
 			assert(dofNode.fetchRequest.filter.exists{
@@ -72,7 +86,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 	}
 
 	describe("Doubly-nested query with group-by on the middle level"){
-		val (_, dofNode) = getFetchNode(TestQueries.samplHeightStats)
+		lazy val (_, dofNode) = getFetchNode(TestQueries.samplHeightStats)
 
 		it("Correctly detects the dof pattern in the innermost query"){
 			val req = dofNode.fetchRequest

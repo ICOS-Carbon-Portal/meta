@@ -10,10 +10,10 @@ import org.eclipse.rdf4j.query.algebra.Group
 import org.eclipse.rdf4j.query.algebra.Filter
 import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
 import se.lu.nateko.cp.meta.services.sparql.index.FileName
+import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 
 object DofPatternRewrite{
 
-	//TODO Make the rewrite aware of all the fusions at the same time, not process independently one by one
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = fusions.foreach{
 		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
 		case DobjStatFusion(expr, statsNode) =>
@@ -24,16 +24,14 @@ object DofPatternRewrite{
 	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}
 
-		val subsumingParents = exprs.filter{
-			case _: BinaryTupleOperator => true
-			case _ => false
-		}
+		val subsumingParents = exprs.collect{case bto: BinaryTupleOperator => bto}
 
 		val independentChildren = exprs.filter{expr =>
-			!subsumingParents.exists(parent => parent != expr && parent.isAncestorOf(expr))
+			!subsumingParents.exists(parent => parent != expr && parent.isAncestorOf(expr)) &&
+			expr.getParentNode != null
 		}
 
-		val deepest = independentChildren.toSeq.sortBy(nodeDepth).last
+		val deepest = independentChildren.toSeq.sortBy(weightedNodeDepth).last
 
 		exprs.filter(_ ne deepest).foreach(replaceNode)
 
@@ -41,7 +39,7 @@ object DofPatternRewrite{
 		val propVars = fusion.propVars.collect{case (qvar, prop) if prop != FileName => (prop, qvar.name)}
 		val fetchExpr = new DataObjectFetchNode(fusion.fetch, propVars)
 
-		deepest.replaceWith(fetchExpr)
+		safelyReplace(deepest, fetchExpr)
 
 		DanglingCleanup.clean(queryTop)
 
@@ -49,7 +47,7 @@ object DofPatternRewrite{
 
 	def replaceNode(node: TupleExpr): Unit = node match{
 		case slice: Slice => slice.setOffset(0)
-		case o:Order => replaceUnaryOp(o)
+		case o: Order => replaceUnaryOp(o)
 		case g: Group => replaceUnaryOp(g)
 		case f: Filter => replaceUnaryOp(f)
 

@@ -53,12 +53,15 @@ package object fusion{
 		}
 	}
 
-	def nodeDepth(node: QueryModelNode): Int = {
+	def weightedNodeDepth(node: QueryModelNode): Int = {
 		var res = -1
 		var ancestor = node
 		while(ancestor != null){
 			ancestor = ancestor.getParentNode
-			res += 1
+			res += (ancestor match{
+				case _: Union => 10000
+				case _ => 1
+			})
 		}
 		res
 	}

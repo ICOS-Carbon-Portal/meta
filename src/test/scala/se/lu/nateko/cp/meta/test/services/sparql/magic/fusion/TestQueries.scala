@@ -209,4 +209,13 @@ object TestQueries{
 	|	FILTER EXISTS {?dobj cpmeta:hasSizeInBytes ?size}
 	|	FILTER regex(?fileName, "lumia", "i")
 	}""".stripMargin
+
+	val unionWithNonMagicProp = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select ?dobj ?timeStart ?nrows
+	|where {
+	|	?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> .
+	|	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	|	?dobj cpmeta:hasNumberOfRows ?nrows .
+	|} order by ?timeStart offset 20 limit 10""".stripMargin
 }

@@ -34,10 +34,6 @@ class DofPatternFusionTests extends AnyFunSpec{
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 	}
 
-	ignore("todo: magic handling of FILTER EXISTS{?dobj cpmeta:hasSizeInBytes ?size}"){
-
-	}
-
 	describe("Union query with a non-magic joined property"){
 		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.unionWithNonMagicProp)
 		lazy val req = dofNode.fetchRequest
@@ -63,6 +59,12 @@ class DofPatternFusionTests extends AnyFunSpec{
 			val bindsFileName = dofNode.getBindingNames().contains("fileName")
 			assert(!bindsFileName)
 		}
+
+		it("hasSizeInBytes value is required to be present"){
+			val fileSizeExistsFilterPresent = dofNode.fetchRequest.filter.exists{case Exists(FileSize) => }
+			assert(fileSizeExistsFilterPresent)
+		}
+
 	}
 
 	describe("Query where station is mandatory"){
@@ -194,6 +196,10 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("Deprecated objects are filtered out"){
 			assert(req.filter.exists{case Not(Exists(DeprecationFlag)) => })
+		}
+
+		it("hasSizeInBytes value is required to be present"){
+			assert(req.filter.exists{case Exists(FileSize) => })
 		}
 
 		it("Expected variables are detected and dealt with"){

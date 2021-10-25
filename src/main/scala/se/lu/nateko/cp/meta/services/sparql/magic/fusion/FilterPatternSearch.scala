@@ -49,13 +49,15 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 
 		case exists: Exists => exists.getSubQuery match{
 			case sp: StatementPattern =>
+
 				val (s, p, o) = splitTriple(sp)
-				if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && varProps.get(QVar(o)) == Some(DobjUri))
+
+				if(meta.isNextVersionOf == p.getValue && s.isAnonymous && !s.hasValue && isDobj(o))
 					Some(index.Exists(DeprecationFlag))
-				else if(meta.hasVariableName == p.getValue && varProps.get(QVar(s)) == Some(DobjUri) && !o.hasValue)
-					Some(index.Exists(HasVarList))
-				else
-					None
+				else if(!o.hasValue && isDobj(s))
+					getExistsPropLookup(meta).get(p.getValue).map(index.Exists(_))
+				else None
+
 			case _ => None
 		}
 
@@ -72,6 +74,8 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 
 		case _ => None
 	}
+
+	private def isDobj(v: Var): Boolean = varProps.get(QVar(v)) == Some(DobjUri)
 
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[index.Filter] = {
 		import Compare.CompareOp._
@@ -146,4 +150,10 @@ object FilterPatternSearch{
 	}
 
 
+	def getExistsPropLookup(meta: CpmetaVocab): Map[Value, Property] = Map(
+		meta.hasName         -> FileName,
+		meta.hasSizeInBytes  -> FileSize,
+		meta.hasVariableName -> HasVarList,
+		meta.hasKeyword      -> Keyword
+	)
 }

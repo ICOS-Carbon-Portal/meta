@@ -30,9 +30,13 @@ case class DobjListFusion(
 	propVars: Map[NamedVar, Property],
 	nonMagicQMNodes: Seq[QueryModelNode]
 ) extends FusionPattern{
-	def essentials = copy(exprsToFuse = Nil)
-	def essentiallyEqual(other: DobjListFusion): Boolean = this.essentials == other.essentials
+	def essentiallyEqual(other: DobjListFusion): Boolean =
+		this.fetch == other.fetch &&
+		this.propVars == other.propVars &&
+		this.nonMagicNodeIds == other.nonMagicNodeIds
+
 	def isPureCpIndexQuery: Boolean = nonMagicQMNodes.isEmpty
+	def nonMagicNodeIds = nonMagicQMNodes.map(System.identityHashCode).toSet
 }
 
 class DofPatternFusion(meta: CpmetaVocab){

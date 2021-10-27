@@ -65,6 +65,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
 	private val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
 	private val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
+	private val initOk = emptyBitmap
 
 	def size: Int = objs.length
 
@@ -108,17 +109,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
-		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(req.filter.optimize)
+		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
 
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
-				filterOpt.fold{
-					objs.indices.drop(req.offset).iterator
-				}{
-					_.iterator.asScala.drop(req.offset).map(_.intValue)
-				}
+				filter.iterator.asScala.drop(req.offset).map(_.intValue)
 			case Some(SortBy(prop, descending)) =>
-				bitmap(prop).iterateSorted(filterOpt, req.offset, descending)
+				bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
 		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
 		idxIter.map(objs.apply)
@@ -197,7 +194,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms: _*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
-		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter.optimize)
+		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
 
 		stats.flatMap{
 			case (key, bm) =>
@@ -424,15 +421,15 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 	)
 
-	private def removeStat(obj: ObjEntry): Unit = for(
-		key <- keyForDobj(obj);
-		bm <- stats.get(key)
-	) bm.remove(obj.idx)
+	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
+		stats.get(key).foreach(_.remove(obj.idx))
+		initOk.remove(obj.idx)
+	}
 
-	private def addStat(obj: ObjEntry): Unit = for(
-		key <- keyForDobj(obj);
-		bm = stats.getOrElseUpdate(key, emptyBitmap)
-	) bm.add(obj.idx)
+	private def addStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
+		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
+		initOk.add(obj.idx)
+	}
 
 }
 

@@ -34,6 +34,18 @@ class DofPatternFusionTests extends AnyFunSpec{
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
 	}
 
+	describe("All non-deprecated data objects, filtered by spec and uri"){
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.nonHiddenNonDeprObjectsWithUrlFilter)
+		it("is interpreted as a minimal magic dobj list query with non-magic filters", ChosenTest){
+			val filter = dofNode.fetchRequest.filter
+			val isNotDeprecatedFilter = filter match{
+				case Not(Exists(DeprecationFlag)) => true
+				case _ => false
+			}
+			assert(isNotDeprecatedFilter)
+		}
+	}
+
 	describe("Union query with a non-magic joined property"){
 		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.unionWithNonMagicProp)
 		lazy val req = dofNode.fetchRequest

@@ -29,7 +29,7 @@ class DataObjectFetchNode(
 
 	override def getSignature(): String = {
 		val orig = super.getSignature
-		val filters = s"filter: ${fetchRequest.filter.optimize.toString}"
+		val filters = s"filter: ${fetchRequest.filter.toString}"
 		val vars = s"""vars: ${allVars.mkString(", ")}"""
 		val sorting = fetchRequest.sort.fold("no sort")(sb => {
 			val dir = if(sb.descending) "DESC" else "ASC"

@@ -77,7 +77,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 					unionVarProps(subs.map(_.propVars)).fold(Seq.empty[FusionPattern]){propVars =>
 						val sampleFetch = subs.head.fetch
 						Seq(DobjListFusion(
-							fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)), sampleFetch.sort, sampleFetch.offset),
+							fetch = DataObjectFetch(Or(subs.map(_.fetch.filter)).flatten, sampleFetch.sort, sampleFetch.offset),
 							exprsToFuse = newExprsToFuse,
 							propVars = propVars,
 							nonMagicQMNodes = subs.head.nonMagicQMNodes
@@ -129,7 +129,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 					case cp: ContProp => cp
 					case optp: OptUriProperty => optp
 				}.distinct.toSeq
-			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_)))
+			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_))).optimize
 
 			val namedVarProps = varProps.collect{
 				case (nv: NamedVar, prop) => nv -> prop
@@ -154,7 +154,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			}.map(_.sp)
 			val nonMagicQMNodes = nonMagicFilterExprs ++ nonMagicStatPatts
 
-			DobjListFusion(DataObjectFetch(allFilts.flatten, None, 0), allExprs, namedVarProps, nonMagicQMNodes)
+			DobjListFusion(DataObjectFetch(allFilts, None, 0), allExprs, namedVarProps, nonMagicQMNodes)
 	}
 
 	def getVarPropLookup(patt: PlainDofPattern): VarPropLookup = {

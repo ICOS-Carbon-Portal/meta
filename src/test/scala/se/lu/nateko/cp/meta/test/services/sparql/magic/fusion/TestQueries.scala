@@ -218,4 +218,17 @@ object TestQueries{
 	|	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 	|	?dobj cpmeta:hasNumberOfRows ?nrows .
 	|} order by ?timeStart offset 20 limit 10""".stripMargin
+
+	val nonHiddenNonDeprObjectsWithUrlFilter = """|PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+	|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|SELECT ?dobj WHERE{
+	|	?dobj cpmeta:hasObjectSpec ?spec .
+	|	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+	|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	|	FILTER (
+	|		!STRSTARTS(STR(?dobj), "https://meta.icos-cp.eu/objects/") &&
+	|		!STRSTARTS(STR(?dobj), "https://meta.fieldsites.se/objects/")
+	|	)
+	|}""".stripMargin
+
 }

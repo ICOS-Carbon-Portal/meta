@@ -231,4 +231,37 @@ object TestQueries{
 	|	)
 	|}""".stripMargin
 
+	val unionQueryWithMultipleSpecValuesBlocks = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	|prefix prov: <http://www.w3.org/ns/prov#>
+	|select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+	|where {
+	|	VALUES ?spec {
+	|		<http://meta.icos-cp.eu/resources/cpmeta/inversionModelingSpatial>
+	|		<http://meta.icos-cp.eu/resources/cpmeta/modelDataArchive>
+	|		<http://meta.icos-cp.eu/resources/cpmeta/inversionModelingTimeseries>
+	|	}
+	|	?dobj cpmeta:hasObjectSpec ?spec .
+	|	?dobj cpmeta:hasSizeInBytes ?size .
+	|	?dobj cpmeta:hasName ?fileName .
+	|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	|	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	|	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	|	{
+	|		{
+	|			VALUES ?spec {
+	|				<http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct>
+	|				<http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct>
+	|				<http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct>
+	|			}
+	|		}
+	|		UNION
+	|		{
+	|			VALUES ?keyword {"Drought 2018"^^xsd:string}
+	|			?dobj cpmeta:hasKeyword ?keyword
+	|		}
+	|	}
+	|}
+	|order by desc(?submTime)
+	|offset 10 limit 20""".stripMargin
 }

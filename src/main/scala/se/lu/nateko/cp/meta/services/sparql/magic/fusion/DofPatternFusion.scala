@@ -120,7 +120,8 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val filtExprs = filtsAndExprs.collect{case (_, te: TupleExpr) => te}
 
 			val categFiltsAndExprs = varProps.toSeq.flatMap{
-				case (v, prop) => getCategFilter(v, prop, patt.varValues)
+				case (v, prop: CategProp) => getCategFilter(v, prop, patt.varValues)
+				case _ => None
 			}
 
 			val categFilts: Seq[Filter] = categFiltsAndExprs.map(_._1)
@@ -238,19 +239,17 @@ object DofPatternFusion{
 		}
 	}
 
-	def getCategFilter(v: QVar, prop: Property, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = prop match{
-		case cp: CategProp =>
+	def getCategFilter(v: QVar, cp: CategProp, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = {
 
-			val valsExprsOpt: Option[(Seq[Value], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
+		val valsExprsOpt: Option[(Seq[Value], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
+			vip.vals.map(_.toSeq -> vip.providers.toSet)
+		}
 
-				val irisOpt = vip.vals.map(_.toSeq).filter(!_.isEmpty)
-				irisOpt.map(_ -> vip.providers.toSet)
-			}
-
-			valsExprsOpt.map{
-				case (vals, exprs) =>
+		valsExprsOpt.map{
+			case (vals, exprs) =>
+				val filter: Filter = if(vals.isEmpty) Nothing else {
 					val iris = vals.collect{case iri: IRI => iri}
-					val filter: Filter = cp match{
+					cp match{
 						case uriProp: UriProperty => CategFilter(uriProp, iris)
 						case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
 						case strProp: StringCategProp => CategFilter(
@@ -258,9 +257,8 @@ object DofPatternFusion{
 							vals.collect{case lit: Literal => asString(lit)}.flatten
 						)
 					}
-					filter -> exprs
-			}
-
-		case _ => None
+				}
+				filter -> exprs
+		}
 	}
 }

@@ -4,54 +4,61 @@ import se.lu.nateko.cp.meta.SparqlServerConfig
 import java.time.Instant
 import scala.collection.concurrent.TrieMap
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.Executor
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.RejectedExecutionException
+import java.time.temporal.TemporalUnit
+import java.time.temporal.ChronoUnit
 
-class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) {
+class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val now: () => Instant) {
 	import QuotaManager._
 
 	private[this] val idGen = new AtomicLong(0)
-	private type ClientHistory = TrieMap[QueryId, QueryRun]
 	private[this] val q = TrieMap.empty[ClientId, ClientHistory]
 	private[this] val longRunning = new AtomicLong(-1) //only one long-running non-localhost query at a time
 
 	def logNewQueryStart(clientIdOpt: Option[ClientId]): QueryQuotaManager = {
 		val id = idGen.incrementAndGet()
-		clientIdOpt.fold[QueryQuotaManager](new NoQuota(NoClient, id)){clientId =>
-			val history: ClientHistory = q.getOrElseUpdate(clientId, TrieMap.empty)
-			history += id -> QueryRun(now(), None, None)
+		clientIdOpt.fold[QueryQuotaManager](new NoQuota(NoClient, id, executor)){clientId =>
+			val history: ClientHistory = q.getOrElseUpdate(clientId, new ClientHistory)
+			history.runs += id -> QueryRun(now(), None, None)
 			new ProperQueryQuotaManager(clientId, id)
 		}
 	}
 
-	def quotaExcess(clientIdOpt: Option[ClientId]): Option[String] = clientIdOpt.flatMap(q.get).flatMap(hist => {
-		var minuteCost: Float = 0
-		var hourCost: Float = 0
-		var count: Int = 0
+	def quotaExcess(clientIdOpt: Option[ClientId]): Option[String] = clientIdOpt.flatMap(q.get).flatMap(hist => hist.synchronized{
+		hist.banTo.collect{
+			case to if now().compareTo(to) < 0 => banMessage(to)
+		}.orElse{
 
-		for((id, run) <- hist){
-			if(run.isOngoing) count += 1
-			if(run.isLastHour){
-				val cost = run.cost
-				hourCost += cost
-				if(run.isLastMinute) minuteCost += cost
-			} else if(!run.isOngoing){
-				hist -= id //forgetting old query runs
+			var minuteCost: Float = 0
+			var hourCost: Float = 0
+
+			for((id, run) <- hist.runs){
+				if(run.isLastHour){
+					val cost = run.cost
+					hourCost += cost
+					if(run.isLastMinute) minuteCost += cost
+				} else if(!run.isOngoing){
+					hist.runs -= id //forgetting old query runs
+				}
 			}
-		}
 
-		if(count > config.maxParallelQueries)
-			Some(s"You have $count running queries. Please try again in a few seconds. Contact Carbon Portal if the problem persists.")
-		else if(hourCost >= config.quotaPerHour)
-			Some("You have exceeded your hourly query quota. Please wait 1 hour to run more queries.")
-		else if(minuteCost >= config.quotaPerMinute)
-			Some("You have exceeded your per-minute query quota. Please wait 1 minute to run more queries.")
-		else None
+			if(hourCost >= config.quotaPerHour)
+				Some("You have exceeded your hourly query quota. Please wait 1 hour to run more queries.")
+			else if(minuteCost >= config.quotaPerMinute)
+				Some("You have exceeded your per-minute query quota. Please wait 1 minute to run more queries.")
+			else None
+		}
 	})
 
-	def cleanup(): Unit = for((cid, hist) <- q){
-		for((qid, run) <- hist)
-			if(!run.isLastHour && !run.isOngoing || !run.isLastDay) hist -= qid
+	private def banMessage(toTime: Instant) = s"You are banned for service overuse until $toTime"
 
-		if(hist.isEmpty) q -= cid
+	def cleanup(): Unit = for((cid, hist) <- q){
+		for((qid, run) <- hist.runs)
+			if(!run.isLastHour && !run.isOngoing || !run.isLastDay) hist.runs -= qid
+
+		if(hist.runs.isEmpty && hist.queue.isEmpty) q -= cid
 	}
 
 	case class QueryRun(start: Instant, streamingStart: Option[Instant], stop: Option[Instant]){
@@ -69,8 +76,15 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		private def ageAt(i: Instant): Float = (i.toEpochMilli - start.toEpochMilli).toFloat / 1000
 	}
 
+	private class ClientHistory{
+		val runs = TrieMap.empty[QueryId, QueryRun]
+		val queue = new ConcurrentLinkedQueue[Runnable]()
+		var banTo: Option[Instant] = None
+		def nRunning = runs.values.count(_.isOngoing) - queue.size
+	}
+
 	private class ProperQueryQuotaManager(val cid: ClientId, val qid: QueryId) extends QueryQuotaManager{
-		private def runInfo: Option[QueryRun] = q.get(cid).flatMap(_.get(qid))
+		private def runInfo: Option[QueryRun] = q.get(cid).flatMap(_.runs.get(qid))
 
 		private def isOngoing = runInfo.fold(false)(_.isOngoing)
 		private def streamingStarted = runInfo.fold(false)(_.streamingStarted)
@@ -80,19 +94,45 @@ class QuotaManager(config: SparqlServerConfig)(implicit val now: () => Instant) 
 		def logQueryFinish(): Unit = {
 			longRunning.compareAndSet(qid, -1)
 			updateQueryRun{(run, time) => run.copy(stop = time)}
+			advanceQueue()
 		}
 
 		def logQueryStreamingStart(): Unit =
 			updateQueryRun{(run, time) => run.copy(streamingStart = time)}
 
-		private def updateQueryRun(update: (QueryRun, Option[Instant]) => QueryRun): Unit = synchronized{
-			for(
-				history <- q.get(cid);
-				run <- history.get(qid)
-			){
-				history += qid -> update(run, Some(now()))
+		def execute(r: Runnable): Unit = {
+			val hist = q(cid)
+			hist.synchronized{
+
+				if(hist.nRunning < config.maxParallelQueries && hist.queue.isEmpty)
+					executor.execute(r)
+				else
+					hist.queue.add(r)
+
+				if(hist.queue.size > config.maxQueryQueue){
+					val banTime = now().plus(config.banLength.toLong, ChronoUnit.MINUTES)
+
+					hist.banTo = Some(banTime)
+					hist.queue.clear()
+					throw new RejectedExecutionException(banMessage(banTime))
+				} else
+					advanceQueue()
 			}
 		}
+
+		private def advanceQueue(): Unit = for(hist <- q.get(cid)) hist.synchronized{
+			if(hist.nRunning < config.maxParallelQueries){
+				val jobOrNull = hist.queue.poll()
+				if(jobOrNull != null) executor.execute(jobOrNull)
+			}
+		}
+
+		private def updateQueryRun(update: (QueryRun, Option[Instant]) => QueryRun): Unit =
+			for(history <- q.get(cid)) history.synchronized{
+				for(run <- history.runs.get(qid)){
+					history.runs += qid -> update(run, Some(now()))
+				}
+			}
 	}
 }
 
@@ -103,7 +143,7 @@ object QuotaManager{
 
 	val NoClient: ClientId = "localhost"
 
-	trait QueryQuotaManager{
+	trait QueryQuotaManager extends Executor{
 		def cid: ClientId
 		def qid: QueryId
 		def keepRunningIndefinitely: Boolean
@@ -111,10 +151,11 @@ object QuotaManager{
 		def logQueryStreamingStart(): Unit
 	}
 
-	class NoQuota(val cid: ClientId, val qid: QueryId) extends QueryQuotaManager{
+	class NoQuota(val cid: ClientId, val qid: QueryId, inner: Executor) extends QueryQuotaManager{
 		def keepRunningIndefinitely: Boolean = true
 		def logQueryFinish(): Unit = {}
 		def logQueryStreamingStart(): Unit = {}
+		def execute(r: Runnable): Unit = inner.execute(r)
 	}
 
 }

@@ -56,7 +56,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()
 	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
-	private val quoter = new QuotaManager(config)(Instant.now _)
+	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
 	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 1, 1, TimeUnit.HOURS)
@@ -111,7 +111,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
 						protocolOption.evaluator.evaluate(query, outStr)
 					},
-					sparqlExe
+					qquoter
 				)
 
 				canceller.schedule(

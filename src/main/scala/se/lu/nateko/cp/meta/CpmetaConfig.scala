@@ -128,6 +128,8 @@ case class SparqlServerConfig(
 	quotaPerMinute: Int,//in seconds
 	quotaPerHour: Int,  //in seconds
 	maxParallelQueries: Int,
+	maxQueryQueue: Int,
+	banLength: Int, //in minutes
 	adminUsers: Seq[String]
 )
 
@@ -182,7 +184,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
 	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
-	implicit val sparqlConfigFormat = jsonFormat5(SparqlServerConfig)
+	implicit val sparqlConfigFormat = jsonFormat7(SparqlServerConfig)
 	implicit val rdfStorageConfigFormat = jsonFormat4(RdfStorageConfig)
 	implicit val citationConfigFormat = jsonFormat3(CitationConfig)
 	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)

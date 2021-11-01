@@ -28,7 +28,7 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 
 	def quotaExcess(clientIdOpt: Option[ClientId]): Option[String] = clientIdOpt.flatMap(q.get).flatMap(hist => hist.synchronized{
 		hist.banTo.collect{
-			case to if now().compareTo(to) < 0 => banMessage(to)
+			case to if now().compareTo(to) < 0 => s"You are banned for service overuse until $to"
 		}.orElse{
 
 			var minuteCost: Float = 0
@@ -51,8 +51,6 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 			else None
 		}
 	})
-
-	private def banMessage(toTime: Instant) = s"You are banned for service overuse until $toTime"
 
 	def cleanup(): Unit = for((cid, hist) <- q){
 		for((qid, run) <- hist.runs)
@@ -114,7 +112,6 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 
 					hist.banTo = Some(banTime)
 					hist.queue.clear()
-					throw new RejectedExecutionException(banMessage(banTime))
 				} else
 					advanceQueue()
 			}

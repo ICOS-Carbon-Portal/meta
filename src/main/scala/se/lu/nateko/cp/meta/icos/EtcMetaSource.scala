@@ -90,7 +90,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 		futfutValVal.flatten.map(_.flatMap(identity))
 	}
 
-	def fetchStations(): Future[Validated[Seq[TcStation[ETC.type]]]] = {
+	def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
 			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
 				for(
@@ -122,6 +122,12 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 			}
 	}
 
+	def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
+		fetchFromTsv(Types.companies, getCompany(vocab)(_)).map(_.map(_.toMap))
+
+	def getSensorModelDict: Future[Validated[Map[String, SensorModel]]] =
+		fetchFromTsv(Types.sensorModels, getSensorModel(_)).map(_.map(_.toMap))
+
 	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
 		.singleRequest(HttpRequest(
 			uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
@@ -141,7 +147,9 @@ object EtcMetaSource{
 	type EtcInstrument = TcInstrument[E]
 	type EtcPerson = TcPerson[E]
 	type EtcStation = TcStation[E]
+	type EtcCompany = TcGenericOrg[E]
 	type EtcMembership = Membership[E]
+	class SensorModel(val modelId: String, val compId: Int, val name: String)
 	implicit val envri = Envri.ICOS
 
 
@@ -151,7 +159,10 @@ object EtcMetaSource{
 		val roles = "teamrole"
 		val people = "team"
 		val stations = "station"
+		val companies = "companies"
 		val instruments = "logger"
+		val sensorModels = "models"
+		val sensors = "sensors"
 		val files = "file"
 		val funding = "funding"
 	}
@@ -169,6 +180,8 @@ object EtcMetaSource{
 		val roleEnd = "TEAM_MEMBER_WORKEND"
 		val authorOrder = "TEAM_MEMBER_AUTHORDER"
 		val persId = "ID_TEAM"
+		val companyTcId = "ID_COMPANY"
+		val companyName = "COMPANY"
 		val stationTcId = "ID_STATION"
 		val siteName = "SITE_NAME"
 		val siteId = "SITE_ID"
@@ -187,6 +200,15 @@ object EtcMetaSource{
 		val loggerModel = "LOGGER_MODEL"
 		val loggerSerial = "LOGGER_SN"
 		val loggerId = "LOGGER_ID"
+		val sensorModelId = "ID_MODEL"
+		val sensorName = "SENSOR"
+		val sensorId = "ID_SENSOR"
+		val sensorSerial = "SN"
+		val sensorVar = "VARIABLE"
+		val northSouthOffset = "NSDIST"
+		val eastWestOffset = "EWDIST"
+		val height = "HEIGHT"
+		val deploymentStart = "START_DATE"
 		val fileId = "FILE_ID"
 		val fileLoggerId = "FILE_LOGGER_ID"
 		val fileFormat = "FILE_FORMAT"
@@ -229,11 +251,14 @@ object EtcMetaSource{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
-	private def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] = lookUp(varName).flatMap{
-		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt.toLocalDate)
-		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date)
+	private def getLocalDateTime(varName: String)(implicit lookup: Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
+		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt)
+		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(12, 0))
 		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
 	}
+
+	private def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] =
+		getLocalDateTime(varName).map(_.toLocalDate)
 
 	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =
 		for(
@@ -260,6 +285,22 @@ object EtcMetaSource{
 		case CountryCode(cc) => Validated.ok(cc)
 		case _ => Validated.error(s + " is not a valid country code")
 	}
+
+	private def getCompany(vocab: CpVocab)(implicit lookup: Lookup): Validated[(Int, EtcCompany)] =
+		for(
+			tcId <- getNumber(Vars.companyTcId).map(_.intValue).require("company must have integer id");
+			name <- lookUp(Vars.companyName).require("company must have a name");
+			cpId = UriId(s"etcorg_$tcId");
+			orgUri = vocab.getOrganization(cpId).toJava;
+			core = Organization(UriResource(orgUri, None, Nil), name, None, None)
+		) yield tcId -> TcGenericOrg(cpId, Some(makeId(tcId.toString)), core)
+
+	private def getSensorModel(implicit lookup: Lookup): Validated[(String, SensorModel)] =
+		for(
+			modelId <- lookUp(Vars.sensorModelId).require("sensor model must have id");
+			compId <- getNumber(Vars.companyTcId).map(_.intValue).require("sensor model must have vendor company id");
+			name <- lookUp(Vars.sensorName).require("sensor model must have name")
+		) yield modelId -> new SensorModel(modelId, compId, name)
 
 	private def getSiteUtc(implicit lookup: Lookup): Validated[(Int, StationId, Option[Int])] =
 		for(
@@ -442,7 +483,7 @@ object EtcMetaSource{
 		}
 	}
 
-	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] ={
+	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] = {
 		val require = requireVar("instrument") _
 		for(
 			stId <- require(Vars.stationTcId).map(_.toInt);
@@ -455,6 +496,47 @@ object EtcMetaSource{
 				model = model,
 				sn = sn
 			)
+	}
+
+	def getSensor(
+		modelDict: Map[String, SensorModel],
+		compDict: Map[Int, EtcCompany]
+	)(implicit lookup: Lookup): Validated[EtcInstrument] = for(
+		tcIdStr <- lookUp(Vars.sensorId).require("sensor must have id");
+		modelId <- lookUp(Vars.sensorModelId).require("sensor must have model id");
+		serial <- lookUp(Vars.sensorSerial).require("sensor must have serial number");
+		model <- new Validated(modelDict.get(modelId)).require(s"Sensor model (id = $modelId) not found");
+		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional
+	) yield
+		TcInstrument[E](
+			tcId = makeId(tcIdStr),
+			model = model.name,
+			sn = serial,
+			vendor = vendor
+		)
+
+	private def getSensorDeployment(
+		stationPosLookup: Map[TcId[E], Position]
+	)(implicit l: Lookup): Validated[(String, InstrumentDeployment[E])] = for(
+		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
+		varName <- lookUp(Vars.sensorVar).optional;
+		sensorId <- lookUp(Vars.sensorId).require("sensor deployment must have sensor id");
+		northOpt <- getNumber(Vars.northSouthOffset).map(_.doubleValue).optional;
+		eastOpt <- getNumber(Vars.eastWestOffset).map(_.doubleValue).optional;
+		heightOpt <- getNumber(Vars.height).map(_.floatValue).optional;
+		start <- getLocalDateTime(Vars.deploymentStart).optional;
+		stationTcId = makeId(stationTcIdStr);
+		statPos <- new Validated(stationPosLookup.get(stationTcId)).require(s"Position for station with id $stationTcId could not be looked up")
+	) yield{
+		val pos = for(north <- northOpt; east <- eastOpt) yield{
+			val Rearth = 6371000d
+			val dlat = Math.toDegrees(north / Rearth)
+			val Rlat = Math.cos(Math.toRadians(statPos.lat))
+			val dlon = Math.toDegrees(east / Rlat)
+			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None)
+		}
+		val cpIdStub = s"$stationTcIdStr_$sensorId"
+		sensorId -> InstrumentDeployment(UriId(""), stationTcId, pos, varName, start, None)
 	}
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =

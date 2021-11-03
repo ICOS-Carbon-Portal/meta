@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station}
 import se.lu.nateko.cp.meta.core.data.{Organization, Funding, Funder}
 import se.lu.nateko.cp.meta.services.CpVocab
+import java.time.LocalDateTime
 
 
 sealed trait Entity[+T <: TC]{
@@ -94,11 +95,21 @@ case class TcInstrument[+T <: TC : TcConf](
 	name: Option[String] = None,
 	vendor: Option[TcOrg[T]] = None,
 	owner: Option[TcOrg[T]] = None,
-	partsCpIds: Seq[UriId] = Nil
+	partsCpIds: Seq[UriId] = Nil,
+	deployments: Seq[InstrumentDeployment[T]] = Nil
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
 	def cpId = CpVocab.instrCpId(tcId)
 }
+
+case class InstrumentDeployment[+T <: TC](
+	cpId: UriId,
+	station: TcId[T],
+	pos: Option[Position],
+	variable: Option[String],
+	start: Option[LocalDateTime],
+	stop: Option[LocalDateTime]
+)
 
 case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)
 

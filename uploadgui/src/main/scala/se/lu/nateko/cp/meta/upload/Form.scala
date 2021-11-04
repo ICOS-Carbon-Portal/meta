@@ -36,7 +36,7 @@ class Form(
 		case FormInputUpdated => updateButton()
 		case LevelSelected(level) =>
 			if(level == 0 || level == 3)
-				addProductionButton.disable(s"Production metedata is not available for data level $level")
+				addProductionButton.disable(s"Production metadata is not available for data level $level")
 			else
 				addProductionButton.enable()
 		case ModeChanged => resetForm()
@@ -46,9 +46,9 @@ class Form(
 				case Data => dataPanel.show()
 				case Collection => {
 					collPanel.show()
-					addProductionButton.disable("Production metedata is not available for collections")
+					addProductionButton.disable("Production metadata is not available for collections")
 				}
-				case Document => addProductionButton.disable("Production metedata is not available for documents")
+				case Document => addProductionButton.disable("Production metadata is not available for documents")
 				case _ =>
 			}
 	}

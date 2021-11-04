@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.upload.Utils._
 
 
 
-private abstract class TextInputElement extends html.Element{
+private abstract class TextInputElement extends html.Object{
 	var value: String
 	var disabled: Boolean
 }
@@ -31,12 +31,15 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 	def refreshAndNotify(): Unit = {
 		_value = parser(input.value)
 
-		if (_value.isSuccess || input.value.isEmpty) {
-			input.title = ""
-			input.parentElement.classList.remove("has-error")
-		} else {
-			input.title = _value.failed.map(_.getMessage).getOrElse("")
-			input.parentElement.classList.add("has-error")
+		input.classList.remove("is-valid")
+		input.classList.remove("is-invalid")
+		input.setCustomValidity("")
+
+		if (_value.isSuccess) {
+			input.classList.add("is-valid")
+		} else if (input.value.nonEmpty) {
+			input.classList.add("is-invalid")
+			input.setCustomValidity(_value.failed.map(_.getMessage).getOrElse(""))
 		}
 
 		cb()

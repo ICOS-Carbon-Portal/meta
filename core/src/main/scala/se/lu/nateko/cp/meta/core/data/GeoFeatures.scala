@@ -37,6 +37,27 @@ case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[
 object PositionUtil{
 	private val numForm = new DecimalFormat("###.######")
 	def format6(d: Double): String = numForm.format(d).replace(',', '.')
+	def average(ps: Iterable[Position]): Option[Position] = {
+		var latSum, lonSum: Double = 0
+		var n: Int = 0
+		var heightSum: Float = 0
+		var nHeight: Int = 0
+		ps.foreach{p =>
+			n += 1
+			latSum += p.lat
+			lonSum += p.lon
+			p.alt.foreach{height =>
+				nHeight += 1
+				heightSum += height
+			}
+		}
+		if(n == 0) None else Some(Position(
+			lat = latSum / n,
+			lon = lonSum / n,
+			alt = (if(nHeight == 0) None else Some(heightSum / nHeight)),
+			label = None
+		))
+	}
 }
 
 case class LatLonBox(min: Position, max: Position, label: Option[String], uri: Option[URI]) extends GeoFeature{

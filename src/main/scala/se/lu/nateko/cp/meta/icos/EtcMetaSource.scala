@@ -40,6 +40,7 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import java.net.URI
+import scala.collection.mutable.ListBuffer
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -531,12 +532,37 @@ object EtcMetaSource{
 		val pos = for(north <- northOpt; east <- eastOpt) yield{
 			val Rearth = 6371000d
 			val dlat = Math.toDegrees(north / Rearth)
-			val Rlat = Math.cos(Math.toRadians(statPos.lat))
+			val Rlat = Rearth * Math.cos(Math.toRadians(statPos.lat))
 			val dlon = Math.toDegrees(east / Rlat)
 			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None)
 		}
-		val cpIdStub = s"$stationTcIdStr_$sensorId"
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, pos, varName, start, None)
+	}
+
+	private def mergeInstrDeployments(sensorId: String, depls: Seq[InstrumentDeployment[E]]) = {
+		val sortedDepls = depls.sortBy(_.start)
+		val res = ListBuffer.empty[InstrumentDeployment[E]]
+		val positions = ListBuffer.empty[Position]
+		var last: InstrumentDeployment[E] = null
+
+		def merge(): Unit = {
+			val idx = res.size
+			res.addOne(last.copy(
+				cpId = new UriId(s"${sensorId}_$idx"),
+				pos = PositionUtil.average(positions)
+			))
+			positions.clear()
+			last = null
+		}
+
+		sortedDepls.tail.foreach{d =>
+			if(last != null && (last.station != d.station || last.variable != d.variable)) merge()
+			last = d
+			d.pos.foreach(positions.addOne)
+		}
+
+		merge()
+		res.toIndexedSeq
 	}
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =

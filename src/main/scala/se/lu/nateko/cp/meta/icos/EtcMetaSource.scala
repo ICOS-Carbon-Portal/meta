@@ -70,11 +70,13 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
+			sensorsVal <- fetchSensors(stationsVal);
 			instrumentsVal <- instrumentsFut
 		) yield Validated.liftFuture{
 			for(
 				people <- peopleVal;
 				stations <- stationsVal;
+				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield {
 				val membExtractor: Lookup => Validated[EtcMembership] = getMembership(
@@ -83,7 +85,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 				)(_)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments)
+					new TcState(stations, membs, instruments ++ sensors)
 				})
 			}
 		}
@@ -123,11 +125,35 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 			}
 	}
 
-	def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
+	def fetchSensors(stationsVal: Validated[Seq[EtcStation]]): Future[Validated[Seq[EtcInstrument]]] = {
+		val futfutValVal = for(
+			modelDictVal <- getSensorModelDict;
+			compDictVal <- getCompaniesDict;
+			deplDictVal <- Validated.liftFuture(
+				stationsVal.map(getDeploymentsDict)
+			).map(_.flatMap(identity))
+		) yield Validated.liftFuture{
+			for(modelDict <- modelDictVal; compDict <- compDictVal; deplDict <- deplDictVal) yield
+				fetchFromTsv(Types.sensors, getSensor(modelDict, compDict, deplDict)(_))
+		}
+		futfutValVal.flatten.map(_.flatMap(identity))
+	}
+
+	private def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
 		fetchFromTsv(Types.companies, getCompany(vocab)(_)).map(_.map(_.toMap))
 
-	def getSensorModelDict: Future[Validated[Map[String, SensorModel]]] =
+	private def getSensorModelDict: Future[Validated[Map[String, SensorModel]]] =
 		fetchFromTsv(Types.sensorModels, getSensorModel(_)).map(_.map(_.toMap))
+
+	private def getDeploymentsDict(stations: Seq[EtcStation]): Future[Validated[Map[String, Seq[InstrumentDeployment[E]]]]] = {
+		val posLookup = (for(s <- stations; pos <- s.core.location) yield s.tcId -> pos).toMap
+
+		fetchFromTsv(Types.meteosens, getSensorDeployment(posLookup)(_)).map(_.map(sensorDepls =>
+			sensorDepls.groupMap(_._1)(_._2).map{
+				case (sensorId, depls) => sensorId -> mergeInstrDeployments(sensorId, depls)
+			}
+		))
+	}
 
 	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
 		.singleRequest(HttpRequest(
@@ -164,6 +190,7 @@ object EtcMetaSource{
 		val instruments = "logger"
 		val sensorModels = "models"
 		val sensors = "sensors"
+		val meteosens = "meteosens"
 		val files = "file"
 		val funding = "funding"
 	}
@@ -501,19 +528,22 @@ object EtcMetaSource{
 
 	def getSensor(
 		modelDict: Map[String, SensorModel],
-		compDict: Map[Int, EtcCompany]
+		compDict: Map[Int, EtcCompany],
+		deploymentsDict: Map[String, Seq[InstrumentDeployment[E]]]
 	)(implicit lookup: Lookup): Validated[EtcInstrument] = for(
 		tcIdStr <- lookUp(Vars.sensorId).require("sensor must have id");
 		modelId <- lookUp(Vars.sensorModelId).require("sensor must have model id");
 		serial <- lookUp(Vars.sensorSerial).require("sensor must have serial number");
 		model <- new Validated(modelDict.get(modelId)).require(s"Sensor model (id = $modelId) not found");
-		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional
+		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional;
+		depls <- new Validated(deploymentsDict.get(tcIdStr)) //sensors without deployments will be excluded
 	) yield
 		TcInstrument[E](
 			tcId = makeId(tcIdStr),
 			model = model.name,
 			sn = serial,
-			vendor = vendor
+			vendor = vendor,
+			deployments = depls
 		)
 
 	private def getSensorDeployment(
@@ -540,7 +570,8 @@ object EtcMetaSource{
 	}
 
 	private def mergeInstrDeployments(sensorId: String, depls: Seq[InstrumentDeployment[E]]) = {
-		val sortedDepls = depls.sortBy(_.start)
+		//the solution is easier in imperative style; group by a tuple of stationId and variable
+		//is not good enough, as in theory a sensor can move to a different station and/or var, and then come back
 		val res = ListBuffer.empty[InstrumentDeployment[E]]
 		val positions = ListBuffer.empty[Position]
 		var last: InstrumentDeployment[E] = null
@@ -555,10 +586,10 @@ object EtcMetaSource{
 			last = null
 		}
 
-		sortedDepls.tail.foreach{d =>
+		depls.sortBy(_.start).foreach{d =>
 			if(last != null && (last.station != d.station || last.variable != d.variable)) merge()
 			last = d
-			d.pos.foreach(positions.addOne)
+			positions.addAll(d.pos)
 		}
 
 		merge()

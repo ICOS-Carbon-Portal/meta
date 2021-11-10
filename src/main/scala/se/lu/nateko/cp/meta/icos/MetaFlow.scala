@@ -64,7 +64,7 @@ object MetaFlow {
 				}
 			} else{
 				val nUpdates = diffV.result.fold(0)(_.size)
-				val errors = diffV.errors.mkString("\n")
+				val errors = diffV.errors.distinct.mkString("\n")
 				system.log.warning(s"Error(s) calculating RDF diff (got $nUpdates updates) for $tip metadata:\n$errors")
 			}
 		}

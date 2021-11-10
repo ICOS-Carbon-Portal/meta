@@ -58,20 +58,19 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 		}
 		.withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
 		.mapConcat{validated =>
-			if(!validated.errors.isEmpty) system.log.warning("ETC metadata problem(s): " + validated.errors.mkString("\n"))
+			if(!validated.errors.isEmpty) system.log.warning("ETC metadata problem(s): " + validated.errors.distinct.mkString("\n"))
 			validated.result.toList
 		}
 
 
 	def fetchFromEtc(): Future[Validated[State]] = {
 		val peopleFut = fetchFromTsv(Types.people, getPerson(_))
-		val instrumentsFut = fetchFromTsv(Types.instruments, getInstrument(_))
 
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
 			sensorsVal <- fetchSensors(stationsVal);
-			instrumentsVal <- instrumentsFut
+			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		) yield Validated.liftFuture{
 			for(
 				people <- peopleVal;
@@ -85,7 +84,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 				)(_)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments ++ sensors)
+					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 			}
 		}
@@ -225,8 +224,7 @@ object EtcMetaSource{
 		val stationDocDois = "REFERENCE_DOI_D"
 		val stationDataPubDois = "REFERENCE_DOI_P"
 		val timeZoneOffset = "UTC_OFFSET"
-		val loggerModel = "LOGGER_MODEL"
-		val loggerSerial = "LOGGER_SN"
+		val loggerSensorId = "LOGGER_SENSOR_ID"
 		val loggerId = "LOGGER_ID"
 		val sensorModelId = "ID_MODEL"
 		val sensorName = "SENSOR"
@@ -511,19 +509,19 @@ object EtcMetaSource{
 		}
 	}
 
-	def getInstrument(implicit lookup: Lookup): Validated[EtcInstrument] = {
-		val require = requireVar("instrument") _
-		for(
-			stId <- require(Vars.stationTcId).map(_.toInt);
-			loggerId <- require(Vars.loggerId).map(_.toInt);
-			sn <- require(Vars.loggerSerial);
-			model <- require(Vars.loggerModel)
-		) yield
-			TcInstrument[E](
-				tcId = CpVocab.getEtcInstrTcId(stId, loggerId),
-				model = model,
-				sn = sn
-			)
+	def getLogger(sensorsVal: Validated[Seq[EtcInstrument]]): Lookup => Validated[EtcInstrument] = {
+		val sensorsDictVal = sensorsVal.map(_.map(sens => sens.tcId -> sens).toMap)
+		implicit lookUp => {
+			val require = requireVar("instrument") _
+			for(
+				stId <- require(Vars.stationTcId).map(_.toInt);
+				loggerId <- require(Vars.loggerId).map(_.toInt);
+				sensorTcId <- require(Vars.loggerSensorId);
+				sensorDict <- sensorsDictVal;
+				instr <- new Validated(sensorDict.get(makeId(sensorTcId))).require(s"Could not look up logger by sensor id $sensorTcId")
+			) yield
+				instr.copy(tcId = CpVocab.getEtcInstrTcId(stId, loggerId))
+		}
 	}
 
 	def getSensor(
@@ -535,15 +533,14 @@ object EtcMetaSource{
 		modelId <- lookUp(Vars.sensorModelId).require("sensor must have model id");
 		serial <- lookUp(Vars.sensorSerial).require("sensor must have serial number");
 		model <- new Validated(modelDict.get(modelId)).require(s"Sensor model (id = $modelId) not found");
-		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional;
-		depls <- new Validated(deploymentsDict.get(tcIdStr)) //sensors without deployments will be excluded
+		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional
 	) yield
 		TcInstrument[E](
 			tcId = makeId(tcIdStr),
 			model = model.name,
 			sn = serial,
 			vendor = vendor,
-			deployments = depls
+			deployments = deploymentsDict.getOrElse(tcIdStr, Nil)
 		)
 
 	private def getSensorDeployment(

@@ -107,8 +107,8 @@ case class InstrumentDeployment[+T <: TC](
 	station: TcId[T],
 	pos: Option[Position],
 	variable: Option[String],
-	start: Option[LocalDateTime],
-	stop: Option[LocalDateTime]
+	start: Option[Instant],
+	stop: Option[Instant]
 )
 
 case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)

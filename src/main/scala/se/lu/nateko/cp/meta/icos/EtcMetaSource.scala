@@ -146,8 +146,13 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 
 	private def getDeploymentsDict(stations: Seq[EtcStation]): Future[Validated[Map[String, Seq[InstrumentDeployment[E]]]]] = {
 		val posLookup = (for(s <- stations; pos <- s.core.location) yield s.tcId -> pos).toMap
+		def getTz(s: EtcStation): Option[Int] = s.core.specificInfo match{
+			case etc: EtcStationSpecifics => etc.timeZoneOffset
+			case _ => None
+		}
+		val tzLookup = (for(s <- stations; tz <- getTz(s)) yield s.tcId -> tz).toMap
 
-		fetchFromTsv(Types.meteosens, getSensorDeployment(posLookup)(_)).map(_.map(sensorDepls =>
+		fetchFromTsv(Types.meteosens, getSensorDeployment(posLookup, tzLookup)(_)).map(_.map(sensorDepls =>
 			sensorDepls.groupMap(_._1)(_._2).map{
 				case (sensorId, depls) => sensorId -> mergeInstrDeployments(sensorId, depls)
 			}
@@ -277,14 +282,14 @@ object EtcMetaSource{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
-	private def getLocalDateTime(varName: String)(implicit lookup: Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
+	private def getLocalDateTime(varName: String, defaultTime: LocalTime)(implicit lookup: Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
 		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt)
-		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(12, 0))
+		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(defaultTime))
 		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
 	}
 
 	private def getLocalDate(varName: String)(implicit lookup: Lookup): Validated[LocalDate] =
-		getLocalDateTime(varName).map(_.toLocalDate)
+		getLocalDateTime(varName, LocalTime.NOON).map(_.toLocalDate)
 
 	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =
 		for(
@@ -362,7 +367,7 @@ object EtcMetaSource{
 				stationTcId <- lookUp(Vars.stationTcId).require("missing ETC technical station id in funding table");
 				funderName <- lookUp(Vars.fundingOrgName).require(s"missing funder name for funding of station $stationTcId");
 				awardTitle <- lookUp(Vars.fundingAwardTitle).optional;
-				awardNumber <- lookUp(Vars.fundingAwardNumber).require(s"Award number missing for funding of station $stationTcId");
+				awardNumber <- lookUp(Vars.fundingAwardNumber).optional;
 				fStart <- getLocalDate(Vars.fundingStart).optional;
 				fEnd <- getLocalDate(Vars.fundingEnd).optional;
 				comment <- lookUp(Vars.fundingComment).optional;
@@ -376,7 +381,7 @@ object EtcMetaSource{
 						label = None, //will be enriched later
 						comments = comment.toSeq
 					),
-					awardNumber = Some(awardNumber),
+					awardNumber = awardNumber,
 					awardTitle = awardTitle,
 					funder = tcFunder.core,
 					awardUrl = url,
@@ -415,11 +420,15 @@ object EtcMetaSource{
 	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
 
 	def parseTsv(bs: ByteString): Seq[Lookup] = {
+
+		def parseCells(line: String): Array[String] = line
+			.stripPrefix("\"").stripSuffix("\"").replaceAll("\"\"", "\"")
+			.split("\\t", -1).map(_.trim)
+
 		val lines = scala.io.Source.fromString(bs.utf8String).getLines()
-		val colNames: Array[String] = lines.next().split('\t').map(_.trim)
-		lines.map{lineStr =>
-			colNames.zip(lineStr.split('\t').map(_.trim)).toMap
-		}.toSeq
+		val colNames: Array[String] = parseCells(lines.next())
+
+		lines.map(lineStr => colNames.zip(parseCells(lineStr)).toMap).toSeq
 	}
 
 	def getStation(
@@ -544,7 +553,8 @@ object EtcMetaSource{
 		)
 
 	private def getSensorDeployment(
-		stationPosLookup: Map[TcId[E], Position]
+		stationPosLookup: Map[TcId[E], Position],
+		tzLookup: Map[TcId[E], Int]
 	)(implicit l: Lookup): Validated[(String, InstrumentDeployment[E])] = for(
 		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
 		varName <- lookUp(Vars.sensorVar).optional;
@@ -552,8 +562,9 @@ object EtcMetaSource{
 		northOpt <- getNumber(Vars.northSouthOffset).map(_.doubleValue).optional;
 		eastOpt <- getNumber(Vars.eastWestOffset).map(_.doubleValue).optional;
 		heightOpt <- getNumber(Vars.height).map(_.floatValue).optional;
-		start <- getLocalDateTime(Vars.deploymentStart).optional;
+		startLocal <- getLocalDateTime(Vars.deploymentStart, LocalTime.MIN).optional;
 		stationTcId = makeId(stationTcIdStr);
+		tz <- new Validated(tzLookup.get(stationTcId)).require(s"Could not look up time zone offset for station with id $stationTcId");
 		statPos <- new Validated(stationPosLookup.get(stationTcId)).require(s"Position for station with id $stationTcId could not be looked up")
 	) yield{
 		val pos = for(north <- northOpt; east <- eastOpt) yield{
@@ -563,6 +574,7 @@ object EtcMetaSource{
 			val dlon = Math.toDegrees(east / Rlat)
 			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None)
 		}
+		val start = startLocal.map(_.toInstant(ZoneOffset.ofHours(tz)))
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, pos, varName, start, None)
 	}
 
@@ -573,23 +585,24 @@ object EtcMetaSource{
 		val positions = ListBuffer.empty[Position]
 		var last: InstrumentDeployment[E] = null
 
-		def merge(): Unit = {
+		def merge(stop: Option[Instant]): Unit = {
 			val idx = res.size
 			res.addOne(last.copy(
 				cpId = new UriId(s"${sensorId}_$idx"),
-				pos = PositionUtil.average(positions)
+				pos = PositionUtil.average(positions),
+				stop = stop
 			))
 			positions.clear()
 			last = null
 		}
 
 		depls.sortBy(_.start).foreach{d =>
-			if(last != null && (last.station != d.station || last.variable != d.variable)) merge()
+			if(last != null && (last.station != d.station || last.variable != d.variable)) merge(d.start)
 			last = d
 			positions.addAll(d.pos)
 		}
 
-		merge()
+		merge(None)
 		res.toIndexedSeq
 	}
 

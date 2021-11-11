@@ -41,6 +41,7 @@ import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import java.net.URI
 import scala.collection.mutable.ListBuffer
+import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource._
@@ -285,6 +286,7 @@ object EtcMetaSource{
 	private def getLocalDateTime(varName: String, defaultTime: LocalTime)(implicit lookup: Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
 		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt)
 		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(defaultTime))
+		case Badm.Date(BadmYear(year)) => ???
 		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
 	}
 
@@ -371,7 +373,7 @@ object EtcMetaSource{
 				fStart <- getLocalDate(Vars.fundingStart).optional;
 				fEnd <- getLocalDate(Vars.fundingEnd).optional;
 				comment <- lookUp(Vars.fundingComment).optional;
-				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr)).optional;
+				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr)).filter(_.isAbsolute).optional;
 				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
 			) yield {
 				val cpId = UriId.escaped(s"${stationTcId}_$awardNumber")
@@ -422,8 +424,7 @@ object EtcMetaSource{
 	def parseTsv(bs: ByteString): Seq[Lookup] = {
 
 		def parseCells(line: String): Array[String] = line
-			.stripPrefix("\"").stripSuffix("\"").replaceAll("\"\"", "\"")
-			.split("\\t", -1).map(_.trim)
+			.split("\\t", -1).map(_.trim.stripPrefix("\"").stripSuffix("\"").replaceAll("\"\"", "\""))
 
 		val lines = scala.io.Source.fromString(bs.utf8String).getLines()
 		val colNames: Array[String] = parseCells(lines.next())
@@ -597,8 +598,11 @@ object EtcMetaSource{
 		}
 
 		depls.sortBy(_.start).foreach{d =>
-			if(last != null && (last.station != d.station || last.variable != d.variable)) merge(d.start)
-			last = d
+			if(last == null) last = d
+			else if(last.station != d.station || last.variable != d.variable) {
+				merge(d.start)
+				last = d
+			}
 			positions.addAll(d.pos)
 		}
 

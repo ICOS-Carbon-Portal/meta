@@ -40,6 +40,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 //		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
 //	)(icosBup)
 
+	def getInstrDeployment(deplId: UriId)(implicit envri: Envri): IRI = getRelative("deployments/", deplId)
 	def getMembership(membId: UriId)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
 	def getMembership(orgId: UriId, role: Role, lastName: String)(implicit envri: Envri): IRI =
 		getMembership(UriId(s"${orgId}_${role.name}_${UriId.escaped(lastName)}"))
@@ -79,6 +80,11 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getObjectSpecification(lastSegment: UriId)(implicit envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
 		else getRelative("objspecs/", lastSegment)
+
+	def lookupIcosDatasetVar(varName: String): Option[IRI] =
+		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))
+			Some(getRelativeRaw("cpmeta/SWC_n_n_n")(icosBup))
+		else None
 }
 
 object CpVocab{

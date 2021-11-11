@@ -106,10 +106,14 @@ private class IcosMetaInstancesFetcher(
 			name = getOptionalString(uri, metaVocab.hasName),
 			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getTcOrganization(o)),
 			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getTcOrganization(v)),
-			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply)
+			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply),
+			deployments = server.getUriValues(uri, metaVocab.ssn.hasDeployment).map(getInstrDeployment)
 		)
 	}
 
+	private def getInstrDeployment[T <: TC](iri: IRI): InstrumentDeployment[T] = {
+		???
+	}
 
 	def getStations[T <: TC](implicit conf: TcConf[T]): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)

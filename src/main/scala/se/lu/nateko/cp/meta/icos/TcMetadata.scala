@@ -96,7 +96,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	vendor: Option[TcOrg[T]] = None,
 	owner: Option[TcOrg[T]] = None,
 	partsCpIds: Seq[UriId] = Nil,
-	deployments: Seq[InstrumentDeployment[T]] = Nil
+	deployments: Seq[InstrumentDeployment[T]]
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
 	def cpId = CpVocab.instrCpId(tcId)

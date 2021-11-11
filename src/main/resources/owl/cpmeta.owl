@@ -10,13 +10,13 @@
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+     xmlns:sosa="http://www.w3.org/ns/sosa/"
      xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
      xmlns:geosp="http://www.opengis.net/ont/geosparql#"
      xmlns:sites="https://meta.fieldsites.se/ontologies/sites/"
      xmlns:schema="http://schema.org/"
      xmlns:dcterms="http://purl.org/dc/terms/"
      xmlns:sitesorg="https://meta.fieldsites.se/resources/organizations/">
-     xmlns:sosa="http://www.w3.org/ns/sosa/">
     <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
     
 
@@ -142,7 +142,14 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
         <rdfs:label>at organization</rdfs:label>
     </owl:ObjectProperty>
@@ -355,7 +362,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent">
-        <rdfs:subPropertyOf rdf:resource="http://purl.org/dc/terms/hasPart"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/ssn/hasSubSystem"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#TransitiveProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Instrument"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Instrument"/>
@@ -722,6 +729,30 @@
     <owl:ObjectProperty rdf:about="http://www.w3.org/ns/prov#wasRevisionOf">
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Entity"/>
         <rdfs:range rdf:resource="http://www.w3.org/ns/prov#Entity"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/ns/ssn/forProperty -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/ns/ssn/forProperty">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">for property</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/ns/ssn/hasDeployment -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/ns/ssn/hasDeployment">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has deployment</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/ns/ssn/hasSubSystem -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/ns/ssn/hasSubSystem">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has subsystem</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -1140,6 +1171,7 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SpatialDataObject"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
@@ -1287,6 +1319,7 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Position"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
@@ -1319,6 +1352,7 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Position"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
@@ -1525,7 +1559,14 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
     </owl:DatatypeProperty>
     
@@ -1636,6 +1677,7 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/SpatialDataObject"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
@@ -1761,9 +1803,16 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableName -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableName">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
+                    <rdf:Description rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:comment>A &quot;virtual&quot; property only used to define a variable in SPARQL, to support variable-name search. Is a multi-valued counterpart of cpmeta:hasActualColumnNames (for SimpleDataObjects), which contains a JSON array.</rdfs:comment>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A &quot;virtual&quot; property only used to define a variable in SPARQL, to support variable-name search. Is a multi-valued counterpart of cpmeta:hasActualColumnNames (for SimpleDataObjects), which contains a JSON array. Also, used to indicate variable name that a sensor is measuring (via Deployment).</rdfs:comment>
     </owl:DatatypeProperty>
     
 
@@ -2237,6 +2286,7 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/sosa/ObservableProperty"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType"/>
@@ -2834,9 +2884,28 @@
     
 
 
+    <!-- http://www.w3.org/ns/sosa/ObservableProperty -->
+
+    <owl:Class rdf:about="http://www.w3.org/ns/sosa/ObservableProperty"/>
+    
+
+
     <!-- http://www.w3.org/ns/sosa/Sensor -->
 
-    <owl:Class rdf:about="http://www.w3.org/ns/sosa/Sensor"/>
+    <owl:Class rdf:about="http://www.w3.org/ns/sosa/Sensor">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.w3.org/ns/ssn/hasDeployment"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/ns/ssn/Deployment"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://www.w3.org/ns/ssn/Deployment -->
+
+    <owl:Class rdf:about="http://www.w3.org/ns/ssn/Deployment"/>
     
 
 

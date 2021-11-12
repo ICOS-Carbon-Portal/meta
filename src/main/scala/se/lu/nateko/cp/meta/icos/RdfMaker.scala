@@ -144,7 +144,13 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				instr.partsCpIds.map{cpId =>
 					(uri, meta.hasInstrumentComponent, vocab.getIcosInstrument(cpId))
 				} ++:
-				instrumentDeploymentTriples(uri, instr)
+				instr.deployments.flatMap{depl =>
+					val deplIri = getIri(depl)
+					(uri, meta.ssn.hasDeployment, deplIri) +:
+					getInstrDeploymentTriples(depl, deplIri)
+				}
+
+			case depl: InstrumentDeployment[T] => getInstrDeploymentTriples(depl, getIri(depl))
 		}
 
 		val tcIdPredicate: IRI = implicitly[TcConf[T]].tcIdPredicate(meta)
@@ -165,6 +171,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 		case instr: TcInstrument[T] =>
 			vocab.getIcosInstrument(instr.cpId)
+
+		case depl: InstrumentDeployment[T] =>
+			vocab.getInstrDeployment(depl.cpId)
 	}
 
 	private def stationTriples(iri: IRI, s: StationSpecifics): Seq[Triple] =  s match{
@@ -196,36 +205,33 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		case _ => Seq.empty
 	}
 
-	private def instrumentDeploymentTriples[T <: TC](iri: IRI, instr: TcInstrument[T]): Seq[Triple] =
-		instr.deployments.flatMap{depl =>
-			val deplIri = vocab.getInstrDeployment(depl.cpId)
-			val stationIri: IRI = ???
-			(iri, meta.ssn.hasDeployment, deplIri) +:
-			(deplIri, RDF.TYPE, meta.ssn.deploymentClass) +:
-			(deplIri, meta.atOrganization, stationIri) +:
-			depl.variable.map{varName =>
-				(deplIri, meta.hasVariableName, vocab.lit(varName))
-			} ++:
-			depl.pos.map{p =>
-				(deplIri, meta.hasLatitude, vocab.lit(p.lat6, XMLSchema.DOUBLE))
-			} ++:
-			depl.pos.map{p =>
-				(deplIri, meta.hasLongitude, vocab.lit(p.lon6, XMLSchema.DOUBLE))
-			} ++:
-			depl.pos.flatMap(_.alt).map{alt =>
-				(deplIri, meta.hasSamplingHeight, vocab.lit(f"$alt%.2f", XMLSchema.FLOAT))
-			} ++:
-			depl.start.map{start =>
-				(deplIri, meta.hasStartTime, vocab.lit(start))
-			} ++:
-			depl.stop.map{stop =>
-				(deplIri, meta.hasEndTime, vocab.lit(stop))
-			} ++:
-			depl.variable.flatMap(vocab.lookupIcosDatasetVar).map{dsVarRes =>
-				(deplIri, meta.ssn.forProperty, dsVarRes)
-			} ++:
-			Nil
-		}
+	private def getInstrDeploymentTriples[T <: TC](depl: InstrumentDeployment[T], deplIri: IRI): Seq[Triple] = {
+		val stationIri: IRI = vocab.getIcosLikeStation(depl.stationUriId)
+
+		(deplIri, RDF.TYPE, meta.ssn.deploymentClass) +:
+		(deplIri, meta.atOrganization, stationIri) +:
+		depl.variable.map{varName =>
+			(deplIri, meta.hasVariableName, vocab.lit(varName))
+		} ++:
+		depl.pos.map{p =>
+			(deplIri, meta.hasLatitude, vocab.lit(p.lat6, XMLSchema.DOUBLE))
+		} ++:
+		depl.pos.map{p =>
+			(deplIri, meta.hasLongitude, vocab.lit(p.lon6, XMLSchema.DOUBLE))
+		} ++:
+		depl.pos.flatMap(_.alt).map{alt =>
+			(deplIri, meta.hasSamplingHeight, vocab.lit(f"$alt%.2f", XMLSchema.FLOAT))
+		} ++:
+		depl.start.map{start =>
+			(deplIri, meta.hasStartTime, vocab.lit(start))
+		} ++:
+		depl.stop.map{stop =>
+			(deplIri, meta.hasEndTime, vocab.lit(stop))
+		} ++:
+		depl.variable.flatMap(vocab.lookupIcosDatasetVar).map{dsVarRes =>
+			(deplIri, meta.ssn.forProperty, dsVarRes)
+		}.toList
+	}
 
 	private def positionTriples(p: Position, iri: IRI): Seq[Triple] =
 		(iri, meta.hasLatitude, vocab.lit(p.lat)) +:

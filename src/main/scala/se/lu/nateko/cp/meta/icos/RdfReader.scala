@@ -107,12 +107,28 @@ private class IcosMetaInstancesFetcher(
 			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getTcOrganization(o)),
 			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getTcOrganization(v)),
 			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply),
-			deployments = server.getUriValues(uri, metaVocab.ssn.hasDeployment).map(getInstrDeployment)
+			deployments = server.getUriValues(uri, metaVocab.ssn.hasDeployment).map(getInstrDeployment[T])
 		)
 	}
 
-	private def getInstrDeployment[T <: TC](iri: IRI): InstrumentDeployment[T] = {
-		???
+	private def getInstrDeployment[T <: TC : TcConf](iri: IRI): InstrumentDeployment[T] = {
+		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
+
+		val pos = for(
+			lat <- getOptionalDouble(iri, metaVocab.hasLatitude);
+			lon <- getOptionalDouble(iri, metaVocab.hasLongitude);
+			alt = getOptionalFloat(iri, metaVocab.hasSamplingHeight)
+		) yield Position(lat, lon, alt, None)
+
+		InstrumentDeployment(
+			cpId = UriId(iri),
+			pos = pos,
+			stationTcId = getTcId[T](stationIri).getOrElse(throw new MetadataException(s"Station $stationIri had no TC id associated with it")),
+			stationUriId = UriId(stationIri),
+			variable = getOptionalString(iri, metaVocab.hasVariableName),
+			start = getOptionalInstant(iri, metaVocab.hasStartTime),
+			stop = getOptionalInstant(iri, metaVocab.hasEndTime)
+		)
 	}
 
 	def getStations[T <: TC](implicit conf: TcConf[T]): Validated[Seq[TcStation[T]]] =

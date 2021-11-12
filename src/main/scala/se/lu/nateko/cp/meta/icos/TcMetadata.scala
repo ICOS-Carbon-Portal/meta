@@ -43,6 +43,10 @@ object Entity{
 		}
 	}
 
+	implicit def funderCpIdSwapper[T <: TC] = new CpIdSwapper[TcFunder[T]]{
+		def withCpId(org: TcFunder[T], id: UriId) = org.copy(cpId = id)
+	}
+
 	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
@@ -59,6 +63,10 @@ object Entity{
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
 	}
 
+	implicit def instrDeploymentCpIdSwapper[T <: TC] = new CpIdSwapper[InstrumentDeployment[T]] {
+		//swapping station info, not deployments own cpid
+		def withCpId(depl: InstrumentDeployment[T], id: UriId) = depl.copy(stationUriId = id)
+	}
 }
 
 case class TcPerson[+T <: TC](
@@ -104,12 +112,15 @@ case class TcInstrument[+T <: TC : TcConf](
 
 case class InstrumentDeployment[+T <: TC](
 	cpId: UriId,
-	station: TcId[T],
+	stationTcId: TcId[T],
+	stationUriId: UriId,
 	pos: Option[Position],
 	variable: Option[String],
 	start: Option[Instant],
 	stop: Option[Instant]
-)
+) extends Entity[T]{
+	def tcIdOpt: Option[TcId[T]] = Some(stationTcId)
+}
 
 case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)
 

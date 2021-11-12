@@ -36,7 +36,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val plainOrgsDiff = diff[T, TcPlainOrg[T]](plainOrgs(current), plainOrgs(newSnapshot), cpOwnOrgs)
 
 		def updateStation(st: TcStation[T]): TcStation[T] = st.copy(
-			responsibleOrg = st.responsibleOrg.map(plainOrgsDiff.ensureIdPreservation),
+			responsibleOrg = st.responsibleOrg.map(o => plainOrgsDiff.ensureIdPreservation(o)),
 			funding = st.funding.map(updateFunding)
 		)
 
@@ -52,11 +52,12 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
 
-		val orgsDiff: SequenceDiff[T, TcOrg[T]] = plainOrgsDiff.concat(stationsDiff.generalizeTo[TcOrg[T]])
+		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
 
 		def updateInstr(instr: TcInstrument[T]): TcInstrument[T] = instr.copy(
-			vendor = instr.vendor.map(orgsDiff.ensureIdPreservation),
-			owner = instr.owner.map(orgsDiff.ensureIdPreservation)
+			vendor = instr.vendor.map(v => orgsDiff.ensureIdPreservation(v)),
+			owner = instr.owner.map(o => orgsDiff.ensureIdPreservation(o)),
+			deployments = instr.deployments.map(d => orgsDiff.ensureIdPreservation(d))
 		)
 
 		val tcInstrs = newSnapshot.instruments.map(updateInstr)
@@ -103,7 +104,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		rdfMaker.createStatement(stat.getSubject, stat.getPredicate, obj)
 
 
-	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T, E] = {
+	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T] = {
 
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
@@ -129,7 +130,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				case (key, cpId) => toMap(key).cpId != cpId
 			}.toMap
 
-			new SequenceDiff[T, E](rdfDiff, idLookup)
+			new SequenceDiff(rdfDiff, idLookup)
 		}
 
 		val existingChangedTcOnly = toKeys.intersect(fromKeys).diff(cpKeys).toSeq.map{key =>
@@ -147,15 +148,15 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				else
 					Map(key -> from.cpId)
 
-			new SequenceDiff[T, E](rdfDiff, idLookup)
+			new SequenceDiff(rdfDiff, idLookup)
 		}.join
 
 		//no entities are deleted, cpIdLookup covered in 'existingAppearedInCp'
-		val oldOriginalRemoved = SequenceDiff.empty[T, E]
+		val oldOriginalRemoved = SequenceDiff.empty[T]
 
 		val presentInCp = { //needed for completeness of cpIdLookup info
 			val idLookup = cpIdLookup(toKeys.intersect(cpKeys), toMap)
-			new SequenceDiff[T, E](Nil, idLookup)
+			new SequenceDiff(Nil, idLookup)
 		}
 
 		val existingAppearedInCp = {
@@ -190,7 +191,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				renamingUpdates ++ renamingUsages ++ statementsToDelete.map(RdfUpdate(_, false))
 			}
 
-			new SequenceDiff[T, E](rdfDiff, cpIdLookup(keys, fromMap))
+			new SequenceDiff(rdfDiff, cpIdLookup(keys, fromMap))
 		}
 
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp).join
@@ -226,13 +227,12 @@ object RdfDiffCalc{
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
-class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
+class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
 
-	def ensureIdPreservation(entity: E): E = entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
+	def ensureIdPreservation[E <: Entity[T] : CpIdSwapper](entity: E): E =
+		entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
 
-	def generalizeTo[E2 >: E <: Entity[T] : CpIdSwapper] = new SequenceDiff[T, E2](rdfDiff, cpIdLookup)
-
-	def concat[E2 >: E <: Entity[T] : CpIdSwapper](other: SequenceDiff[T, E2]) = new SequenceDiff[T, E2](
+	def concat(other: SequenceDiff[T]) = new SequenceDiff[T](
 		rdfDiff ++ other.rdfDiff,
 		cpIdLookup ++ other.cpIdLookup
 	)
@@ -240,10 +240,10 @@ class SequenceDiff[T <: TC, E <: Entity[T] : CpIdSwapper](val rdfDiff: Seq[RdfUp
 
 object SequenceDiff{
 
-	def empty[T <: TC, E <: Entity[T] : CpIdSwapper] = new SequenceDiff[T, E](Nil, Map.empty)
+	def empty[T <: TC] = new SequenceDiff[T](Nil, Map.empty)
 
-	implicit class SeqDiffSeqEnriched[T <: TC, E <: Entity[T] : CpIdSwapper](val seq: Seq[SequenceDiff[T, E]]) {
-		def join: SequenceDiff[T, E] = {
+	implicit class SeqDiffSeqEnriched[T <: TC](val seq: Seq[SequenceDiff[T]]) {
+		def join: SequenceDiff[T] = {
 			val rdfDiff = seq.flatMap(_.rdfDiff)
 			val lookup = Map(seq.flatMap(_.cpIdLookup): _*)
 			new SequenceDiff(rdfDiff, lookup)
@@ -251,6 +251,6 @@ object SequenceDiff{
 	}
 
 	implicit class RdfUpdSeqEnriched(val rdfupd: Seq[RdfUpdate]) extends AnyVal{
-		def toSeqDiff[T <: TC, E <: Entity[T] : CpIdSwapper] = new SequenceDiff[T, E](rdfupd, Map.empty)
+		def toSeqDiff[T <: TC] = new SequenceDiff[T](rdfupd, Map.empty)
 	}
 }

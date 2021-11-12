@@ -581,7 +581,15 @@ object EtcMetaSource{
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
 	}
 
-	private def mergeInstrDeployments(sensorId: String, depls: Seq[InstrumentDeployment[E]]) = {
+	private def mergeInstrDeployments(depls: Seq[(String, InstrumentDeployment[E])]) = {
+		import se.lu.nateko.cp.meta.utils.slidingByKey
+		slidingByKey(depls.iterator){
+			case (instrId, depl) => (depl.stationTcId, depl.variable, instrId)
+		}.map{group =>
+			group.head._2.copy(
+				pos = PositionUtil.average(group.map(_._2.pos))
+			)
+		}
 		//the solution is easier in imperative style; group by a tuple of stationId and variable
 		//is not good enough, as in theory a sensor can move to a different station and/or var, and then come back
 		val res = ListBuffer.empty[InstrumentDeployment[E]]

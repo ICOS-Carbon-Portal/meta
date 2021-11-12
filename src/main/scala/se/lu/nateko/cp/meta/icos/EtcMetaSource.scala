@@ -148,11 +148,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 	private def getDeploymentsDict(stations: Seq[EtcStation]): Future[Validated[Map[String, Seq[InstrumentDeployment[E]]]]] = {
 		val stationLookup = stations.map(s => s.tcId -> s).toMap
 
-		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)(_)).map(_.map(sensorDepls =>
-			sensorDepls.groupMap(_._1)(_._2).map{
-				case (sensorId, depls) => sensorId -> mergeInstrDeployments(sensorId, depls)
-			}
-		))
+		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)(_)).map(_.map(mergeInstrDeployments))
 	}
 
 	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
@@ -581,43 +577,56 @@ object EtcMetaSource{
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
 	}
 
-	private def mergeInstrDeployments(depls: Seq[(String, InstrumentDeployment[E])]) = {
+	private def mergeInstrDeployments(
+		depls: Seq[(String, InstrumentDeployment[E])]
+	): Map[String, Seq[InstrumentDeployment[E]]] = {
+
 		import se.lu.nateko.cp.meta.utils.slidingByKey
-		slidingByKey(depls.iterator){
+
+		val fused = slidingByKey(depls.iterator){
 			case (instrId, depl) => (depl.stationTcId, depl.variable, instrId)
 		}.map{group =>
-			group.head._2.copy(
-				pos = PositionUtil.average(group.map(_._2.pos))
+			group.head._1 -> group.head._2.copy(
+				pos = PositionUtil.average(group.flatMap(_._2.pos))
 			)
-		}
-		//the solution is easier in imperative style; group by a tuple of stationId and variable
-		//is not good enough, as in theory a sensor can move to a different station and/or var, and then come back
-		val res = ListBuffer.empty[InstrumentDeployment[E]]
-		val positions = ListBuffer.empty[Position]
-		var last: InstrumentDeployment[E] = null
+		}.toIndexedSeq
 
-		def merge(stop: Option[Instant]): Unit = {
-			val idx = res.size
-			res.addOne(last.copy(
-				cpId = new UriId(s"${sensorId}_$idx"),
-				pos = PositionUtil.average(positions),
-				stop = stop
-			))
-			positions.clear()
-			last = null
-		}
+		val withStopDates1 = fused.sliding(2,1).map{
+			case Seq((sens1, d1), (sens2, d2)) => sens1 -> (
+				if(d1.stationTcId == d2.stationTcId && d1.variable == d2.variable && sens1 != sens2) d1.copy(stop = d2.start)
+				else d1
+			)
+		}.toSeq :++ (if(fused.size % 2 == 0) Nil else Seq(fused.last))
 
-		depls.sortBy(_.start).foreach{d =>
-			if(last == null) last = d
-			else if(last.stationTcId != d.stationTcId || last.variable != d.variable) {
-				merge(d.start)
-				last = d
-			}
-			positions.addAll(d.pos)
-		}
+		???
+		// //the solution is easier in imperative style; group by a tuple of stationId and variable
+		// //is not good enough, as in theory a sensor can move to a different station and/or var, and then come back
+		// val res = ListBuffer.empty[InstrumentDeployment[E]]
+		// val positions = ListBuffer.empty[Position]
+		// var last: InstrumentDeployment[E] = null
 
-		merge(None)
-		res.toIndexedSeq
+		// def merge(stop: Option[Instant]): Unit = {
+		// 	val idx = res.size
+		// 	res.addOne(last.copy(
+		// 		cpId = new UriId(s"${sensorId}_$idx"),
+		// 		pos = PositionUtil.average(positions),
+		// 		stop = stop
+		// 	))
+		// 	positions.clear()
+		// 	last = null
+		// }
+
+		// depls.sortBy(_.start).foreach{d =>
+		// 	if(last == null) last = d
+		// 	else if(last.stationTcId != d.stationTcId || last.variable != d.variable) {
+		// 		merge(d.start)
+		// 		last = d
+		// 	}
+		// 	positions.addAll(d.pos)
+		// }
+
+		// merge(None)
+		// res.toIndexedSeq
 	}
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =

@@ -60,6 +60,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 		.withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
 		.mapConcat{validated =>
 			if(!validated.errors.isEmpty) system.log.warning("ETC metadata problem(s): " + validated.errors.distinct.mkString("\n"))
+			if(validated.result.isEmpty) system.log.error("ETC metadata parsing has failed, preceding warnings may give a clue")
 			validated.result.toList
 		}
 
@@ -577,57 +578,48 @@ object EtcMetaSource{
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
 	}
 
-	private def mergeInstrDeployments(
+	def mergeInstrDeployments(
 		depls: Seq[(String, InstrumentDeployment[E])]
-	): Map[String, Seq[InstrumentDeployment[E]]] = {
+	): Map[String, Seq[InstrumentDeployment[E]]] = if(depls.isEmpty) Map.empty else {
 
 		import se.lu.nateko.cp.meta.utils.slidingByKey
 
-		val fused = slidingByKey(depls.iterator){
-			case (instrId, depl) => (depl.stationTcId, depl.variable, instrId)
-		}.map{group =>
-			group.head._1 -> group.head._2.copy(
-				pos = PositionUtil.average(group.flatMap(_._2.pos))
-			)
-		}.toIndexedSeq
+		val pass1 = depls.groupBy{
+			case (_, depl) => (depl.stationTcId, depl.variable)
+		}.values.flatMap{instDepls =>
+			val sorted = instDepls.sortBy(_._2.start)
 
-		val withStopDates1 = fused.sliding(2,1).map{
-			case Seq((sens1, d1), (sens2, d2)) => sens1 -> (
-				if(d1.stationTcId == d2.stationTcId && d1.variable == d2.variable && sens1 != sens2) d1.copy(stop = d2.start)
-				else d1
-			)
-		}.toSeq :++ (if(fused.size % 2 == 0) Nil else Seq(fused.last))
+			val fused = slidingByKey(sorted.iterator){
+				case (sensId, _) => sensId
+			}.map{
+				case IndexedSeq(single) => single
+				case group @ IndexedSeq((sensId, depl), _*) =>
+					sensId -> depl.copy(
+						pos = PositionUtil.average(group.flatMap(_._2.pos))
+					)
+			}.toIndexedSeq
 
-		???
-		// //the solution is easier in imperative style; group by a tuple of stationId and variable
-		// //is not good enough, as in theory a sensor can move to a different station and/or var, and then come back
-		// val res = ListBuffer.empty[InstrumentDeployment[E]]
-		// val positions = ListBuffer.empty[Position]
-		// var last: InstrumentDeployment[E] = null
+			fused.sliding(2,1).collect{
+				case Seq((sensId, d1), (_, d2)) => sensId -> d1.copy(stop = d2.start)
+			}.toSeq :+ fused.last
+		}
 
-		// def merge(stop: Option[Instant]): Unit = {
-		// 	val idx = res.size
-		// 	res.addOne(last.copy(
-		// 		cpId = new UriId(s"${sensorId}_$idx"),
-		// 		pos = PositionUtil.average(positions),
-		// 		stop = stop
-		// 	))
-		// 	positions.clear()
-		// 	last = null
-		// }
-
-		// depls.sortBy(_.start).foreach{d =>
-		// 	if(last == null) last = d
-		// 	else if(last.stationTcId != d.stationTcId || last.variable != d.variable) {
-		// 		merge(d.start)
-		// 		last = d
-		// 	}
-		// 	positions.addAll(d.pos)
-		// }
-
-		// merge(None)
-		// res.toIndexedSeq
+		pass1.groupMap(_._1)(_._2).view.mapValues{depls =>
+			val deplsSorted = depls.toSeq.sortBy(_.start)
+			deplsSorted.sliding(2,1).collect{
+				case Seq(d1, d2) => d1.copy(stop = minOptInst(d1.stop, d2.start))
+			}.toSeq :+ deplsSorted.last
+		}.map{
+			case (instrId, depls) =>
+				val deplsWithIds = depls.zipWithIndex.map{
+					case (depl, idx) => depl.copy(cpId = new UriId(s"${instrId}_$idx"))
+				}
+				instrId -> deplsWithIds
+		}.toMap
 	}
+
+	private def minOptInst(i1: Option[Instant], i2: Option[Instant]): Option[Instant] =
+		Seq(i1, i2).flatten.sorted.headOption
 
 	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =
 		lookUp(varName).require(s"$varName is required for $hint info")

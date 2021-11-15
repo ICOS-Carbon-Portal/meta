@@ -50,9 +50,9 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 			case err: Throwable =>
 				val msgBase = err.getMessage
 				val msg = if(msgBase != null) msgBase else {
-					("(exception message is null)" :+ err.getStackTrace()).mkString("\n")
+					("(exception message is null)" +: err.getStackTrace()).mkString("\n")
 				}
-				new Validated[U](None, errors :+ msg)
+				new Validated[U](None, errors :+ s"${err.getClass.getName}: $msg")
 		}
 
 }

@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path.{Segment, Slash, Empty}
+import scala.collection.mutable.Buffer
 
 package object utils {
 	implicit class ToTryConvertibleOption[T](val inner: Option[T]) extends AnyVal{
@@ -62,4 +63,32 @@ package object utils {
 
 	def parseCommaSepList(s: String): Array[String] = s.split(",").map(_.trim).filter(!_.isEmpty)
 
+	def slidingByKey[T >: Null, K](inner: Iterator[T])(key: T => K) = new Iterator[IndexedSeq[T]]{
+		private val group = Buffer.empty[T]
+
+		def hasNext: Boolean = !group.isEmpty || {
+			if(inner.hasNext) {
+				group.append(inner.next())
+				true
+			}
+			else false
+		}
+		
+		def next(): IndexedSeq[T] =
+			if(!hasNext)
+				throw new NoSuchElementException("slidingByKey iterator empty")
+			else {
+				val lastKey = key(group.last)
+				var next: T = null
+				while(inner.hasNext && {next = inner.next(); key(next) == lastKey}){
+					group.append(next)
+					next = null
+				}
+				val nextGroup = group.toIndexedSeq
+				group.clear()
+				if(next != null) group.append(next)
+				nextGroup
+			}
+		
+	}
 }

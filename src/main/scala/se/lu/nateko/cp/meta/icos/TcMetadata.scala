@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station}
 import se.lu.nateko.cp.meta.core.data.{Organization, Funding, Funder}
 import se.lu.nateko.cp.meta.services.CpVocab
+import java.time.LocalDateTime
 
 
 sealed trait Entity[+T <: TC]{
@@ -42,6 +43,10 @@ object Entity{
 		}
 	}
 
+	implicit def funderCpIdSwapper[T <: TC] = new CpIdSwapper[TcFunder[T]]{
+		def withCpId(org: TcFunder[T], id: UriId) = org.copy(cpId = id)
+	}
+
 	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
@@ -58,6 +63,10 @@ object Entity{
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
 	}
 
+	implicit def instrDeploymentCpIdSwapper[T <: TC] = new CpIdSwapper[InstrumentDeployment[T]] {
+		//swapping station info, not deployments own cpid
+		def withCpId(depl: InstrumentDeployment[T], id: UriId) = depl.copy(stationUriId = id)
+	}
 }
 
 case class TcPerson[+T <: TC](
@@ -94,10 +103,23 @@ case class TcInstrument[+T <: TC : TcConf](
 	name: Option[String] = None,
 	vendor: Option[TcOrg[T]] = None,
 	owner: Option[TcOrg[T]] = None,
-	partsCpIds: Seq[UriId] = Nil
+	partsCpIds: Seq[UriId] = Nil,
+	deployments: Seq[InstrumentDeployment[T]]
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
 	def cpId = CpVocab.instrCpId(tcId)
+}
+
+case class InstrumentDeployment[+T <: TC](
+	cpId: UriId,
+	stationTcId: TcId[T],
+	stationUriId: UriId,
+	pos: Option[Position],
+	variable: Option[String],
+	start: Option[Instant],
+	stop: Option[Instant]
+) extends Entity[T]{
+	def tcIdOpt: Option[TcId[T]] = Some(stationTcId)
 }
 
 case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)

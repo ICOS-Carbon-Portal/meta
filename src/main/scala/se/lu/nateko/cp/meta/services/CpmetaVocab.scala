@@ -183,6 +183,15 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 		val license = getRelativeRaw("license")
 	}
 
+	object ssn extends CustomVocab{
+		val factory = top.factory
+		implicit val bup = makeUriProvider(CpmetaVocab.SsnPrefix)
+
+		val deploymentClass = getRelativeRaw("Deployment")
+		val forProperty = getRelativeRaw("forProperty")
+		val hasDeployment = getRelativeRaw("hasDeployment")
+	}
+
 	object sites extends CustomVocab {
 		val factory = top.factory
 		implicit val bup = makeUriProvider("https://meta.fieldsites.se/ontologies/sites/")
@@ -194,4 +203,6 @@ object CpmetaVocab{
 	val MetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 	val ProvPrefix = "http://www.w3.org/ns/prov#"
 	val DctermsPrefix = "http://purl.org/dc/terms/"
+	//val SosaPrefix = "http://www.w3.org/ns/sosa/"
+	val SsnPrefix = "http://www.w3.org/ns/ssn/"
 }

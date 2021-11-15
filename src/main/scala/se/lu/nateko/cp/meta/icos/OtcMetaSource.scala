@@ -270,7 +270,8 @@ class OtcMetaSource(
 					sn = sn,
 					name = nameOpt,
 					partsCpIds = sensorLookup.getOrElse(tcId, Nil),
-					vendor = vendorOpt.flatMap(orgLookup.get)
+					vendor = vendorOpt.flatMap(orgLookup.get),
+					deployments = Nil
 				)
 		}.map(_.map(_._2))
 	}

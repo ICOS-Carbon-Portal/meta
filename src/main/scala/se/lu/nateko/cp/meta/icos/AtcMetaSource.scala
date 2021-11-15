@@ -345,7 +345,8 @@ object AtcMetaSource{
 				vendor = orgs.get(vendorId),
 				name = nameOpt,
 				owner = orgs.get(ownerId),
-				partsCpIds = related
+				partsCpIds = related,
+				deployments = Nil
 			)
 		}
 	}

@@ -31,7 +31,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	val icosBup = baseUriProviderForEnvri(Envri.ICOS)
 
 	def getIcosLikeStation(stationId: UriId) = getRelative(s"stations/", stationId)(icosBup)
-	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(TcConf.stationId[ETC.type](UriId.escaped(id.id)))
+	def getEcosystemStation(id: EtcStationId) = getIcosLikeStation(etcStationUriId(id))
 
 	def getPerson(firstName: String, lastName: String)(implicit envri: Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(implicit envri: Envri): IRI = getRelativeRaw("people/" + cpId)
@@ -40,6 +40,7 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 //		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
 //	)(icosBup)
 
+	def getInstrDeployment(deplId: UriId)(implicit envri: Envri): IRI = getRelative("deployments/", deplId)
 	def getMembership(membId: UriId)(implicit envri: Envri): IRI = getRelative("memberships/", membId)
 	def getMembership(orgId: UriId, role: Role, lastName: String)(implicit envri: Envri): IRI =
 		getMembership(UriId(s"${orgId}_${role.name}_${UriId.escaped(lastName)}"))
@@ -79,6 +80,11 @@ class CpVocab (val factory: ValueFactory)(implicit envriConfigs: EnvriConfigs) e
 	def getObjectSpecification(lastSegment: UriId)(implicit envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
 		else getRelative("objspecs/", lastSegment)
+
+	def lookupIcosDatasetVar(varName: String): Option[IRI] =
+		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))
+			Some(getRelativeRaw("cpmeta/SWC_n_n_n")(icosBup))
+		else None
 }
 
 object CpVocab{
@@ -132,6 +138,7 @@ object CpVocab{
 
 	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
 
+	def etcStationUriId(station: EtcStationId) = TcConf.stationId[ETC.type](UriId.escaped(station.id))
 	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = TcConf.EtcConf.makeId(s"${station}_$id")
 	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 

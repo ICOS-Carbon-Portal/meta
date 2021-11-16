@@ -14,6 +14,7 @@ import play.api.libs.json._
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.doi.Doi
 
 object Backend {
 
@@ -120,7 +121,7 @@ object Backend {
 	}
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
-		.post("/sparql", query, responseType = "application/json")
+		.post("/sparql", query)
 		.recoverWith(recovery("execute a SPARQL query"))
 		.map(xhr =>
 			(parseTo[JsObject](xhr) \ "results" \ "bindings")
@@ -136,14 +137,19 @@ object Backend {
 			.map(xhr => new URI(xhr.responseText))
 	}
 
-	def uploadFile(file: File, path: URI): Future[String] = Ajax
-		.put(path.toString, file, headers = Map("Content-Type" -> "application/octet-stream"), withCredentials = true)
+	def uploadFile(file: File, dataURL: URI): Future[String] = Ajax
+		.put(dataURL.toString, file, headers = Map("Content-Type" -> "application/octet-stream"), withCredentials = true)
 		.recoverWith(recovery("upload file"))
 		.map(_.responseText)
 
 	def getMetadata(uri: URI): Future[UploadDto] = Ajax.get(s"/dtodownload?uri=$uri")
 		.recoverWith(recovery("fetch existing object"))
 		.map(parseTo[UploadDto])
+
+	def createDraftDoi(uri: URI, doiType: String): Future[Doi] = Ajax
+		.post(s"/create-draft-doi/$doiType", Json.prettyPrint(Json.toJson(uri)), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
+		.recoverWith(recovery("create draft DOI"))
+		.map(parseTo[Doi])
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{

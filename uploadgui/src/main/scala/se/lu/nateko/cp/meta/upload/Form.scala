@@ -13,12 +13,14 @@ import ItemTypeRadio._
 import UploadApp.{hideAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms._
 import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import java.net.URI
 
 class Form(
 	subms: IndexedSeq[SubmitterProfile],
 	objSpecs: IndexedSeq[ObjSpec],
 	spatCovs: IndexedSeq[SpatialCoverage],
-	onUpload: (UploadDto, Option[dom.File]) => Unit,
+	onUpload: (UploadDto, Option[dom.File], ItemType) => Unit,
+	createDoi: (URI, String) => Unit
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
@@ -82,23 +84,23 @@ class Form(
 							spec <- dataPanel.objSpec
 						) {
 							whenDone(Backend.tryIngestion(file, spec, nRows, varnames)){ _ =>
-								onUpload(dto, Some(file))
+								onUpload(dto, Some(file), ItemTypeRadio.Data)
 							}.failed.foreach {
 								case _ => progressBar.hide()
 							}
 						}
 					}
 				} else
-					dataObjectDto.foreach(onUpload(_, None))
+					dataObjectDto.foreach(onUpload(_, None, ItemTypeRadio.Data))
 
 			case Some(Collection) =>
-				staticCollectionDto.foreach(onUpload(_, None))
+				staticCollectionDto.foreach(onUpload(_, None, ItemTypeRadio.Collection))
 
 			case Some(Document) =>
 				for(
 					dto <- aboutPanel.documentObjectDto;
 					fileOpt <- if(aboutPanel.isInNewItemMode) aboutPanel.file.map(Some.apply) else Success(None)
-				) onUpload(dto, fileOpt)
+				) onUpload(dto, fileOpt, ItemTypeRadio.Document)
 
 			case _ =>
 		}
@@ -192,6 +194,12 @@ class Form(
 
 	private def handleDto(upDto: UploadDto): Unit = {
 		hideAlert()
+		aboutPanel.itemType.map{ itemType =>
+			aboutPanel.metadataUri.map{ metaURL =>
+				val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL, itemType.toString.toLowerCase))
+				newDoiButton.enable()
+			}
+		}
 		upDto match {
 			case dto: DataObjectDto => {
 				val hasProduction = dto.specificInfo.fold(_ => true, _.production.isDefined)

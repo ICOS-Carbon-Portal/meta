@@ -37,7 +37,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
-import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
+import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService, DoiService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
@@ -49,6 +49,7 @@ class MetaDb (
 	val instanceServers: Map[String, InstanceServer],
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
+	val doiService: DoiService,
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
@@ -129,6 +130,8 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val uploadService = makeUploadService(config, repo, instanceServers)
 
+			val doiService = new DoiService(config)
+
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = {
@@ -141,7 +144,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			new MetaDb(instanceServers, instOntos, uploadService, doiService, labelingService, fileService, sparqlServer, repo, citer, config)
 		}
 	}
 
@@ -254,7 +257,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		def ensureSchemaOntExists(schemaOntId: String): Unit =
 			if(!schemaOntIds.contains(schemaOntId))
 				throw new ServiceException(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
-		
+
 		config.dataUploadService.metaServers.values.foreach(ensureInstServerExists)
 		config.dataUploadService.collectionServers.values.foreach(ensureInstServerExists)
 

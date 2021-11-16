@@ -194,11 +194,12 @@ class Form(
 
 	private def handleDto(upDto: UploadDto): Unit = {
 		hideAlert()
-		aboutPanel.itemType.map{ itemType =>
-			aboutPanel.metadataUri.map{ metaURL =>
-				val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL, itemType.toString.toLowerCase))
-				newDoiButton.enable()
-			}
+		for(
+			itemType <- aboutPanel.itemType;
+			metaURL <- aboutPanel.metadataUri.toOption
+		){
+			val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL, itemType.toString.toLowerCase))
+			newDoiButton.enable()
 		}
 		upDto match {
 			case dto: DataObjectDto => {

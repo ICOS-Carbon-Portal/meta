@@ -49,7 +49,6 @@ class MetaDb (
 	val instanceServers: Map[String, InstanceServer],
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
-	val doiService: DoiService,
 	val labelingService: StationLabelingService,
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
@@ -130,8 +129,6 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val uploadService = makeUploadService(config, repo, instanceServers)
 
-			val doiService = new DoiService(config)
-
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = {
@@ -144,7 +141,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, doiService, labelingService, fileService, sparqlServer, repo, citer, config)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		}
 	}
 

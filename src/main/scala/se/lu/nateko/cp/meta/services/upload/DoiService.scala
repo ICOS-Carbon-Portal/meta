@@ -25,9 +25,9 @@ import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.doi.meta.GenericName
 import java.time.Year
-import java.net.URI
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 
 class DoiService(conf: CpmetaConfig)(implicit val system: ActorSystem) {
 
@@ -41,14 +41,24 @@ class DoiService(conf: CpmetaConfig)(implicit val system: ActorSystem) {
 	}
 
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
-	private val http = Http()
 
 	def saveDoi(meta: DoiMeta)(implicit envri: Envri): Future[Doi] = {
 		client.putMetadata(meta).map(_ => meta.doi)
 	}
 
-	def makeDataObjectDoi(uri: URI)(implicit envri: Envri): Future[DoiMeta] = {
-		fetchDataObject(uri).map{dobj =>
+	def makeDoi(
+		doiType: String,
+		uri: Uri,
+		uriSerializer: UriSerializer
+	)(implicit envri: Envri): Option[DoiMeta] = doiType match {
+		case "data" => makeDataObjectDoi(uri, uriSerializer)
+		case "document" => makeDocObjectDoi(uri, uriSerializer)
+		case "collection" => makeCollectionDoi(uri, uriSerializer)
+		case _ => None
+	}
+
+	private def makeDataObjectDoi(uri: Uri, uriSerializer: UriSerializer)(implicit envri: Envri) = {
+		uriSerializer.fetchStaticObject(uri).flatMap(_.asDataObject).map{dobj =>
 			DoiMeta(
 				doi = client.doi(CoolDoi.makeRandom),
 				creators = dobj.references.authors.fold[Seq[Creator]](Seq())(_.map(a =>
@@ -81,8 +91,8 @@ class DoiService(conf: CpmetaConfig)(implicit val system: ActorSystem) {
 		}
 	}
 
-	def makeDocObjectDoi(uri: URI)(implicit envri: Envri): Future[DoiMeta] = {
-		fetchDocObject(uri).map{dobj =>
+	private def makeDocObjectDoi(uri: Uri, uriSerializer: UriSerializer)(implicit envri: Envri): Option[DoiMeta] = {
+		uriSerializer.fetchStaticObject(uri).map{dobj =>
 			DoiMeta(
 				doi = client.doi(CoolDoi.makeRandom),
 				titles = dobj.references.title.map(title => Seq(Title(title, None, None)))
@@ -90,8 +100,8 @@ class DoiService(conf: CpmetaConfig)(implicit val system: ActorSystem) {
 		}
 	}
 
-	def makeCollectionDoi(uri: URI)(implicit envri: Envri): Future[DoiMeta] = {
-		fetchCollectionObject(uri).map{coll =>
+	private def makeCollectionDoi(uri: Uri, uriSerializer: UriSerializer)(implicit envri: Envri): Option[DoiMeta] = {
+		uriSerializer.fetchStaticCollection(uri).map{coll =>
 			DoiMeta(
 				doi = client.doi(CoolDoi.makeRandom),
 				creators = Seq(Creator(GenericName(coll.creator.name), Seq(), Seq())),
@@ -112,31 +122,4 @@ class DoiService(conf: CpmetaConfig)(implicit val system: ActorSystem) {
 			)
 		}
 	}
-
-	private def fetchDataObject(uri: java.net.URI): Future[DataObject] = http
-		.singleRequest(HttpRequest(
-			uri = Uri(uri.toASCIIString),
-			headers = Seq(Accept(MediaTypes.`application/json`))
-		))
-		.flatMap{resp =>
-			Unmarshal(resp).to[DataObject]
-		}
-
-	private def fetchDocObject(uri: java.net.URI): Future[DocObject] = http
-		.singleRequest(HttpRequest(
-			uri = Uri(uri.toASCIIString),
-			headers = Seq(Accept(MediaTypes.`application/json`))
-		))
-		.flatMap{resp =>
-			Unmarshal(resp).to[DocObject]
-		}
-
-	private def fetchCollectionObject(uri: java.net.URI): Future[StaticCollection] = http
-		.singleRequest(HttpRequest(
-			uri = Uri(uri.toASCIIString),
-			headers = Seq(Accept(MediaTypes.`application/json`))
-		))
-		.flatMap{resp =>
-			Unmarshal(resp).to[StaticCollection]
-		}
 }

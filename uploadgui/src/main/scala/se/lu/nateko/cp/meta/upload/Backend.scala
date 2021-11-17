@@ -147,7 +147,7 @@ object Backend {
 		.map(parseTo[UploadDto])
 
 	def createDraftDoi(uri: URI, doiType: String): Future[Doi] = Ajax
-		.post(s"/create-draft-doi/$doiType", Json.prettyPrint(Json.toJson(uri)), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
+		.post(s"/dois/$doiType", Json.prettyPrint(Json.toJson(uri)), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
 		.recoverWith(recovery("create draft DOI"))
 		.map(parseTo[Doi])
 

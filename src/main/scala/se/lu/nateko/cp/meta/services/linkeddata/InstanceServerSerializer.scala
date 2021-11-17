@@ -24,6 +24,7 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import scala.util.Using
 
 object InstanceServerSerializer {
 
@@ -78,19 +79,18 @@ object InstanceServerSerializer {
 	)(implicit ctxt: ExecutionContext) = Marshalling.WithFixedContentType(acceptedContType, () => {
 
 		val entityBytes = StreamConverters.asOutputStream().mapMaterializedValue{ outStr =>
-			ctxt.execute(() => {
-				val statements = producer.statements
-				try{
+			ctxt.execute(() =>
+				Using.Manager{use =>
+					val statements = use(producer.statements)
+					use.acquire(outStr)
 					val rdfWriter = writerFactory.getWriter(outStr)
 					rdfWriter.startRDF()
 					producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
 					statements.foreach(rdfWriter.handleStatement)
 					rdfWriter.endRDF()
-				}finally{
-					outStr.close()
-					statements.close()
 				}
-			})
+				.failed.foreach(ctxt.reportFailure)
+			)
 		}
 		HttpResponse(entity = HttpEntity(returnedContType, entityBytes))
 	})

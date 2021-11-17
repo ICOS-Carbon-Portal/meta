@@ -31,6 +31,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Using
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -122,14 +123,22 @@ class Rdf4jUriSerializer(
 		}
 	}
 
-	private def getDefaultHtml(uri: Uri)(charset: HttpCharset) = {
+	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
 		implicit val envri = inferEnvri(uri)
-		val viewInfo = getViewInfo(uri, repo)
-		HttpResponse(
-			status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
-			entity = HttpEntity(
-				ContentType.WithCharset(MediaTypes.`text/html`, charset),
-				if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "").body else views.html.UriResourcePage(viewInfo).body
+		getViewInfo(uri, repo).fold(
+			err => HttpResponse(
+				status = StatusCodes.InternalServerError,
+				entity = HttpEntity(
+					ContentType.WithCharset(MediaTypes.`text/html`, charset),
+					views.html.MessagePage("Server error", err.getMessage).body
+				)
+			),
+			viewInfo => HttpResponse(
+				status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
+				entity = HttpEntity(
+					ContentType.WithCharset(MediaTypes.`text/html`, charset),
+					if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "").body else views.html.UriResourcePage(viewInfo).body
+				)
 			)
 		)
 	}
@@ -221,18 +230,21 @@ private object Rdf4jUriSerializer{
 
 	val Limit = 500
 
-	def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
+	private def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
 		val uri = repo.getValueFactory.createIRI(res.toString)
 		val own = repo.access(conn => conn.getStatements(uri, null, null, false))
 		val about = repo.access(conn => conn.getStatements(null, null, uri, false))
 		own ++ about
 	}
 
-	def getViewInfo(res: Uri, repo: Repository): ResourceViewInfo = repo.accessEagerly{conn =>
+	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>
+		val conn = use(repo.getConnection())
 
-		val propInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
-
-		val propInfos = new Rdf4jIterationIterator(propInfo).map{bset =>
+		val propInfos = use(
+			new Rdf4jIterationIterator(
+				conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
+			)
+		).map{bset =>
 
 			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
 
@@ -247,9 +259,11 @@ private object Rdf4jUriSerializer{
 			propUriOpt zip propValueOpt
 		}.flatten.take(Limit).toIndexedSeq
 
-		val usageInfo = conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate()
-
-		val usageInfos = new Rdf4jIterationIterator(usageInfo).map{bset =>
+		val usageInfos = use(
+			new Rdf4jIterationIterator(
+				conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate()
+			)
+		).map{bset =>
 			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
 		}.flatten.take(Limit).toIndexedSeq
 
@@ -271,6 +285,7 @@ private object Rdf4jUriSerializer{
 				acc.copy(propValues = propAndVal :: acc.propValues)
 		})
 	}
+
 
 	private def getOptUriRes(bset: BindingSet, varName: String, lblName: String): Option[UriResource] = {
 		bset.getValue(varName) match {

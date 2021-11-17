@@ -128,10 +128,11 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 		val provStOpt: Option[IRI] = fetcher.server
 			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
+			.toIndexedSeq
 			.collect{
 				case Rdf4jStatement(provSt, _, _) if fetcher.server.hasStatement(provSt, appStatus, vocab.lit("STEP3APPROVED")) => provSt
 			}
-			.toIndexedSeq.headOption
+			.headOption
 
 		val labelingDate = provStOpt.flatMap{labeledSt =>
 			fetcher

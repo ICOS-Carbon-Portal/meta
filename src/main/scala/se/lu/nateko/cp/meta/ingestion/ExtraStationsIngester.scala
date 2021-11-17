@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 	import IcosStationsIngester._
@@ -22,13 +23,13 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 	def getStatements(vf: ValueFactory): Ingestion.Statements = Future{
 		val stationListInput = getClass.getResourceAsStream(extraStationsPath)
 
-		Source.fromInputStream(stationListInput, "UTF-8")
-			.getLines()
-			.drop(1)
+		val src = Source.fromInputStream(stationListInput, "UTF-8")
+		val iter = src.getLines().drop(1)
 			.collect{
 				case line if !line.trim.isEmpty => Station.parse(line.trim)
 			}
 			.flatMap(makeStationStatements(vf))
+		new CloseableIterator.Wrap(iter, src.close)
 	}
 
 

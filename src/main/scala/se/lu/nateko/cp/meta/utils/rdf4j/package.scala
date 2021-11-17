@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.utils
 import java.net.{ URI => JavaUri }
 import java.time.Instant
 
+import scala.collection.AbstractIterator
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -53,7 +54,10 @@ package object rdf4j {
 	}
 
 	implicit class IterableCloseableIteration[T](val res: CloseableIteration[T, _]) extends AnyVal{
-		def asScalaIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res, () => ())
+		def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
+			override def hasNext: Boolean = res.hasNext()
+			override def next(): T = res.next()
+		}
 	}
 
 	implicit class Rdf4jRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{

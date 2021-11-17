@@ -27,6 +27,7 @@ import se.lu.nateko.cp.meta.icos.Administrator
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import scala.util.Try
+import scala.util.Using
 
 final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
 	import AttributionProvider._
@@ -45,9 +46,9 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 			.distinct
 	)
 
-	def getMemberships(station: Station): Iterator[Membership] = {
+	def getMemberships(station: Station): IndexedSeq[Membership] = {
 		val query = membsQuery(station.org.self.uri)
-		sparql.evaluateTupleQuery(SparqlQuery(query))
+		Using(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.toIndexedSeq).get
 			.flatMap(parseMembership)
 	}
 

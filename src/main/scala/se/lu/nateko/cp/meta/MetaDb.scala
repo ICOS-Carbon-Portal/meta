@@ -55,11 +55,11 @@ class MetaDb (
 	val repo: Repository,
 	val dataCiter: CitationClient,
 	val config: CpmetaConfig
-)(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends Closeable{
+)(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends AutoCloseable{
 
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, dataCiter,config)
 
-	def close(): Unit = {
+	override def close(): Unit = {
 		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
 		repo.shutDown()

@@ -6,5 +6,4 @@ where{
 	?dobj cpmeta:hasObjectSpec/cpmeta:hasFormat ?format .
 	filter (?format != cpmeta:asciiWdcggTimeSer)
 }
-group by ?format
-order by desc(?c)`;
+group by ?format`;

@@ -14,21 +14,23 @@ SELECT ?stationTheme
 	"AWAITINGSTEP1"
 	) as ?labelingStatus)
 ?lastModified
+(coalesce(?tcClass, if(strstarts(?hoClass, 'Ass'), 'Associated', ?hoClass)) as ?stationClass)
+(coalesce(?tcCountry, ?hoCountry) as ?country)
 FROM <http://meta.icos-cp.eu/ontologies/stationentry/>
 FROM <http://meta.icos-cp.eu/resources/stationentry/>
 FROM <http://meta.icos-cp.eu/resources/icos/>
 FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 WHERE {
-	?s cpst:hasShortName ?hoId .
-	?s cpst:hasLongName ?hoName .
+	?s cpst:hasShortName ?hoId ; cpst:hasLongName ?hoName .
+	?s cpst:hasCountry ?hoCountry ; cpst:hasStationClass ?hoClass .
 	?s a [ rdfs:label ?stationTheme] .
 	OPTIONAL{GRAPH ?g { ?s cpst:hasApplicationStatus ?status }}
 	OPTIONAL{GRAPH ?g { ?s cpst:hasAppStatusDate ?lastModified }}
 	OPTIONAL{
 		?s cpst:hasProductionCounterpart ?psStr .
 		bind(iri(?psStr) as ?ps)
-		?ps cpmeta:hasStationId ?tcId .
-		?ps cpmeta:hasName ?tcName .
+		?ps cpmeta:hasStationId ?tcId ; cpmeta:hasName ?tcName .
+		?ps cpmeta:hasStationClass ?tcClass ; cpmeta:countryCode ?tcCountry .
 	}
 }
 ORDER BY ?stationTheme ?id

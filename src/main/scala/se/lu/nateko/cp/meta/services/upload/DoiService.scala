@@ -29,8 +29,9 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import scala.concurrent.ExecutionContext
 import java.net.URI
+import akka.http.scaladsl.model.Uri
 
-class DoiService(conf: CpmetaConfig)(implicit ctxt: ExecutionContext) {
+class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: ExecutionContext) {
 
 	private def client(implicit envri: Envri): DoiClient = {
 		val doiConf = conf.doi(envri)
@@ -41,11 +42,32 @@ class DoiService(conf: CpmetaConfig)(implicit ctxt: ExecutionContext) {
 
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
 
-	def saveDoi(meta: DoiMeta)(implicit envri: Envri): Future[Doi] = {
+	private def saveDoi(meta: DoiMeta)(implicit envri: Envri): Future[Doi] = {
 		client.putMetadata(meta).map(_ => meta.doi)
 	}
 
-	def makeDataObjectDoi(dobj: DataObject, uri: URI)(implicit envri: Envri): DoiMeta = {
+	def createDraftDoi(dataItemLandingPage: URI)(implicit envri: Envri): Future[Option[Doi]] = {
+		import UriSerializer.Hash
+		val uri = Uri(dataItemLandingPage.toString)
+
+		val doiMetaOpt: Option[DoiMeta] =
+			(uri.path match {
+				case Hash.Collection(_)  => fetcher.fetchStaticCollection(uri)
+					.map(makeCollectionDoi)
+
+				case Hash.Object(_)      => fetcher.fetchStaticObject(uri)
+					.map{
+						case data: DataObject => makeDataObjectDoi(data)
+						case doc: DocObject   => makeDocObjectDoi(doc)
+					}
+				case _ => None
+			})
+			.map(_.copy(url = Some(dataItemLandingPage.toString)))
+
+		doiMetaOpt.fold(Future.successful(Option.empty[Doi]))(m => saveDoi(m).map(Some(_)))
+	}
+
+	def makeDataObjectDoi(dobj: DataObject)(implicit envri: Envri): DoiMeta = {
 		DoiMeta(
 			doi = client.doi(CoolDoi.makeRandom),
 			creators = dobj.references.authors.fold[Seq[Creator]](Seq())(_.map(a =>
@@ -72,20 +94,18 @@ class DoiService(conf: CpmetaConfig)(implicit ctxt: ExecutionContext) {
 			descriptions = dobj.specificInfo match {
 				case Left(l3) => l3.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 				case Right(_) => Seq()
-			},
-			url = Some(uri.toString)
+			}
 		)
 	}
 
-	def makeDocObjectDoi(doc: StaticObject, uri: URI)(implicit envri: Envri): DoiMeta = {
+	def makeDocObjectDoi(doc: StaticObject)(implicit envri: Envri): DoiMeta = {
 		DoiMeta(
 			doi = client.doi(CoolDoi.makeRandom),
-			titles = doc.references.title.map(title => Seq(Title(title, None, None))),
-			url = Some(uri.toString)
+			titles = doc.references.title.map(title => Seq(Title(title, None, None)))
 		)
 	}
 
-	def makeCollectionDoi(coll: StaticCollection, uri: URI)(implicit envri: Envri): DoiMeta = {
+	def makeCollectionDoi(coll: StaticCollection)(implicit envri: Envri): DoiMeta = {
 		DoiMeta(
 			doi = client.doi(CoolDoi.makeRandom),
 			creators = Seq(Creator(GenericName(coll.creator.name), Seq(), Seq())),
@@ -101,8 +121,7 @@ class DoiService(conf: CpmetaConfig)(implicit ctxt: ExecutionContext) {
 			formats = Seq(),
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
-			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
-			url = Some(uri.toString)
+			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 		)
 	}
 }

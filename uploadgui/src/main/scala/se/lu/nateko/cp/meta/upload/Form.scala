@@ -19,8 +19,8 @@ class Form(
 	subms: IndexedSeq[SubmitterProfile],
 	objSpecs: IndexedSeq[ObjSpec],
 	spatCovs: IndexedSeq[SpatialCoverage],
-	onUpload: (UploadDto, Option[dom.File], ItemType) => Unit,
-	createDoi: (URI, String) => Unit
+	onUpload: (UploadDto, Option[dom.File]) => Unit,
+	createDoi: URI => Unit
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
@@ -84,23 +84,23 @@ class Form(
 							spec <- dataPanel.objSpec
 						) {
 							whenDone(Backend.tryIngestion(file, spec, nRows, varnames)){ _ =>
-								onUpload(dto, Some(file), ItemTypeRadio.Data)
+								onUpload(dto, Some(file))
 							}.failed.foreach {
 								case _ => progressBar.hide()
 							}
 						}
 					}
 				} else
-					dataObjectDto.foreach(onUpload(_, None, ItemTypeRadio.Data))
+					dataObjectDto.foreach(onUpload(_, None))
 
 			case Some(Collection) =>
-				staticCollectionDto.foreach(onUpload(_, None, ItemTypeRadio.Collection))
+				staticCollectionDto.foreach(onUpload(_, None))
 
 			case Some(Document) =>
 				for(
 					dto <- aboutPanel.documentObjectDto;
 					fileOpt <- if(aboutPanel.isInNewItemMode) aboutPanel.file.map(Some.apply) else Success(None)
-				) onUpload(dto, fileOpt, ItemTypeRadio.Document)
+				) onUpload(dto, fileOpt)
 
 			case _ =>
 		}
@@ -195,10 +195,9 @@ class Form(
 	private def handleDto(upDto: UploadDto): Unit = {
 		hideAlert()
 		for(
-			itemType <- aboutPanel.itemType;
 			metaURL <- aboutPanel.metadataUri.toOption
 		){
-			val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL, itemType.toString.toLowerCase))
+			val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
 			newDoiButton.enable()
 		}
 		upDto match {

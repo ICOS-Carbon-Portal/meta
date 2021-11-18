@@ -14,7 +14,6 @@ import scala.util.{ Success, Failure }
 import java.net.URI
 import se.lu.nateko.cp.meta.upload.formcomponents.Button
 import se.lu.nateko.cp.meta.core.data
-import se.lu.nateko.cp.meta.upload.formcomponents.ItemTypeRadio.ItemType
 
 object UploadApp {
 	import Utils._
@@ -57,8 +56,7 @@ object UploadApp {
 
 	private def upload(
 		dto: UploadDto,
-		file: Option[dom.File],
-		itemType: ItemType
+		file: Option[dom.File]
 	)(implicit envri: Envri, envriConf: EnvriConfig): Future[URI] = whenDone{
 		file match {
 			case Some(file) =>
@@ -73,13 +71,13 @@ object UploadApp {
 		val metaURL = new URI("https://" + envriConf.metaHost + dataURL.getPath())
 		val doiCreation = if(envri == data.Envri.ICOS) " or create a draft DOI." else ""
 		showAlert(s"Success! <a class='alert-link' href='${metaURL}'>View metadata</a>$doiCreation", "alert alert-success")
-		val createDoiButton = new Button("new-doi-button", () => createDoi(metaURL, itemType.toString.toLowerCase))
+		val createDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
 		createDoiButton.enable()
 	})
 
-	private def createDoi(uri: URI, doiType: String): Unit = {
+	private def createDoi(uri: URI): Unit = {
 		whenDone{
-			Backend.createDraftDoi(uri, doiType)
+			Backend.createDraftDoi(uri)
 		}(doi => {
 			showAlert(s"Draft DOI created: <a class='alert-link' target='_blank' href='https://doi.icos-cp.eu'>Edit or submit ${doi} for publication</a>", "alert alert-success")
 		}).onComplete {

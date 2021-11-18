@@ -17,39 +17,28 @@ object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
-		coreConf: MetaCoreConfig,
-		uriSerializer: UriSerializer
+		coreConf: MetaCoreConfig
 	): Route = {
-
-		def saveDoi(doiMeta: Option[DoiMeta])(implicit envri: Envri): Route = doiMeta match {
-			case None => complete(StatusCodes.NotFound)
-			case Some(doiMeta) =>
-				onSuccess(service.saveDoi(doiMeta)){ doi =>
-					complete(doi)
-				}
-		}
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
-		pathPrefix("dois"){
+		pathPrefix("dois" / "createDraft"){
 			post{
 				authRouting.mustBeLoggedIn{ _ =>
 					extractEnvri{implicit envri =>
 						entity(as[URI]){ uri =>
-							path("data"){
-								saveDoi(uriSerializer.fetchStaticObject(Uri(uri.toString)).flatMap(_.asDataObject).map(service.makeDataObjectDoi(_, uri)))
-							} ~
-							path("document"){
-								saveDoi(uriSerializer.fetchStaticObject(Uri(uri.toString)).map(service.makeDocObjectDoi(_, uri)))
-							} ~
-							path("collection"){
-								saveDoi(uriSerializer.fetchStaticCollection(Uri(uri.toString)).map(service.makeCollectionDoi(_, uri)))
+							onSuccess(service.createDraftDoi(uri)){doiOpt =>
+								doiOpt.fold(
+									complete(StatusCodes.NotFound -> s"Resource with landing page $uri not found, no DOI created")
+								)(complete(_))
 							}
-						}
+						} ~
+						complete(StatusCodes.BadRequest -> "Expected JSON string with landing page URL as payload")
 					}
 				}
-			}
+			} ~
+			complete(StatusCodes.BadRequest -> "Only POST requests to this URL")
 		}
 
 	}

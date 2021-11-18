@@ -33,7 +33,7 @@ const queries = [
 	{name:"Documents", query: existingDocuments},
 	{name:"Data object counts per format", query: perFormatStats},
 	{name:"DCAT metadata demo", query: dcat},
-	{name:"OTC METEOSENS sensor deployments demo", query: sensorsDeployments},
+	{name:"ETC METEOSENS sensor deployments demo", query: sensorsDeployments},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, labelling app form values", query: etcLabelingValues}
 ];

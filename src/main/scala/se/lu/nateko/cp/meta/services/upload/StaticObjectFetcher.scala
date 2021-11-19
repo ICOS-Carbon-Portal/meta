@@ -101,7 +101,7 @@ class StaticObjectFetcher(
 		else {
 			val dobj = vocab.getStaticObject(hash)
 			getOptionalUri(dobj, RDFS.SEEALSO).map(_.toJava).orElse(
-				if(spec.dataLevel < 1) None
+				if(spec.dataLevel < 1 && spec.theme.self.uri === vocab.atmoTheme) None
 				else Some(vocab.getStaticObjectAccessUrl(hash))
 			)
 		}

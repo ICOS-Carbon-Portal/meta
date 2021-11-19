@@ -232,9 +232,8 @@ private object Rdf4jUriSerializer{
 
 	private def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
 		val uri = repo.getValueFactory.createIRI(res.toString)
-		val own = repo.access(conn => conn.getStatements(uri, null, null, false))
-		val about = repo.access(conn => conn.getStatements(null, null, uri, false))
-		own ++ about
+		repo.access(conn => conn.getStatements(uri, null, null, false)) ++
+		repo.access(conn => conn.getStatements(null, null, uri, false))
 	}
 
 	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>

@@ -113,32 +113,6 @@ package object rdf4j {
 		}
 	}
 
-	implicit class Rdf4jSailWithAccess(val sail: Sail) extends AnyVal{
-
-		def access[T](accessor: SailConnection => CloseableIteration[_ <: T, _]): CloseableIterator[T] = {
-			val conn = sail.getConnection
-			try{
-				val repRes = accessor(conn)
-				new Rdf4jIterationIterator(repRes, () => conn.close())
-			}
-			catch{
-				case err: Throwable =>
-					conn.close()
-					throw err
-			}
-		}
-
-		def accessEagerly[T](accessor: SailConnection => T): T = {
-			val conn = sail.getConnection
-			try{
-				accessor(conn)
-			}
-			finally{
-				conn.close()
-			}
-		}
-	}
-
 	def asString(lit: Literal): Option[String] = if(lit.getDatatype === XMLSchema.STRING) Some(lit.stringValue) else None
 
 	def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.longValue).toOption else None

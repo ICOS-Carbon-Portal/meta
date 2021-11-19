@@ -1,13 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import java.time.Instant
-import java.util.ArrayList
-import java.util.concurrent.ArrayBlockingQueue
-
-import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.collection.mutable.AnyRefMap
-import scala.collection.mutable.ArrayBuffer
-
+import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
@@ -15,21 +8,27 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.sail.Sail
-
-import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
-
+import org.roaringbitmap.buffer.MutableRoaringBitmap
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
-import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.services.sparql.index._
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
-import akka.event.LoggingAdapter
+import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
+import se.lu.nateko.cp.meta.utils.rdf4j._
+
+import java.time.Instant
+import java.util.ArrayList
+import java.util.concurrent.ArrayBlockingQueue
+import scala.collection.mutable.AnyRefMap
+import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.Using
 
 
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
@@ -53,7 +52,6 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Literal]
 }
 
-//TODO Make the index closeable (then it can permanently hold a single connection to the Sail)
 class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
 	import CpIndex._
 
@@ -79,12 +77,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
 		case FileName => StringHierarchicalBitmap{idx =>
 			val uri = objs(idx).uri
-			sail.accessEagerly{conn => //this is to avoid storing all the file names in memory
+			//this is to avoid storing all the file names in memory
+			Using(sail.getConnection){conn =>
 				val iter = conn.getStatements(uri, vocab.hasName, null, false)
-				val res = if(iter.hasNext()) iter.next().getObject().stringValue() else ""
+				val res = if(iter.hasNext()) iter.next().getObject.stringValue else ""
 				iter.close()
 				res
-			}
+			}.getOrElse("")
 		}
 		case FileSize =>        FileSizeHierarchicalBitmap(idx => objs(idx).size)
 		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(idx => objs(idx).samplingHeight)
@@ -100,7 +99,11 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
 
 	//Mass-import of the statistics data
-	sail.access[Statement](_.getStatements(null, null, null, false)).foreach(s => put(RdfUpdate(s, true)))
+	Using(sail.getConnection)(_
+		.getStatements(null, null, null, false)
+		.asPlainScalaIterator
+		.foreach(s => put(RdfUpdate(s, true)))
+	)
 	flush()
 	contMap.valuesIterator.foreach(_.optimizeAndTrim())
 	stats.filterInPlace{case (_, bm) => !bm.isEmpty}
@@ -361,7 +364,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 					if(isAssertion) deprecated.add(oe.idx)
 					else if(
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+						!Using(sail.getConnection)(_.hasStatement(null, pred, obj, false)).getOrElse(false)
 					) deprecated.remove(oe.idx)
 				})
 
@@ -496,13 +499,15 @@ object CpIndex{
 
 	private def getStationRequirementsPerSpec(sail: Sail, vocab: CpmetaVocab): AnyRefMap[IRI, Boolean] = {
 		val map = new AnyRefMap[IRI, Boolean]
-		sail.access[Statement](
-			_.getStatements(null, vocab.hasDataLevel, null, false)
-		).foreach{
-			case Rdf4jStatement(subj, _, obj: Literal) =>
-				map.update(subj, objSpecRequiresStation(subj, obj))
-			case _ =>
-		}
+		Using(sail.getConnection)(_
+			.getStatements(null, vocab.hasDataLevel, null, false)
+			.asPlainScalaIterator
+			.foreach{
+				case Rdf4jStatement(subj, _, obj: Literal) =>
+					map.update(subj, objSpecRequiresStation(subj, obj))
+				case _ =>
+			}
+		)
 		map
 	}
 

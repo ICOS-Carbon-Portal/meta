@@ -3661,20 +3661,20 @@
     
 
 
-    <!-- https://meta.fieldsites.se/ontologies/sites/spectralCsv -->
-
-    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/spectralCsv">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label>Tab-separated CSV by SITES SPECTRAL</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
     <!-- https://meta.fieldsites.se/ontologies/sites/spectralPointCloud -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/spectralPointCloud">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label>SITES Spectral point cloud</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://meta.fieldsites.se/ontologies/sites/zipLidar -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/zipLidar">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label>Zipped LiDAR data</rdfs:label>
     </owl:NamedIndividual>
     
 

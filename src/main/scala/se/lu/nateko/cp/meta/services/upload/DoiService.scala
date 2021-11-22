@@ -20,6 +20,7 @@ import se.lu.nateko.cp.doi.meta._
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.doi.meta.GenericName
@@ -106,9 +107,16 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 	}
 
 	def makeCollectionDoi(coll: StaticCollection)(implicit envri: Envri): DoiMeta = {
+		val creators = fetchCollMembers(coll).flatMap(_.references.authors.getOrElse(Nil)).map{pers =>
+			Creator(
+				name = PersonalName(pers.firstName, pers.lastName),
+				nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+				affiliation = Nil
+			)
+		}
 		DoiMeta(
 			doi = client.doi(CoolDoi.makeRandom),
-			creators = Seq(Creator(GenericName(coll.creator.name), Seq(), Seq())),
+			creators = creators,
 			titles = Some(Seq(Title(coll.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
 			publicationYear = Some(Year.now.getValue),
@@ -123,5 +131,12 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 		)
+	}
+
+	private def fetchCollMembers(coll: StaticCollection): Seq[StaticObject] = {
+		coll.members.flatMap(_ match {
+			case PlainStaticObject(res, _, _) => Seq(fetcher.fetchStaticObject(Uri(res.toString)))
+			case StaticCollection(res, _, _, _, _, _, _, _, _) => fetcher.fetchStaticCollection(Uri(res.toString)).map(fetchCollMembers(_))
+		}).flatten
 	}
 }

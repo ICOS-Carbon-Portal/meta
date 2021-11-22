@@ -79,7 +79,7 @@ object UploadApp {
 		whenDone{
 			Backend.createDraftDoi(uri)
 		}(doi => {
-			showAlert(s"Draft DOI created: <a class='alert-link' target='_blank' href='https://doi.icos-cp.eu'>Edit or submit ${doi} for publication</a>", "alert alert-success")
+			showAlert(s"Draft DOI created: ${doi}. <a class='alert-link' target='_blank' href='https://doi.icos-cp.eu/?q=${doi}'>Edit or submit for publication</a>", "alert alert-success")
 		}).onComplete {
 				case _ => progressBar.hide()
 			}

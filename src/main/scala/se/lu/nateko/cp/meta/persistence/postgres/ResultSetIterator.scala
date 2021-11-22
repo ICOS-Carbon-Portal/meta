@@ -2,8 +2,12 @@ package se.lu.nateko.cp.meta.persistence.postgres
 
 import java.sql.ResultSet
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import java.sql.Connection
 
-abstract class ResultSetIterator[T](rs: ResultSet) extends CloseableIterator[T]{
+class ResultSetIterator[T](connectionFactory: () => Connection, resultFactory: ResultSet => T, selectQuery: String) extends CloseableIterator[T]{
+	private[this] val conn = connectionFactory()
+	private[this] val st = conn.createStatement()
+	private[this] val rs = st.executeQuery(selectQuery)
 
 	private[this] var doesHaveNext = false
 	private[this] var closed = false
@@ -13,10 +17,10 @@ abstract class ResultSetIterator[T](rs: ResultSet) extends CloseableIterator[T]{
 	final def hasNext: Boolean = !closed && doesHaveNext
 
 	final def next(): T =
-		if(closed){
+		if(closed || !doesHaveNext){
 			throw new IllegalStateException("Iterator has no more elements!")
 		}else try{
-			val nextItem = construct(rs)
+			val nextItem = resultFactory(rs)
 			increment()
 			nextItem
 		}catch{
@@ -24,13 +28,14 @@ abstract class ResultSetIterator[T](rs: ResultSet) extends CloseableIterator[T]{
 		}
 
 	final def close(): Unit = if(!closed){
-		closed = true
-		rs.close()
-		closeInternal()
+		try{
+			rs.close()
+			st.close()
+		}finally{
+			conn.close()
+			closed = true
+		}
 	}
-
-	protected def construct(rs: ResultSet): T
-	protected def closeInternal(): Unit
 
 	private def increment(): Unit = {
 		doesHaveNext = rs.next()

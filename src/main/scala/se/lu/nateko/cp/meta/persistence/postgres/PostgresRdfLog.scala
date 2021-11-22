@@ -10,6 +10,8 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 import se.lu.nateko.cp.meta.RdflogConfig
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import java.time.Instant
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
 
@@ -18,7 +20,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	def appendAll(updates: IterableOnce[RdfUpdate]): Unit = {
 		//TODO Use a pool of connections/prepared statements for better performance
 
-		val appendPs: PreparedStatement = getConnection.prepareStatement(
+		val appendPs: PreparedStatement = getConnection().prepareStatement(
 			s"""INSERT INTO $logName (tstamp, "ASSERTION", "TYPE", "SUBJECT", "PREDICATE", "OBJECT", "LITATTR") VALUES (?, ?, ?, ?, ?, ?, ?)"""
 		)
 		try{
@@ -63,12 +65,10 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		}
 	}
 
-	def updates: Iterator[RdfUpdate] = {
-		val conn = getConnection
-		val st = conn.createStatement
-		val rs = st.executeQuery(s"SELECT * FROM $logName ORDER BY id")
-		new RdfUpdateResultSetIterator(rs, factory, () => {st.close; conn.close()})
-	}
+	def updates: CloseableIterator[RdfUpdate] = rdfUpdateIterators.plain
+	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = rdfUpdateIterators.timed
+
+	private def rdfUpdateIterators = new RdfUpdateResultSetIterator(getConnection, factory, s"SELECT * FROM $logName ORDER BY id")
 
 /*	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
 		val conn = getConnection
@@ -110,7 +110,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	}
 
 	def isInitialized: Boolean = {
-		val conn = getConnection
+		val conn = getConnection()
 		try{
 			val meta = conn.getMetaData
 			val tblRes = meta.getTables(null, null, logName, null)
@@ -124,7 +124,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	}
 
 	private def execute(statement: String): Unit = {
-		val conn = getConnection
+		val conn = getConnection()
 		try{
 			val st = conn.createStatement
 			st.execute(statement)
@@ -134,7 +134,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		}
 	}
 
-	private def getConnection = Postgres.getConnection(serv, creds).get
+	private def getConnection() = Postgres.getConnection(serv, creds).get
 
 	private def safeDatatype(lit: Literal): String =
 		if(lit.getDatatype == null) XMLSchema.STRING.stringValue

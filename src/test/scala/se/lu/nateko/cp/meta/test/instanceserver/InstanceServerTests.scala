@@ -54,7 +54,7 @@ class InstanceServerTests extends AnyFunSpec{
 			it("Rdf4jUtils RepositoryResult to Iterator conversion"){
 				val conn = rdf4jRepo.getConnection
 				def repRes = conn.getStatements(null, null, null, false, ctxt)
-				repRes.asScalaIterator.toArray
+				repRes.asPlainScalaIterator.toArray
 			}
 		}
 

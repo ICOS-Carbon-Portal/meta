@@ -1,25 +1,34 @@
 package se.lu.nateko.cp.meta.routes
 
-import scala.concurrent.duration.DurationInt
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.Multipart
+import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.FileDeletionDto
 import se.lu.nateko.cp.meta.LabelingStatusUpdate
 import se.lu.nateko.cp.meta.LabelingUserDto
-import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
+import se.lu.nateko.cp.meta.services.labeling.StationLabelingHistory
+import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import spray.json.JsObject
+
 import java.net.URI
-import akka.http.scaladsl.unmarshalling.Unmarshaller
+import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
 
@@ -101,6 +110,14 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				parameter("stationId".as[URI]){stationId =>
 					complete(service.getFilePack(stationId))
 				}
+			} ~
+			path("labelingHistory"){
+				import StationLabelingHistory._
+				val src = Source(
+					CsvHeader +: service.labelingHistory.toSeq.sortBy(_.provId).map(toCsvRow)
+				).map(ByteString(_, StandardCharsets.UTF_8))
+
+				complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, src))
 			}
 		}
 	}

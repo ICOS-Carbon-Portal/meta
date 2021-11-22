@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.utils
 import java.net.{ URI => JavaUri }
 import java.time.Instant
 
+import scala.collection.AbstractIterator
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -53,7 +54,10 @@ package object rdf4j {
 	}
 
 	implicit class IterableCloseableIteration[T](val res: CloseableIteration[T, _]) extends AnyVal{
-		def asScalaIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res, () => ())
+		def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
+			override def hasNext: Boolean = res.hasNext()
+			override def next(): T = res.next()
+		}
 	}
 
 	implicit class Rdf4jRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
@@ -100,32 +104,6 @@ package object rdf4j {
 
 		def accessEagerly[T](accessor: RepositoryConnection => T): T = {
 			val conn = repo.getConnection
-			try{
-				accessor(conn)
-			}
-			finally{
-				conn.close()
-			}
-		}
-	}
-
-	implicit class Rdf4jSailWithAccess(val sail: Sail) extends AnyVal{
-
-		def access[T](accessor: SailConnection => CloseableIteration[_ <: T, _]): CloseableIterator[T] = {
-			val conn = sail.getConnection
-			try{
-				val repRes = accessor(conn)
-				new Rdf4jIterationIterator(repRes, () => conn.close())
-			}
-			catch{
-				case err: Throwable =>
-					conn.close()
-					throw err
-			}
-		}
-
-		def accessEagerly[T](accessor: SailConnection => T): T = {
-			val conn = sail.getConnection
 			try{
 				accessor(conn)
 			}

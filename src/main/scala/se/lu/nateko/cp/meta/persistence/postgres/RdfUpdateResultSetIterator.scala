@@ -7,10 +7,16 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import java.sql.Connection
+import java.time.Instant
 
-class RdfUpdateResultSetIterator(rs: ResultSet, factory: ValueFactory, closer: () => Unit) extends ResultSetIterator[RdfUpdate](rs){
+class RdfUpdateResultSetIterator(getConn: () => Connection, factory: ValueFactory, selectQuery: String){
+	def plain = new ResultSetIterator(getConn, readRdfUpdate, selectQuery)
+	def timed = new ResultSetIterator(getConn, readTimedRdfUpdate, selectQuery)
 
-	override protected def construct(rs: ResultSet): RdfUpdate = {
+	def readRdfUpdate(rs: ResultSet): RdfUpdate = {
+		def getUri(colName: String): IRI = factory.createIRI(rs.getString(colName))
+
 		val tripleType = rs.getShort("TYPE")
 		val objString = rs.getString("OBJECT")
 
@@ -31,7 +37,9 @@ class RdfUpdateResultSetIterator(rs: ResultSet, factory: ValueFactory, closer: (
 		RdfUpdate(statement, isAssertion)
 	}
 
-	override protected def closeInternal(): Unit = closer()
-
-	private def getUri(colName: String): IRI = factory.createIRI(rs.getString(colName))
+	def readTimedRdfUpdate(rs: ResultSet): (Instant, RdfUpdate) = {
+		val upd = readRdfUpdate(rs)
+		val ts = rs.getTimestamp("tstamp").toInstant
+		ts -> upd
+	}
 }

@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, XMLSchema}
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
-trait InstanceServer {
+trait InstanceServer extends AutoCloseable{
 	import InstanceServer._
 
 	/**
@@ -25,6 +25,7 @@ trait InstanceServer {
 	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer
 	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
 
+	final override def close(): Unit = shutDown()
 	def shutDown(): Unit = {}
 
 	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))

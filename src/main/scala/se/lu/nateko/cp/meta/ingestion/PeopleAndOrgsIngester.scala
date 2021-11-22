@@ -15,8 +15,11 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import scala.util.Using
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import scala.concurrent.ExecutionContext
 
-class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriConfigs) extends Ingester{
+class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriConfigs, exe: ExecutionContext) extends Ingester{
 
 	override def isAppendOnly = true
 
@@ -25,7 +28,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 	private case class OrgInfo(orgName: String, orgId: UriId)
 	private case class Info(lname: String, fname: String, org: Option[OrgInfo])
 
-	def getStatements(factory: ValueFactory): Ingestion.Statements = {
+	def getStatements(factory: ValueFactory): Ingestion.Statements = Future{
 
 		implicit val f = factory
 		implicit val envri = Envri.ICOS
@@ -33,14 +36,16 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 		val metaVocab = new CpmetaVocab(factory)
 		val role = Researcher
 
-		val info = Source
-			.fromInputStream(getClass.getResourceAsStream(pathToTextRes), "UTF-8")
-			.getLines().map(_.trim).filter(!_.isEmpty).map{
+		val info = Using(
+			Source.fromInputStream(getClass.getResourceAsStream(pathToTextRes), "UTF-8")
+		){
+			_.getLines().map(_.trim).filter(!_.isEmpty).map{
 				case ingosRegexp(lname, fname, orgName, orgId) =>
 					Info(lname, fname, Some(OrgInfo(orgName, UriId(orgId))))
 				case gcpRegexp(lname, fname) =>
 					Info(lname, fname, None)
 			}.toIndexedSeq
+		}.get
 
 		val orgTriples = info.collect{
 			case Info(_, _, Some(orgInfo)) => orgInfo
@@ -79,6 +84,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 					(membership, metaVocab.atOrganization, org)
 				)
 		}.flatten
-		Future.successful((orgTriples ++ personTriples ++ membershipTriples).map(factory.tripleToStatement).iterator)
+		val iter = (orgTriples ++ personTriples ++ membershipTriples).map(factory.tripleToStatement).iterator
+		new CloseableIterator.Wrap(iter, () => ())
 	}
 }

@@ -30,6 +30,7 @@ import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j._
 
 import java.net.URI
+import scala.util.Using
 
 class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
 
@@ -37,14 +38,14 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 
 		val dois: List[Doi] = {
 			val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi
-			sail
-				.access[Statement]{conn =>
-					conn.getStatements(null, hasDoi, null, false)
-				}
+			Using(sail.getConnection){_
+				.getStatements(null, hasDoi, null, false)
+				.asPlainScalaIterator
 				.map(_.getObject.stringValue)
 				.toList.distinct.collect{
 					case Doi(doi) => doi
 				}
+			}.get
 		}
 
 		val doiCiter = new CitationClient(dois, conf.citations)

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.persistence
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class InMemoryRdfLog extends RdfUpdateLog{
 
@@ -12,7 +13,7 @@ class InMemoryRdfLog extends RdfUpdateLog{
 		log.addAll(updates.iterator.toIndexedSeq.asJava)
 	}
 
-	def updates: Iterator[RdfUpdate] = log.iterator.asScala
-	//def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = ???
+	def updates: CloseableIterator[RdfUpdate] = new CloseableIterator.Wrap(log.iterator.asScala, () => ())
+	def timedUpdates = ???
 	def close(): Unit = {}
 }

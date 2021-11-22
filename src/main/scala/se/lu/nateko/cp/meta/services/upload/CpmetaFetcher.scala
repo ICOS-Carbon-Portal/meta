@@ -212,7 +212,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				parts = server.getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite),
 				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
 					case iri: IRI => getInstrumentLite(iri)
-				}.take(1).toList.headOption
+				}.toList.headOption
 			)
 		) else None
 	}

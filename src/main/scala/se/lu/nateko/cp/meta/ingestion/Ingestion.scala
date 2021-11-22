@@ -14,6 +14,8 @@ import java.net.URI
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import scala.util.Using
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false
@@ -29,7 +31,7 @@ trait Extractor extends StatementProvider{
 
 object Ingestion {
 
-	type Statements = Future[Iterator[Statement]]
+	type Statements = Future[CloseableIterator[Statement]]
 
 	def allProviders(implicit system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] = {
 		import system.dispatcher
@@ -74,18 +76,16 @@ object Ingestion {
 			target: InstanceServer,
 			provider: T, stFactory: T => Statements
 	)(implicit ctxt: ExecutionContext): Future[Unit] = stFactory(provider).map{newStatements =>
-
-		if(provider.isAppendOnly){
-			val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
-			target.applyAll(toAdd)
-		} else {
-			val newRepo = Loading.fromStatements(newStatements)
-			val source = new Rdf4jInstanceServer(newRepo)
-			try{
+		Using.Manager{use =>
+			use.acquire(newStatements)
+			if(provider.isAppendOnly){
+				val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
+				target.applyAll(toAdd)
+			} else {
+				val newRepo = Loading.fromStatements(newStatements)
+				val source = use(new Rdf4jInstanceServer(newRepo))
 				val updates = computeDiff(target.writeContextsView, source).toIndexedSeq
 				target.applyAll(updates)
-			}finally{
-				source.shutDown()
 			}
 		}
 	}
@@ -98,7 +98,7 @@ object Ingestion {
 	}
 
 	object EmptyIngester extends Ingester{
-		override def getStatements(valueFactory: ValueFactory) = Future.successful(Iterator.empty)
+		override def getStatements(valueFactory: ValueFactory) = Future.successful(CloseableIterator.empty)
 	}
 
 }

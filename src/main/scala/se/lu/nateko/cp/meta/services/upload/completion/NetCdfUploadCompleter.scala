@@ -29,7 +29,7 @@ private class NetCdfUploadCompleter(
 		val olds = result.varInfo.flatMap{vinfo =>
 			val vUri = vocab.getVarInfo(hash, vinfo.name)
 
-			Seq(metaVocab.hasMinValue, metaVocab.hasMaxValue).flatMap{prop =>
+			IndexedSeq(metaVocab.hasMinValue, metaVocab.hasMaxValue).flatMap{prop =>
 				server.getStatements(Some(vUri), Some(prop), None)
 			}
 		}

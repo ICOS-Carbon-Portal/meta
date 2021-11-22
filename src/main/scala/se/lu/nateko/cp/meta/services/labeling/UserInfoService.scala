@@ -10,10 +10,9 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import scala.util.Using
 
 trait UserInfoService { self: StationLabelingService =>
-
-	private val (factory, vocab) = getFactoryAndVocab(provisionalInfoServer)
 
 	private val userToTcsLookup: Map[String, Seq[JavaURI]] = {
 		val userTcPairs = for(
@@ -25,13 +24,12 @@ trait UserInfoService { self: StationLabelingService =>
 	}
 
 	def getLabelingUserInfo(uinfo: UserId): LabelingUserDto = {
-		val allEmails = provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
-
-		val piUriOpt = allEmails.collectFirst{
+		val piUriOpt = Using(
+			provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
+		)(_.collectFirst{
 			case Rdf4jStatement(uri: IRI, _, mail)
 				if(mail.stringValue.equalsIgnoreCase(uinfo.email)) => uri
-		}
-		allEmails.close()
+		}).get
 
 		val tcs = userToTcsLookup.get(uinfo.email).getOrElse(Nil)
 		val isDg: Boolean = config.dgUserId == uinfo.email

@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.LabelingServiceConfig
 import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 
 
 class StationLabelingService(
@@ -19,12 +20,20 @@ class StationLabelingService(
 	protected val config: LabelingServiceConfig
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService {
 
-	private val (_, vocab) = getFactoryAndVocab(provisionalInfoServer)
-
-	protected def getFactoryAndVocab(instServer: InstanceServer) = {
-		val factory = instServer.factory
-		val vocab = new StationsVocab(factory)
-		(factory, vocab)
+	protected val factory = provisionalInfoServer.factory
+	protected val vocab = new StationsVocab(factory)
+	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
+	protected val provRdfLog = provisionalInfoServer match{
+		case logging: LoggingInstanceServer => logging.log
+		case _ => throw new Exception(
+			"Configuration error! Provisional stations metadata InstanceServer is expected to be a LoggingInstanceServer"
+		)
+	}
+	protected val labelingRdfLog = server match{
+		case logging: LoggingInstanceServer => logging.log
+		case _ => throw new Exception(
+			"Configuration error! Labeling metadata InstanceServer is expected to be a LoggingInstanceServer"
+		)
 	}
 
 	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId): Unit =

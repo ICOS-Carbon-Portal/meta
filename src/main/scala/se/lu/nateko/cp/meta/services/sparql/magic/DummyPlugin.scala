@@ -13,6 +13,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.sail.Sail
 
 import se.lu.nateko.cp.meta.utils.rdf4j._
+import scala.util.Using
 
 class DummyPlugin extends MagicTupleFuncPlugin {
 
@@ -25,7 +26,9 @@ class DummyPlugin extends MagicTupleFuncPlugin {
 	def expressionEnricher = new SimpleTupleFunctionExprEnricher(Map(DummyTupleFunction.getURI -> DummyTupleFunction))
 
 	def initialize(fromSail: Sail): Unit = {
-		counter = fromSail.access[Statement](_.getStatements(null, null, null, false)).size
+		counter = Using(fromSail.getConnection)(
+			_.getStatements(null, null, null, false).asPlainScalaIterator.size
+		).get
 	}
 
 	def statementAdded(s: Statement): Unit = {

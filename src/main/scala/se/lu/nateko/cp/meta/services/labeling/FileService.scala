@@ -16,8 +16,6 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 trait FileService { self: StationLabelingService =>
 
-	private val (factory, vocab) = getFactoryAndVocab(server)
-
 	def processFile(upload: Multipart.FormData.Strict, uploader: UserId)(implicit ex: ExecutionContext): Future[Unit] = Future{
 		val nameToParts = upload.strictParts.map(part => (part.name, part)).toMap
 		val fileType = nameToParts("fileType").entity.data.decodeString("UTF-8")

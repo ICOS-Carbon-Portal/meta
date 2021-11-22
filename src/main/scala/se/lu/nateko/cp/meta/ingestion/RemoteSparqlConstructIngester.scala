@@ -20,6 +20,7 @@ import akka.http.scaladsl.model.headers
 import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 import akka.stream.Materializer
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem, m: Materializer) extends Ingester{
 
@@ -40,7 +41,7 @@ class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: Acto
 					Future{
 						parser.parse(inputStr, rdfGraph.toString)
 						import scala.jdk.CollectionConverters.IteratorHasAsScala
-						collector.getStatements.iterator().asScala
+						new CloseableIterator.Wrap(collector.getStatements.iterator().asScala, () => ())
 					}
 				case _ =>
 					resp.discardEntityBytes()

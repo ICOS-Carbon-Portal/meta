@@ -22,7 +22,6 @@ trait LifecycleService { self: StationLabelingService =>
 	import LifecycleService._
 	import AppStatus.AppStatus
 
-	private val (factory, vocab) = getFactoryAndVocab(server)
 	private val mailer = SendMail(config.mailing)
 
 	def updateStatus(station: URI, newStatus: String, newStatusComment: Option[String], user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
@@ -115,14 +114,14 @@ trait LifecycleService { self: StationLabelingService =>
 		val stationId = lookupStationId(station).getOrElse("???")
 
 		(from, to) match{
-			case (_, AppStatus.submitted) =>
+			case (_, AppStatus.step1submitted) =>
 				val recipients: Seq[String] = getTcUsers(station)
 				val subject = "Application for labeling received"
 				val body = views.html.LabelingEmailSubmitted1(user, stationId).body
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
-			case (AppStatus.approved, AppStatus.step2ontrack) =>
+			case (AppStatus.step1approved, AppStatus.step2ontrack) =>
 				val calLabRecipients = if(stationIsAtmospheric(station)) config.calLabEmails else Nil
 				val recipients = (getTcUsers(station) :+ config.dgUserId) ++ calLabRecipients
 				val subject = s"Labeling Step2 activated for $stationId"
@@ -167,17 +166,18 @@ object LifecycleService{
 	object AppStatus extends Enumeration{
 		type AppStatus = Value
 
-		val neverSubmitted = Value("NEVER SUBMITTED")
-		val notSubmitted = Value("NOT SUBMITTED")
-		val submitted = Value("SUBMITTED")
-		val acknowledged = Value("ACKNOWLEDGED")
-		val approved = Value("APPROVED")
-		val rejected = Value("REJECTED")
-		val step2ontrack = Value("STEP2ONTRACK")
-		val step2delayed = Value("STEP2DELAYED")
-		val step2stalled = Value("STEP2STALLED")
-		val step2approved = Value("STEP2APPROVED")
-		val step3approved = Value("STEP3APPROVED")
+		val neverSubmitted    = Value("NEVER SUBMITTED")
+		val step1notsubmitted = Value("NOT SUBMITTED")
+		val step1submitted    = Value("SUBMITTED")
+		val step1acknowledged = Value("ACKNOWLEDGED")
+		val step1approved     = Value("APPROVED")
+		val rejected          = Value("REJECTED")
+		val step2ontrack      = Value("STEP2ONTRACK")
+		val step2started_old  = Value("STEP2STARTED")
+		val step2delayed      = Value("STEP2DELAYED")
+		val step2stalled      = Value("STEP2STALLED")
+		val step2approved     = Value("STEP2APPROVED")
+		val step3approved     = Value("STEP3APPROVED")
 	}
 
 	object Role extends Enumeration{
@@ -191,29 +191,29 @@ object LifecycleService{
 	import Role._
 
 	val transitions: Map[AppStatus, Map[AppStatus, Role]] = Map(
-		neverSubmitted -> Map(submitted -> PI),
-		submitted -> Map(acknowledged -> TC),
-		acknowledged -> Map(
-			notSubmitted -> TC,
-			approved -> TC,
+		neverSubmitted -> Map(step1submitted -> PI),
+		step1submitted -> Map(step1acknowledged -> TC),
+		step1acknowledged -> Map(
+			step1notsubmitted -> TC,
+			step1approved -> TC,
 			rejected -> TC
 		),
-		notSubmitted -> Map(
-			approved -> TC,
+		step1notsubmitted -> Map(
+			step1approved -> TC,
 			rejected -> TC,
-			submitted -> PI
+			step1submitted -> PI
 		),
-		approved -> Map(
+		step1approved -> Map(
 			rejected -> TC,
-			notSubmitted -> TC,
+			step1notsubmitted -> TC,
 			step2ontrack -> PI
 		),
 		rejected -> Map(
-			approved -> TC,
-			notSubmitted -> TC
+			step1approved -> TC,
+			step1notsubmitted -> TC
 		),
 		step2ontrack -> Map(
-			approved -> TC,
+			step1approved -> TC,
 			step2approved -> TC,
 			step2stalled -> TC,
 			step2delayed -> TC

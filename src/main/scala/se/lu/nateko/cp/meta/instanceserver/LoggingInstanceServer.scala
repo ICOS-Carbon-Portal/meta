@@ -6,7 +6,7 @@ import scala.util.Try
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Statement
 
-class LoggingInstanceServer(inner: InstanceServer, log: RdfUpdateLog) extends InstanceServer{
+class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extends InstanceServer{
 
 	def factory = inner.factory
 	def readContexts = inner.readContexts

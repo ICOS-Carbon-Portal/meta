@@ -14,8 +14,6 @@ import scala.util.Using
 
 trait UserInfoService { self: StationLabelingService =>
 
-	private val (factory, vocab) = getFactoryAndVocab(provisionalInfoServer)
-
 	private val userToTcsLookup: Map[String, Seq[JavaURI]] = {
 		val userTcPairs = for(
 			(tcUri, userMails) <- config.tcUserIds.toSeq;

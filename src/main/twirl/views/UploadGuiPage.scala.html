@@ -10,7 +10,7 @@
 		margin: 1.5rem auto;
 	}
 	.form,
-	#header-buttons {
+	#header-buttons-container {
 		display: none;
 	}
 	.form h2 {
@@ -35,17 +35,16 @@
 	#longitude-element {
 		display: none;
 	}
-	#submitbutton {
-		margin: 0;
+	#header-buttons > button {
 		width: 100%;
 	}
 	@@media (min-width: 480px) {
-		#submitbutton {
-			margin: 0 1.5em;
+		#header-buttons > button {
 			width: auto;
 		}
 	}
 	@if(envri == Envri.SITES) {
+		#new-doi-button,
 		.keywords-block,
 		.l3option,
 		.sampling-height-block,
@@ -57,9 +56,11 @@
 
 	<div id="main">
 		<div id="alert-placeholder"></div>
-		<div id="progress-bar" class="progress" style="display: none">
-			<div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%">
-				Uploading...
+		<div id="progress-bar" style="display: none;">
+			<div class="progress mb-3" style="height: 24px;">
+				<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 20px;">
+					Uploading...
+				</div>
 			</div>
 		</div>
 		<form id="form-block" class="form" autocomplete="off">
@@ -404,8 +405,11 @@
 }
 
 @header = {
-	<div id="header-buttons" class="col-md text-md-end my-2">
-		<button id="addproductionbutton" type="button" class="btn btn-outline-primary" disabled>Add production metadata</button>
-		<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
+	<div id="header-buttons-container">
+		<div id="header-buttons" class="d-flex justify-content-end my-2 gap-3 flex-wrap">
+			<button id="new-doi-button" type="button" class="btn btn-outline-primary" disabled>Create a new draft DOI</button>
+			<button id="addproductionbutton" type="button" class="btn btn-outline-primary" disabled>Add production metadata</button>
+			<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
+		</div>
 	</div>
 }

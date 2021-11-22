@@ -11,6 +11,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
 import scala.concurrent.Future
 import scala.util.{ Success, Failure }
+import java.net.URI
+import se.lu.nateko.cp.meta.upload.formcomponents.Button
+import se.lu.nateko.cp.meta.core.data
 
 object UploadApp {
 	import Utils._
@@ -18,7 +21,7 @@ object UploadApp {
 
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
-	private val headerButtons = new HtmlElements("#header-buttons")
+	private val headerButtons = new HtmlElements("#header-buttons-container")
 	val progressBar = new ProgressBar("#progress-bar")
 	private val alert = getElementById[html.Div]("alert-placeholder").get
 
@@ -34,7 +37,7 @@ object UploadApp {
 
 		val formFut = for(subms <- submsFut; objSpecs <- specsFut; spatCovs <- spatCovsFut) yield{
 			implicit val bus = new PubSubBus
-			new Form(subms, objSpecs, spatCovs, upload _)
+			new Form(subms, objSpecs, spatCovs, upload _, createDoi _)
 		}
 
 		whenDone(formFut){ _ =>
@@ -51,24 +54,35 @@ object UploadApp {
 		loginBlock.show()
 	}
 
-	private def upload(dto: UploadDto, file: Option[dom.File]): Unit = file match {
-		case Some(file) => {
-			whenDone{
-				Backend.submitMetadata(dto).flatMap(uri => Backend.uploadFile(file, uri))
-			}(pid => {
-				showAlert(s"${file.name} uploaded! <a class='alert-link' href='https://hdl.handle.net/$pid'>View metadata</a>", "alert alert-success")
-			}).onComplete {
+	private def upload(
+		dto: UploadDto,
+		file: Option[dom.File]
+	)(implicit envri: Envri, envriConf: EnvriConfig): Future[URI] = whenDone{
+		file match {
+			case Some(file) =>
+				Backend.submitMetadata(dto).flatMap(dataURL =>
+					Backend.uploadFile(file, dataURL).map(_ => dataURL)
+				)
+			case None =>
+				Backend.submitMetadata(dto)
+		}
+	}(dataURL => {
+		progressBar.hide()
+		val metaURL = new URI("https://" + envriConf.metaHost + dataURL.getPath())
+		val doiCreation = if(envri == data.Envri.ICOS) " or create a draft DOI." else ""
+		showAlert(s"Success! <a class='alert-link' href='${metaURL}'>View metadata</a>$doiCreation", "alert alert-success")
+		val createDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
+		createDoiButton.enable()
+	})
+
+	private def createDoi(uri: URI): Unit = {
+		whenDone{
+			Backend.createDraftDoi(uri)
+		}(doi => {
+			showAlert(s"Draft DOI created: ${doi}. <a class='alert-link' target='_blank' href='https://doi.icos-cp.eu/?q=${doi}'>Edit or submit for publication</a>", "alert alert-success")
+		}).onComplete {
 				case _ => progressBar.hide()
 			}
-		}
-		case None => {
-			whenDone{
-				Backend.submitMetadata(dto)
-			}(dataURL => {
-				showAlert(s"Metadata uploaded! <a class='alert-link' href='${dataURL.getPath}'>View metadata</a>", "alert alert-success")
-				progressBar.hide()
-			})
-		}
 	}
 
 	def whenDone[T](fut: Future[T])(cb: T => Unit): Future[T] = fut.andThen{

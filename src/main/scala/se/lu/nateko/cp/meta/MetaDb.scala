@@ -37,7 +37,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
-import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService }
+import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService, DoiService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
@@ -254,7 +254,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		def ensureSchemaOntExists(schemaOntId: String): Unit =
 			if(!schemaOntIds.contains(schemaOntId))
 				throw new ServiceException(s"Missing schema ontology with id '$schemaOntId'. Check your config.")
-		
+
 		config.dataUploadService.metaServers.values.foreach(ensureInstServerExists)
 		config.dataUploadService.collectionServers.values.foreach(ensureInstServerExists)
 

@@ -12,6 +12,8 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.icos.MetaFlow
+import se.lu.nateko.cp.meta.services.upload.DoiService
+import scala.concurrent.ExecutionContext
 
 object MainRoute {
 
@@ -24,7 +26,7 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit mat: Materializer): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit mat: Materializer, ctxt: ExecutionContext): Route = {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val envriConfigs = config.core.envriConfigs
@@ -34,6 +36,8 @@ object MainRoute {
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)
+		val doiService = new DoiService(config, db.uriSerializer)
+		val doiRoute = DoiRoute(doiService, authRouting, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
@@ -54,6 +58,7 @@ object MainRoute {
 			sparqlRoute ~
 			metaEntryRoute ~
 			uploadRoute ~
+			doiRoute ~
 			labelingRoute ~
 			filesRoute ~
 			authRoute ~

@@ -24,6 +24,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.model.headers.SameSite
+import akka.http.javadsl.server.MissingCookieRejection
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting._
@@ -85,8 +86,10 @@ object AuthenticationRouting {
 	case class InvalidCpauthTokenRejection(message: String) extends Rejection
 
 	val authRejectionHandler = RejectionHandler.newBuilder().handle{
-			case InvalidCpauthTokenRejection(message) =>
-				forbid(message)
+			case InvalidCpauthTokenRejection(message) => forbid(message)
+			case cookieRej: MissingCookieRejection => forbid(
+				s"Authentication cookie ${cookieRej.cookieName} not present. Login required for this operation."
+			)
 		}.result()
 
 	val ensureLocalRequest: Directive0 =

@@ -19,6 +19,7 @@ import formcomponents._
 import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
+import java.net.URI
 
 
 class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
@@ -32,6 +33,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 	def itemHash: Try[Sha256Sum] = if(isInNewItemMode) fileInput.hash else Success(fileHash.get)
 	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value.withErrorContext("Previous version")
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
+	def metadataUri: Try[URI] = metadataUriInput.value
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 

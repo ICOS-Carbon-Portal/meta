@@ -226,7 +226,7 @@
 }
 
 @headerExtra = @{
-	if(dobj.specification.dataLevel > 0 && uploadComplete)
+	if(dobj.accessUrl.isDefined && uploadComplete)
 		Some(objPageHeaderExtra(dobj))
 	else None
 }

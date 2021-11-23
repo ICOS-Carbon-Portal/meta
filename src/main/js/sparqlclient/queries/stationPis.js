@@ -18,7 +18,7 @@ order by ?stationTheme ?stationId UCASE(?lastName) ?firstName`;
 
 export const prodStationPis = `prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-select distinct ?stTheme ?stId ?country ?stationName ?fname ?lname ?email
+select distinct ?stTheme ?stId ?stClass ?country ?stationName ?fname ?lname ?email
 from <http://meta.icos-cp.eu/resources/icos/>
 from <http://meta.icos-cp.eu/resources/cpmeta/>
 from <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -31,5 +31,6 @@ where{
 	?station a/rdfs:label ?stTheme .
 	?pers cpmeta:hasFirstName ?fname; cpmeta:hasLastName ?lname .
 	OPTIONAL{?pers cpmeta:hasEmail ?email}
+	OPTIONAL{?station cpmeta:hasStationClass ?stClass }
 }
 order by ?stTheme ?stId ?lname`;

@@ -132,6 +132,7 @@ object AtcMetaSource{
 		"france"          -> "FR",
 		"germany"         -> "DE",
 		"great britain"   -> "GB",
+		"united kingdom"  -> "GB",
 		"ireland"         -> "IE",
 		"italy"           -> "IT",
 		"norway"          -> "NO",

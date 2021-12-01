@@ -15,6 +15,7 @@ import { stationRoles } from './queries/stationRoles';
 import { dcat } from './queries/dcat.js'
 import { sensorsDeployments } from './queries/sensorsDeployments';
 import { hoVsTc } from './queries/hoVsTcStationDiscrepancies';
+import { atcSpeciesAndHeights } from './queries/atcSpeciesAndHeights';
 
 
 const queries = [
@@ -33,6 +34,7 @@ const queries = [
 	{name:"Documents", query: existingDocuments},
 	{name:"Data object counts per format", query: perFormatStats},
 	{name:"DCAT metadata demo", query: dcat},
+	{name:"ATC species and sampling heights (in the data)", query: atcSpeciesAndHeights},
 	{name:"ETC METEOSENS sensor deployments demo", query: sensorsDeployments},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, labelling app form values", query: etcLabelingValues}

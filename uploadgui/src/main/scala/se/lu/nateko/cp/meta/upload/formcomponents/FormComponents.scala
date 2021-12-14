@@ -162,3 +162,22 @@ class Modal(elemId: String) {
 		body.innerHTML = html
 	}
 }
+
+class Checkbox(elemId: String, cb: (Boolean) => Unit) {
+	private val checkbox = getElementById[html.Input](elemId).get
+
+	def checked: Boolean = checkbox.checked
+	def check(): Unit = {
+		checkbox.checked = true
+		cb(checked)
+	}
+	def uncheck(): Unit = {
+		checkbox.checked = false
+		cb(checked)
+	}
+
+	def enable(): Unit = checkbox.disabled = false
+	def disable(): Unit = checkbox.disabled = true
+
+	checkbox.onchange = _ => cb(checked)
+}

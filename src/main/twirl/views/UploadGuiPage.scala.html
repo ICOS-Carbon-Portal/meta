@@ -35,6 +35,21 @@
 	#longitude-element {
 		display: none;
 	}
+	#production-switch {
+		padding-bottom: 0.3em;
+	}
+	.production-section {
+		position: relative;
+	}
+	#production-cover {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		background: rgba(238, 238, 238, 0.5);
+		z-index: 3;
+	}
 	.input-group-child-wrapper {
 		margin-left: 0 !important;
 	}
@@ -333,47 +348,56 @@
 				</section>
 				<section class="col-md-4 production-section">
 					<div class="card">
-						<div class="card-body">
-							<h2>Production</h2>
-							<div class="mb-3">
-								<label class="form-label" for="creatoruri">Creator</label>
-								<input id="creatoruri" list="agent-list" class="form-control" placeholder="(type to search)">
-								<datalist id="agent-list"></datalist>
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="contributors">Contributors</label>
-								<div id="contributors">
-									<div class="input-group contributors-element" style="display: none;">
-										<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
-										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove variable"><i class="fas fa-times"></i></button>
-									</div>
-									<div class="d-grid gap-2">
-										<button type="button" id="add-contributor" class="btn btn-block btn-secondary" aria-label="Add contributor">Add contributor</button>
+						<div class="card-header bg-white">
+							<h2 class="border-0">
+								<div class="form-check form-switch">
+									<input class="form-check-input" type="checkbox" role="switch" id="production-switch">
+									<label class="form-check-label pt-1 opacity-100" for="production-switch">Production</label>
+								</div>
+							</h2>
+						</div>
+						<div class="card-body position-relative">
+							<div class="production-section">
+								<div class="mb-3">
+									<label class="form-label" for="creatoruri">Creator</label>
+									<input id="creatoruri" list="agent-list" class="form-control" placeholder="(type to search)">
+									<datalist id="agent-list"></datalist>
+								</div>
+								<div class="mb-3">
+									<label class="form-label" for="contributors">Contributors</label>
+									<div id="contributors">
+										<div class="input-group contributors-element" style="display: none;">
+											<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
+											<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+										</div>
+										<div class="d-grid gap-2">
+											<button type="button" id="add-contributor" class="btn btn-block btn-secondary" aria-label="Add contributor">Add contributor</button>
+										</div>
 									</div>
 								</div>
+								<div class="mb-3">
+									<label class="form-label" for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
+									<input id="hostorganisation" list="organization-list" class="form-control" placeholder="(type to search)">
+									<datalist id="organization-list"></datalist>
+								</div>
+								<div class="mb-3">
+									<label class="form-label" for="productioncomment">Comment <em class="text-muted">- optional</em></label>
+									<textarea class="form-control" name="productioncomment" id="productioncomment" rows="8" cols="80"></textarea>
+								</div>
+								<div class="mb-3">
+									<label class="form-label" for="creationdate">Creation date (UTC)</label>
+									<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
+								</div>
+								<div class="mb-3">
+									<label class="form-label" for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
+									<textarea class="form-control" name="sources" id="sources" rows="2" cols="80"></textarea>
+								</div>
 							</div>
-							<div class="mb-3">
-								<label class="form-label" for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
-								<input id="hostorganisation" list="organization-list" class="form-control" placeholder="(type to search)">
-								<datalist id="organization-list"></datalist>
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="productioncomment">Comment <em class="text-muted">- optional</em></label>
-								<textarea class="form-control" name="productioncomment" id="productioncomment" rows="8" cols="80"></textarea>
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="creationdate">Creation date (UTC)</label>
-								<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
-								<textarea class="form-control" name="sources" id="sources" rows="2" cols="80"></textarea>
-							</div>
-							<button id="removeproductionbutton" type="button" class="btn btn-link">Remove production metadata</button>
+							<div id="production-cover"></div>
 						</div>
-						</div>
-					</section>
-					<section class="col-md-8 collection-section">
+					</div>
+				</section>
+				<section class="col-md-8 collection-section">
 					<div class="card">
 						<div class="card-body">
 							<h2>Collection</h2>

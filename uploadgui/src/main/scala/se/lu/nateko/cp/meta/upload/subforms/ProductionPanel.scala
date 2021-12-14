@@ -7,6 +7,7 @@ import scala.util.{Try, Success}
 
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto}
+import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 
 import formcomponents._
 import Utils._
@@ -16,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".production-section"){
 
 	def dataProductionDtoOpt: Try[Option[DataProductionDto]] =
-		if(!htmlElements.areEnabled) Success(None) else dataProductionDto.map(Some.apply)
+		if(!productionSwitch.checked) Success(None) else dataProductionDto.map(Some.apply)
 
 	def dataProductionDto: Try[DataProductionDto] =
 		 for(
@@ -34,6 +35,9 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			sources = sources,
 			creationDate = creationDate
 		)
+
+	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
+	private val productionCover =  new HtmlElements("#production-cover")
 
 	private val agentList = new DataList[NamedUri]("agent-list", _.name)
 	private val creatorInput = new DataListInput("creatoruri", agentList, notifyUpdate)
@@ -83,7 +87,22 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			organizationList.values = agentAgg.orgs
 	}
 
-	private def onLevelSelected(level: Int): Unit = if(level == 0) hide() else if(level == 3) show()
+	private def onLevelSelected(level: Int): Unit = level match {
+		case 0 =>
+			productionSwitch.uncheck()
+			hide()
+		case 1 | 2 =>
+			productionSwitch.uncheck()
+			productionSwitch.enable()
+			show()
+		case 3 =>
+			productionSwitch.check()
+			productionSwitch.disable()
+			show()
+	}
+
+	private def onProductionSwitched(checked: Boolean) =
+		if (checked) productionCover.hide() else productionCover.show()
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo
@@ -110,6 +129,7 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 					commentInput.value = production.comment
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
+					productionSwitch.check()
 					show()
 				}
 			}

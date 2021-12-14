@@ -30,27 +30,16 @@ class Form(
 	val collPanel = new CollectionPanel
 	val l3Panel = new L3Panel(spatCovs)
 	val submitButton = new Button("submitbutton", submitAction)
-	val addProductionButton = new Button("addproductionbutton", onAddProductionClick)
-	val removeProductionButton = new Button("removeproductionbutton", onRemoveProductionClick)
 
 	bus.subscribe{
-		case GotUploadDto(dto) => handleDto(dto)
+		case GotUploadDto(_) => handleDto()
 		case FormInputUpdated => updateButton()
-		case LevelSelected(level) =>
-			if(level == 0 || level == 3)
-				addProductionButton.disable(s"Production metadata is not available for data level $level")
-			else
-				addProductionButton.enable()
 		case ModeChanged => resetForm()
 		case ItemTypeSelected(itemType) =>
 			resetForm()
 			itemType match{
 				case Data => dataPanel.show()
-				case Collection => {
-					collPanel.show()
-					addProductionButton.disable("Production metadata is not available for collections")
-				}
-				case Document => addProductionButton.disable("Production metadata is not available for documents")
+				case Collection => collPanel.show()
 				case _ =>
 			}
 	}
@@ -109,19 +98,6 @@ class Form(
 	private def updateButton(): Unit = dto match {
 		case Success(_) => submitButton.enable()
 		case Failure(err) => submitButton.disable(err.getMessage)
-	}
-
-	private def onAddProductionClick(): Unit = {
-		addProductionButton.disable("")
-		prodPanel.show()
-		updateButton()
-	}
-
-	private def onRemoveProductionClick(): Unit = {
-		addProductionButton.enable()
-		prodPanel.hide()
-		prodPanel.resetForm()
-		updateButton()
 	}
 
 	def dto: Try[UploadDto] = aboutPanel.itemType match {
@@ -192,20 +168,13 @@ class Form(
 		preExistingDoi = doi
 	)
 
-	private def handleDto(upDto: UploadDto): Unit = {
+	private def handleDto(): Unit = {
 		hideAlert()
 		for(
 			metaURL <- aboutPanel.metadataUri.toOption
 		){
 			val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
 			newDoiButton.enable()
-		}
-		upDto match {
-			case dto: DataObjectDto => {
-				val hasProduction = dto.specificInfo.fold(_ => true, _.production.isDefined)
-				if(hasProduction) addProductionButton.disable("")
-			}
-			case _ =>
 		}
 	}
 }

@@ -56,7 +56,7 @@ class Form(
 	}
 
 	def resetForm(): Unit = {
-		submitButton.disable("")
+		updateButton()
 		subforms.foreach{sf =>
 			sf.resetForm()
 			sf.hide()
@@ -67,7 +67,7 @@ class Form(
 
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
-		submitButton.disable("")
+		updateButton()
 		hideAlert()
 		progressBar.show()
 		aboutPanel.itemType match {

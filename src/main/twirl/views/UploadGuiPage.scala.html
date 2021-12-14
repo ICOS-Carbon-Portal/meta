@@ -35,6 +35,14 @@
 	#longitude-element {
 		display: none;
 	}
+	.input-group-child-wrapper {
+		margin-left: 0 !important;
+	}
+	.input-group-child-wrapper > button {
+		margin-left: -1px;
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
 	#header-buttons > button {
 		width: 100%;
 	}
@@ -96,7 +104,9 @@
 								<label class="form-label" for="metadata-update">Metadata url</label>
 								<div class="input-group">
 									<input type="text" id="metadata-update" class="form-control" placeholder="Metadata URL">
-									<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get</button>
+									<span class="input-group-child-wrapper" data-bs-toggle="popover" data-bs-trigger="hover">
+										<button id="get-metadata" type="button" class="btn btn-primary" disabled>Get</button>
+									</span>
 								</div>
 							</div>
 							<div class="mb-3">
@@ -182,7 +192,11 @@
 								<label class="form-label" for="objspecselect">Data type</label>
 								<div class="input-group">
 									<select class="form-select" id="objspecselect" disabled></select>
-									<button type="button" id="data-type-variable-list-button" data-bs-toggle="modal" data-bs-target="#data-type-info-modal" class="btn btn-secondary" aria-label="View linked variables" disabled><i class="fas fa-info-circle"></i></button>
+									<span class="input-group-child-wrapper" data-bs-toggle="popover" data-bs-trigger="hover">
+										<button type="button" id="data-type-variable-list-button" data-bs-toggle="modal" data-bs-target="#data-type-info-modal" class="btn btn-secondary" aria-label="View linked variables" disabled>
+											<i class="fas fa-info-circle"></i>
+										</button>
+									</span>
 								</div>
 								<div class="modal fade" id="data-type-info-modal" tabindex="-1" aria-labelledby="data-type-info-modal-title" aria-hidden="true">
 									<div class="modal-dialog modal-xl">
@@ -408,8 +422,9 @@
 	<div id="header-buttons-container">
 		<div id="header-buttons" class="d-flex justify-content-end my-2 gap-3 flex-wrap">
 			<button id="new-doi-button" type="button" class="btn btn-outline-primary" disabled>Create a new draft DOI</button>
-			<button id="addproductionbutton" type="button" class="btn btn-outline-primary" disabled>Add production metadata</button>
-			<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
+			<span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover">
+				<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
+			</span>
 		</div>
 	</div>
 }

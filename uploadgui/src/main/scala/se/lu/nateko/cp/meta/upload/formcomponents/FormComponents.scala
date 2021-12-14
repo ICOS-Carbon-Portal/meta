@@ -8,6 +8,7 @@ import org.scalajs.dom
 import org.scalajs.dom.html
 import org.scalajs.dom.raw._
 import org.scalajs.dom.ext._
+import scala.scalajs.js
 
 import se.lu.nateko.cp.meta.upload.Utils._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -96,15 +97,20 @@ class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[
 
 class Button(elemId: String, onClick: () => Unit){
 	private[this] val button = getElementById[html.Button](elemId).get
+	private[this] var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
 
 	def enable(): Unit = {
 		button.disabled = false
-		button.title = ""
+		button.parentElement.setAttribute("data-bs-content", "")
+		popover.disable()
 	}
 
 	def disable(errMessage: String): Unit = {
 		button.disabled = true
-		button.title = errMessage
+		button.parentElement.setAttribute("data-bs-content", errMessage)
+
+		if (errMessage.nonEmpty)
+			popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
 	}
 
 	button.onclick = _ => onClick()

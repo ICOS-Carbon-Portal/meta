@@ -111,7 +111,7 @@ object SparqlRoute {
 			case Some(first) =>
 				val restSrc = Source.unfoldAsync(queue)(q => q.pull().map(_.map(q -> _)))
 
-				val data = Source.combine(Source.single(first), restSrc)(Concat.apply)
+				val data = Source.combine(Source.single(first), restSrc)(Concat.apply(_))
 					.watchTermination()((_, done) => {
 						done.onComplete(_ => queue.cancel())
 					})

@@ -1,6 +1,6 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "2.13.6"
+ThisBuild / scalaVersion := "2.13.7"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -49,8 +49,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.6.10"
-val akkaHttpVersion = "10.2.1"
+val akkaVersion = "2.6.17"
+val akkaHttpVersion = "10.2.7"
 val rdf4jVersion = "2.4.6"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
@@ -91,6 +91,8 @@ lazy val meta = (project in file("."))
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"   % "test",
+			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test",
+			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
 		),
 

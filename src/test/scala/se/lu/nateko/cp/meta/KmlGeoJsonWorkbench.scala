@@ -26,10 +26,10 @@ object KmlGeoJsonWorkbench {
 	}
 
 	def parseKmzs: Iterable[(StationId, JsValue)] = {
-		new File(workDir).listFiles().toIterable.map{file =>
+		new File(workDir).listFiles().map{file =>
 			val id = StationId.unapply(file.getName.stripSuffix(".kmz")).get
 			id -> getGeoJson(file)
-		}.sortBy(_._1.id).toIndexedSeq
+		}.sortBy(_._1.id)
 	}
 
 	def getKmzUrls: Iterable[(StationId, URL)] = {

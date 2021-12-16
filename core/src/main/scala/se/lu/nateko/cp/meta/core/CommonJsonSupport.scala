@@ -53,16 +53,16 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 
 	implicit val timeIntervalFormat = jsonFormat2(TimeInterval)
 
-	def enumFormat[T <: Enumeration](enum: T) = new RootJsonFormat[enum.Value] {
-		def write(v: enum.Value) = JsString(v.toString)
+	def enumFormat[T <: Enumeration](theEnum: T) = new RootJsonFormat[theEnum.Value] {
+		def write(v: theEnum.Value) = JsString(v.toString)
 
-		def read(value: JsValue): enum.Value = value match{
+		def read(value: JsValue): theEnum.Value = value match{
 			case JsString(s) =>
 				try{
-					enum.withName(s)
+					theEnum.withName(s)
 				}catch{
 					case _: NoSuchElementException => deserializationError(
-						"Expected one of: " + enum.values.map(_.toString).mkString("'", "', '", "'")
+						"Expected one of: " + theEnum.values.map(_.toString).mkString("'", "', '", "'")
 					)
 				}
 			case _ => deserializationError("Expected a string")

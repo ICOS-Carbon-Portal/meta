@@ -20,17 +20,18 @@ import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
 import Utils._
 import java.net.URI
+import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio._
 
 
 class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
 
 	def submitterOpt: Option[SubmitterProfile] = submitterIdSelect.value
 	def submitter: Try[SubmitterProfile] = submitterOpt.withMissingError("Submitter Id not set")
-	def isInNewItemMode: Boolean = modeControl.value.contains("new")
+	def isNewItemOrVersion: Boolean = modeControl.isNewItemOrVersion
 	def itemType: Option[ItemType] = typeControl.value
 	def file: Try[dom.File] = fileInput.file
-	def itemName: Try[String] = if(isInNewItemMode) fileInput.file.map(_.name) else fileNameInput.value;
-	def itemHash: Try[Sha256Sum] = if(isInNewItemMode) fileInput.hash else Success(fileHash.get)
+	def itemName: Try[String] = if(isNewItemOrVersion) fileInput.file.map(_.name) else fileNameInput.value;
+	def itemHash: Try[Sha256Sum] = if(isNewItemOrVersion) fileInput.hash else Success(fileHash.get)
 	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value.withErrorContext("Previous version")
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
 	def metadataUri: Try[URI] = metadataUriInput.value
@@ -51,7 +52,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 		preExistingDoi = doi
 	)
 
-	private val modeControl = new Radio[String]("new-update-radio", onModeSelected, s => Some(s), s => s)
+	private val modeControl = new ModeRadio("new-update-radio", onModeSelected)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
 	private val typeControl = new ItemTypeRadio("file-type-radio", onItemTypeSelected)
 	private val fileElement = new HtmlElements("#file-element")
@@ -89,20 +90,27 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 		updateGetMetadataButton()
 	}
 
-	private def onModeSelected(@annotation.unused modeName: String): Unit = {
-		if(isInNewItemMode){
-			fileNameElement.hide()
-			metadataUrlElement.hide()
-			typeControl.enable()
-			typeControl.reset()
-		} else {
-			fileElement.hide()
-			fileNameElement.show()
-			metadataUrlElement.show()
-			typeControl.reset()
-			typeControl.disable()
-			metadataUriInput.focus()
-		}
+	private def onModeSelected(mode: Mode): Unit = {
+		mode match {
+			case NewItem =>
+				fileNameElement.hide()
+				metadataUrlElement.hide()
+				typeControl.enable()
+				typeControl.reset()
+			case Update =>
+				fileElement.hide()
+				fileNameElement.show()
+				metadataUrlElement.show()
+				typeControl.reset()
+				typeControl.disable()
+				metadataUriInput.focus()
+			case NewVersion =>
+				fileNameElement.hide()
+				metadataUrlElement.show()
+				typeControl.reset()
+				typeControl.disable()
+				metadataUriInput.focus()
+			}
 		bus.publish(ModeChanged)
 		clearFields()
 	}
@@ -117,7 +125,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 			fileElement.hide()
 			fileNameElement.hide()
 		case _ =>
-			if(isInNewItemMode) {
+			if(isNewItemOrVersion) {
 				fileElement.show()
 				fileNameElement.hide()
 			} else {
@@ -128,7 +136,6 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 
 	private def onSubmitterSelected(): Unit = submitterIdSelect.value.foreach{subm =>
 		bus.publish(GotStationsList(IndexedSeq.empty))
-		bus.publish(ModeChanged)
 		resetForm()
 		updateGetMetadataButton()
 		whenDone(Backend.stationInfo(subm.producingOrganizationClass, subm.producingOrganization)){
@@ -158,20 +165,26 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 					typeControl.value = Data
 					fileNameInput.value = dto.fileName
 					fileHash = Some(dto.hashSum)
-					previousVersionInput.value = dto.isNextVersionOf
+					previousVersionInput.value =
+						if (isNewItemOrVersion) Some(Left(dto.hashSum))
+						else dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				}
 				case dto: DocObjectDto =>
 					typeControl.value = Document
 					fileNameInput.value = dto.fileName
 					fileHash = Some(dto.hashSum)
-					previousVersionInput.value = dto.isNextVersionOf
+					previousVersionInput.value =
+						if (isNewItemOrVersion) Some(Left(dto.hashSum))
+						else dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				case dto: StaticCollectionDto =>
 					typeControl.value = Collection
 					fileNameInput.value = ""
 					fileHash = None
-					previousVersionInput.value = dto.isNextVersionOf
+					previousVersionInput.value =
+						if (isNewItemOrVersion) Sha256Sum.fromString(metadataUri.getPath().split("/").last).toOption.map(Left(_))
+						else dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
 				case _ =>
 					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")

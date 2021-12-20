@@ -61,7 +61,7 @@ class Form(
 		progressBar.show()
 		aboutPanel.itemType match {
 			case Some(Data) =>
-				if(aboutPanel.isInNewItemMode) {
+				if(aboutPanel.isNewItemOrVersion) {
 					whenDone {
 						aboutPanel.refreshFileHash()
 					}{ _ =>
@@ -88,7 +88,7 @@ class Form(
 			case Some(Document) =>
 				for(
 					dto <- aboutPanel.documentObjectDto;
-					fileOpt <- if(aboutPanel.isInNewItemMode) aboutPanel.file.map(Some.apply) else Success(None)
+					fileOpt <- if(aboutPanel.isNewItemOrVersion) aboutPanel.file.map(Some.apply) else Success(None)
 				) onUpload(dto, fileOpt)
 
 			case _ =>
@@ -170,11 +170,13 @@ class Form(
 
 	private def handleDto(): Unit = {
 		hideAlert()
-		for(
-			metaURL <- aboutPanel.metadataUri.toOption
-		){
-			val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
-			newDoiButton.enable()
+		if(!aboutPanel.isNewItemOrVersion) {
+			for(
+				metaURL <- aboutPanel.metadataUri.toOption
+			){
+				val newDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
+				newDoiButton.enable()
+			}
 		}
 	}
 }

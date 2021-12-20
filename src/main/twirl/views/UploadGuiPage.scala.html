@@ -102,14 +102,20 @@
 									<div id="new-update-radio">
 										<div class="form-check form-check-inline">
 											<label class="form-check-label">
-												<input type="radio" name="new-update" value="new" class="js-new-update form-check-input" checked>
+												<input type="radio" name="new-update" value="new-item" class="form-check-input" checked>
 												New item
 											</label>
 										</div>
 										<div class="form-check form-check-inline">
 											<label class="form-check-label">
-												<input type="radio" name="new-update" value="update" class="js-new-update form-check-input">
+												<input type="radio" name="new-update" value="update" class="form-check-input">
 												Update metadata
+											</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<label class="form-check-label">
+												<input type="radio" name="new-update" value="new-version" class="form-check-input">
+												New version
 											</label>
 										</div>
 									</div>
@@ -445,7 +451,9 @@
 @header = {
 	<div id="header-buttons-container">
 		<div id="header-buttons" class="d-flex justify-content-end my-2 gap-3 flex-wrap">
-			<button id="new-doi-button" type="button" class="btn btn-outline-primary" disabled>Create a new draft DOI</button>
+			<span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Upload first">
+				<button id="new-doi-button" type="button" class="btn btn-outline-primary" disabled>Create a new draft DOI</button>
+			</span>
 			<span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover">
 				<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
 			</span>

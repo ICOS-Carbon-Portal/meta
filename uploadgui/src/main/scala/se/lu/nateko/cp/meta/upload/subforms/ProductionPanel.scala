@@ -101,8 +101,10 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			show()
 	}
 
-	private def onProductionSwitched(checked: Boolean) =
+	private def onProductionSwitched(checked: Boolean) = {
 		if (checked) productionCover.hide() else productionCover.show()
+		notifyUpdate()
+	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo

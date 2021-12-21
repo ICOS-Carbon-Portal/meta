@@ -18,6 +18,7 @@ import java.time.LocalDate
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
+import scala.util.Using
 
 class AffiliationEntry(val id: Int, val name: String)
 
@@ -140,14 +141,10 @@ object DroughtMeta2{
 		pe.id -> pe
 	}.toMap
 
-	private def parseCsv[T](file: File): Vector[Array[String]] = {
-		val fileReader = new FileReader(file)
-		try{
-			new CSVReaderBuilder(fileReader).withCSVParser(
+	private def parseCsv[T](file: File): Vector[Array[String]] =
+		Using(new FileReader(file)){reader =>
+			new CSVReaderBuilder(reader).withCSVParser(
 				new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build
 			).build.iterator().asScala.drop(1).toVector
-		}finally{
-			fileReader.close()
-		}
-	}
+		}.get
 }

@@ -164,7 +164,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			case Nil => patt.dobjVar
 			case head :: tail => for(
 				prev <- endVar(tail:_*);
-				statPatts <- patt.propPaths.get(prev).toIterable;
+				statPatts <- patt.propPaths.get(prev).toSeq;
 				statPat <- statPatts.filter(_.pred === head)
 			) yield statPat.targetVar
 		}

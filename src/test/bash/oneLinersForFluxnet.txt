@@ -1,0 +1,12 @@
+cd winter2020
+
+for f in *.zip; do ./extractHHfromZips.sh $f ../winter2020Hh; done
+
+cd ../winter2020Hh
+
+for f in *.csv ; do zip $f".zip" $f; done
+
+wc -l *.csv | awk '{print $0".zip"}' > lines.txt
+
+join -j 2 lines.txt hashes.txt | awk 'BEGIN {OFS=","; print "StationID", "File", "Nrows", "Hash"} {print substr($0,5,6), $1, ($2 - 1), $3}'
+ > hashesAndLineNums.txt

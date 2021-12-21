@@ -60,6 +60,24 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/device -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/device">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">device</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasFunder -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasFunder">
@@ -109,6 +127,7 @@
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
@@ -177,6 +196,7 @@
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
@@ -666,6 +686,7 @@
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
@@ -684,6 +705,7 @@
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
@@ -1057,6 +1079,14 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Device -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Device</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy">
@@ -1095,7 +1125,9 @@
 
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Instrument -->
 
-    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Instrument</rdfs:label>
+    </owl:Class>
     
 
 

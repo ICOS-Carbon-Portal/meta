@@ -26,7 +26,7 @@ import java.time.Instant
 
 
 object DroughtUpload2{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018/v2")
+	val baseDir = Paths.get("/home/oleg/workspace/cpupload/icosHistorical/v2")
 	val fluxnetArchiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
 	val fluxnetHhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
 	val atmoSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct")

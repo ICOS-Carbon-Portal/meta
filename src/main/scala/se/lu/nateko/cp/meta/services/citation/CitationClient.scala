@@ -130,7 +130,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 				Future.successful(citation.trim)
 		}
 		.recoverWith{
-			case err => errorLite(s"Error fetching citation string from DataCite: ${err.getMessage}")
+			case err => errorLite(s"Error fetching citation string for ${key._1} from DataCite: ${err.getMessage}")
 		}
 		.andThen{
 			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)

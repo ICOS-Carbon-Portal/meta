@@ -25,8 +25,9 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 
 	private val ingosRegexp = """^(.+),\ (.+):\ (.+)\ \((.+)\)$""".r
 	private val gcpRegexp = """^(.+),\ (.+)$""".r
+	private val fluxnetRegexp = """^(.+),(.+),(.+)$""".r
 	private case class OrgInfo(orgName: String, orgId: UriId)
-	private case class Info(lname: String, fname: String, org: Option[OrgInfo])
+	private case class Info(lname: String, fname: String, email: Option[String], org: Option[OrgInfo])
 
 	def getStatements(factory: ValueFactory): Ingestion.Statements = Future{
 
@@ -41,14 +42,17 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 		){
 			_.getLines().map(_.trim).filter(!_.isEmpty).map{
 				case ingosRegexp(lname, fname, orgName, orgId) =>
-					Info(lname, fname, Some(OrgInfo(orgName, UriId(orgId))))
+					Info(lname, fname, None, Some(OrgInfo(orgName, UriId(orgId))))
 				case gcpRegexp(lname, fname) =>
-					Info(lname, fname, None)
+					Info(lname, fname, None, None)
+				case fluxnetRegexp(lname, fname, email) =>
+					Info(lname, fname, Some(email), None)
+
 			}.toIndexedSeq
 		}.get
 
 		val orgTriples = info.collect{
-			case Info(_, _, Some(orgInfo)) => orgInfo
+			case Info(_, _, _, Some(orgInfo)) => orgInfo
 		}.distinct.flatMap{
 			case OrgInfo(orgName, orgId) =>
 				val org = vocab.getOrganization(orgId)
@@ -59,20 +63,21 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 				)
 		}
 
-		val personTriples = info.collect{
-			case Info(lname, fname, _) => (lname, fname)
-		}.distinct.flatMap{
-			case (lname, fname) =>
-				val person = vocab.getPerson(fname, lname)
+		val personTriples = info
+			.distinctBy(p => (p.lname, p.fname))
+			.flatMap{p =>
+				val person = vocab.getPerson(p.fname, p.lname)
 				Seq[(IRI, IRI, Value)](
 					(person, RDF.TYPE, metaVocab.personClass),
-					(person, metaVocab.hasFirstName, fname.toRdf),
-					(person, metaVocab.hasLastName, lname.toRdf)
-				)
-		}
+					(person, metaVocab.hasFirstName, p.fname.toRdf),
+					(person, metaVocab.hasLastName, p.lname.toRdf)
+				) ++ p.email.map{mail =>
+					(person, metaVocab.hasEmail, mail.toRdf)
+				}
+			}
 
 		val membershipTriples = info.collect{
-			case Info(lname, fname, Some(OrgInfo(_, orgId))) =>
+			case Info(lname, fname, _, Some(OrgInfo(_, orgId))) =>
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
 				val membership = vocab.getMembership(orgId, role, lname)

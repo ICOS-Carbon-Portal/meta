@@ -1,0 +1,27 @@
+Acosta,Manuel,acosta.m@czechglobe.cz
+Aranda-Barranco,Sergio,sergioaranda@ugr.es
+Chi,Jinshu,jinshu.chi@slu.se
+de la Motte,Louis Gourlez,l.gourlezdelamotte@uliege.be
+Elberling,Bo,be@ign.ku.dk
+Gruenwald,J. Thomas,thomas.gruenwald@tu-dresden.de
+Guibal,Frederic,Frederic.Guibal@univ-cezanne.fr
+Havrankova,Katerina,havrankova.k@czechglobe.cz
+Heimsch,Laura,laura.heimsch@fmi.fi
+Kowalski,Andrew,andyk@ugr.es
+Lagergren,Fredrik,Fredrik.Lagergren@nateko.lu.se
+Laggoun,Fatima,fatima.laggoun@univ-orleans.fr
+Lankreijer,Harry,Harry.Lankreijer@nateko.lu.se
+Lindroth,Andreas,Anders.Lindroth@nateko.lu.se
+Lopez Ballesteros,Ana,alballesteros@correo.ugr.es
+Moya Jimenez,Maria Rosario,charo.moya@eeza.csic.es
+Muller,Jonathan,jonathan.muller@weizmann.ac.il
+Neirynck,Johan,johan.neirynck@inbo.be
+Poveda,Francisco Domingo,poveda@eeza.csic.es
+Rotenberg,Eyal,eyal.rotenberg@weizmann.ac.il
+Sanchez-Canete,Enrique P.,enripsc@ugr.es
+Schwartz,Efrat,efrat.schwartz@weizmann.ac.il
+Serrano,Penelope,penelope@ugr.es
+Sigsgaard,Charlotte,cs@ign.ku.dk
+Sottocornola,Matteo,m.sottocornola@gmail.com
+Uldall,Frederik,fu@ign.ku.dk
+Yakir,Dan,dan.yakir@weizmann.ac.il

@@ -82,14 +82,14 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			res
 		}
 
-		cache.get(key).fold(recache()){fut =>
+		cache.get(key).map{fut =>
 			fut.value match{
 				case Some(Failure(_)) =>
 					//if this citation is a completed failure at the moment
 					recache()
 				case _ => fut
 			}
-		}
+		}.getOrElse(recache())
 	}
 
 	private def warmUpCache(): Unit = {
@@ -113,7 +113,7 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 				uri = style match {
 					case CitationStyle.BIBTEX => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
 					case CitationStyle.RIS =>    s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
-					case _ =>                    s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+					case _ =>                    s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
 				}
 			)
 		}.flatMap{resp =>

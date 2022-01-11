@@ -3,7 +3,7 @@
 
 @(refs: References)
 @for(cit <- refs.citationString){
-	@PanelRow("Citation", cit)
+	@PanelHtmlRow{Citation}{@Html(cit)}
 }
 @for(cit <- refs.citationBibTex){
 	@citationCollapsible("BibTex", cit)

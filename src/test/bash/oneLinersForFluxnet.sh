@@ -33,3 +33,6 @@ join -a 1 --header -t, -e "" -1 1 -2 8 \
 autoInfo.csv drought_data_hh.csv > winter_data_hh.csv
 
 #change | back to ,
+
+#reshape autoInfo.csv to facilitate copy-pasting updates to winter_data_hh.csv
+awk 'BEGIN{FS=","; OFS=","} {print $4, "", $2, $5, $3, $6, "", $1}' > pre_data_hh.csv

@@ -23,8 +23,8 @@ object EtcFileMetadataStore {
 
 	def fallbackUtcOffset(station: StationId): Option[Int] = station.id.take(2) match {
 		case "BE" | "CH" | "CZ" | "DE" | "DK" | "ES" | "FR" | "IT" | "NL" | "SE" => Some(1)
-		case "GB" | "PT" => Some(0)
-		case "FI" => Some(2)
+		case "GB" | "PT" | "IE" => Some(0)
+		case "FI" | "IL" => Some(2)
 		case "RU" => Some(3)
 		case _ => None
 	}

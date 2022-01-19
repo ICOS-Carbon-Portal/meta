@@ -41,9 +41,9 @@ object FluxdataUpload{
 	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("eco_data_arch.csv", fluxnetArchiveSpec, citer)
 
 	val excludedUploadStations = Set(
-		"IE-Cra", "DE-RuR", "DE-RuS", "DE-RuW"
+		"IE-Cra", "DE-RuR", "DE-RuS", "DE-RuW", "IL-Yat"
 	)
-	val succeededStationsToSkip = 6
+	val succeededStationsToSkip = 66
 }
 
 

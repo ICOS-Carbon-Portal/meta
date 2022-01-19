@@ -63,7 +63,11 @@ class FileEntry(
 				Future.successful(Nil)
 			else
 				Future.sequence(
-					papers.map(doi => citer.getCitation(doi, CitationStyle.TEXT))
+					papers.map(
+						doi => citer.getCitation(doi, CitationStyle.HTML).recover{
+							case _: Throwable => s"https://doi.org/${doi.prefix}/${doi.suffix}"
+						}
+					)
 				).map("See also:" +: _)
 
 		papersComments.map{papComms =>

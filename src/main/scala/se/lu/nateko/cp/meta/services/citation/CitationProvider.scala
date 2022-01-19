@@ -84,7 +84,7 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 
 	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>
 		server.getStringValues(iri, metaVocab.hasDoi).headOption
-			.collect{ citer.extractDoiCitation(CitationStyle.TEXT) }
+			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
 	}
 
 	private def getCitableItem(res: Resource): Option[CitableItem] = toIRI(res).flatMap{iri =>

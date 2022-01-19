@@ -44,7 +44,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	val attrProvider = new AttributionProvider(repo, vocab)
 
 	def getItemCitationInfo(item: CitableItem) = References.empty.copy(
-		citationString = getDoiCitation(item, CitationStyle.TEXT),
+		citationString = getDoiCitation(item, CitationStyle.HTML),
 		citationBibTex = getDoiCitation(item, CitationStyle.BIBTEX),
 		citationRis    = getDoiCitation(item, CitationStyle.RIS)
 	)
@@ -60,7 +60,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
 			References(
-				citationString = getDoiCitation(data, CitationStyle.TEXT).orElse(citInfo.citText),
+				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
 				citationRis = getDoiCitation(data, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,

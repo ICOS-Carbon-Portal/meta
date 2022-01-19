@@ -41,7 +41,7 @@ object DroughtUpload{
 		csv.iterator().asScala.drop(1).map(parseFluxMeta(_, filesFolder))
 	}
 
-	def fileMetaEntries(fileName: String, project: String): IndexedSeq[FileEntry] = {
+	def fileMetaEntries(fileName: String, project: DroughtMeta2.Project): IndexedSeq[FileEntry] = {
 		import DroughtMeta2._
 
 		def metaFile(fname: String) = baseDir.resolve(s"meta/$fname").toFile

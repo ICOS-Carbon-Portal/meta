@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import scala.concurrent.Future
 import akka.Done
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker2
-import se.lu.nateko.cp.meta.upload.drought.DroughtUpload2
+import se.lu.nateko.cp.meta.upload.drought.FluxdataUpload
 
 object UploadWorkbench{
 	implicit val system = ActorSystem("upload_workbench")
@@ -35,9 +35,9 @@ object UploadWorkbench{
 	val citer = new CitationClient(Nil, new CitationConfig("apa", false, 10))
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
-	private def atmoUpload = DroughtUpload2.atmoUpload(citer)
-	private def fluxHhUpload = DroughtUpload2.fluxHhUpload(citer)
-	private def fluxUpload = DroughtUpload2.fluxUpload(citer)
+	private def atmoUpload = FluxdataUpload.atmoUpload(citer)
+	private def fluxHhUpload = FluxdataUpload.fluxHhUpload(citer)
+	private def fluxUpload = FluxdataUpload.fluxUpload(citer)
 
 	private def doiMachinery(password: String): (DoiMaker, DroughtDoiMaker2) = {
 		val client = new DoiMaker(password)
@@ -49,11 +49,12 @@ object UploadWorkbench{
 	def uploadFluxHhDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxHhUpload)
 	def uploadFluxDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxUpload)
 
-	private def uploadDrought(cpAuthToken: String, upload: DroughtUpload2): Future[Done] = {
+	private def uploadDrought(cpAuthToken: String, upload: FluxdataUpload): Future[Done] = {
 		val client = uploadClient(cpAuthToken)
 		executeSequentially(upload.uploadedFileMetaEntries){fe =>
 			val finfo = upload.getFileInfo(fe)
 			upload.makeDto(fe).flatMap{dto =>
+				println(s"Will upload ${finfo.hash.id} (${finfo.path})")
 				client.uploadSingleObject(dto, finfo)
 			}
 		}

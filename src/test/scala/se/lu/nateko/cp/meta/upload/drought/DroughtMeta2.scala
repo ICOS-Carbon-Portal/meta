@@ -18,6 +18,7 @@ import java.time.LocalDate
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
+import scala.util.Using
 
 class AffiliationEntry(val id: Int, val name: String)
 
@@ -37,24 +38,24 @@ class FileEntry(
 	val stationId: String,
 	val stationName: String,
 	val isIcos: Boolean,
-	val project: String,
+	val project: DroughtMeta2.Project,
 	val authors: IndexedSeq[PersonEntry],
 	val contribs: IndexedSeq[PersonEntry],
 	val ack: Option[String],
 	val papers: IndexedSeq[Doi]
 ){
-	import DroughtMeta2.{Atmo, Fluxnet}
+	import DroughtMeta2.{Atmo}
 
 	def stationUrl: URI = new URI(
 		"http://meta.icos-cp.eu/resources/stations/" + (project match{
-			case Atmo => if(isIcos) "AS" else project
-			case Fluxnet => if(isIcos) "ES" else project
+			case Atmo => if(isIcos) "AS" else "ATMO"
+			case _ => if(isIcos) "ES" else "FLUXNET"
 		}) + "_" + stationId
 	)
 
 	def creatorUrl: URI = project match{
-		case Atmo => DroughtUpload2.atcOrg
-		case Fluxnet => DroughtUpload2.etcOrg
+		case Atmo => FluxdataUpload.atcOrg
+		case _ => FluxdataUpload.etcOrg
 	}
 
 	def comment(citer: CitationClient)(implicit ctxt: ExecutionContext): Future[Option[String]] = {
@@ -74,14 +75,16 @@ class FileEntry(
 
 object DroughtMeta2{
 
-	val Atmo = "ATMO"
-	val Fluxnet = "FLUXNET"
+	sealed trait Project
+	case object Atmo extends Project
+	case object Winter2020 extends Project
+	case object Winter2020Hh extends Project
 
 	val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
 	val HeightRegex = """^\w{3}_(\d+\.?\d*)m_""".r.unanchored
 
 	def fluxFileYears(fe: FileEntry): (Int, Int) = {
-		assert(fe.project == Fluxnet, s"Can parse years only from the $Fluxnet files")
+		assert(fe.project != Atmo, s"Can parse years only from Fluxnet files")
 
 		val YearsRegex(yearFromStr, yearToStr) = fe.fileName
 		yearFromStr.toInt -> yearToStr.toInt
@@ -100,7 +103,7 @@ object DroughtMeta2{
 	}
 
 	def parseFileEntries(
-		file: File, project: String, persons: Map[Int, PersonEntry]
+		file: File, project: Project, persons: Map[Int, PersonEntry]
 	): IndexedSeq[FileEntry] = parseCsv(file).map{arr =>
 
 		def getNonEmpty(cells: Range) = cells.flatMap(i => ifNotEmpty(arr(i)))
@@ -140,14 +143,10 @@ object DroughtMeta2{
 		pe.id -> pe
 	}.toMap
 
-	private def parseCsv[T](file: File): Vector[Array[String]] = {
-		val fileReader = new FileReader(file)
-		try{
-			new CSVReaderBuilder(fileReader).withCSVParser(
+	private def parseCsv[T](file: File): Vector[Array[String]] =
+		Using(new FileReader(file)){reader =>
+			new CSVReaderBuilder(reader).withCSVParser(
 				new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build
 			).build.iterator().asScala.drop(1).toVector
-		}finally{
-			fileReader.close()
-		}
-	}
+		}.get
 }

@@ -23,47 +23,49 @@ import java.nio.file.Files
 import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
 import java.util.zip.ZipFile
 import java.time.Instant
+import se.lu.nateko.cp.meta.core.data.References
+import se.lu.nateko.cp.meta.ReferencesDto
 
 
-object DroughtUpload2{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018/v2")
-	val fluxnetArchiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
-	val fluxnetHhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
+object FluxdataUpload{
+	val baseDir = Paths.get("/home/oleg/workspace/cpupload/icosHistorical/v2")
+	val fluxnetArchiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct")
+	val fluxnetHhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct")
 	val atmoSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct")
 
 	val atcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ATC")
 	val etcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ETC")
 
-	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("atmos_data.csv", atmoSpec, citer)
-	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_hh.csv", fluxnetHhSpec, citer)
-	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new DroughtUpload2("eco_data_arch.csv", fluxnetArchiveSpec, citer)
+	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("atmos_data.csv", atmoSpec, citer)
+	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final.csv", fluxnetHhSpec, citer)
+	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("eco_data_arch.csv", fluxnetArchiveSpec, citer)
 
 	val excludedUploadStations = Set(
-		"BE-Bra", "BE-Lon", "BE-Vie",
-		"CH-Aws", "CH-Cha", "CH-Dav", "CH-Fru",
-		"DE-Geb", "DK-Sor", "FI-Let", "FI-Var", "FR-EM2", "FR-Hes",
-		"IT-Cp2", "IT-SR2", "IT-Tor", "SE-Ros"
+		"IE-Cra", "DE-RuR", "DE-RuS", "DE-RuW"
 	)
+	val succeededStationsToSkip = 6
 }
 
 
-class DroughtUpload2(
+class FluxdataUpload(
 	fileEntriesFile: String, spec: URI,
 	citer: CitationClient
 )(implicit ctxt: ExecutionContext){
 
-	import DroughtUpload2._
+	import FluxdataUpload._
 	import DroughtMeta2._
 
 	private val haveDois: Boolean = (spec != fluxnetHhSpec)
-	private val project: String = if(spec == atmoSpec) Atmo else Fluxnet
+	private val project: Project = if(spec == atmoSpec) Atmo else (
+		if(spec == fluxnetHhSpec) Winter2020Hh else Winter2020
+	)
 
 	def uploadedFileMetaEntries: IndexedSeq[FileEntry] = allFileMetaEntries.filter{fe =>
 		val sameVersion = fe.prevHash.contains(fe.hash)
 		//if(sameVersion) println(s"New version of itself: ${fe.fileName}")
 		!excludedUploadStations.contains(fe.fileName.substring(4, 10)) &&
 		!sameVersion
-	}
+	}.drop(succeededStationsToSkip)
 
 	val allFileMetaEntries: IndexedSeq[FileEntry] = {
 
@@ -94,7 +96,9 @@ class DroughtUpload2(
 		preExistingDoi = Some(Doi("10.18160", "YVR0-4898"))
 	)
 
-	def getFilePath(meta: FileEntry): Path = baseDir.resolve(project.toLowerCase).resolve(meta.fileName)
+	def getFilePath(meta: FileEntry): Path = baseDir
+		.resolve(project.getClass.getName.split("\\$").last.toLowerCase)
+		.resolve(meta.fileName)
 	def getFileInfo(meta: FileEntry) = new FileInfo(getFilePath(meta), meta.hash)
 
 	def makeDto(meta: FileEntry): Future[ObjectUploadDto] = meta.comment(citer).map{comment =>
@@ -130,7 +134,7 @@ class DroughtUpload2(
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevHash.map(Left(_)),
 			preExistingDoi = if(haveDois) Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))) else None,
-			references = None
+			references = Some(ReferencesDto(Some(Seq("Warm Winter 2020"))))
 		)
 	}
 

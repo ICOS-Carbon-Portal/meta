@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.citation
 import se.lu.nateko.cp.meta.core.data._
 
 class StructuredCitations(
-	dobj: DataObject,
+	obj: StaticObject,
 	citInfo: CitationInfo,
 	keywords: Option[IndexedSeq[String]],
 	theLicence: Option[Licence]
@@ -11,17 +11,22 @@ class StructuredCitations(
 
 	private type TagOpt = (String, Option[String])
 
-	private val note: Option[String] = dobj.specificInfo.fold(
-		l3 => l3.description,
-		_ => None
-	)
+	private val note: Option[String] = obj match {
+		case dobj: DataObject =>
+			dobj.specificInfo.fold(
+				l3 => l3.description,
+				_ => None
+			)
+		case _ => None
+	}
+
 	private val newLine = "\r\n"
 
 	def toBibTex: String = {
 		// http://www.bibtex.org/Format/
 		// http://bib-it.sourceforge.net/help/fieldsAndEntryTypes.php
 
-		val key: String = citInfo.pidUrl.getOrElse(dobj.fileName)
+		val key: String = citInfo.pidUrl.getOrElse(obj.fileName)
 
 		val authorsOpt = citInfo.authors.map{
 			_.map(p => s"${p.lastName}, ${p.firstName.head}.").mkString(", ")
@@ -36,10 +41,10 @@ class StructuredCitations(
 			"note" -> note,
 			"keywords" -> kwords,
 			"url" -> citInfo.pidUrl,
-			"publisher" -> Some(dobj.submission.submitter.name),
+			"publisher" -> Some(obj.submission.submitter.name),
 			"copyright" -> theLicence.map(_.url.toString),
-			"doi" -> dobj.doi,
-			"pid" -> dobj.pid,
+			"doi" -> obj.doi,
+			"pid" -> obj.pid,
 		)
 
 		val separator = s",$newLine"
@@ -68,12 +73,12 @@ class StructuredCitations(
 
 		val tagsOpt: Seq[TagOpt] = Seq(
 			"T1" -> citInfo.title,
-			"ID" -> dobj.pid,
-			"DO" -> dobj.doi,
+			"ID" -> obj.pid,
+			"DO" -> obj.doi,
 			"PY" -> citInfo.year,
 			"AB" -> note,
 			"UR" -> citInfo.pidUrl,
-			"PB" -> Some(dobj.submission.submitter.name)
+			"PB" -> Some(obj.submission.submitter.name)
 		)
 
 		(startTag ++ tagsOpt ++ authorsOpt ++ kwords :+ endTag)

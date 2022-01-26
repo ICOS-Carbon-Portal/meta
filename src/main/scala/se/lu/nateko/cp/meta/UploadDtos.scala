@@ -33,6 +33,9 @@ case class DocObjectDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	fileName: String,
+	title: Option[String],
+	description: Option[String],
+	authors: Seq[URI],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[Doi]
 ) extends ObjectUploadDto

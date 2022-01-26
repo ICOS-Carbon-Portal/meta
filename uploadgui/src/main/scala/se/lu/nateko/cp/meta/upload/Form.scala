@@ -28,6 +28,7 @@ class Form(
 	val acqPanel = new AcquisitionPanel
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel
+	val docPanel = new DocumentPanel
 	val l3Panel = new L3Panel(spatCovs)
 	val submitButton = new Button("submitbutton", submitAction)
 
@@ -40,7 +41,7 @@ class Form(
 			itemType match{
 				case Data => dataPanel.show()
 				case Collection => collPanel.show()
-				case _ =>
+				case Document => docPanel.show()
 			}
 	}
 
@@ -52,7 +53,7 @@ class Form(
 		}
 	}
 
-	def subforms = Seq(dataPanel, acqPanel, prodPanel, collPanel, l3Panel)
+	def subforms = Seq(dataPanel, acqPanel, prodPanel, collPanel, docPanel, l3Panel)
 
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
@@ -87,7 +88,7 @@ class Form(
 
 			case Some(Document) =>
 				for(
-					dto <- aboutPanel.documentObjectDto;
+					dto <- documentObjectDto;
 					fileOpt <- if(aboutPanel.isNewItemOrVersion) aboutPanel.file.map(Some.apply) else Success(None)
 				) onUpload(dto, fileOpt)
 
@@ -103,7 +104,7 @@ class Form(
 	def dto: Try[UploadDto] = aboutPanel.itemType match {
 		case Some(Data) => dataObjectDto
 		case Some(Collection) => staticCollectionDto
-		case Some(Document) => aboutPanel.documentObjectDto
+		case Some(Document) => documentObjectDto
 		case _ => fail("No file type selected")
 	}
 
@@ -164,6 +165,26 @@ class Form(
 		members = members,
 		title = title,
 		description = description,
+		isNextVersionOf = previousVersion,
+		preExistingDoi = doi
+	)
+
+	def documentObjectDto: Try[DocObjectDto] = for(
+		submitter <- aboutPanel.submitter;
+		file <- aboutPanel.itemName;
+		hash <- aboutPanel.itemHash;
+		title <- docPanel.title;
+		description <- docPanel.description;
+		authors <- docPanel.authors;
+		previousVersion <- aboutPanel.previousVersion;
+		doi <- aboutPanel.existingDoi
+	) yield DocObjectDto(
+		hashSum = hash,
+		submitterId = submitter.id,
+		fileName = file,
+		title = title,
+		description = description,
+		authors = authors.map(_.uri),
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi
 	)

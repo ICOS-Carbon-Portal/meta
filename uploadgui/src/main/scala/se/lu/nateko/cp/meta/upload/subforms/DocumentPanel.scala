@@ -26,15 +26,8 @@ class DocumentPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSu
 	}
 
 	override def show(): Unit = {
+		super.getPeopleAndOrganizations()
 		super.show()
-		for(
-			people <- Backend.getPeople;
-			organizations <- Backend.getOrganizations
-		)
-		yield {
-			bus.publish(GotAgentList(organizations.concat(people)))
-			bus.publish(GotOrganizationList(organizations))
-		}
 	}
 
 	bus.subscribe{
@@ -46,8 +39,6 @@ class DocumentPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSu
 		case GotAgentList(agents) =>
 			agentAgg.agents = agents
 			agentList.values = agentAgg.agents
-		case GotOrganizationList(orgs) =>
-			agentAgg.orgs = orgs
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
@@ -59,11 +50,10 @@ class DocumentPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSu
 			yield {
 				agentList.values = organizations.concat(people)
 				documentTitle.value = dto.title
-				println(dto.authors)
 				documentAuthors.setValues(dto.authors.flatMap(agentUri => agentList.values.find(_.uri == agentUri)))
 				documentDescription.value = dto.description
 				notifyUpdate()
-				show()
+				super.show()
 			}
 		case _ =>
 			hide()

@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.core.sparql.BoundLiteral
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.core.data.Station
+import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.concurrent.Future
 import akka.Done
@@ -79,12 +80,14 @@ object AtcCollMaker{
 	val icosRiCreator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.Ror)), Nil)
 
 	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, samples: Seq[DataObject]): DoiMeta = {
-		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.map{pers =>
-			Creator(
-				name = PersonalName(pers.firstName, pers.lastName),
-				nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
-				affiliation = Nil
-			)
+		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.collect{ _ match {
+			case pers: Person =>
+				Creator(
+					name = PersonalName(pers.firstName, pers.lastName),
+					nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+					affiliation = Nil
+				)
+			}
 		}
 		DoiMeta(
 			doi = doi,
@@ -139,7 +142,7 @@ where {
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 }"""
 
-	def parseStationColls(spRes: SparqlSelectResult): Map[URI, URI] = 
+	def parseStationColls(spRes: SparqlSelectResult): Map[URI, URI] =
 		getUriSeqs(spRes, "station", "coll")
 			.groupBy(_.apply(1)) //group by collection
 			.filter(_._2.length == 1) //keep only collections with single station

@@ -23,6 +23,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport._
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.meta.core.data.Person
+import se.lu.nateko.cp.meta.core.data.Agent
 import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
@@ -97,9 +98,13 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 		)
 	}
 
-	def makeDocObjectDoi(doc: StaticObject)(implicit envri: Envri) = DoiMeta(
+	def makeDocObjectDoi(doc: DocObject)(implicit envri: Envri) = DoiMeta(
 		doi = client.doi(CoolDoi.makeRandom),
-		titles = doc.references.title.map(title => Seq(Title(title, None, None)))
+		titles = doc.references.title.map(title => Seq(Title(title, None, None))),
+		publisher = Some("ICOS ERIC -- Carbon Portal"),
+		publicationYear = Some(Year.now.getValue),
+		descriptions = doc.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
+		creators = doc.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 	)
 
 	def makeCollectionDoi(coll: StaticCollection)(implicit envri: Envri): DoiMeta = {
@@ -127,11 +132,20 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 		)
 	}
 
-	def toDoiCreator(p: Person) = Creator(
-		name = PersonalName(p.firstName, p.lastName),
-		nameIdentifiers = p.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
-		affiliation = Nil
-	)
+	def toDoiCreator(p: Agent) = p match {
+		case Organization(_, name, _, _) =>
+			Creator(
+				name = GenericName(name),
+				nameIdentifiers = Nil,
+				affiliation = Nil
+			)
+		case Person(_, firstName, lastName, orcid) =>
+			Creator(
+				name = PersonalName(firstName, lastName),
+				nameIdentifiers = orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+				affiliation = Nil
+			)
+	}
 
 	def toDoiContributor(p: Person) = {
 		val creator = toDoiCreator(p)

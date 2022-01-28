@@ -27,7 +27,7 @@ import CitationStyle._
 
 class CitationInfo(
 	val pidUrl: Option[String],
-	val authors: Option[Seq[Person]],
+	val authors: Option[Seq[Agent]],
 	val title: Option[String],
 	val year: Option[String],
 	val tempCovDisplay: Option[String],
@@ -205,18 +205,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getDocCitation(dobj: DocObject)(implicit envri: Envri.Value): CitationInfo = {
 		val zoneId = ZoneId.of("UTC")
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
-		val authors = dobj.authors.distinct.collect{
-			case p: Person => p
-		}
-		val authorString = dobj.authors.distinct.collect{
+		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."
 			case o: Organization => o.name
-		}.mkString("", ", ", " ")
+		}.mkString("", ", ", " "))
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val citString = for(
 			year <- yearOpt;
-			title <- dobj.title;
+			title <- dobj.references.title;
 			pidUrl <- pidUrlOpt
 		) yield {
 			if(envri == Envri.SITES)
@@ -225,7 +222,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				s"${authorString}ICOS RI, $year. $title, $pidUrl"
 		}
 
-		new CitationInfo(pidUrlOpt, Option(authors), dobj.title, yearOpt, None, citString)
+		new CitationInfo(pidUrlOpt, dobj.references.authors, dobj.references.title, yearOpt, None, citString)
 
 	}
 }

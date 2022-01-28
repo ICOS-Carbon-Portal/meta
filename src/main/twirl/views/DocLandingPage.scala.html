@@ -45,7 +45,7 @@
 		@Panel("Content", 12){
 			@Citations(doc.references)
 			@PanelRow("File name", doc.fileName)
-			@for(title <- doc.title){
+			@for(title <- doc.references.title){
 				@PanelRow("Title", title)
 			}
 			@for(description <- doc.description){

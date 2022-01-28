@@ -84,9 +84,9 @@ object UploadDtoReader{
 			submitterId = "",
 			hashSum = dobj.hash,
 			fileName = dobj.fileName,
-			title = dobj.title,
+			title = dobj.references.title,
 			description = dobj.description,
-			authors = dobj.authors.map(_.self.uri),
+			authors = dobj.references.authors.fold[Seq[URI]](Seq())(_.map(_.self.uri)),
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>
 				Uri.Path(uri.getPath) match {
 					case Hash.Object(hash) => Some(hash)

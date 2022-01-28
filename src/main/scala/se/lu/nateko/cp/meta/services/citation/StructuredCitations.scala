@@ -29,7 +29,13 @@ class StructuredCitations(
 		val key: String = citInfo.pidUrl.getOrElse(obj.fileName)
 
 		val authorsOpt = citInfo.authors.map{
-			_.map(p => s"${p.lastName}, ${p.firstName.head}.").mkString(", ")
+			_.map {
+				_ match {
+					case p: Person => s"${p.lastName}, ${p.firstName.head}."
+					case o: Organization => o.name
+				}
+			}
+			.mkString(", ")
 		}
 
 		val kwords = keywords.filterNot(_.isEmpty).map(kws => kws.mkString(", "))
@@ -60,7 +66,12 @@ class StructuredCitations(
 
 		val authorsOpt: Seq[TagOpt] = citInfo.authors
 			.map{
-				_.map(p => "AU" -> Some(s"${p.lastName}, ${p.firstName.head}."))
+				_.map {
+					_ match {
+						case p: Person => "AU" -> Some(s"${p.lastName}, ${p.firstName.head}.")
+						case o: Organization => "AU" -> Some(o.name)
+					}
+				}
 			}
 			.getOrElse(Nil)
 

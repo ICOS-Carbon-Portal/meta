@@ -59,15 +59,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 	}
 
 	override def show(): Unit = {
+		super.getPeopleAndOrganizations()
 		super.show()
-		for(
-			people <- Backend.getPeople;
-			organizations <- Backend.getOrganizations
-		)
-		yield {
-			bus.publish(GotAgentList(organizations.concat(people)))
-			bus.publish(GotOrganizationList(organizations))
-		}
 	}
 
 	bus.subscribe{
@@ -132,7 +125,7 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
 					productionSwitch.check()
-					show()
+					super.show()
 				}
 			}
 		case _ =>

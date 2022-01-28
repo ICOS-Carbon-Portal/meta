@@ -58,9 +58,9 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 	}
 
 	private [this] val formDiv = getElementById[html.Div](elemId).get
-	private [this] val template = querySelector[html.Div](formDiv, ".contributors-element").get
+	private [this] val template = querySelector[html.Div](formDiv, ".data-list").get
 	private [this] var _ordId: Long = 0L
-	private [this] val addButton = querySelector[html.Button](formDiv, "#add-contributor").get
+	private [this] val addButton = querySelector[html.Button](formDiv, "#add-element").get
 
 	private[this] val elems = mutable.Buffer.empty[DataListEditableInput[T]]
 

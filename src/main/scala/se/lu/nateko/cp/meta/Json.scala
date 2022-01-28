@@ -86,7 +86,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	implicit val elaboratedProductMetadataFormat = jsonFormat7(ElaboratedProductMetadata)
 	implicit val referencesDtoFormat = jsonFormat1(ReferencesDto)
 	implicit val dataObjectDtoFormat = jsonFormat8(DataObjectDto)
-	implicit val docObjectDtoFormat = jsonFormat5(DocObjectDto)
+	implicit val docObjectDtoFormat = jsonFormat8(DocObjectDto)
 
 	implicit object objectUploadDtoFormat extends RootJsonFormat[ObjectUploadDto]{
 		override def write(umd: ObjectUploadDto) = umd match{

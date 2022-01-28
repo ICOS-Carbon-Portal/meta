@@ -42,9 +42,14 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 		val specificStatements = meta match {
 			case dobj: DataObjectDto => getDobjStatements(dobj)
-			case _: DocObjectDto => Seq(
+			case doc: DocObjectDto => Seq(
 				makeSt(objectUri, RDF.TYPE, metaVocab.docObjectClass)
-			)
+			) ++
+			makeSt(objectUri, metaVocab.dcterms.title, doc.title.map(vocab.lit)) ++
+			makeSt(objectUri, metaVocab.dcterms.description, doc.description.map(vocab.lit)) ++
+			doc.authors.map{ author =>
+				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
+			}
 		}
 
 		specificStatements ++ Seq(

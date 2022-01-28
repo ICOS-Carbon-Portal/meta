@@ -81,11 +81,15 @@ class StaticObjectFetcher(
 			size = getOptionalLong(doc, metaVocab.hasSizeInBytes),
 			pid = submission.stop.map(_ => pidFactory.getPid(hash)),
 			doi = getOptionalString(doc, metaVocab.hasDoi),
+			description = getOptionalString(doc, metaVocab.dcterms.description),
 			submission = submission,
 			nextVersion = getNextVersion(doc),
 			previousVersion = getPreviousVersion(doc),
 			parentCollections = collFetcher.getParentCollections(doc),
-			references = References.empty
+			references = References.empty.copy(
+				title = getOptionalString(doc, metaVocab.dcterms.title),
+				authors = Option(server.getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
+			)
 		)
 		init.copy(references = citer.getCitationInfo(init))
 	}

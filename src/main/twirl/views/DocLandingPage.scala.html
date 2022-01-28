@@ -45,6 +45,12 @@
 		@Panel("Content", 12){
 			@Citations(doc.references)
 			@PanelRow("File name", doc.fileName)
+			@for(title <- doc.references.title){
+				@PanelRow("Title", title)
+			}
+			@for(description <- doc.description){
+				@PanelRow("Description", description)
+			}
 			@for(size <- doc.size){
 				@PanelRow("Size in bytes", size.toString)
 			}

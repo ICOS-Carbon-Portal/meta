@@ -27,7 +27,7 @@ import CitationStyle._
 
 class CitationInfo(
 	val pidUrl: Option[String],
-	val authors: Option[Seq[Person]],
+	val authors: Option[Seq[Agent]],
 	val title: Option[String],
 	val year: Option[String],
 	val tempCovDisplay: Option[String],
@@ -71,7 +71,17 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				licence = theLicence
 			)
 
-		case doc: DocObject => getItemCitationInfo(doc)
+		case doc: DocObject =>
+			val citInfo = getDocCitation(doc)
+			val structuredCitations = new StructuredCitations(doc, citInfo, None, None)
+
+			References.empty.copy(
+				citationString = getDoiCitation(doc, CitationStyle.HTML).orElse(citInfo.citText),
+				citationBibTex = getDoiCitation(doc, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(doc, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
+				authors = citInfo.authors,
+				title = citInfo.title
+			)
 	}
 
 	//will depend on other things in the future
@@ -153,7 +163,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 		val authors = dobj.specificInfo.fold(
 			_ => "",
-			l2 => s"${l2.acquisition.station.org.name}, "
+			l2 => s"${l2.acquisition.station.org.name} "
 		)
 		val pidUrlOpt = getPidUrl(dobj)
 		val citString = for(
@@ -166,7 +176,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	}
 
-	private def getPidUrl(dobj: DataObject): Option[String] = for(
+	private def getPidUrl(dobj: StaticObject): Option[String] = for(
 		pid <- dobj.doi.orElse(dobj.pid);
 		handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 	) yield s"$handleProxy$pid"
@@ -191,13 +201,37 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			}
 		case _ => Seq.empty
 	}
+
+	private def getDocCitation(dobj: DocObject)(implicit envri: Envri.Value): CitationInfo = {
+		val zoneId = ZoneId.of("UTC")
+		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
+		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
+			case p: Person => s"${p.lastName}, ${p.firstName.head}."
+			case o: Organization => o.name
+		}.mkString("", ", ", " "))
+
+		val pidUrlOpt = getPidUrl(dobj)
+		val citString = for(
+			year <- yearOpt;
+			title <- dobj.references.title;
+			pidUrl <- pidUrlOpt
+		) yield {
+			if(envri == Envri.SITES)
+				s"${authorString}($year). $title. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
+			else
+				s"${authorString}ICOS RI, $year. $title, $pidUrl"
+		}
+
+		new CitationInfo(pidUrlOpt, dobj.references.authors, dobj.references.title, yearOpt, None, citString)
+
+	}
 }
 
 object CitationMaker{
 
 	val defaultLicences: Map[Envri, Licence] = Map(
 		Envri.ICOS -> Licence("ICOS CCBY4 Data Licence", new URI("https://data.icos-cp.eu/licence")),
-		Envri.SITES -> Licence("SITES CCBY4 Data Licence",new URI("https://data.fieldsites.se/licence"))
+		Envri.SITES -> Licence("SITES CCBY4 Data Licence", new URI("https://data.fieldsites.se/licence"))
 	)
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(

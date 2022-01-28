@@ -30,6 +30,7 @@
 	.l3-section,
 	.l3spatcover-element,
 	.collection-section,
+	.document-section,
 	.production-section,
 	#latitude-element,
 	#longitude-element {
@@ -372,12 +373,12 @@
 								<div class="mb-3">
 									<label class="form-label" for="contributors">Contributors</label>
 									<div id="contributors">
-										<div class="input-group contributors-element" style="display: none;">
+										<div class="input-group data-list" style="display: none;">
 											<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
-											<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+											<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove contributor"><i class="fas fa-times"></i></button>
 										</div>
 										<div class="d-grid gap-2">
-											<button type="button" id="add-contributor" class="btn btn-block btn-secondary" aria-label="Add contributor">Add contributor</button>
+											<button type="button" id="add-element" class="btn btn-block btn-secondary" aria-label="Add contributor">Add contributor</button>
 										</div>
 									</div>
 								</div>
@@ -413,11 +414,41 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="collectiontitle">Title</label>
-								<input id="collectiontitle" type="text" placeholder="Collection title" class="form-control">
+								<input id="collectiontitle" type="text" class="form-control">
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="collectiondescription">Description</label>
 								<textarea class="form-control" name="collectiondescription" id="collectiondescription" rows="8" cols="80"></textarea>
+							</div>
+						</div>
+					</div>
+				</section>
+				<section class="col-md-8 document-section">
+					<div class="card">
+						<div class="card-body">
+							<h2>Document</h2>
+							<div class="mb-3">
+								<label class="form-label" for="document-title">Title</label>
+								<input id="document-title" type="text" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="document-description">Description</label>
+								<textarea class="form-control" name="document-description" id="document-description" rows="8"
+									cols="80"></textarea>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="document-authors">Authors</label>
+								<div id="document-authors">
+									<div class="input-group data-list" style="display: none;">
+										<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
+										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove author"><i
+												class="fas fa-times"></i></button>
+									</div>
+									<div class="d-grid gap-2">
+										<button type="button" id="add-element" class="btn btn-block btn-secondary" aria-label="Add author">Add
+											author</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>

@@ -91,10 +91,10 @@ class FluxdataUpload(
 	def getFluxCollDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = allFileMetaEntries.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
-		title = "Drought-2018 ecosystem eddy covariance flux product for 52 stations in FLUXNET-Archive format—release 2019-2",
-		description = Some("This is the release of the observational data product for eddy covariance fluxes at 52 stations in the ecosystem domain, part of them outside the ICOS network, from the Drought-2018 team and covering the period 1989-2018. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."),
-		isNextVersionOf = Some(Left(Sha256Sum.fromBase64Url("UZw8ra7OVilmVjATTCgIimpz").get)),
-		preExistingDoi = Some(Doi("10.18160", "YVR0-4898"))
+		title = "Warm Winter 2020 ecosystem eddy covariance flux product for 73 stations in FLUXNET-Archive format—release 2022-1",
+		description = Some("This is the release of the observational data product for eddy covariance fluxes at 73 stations in the ecosystem domain, part of them outside the ICOS network, covering the period 1989-2020. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."),
+		isNextVersionOf = None,//Some(Left(Sha256Sum.fromBase64Url("UZw8ra7OVilmVjATTCgIimpz").get)),
+		preExistingDoi = Some(Doi("10.18160", "2G60-ZHAK"))
 	)
 
 	def getFilePath(meta: FileEntry): Path = baseDir

@@ -73,8 +73,8 @@ object UploadWorkbench{
 
 	def registerFluxCollDoi(password: String): Future[Done] = {
 		val (client, maker) = doiMachinery(password)
-		val doiMeta = maker.fluxCollDoiMeta("YVR0-4898", fluxUpload.allFileMetaEntries).copy(
-			url = Some("https://meta.icos-cp.eu/collections/ueb_7FcyEcbG6y9-UGo5HUqV")
+		val doiMeta = maker.fluxCollDoiMeta("2G60-ZHAK", fluxUpload.allFileMetaEntries).copy(
+			url = Some("https://meta.icos-cp.eu/collections/gdINRHdRH6xknqoLsIU1FOZ4")
 		)
 		client.saveDoi(doiMeta)
 	}

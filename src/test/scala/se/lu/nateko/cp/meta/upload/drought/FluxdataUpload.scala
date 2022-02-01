@@ -37,13 +37,14 @@ object FluxdataUpload{
 	val etcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ETC")
 
 	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("atmos_data.csv", atmoSpec, citer)
-	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final.csv", fluxnetHhSpec, citer)
-	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("eco_data_arch.csv", fluxnetArchiveSpec, citer)
+	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_hh.csv", fluxnetHhSpec, citer)
+	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_arch.csv", fluxnetArchiveSpec, citer)
 
-	val excludedUploadStations = Set(
-		"IE-Cra", "DE-RuR", "DE-RuS", "DE-RuW", "IL-Yat"
+	val excludedUploadStations: Set[String] = Set(
+		//"CH-Cha"
+		//"IE-Cra", "DE-RuR", "DE-RuS", "DE-RuW", "IL-Yat"
 	)
-	val succeededStationsToSkip = 66
+	val succeededStationsToSkip = 0
 }
 
 

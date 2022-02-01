@@ -45,11 +45,11 @@ object UploadWorkbench{
 		client -> maker
 	}
 
-	def uploadAtmoDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, atmoUpload)
-	def uploadFluxHhDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxHhUpload)
-	def uploadFluxDrought(cpAuthToken: String): Future[Done] = uploadDrought(cpAuthToken, fluxUpload)
+	def uploadAtmoHistoric(cpAuthToken: String): Future[Done] = uploadHistoric(cpAuthToken, atmoUpload)
+	def uploadFluxHhHistoric(cpAuthToken: String): Future[Done] = uploadHistoric(cpAuthToken, fluxHhUpload)
+	def uploadFluxHistoric(cpAuthToken: String): Future[Done] = uploadHistoric(cpAuthToken, fluxUpload)
 
-	private def uploadDrought(cpAuthToken: String, upload: FluxdataUpload): Future[Done] = {
+	private def uploadHistoric(cpAuthToken: String, upload: FluxdataUpload): Future[Done] = {
 		val client = uploadClient(cpAuthToken)
 		executeSequentially(upload.uploadedFileMetaEntries){fe =>
 			val finfo = upload.getFileInfo(fe)

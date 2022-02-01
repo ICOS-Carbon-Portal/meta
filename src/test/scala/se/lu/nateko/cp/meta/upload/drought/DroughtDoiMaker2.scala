@@ -37,17 +37,17 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 
 		val (yearFrom, yearTo) = DroughtMeta2.fluxFileYears(meta)
 
-		val title = Title(s"Drought-2018 ecosystem eddy covariance flux product from " + stationName, None, None)
+		val title = Title(s"Warm winter 2020 ecosystem eddy covariance flux product from " + stationName, None, None)
 		val descr = "Public release of the observational data product for eddy covariance fluxes " +
 			s"at $stationName, covering the period $yearFrom-$yearTo"
-		val majorVersion = if(meta.prevHash.isDefined) 2 else 1
+		val majorVersion = 1//if(meta.prevHash.isDefined) 2 else 1
 
 		DoiMeta(
 			doi = maker.client.doi(coolDoi(meta.hash)),
 			creators = meta.authors.map(creatorPerson) :+ etcCreator,
 			titles = Some(Seq(title)),
 			publisher = Some("ICOS Carbon Portal"),
-			publicationYear = Some(2020),
+			publicationYear = Some(2022),
 			types = Some(ResourceType(Some("FLUXNET zip archive"), Some(ResourceTypeGeneral.Dataset))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),

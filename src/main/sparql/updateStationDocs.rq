@@ -1,0 +1,10 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?s cpmeta:hasDocumentationObject ?olddoc .
+}
+where{
+	?s a cpmeta:AS .
+	?s cpmeta:hasDocumentationObject ?olddoc .
+	#?newer cpmeta:isNextVersionOf+ ?doc .
+	filter exists{[] cpmeta:isNextVersionOf ?olddoc}
+}

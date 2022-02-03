@@ -1,17 +1,15 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-prefix prov: <http://www.w3.org/ns/prov#>
-construct{
-    ?dobj ?pred ?obj .
-        ?obj ?pred2 ?obj2 .
+construct {
+?dobj ?p ?o .
+?o ?p2 ?o2 .
 }
-FROM <http://meta.icos-cp.eu/resources/otcprodcsv/>
-where {
-	?dobj cpmeta:wasSubmittedBy ?subm .
-	FILTER NOT EXISTS {?subm prov:endedAtTime ?size } .
-	?dobj ?pred ?obj .
+from <http://meta.icos-cp.eu/documents/>
+where{
+	?dobj a cpmeta:DocumentObject .
+	filter not exists{?dobj cpmeta:hasSizeInBytes []}
+	?dobj ?p ?o .
 	OPTIONAL{
-		?obj ?pred2 ?obj2 .
-		FILTER(?pred != cpmeta:isNextVersionOf )
+		?o ?p2 ?o2 .
+		FILTER(?p != cpmeta:isNextVersionOf)
 	}
 }
-

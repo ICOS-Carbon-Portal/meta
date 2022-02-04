@@ -125,7 +125,7 @@ class Form(
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
 		references = Some(ReferencesDto(
-				keywords = dataPanel.keywords.toOption.map(_.split(",").toIndexedSeq.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty)
+			keywords = dataPanel.keywords.toOption.map(_.map(_.trim).filter(!_.isEmpty))
 		))
 	)
 

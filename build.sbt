@@ -62,6 +62,14 @@ frontendBuild := {
 	(Process("npm ci") #&& Process("npm run gulp")).!
 }
 
+val fetchGCMDKeywords = taskKey[Int]("Fetches GCMD keywords from NASA")
+fetchGCMDKeywords := {
+	import scala.sys.process._
+	url("https://gcmd.earthdata.nasa.gov/kms/concepts/concept_scheme/sciencekeywords/?format=json") #>
+		Seq("jq", ".concepts | map(.prefLabel)") #>
+		file("./src/main/resources/gcmdkeywords.json") !
+}
+
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore)
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)

@@ -238,7 +238,18 @@
 							</div>
 							<div class="mb-3 keywords-block">
 								<label class="form-label" for="keywords">Extra keywords <em class="text-muted">- optional</em></label>
-								<input type="text" id="keywords" class="form-control" placeholder="comma-separated, case-sensitive!">
+								<div id="extra-keywords">
+									<div class="input-group data-list" style="display: none;">
+										<input type="text" id="keywords" list="keyword-list" class="form-control data-list-input">
+										<datalist id="keyword-list"></datalist>
+										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove keyword"><i
+												class="fas fa-times"></i></button>
+									</div>
+									<div class="d-grid gap-2">
+										<button type="button" id="add-element" class="btn btn-block btn-secondary" aria-label="Add keyword">Add
+											keyword</button>
+									</div>
+								</div>
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>

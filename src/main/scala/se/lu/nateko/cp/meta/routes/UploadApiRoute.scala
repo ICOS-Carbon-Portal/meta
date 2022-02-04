@@ -24,6 +24,8 @@ import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import akka.stream.scaladsl.FileIO
+import java.nio.file.Paths
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -120,6 +122,10 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 						case notStation =>
 							complete(StatusCodes.BadRequest -> s"$notStation is not a proper ICOS ETC station id")
 					}
+				} ~
+				path("gcmdkeywords"){
+					val keywords = FileIO.fromPath(Paths.get("./src/main/resources/gcmdkeywords.json"))
+					complete(HttpEntity(ContentTypes.`application/json`, keywords))
 				} ~
 				extractEnvri { implicit envri =>
 					import MetaCoreConfig.{envriConfigFormat, envriFormat}

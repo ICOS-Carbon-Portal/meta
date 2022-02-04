@@ -76,7 +76,7 @@
 				}
 			}
 			@for(document <- stationDocs) {
-				@metadataHtmlRow{Documentation}{<a href=@{docAccessLink(document)}>@{document.name}</a>}
+				@metadataHtmlRow{Documentation}{<a href=@{document.res}>@{document.name}</a>}
 			}
 			@for(org <- station.responsibleOrganization) {
 				@metadataHtmlRow{Organization}{
@@ -206,10 +206,6 @@
 @portalLink = @{
 	val stationUri = stationUriShortener(station.org.self.uri)
 	Uri(s"https://${conf.dataHost}/portal/").withFragment(s"""{"filterCategories":{"station":["$stationUri"]}}""")
-}
-
-@docAccessLink(doc: PlainStaticObject) = @{
-	Uri(doc.res.toString).withHost(conf.dataHost).toString
 }
 
 @stationShortName(station: Station) = @{

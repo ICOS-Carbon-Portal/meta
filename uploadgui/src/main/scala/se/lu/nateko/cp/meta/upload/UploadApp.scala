@@ -34,10 +34,16 @@ object UploadApp {
 		val submsFut = Backend.submitterIds
 		val specsFut = Backend.getObjSpecs
 		val spatCovsFut = Backend.getL3SpatialCoverages
+		val gcmdKeywordsFut = Backend.getKeywordList()
 
-		val formFut = for(subms <- submsFut; objSpecs <- specsFut; spatCovs <- spatCovsFut) yield{
+		val formFut = for(
+			subms <- submsFut;
+			objSpecs <- specsFut;
+			spatCovs <- spatCovsFut;
+			gcmdKeywords <- gcmdKeywordsFut
+		) yield{
 			implicit val bus = new PubSubBus
-			new Form(subms, objSpecs, spatCovs, upload _, createDoi _)
+			new Form(subms, objSpecs, spatCovs, gcmdKeywords, upload _, createDoi _)
 		}
 
 		whenDone(formFut){ _ =>

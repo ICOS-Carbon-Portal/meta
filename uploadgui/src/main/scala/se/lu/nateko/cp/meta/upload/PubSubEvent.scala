@@ -14,6 +14,5 @@ final case class GotStationsList(stations: IndexedSeq[Station]) extends PubSubEv
 final case class GotUploadDto(dto: UploadDto) extends PubSubEvent
 final case class GotAgentList(agents: IndexedSeq[NamedUri]) extends PubSubEvent
 final case class GotOrganizationList(orgs: IndexedSeq[NamedUri]) extends PubSubEvent
-final case class GotKeywordList(keywords: IndexedSeq[String]) extends PubSubEvent
 
 final case object FormInputUpdated extends PubSubEvent

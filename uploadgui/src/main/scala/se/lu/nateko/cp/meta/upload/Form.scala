@@ -19,12 +19,13 @@ class Form(
 	subms: IndexedSeq[SubmitterProfile],
 	objSpecs: IndexedSeq[ObjSpec],
 	spatCovs: IndexedSeq[SpatialCoverage],
+	keyWords: IndexedSeq[String],
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 	createDoi: URI => Unit
 )(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
-	val dataPanel = new DataPanel(objSpecs, () => aboutPanel.submitterOpt)
+	val dataPanel = new DataPanel(objSpecs, keyWords, () => aboutPanel.submitterOpt)
 	val acqPanel = new AcquisitionPanel
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel

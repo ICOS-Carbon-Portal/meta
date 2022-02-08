@@ -133,6 +133,7 @@ lazy val meta = (project in file("."))
 		assembly := Def.taskDyn{
 			val original = assembly.taskValue
 			if(frontendBuild.value != 0) throw new IllegalStateException("Front end build error")
+			else if(fetchGCMDKeywords.value != 0) throw new IllegalStateException("Error while fetching GCMD keywords list")
 			else Def.task(original.value)
 		}.value,
 

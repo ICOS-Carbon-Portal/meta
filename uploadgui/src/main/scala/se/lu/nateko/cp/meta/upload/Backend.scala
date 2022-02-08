@@ -152,7 +152,7 @@ object Backend {
 		.map(parseTo[Doi])
 
 	def getKeywordList(): Future[IndexedSeq[String]] = Ajax
-		.get("/upload/gcmdkeywords")
+		.get("/uploadgui/gcmdkeywords.json")
 		.recoverWith(recovery("fetch keyword list"))
 		.map(parseTo[IndexedSeq[String]])
 

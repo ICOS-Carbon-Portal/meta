@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import scala.util.Try
 
 import se.lu.nateko.cp.meta.upload._
@@ -15,6 +13,7 @@ import UploadApp.whenDone
 
 class DataPanel(
 	objSpecs: IndexedSeq[ObjSpec],
+	gcmdKeywords: IndexedSeq[String],
 	submitter: () => Option[SubmitterProfile]
 )(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
@@ -27,9 +26,11 @@ class DataPanel(
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
 	private val keywordList = new KeywordDataList("keyword-list")
+	keywordList.values = gcmdKeywords
 	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
+
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -41,16 +42,8 @@ class DataPanel(
 		disableVarInfoButton()
 	}
 
-	override def show(): Unit = {
-		Backend.getKeywordList().map{ keywords =>
-			bus.publish(GotKeywordList(keywords))
-			super.show()
-		}
-	}
-
 	bus.subscribe{
 		case GotUploadDto(dto) => handleDto(dto)
-		case GotKeywordList(keywords) => keywordList.values = keywords
 	}
 
 	private def onLevelSelected(level: Int): Unit = {
@@ -114,22 +107,18 @@ class DataPanel(
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto =>
-			Backend.getKeywordList().map{ keywords =>
-				objSpecs.find(_.uri == dto.objectSpecification).foreach{spec =>
-					levelControl.value = spec.dataLevel
-					onLevelSelected(spec.dataLevel)
-					objSpecSelect.value = spec
-					onSpecSelected()
-				}
-				keywordList.values = keywords
-				extraKeywords.setValues(dto.references.flatMap(_.keywords).getOrElse(Seq()))
-				dto.specificInfo.fold(
-					_ => nRowsInput.reset(),
-					l2 => nRowsInput.value = l2.nRows
-				)
-
-				show()
+			objSpecs.find(_.uri == dto.objectSpecification).foreach{spec =>
+				levelControl.value = spec.dataLevel
+				onLevelSelected(spec.dataLevel)
+				objSpecSelect.value = spec
+				onSpecSelected()
 			}
+			extraKeywords.setValues(dto.references.flatMap(_.keywords).getOrElse(Seq()))
+			dto.specificInfo.fold(
+				_ => nRowsInput.reset(),
+				l2 => nRowsInput.value = l2.nRows
+			)
+
 		case _ =>
 			hide()
 	}

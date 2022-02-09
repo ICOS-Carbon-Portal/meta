@@ -17,8 +17,14 @@ import { sensorsDeployments } from './queries/sensorsDeployments';
 import { hoVsTc } from './queries/hoVsTcStationDiscrepancies';
 import { atcSpeciesAndHeights } from './queries/atcSpeciesAndHeights';
 
+import { stations as sitesStations } from './queries/SITES/stations';
+import { locations as sitesLocations } from './queries/SITES/locations';
+import { samplingPoints as sitesSamplingPoints } from './queries/SITES/samplingPoints';
 
-const queries = [
+const envri = typeof location !== 'undefined' && location.host.indexOf('fieldsites.se') >= 0 ? "SITES" : "ICOS";
+const host = envri === "SITES" ? 'https://meta.fieldsites.se/' : 'https://meta.icos-cp.eu/';
+
+const icosQueries = [
 	{name:"Table of stations", query: stationsTable},
 	{name:"Production stations not linked to provisional ones", query: provisionlessProdStations},
 	{name:"Provisional stations and their PIs, entered by HO", query: provStationPis},
@@ -30,8 +36,8 @@ const queries = [
 	{name:"Last 1000 data objects", query: lastDataObjects},
 	{name:"Search with sampling heights", query: bySamplingHeights},
 	{name:"Re-submitted files", query: resubmittedFiles},
-	{name:"Collections", query: existingCollections},
-	{name:"Documents", query: existingDocuments},
+	{name:"Collections", query: existingCollections(host)},
+	{name:"Documents", query: existingDocuments(host)},
 	{name:"Data object counts per format", query: perFormatStats},
 	{name:"DCAT metadata demo", query: dcat},
 	{name:"ATC species and sampling heights (in the data)", query: atcSpeciesAndHeights},
@@ -39,6 +45,15 @@ const queries = [
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
 	{name:"ETC, labelling app form values", query: etcLabelingValues}
 ];
+const sitesQueries = [
+	{ name: "Stations", query: sitesStations },
+	{ name: "Last 1000 data objects", query: lastDataObjects },
+	{ name: "Collections", query: existingCollections(host) },
+	{ name: "Documents", query: existingDocuments(host) },
+	{ name: "Locations", query: sitesLocations },
+	{ name: "Sampling points", query: sitesSamplingPoints },
+]
+const queries = envri === "SITES" ? sitesQueries : icosQueries;
 
 export default queries;
 

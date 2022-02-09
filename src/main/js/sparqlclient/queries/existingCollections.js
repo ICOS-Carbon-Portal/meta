@@ -1,4 +1,4 @@
-export const existingCollections = `prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+export const existingCollections = (host) => { return `prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix dcterms: <http://purl.org/dc/terms/>
 select * where{
 	?coll a cpmeta:Collection .
@@ -7,6 +7,8 @@ select * where{
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
 	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
+	FILTER(STRSTARTS(str(?coll), "${host}"))
 }
 order by ?title
 `;
+}

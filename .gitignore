@@ -49,6 +49,7 @@ nohup.out
 README.html
 *.*~
 src/test/resources/startTimes.csv
+src/main/resources/gcmdkeywords.json
 
 #Environment-specific config
 /application.conf

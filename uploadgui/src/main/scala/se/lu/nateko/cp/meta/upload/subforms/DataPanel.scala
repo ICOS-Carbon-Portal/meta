@@ -13,19 +13,24 @@ import UploadApp.whenDone
 
 class DataPanel(
 	objSpecs: IndexedSeq[ObjSpec],
+	gcmdKeywords: IndexedSeq[String],
 	submitter: () => Option[SubmitterProfile]
 )(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
-	def keywords: Try[String] = keywordsInput.value
+	def keywords: Try[Seq[String]] = extraKeywords.values
 
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
+	private val keywordList = new KeywordDataList("keyword-list")
+	keywordList.values = gcmdKeywords
+	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
+
 
 	def resetForm(): Unit = {
 		levelControl.value = Int.MinValue
@@ -33,6 +38,7 @@ class DataPanel(
 		nRowsInput.value = None
 		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
+		extraKeywords.setValues(Seq())
 		disableVarInfoButton()
 	}
 
@@ -107,13 +113,13 @@ class DataPanel(
 				objSpecSelect.value = spec
 				onSpecSelected()
 			}
-			keywordsInput.value = dto.references.fold("")(_.keywords.fold("")(_.mkString(", ")))
+			extraKeywords.setValues(dto.references.flatMap(_.keywords).getOrElse(Seq()))
 			dto.specificInfo.fold(
 				_ => nRowsInput.reset(),
 				l2 => nRowsInput.value = l2.nRows
 			)
-
 			show()
+
 		case _ =>
 			hide()
 	}

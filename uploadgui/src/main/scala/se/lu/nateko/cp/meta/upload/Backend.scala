@@ -151,6 +151,13 @@ object Backend {
 		.recoverWith(recovery("create draft DOI"))
 		.map(parseTo[Doi])
 
+	def getKeywordList(implicit envri: Envri.Envri): Future[IndexedSeq[String]] =
+		if (envri == Envri.SITES) Future.successful(IndexedSeq.empty)
+		else Ajax
+			.get("/uploadgui/gcmdkeywords.json")
+			.recoverWith(recovery("fetch keyword list"))
+			.map(parseTo[IndexedSeq[String]])
+
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{
 			case (key, v) => key -> (v \ "value").validate[String].get

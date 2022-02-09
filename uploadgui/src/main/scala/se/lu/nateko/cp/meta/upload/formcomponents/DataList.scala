@@ -22,6 +22,7 @@ class DataList[T](elemId: String, val labeller: T => String) {
 	private val list = getElementById[html.DataList](elemId).get
 	private[this] var _values = IndexedSeq.empty[T]
 	private val valLookup = mutable.Map.empty[String, T]
+	protected val lookupIsActive: Boolean = true
 
 	def lookupValue(label: String): Option[T] = valLookup.get(label)
 
@@ -33,12 +34,17 @@ class DataList[T](elemId: String, val labeller: T => String) {
 		valLookup.clear()
 
 		values.foreach{ value =>
-			valLookup.addOne(labeller(value), value)
+			if(lookupIsActive) valLookup.addOne(labeller(value), value)
 			val opt = document.createElement("option")
 			opt.textContent = labeller(value)
 			list.appendChild(opt)
 		}
 	}
+}
+
+class KeywordDataList(elemId: String) extends DataList[String](elemId, identity) {
+	override protected val lookupIsActive: Boolean = false
+	override def lookupValue(label: String): Option[String] = Some(label)
 }
 
 class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Unit) {

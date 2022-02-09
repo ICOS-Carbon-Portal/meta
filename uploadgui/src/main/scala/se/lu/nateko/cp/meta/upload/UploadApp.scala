@@ -34,7 +34,7 @@ object UploadApp {
 		val submsFut = Backend.submitterIds
 		val specsFut = Backend.getObjSpecs
 		val spatCovsFut = Backend.getL3SpatialCoverages
-		val gcmdKeywordsFut = Backend.getKeywordList()
+		val gcmdKeywordsFut = Backend.getKeywordList
 
 		val formFut = for(
 			subms <- submsFut;

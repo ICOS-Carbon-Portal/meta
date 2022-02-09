@@ -118,6 +118,7 @@ class DataPanel(
 				_ => nRowsInput.reset(),
 				l2 => nRowsInput.value = l2.nRows
 			)
+			show()
 
 		case _ =>
 			hide()

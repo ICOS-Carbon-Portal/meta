@@ -101,7 +101,6 @@ class Button(elemId: String, onClick: () => Unit){
 
 	def enable(): Unit = {
 		button.disabled = false
-		button.parentElement.setAttribute("data-bs-content", "")
 		popover.disable()
 	}
 

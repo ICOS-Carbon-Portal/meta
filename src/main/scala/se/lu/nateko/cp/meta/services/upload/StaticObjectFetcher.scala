@@ -119,6 +119,6 @@ class PlainStaticObjectFetcher(allDataObjServer: InstanceServer) extends Fetchin
 	def getPlainStaticObject(dobj: IRI) = PlainStaticObject(
 		dobj.toJava,
 		getHashsum(dobj, metaVocab.hasSha256sum),
-		getSingleString(dobj, metaVocab.hasName)
+		getOptionalString(dobj, metaVocab.dcterms.title).getOrElse(getSingleString(dobj, metaVocab.hasName))
 	)
 }

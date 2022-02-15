@@ -29,8 +29,6 @@ function initMap(locations) {
 			L.geoJson(geoJson, {
 
 				pointToLayer: function (feature, latlng) {
-					var featLabel = feature.properties && feature.properties.label;
-
 					if(feature.properties && feature.properties.radius){ //this point is a circle
 						var marker = L.circle(latlng, {
 							radius: feature.properties.radius,
@@ -38,12 +36,17 @@ function initMap(locations) {
 							weight: 1,
 							fillOpacity: 0.4
 						}).addTo(map);
-						if(featLabel) marker.bindPopup(featLabel);
 						return null;
 					} else {
 						var marker = icon ? L.marker(latlng, {icon}) : L.marker(latlng);
-						if(featLabel) marker.bindPopup(featLabel);
 						return marker;
+					}
+				},
+				onEachFeature(feature, layer) {
+					if (isSites) {
+						layer.bindPopup(label);
+					} else if (feature.properties && feature.properties.label) {
+						layer.bindPopup(feature.properties.label);
 					}
 				},
 				style: function (feature) {
@@ -208,7 +211,7 @@ function getStationLocations(stationUrl) {
 			const sitesCoverage = result.specificInfo._type === 'sites'
 				? result.specificInfo.sites.map(site => {
 					return {
-						"label": `<b>${site.self.label}</b><br>${site.ecosystem.label}`,
+						"label": `<b>${site.location.label}</b><br>${site.ecosystem.label}`,
 						"geoJson": site.location.geo
 					}
 				})

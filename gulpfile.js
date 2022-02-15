@@ -18,11 +18,11 @@ projects.forEach(function(project){
 		bundleFile: project + '.js'
 	};
 
-	gulp.task('clean' + project, function(done) {
-		del([paths.target + paths.bundleFile], done);
+	gulp.task('clean' + project, async function() {
+		del([paths.target + paths.bundleFile]);
 	});
 
-	gulp.task('js' + project, ['clean' + project], function() {
+	gulp.task('js' + project, gulp.series('clean' + project), function() {
 
 		return browserify({
 				entries: [paths.main],
@@ -41,11 +41,11 @@ projects.forEach(function(project){
 
 	gulp.task('watch' + project, function() {
 		var sources = paths.js.concat(paths.jsx, paths.common);
-		gulp.watch(sources, ['js' + project]);
+		gulp.watch(sources, gulp.series(['js' + project]));
 	});
 
-	gulp.task(project, ['watch' + project, 'js' + project]);
+	gulp.task(project, gulp.series(['watch' + project, 'js' + project]));
 
 });
 
-gulp.task('default', projects.map(function(p){return 'js' + p;}));
+gulp.task('default', gulp.series(projects.map(function(p){return 'js' + p;})));

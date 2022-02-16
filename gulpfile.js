@@ -22,7 +22,7 @@ projects.forEach(function(project){
 		del([paths.target + paths.bundleFile]);
 	});
 
-	gulp.task('js' + project, gulp.series('clean' + project), function() {
+	gulp.task('build' + project, function() {
 
 		return browserify({
 				entries: [paths.main],
@@ -38,6 +38,8 @@ projects.forEach(function(project){
 			.pipe(gulp.dest(paths.target));
 
 	});
+
+	gulp.task('js' + project, gulp.series('clean' + project, 'build' + project));
 
 	gulp.task('watch' + project, function() {
 		var sources = paths.js.concat(paths.jsx, paths.common);

@@ -30,7 +30,7 @@ function initMap(locations) {
 
 				pointToLayer: function (feature, latlng) {
 					if(feature.properties && feature.properties.radius){ //this point is a circle
-						var marker = L.circle(latlng, {
+						L.circle(latlng, {
 							radius: feature.properties.radius,
 							color: "rgb(50,50,255)",
 							weight: 1,
@@ -38,12 +38,11 @@ function initMap(locations) {
 						}).addTo(map);
 						return null;
 					} else {
-						var marker = icon ? L.marker(latlng, {icon}) : L.marker(latlng);
-						return marker;
+						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
 					}
 				},
 				onEachFeature(feature, layer) {
-					if (isSites) {
+					if (isSites && label) {
 						layer.bindPopup(label);
 					} else if (feature.properties && feature.properties.label) {
 						layer.bindPopup(feature.properties.label);

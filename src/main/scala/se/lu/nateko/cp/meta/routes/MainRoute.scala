@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshall
 import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import scala.concurrent.ExecutionContext
+import akka.actor.ActorSystem
 
 object MainRoute {
 
@@ -26,7 +27,7 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit mat: Materializer, ctxt: ExecutionContext): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit system: ActorSystem, ctxt: ExecutionContext): Route = {
 
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val envriConfigs = config.core.envriConfigs

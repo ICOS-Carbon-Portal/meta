@@ -80,6 +80,7 @@ lazy val meta = (project in file("."))
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
+			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion,
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",

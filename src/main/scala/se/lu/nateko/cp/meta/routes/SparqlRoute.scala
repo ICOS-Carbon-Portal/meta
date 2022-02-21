@@ -1,22 +1,23 @@
 package se.lu.nateko.cp.meta.routes
 
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletionException
-
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import akka.actor.ActorSystem
+import akka.http.caching.LfuCache
+import akka.http.caching.scaladsl.Cache
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.http.scaladsl.model.HttpEntity.Default
+import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.CachingDirectives._
 import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.RouteResult
 import akka.http.scaladsl.server.RouteResult.Complete
 import akka.http.scaladsl.server.RouteResult.Rejected
+import akka.http.scaladsl.server.directives.CachingDirectives._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Concat
 import akka.stream.scaladsl.Keep
@@ -24,21 +25,22 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.getStackTrace
-import akka.http.scaladsl.server.RequestContext
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import akka.http.scaladsl.model.HttpEntity.Strict
-import akka.http.scaladsl.model.HttpEntity.Default
-import java.security.MessageDigest
-import akka.http.caching.LfuCache
-import akka.http.scaladsl.server.RouteResult
-import akka.actor.ActorSystem
-import scala.util.Random
-import akka.http.caching.scaladsl.Cache
 import se.lu.nateko.cp.meta.utils.streams.CachedSource
 
+import java.security.MessageDigest
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletionException
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Random
+
 object SparqlRoute {
+
+	val X_Cache_Status = "X-Cache-Status"
 
 	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
 
@@ -81,13 +83,18 @@ object SparqlRoute {
 			}
 
 		val spCache = new SparqlCache(system)
+		val bypass = respondWithHeader(RawHeader(X_Cache_Status, "BYPASS")){plainRoute}
 
 		path("sparql"){
-			//entity(as[ByteString]){payload =>
-				cache(spCache, spCache.cacheKeyer){
-					plainRoute
+			cachingProhibited{bypass} ~
+			extractRequestContext{ctxt =>
+				spCache.cacheKeyer.lift(ctxt).fold(bypass){key =>
+					val cacheStat = if(spCache.keys.contains(key)) "HIT" else "MISS"
+					respondWithHeader(RawHeader(X_Cache_Status, cacheStat)){
+						_ => spCache.apply(key, () => plainRoute(ctxt))
+					}
 				}
-			//}
+			}
 		}
 	}
 
@@ -145,18 +152,20 @@ class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache
 
 	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] = {
 		import system.dispatcher
-		inner.apply(key, () => genValue().flatMap(makeCached))
+		inner.apply(key, () => genValue().map(makeCached(key)))
 	}
 
 	override def getOrLoad(key: Sha256Sum, loadValue: Sha256Sum => Future[RouteResult]): Future[RouteResult] = {
 		import system.dispatcher
-		inner.getOrLoad(key, hash => loadValue(hash).flatMap(makeCached))
+		inner.getOrLoad(key, hash => loadValue(hash).map(makeCached(key)))
 	}
 
 	override def get(key: Sha256Sum): Option[Future[RouteResult]] = inner.get(key)
 
 	override def put(key: Sha256Sum, mayBeValue: Future[RouteResult])(implicit ex: ExecutionContext): Future[RouteResult] = {
-		inner.put(key, mayBeValue.flatMap(makeCached))
+		val fresh = mayBeValue.map(makeCached(key))
+		inner.put(key, fresh)
+		fresh
 	}
 
 	override def remove(key: Sha256Sum): Unit = inner.remove(key)
@@ -170,7 +179,7 @@ class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache
 	val cacheKeyer: PartialFunction[RequestContext, Sha256Sum] = {
 		case reqCtxt if shouldCache(reqCtxt) =>
 			val req = reqCtxt.request
-			val accept = req.header[Accept].fold("")(_.value())
+			val accept = req.header[Accept].map(_.mediaRanges.map(_.mainType)).fold("")(_.sorted.mkString)
 			val query = req.uri.rawQueryString.getOrElse("")
 			val payload = req.entity match{
 				case Strict(_, data) => data
@@ -181,9 +190,7 @@ class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache
 			digest.update(accept.getBytes())
 			digest.update(query.getBytes())
 			payload.asByteBuffers.foreach(digest.update)
-			val key = new Sha256Sum(digest.digest())
-			println(key)
-			key
+			new Sha256Sum(digest.digest())
 	}
 
 	private def shouldCache(ctxt: RequestContext): Boolean = {
@@ -191,15 +198,22 @@ class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache
 		meth == HttpMethods.GET || meth == HttpMethods.POST
 	}
 
-	private def makeCached(rr: RouteResult)(implicit ex: ExecutionContext): Future[RouteResult] = rr match {
-		case _: Rejected => Future.successful(rr)
+	private def makeCached(key: Sha256Sum)(rr: RouteResult)(implicit ex: ExecutionContext): RouteResult = rr match {
+		case _: Rejected => rr
 		case Complete(response) =>
-			response.entity match {
-				case _: Strict => Future.successful(rr)
+			println(s"CACHEING FOR KEY $key")
+			val cachedEnt = response.entity match {
+				case se: Strict => se
 				case ent =>
-					val cachedPayload = CachedSource(ent.dataBytes)
-					val cachedEnt = HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
-					Future.successful(Complete(response.withEntity(cachedEnt)))
+					val quota = new CachedSource.Quota[ByteString](
+						_.length,
+						1000000L,
+						() => {println(s"REMOVING KEY $key");remove(key)},
+						ByteString("\nSPARQL response too large to be cached! Try running the query with Cache-Control: no-cache")
+					)
+					val cachedPayload = CachedSource(ent.dataBytes, quota)
+					HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
 			}
+			Complete(response.withEntity(cachedEnt))
 	}
 }

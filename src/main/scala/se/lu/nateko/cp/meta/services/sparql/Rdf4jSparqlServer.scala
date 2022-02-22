@@ -127,19 +127,22 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 					TimeUnit.SECONDS
 				)
 
-				sparqlFut.whenComplete((_, _) =>
-					try{outStr.flush(); outStr.close()}
-					finally{
+				sparqlFut.whenCompleteAsync((_, _) =>
+					try{outStr.flush(); outStr.close()} finally{
 						qquoter.logQueryFinish()
 						conn.close()
-					}
+					},
+					sparqlExe
 				)
+				sparqlFut
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaCanceller)
 				)
 			).watchTermination(){(sparqlFut, doneFut) =>
-				doneFut.onComplete(_ => sparqlFut.cancel(true))(scalaCanceller)
+				doneFut.onComplete{_ =>
+					sparqlFut.cancel(true)
+				}(scalaCanceller)
 				scala.compat.java8.FutureConverters.toScala(sparqlFut)
 			}
 

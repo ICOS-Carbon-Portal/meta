@@ -17,3 +17,5 @@ final class UnauthorizedUserInfoUpdateException(message: String) extends Service
 final class IllegalLabelingStatusException(message: String) extends ServiceException(message)
 
 final class PidMintingException(message: String) extends ServiceException(message)
+
+final object CacheSizeLimitExceeded extends ServiceException("Cache size limit exceeded.")

@@ -31,7 +31,7 @@ class CpNativeStoreConnection(
 
 	private implicit val valueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
-	private val sailStore = sail.getSailStore
+	//private val sailStore = sail.getSailStore
 
 	override def evaluateInternal(
 		expr: TupleExpr,
@@ -64,7 +64,7 @@ class CpNativeStoreConnection(
 			new DisjunctiveConstraintOptimizer(),
 			new SameTermFilterOptimizer(),
 			new QueryModelNormalizer(),
-			new QueryJoinOptimizer(sailStore.getEvaluationStatistics()),
+			//new QueryJoinOptimizer(sailStore.getEvaluationStatistics()),
 			new IterativeEvaluationOptimizer(),
 			new FilterOptimizer()
 			//new OrderLimitOptimizer()

@@ -45,11 +45,10 @@ construct{
 	?dobj cpmeta:hasName ?fileName .
 	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
 	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStart .
-	?dobj cpmeta:wasAcquiredBy [
-		prov:startedAtTime ?timeStart ;
+	?dobj cpmeta:wasAcquiredBy ?acq .
+	?acq prov:startedAtTime ?timeStart ;
 		prov:endedAtTime ?timeEnd ;
-		prov:wasAssociatedWith ?stationUri
-	] .
+		prov:wasAssociatedWith ?stationUri .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
 	?stationUri cpmeta:hasName ?station .
 	optional{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .

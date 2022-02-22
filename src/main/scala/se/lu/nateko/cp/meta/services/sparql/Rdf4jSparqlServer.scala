@@ -109,13 +109,11 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 				val sparqlFut = CompletableFuture.runAsync(
 					() => {
 						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
-						println(s"evaluating query on ${Thread.currentThread().getName()}, printing to outStr")
 						protocolOption.evaluator.evaluate(query, outStr)
-						println("query evaluation complete")
 					},
 					qquoter
 				)
-			println("SPARQL query run started, will schedule cancelling now")
+
 				canceller.schedule(
 					() => if(!sparqlFut.isDone){
 						if(qquoter.keepRunningIndefinitely)
@@ -128,32 +126,22 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 					config.maxQueryRuntimeSec.toLong,
 					TimeUnit.SECONDS
 				)
-			println("cancelling scheduled")
 
-				sparqlFut.whenComplete((_, _) =>
-					try{
-						println("sparqlFut.whenComplete on thread " + Thread.currentThread().getName())
-						outStr.flush()
-						println("output stream flushed")
-						outStr.close()
-						println("output stream closed")
-					}
-					finally{
+				sparqlFut.whenCompleteAsync((_, _) =>
+					try{outStr.flush(); outStr.close()} finally{
 						qquoter.logQueryFinish()
-						println("Closing repository connection")
 						conn.close()
-					}
+					},
+					sparqlExe
 				)
+				sparqlFut
 			}.wireTap(
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaCanceller)
 				)
 			).watchTermination(){(sparqlFut, doneFut) =>
-				doneFut.onComplete{trydone =>
-					println(s"SPARQL response byte source terminated with $trydone, cancelling inner Java SPARQL Future")
-					println(s"sparqlFut.isDone() = ${sparqlFut.isDone()}")
+				doneFut.onComplete{_ =>
 					sparqlFut.cancel(true)
-					println(s"SPARQL future canceled")
 				}(scalaCanceller)
 				scala.compat.java8.FutureConverters.toScala(sparqlFut)
 			}

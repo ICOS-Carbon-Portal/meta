@@ -24,9 +24,11 @@ import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.services.CacheSizeLimitExceeded
 import se.lu.nateko.cp.meta.utils.getStackTrace
 import se.lu.nateko.cp.meta.utils.streams.CachedSource
 
@@ -44,7 +46,7 @@ object SparqlRoute {
 
 	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
 
-	def apply()(implicit marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route = {
+	def apply(conf: SparqlServerConfig)(implicit marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route = {
 
 		val makeResponse: String => Route = query => respondWithHeaders(`Access-Control-Allow-Origin`.*) {
 			handleExceptions(MainRoute.exceptionHandler){
@@ -82,7 +84,7 @@ object SparqlRoute {
 				}
 			}
 
-		val spCache = new SparqlCache(system)
+		val spCache = new SparqlCache(system, conf.maxCacheableQuerySize)
 		val bypass = respondWithHeader(RawHeader(X_Cache_Status, "BYPASS")){plainRoute}
 
 		path("sparql"){
@@ -146,9 +148,10 @@ object SparqlRoute {
 
 }
 
-class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache[Sha256Sum, RouteResult]{
+class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat: Materializer) extends Cache[Sha256Sum, RouteResult]{
 
 	private[this] val inner = LfuCache.apply[Sha256Sum, RouteResult](system)
+	val quota = new CachedSource.Quota[ByteString](_.length, maxCacheableQuerySize)
 
 	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] = {
 		import system.dispatcher
@@ -201,17 +204,16 @@ class SparqlCache(system: ActorSystem)(implicit mat: Materializer) extends Cache
 	private def makeCached(key: Sha256Sum)(rr: RouteResult)(implicit ex: ExecutionContext): RouteResult = rr match {
 		case _: Rejected => rr
 		case Complete(response) =>
-			println(s"CACHEING FOR KEY $key")
 			val cachedEnt = response.entity match {
 				case se: Strict => se
 				case ent =>
-					val quota = new CachedSource.Quota[ByteString](
-						_.length,
-						1000000L,
-						() => {println(s"REMOVING KEY $key");remove(key)},
-						ByteString("\nSPARQL response too large to be cached! Try running the query with Cache-Control: no-cache")
-					)
-					val cachedPayload = CachedSource(ent.dataBytes, quota)
+					val cachedPayload = CachedSource(ent.dataBytes, quota).recover{
+						case CacheSizeLimitExceeded =>
+							remove(key)
+							ByteString("\nSPARQL RESPONSE TOO LARGE TO BE CACHED.\n" +
+							s"The largest cacheable response size is ${quota.maxCost} bytes.\n" +
+							"Try running the query with 'Cache-Control: no-cache' to get full response\n")
+					}
 					HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
 			}
 			Complete(response.withEntity(cachedEnt))

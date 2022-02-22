@@ -32,7 +32,7 @@ object MainRoute {
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val envriConfigs = config.core.envriConfigs
 
-		val sparqlRoute = SparqlRoute()
+		val sparqlRoute = SparqlRoute(config.sparql)
 		val staticRoute = StaticRoute(config.onto, config.auth(Envri.ICOS))
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route

@@ -128,7 +128,7 @@ object SparqlRoute {
 				}
 
 				sparqlErr.fold(respondWith(Source.empty)){
-					case cexc: CompletionException if(cexc.getCause.isInstanceOf[CancellationException]) =>
+					case _: CancellationException =>
 						HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
 					case err: Throwable =>
 						HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))

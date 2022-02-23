@@ -23,17 +23,15 @@ select * where{
 	?ds dct:modified ?modified .
 	?ds dct:description ?description .
 	?ds dct:creator ?creator .
-	?ds dct:temporal [
-		a dct:PeriodOfTime ;
+	?ds dct:temporal ?dsTempCov .
+	?dsTempCov a dct:PeriodOfTime ;
 		dcat:startDate ?timeStart ;
-		dcat:endDate ?timeEnd
-	].
-	?ds dcat:distribution [
-		a dcat:Distribution ;
+		dcat:endDate ?timeEnd .
+	?ds dcat:distribution ?dsDistr .
+	?dsDistr a dcat:Distribution ;
 		dcat:accessURL ?accessUrl ;
 		dct:license ?licence ;
 		dcat:byteSize ?byteSize ;
-		dcat:downloadURL ?downloadUrl
-	].
+		dcat:downloadURL ?downloadUrl .
 }
 `;

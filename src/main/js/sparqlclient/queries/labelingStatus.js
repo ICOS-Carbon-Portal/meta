@@ -23,7 +23,7 @@ FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 WHERE {
 	?s cpst:hasShortName ?hoId ; cpst:hasLongName ?hoName .
 	?s cpst:hasCountry ?hoCountry ; cpst:hasStationClass ?hoClass .
-	?s a [ rdfs:label ?stationTheme] .
+	?s a/rdfs:label ?stationTheme .
 	OPTIONAL{GRAPH ?g { ?s cpst:hasApplicationStatus ?status }}
 	OPTIONAL{GRAPH ?g { ?s cpst:hasAppStatusDate ?lastModified }}
 	OPTIONAL{

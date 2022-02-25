@@ -111,7 +111,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 			|select distinct ?dobj where{
 			|	?dobj cpmeta:hasName "$fileName" .
-			|	?dobj cpmeta:wasSubmittedBy [prov:endedAtTime ?submEnd]
+			|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
 			|}
 			|order by desc(?submEnd)
 			|limit 2""".stripMargin //limit 2 is to include potentially itself and the latest other upload of this filename

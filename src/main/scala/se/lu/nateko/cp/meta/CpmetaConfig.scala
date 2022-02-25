@@ -99,6 +99,7 @@ case class EmailConfig(
 case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
+	icosMetaInstanceServerId: String,
 	tcUserIds: Map[URI, Seq[String]],
 	dgUserId: String,
 	riComEmail: String,
@@ -192,7 +193,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
 	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
-	implicit val labelingServiceConfigFormat = jsonFormat8(LabelingServiceConfig)
+	implicit val labelingServiceConfigFormat = jsonFormat9(LabelingServiceConfig)
 	implicit val sparqlConfigFormat = jsonFormat8(SparqlServerConfig)
 	implicit val rdfStorageConfigFormat = jsonFormat4(RdfStorageConfig)
 	implicit val citationConfigFormat = jsonFormat3(CitationConfig)

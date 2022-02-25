@@ -10,20 +10,25 @@ import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 
 
 class StationLabelingService(
-	protected val server: InstanceServer,
-	protected val provisionalInfoServer: InstanceServer,
+	instanceServers: Map[String, InstanceServer],
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
 	protected val config: LabelingServiceConfig
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService {
 
-	protected val factory = provisionalInfoServer.factory
+	protected val server: InstanceServer = instanceServers(config.instanceServerId)
+	protected val provInfoServer: InstanceServer = instanceServers(config.provisionalInfoInstanceServerId)
+	protected val icosInfoServer: InstanceServer = instanceServers(config.icosMetaInstanceServerId)
+	protected implicit val factory = provInfoServer.factory
 	protected val vocab = new StationsVocab(factory)
+	protected val metaVocab = new CpmetaVocab(factory)
 	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
-	protected val provRdfLog = provisionalInfoServer match{
+	protected val provRdfLog = provInfoServer match{
 		case logging: LoggingInstanceServer => logging.log
 		case _ => throw new Exception(
 			"Configuration error! Provisional stations metadata InstanceServer is expected to be a LoggingInstanceServer"
@@ -46,17 +51,17 @@ class StationLabelingService(
 	}
 
 	protected def getPiEmails(piUri: IRI): Seq[String] =
-		provisionalInfoServer.getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
+		provInfoServer.getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
 
 	protected def lookupStationClass(stationUri: IRI): Option[IRI] =
-		InstanceServerUtils.getSingleTypeIfAny(stationUri, provisionalInfoServer)
+		InstanceServerUtils.getSingleTypeIfAny(stationUri, provInfoServer)
 
 	protected def lookupStationId(stationUri: IRI): Option[String] =
-		provisionalInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
+		provInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
 
 	protected def getStationPiOrDeputyEmails(stationUri: IRI): Seq[String] = (
-		provisionalInfoServer.getUriValues(stationUri, vocab.hasPi) ++
-		provisionalInfoServer.getUriValues(stationUri, vocab.hasDeputyPi)
+		provInfoServer.getUriValues(stationUri, vocab.hasPi) ++
+		provInfoServer.getUriValues(stationUri, vocab.hasDeputyPi)
 	).flatMap(getPiEmails)
 }
 

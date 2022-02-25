@@ -114,7 +114,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 			path("labelingHistory.csv" | "labelingHistory"){
 				import StationLabelingHistory._
 				val src = Source(
-					CsvHeader +: service.labelingHistory.toSeq.sortBy(_.provId).map(toCsvRow)
+					CsvHeader +: service.labelingHistory.toSeq.sortBy(_.station.provId).map(toCsvRow)
 				).map(ByteString(_, StandardCharsets.UTF_8))
 
 				complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, src))

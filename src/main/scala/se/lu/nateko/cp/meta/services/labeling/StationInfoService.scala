@@ -9,6 +9,9 @@ import spray.json.JsObject
 import spray.json.JsString
 import java.time.Instant
 import org.eclipse.rdf4j.model.Literal
+import java.net.URI
+import se.lu.nateko.cp.meta.core.data.DataTheme
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 
 trait StationInfoService { self: StationLabelingService =>
 
@@ -67,8 +70,8 @@ trait StationInfoService { self: StationLabelingService =>
 					case _ => map
 				}
 			}
-		for((iri, hist) <- histLookup; stId <- lookupStationId(iri))
-			yield new StationLabelingHistory(stId, iri, hist)
+		for((iri, hist) <- histLookup; stInfo <- getStationBasicInfo(iri))
+			yield new StationLabelingHistory(stInfo, hist)
 	}
 
 	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory = {
@@ -97,6 +100,34 @@ trait StationInfoService { self: StationLabelingService =>
 		case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
 		case _ => true
 	}
+
+	private def getStationBasicInfo(provUri: IRI): Option[StationBasicInfo] = {
+		val provIdOpt = provInfoServer.getStringValues(provUri, vocab.hasShortName).headOption
+		val provNameOpt = provInfoServer.getStringValues(provUri, vocab.hasLongName).headOption
+		val themeOpt = InstanceServerUtils.getSingleTypeIfAny(provUri, provInfoServer).collect{
+			case t if t === vocab.atmoStationClass => "Atmosphere"
+			case t if t === vocab.ecoStationClass => "Ecosystem"
+			case t if t === vocab.oceStationClass => "Ocean"
+		}
+		val provClassOpt = provInfoServer.getStringValues(provUri, vocab.hasStationClass).headOption
+		val prodUriOpt = provInfoServer.getUriLiteralValues(provUri, vocab.hasProductionCounterpart).headOption.map(_.toRdf)
+
+		def prodStr(pred: IRI): Option[String] =
+			prodUriOpt.flatMap(prodUri => icosInfoServer.getStringValues(prodUri, pred).headOption)
+
+		for(provId <- provIdOpt; provName <- provNameOpt; theme <- themeOpt; provClass <- provClassOpt) yield
+			StationBasicInfo(
+				provId = provId,
+				prodId = prodStr(metaVocab.hasStationId),
+				provName = provName,
+				prodName = prodStr(metaVocab.hasName),
+				provUri = provUri.toJava,
+				prodUri = prodUriOpt.map(_.toJava),
+				theme = theme,
+				provClass = provClass,
+				prodClass = prodStr(metaVocab.hasStationClass)
+			)
+	}
 }
 
 case class LabelingHistory(
@@ -108,19 +139,32 @@ case class LabelingHistory(
 	labelled: Option[Instant]
 )
 
-class StationLabelingHistory(val provId: String, val iri: IRI, val hist: LabelingHistory)
+case class StationBasicInfo(
+	provId: String,
+	prodId: Option[String],
+	provName: String,
+	prodName: Option[String],
+	provUri: URI,
+	prodUri: Option[URI],
+	theme: String,
+	provClass: String,
+	prodClass: Option[String]
+)
+
+class StationLabelingHistory(val station: StationBasicInfo, val hist: LabelingHistory)
 
 object StationLabelingHistory{
 
 	def empty(ts: Instant) = LabelingHistory(ts, None, None, None, None, None)
 
-	val CsvHeader = "ProvisID,ProvisURI,Added,Step1Start,Step1End,Step2Start,Step2End,Labelled"
+	val CsvHeader = "Theme,ID,Name,Class,Added,Step1Start,Step1End,Step2Start,Step2End,Labelled"
 
 	def toCsvRow(shist: StationLabelingHistory): String = {
 		val hist = shist.hist
-		val cells = Seq(shist.provId, shist.iri.stringValue) ++ Seq(
-			Some(hist.added), hist.step1start, hist.step1approval, hist.step2start, hist.step2approval, hist.labelled
-		).map(cell)
+		val st = shist.station
+		val cells: Seq[String] =
+			Seq(st.theme, st.prodId.getOrElse(st.provId), st.prodName.getOrElse(st.provName), st.prodClass.getOrElse(st.provClass)) ++
+			Seq(Some(hist.added), hist.step1start, hist.step1approval, hist.step2start, hist.step2approval, hist.labelled).map(cell)
 		cells.mkString("\n", ",", "")
 	}
 

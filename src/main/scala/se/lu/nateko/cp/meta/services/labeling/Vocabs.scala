@@ -12,8 +12,11 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 
 	val station = getRelativeRaw("Station")
 	val atmoStationClass = getRelativeRaw("AS")
+	val ecoStationClass = getRelativeRaw("ES")
+	val oceStationClass = getRelativeRaw("OS")
 
 	val hasShortName = getRelativeRaw("hasShortName")
+	val hasLongName = getRelativeRaw("hasLongName")
 	val hasPi = getRelativeRaw("hasPi")
 	val hasDeputyPi = getRelativeRaw("hasDeputyPi")
 	val hasFirstName = getRelativeRaw("hasFirstName")
@@ -25,6 +28,8 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasApplicationStatus = getRelativeRaw("hasApplicationStatus")
 	val hasAppStatusComment = getRelativeRaw("hasAppStatusComment")
 	val hasAppStatusDate = getRelativeRaw("hasAppStatusDate")
+	val hasProductionCounterpart = getRelativeRaw("hasProductionCounterpart")
+	val hasStationClass = getRelativeRaw("hasStationClass")
 
 	def getProperty(fieldName: String) = getRelativeRaw(fieldName)
 

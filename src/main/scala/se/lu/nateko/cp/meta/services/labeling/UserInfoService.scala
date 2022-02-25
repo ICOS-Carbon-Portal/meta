@@ -25,7 +25,7 @@ trait UserInfoService { self: StationLabelingService =>
 
 	def getLabelingUserInfo(uinfo: UserId): LabelingUserDto = {
 		val piUriOpt = Using(
-			provisionalInfoServer.getStatements(None, Some(vocab.hasEmail), None)
+			provInfoServer.getStatements(None, Some(vocab.hasEmail), None)
 		)(_.collectFirst{
 			case Rdf4jStatement(uri: IRI, _, mail)
 				if(mail.stringValue.equalsIgnoreCase(uinfo.email)) => uri
@@ -38,7 +38,7 @@ trait UserInfoService { self: StationLabelingService =>
 			case None =>
 				LabelingUserDto(None, uinfo.email, false, isDg, tcs, None, None)
 			case Some(piUri) =>
-				val props = provisionalInfoServer
+				val props = provInfoServer
 					.getStatements(piUri)
 					.groupBy(_.getPredicate)
 					.map{case (pred, statements) => (pred, statements.head)} //ignoring multiprops
@@ -78,11 +78,11 @@ trait UserInfoService { self: StationLabelingService =>
 
 		val protectedPredicates = Set(vocab.hasEmail, RDF.TYPE)
 
-		val currentInfo = provisionalInfoServer.getStatements(userUri).filter{
+		val currentInfo = provInfoServer.getStatements(userUri).filter{
 			case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
 			case _ => true
 		}
 
-		provisionalInfoServer.applyDiff(currentInfo, newInfo)
+		provInfoServer.applyDiff(currentInfo, newInfo)
 	}
 }

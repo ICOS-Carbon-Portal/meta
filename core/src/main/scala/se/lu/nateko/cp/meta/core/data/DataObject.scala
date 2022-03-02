@@ -69,29 +69,25 @@ case class DataProduction(
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
 
-case class L2OrLessSpecificMeta(
+case class StationTimeSeriesMeta(
 	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction],
 	nRows: Option[Int],
 	coverage: Option[GeoFeature],
-	columns: Option[Seq[ColumnInfo]]
+	columns: Option[Seq[VarMeta]]
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-sealed trait VarMeta{
-	def label: String
-	def valueType: ValueType
-}
-case class L3VarInfo(label: String, valueType: ValueType, minMax: Option[(Double, Double)]) extends VarMeta
-case class ColumnInfo(label: String, valueType: ValueType) extends VarMeta
-
-case class L3SpecificMeta(
+case class VarMeta(label: String, valueType: ValueType, minMax: Option[(Double, Double)])
+case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
 	spatial: LatLonBox,
 	temporal: TemporalCoverage,
+	station: Option[Station],
+	samplingHeight: Option[Float],
 	productionInfo: DataProduction,
-	variables: Option[Seq[L3VarInfo]]
+	variables: Option[Seq[VarMeta]]
 )
 
 sealed trait StaticObject extends CitableItem{
@@ -121,7 +117,7 @@ case class DataObject(
 	size: Option[Long],
 	submission: DataSubmission,
 	specification: DataObjectSpec,
-	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],
+	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource],

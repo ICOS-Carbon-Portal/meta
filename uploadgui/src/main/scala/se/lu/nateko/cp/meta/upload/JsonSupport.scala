@@ -42,8 +42,8 @@ object JsonSupport {
 
 	implicit val dataProductionDtoFormat = Json.format[DataProductionDto]
 	implicit val referencesFormat = Json.format[ReferencesDto]
-	implicit val elaboratedProductMetadataFormat = Json.format[ElaboratedProductMetadata]
-	implicit val stationDataMetadataFormat = Json.format[StationDataMetadata]
+	implicit val elaboratedProductMetadataFormat = Json.format[SpatioTemporalDto]
+	implicit val stationDataMetadataFormat = Json.format[StationTimeSeriesDto]
 
 	implicit val doiFormat = new Format[Doi]{
 		def writes(doi: Doi) = JsString(doi.toString)

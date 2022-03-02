@@ -83,7 +83,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		markerIcon = getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
 	)
 
-	private def getTemporalCoverage(dobj: IRI) = TemporalCoverage(
+	protected def getTemporalCoverage(dobj: IRI) = TemporalCoverage(
 		interval = TimeInterval(
 			start = getSingleInstant(dobj, metaVocab.hasStartTime),
 			stop = getSingleInstant(dobj, metaVocab.hasEndTime)
@@ -103,24 +103,6 @@ trait CpmetaFetcher extends FetchingHelper{
 		ecosystem = getLabeledResource(site, metaVocab.hasEcosystemType),
 		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
 	)
-
-	protected def getL3Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): L3SpecificMeta = {
-
-		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
-		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
-		val prod = prodOpt.get
-
-		L3SpecificMeta(
-			title = getSingleString(dobj, metaVocab.dcterms.title),
-			description = getOptionalString(dobj, metaVocab.dcterms.description),
-			spatial = getLatLonBox(cov),
-			temporal = getTemporalCoverage(dobj),
-			productionInfo = prod,
-			variables = Some(
-				server.getUriValues(dobj, metaVocab.hasActualVariable).flatMap(getL3VarInfo(_, vtLookup))
-			).filter(_.nonEmpty)
-		)
-	}
 
 	protected def getCoverage(covUri: IRI): GeoFeature = {
 		val covClass = getSingleUri(covUri, RDF.TYPE)
@@ -152,11 +134,11 @@ trait CpmetaFetcher extends FetchingHelper{
 	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
 		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
 
-	protected def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[L3VarInfo] = for(
+	protected def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[VarMeta] = for(
 		varName <- getOptionalString(vi, RDFS.LABEL);
 		valTypeUri <- vtLookup.lookup(varName)
 	) yield
-		L3VarInfo(
+		VarMeta(
 			label = varName,
 			valueType = getValueType(valTypeUri),
 			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>

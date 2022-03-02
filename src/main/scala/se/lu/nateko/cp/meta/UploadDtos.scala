@@ -23,7 +23,7 @@ case class DataObjectDto(
 	submitterId: String,
 	objectSpecification: URI,
 	fileName: String,
-	specificInfo: Either[ElaboratedProductMetadata, StationDataMetadata],
+	specificInfo: Either[SpatioTemporalDto, StationTimeSeriesDto],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[Doi],
 	references: Option[ReferencesDto]
@@ -50,7 +50,7 @@ case class StaticCollectionDto(
 	preExistingDoi: Option[Doi]
 ) extends UploadDto
 
-case class StationDataMetadata(
+case class StationTimeSeriesDto(
 	station: URI,
 	site: Option[URI],
 	instrument: OptionalOneOrSeq[URI],
@@ -63,12 +63,14 @@ case class StationDataMetadata(
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 }
 
-case class ElaboratedProductMetadata(
+case class SpatioTemporalDto(
 	title: String,
 	description: Option[String],
 	spatial: Either[LatLonBox, URI],
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
+	forStation: Option[URI],
+	samplingHeight: Option[Float],
 	customLandingPage: Option[URI],
 	variables: Option[Seq[String]]
 )

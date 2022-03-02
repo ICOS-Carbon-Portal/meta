@@ -28,7 +28,7 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.ConfigLoader
@@ -278,7 +278,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	)(implicit envri: Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
-			Right(StationDataMetadata(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
+			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _, _
 		) =>
 			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){

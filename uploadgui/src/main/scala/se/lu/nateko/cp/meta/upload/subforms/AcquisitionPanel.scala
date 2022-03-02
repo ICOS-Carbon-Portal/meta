@@ -17,7 +17,7 @@ import formcomponents._
 import UploadApp.whenDone
 import Utils._
 import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 
 
 class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".acq-section"){
@@ -160,7 +160,7 @@ object AcquisitionPanel{
 	)
 	class Sites(val all: IndexedSeq[NamedUri], val selected: Option[NamedUri], val points: SamplingPoints)
 
-	def getStationInfo(l2: StationDataMetadata, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
+	def getStationInfo(l2: StationTimeSeriesDto, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
 		stations.find(_.namedUri.uri == l2.station).fold(
 			Future.successful[Option[(Station, Sites)]](None)
 		){station =>

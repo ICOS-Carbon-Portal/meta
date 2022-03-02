@@ -13,15 +13,14 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.L3VarInfo
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -70,7 +69,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		val objectUri = vocab.getStaticObject(hashSum)
 
 		val specificStatements = meta.specificInfo.fold(
-			elProd => getElaboratedProductStatements(hashSum, elProd),
+			elProd => getSpatioTemporalStatements(hashSum, elProd),
 			stationData => getStationDataStatements(hashSum, stationData)
 		)
 
@@ -131,8 +130,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(samplUri, RDFS.LABEL, point.label.map(vocab.lit))
 	}
 
-	private def getElaboratedProductStatements(hash: Sha256Sum, meta: ElaboratedProductMetadata)(implicit envri: Envri): Seq[Statement] = {
+	private def getSpatioTemporalStatements(hash: Sha256Sum, meta: SpatioTemporalDto)(implicit envri: Envri): Seq[Statement] = {
 		val objUri = vocab.getStaticObject(hash)
+		val acq = vocab.getAcquisition(hash)
 		Seq(
 			makeSt(objUri, metaVocab.dcterms.title, vocab.lit(meta.title)),
 			makeSt(objUri, metaVocab.hasStartTime, vocab.lit(meta.temporal.interval.start)),
@@ -144,11 +144,14 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
 		getProductionStatements(hash, meta.production) ++
 		getSpatialCoverageStatements(hash, meta.spatial) ++
+		makeSt(objUri, metaVocab.wasAcquiredBy, meta.forStation.orElse(meta.samplingHeight).map(_ => acq)) ++
+		makeSt(acq, metaVocab.prov.wasAssociatedWith, meta.forStation.map(_.toRdf)) ++
+		makeSt(acq, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(_.toRdf)) ++
 		meta.variables.toSeq.flatten.flatMap(getL3VarInfoStatements(objUri, hash, _))
 	}
 
-	private def getStationDataStatements(hash: Sha256Sum, meta: StationDataMetadata)(implicit envri: Envri): Seq[Statement] = {
+	private def getStationDataStatements(hash: Sha256Sum, meta: StationTimeSeriesDto)(implicit envri: Envri): Seq[Statement] = {
 		val objectUri = vocab.getStaticObject(hash)
 		val aquisitionUri = vocab.getAcquisition(hash)
 		val acqStart = meta.acquisitionInterval.map(_.start)

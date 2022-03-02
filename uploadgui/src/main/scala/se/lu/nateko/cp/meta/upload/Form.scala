@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.upload.formcomponents._
 import ItemTypeRadio._
 import UploadApp.{hideAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms._
-import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import se.lu.nateko.cp.meta.{SpatioTemporalDto, StationTimeSeriesDto}
 import java.net.URI
 
 class Form(
@@ -130,7 +130,7 @@ class Form(
 		))
 	)
 
-	def specificInfo: Try[Either[ElaboratedProductMetadata, StationDataMetadata]] = dataPanel.objSpec.flatMap{spec =>
+	def specificInfo: Try[Either[SpatioTemporalDto, StationTimeSeriesDto]] = dataPanel.objSpec.flatMap{spec =>
 		if(spec.dataLevel == 3) l3Panel.meta(prodPanel.dataProductionDto).map(Left.apply)
 		else for(
 			station <- acqPanel.station;
@@ -141,7 +141,7 @@ class Form(
 			instrumentUri <- acqPanel.instrUri;
 			production <- prodPanel.dataProductionDtoOpt
 		) yield Right(
-			StationDataMetadata(
+			StationTimeSeriesDto(
 				station = station.namedUri.uri,
 				site = acqPanel.site.flatten.map(_.uri),
 				instrument = instrumentUri,

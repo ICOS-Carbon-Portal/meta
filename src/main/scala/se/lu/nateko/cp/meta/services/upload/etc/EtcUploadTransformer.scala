@@ -8,7 +8,7 @@ import scala.util.Try
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.UriId
@@ -49,7 +49,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			objectSpecification = objSpec.toJava,
 			fileName = meta.fileName,
 			specificInfo = Right(
-				StationDataMetadata(
+				StationTimeSeriesDto(
 					station = vocab.getEcosystemStation(meta.station).toJava,
 					site = None,
 					instrument = Some(Left(vocab.getEtcInstrument(tcIntId, meta.logger).toJava)),

@@ -147,7 +147,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate -> discontinued
 	}
 
-	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): StationTimeSeriesMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
@@ -174,20 +174,42 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				_.flatMap{colName =>
 					vtLookup.lookup(colName).map{vtUri =>
 						val valType = getValueType(vtUri)
-						ColumnInfo(colName, valType)
+						VarMeta(colName, valType, None)
 					}
 				}.toIndexedSeq
 			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
 				Some(
 					vtLookup.plainMandatory.map{
-						case (colName, valTypeIri) => ColumnInfo(colName, getValueType(valTypeIri))
+						case (colName, valTypeIri) => VarMeta(colName, getValueType(valTypeIri), None)
 					}
 				)
 			}.filter(_.nonEmpty)
 
-		L2OrLessSpecificMeta(acq, prod, nRows, coverage, columns)
+		StationTimeSeriesMeta(acq, prod, nRows, coverage, columns)
 	}
 
+	protected def getL3Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
+
+		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
+		val prod = prodOpt.get
+
+		val acqOpt = getOptionalUri(dobj, metaVocab.wasAcquiredBy)
+		val stationOpt = acqOpt.flatMap(getOptionalUri(_, metaVocab.prov.wasAssociatedWith))
+
+		SpatioTemporalMeta(
+			title = getSingleString(dobj, metaVocab.dcterms.title),
+			description = getOptionalString(dobj, metaVocab.dcterms.description),
+			spatial = getLatLonBox(cov),
+			temporal = getTemporalCoverage(dobj),
+			station = stationOpt.map(getStation),
+			samplingHeight = acqOpt.flatMap(getOptionalFloat(_, metaVocab.hasSamplingHeight)),
+			productionInfo = prod,
+			variables = Some(
+				server.getUriValues(dobj, metaVocab.hasActualVariable).flatMap(getL3VarInfo(_, vtLookup))
+			).filter(_.nonEmpty)
+		)
+	}
 
 	protected def getDataProduction(obj: IRI, prod: IRI) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),

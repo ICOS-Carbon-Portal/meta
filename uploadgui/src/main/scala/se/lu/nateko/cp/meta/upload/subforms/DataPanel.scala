@@ -66,7 +66,7 @@ class DataPanel(
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
-			if(objSpec.dataset.nonEmpty && objSpec.dataLevel <= 2) nRowsInput.enable() else nRowsInput.disable()
+			if(objSpec.isStationTimeSer) nRowsInput.enable() else nRowsInput.disable()
 			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))
@@ -80,12 +80,12 @@ class DataPanel(
 
 	private def showVarInfoModal(): Unit = for(
 		spec <- objSpecSelect.value;
-		datasetUri <- spec.dataset
+		dsSpec <- spec.dataset
 	){
-		val variablesInfo = if(spec.dataLevel > 2)
-				Backend.getDatasetVariables(datasetUri)
+		val variablesInfo = if(dsSpec.dsClass == DsSpec.SpatioTemp)
+				Backend.getDatasetVariables(dsSpec.uri)
 			else
-				Backend.getDatasetColumns(datasetUri)
+				Backend.getDatasetColumns(dsSpec.uri)
 		whenDone(variablesInfo){ datasetVars =>
 			val tableHeader = """<table class="table"><thead><th>Label</th><th>Value type</th><th>Unit</th><th>Required</th><th>Regex</th><th>Title</th></thead><tbody>"""
 			varInfoModal.setTitle(s"Variables in ${spec.name}")

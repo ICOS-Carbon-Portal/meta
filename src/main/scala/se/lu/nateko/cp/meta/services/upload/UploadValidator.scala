@@ -32,6 +32,7 @@ import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.core.data.DatasetClass
 
 class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
@@ -180,21 +181,24 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val errors = scala.collection.mutable.Buffer.empty[String]
 
 		meta.specificInfo match{
-			case Left(l3meta) =>
-				for(vars <- l3meta.variables) spec.datasetSpec.fold[Unit]{
-					errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
-				}{dsSpec =>
-					val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.self.uri.toRdf)
-					vars.foreach{varName =>
-						if(valTypeLookup.lookup(varName).isEmpty) errors +=
-							s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
+			case Left(spTempMeta) =>
+				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.SpatioTemporal))
+					errors += "Wrong class of dataset for this object spec (must be spatiotemporal)"
+				else
+					for(vars <- spTempMeta.variables) spec.datasetSpec.fold[Unit]{
+						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
+					}{dsSpec =>
+						val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.self.uri.toRdf)
+						vars.foreach{varName =>
+							if(valTypeLookup.lookup(varName).isEmpty) errors +=
+								s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
+						}
 					}
-				}
-				if(spec.dataLevel < 3) errors += "The data level for this kind of metadata package must have been 3"
 
 			case Right(stationMeta) =>
-				if(spec.dataLevel > 2) errors += "The data level for this kind of metadata package must have been 2 or less"
-				else{
+				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.StationTimeSeries)) {
+					errors += "Wrong class of dataset for this object spec (must be station-specific time series)"
+				}else{
 					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'acquisitionInterval' with start and stop timestamps."
 

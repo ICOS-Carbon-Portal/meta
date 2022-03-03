@@ -17,6 +17,8 @@ import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
+import se.lu.nateko.cp.meta.services.MetadataException
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -37,8 +39,16 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 	private def getDatasetSpec(ds: IRI) = DatasetSpec(
 		self = getLabeledResource(ds),
+		dsClass = getDatasetClass(ds),
 		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
+
+	private def getDatasetClass(ds: IRI): DatasetClass.DatasetClass = {
+		val types = server.getTypes(ds).toSet
+		if(types.contains(metaVocab.tabularDatasetSpecClass)) DatasetClass.StationTimeSeries
+		else if(types.contains(metaVocab.datasetSpecClass)) DatasetClass.SpatioTemporal
+		else throw new MetadataException(s"Dataset specification $ds did not have any of the expected classes")
+	}
 
 	private def getDocumentationObjs(item: IRI): Seq[PlainStaticObject] =
 		server.getUriValues(item, metaVocab.hasDocumentationObject).map(plainObjFetcher.getPlainStaticObject)

@@ -26,11 +26,11 @@ class Form(
 
 	val aboutPanel = new AboutPanel(subms)
 	val dataPanel = new DataPanel(objSpecs, keyWords, () => aboutPanel.submitterOpt)
-	val acqPanel = new AcquisitionPanel
+	val statTsPanel = new StationTimeSeriesPanel
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel
 	val docPanel = new DocumentPanel
-	val l3Panel = new L3Panel(spatCovs)
+	val spatTempPanel = new SpatioTemporalPanel(spatCovs)
 	val submitButton = new Button("submitbutton", submitAction)
 
 	bus.subscribe{
@@ -54,7 +54,7 @@ class Form(
 		}
 	}
 
-	def subforms = Seq(dataPanel, acqPanel, prodPanel, collPanel, docPanel, l3Panel)
+	def subforms = Seq(dataPanel, statTsPanel, prodPanel, collPanel, docPanel, spatTempPanel)
 
 	def submitAction(): Unit = {
 		dom.window.scrollTo(0, 0)
@@ -71,7 +71,7 @@ class Form(
 							dto <- dataObjectDto;
 							file <- aboutPanel.file;
 							nRows <- dataPanel.nRows;
-							varnames <- l3Panel.varnames;
+							varnames <- spatTempPanel.varnames;
 							spec <- dataPanel.objSpec
 						) {
 							whenDone(Backend.tryIngestion(file, spec, nRows, varnames)){ _ =>
@@ -131,19 +131,20 @@ class Form(
 	)
 
 	def specificInfo: Try[Either[SpatioTemporalDto, StationTimeSeriesDto]] = dataPanel.objSpec.flatMap{spec =>
-		if(spec.dataLevel == 3) l3Panel.meta(prodPanel.dataProductionDto).map(Left.apply)
+		if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel == 3))
+			spatTempPanel.meta(prodPanel.dataProductionDto).map(Left.apply)
 		else for(
-			station <- acqPanel.station;
-			acqInterval <- acqPanel.timeInterval;
+			station <- statTsPanel.station;
+			acqInterval <- statTsPanel.timeInterval;
 			nRows <- dataPanel.nRows;
-			samplingPoint <- acqPanel.samplingPoint;
-			samplingHeight <- acqPanel.samplingHeight;
-			instrumentUri <- acqPanel.instrUri;
+			samplingPoint <- statTsPanel.samplingPoint;
+			samplingHeight <- statTsPanel.samplingHeight;
+			instrumentUri <- statTsPanel.instrUri;
 			production <- prodPanel.dataProductionDtoOpt
 		) yield Right(
 			StationTimeSeriesDto(
 				station = station.namedUri.uri,
-				site = acqPanel.site.flatten.map(_.uri),
+				site = statTsPanel.site.flatten.map(_.uri),
 				instrument = instrumentUri,
 				samplingPoint = samplingPoint,
 				samplingHeight = samplingHeight,

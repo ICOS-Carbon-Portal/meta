@@ -34,8 +34,13 @@ case class DataObjectSpec(
 	keywords: Option[Seq[String]]
 )
 
+object DatasetClass extends Enumeration{
+	type DatasetClass = Value
+	val StationTimeSeries, SpatioTemporal = Value
+}
 case class DatasetSpec(
 	self: UriResource,
+	dsClass: DatasetClass.DatasetClass,
 	resolution: Option[String]
 )
 

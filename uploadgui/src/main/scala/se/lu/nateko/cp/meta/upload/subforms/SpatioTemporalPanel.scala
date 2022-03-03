@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Position
 
-class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
+class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
 	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for(
 		title <- titleInput.value;
@@ -88,12 +88,10 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extend
 
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
-		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
-		case LevelSelected(level) => onLevelSelected(level)
+		case ObjSpecSelected(spec) =>
+			if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel >= 3)) show() else hide()
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
 	}
-
-	private def onLevelSelected(level: Int): Unit = if(level == 3) show() else hide()
 
 	private def onSpatCoverSelected(): Unit = {
 		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()

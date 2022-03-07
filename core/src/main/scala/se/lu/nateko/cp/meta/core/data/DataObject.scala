@@ -32,7 +32,10 @@ case class DataObjectSpec(
 	datasetSpec: Option[DatasetSpec],
 	documentation: Seq[PlainStaticObject],
 	keywords: Option[Seq[String]]
-)
+){
+	def isStationTimeSer: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.StationTimeSeries)
+	def isSpatiotemporal: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.SpatioTemporal)
+}
 
 object DatasetClass extends Enumeration{
 	type DatasetClass = Value
@@ -69,7 +72,8 @@ case class DataProduction(
 	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
-	sources: Seq[UriResource],
+	sources: Seq[PlainStaticObject],
+	documentation: Option[PlainStaticObject],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
@@ -93,7 +97,11 @@ case class SpatioTemporalMeta(
 	samplingHeight: Option[Float],
 	productionInfo: DataProduction,
 	variables: Option[Seq[VarMeta]]
-)
+){
+	def acquisition: Option[DataAcquisition] = station.map{
+		DataAcquisition(_, None, None, None, None, samplingHeight)
+	}
+}
 
 sealed trait StaticObject extends CitableItem{
 	def hash: Sha256Sum
@@ -128,6 +136,8 @@ case class DataObject(
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
+	def acquisition: Option[DataAcquisition] = specificInfo.fold(_.acquisition, stTs => Some(stTs.acquisition))
+
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),
 		l2 => l2.productionInfo

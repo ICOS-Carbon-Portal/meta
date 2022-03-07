@@ -115,7 +115,7 @@
 
 	<div class="row">
 
-		@for(acquisition <- dobj.specificInfo.toOption.map(_.acquisition); station = acquisition.station){
+		@for(acquisition <- dobj.acquisition; station = acquisition.station){
 			@Panel("Acquisition", 4){
 				@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
 					@PanelRow("Location", location)
@@ -154,7 +154,10 @@
 					@agentPanelRow("Contributor", contributor)
 				}
 				@for(source <- production.sources.sorted){
-					@resourcePanelRow("Source object", source)
+					@resourcePanelRow("Source object", source.asUriResource)
+				}
+				@for(doc <- production.documentation){
+					@resourcePanelRow("Documentation", doc.asUriResource)
 				}
 			}
 		}

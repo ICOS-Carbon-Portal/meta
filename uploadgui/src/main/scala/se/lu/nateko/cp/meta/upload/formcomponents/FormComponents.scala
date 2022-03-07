@@ -63,7 +63,15 @@ class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Inst
 )
 class TextInput(elemId: String, cb: () => Unit, hint: String) extends GenericTextInput[String](elemId, cb, fail(s"Missing $hint"))(s => Try(s), s => s)
 
-class HashOptInput(elemId: String, cb: () => Unit)
+
+class HashOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Sha256Sum](elemId, cb)(
+	s =>
+		if(s.trim.isEmpty) Success(None)
+		else Sha256Sum.fromString(s.trim).map(Some(_)),
+	hash => hash.id
+)
+
+class HashOptOneOrManyInput(elemId: String, cb: () => Unit)
 	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)

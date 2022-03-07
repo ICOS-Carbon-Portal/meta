@@ -157,7 +157,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate -> discontinued
 	}
 
-	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): StationTimeSeriesMeta = {
+	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): StationTimeSeriesMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
@@ -198,7 +198,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		StationTimeSeriesMeta(acq, prod, nRows, coverage, columns)
 	}
 
-	protected def getL3Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
+	protected def getSpatioTempMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
 
 		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
 		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
@@ -226,7 +226,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
-		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject).map(_.asUriResource),
+		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject),
+		documentation = getOptionalUri(prod, RDFS.SEEALSO).map(plainObjFetcher.getPlainStaticObject),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 

@@ -182,6 +182,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(productionUri, metaVocab.hasEndTime, vocab.lit(prod.creationDate))
 		) ++
 		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
+		makeSt(productionUri, RDFS.SEEALSO, prod.documentation.map(vocab.getStaticObject)) ++
 		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
 		prod.contributors.map{ contrib =>
 			makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)

@@ -26,6 +26,7 @@ import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
+import se.lu.nateko.cp.meta.core.data.UriResource
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader._
@@ -125,12 +126,8 @@ object UploadDtoReader{
 		contributors = prod.contributors.map(_.self.uri),
 		hostOrganization = prod.host.map(_.self.uri),
 		comment = prod.comment,
-		sources = Option(prod.sources.flatMap{uri =>
-			Uri.Path(uri.uri.getPath) match {
-				case Hash.Object(hash) => Some(hash)
-				case _ => None
-			}
-		}),
+		sources = Option(prod.sources.map(_.hash)),
+		documentation = prod.documentation.map(_.hash),
 		creationDate = prod.dateTime
 	)
 
@@ -138,5 +135,4 @@ object UploadDtoReader{
 		case CpVocab.SpatialCoverage(_) => Left(box)
 		case uri => Right(uri)
 	}
-
 }

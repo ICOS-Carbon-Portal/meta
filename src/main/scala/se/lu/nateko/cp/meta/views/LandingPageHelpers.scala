@@ -61,6 +61,8 @@ object LandingPageHelpers{
 		res.label.getOrElse(res.uri.getPath.split('/').last)
 	}
 
+	implicit val plainStaticObjectOrdering = Ordering.by[PlainStaticObject, String](_.name)
+
 	def stationUriShortener(uri: URI): String = {
 		val icosStationPref = "http://meta.icos-cp.eu/resources/stations/"
 		val wdcggStationPref = "http://meta.icos-cp.eu/resources/wdcgg/station/"

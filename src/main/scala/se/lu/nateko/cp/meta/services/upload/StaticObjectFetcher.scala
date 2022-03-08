@@ -48,10 +48,12 @@ class StaticObjectFetcher(
 		val valTypeLookup = getOptionalUri(specIri, metaVocab.containsDataset)
 			.fold(new ValueTypeLookup[IRI](Nil))(getValTypeLookup)
 
-		val levelSpecificInfo = if(spec.dataLevel == 3 || CpVocab.isIngosArchive(specIri))
-				Left(getL3Meta(dobj, valTypeLookup, production))
-			else
-				Right(getL2Meta(dobj, valTypeLookup, production))
+		val levelSpecificInfo = if(
+				spec.isSpatiotemporal || (
+					!spec.isStationTimeSer && (spec.dataLevel > 2 || CpVocab.isIngosArchive(specIri))
+				)
+			) Left(getSpatioTempMeta(dobj, valTypeLookup, production))
+			else Right(getStationTimeSerMeta(dobj, valTypeLookup, production))
 
 		val init = DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),

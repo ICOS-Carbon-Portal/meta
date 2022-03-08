@@ -17,6 +17,8 @@ import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
+import se.lu.nateko.cp.meta.services.MetadataException
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -37,8 +39,16 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 	private def getDatasetSpec(ds: IRI) = DatasetSpec(
 		self = getLabeledResource(ds),
+		dsClass = getDatasetClass(ds),
 		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
+
+	private def getDatasetClass(ds: IRI): DatasetClass.DatasetClass = {
+		val types = server.getTypes(ds).toSet
+		if(types.contains(metaVocab.tabularDatasetSpecClass)) DatasetClass.StationTimeSeries
+		else if(types.contains(metaVocab.datasetSpecClass)) DatasetClass.SpatioTemporal
+		else throw new MetadataException(s"Dataset specification $ds did not have any of the expected classes")
+	}
 
 	private def getDocumentationObjs(item: IRI): Seq[PlainStaticObject] =
 		server.getUriValues(item, metaVocab.hasDocumentationObject).map(plainObjFetcher.getPlainStaticObject)
@@ -147,7 +157,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate -> discontinued
 	}
 
-	protected def getL2Meta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): L2OrLessSpecificMeta = {
+	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): StationTimeSeriesMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
@@ -174,27 +184,50 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				_.flatMap{colName =>
 					vtLookup.lookup(colName).map{vtUri =>
 						val valType = getValueType(vtUri)
-						ColumnInfo(colName, valType)
+						VarMeta(colName, valType, None)
 					}
 				}.toIndexedSeq
 			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
 				Some(
 					vtLookup.plainMandatory.map{
-						case (colName, valTypeIri) => ColumnInfo(colName, getValueType(valTypeIri))
+						case (colName, valTypeIri) => VarMeta(colName, getValueType(valTypeIri), None)
 					}
 				)
 			}.filter(_.nonEmpty)
 
-		L2OrLessSpecificMeta(acq, prod, nRows, coverage, columns)
+		StationTimeSeriesMeta(acq, prod, nRows, coverage, columns)
 	}
 
+	protected def getSpatioTempMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
+
+		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
+		val prod = prodOpt.get
+
+		val acqOpt = getOptionalUri(dobj, metaVocab.wasAcquiredBy)
+		val stationOpt = acqOpt.flatMap(getOptionalUri(_, metaVocab.prov.wasAssociatedWith))
+
+		SpatioTemporalMeta(
+			title = getSingleString(dobj, metaVocab.dcterms.title),
+			description = getOptionalString(dobj, metaVocab.dcterms.description),
+			spatial = getLatLonBox(cov),
+			temporal = getTemporalCoverage(dobj),
+			station = stationOpt.map(getStation),
+			samplingHeight = acqOpt.flatMap(getOptionalFloat(_, metaVocab.hasSamplingHeight)),
+			productionInfo = prod,
+			variables = Some(
+				server.getUriValues(dobj, metaVocab.hasActualVariable).flatMap(getL3VarInfo(_, vtLookup))
+			).filter(_.nonEmpty)
+		)
+	}
 
 	protected def getDataProduction(obj: IRI, prod: IRI) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),
 		contributors = server.getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent),
 		host = getOptionalUri(prod, metaVocab.wasHostedBy).map(getOrganization),
 		comment = getOptionalString(prod, RDFS.COMMENT),
-		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject).map(_.asUriResource),
+		sources = server.getUriValues(obj, metaVocab.prov.hadPrimarySource).map(plainObjFetcher.getPlainStaticObject),
+		documentation = getOptionalUri(prod, RDFS.SEEALSO).map(plainObjFetcher.getPlainStaticObject),
 		dateTime = getSingleInstant(prod, metaVocab.hasEndTime)
 	)
 

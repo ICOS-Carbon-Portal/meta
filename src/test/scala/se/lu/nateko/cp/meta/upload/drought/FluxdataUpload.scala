@@ -13,7 +13,7 @@ import scala.jdk.CollectionConverters._
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.doi._
@@ -113,10 +113,11 @@ class FluxdataUpload(
 				) else
 					Files.getLastModifiedTime(getFilePath(meta)).toInstant,
 			sources = None,
+			documentation = None,
 			comment = comment
 		)
 
-		val stationMeta = StationDataMetadata(
+		val stationMeta = StationTimeSeriesDto(
 			station = meta.stationUrl,
 			site = None,
 			instrument = None,

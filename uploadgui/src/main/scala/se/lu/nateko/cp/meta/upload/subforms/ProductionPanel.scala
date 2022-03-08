@@ -26,14 +26,16 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			hostOrganization = hostOrganizationInput.value.toOption;
 			comment <- commentInput.value.withErrorContext("Comment");
 			creationDate <- creationDateInput.value.withErrorContext("Creation date");
-			sources <- sourcesInput.value.withErrorContext("Sources")
+			sources <- sourcesInput.value.withErrorContext("Sources");
+			doc <- docInput.value
 		) yield DataProductionDto(
 			creator = creator.uri,
 			contributors = contributors.map(_.uri),
 			hostOrganization = hostOrganization.map(_.uri),
 			comment = comment,
 			sources = sources,
-			creationDate = creationDate
+			creationDate = creationDate,
+			documentation = doc
 		)
 
 	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
@@ -47,6 +49,7 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
+	private val docInput = new HashOptInput("proddoc", notifyUpdate)
 	private val agentAgg = new AgentAggregator
 
 	def resetForm(): Unit = {

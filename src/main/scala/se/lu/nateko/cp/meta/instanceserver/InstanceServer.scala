@@ -70,10 +70,14 @@ trait InstanceServer extends AutoCloseable{
 		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
 	}
 
-	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[IRI] = {
+	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[IRI] = {
 		val values = getValues(subj, pred).collect{case uri: IRI => uri}.distinct
 		assertCardinality(values.size, exp, s"IRI value(s) of $pred for $subj")
 		values
+	}
+
+	final def getTypes(res: IRI): IndexedSeq[IRI] = getValues(res, RDF.TYPE).collect{
+		case classUri: IRI => classUri
 	}
 
 	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] = {
@@ -84,22 +88,22 @@ trait InstanceServer extends AutoCloseable{
 		values
 	}
 
-	final def getStringValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[String] =
+	final def getStringValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] =
 		getLiteralValues(subj, pred, XMLSchema.STRING, exp)
 
-	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Int] =
+	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Int] =
 		getLiteralValues(subj, pred, XMLSchema.INTEGER, exp).map(_.toInt)
 
-	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Long] =
+	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Long] =
 		getLiteralValues(subj, pred, XMLSchema.LONG, exp).map(_.toLong)
 
-	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Double] =
+	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Double] =
 		getLiteralValues(subj, pred, XMLSchema.DOUBLE, exp).map(_.toDouble)
 
-	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[Float] =
+	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Float] =
 		getLiteralValues(subj, pred, XMLSchema.FLOAT, exp).map(_.toFloat)
 
-	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): Seq[JavaUri] =
+	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[JavaUri] =
 		getLiteralValues(subj, pred, XMLSchema.ANYURI, exp).map(new JavaUri(_))
 }
 

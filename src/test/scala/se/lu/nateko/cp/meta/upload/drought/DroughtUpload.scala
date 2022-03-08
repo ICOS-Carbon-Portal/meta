@@ -13,7 +13,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.upload._
 import se.lu.nateko.cp.doi._
@@ -69,9 +69,10 @@ object DroughtUpload{
 			hostOrganization = None,
 			creationDate = meta.creationDate,
 			sources = None,
+			documentation = None,
 			comment = meta.comment
 		)
-		val stationMeta = StationDataMetadata(
+		val stationMeta = StationTimeSeriesDto(
 			station = meta.station,
 			site = None,
 			instrument = None,

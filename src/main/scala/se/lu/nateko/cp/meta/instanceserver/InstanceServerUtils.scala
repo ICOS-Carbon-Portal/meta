@@ -12,9 +12,7 @@ object InstanceServerUtils {
 	 */
 	def getSingleTypeIfAny(instUri: IRI, instServer: InstanceServer): Option[IRI] = {
 
-		val types = instServer.getValues(instUri, RDF.TYPE).collect{
-			case classUri: IRI if classUri != OWL.NAMEDINDIVIDUAL => classUri
-		}.distinct
+		val types = instServer.getTypes(instUri).filter(_ != OWL.NAMEDINDIVIDUAL).distinct
 
 		assert(types.size <= 1, s"Expected individual $instUri to have at most one type, but it had ${types.size}")
 		types.headOption

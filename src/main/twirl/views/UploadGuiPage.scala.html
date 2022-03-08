@@ -165,11 +165,11 @@
 								<input id="filename" class="form-control filename" type="text">
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>
 								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="existingdoi">Pre-existing DOI <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="existingdoi">Pre-existing DOI @optional</label>
 								<input type="text" id="existingdoi" class="form-control" placeholder="DOI">
 							</div>
 						</div>
@@ -237,7 +237,7 @@
 								<div id="data-keywords">None</div>
 							</div>
 							<div class="mb-3 keywords-block">
-								<label class="form-label" for="keywords">Extra keywords <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="keywords">Extra keywords @optional</label>
 								<div id="extra-keywords">
 									<div class="input-group data-list" style="display: none;">
 										<input type="text" id="keywords" list="keyword-list" class="form-control data-list-input">
@@ -261,7 +261,7 @@
 				<section class="col-md-4 acq-section">
 					<div class="card">
 						<div class="card-body">
-							<h2>Acquisition</h2>
+							<h2>Station-specific time series</h2>
 							<div class="mb-3">
 								<label class="form-label" for="stationselect">Station</label>
 								<select class="form-select" id="stationselect" disabled></select>
@@ -279,23 +279,23 @@
 								<input id="acqstopinput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control" disabled>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="samplingpointselect">Sampling point <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="samplingpointselect">Sampling point @optional</label>
 								<select class="form-select" id="samplingpointselect" disabled></select>
 							</div>
 							<div class="mb-3 position-element" id="latitude-element">
-								<label class="form-label" for="latitude">Sampling point (latitude) <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="latitude">Sampling point (latitude) @optional</label>
 								<input id="latitude" type="text" class="form-control">
 							</div>
 							<div class="mb-3 position-element" id="longitude-element">
-								<label class="form-label" for="longitude">Sampling point (longitude) <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="longitude">Sampling point (longitude) @optional</label>
 								<input id="longitude" type="text" class="form-control">
 							</div>
 							<div class="mb-3 sampling-height-block">
-								<label class="form-label" for="sampleheight">Sampling height (m) <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="sampleheight">Sampling height (m) @optional</label>
 								<input id="sampleheight" type="text" class="form-control">
 							</div>
 							<div class="mb-3 instrument-block">
-								<label class="form-label" for="instrumenturi">Instrument (url) <em class="text-muted">- optional</em></label>
+								<label class="form-label" for="instrumenturi">Instrument (url) @optional</label>
 								<textarea class="form-control" name="instrumenturi" id="instrumenturi" rows="2" cols="80"></textarea>
 							</div>
 						</div>
@@ -304,7 +304,7 @@
 				<section class="col-md-4 l3-section">
 					<div class="card">
 						<div class="card-body">
-							<h2>L3 metadata</h2>
+							<h2>Spatiotemporal dataset</h2>
 							<div class="mb-3">
 								<label class="form-label" for="l3title">Title</label>
 								<input id="l3title" type="text" class="form-control">
@@ -324,6 +324,14 @@
 							<div class="mb-3">
 								<label class="form-label" for="l3tempres">Temporal resolution @optional</label>
 								<input id="l3tempres" type="text" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="elabstationselect">Station @optional</label>
+								<select class="form-select" id="elabstationselect" disabled></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="elabsampleheight">Sampling height (m) @optional</label>
+								<input id="elabsampleheight" type="text" class="form-control">
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="l3spatcoverselect">Spatial coverage</label>
@@ -394,12 +402,12 @@
 									</div>
 								</div>
 								<div class="mb-3">
-									<label class="form-label" for="hostorganisation">Host organisation <em class="text-muted">- optional</em></label>
+									<label class="form-label" for="hostorganisation">Host organisation @optional</label>
 									<input id="hostorganisation" list="organization-list" class="form-control" placeholder="(type to search)">
 									<datalist id="organization-list"></datalist>
 								</div>
 								<div class="mb-3">
-									<label class="form-label" for="productioncomment">Comment <em class="text-muted">- optional</em></label>
+									<label class="form-label" for="productioncomment">Comment @optional</label>
 									<textarea class="form-control" name="productioncomment" id="productioncomment" rows="8" cols="80"></textarea>
 								</div>
 								<div class="mb-3">
@@ -407,8 +415,12 @@
 									<input id="creationdate" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
 								</div>
 								<div class="mb-3">
-									<label class="form-label" for="sources">List of sources (one hashsum per line) <em class="text-muted">- optional</em></label>
+									<label class="form-label" for="sources">List of sources (one hashsum per line) @optional</label>
 									<textarea class="form-control" name="sources" id="sources" rows="2" cols="80"></textarea>
+								</div>
+								<div class="mb-3">
+									<label class="form-label" for="proddoc">Documentation @optional</label>
+									<input id="proddoc" type="text" placeholder="document object hashsum" class="form-control">
 								</div>
 							</div>
 							<div id="production-cover"></div>
@@ -483,7 +495,7 @@
 }
 
 @optionalsite = @{
-	if (envri == Envri.ICOS) <em class="text-muted">- optional</em>
+	if (envri == Envri.ICOS) optional
 }
 
 @optional = {

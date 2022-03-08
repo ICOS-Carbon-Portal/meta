@@ -43,7 +43,10 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 			varNameInput.value = varName
 		}
 
-		def remove(): Unit = formDiv.removeChild(div)
+		def remove(): Unit = {
+			formDiv.removeChild(div)
+			notifyUpdate()
+		}
 
 		private[this] val id: Long = {_ordId += 1; _ordId}
 		private[this] val div = deepClone(template)

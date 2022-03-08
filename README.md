@@ -45,7 +45,7 @@ Naturally, instead of `curl`, one can automate this process (as well as all the 
 
 ### Registering the metadata package
 
-The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content depends on the data object's ICOS data level. For example, for L0 and L1 the metadata has the following format:
+The first step of the 2-step upload workflow is preparing and uploading a metadata package for your data object. The package is a JSON document whose exact content depends on the kind of data object. There are two specific kinds that are recognized: station-specific time series data objects and spatiotemporal data objects (which may optionally also be station-specific). For the former kind, the metadata has the following format:
 
 ```json
 {
@@ -66,7 +66,8 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 			"hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
 			"comment": "free text",
 			"creationDate": "2017-12-01T12:00:00.000Z",
-			"sources": ["utw3ah9Fo7_Sp7BN5i8z2vbK"]
+			"sources": ["utw3ah9Fo7_Sp7BN5i8z2vbK"],
+			"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM"
 		}
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
@@ -78,12 +79,36 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 }
 ```
 
+For the spatiotemporal data objects, the metadata package has the same general structure, but `specificInfo` property differs, and should look as follows:
+
+```json
+{
+	"title": "JenaCarboScopeRegional inversion results for EUROCOM",
+	"description": "JenaCarboScopeRegional inverse modelling estimates of European CO2 fluxes for 2006-2015 as part of the EUROCOM inversion...",
+	"spatial": "http://meta.icos-cp.eu/resources/latlonboxes/europeLatLonBoxIngos",
+	"temporal": {
+		"interval": {
+			"start": "2006-01-01T00:00:00Z",
+			"stop": "2015-12-31T00:00:00Z"
+		},
+		"resolution": "monthly"
+	},
+	"production": {
+		//same as for station-specific time series
+	},
+	"forStation": "http://meta.icos-cp.eu/resources/stations/AS_SMR",
+	"samplingHeight": 50.5,
+	"customLandingPage": "http://www.bgc-jena.mpg.de/CarboScope/?ID=s99_v3.7",
+	"variables": ["co2flux_land", "co2flux_ocean"]
+}
+```
+
 Clarifications:
 
 - `submitterId` will be provided by the CP's technical people. This is not the same as username for logging in with CPauth.
 - `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems.
 - `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
-- `specificInfo` for level 0, 1 or 2
+- `specificInfo` for station-specific time series objects
 	- `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
 	- `acquisitionInterval` (optional) is the temporal interval during which the actual measurement was performed. Required for data objects that do not get ingested completely by CP (i.e. with parsing and internal binary representation to support previews).
 	- `instrument` (optional) is the URL of the metadata entity representing the instrument used to perform the measurement resulting in this data object.
@@ -95,19 +120,23 @@ Clarifications:
 		- `comment` is an optional free text.
 		- `creationDate` is an ISO 8601 time stamp.
 		- `sources` (optional) is an array of source data objects, that the current one was produced from, referred to as hashsums. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
+		- `documentation` (optional) hashsum of a document object containing information specific to production of this specific data object.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
-- `specificInfo` for level 3
+- `specificInfo` for spatiotemporal objects
 	- `title` is a required string.
 	- `description` is an optional string.
-	- `spatial` is the spacial coverage or a url to another spacial coverage.
+	- `spatial` is the spacial coverage or a string with url to a reusable spacial coverage object.
 		- `min` containing numeric `lat` and `lon` (WGS84).
 		- `max` containing numeric `lat` and `lon` (WGS84).
 		- `label` is a optional string to describe the spacial coverage.
-	- `temporal` is the time coverage.
+	- `temporal` is the temporal coverage.
 		- `interval` containing `start` and `stop` timestamps.
-		- `resolution` is a string indicating the resolution of the dataset.
-	- `production` is similar to `production` for levels 1 and 2.
-	- `customLandingPage` is an optional url linking to the data hosted somewhere else.
+		- `resolution` (optional) is a string indicating the resolution of the dataset.
+	- `production` (required) is identical to `production` for station-specific time series.
+	- `forStation` (optional) is a url of a station the data object is related to.
+	- `samplingHeight` (optional) floating-point sampling height in meters. Will typically refer to a simulation parameter, not an experimental sampling height.
+	- `customLandingPage` (optional) is a url linking to the data hosted somewhere else.
+	- `variables` (optional) is a list of strings with variable names. Needed to make the variables previewable. The variables must have been earlier defined in the corresponding dataset specification.
 - `objectSpecification` has to be prepared and provided by CP, but with your help. It must be specific to every kind of data object that you want to upload. Please get in touch with CP about it.
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object(s) that is(are) already present. The value is the SHA256 hashsum of the older data object (or an array of the hashsums, if they are more than one). Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.

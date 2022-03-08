@@ -4,7 +4,7 @@ package se.lu.nateko.cp.meta.upload.subforms
 import scala.util.{Try, Success}
 
 import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, ElaboratedProductMetadata}
+import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, SpatioTemporalDto}
 
 import formcomponents._
 import Utils._
@@ -13,9 +13,9 @@ import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Position
 
-class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
+class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
-	def meta(productionDto: => Try[DataProductionDto]): Try[ElaboratedProductMetadata] = for(
+	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for(
 		title <- titleInput.value;
 		descr <- descriptionInput.value;
 		spatCov <- spatialCoverage;
@@ -24,12 +24,15 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extend
 		tempRes <- temporalResInput.value;
 		prod <- productionDto;
 		customLanding <- externalPageInput.value;
+		height <- samplingHeightInput.value;
 		varInfo <- varInfoForm.varInfos
-	) yield ElaboratedProductMetadata(
+	) yield SpatioTemporalDto(
 		title = title,
 		description = descr,
 		spatial = spatCov,
 		temporal = TemporalCoverage(tempCov, tempRes),
+		forStation = stationSelect.value.map(_.namedUri.uri),
+		samplingHeight = height,
 		production = prod,
 		customLandingPage = customLanding,
 		variables = varInfo
@@ -57,6 +60,8 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extend
 	private val timeStopInput = new InstantInput("l3stopinput", notifyUpdate)
 	private val timeIntevalInput = new TimeIntevalInput(timeStartInput, timeStopInput)
 	private val temporalResInput = new TextOptInput("l3tempres", notifyUpdate)
+	private val stationSelect = new Select[Station]("elabstationselect", s => s"${s.id} (${s.namedUri.name})")
+	private val samplingHeightInput = new FloatOptInput("elabsampleheight", notifyUpdate)
 	private val spatialCovSelect = new Select[SpatialCoverage]("l3spatcoverselect", _.label, autoselect = false, onSpatCoverSelected)
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
@@ -83,11 +88,10 @@ class L3Panel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extend
 
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
-		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
-		case LevelSelected(level) => onLevelSelected(level)
+		case ObjSpecSelected(spec) =>
+			if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel >= 3)) show() else hide()
+		case GotStationsList(stations) => stationSelect.setOptions(stations)
 	}
-
-	private def onLevelSelected(level: Int): Unit = if(level == 3) show() else hide()
 
 	private def onSpatCoverSelected(): Unit = {
 		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()

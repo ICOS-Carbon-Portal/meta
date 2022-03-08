@@ -32,10 +32,18 @@ case class DataObjectSpec(
 	datasetSpec: Option[DatasetSpec],
 	documentation: Seq[PlainStaticObject],
 	keywords: Option[Seq[String]]
-)
+){
+	def isStationTimeSer: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.StationTimeSeries)
+	def isSpatiotemporal: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.SpatioTemporal)
+}
 
+object DatasetClass extends Enumeration{
+	type DatasetClass = Value
+	val StationTimeSeries, SpatioTemporal = Value
+}
 case class DatasetSpec(
 	self: UriResource,
+	dsClass: DatasetClass.DatasetClass,
 	resolution: Option[String]
 )
 
@@ -64,35 +72,36 @@ case class DataProduction(
 	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
-	sources: Seq[UriResource],
+	sources: Seq[PlainStaticObject],
+	documentation: Option[PlainStaticObject],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
 
-case class L2OrLessSpecificMeta(
+case class StationTimeSeriesMeta(
 	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction],
 	nRows: Option[Int],
 	coverage: Option[GeoFeature],
-	columns: Option[Seq[ColumnInfo]]
+	columns: Option[Seq[VarMeta]]
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-sealed trait VarMeta{
-	def label: String
-	def valueType: ValueType
-}
-case class L3VarInfo(label: String, valueType: ValueType, minMax: Option[(Double, Double)]) extends VarMeta
-case class ColumnInfo(label: String, valueType: ValueType) extends VarMeta
-
-case class L3SpecificMeta(
+case class VarMeta(label: String, valueType: ValueType, minMax: Option[(Double, Double)])
+case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
 	spatial: LatLonBox,
 	temporal: TemporalCoverage,
+	station: Option[Station],
+	samplingHeight: Option[Float],
 	productionInfo: DataProduction,
-	variables: Option[Seq[L3VarInfo]]
-)
+	variables: Option[Seq[VarMeta]]
+){
+	def acquisition: Option[DataAcquisition] = station.map{
+		DataAcquisition(_, None, None, None, None, samplingHeight)
+	}
+}
 
 sealed trait StaticObject extends CitableItem{
 	def hash: Sha256Sum
@@ -121,12 +130,14 @@ case class DataObject(
 	size: Option[Long],
 	submission: DataSubmission,
 	specification: DataObjectSpec,
-	specificInfo: Either[L3SpecificMeta, L2OrLessSpecificMeta],
+	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
+	def acquisition: Option[DataAcquisition] = specificInfo.fold(_.acquisition, stTs => Some(stTs.acquisition))
+
 	def production: Option[DataProduction] = specificInfo.fold(
 		l3 => Some(l3.productionInfo),
 		l2 => l2.productionInfo

@@ -17,10 +17,10 @@ import formcomponents._
 import UploadApp.whenDone
 import Utils._
 import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 
 
-class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".acq-section"){
+class StationTimeSeriesPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".acq-section"){
 	def station: Try[Station] = stationSelect.value.withMissingError("Station not chosen")
 	def site = siteSelect.value
 	def timeInterval: Try[Option[TimeInterval]] = timeIntevalInput.value.withErrorContext("Acqusition time interval")
@@ -62,9 +62,8 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 	}
 
 	bus.subscribe{
-		case LevelSelected(level) => onLevelSelected(level)
 		case ObjSpecSelected(objSpec) =>
-			onLevelSelected(objSpec.dataLevel)
+			if(objSpec.isStationTimeSer || (objSpec.dataset.isEmpty && objSpec.dataLevel <= 2)) show() else hide()
 			if(objSpec.dataset.isDefined) {
 				acqStartInput.disable()
 				acqStopInput.disable()
@@ -80,8 +79,6 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 
 	}
 
-	private def onLevelSelected(level: Int): Unit = if(level <= 2) show() else hide()
-
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto =>
 			dto.specificInfo match {
@@ -92,7 +89,7 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 					samplingHeightInput.value = l2.samplingHeight
 					instrUriInput.value = l2.instrument
 
-					whenDone(AcquisitionPanel.getStationInfo(l2, stationSelect.getOptions)){
+					whenDone(StationTimeSeriesPanel.getStationInfo(l2, stationSelect.getOptions)){
 						case None =>
 							resetPlaceInfo()
 						case Some((station, sitesInfo)) =>
@@ -153,14 +150,14 @@ class AcquisitionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Pane
 
 }
 
-object AcquisitionPanel{
+object StationTimeSeriesPanel{
 	class SamplingPoints(
 		val all: IndexedSeq[SamplingPoint],
 		val selected: Option[Either[Position, SamplingPoint]]
 	)
 	class Sites(val all: IndexedSeq[NamedUri], val selected: Option[NamedUri], val points: SamplingPoints)
 
-	def getStationInfo(l2: StationDataMetadata, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
+	def getStationInfo(l2: StationTimeSeriesDto, stations: IndexedSeq[Station]): Future[Option[(Station, Sites)]] =
 		stations.find(_.namedUri.uri == l2.station).fold(
 			Future.successful[Option[(Station, Sites)]](None)
 		){station =>

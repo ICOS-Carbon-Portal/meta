@@ -102,7 +102,7 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 			val hist = q(cid)
 			hist.synchronized{
 
-				if(hist.nRunning < config.maxParallelQueries && hist.queue.isEmpty)
+				if(hist.nRunning <= config.maxParallelQueries && hist.queue.isEmpty)
 					executor.execute(r)
 				else
 					hist.queue.add(r)
@@ -118,7 +118,7 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 		}
 
 		private def advanceQueue(): Unit = for(hist <- q.get(cid)) hist.synchronized{
-			if(hist.nRunning < config.maxParallelQueries){
+			if(hist.nRunning <= config.maxParallelQueries){
 				val jobOrNull = hist.queue.poll()
 				if(jobOrNull != null) executor.execute(jobOrNull)
 			}

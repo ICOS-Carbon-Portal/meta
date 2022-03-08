@@ -16,16 +16,17 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import UriSerializer.Hash
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.ElaboratedProductMetadata
+import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.core.data.L2OrLessSpecificMeta
-import se.lu.nateko.cp.meta.StationDataMetadata
+import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
+import se.lu.nateko.cp.meta.core.data.UriResource
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader._
@@ -49,16 +50,18 @@ object UploadDtoReader{
 			objectSpecification = dobj.specification.self.uri,
 			fileName = dobj.fileName,
 			specificInfo = dobj.specificInfo match {
-				case Left(l3) => Left(ElaboratedProductMetadata(
+				case Left(l3) => Left(SpatioTemporalDto(
 					title = l3.title,
 					description = l3.description,
 					spatial = readCoverage(l3.spatial),
 					temporal = l3.temporal,
+					forStation = l3.station.map(_.org.self.uri),
+					samplingHeight = l3.samplingHeight,
 					production = dataProductionToDto(l3.productionInfo),
 					customLandingPage = dobj.accessUrl.filterNot(uri => uri.getPath.endsWith(dobj.hash.id)),
 					variables = l3.variables.map(_.map(_.label))
 				))
-				case Right(l2) => Right(StationDataMetadata(
+				case Right(l2) => Right(StationTimeSeriesDto(
 					station = l2.acquisition.station.org.self.uri,
 					site = l2.acquisition.site.map(_.self.uri),
 					instrument = l2.acquisition.instrument.map(transformEither(_.uri, _.map(_.uri))),
@@ -123,12 +126,8 @@ object UploadDtoReader{
 		contributors = prod.contributors.map(_.self.uri),
 		hostOrganization = prod.host.map(_.self.uri),
 		comment = prod.comment,
-		sources = Option(prod.sources.flatMap{uri =>
-			Uri.Path(uri.uri.getPath) match {
-				case Hash.Object(hash) => Some(hash)
-				case _ => None
-			}
-		}),
+		sources = Option(prod.sources.map(_.hash)),
+		documentation = prod.documentation.map(_.hash),
 		creationDate = prod.dateTime
 	)
 
@@ -136,5 +135,4 @@ object UploadDtoReader{
 		case CpVocab.SpatialCoverage(_) => Left(box)
 		case uri => Right(uri)
 	}
-
 }

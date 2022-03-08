@@ -92,9 +92,9 @@ object Backend {
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
-		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.dataLevel == 3)
+		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
 
-		if(spec.dataset.nonEmpty && (spec.dataLevel <= 2 || firstVarName.isDefined)){
+		if(spec.isStationTimeSer || firstVarName.isDefined){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>

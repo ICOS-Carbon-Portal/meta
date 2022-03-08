@@ -68,7 +68,10 @@ object SparqlQueries {
 		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
 		|	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
 		|	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
-		|	OPTIONAL{?spec cpmeta:containsDataset ?dataset}
+		|	OPTIONAL{
+		|		?spec cpmeta:containsDataset ?dataset .
+		|		BIND(EXISTS{?dataset a cpmeta:DatasetSpec} as ?isSpatioTemp)
+		|	}
 		|} order by ?name""".stripMargin
 
 	def objSpecs(implicit envri: Envri): String = envri match {
@@ -83,7 +86,12 @@ object SparqlQueries {
 			new URI(b("spec")),
 			b("name"),
 			b("dataLevel").toInt,
-			if(b.contains("dataset")) Some(new URI(b("dataset"))) else None,
+			if(b.contains("dataset")) Some(
+				DsSpec(
+					uri = new URI(b("dataset")),
+					dsClass = (if(b("isSpatioTemp").toBoolean) DsSpec.SpatioTemp else DsSpec.StationTimeSer)
+				)
+			) else None,
 			new URI(b("theme")),
 			new URI(b("project")),
 			keywords("keywords").concat(keywords("projKeywords")).distinct

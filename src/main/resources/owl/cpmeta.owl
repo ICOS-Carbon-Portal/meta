@@ -3091,6 +3091,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/csvWithIso8601tsFirstCol -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/csvWithIso8601tsFirstCol">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CSV with ISO8601 timestamp as first column</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/etcDate -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/etcDate">

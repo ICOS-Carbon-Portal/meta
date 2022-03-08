@@ -62,6 +62,7 @@ class StationTimeSeriesPanel(implicit bus: PubSubBus, envri: Envri.Envri) extend
 	}
 
 	bus.subscribe{
+		case LevelSelected(_) => hide()
 		case ObjSpecSelected(objSpec) =>
 			if(objSpec.isStationTimeSer || (objSpec.dataset.isEmpty && objSpec.dataLevel <= 2)) show() else hide()
 			if(objSpec.dataset.isDefined) {

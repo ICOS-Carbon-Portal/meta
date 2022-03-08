@@ -9,14 +9,15 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 abstract class PanelSubform(selector: String)(implicit bus: PubSubBus) {
 	protected val htmlElements = new HtmlElements(selector)
 	protected def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
+	private[this] var gotPeepsOrgs: Boolean = false
 
 
 	def resetForm(): Unit
 	def hide(): Unit = htmlElements.hide()
 	def show(): Unit = htmlElements.show()
 
-	def getPeopleAndOrganizations()(implicit envri: Envri.Envri) = {
-		for(
+	def getPeopleAndOrganizations()(implicit envri: Envri.Envri) = if(!gotPeepsOrgs){
+		val done = for(
 			people <- Backend.getPeople;
 			organizations <- Backend.getOrganizations
 		)
@@ -24,5 +25,7 @@ abstract class PanelSubform(selector: String)(implicit bus: PubSubBus) {
 			bus.publish(GotAgentList(organizations.concat(people)))
 			bus.publish(GotOrganizationList(organizations))
 		}
+		UploadApp.whenDone(done)(_ => ())
+		gotPeepsOrgs = true
 	}
 }

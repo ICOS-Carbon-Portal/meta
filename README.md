@@ -120,7 +120,7 @@ Clarifications:
 		- `comment` is an optional free text.
 		- `creationDate` is an ISO 8601 time stamp.
 		- `sources` (optional) is an array of source data objects, that the current one was produced from, referred to as hashsums. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
-		- `documentation` (optional) hashsum of a document object containing information specific to production of this specific data object.
+		- `documentation` (optional) hashsum of a document object containing information specific to production of this data object.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
 - `specificInfo` for spatiotemporal objects
 	- `title` is a required string.

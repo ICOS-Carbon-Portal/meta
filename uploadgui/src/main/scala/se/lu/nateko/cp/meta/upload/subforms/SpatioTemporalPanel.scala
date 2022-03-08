@@ -88,6 +88,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
+		case LevelSelected(_) => hide()
 		case ObjSpecSelected(spec) =>
 			if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel >= 3)) show() else hide()
 		case GotStationsList(stations) => stationSelect.setOptions(stations)

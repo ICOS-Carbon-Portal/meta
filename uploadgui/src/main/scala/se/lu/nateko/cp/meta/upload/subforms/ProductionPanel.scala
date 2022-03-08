@@ -68,8 +68,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 
 	bus.subscribe{
 		case GotUploadDto(upDto) => handleDto(upDto)
-		case ObjSpecSelected(spec) => onLevelSelected(spec.dataLevel)
-		case LevelSelected(level) => onLevelSelected(level)
+		case ObjSpecSelected(spec) => onSpecSelected(spec)
+		case LevelSelected(_) => hide()
 		case GotStationsList(stations) => {
 			agentAgg.stations = stations.map(_.namedUri)
 			agentList.values = agentAgg.agents
@@ -83,7 +83,7 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 			organizationList.values = agentAgg.orgs
 	}
 
-	private def onLevelSelected(level: Int): Unit = level match {
+	private def onSpecSelected(spec: ObjSpec): Unit = spec.dataLevel match {
 		case 0 =>
 			productionSwitch.uncheck()
 			hide()

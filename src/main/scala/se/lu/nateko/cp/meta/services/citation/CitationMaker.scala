@@ -106,10 +106,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
 
 		def titleOpt = dobj.specificInfo.fold(
-			l3 => Some(l3.title),
-			l2 => for(
+			spatioTemp => Some(spatioTemp.title),
+			stationTs => for(
 					spec <- dobj.specification.self.label;
-					acq = l2.acquisition;
+					acq = stationTs.acquisition;
 					time <- tempCov
 				) yield {
 					val station = acq.station.org.name
@@ -118,7 +118,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		val authors: Seq[Person] = if(isIcosProject) attrProvider.getAuthors(dobj) else{
+		val authors: Seq[Person] = if(isIcosProject && dobj.specification.dataLevel < 3) attrProvider.getAuthors(dobj) else{
 			import AttributionProvider.personOrdering
 			dobj.production.toSeq.flatMap(prod => prod.contributors :+ prod.creator).collect{
 				case p: Person => p

@@ -120,9 +120,9 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 		val authors: Seq[Person] = if(isIcosProject && dobj.specification.dataLevel < 3) attrProvider.getAuthors(dobj) else{
 			import AttributionProvider.personOrdering
-			dobj.production.toSeq.flatMap(prod => prod.contributors :+ prod.creator).collect{
-				case p: Person => p
-			}.sorted.distinct
+			dobj.production.toSeq.flatMap(prod =>
+				prod.creator +: prod.contributors.collect{case p: Person => p}.sorted
+			).collect{case p: Person => p}.distinct
 		}
 
 		val pidUrlOpt = getPidUrl(dobj)

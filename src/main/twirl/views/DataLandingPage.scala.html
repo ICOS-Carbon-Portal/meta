@@ -121,8 +121,10 @@
 					@PanelRow("Location", location)
 				}
 				@agentPanelRow("Station", station.org)
-				@for(responsibleOrganization <- station.responsibleOrganization){
-					@agentPanelRow("Responsible organization", responsibleOrganization)
+				@if(dobj.production.flatMap(_.host).isEmpty){
+					@for(responsibleOrganization <- station.responsibleOrganization){
+						@agentPanelRow("Responsible organization", responsibleOrganization)
+					}
 				}
 				@for(site <- acquisition.site){
 					@resourcePanelRow("Ecosystem", site.ecosystem)

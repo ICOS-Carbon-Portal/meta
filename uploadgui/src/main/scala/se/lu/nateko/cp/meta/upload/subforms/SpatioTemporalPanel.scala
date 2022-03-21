@@ -102,15 +102,21 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo match{
-			case Left(l3) =>
-				titleInput.value = l3.title
-				descriptionInput.value = l3.description
-				timeStartInput.value = l3.temporal.interval.start
-				timeStopInput.value = l3.temporal.interval.stop
-				temporalResInput.value = l3.temporal.resolution
-				externalPageInput.value = l3.customLandingPage
-				varInfoForm.setValues(l3.variables)
-				l3.spatial match{
+			case Left(spatTemp) =>
+				titleInput.value = spatTemp.title
+				descriptionInput.value = spatTemp.description
+				timeStartInput.value = spatTemp.temporal.interval.start
+				timeStopInput.value = spatTemp.temporal.interval.stop
+				temporalResInput.value = spatTemp.temporal.resolution
+				stationSelect.reset()
+				for(
+					statUri <- spatTemp.forStation;
+					stat <- stationSelect.getOptions.find(_.namedUri.uri == statUri)
+				) stationSelect.value = stat
+				samplingHeightInput.value = spatTemp.samplingHeight
+				externalPageInput.value = spatTemp.customLandingPage
+				varInfoForm.setValues(spatTemp.variables)
+				spatTemp.spatial match{
 					case Left(box) =>
 						minLatInput.value = box.min.lat
 						minLonInput.value = box.min.lon

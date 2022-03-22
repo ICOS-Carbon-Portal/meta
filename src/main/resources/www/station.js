@@ -13,6 +13,7 @@ function initMap(locations) {
 
 	var map = L.map(mapDiv, {
 		minZoom: 1,
+		maxZoom: 14,
 		maxBounds: [[-90, -180],[90, 180]],
 		scrollWheelZoom: window.top === window.self
 	});
@@ -38,12 +39,12 @@ function initMap(locations) {
 						}).addTo(map);
 						return null;
 					} else {
-						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
+						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);  
 					}
 				},
 				onEachFeature(feature, layer) {
 					if (isSites && label) {
-						layer.bindPopup(label);
+						layer.bindPopup(label); 
 					} else if (feature.properties && feature.properties.label) {
 						layer.bindPopup(feature.properties.label);
 					}

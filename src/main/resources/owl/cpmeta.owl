@@ -512,6 +512,24 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Project"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">implies default licence</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf">
@@ -2861,6 +2879,12 @@
     
 
 
+    <!-- http://purl.org/dc/terms/LicenseDocument -->
+
+    <owl:Class rdf:about="http://purl.org/dc/terms/LicenseDocument"/>
+    
+
+
     <!-- http://www.opengis.net/ont/geosparql#Feature -->
 
     <owl:Class rdf:about="http://www.opengis.net/ont/geosparql#Feature">
@@ -3669,6 +3693,24 @@
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
         <hasName>Ocean Thematic Centre</hasName>
         <rdfs:label>ICOS OTC</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://data.fieldsites.se/licence -->
+
+    <owl:NamedIndividual rdf:about="https://data.fieldsites.se/licence">
+        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES CCBY4 Data Licence</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://data.icos-cp.eu/licence -->
+
+    <owl:NamedIndividual rdf:about="https://data.icos-cp.eu/licence">
+        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS CCBY4 Data Licence</rdfs:label>
     </owl:NamedIndividual>
     
 

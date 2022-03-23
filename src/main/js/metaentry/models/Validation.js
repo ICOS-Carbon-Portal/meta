@@ -13,7 +13,7 @@ function intValidator(s){
 }
 
 function urlValidator(s){
-	var expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+	var expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
 	var regex = new RegExp(expression);
 	return (s && s.match(regex)) ? ok : error("Not a valid URL!");
 }
@@ -143,8 +143,9 @@ function getValidator(dataRangeDto){
 }
 
 module.exports = {
-	getValidator: getValidator,
-	aggregateValidities: aggregateValidities
+	getValidator,
+	aggregateValidities,
+	urlValidator
 };
 
 

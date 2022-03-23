@@ -15,7 +15,7 @@ trait InstanceLabeler {
 
 	// rdfs:label is the default, to be overridden in some implementations
 	def getLabel(instUri: IRI, instServer: InstanceServer): String =
-		getRdfsLabel(instUri, instServer).getOrElse(instUri.getLocalName)
+		getRdfsLabel(instUri, instServer).getOrElse(instUri.stringValue)
 
 	final def getRdfsLabel(instUri: IRI, instServer: InstanceServer): Option[String] =
 		instServer.getValues(instUri, RDFS.LABEL).headOption.map(_.stringValue)

@@ -4,11 +4,11 @@ export default class ObjectPropertyValues extends PropertyValues{
 
 	constructor(propertyDto, valueDtos){
 		super(propertyDto, _.pluck(valueDtos, "value"));
-		this._rangeValues = propertyDto.rangeValues || [];
+		this._rangeValues = propertyDto.rangeValues || null;
 	}
 
 	hasRangeValues(){
-		return !_.isEmpty(this._rangeValues);
+		return this._rangeValues != null && !_.isEmpty(this._rangeValues);
 	}
 
 	getRangeValues(){

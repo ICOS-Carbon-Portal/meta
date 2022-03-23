@@ -119,16 +119,6 @@
         <IRI>http://meta.icos-cp.eu/resources/memberships/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:NercP01Concept</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
-        <AbbreviatedIRI>cpmeta:NercP01Concept</AbbreviatedIRI>
-        <IRI>http://vocab.nerc.ac.uk/collection/P01/current/</IRI>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
         <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>

@@ -2364,14 +2364,6 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ExternalVocabConcept -->
-
-    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ExternalVocabConcept">
-        <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
-    </owl:Class>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation">
@@ -2515,16 +2507,6 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/NeonStation">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:label>NEON station</rdfs:label>
-    </owl:Class>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/NercP01Concept -->
-
-    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/NercP01Concept">
-        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ExternalVocabConcept"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">NERC P01 vocabulary concept</rdfs:label>
-        <rdfs:seeAlso rdf:resource="http://vocab.nerc.ac.uk/collection/P02/current/"/>
     </owl:Class>
     
 
@@ -2850,12 +2832,6 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.w3.org/2004/02/skos/core#closeMatch"/>
-                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ExternalVocabConcept"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:comment>Domain-specific meaning of the values</rdfs:comment>
         <rdfs:label>Value Type</rdfs:label>
     </owl:Class>

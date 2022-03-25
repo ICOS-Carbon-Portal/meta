@@ -53,6 +53,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
 		_ <- validatePrevVers(meta, getInstServer(spec));
+		_ <- validateLicence(meta, getInstServer(spec));
 		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
 	) yield NotUsed
 
@@ -246,6 +247,15 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			}
 		}
 		.foldLeft(ok)(bothOk(_, _))
+
+	private def validateLicence(dto: DataObjectDto, getInstServ: => Try[InstanceServer]): Try[NotUsed] = {
+		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
+			getInstServ.flatMap{serv =>
+				if(serv.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
+				else userFail(s"Unknown licence $licUri")
+			}
+		}
+	}
 
 	private def existsAndIsCompleted(obj: IRI, inServer: InstanceServer): Try[NotUsed] = {
 		if(inServer.hasStatement(Some(obj), Some(metaVocab.hasSizeInBytes), None))

@@ -24,6 +24,9 @@ import scala.util.Success
 import scala.util.Try
 
 import CitationStyle._
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.IRI
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -40,7 +43,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	val server = new Rdf4jInstanceServer(repo)
 	val vocab = new CpVocab(server.factory)
-	protected val hasKeywords = (new CpmetaVocab(server.factory)).hasKeywords
+	private val metaVocab = new CpmetaVocab(server.factory)
 	val attrProvider = new AttributionProvider(repo, vocab)
 
 	def getItemCitationInfo(item: CitableItem) = References.empty.copy(
@@ -54,8 +57,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case data: DataObject =>
 			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
 			val dobj = vocab.getStaticObject(data.hash)
-			val keywords = getOptionalString(dobj, hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-			val theLicence = getLicence
+			val keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
+			val theLicence = getLicence(data.hash)
 			val structuredCitations = new StructuredCitations(data, citInfo, keywords, theLicence)
 
 			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
@@ -84,8 +87,29 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			)
 	}
 
-	//will depend on other things in the future
-	def getLicence(implicit envri: Envri): Option[Licence] = defaultLicences.get(envri)
+	def getLicence(dobj: Sha256Sum)(implicit envri: Envri): Option[Licence] = {
+		val uri = vocab.getStaticObject(dobj)
+
+		def getOptLic(licUri: IRI): Option[Licence] = getOptionalString(licUri, RDFS.LABEL)
+			.map(new Licence(_, licUri.toJava))
+
+		def getImpliedLic(term: IRI): Option[Licence] = getOptionalUri(term, metaVocab.impliesDefaultLicence)
+			.flatMap(getOptLic)
+
+		def getSpec = getOptionalUri(uri, metaVocab.hasObjectSpec)
+
+		getOptionalUri(uri, metaVocab.dcterms.license)
+			.flatMap(getOptLic) //obj-level licence declaration
+			.orElse(getSpec.flatMap(getImpliedLic)) //spec-level
+			.orElse{ //project-level
+				for(
+					spec <- getSpec;
+					proj <- getOptionalUri(spec, metaVocab.hasAssociatedProject);
+					lic <- getImpliedLic(proj)
+				) yield lic
+			}
+			.orElse(defaultLicences.get(envri)) //defaults
+	}
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
 		case None => "Fetching... try [refreshing the page] again in a few seconds"

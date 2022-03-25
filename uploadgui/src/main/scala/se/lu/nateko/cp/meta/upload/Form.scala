@@ -126,7 +126,8 @@ class Form(
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
 		references = Some(ReferencesDto(
-			keywords = dataPanel.keywords.toOption.map(_.map(_.trim).filter(!_.isEmpty))
+			keywords = dataPanel.keywords.toOption.map(_.map(_.trim).filter(!_.isEmpty)),
+			licence = None //TODO Add license selection support to UploadGUI
 		))
 	)
 

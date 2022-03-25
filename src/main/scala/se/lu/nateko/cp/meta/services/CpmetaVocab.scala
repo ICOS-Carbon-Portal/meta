@@ -64,6 +64,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val awardNumber = getRelativeRaw("awardNumber")
 	val awardTitle = getRelativeRaw("awardTitle")
 	val awardURI = getRelativeRaw("awardURI")
+	val impliesDefaultLicence = getRelativeRaw("impliesDefaultLicence")
 
 	val hasSha256sum = getRelativeRaw("hasSha256sum")
 	val hasDoi = getRelativeRaw("hasDoi")
@@ -175,6 +176,8 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	object dcterms extends CustomVocab {
 		val factory = top.factory
 		implicit val bup = makeUriProvider(CpmetaVocab.DctermsPrefix)
+
+		val licenseDocClass = getRelativeRaw("LicenseDocument")
 
 		val date = getRelativeRaw("date")
 		val title = getRelativeRaw("title")

@@ -81,7 +81,7 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = Some(ReferencesDto(dobj.references.keywords))
+			references = Some(ReferencesDto(dobj.references.keywords, dobj.references.licence.map(_.url)))
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",

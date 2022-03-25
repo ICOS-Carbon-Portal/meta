@@ -74,7 +74,8 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 	"isNextVersionOf": "MAp1ftC4mItuNXH3xmAe7jZk",
 	"preExistingDoi": "10.1594/PANGAEA.865618",
 	"references": {
-		"keywords": []
+		"keywords": ["CO2", "meteo"],
+		"licence": "https://creativecommons.org/publicdomain/zero/1.0/"
 	}
 }
 ```
@@ -141,7 +142,11 @@ Clarifications:
 - `isNextVersionOf` is optional. It should be used if you are uploading a new version of a data object(s) that is(are) already present. The value is the SHA256 hashsum of the older data object (or an array of the hashsums, if they are more than one). Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 - `preExistingDoi` (optional) allows specifying a DOI for the data object, for example if it is also hosted elsewhere and already has a preferred DOI, or if a dedicated DOI has been minted for the object before uploading it to CP.
 - `references` (optional) JSON object with additional "library-like" information; the list of its properties is planned to grow in the future.
-- `keywords` (optional) an array of strings to be used as keywords specific to this particular object. Please note that CP metadata allows specifying keywords also on the data object specification (data type) level, and on the project level. Keywords common to all data objects of a certain data type should be associated directly with the corresponding specification (this is done by CP staff on request from the data uploaders).
+	- `keywords` (optional) an array of strings to be used as keywords specific to this particular object. Please note that CP metadata allows specifying keywords also on the data object specification (data type) level, and on the project level. Keywords common to all data objects of a certain data type should be associated directly with the corresponding specification (this is done by CP staff on request from the data uploaders).
+	- `licence` (optional) URL that identifies a licence for the data object. CP (or SITES) data licence is used by default (depending on the ENVRI), if not specified. The licence URL must come from a list of supported licences, for example:
+		+ https://data.icos-cp.eu/licence
+		+ https://data.fieldsites.se/licence
+		+ (the up-to-date list of supported licences can be obtained using [SPARQL client](https://meta.icos-cp.eu/sparqlclient/) and query `select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>}`)
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 

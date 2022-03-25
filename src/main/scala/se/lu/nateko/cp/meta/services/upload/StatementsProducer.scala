@@ -77,7 +77,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
-		makeSt(objectUri, metaVocab.hasKeywords, meta.references.flatMap(_.keywords).map(_.mkString(",")).map(vocab.lit))
+		makeSt(objectUri, metaVocab.hasKeywords, meta.references.flatMap(_.keywords).map(_.mkString(",")).map(vocab.lit)) ++
+		makeSt(objectUri, metaVocab.dcterms.license, meta.references.flatMap(_.licence).map(_.toRdf))
 	}
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {

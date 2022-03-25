@@ -77,9 +77,9 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 
 	def getLicence(res: Resource): Option[Licence] = for(
 		iri <- toIRI(res);
-		_ <- extractHash(iri);
+		hash <- extractHash(iri);
 		envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri));
-		lic <- citer.getLicence(envri)
+		lic <- citer.getLicence(hash)(envri)
 	) yield lic
 
 	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>

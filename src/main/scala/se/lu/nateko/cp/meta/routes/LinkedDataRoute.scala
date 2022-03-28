@@ -37,7 +37,8 @@ object LinkedDataRoute {
 				case _ => envriConf.metaItemPrefix
 			}
 			respondWithHeaders(`Access-Control-Allow-Origin`.*) {
-				complete(uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme))
+				val canonicalUri = uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme)
+				complete(canonicalUri)
 			}
 		}
 

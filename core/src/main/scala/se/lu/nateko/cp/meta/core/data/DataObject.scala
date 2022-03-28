@@ -169,7 +169,7 @@ case class DocObject(
 	references: References
 ) extends StaticObject
 
-case class Licence(name: String, url: URI)
+case class Licence(url: URI, name: String, webpage: URI, baseLicence: Option[URI])
 
 case class References(
 	citationString: Option[String],

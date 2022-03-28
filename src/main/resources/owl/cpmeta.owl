@@ -3164,6 +3164,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence">
+        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <skos:exactMatch rdf:resource="https://creativecommons.org/licenses/by/4.0"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS CCBY4 Data Licence</rdfs:label>
+        <rdfs:seeAlso rdf:resource="https://data.icos-cp.eu/licence"/>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/igbp_BSV -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/igbp_BSV">
@@ -3697,20 +3708,19 @@
     
 
 
-    <!-- https://data.fieldsites.se/licence -->
+    <!-- https://creativecommons.org/licenses/by/4.0 -->
 
-    <owl:NamedIndividual rdf:about="https://data.fieldsites.se/licence">
-        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES CCBY4 Data Licence</rdfs:label>
+    <owl:NamedIndividual rdf:about="https://creativecommons.org/licenses/by/4.0">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">vanilla CC BY 4</rdfs:label>
     </owl:NamedIndividual>
     
 
 
-    <!-- https://data.icos-cp.eu/licence -->
+    <!-- https://creativecommons.org/publicdomain/zero/1.0/ -->
 
-    <owl:NamedIndividual rdf:about="https://data.icos-cp.eu/licence">
+    <owl:NamedIndividual rdf:about="https://creativecommons.org/publicdomain/zero/1.0/">
         <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS CCBY4 Data Licence</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -3738,6 +3748,17 @@
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/image">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label>Image</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://meta.fieldsites.se/ontologies/sites/sitesLicence -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/sitesLicence">
+        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <skos:exactMatch rdf:resource="https://creativecommons.org/licenses/by/4.0"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">SITES CCBY4 Data Licence</rdfs:label>
+        <rdfs:seeAlso rdf:resource="https://data.fieldsites.se/licence"/>
     </owl:NamedIndividual>
     
 

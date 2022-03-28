@@ -97,6 +97,7 @@ object CpVocab{
 	val SpatCovPrefix = "spcov_"
 	val VarInfoPrefix = "varinfo_"
 	val RolesPrefix = "roles/"
+	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)
@@ -107,7 +108,7 @@ object CpVocab{
 	}
 
 	object SpatialCoverage{
-		def unapply(uri: java.net.URI): Option[Sha256Sum] = asPrefWithHashSuff(uri.getPath.split('/').last, SpatCovPrefix)
+		def unapply(uri: URI): Option[Sha256Sum] = asPrefWithHashSuff(uri.getPath.split('/').last, SpatCovPrefix)
 	}
 
 	object DataObject{

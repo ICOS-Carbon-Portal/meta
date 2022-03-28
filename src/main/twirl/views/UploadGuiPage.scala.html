@@ -1,9 +1,9 @@
+@import java.net.URI
 @import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 @import se.lu.nateko.cp.meta.core.data.Envri
-@import se.lu.nateko.cp.meta.core.data.Licence
 @import Envri.Envri
 
-@(devVersion: Boolean, licences: Seq[Licence], envri: Envri, authConf: PublicAuthConfig)
+@(devVersion: Boolean, licences: Seq[(URI, String)], envri: Envri, authConf: PublicAuthConfig)
 @ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapJavascript = true){
 	<style type="text/css">
 	#main {
@@ -256,9 +256,9 @@
 							<div class="mb-3 licence-block">
 								<label class="form-label" for="licence">Licence @optional</label>
 								<select class="form-select" id="licenceselect">
-									<option value=""></option>
-									@for(lic <- licences){
-										<option value=@(lic.url)>@(lic.name)</option>
+									<option value="">(inherit default)</option>
+									@for((licUrl, licName) <- licences){
+										<option value=@licUrl>@licName</option>
 									}
 								</select>
 							</div>

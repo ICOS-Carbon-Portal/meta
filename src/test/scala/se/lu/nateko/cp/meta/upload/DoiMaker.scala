@@ -1,18 +1,20 @@
 package se.lu.nateko.cp.meta.upload
 
+import akka.Done
+import akka.actor.ActorSystem
+import se.lu.nateko.cp.doi._
 import se.lu.nateko.cp.doi.core.DoiClient
 import se.lu.nateko.cp.doi.core.DoiClientConfig
-import java.net.URL
 import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
-import se.lu.nateko.cp.doi._
 import se.lu.nateko.cp.doi.meta._
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import akka.actor.ActorSystem
-import java.net.URI
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
-import scala.concurrent.Future
-import akka.Done
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
+
+import java.net.URI
+import java.net.URL
+import scala.concurrent.Future
 import scala.util.Try
 
 class DoiMaker(password: String)(implicit val system: ActorSystem){
@@ -37,7 +39,7 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 object DoiMaker{
 
-	val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
+	val ccby4 = Rights("CC BY 4.0", Some(CpVocab.CCBY4.toString))
 	val etc = GenericName("ICOS Ecosystem Thematic Centre")
 	val atc = GenericName("ICOS Atmosphere Thematic Centre")
 

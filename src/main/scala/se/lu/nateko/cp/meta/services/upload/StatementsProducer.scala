@@ -1,33 +1,32 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-import java.time.Instant
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
-
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
+import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.utils._
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.utils.rdf4j._
+
+import java.net.URI
+import java.time.Instant
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 

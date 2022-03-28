@@ -1,7 +1,11 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.SKOS
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
@@ -24,9 +28,6 @@ import scala.util.Success
 import scala.util.Try
 
 import CitationStyle._
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.IRI
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -90,8 +91,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	def getLicence(dobj: Sha256Sum)(implicit envri: Envri): Option[Licence] = {
 		val uri = vocab.getStaticObject(dobj)
 
-		def getOptLic(licUri: IRI): Option[Licence] = getOptionalString(licUri, RDFS.LABEL)
-			.map(new Licence(_, licUri.toJava))
+		def getOptLic(licUri: IRI): Option[Licence] = for(
+			name <- getOptionalString(licUri, RDFS.LABEL);
+			webpage = getOptionalUri(licUri, RDFS.SEEALSO).getOrElse(licUri).toJava;
+			baseLicence = getOptionalUri(licUri, SKOS.EXACT_MATCH).map(_.toJava)
+		) yield Licence(licUri.toJava, name, webpage, baseLicence)
 
 		def getImpliedLic(term: IRI): Option[Licence] = getOptionalUri(term, metaVocab.impliesDefaultLicence)
 			.flatMap(getOptLic)
@@ -254,8 +258,18 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 object CitationMaker{
 
 	val defaultLicences: Map[Envri, Licence] = Map(
-		Envri.ICOS -> Licence("ICOS CCBY4 Data Licence", new URI("https://data.icos-cp.eu/licence")),
-		Envri.SITES -> Licence("SITES CCBY4 Data Licence", new URI("https://data.fieldsites.se/licence"))
+		Envri.ICOS -> Licence(
+			new URI(CpmetaVocab.MetaPrefix + "icosLicence"),
+			"ICOS CCBY4 Data Licence",
+			new URI("https://data.icos-cp.eu/licence"),
+			Some(CpVocab.CCBY4)
+		),
+		Envri.SITES -> Licence(
+			new URI(CpmetaVocab.SitesPrefix + "sitesLicence"),
+			"SITES CCBY4 Data Licence",
+			new URI("https://data.fieldsites.se/licence"),
+			Some(CpVocab.CCBY4)
+		)
 	)
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(

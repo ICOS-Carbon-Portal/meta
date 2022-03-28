@@ -7,7 +7,8 @@ case class EnvriConfig(
 	dataHost: String,
 	metaHost: String,
 	dataItemPrefix: URI,
-	metaItemPrefix: URI
+	metaItemPrefix: URI,
+	defaultTimezoneId: String
 ){
 	def matchesHost(host: String): Boolean =
 		host == dataHost || host == metaHost ||

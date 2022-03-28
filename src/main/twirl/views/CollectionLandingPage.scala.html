@@ -6,47 +6,57 @@
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(coll.title, pageTitle, envri, CpMenu.default, headerExtra = Some(headerExtra)){
-	<div class="row">
-		@Panel("Summary", 8, "success"){
-			@PanelRow("Title", coll.title)
-			@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
-			@PanelHtmlRow{Download URL}{
-				<span><a target="_blank" href=@{accessUrl}>@{coll.title + ".zip"}</a></span>
+@ServerSidePage(coll.title, coll.title, envri, CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+	<div class="row py-2 gy-4">
+		<div class="col-md-8">
+			@if(coll.nextVersion) {
+				<div class="alert alert-warning">
+					A newer version is available:
+					@nextVersionLink(coll.nextVersion)
+				</div>
 			}
-			@PanelHtmlRow{Collection creator}{
-				@agentLink(coll.creator)
-			}
-			@PanelHtmlRow{Previous version}{@versionLink(coll.previousVersion)}
-			@PanelHtmlRow{Next version}{@versionLink(coll.nextVersion)}
-		}
-		<div class="col-md-4">
-			<div class="row">
-				@Panel("Metadata download", 12){
-					@collMetaDownloadButton(coll, "JSON", "json")
-					@collMetaDownloadButton(coll, "RDF/XML", "xml")
-					@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")
+			<div class="row gy-2">
+				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
+				@for(description <- coll.description){
+					@property("Description", description)
 				}
-				@Panel("Download count", 6){
+				@HtmlProperty{Creator}{
+					@agentLink(coll.creator)
+				}
+				@if(coll.previousVersion) {
+					@HtmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
+				}
+				@Citations(coll.references)
+
+				<h2 class="fs-3 mt-5">Content</h2>
+				@property("Number of items", coll.members.size.toString)
+				@for((item, i) <- coll.members.zipWithIndex){
+					@HtmlProperty{
+						@if(i == 0) {Items}
+					}{
+						@staticDataItemLink(item)
+					}
+				}
+
+				<h2 class="fs-3 mt-5">Statistics</h2>
+				@HtmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
 			</div>
 		</div>
-	</div>
-
-	<div class="row">
-		@Panel("Content", 12){
-			@Citations(coll.references)
-			@for(description <- coll.description){
-				@PanelRow("Description", description)
-			}
-			@PanelRow("Number of items", coll.members.size.toString)
-			@for(item <- coll.members){
-				@PanelHtmlRow{Item}{
-					@staticDataItemLink(item)
+		<div class="col-md-4">
+			<div class="row">
+				@card(12, "bg-light"){@Html("")}{
+					<div class="row gy-2">
+						@HtmlProperty{Metadata}{
+							@collMetaDownloadButton(coll, "JSON", "json") •
+							@collMetaDownloadButton(coll, "RDF/XML", "xml") •
+							@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")
+						}
+					</div>
 				}
-			}
-		}
+			</div>
+		</div>
 	</div>
 }
 
@@ -54,13 +64,6 @@
 
 @headerExtra = {
 	<a class="btn btn-secondary" href="@accessUrl">Download</a>
-}
-
-@pageTitle = @{
-	envri match {
-		case Envri.SITES => "Collection Landing Page"
-		case _ => "Collection Landing Page at Carbon Portal"
-	}
 }
 
 @staticDataItemLink(item: StaticDataItem) = {

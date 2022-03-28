@@ -11,176 +11,204 @@
 
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @template{
-	<div class="row">
-		@Panel("Summary", 8, summaryStyleContext){
-			@if(!uploadComplete) {
-				@PanelRow("Status - Not complete", "Metadata uploaded. Data not uploaded. No PID assigned.")
-			}
+	<div class="row py-2 gy-4">
+		@if(dobj.nextVersion) {
+			<div class="col-12">
+				<div class="alert alert-warning">
+					A newer version is available:
+					@nextVersionLink(dobj.nextVersion)
+				</div>
+			</div>
+		}
+		@if(!uploadComplete) {
+			<div class="col-12">
+				<div class="alert alert-warning">
+					<h4 class="alert-heading">Upload incomplete</h4>
+					<div>Metadata uploaded on @dobj.submission.start.getDateTimeStr. Data not uploaded. No PID assigned.</div>
+				</div>
+			</div>
+		}
+		<div class="col-md-8">
+			<div class="row gy-2">
 			@DoiPanelHtmlRow(dobj.doi, handleProxies.doi)
 			@if(uploadComplete) {
 				@PidPanelHtmlRow(dobj.pid, handleProxies.basic)
-				@accessUrlRow(dobj)
 			}
-			@resourcePanelRow("Data affiliation", dobj.specification.project.self)
-			@PanelHtmlRow{Previous version}{@versionLink(dobj.previousVersion.flattenToSeq)}
-			@PanelHtmlRow{Next version}{@versionLink(dobj.nextVersion)}
-			@for(coll <- dobj.parentCollections){
-				@resourcePanelRow("Part of", coll)
-			}
-			@for(ack <- dobj.references.acknowledgements.toSeq.flatten){
-				@PanelRow("Acknowledgement", ack)
-			}
-		}
-		<div class="col-md-4">
-			<div class="row">
-				@Panel("Metadata download", 12){
-					<div class="d-flex flex-wrap gap-1">
-						@objMetaDownloadButton(dobj, "JSON", "json")
-						@objMetaDownloadButton(dobj, "RDF/XML", "xml")
-						@objMetaDownloadButton(dobj, "RDF/Turtle", "ttl")
-					</div>
-				}
-				@Panel("Download count", 6){
-					@extras.downloadStats.getOrElse("Not available")
-				}
-				@Panel("Preview count", 6){
-					@extras.previewStats.getOrElse("Not available")
-				}
-			</div>
-		</div>
-	</div>
-
-	<div class="row">
-		@Panel("Content", 12){
-			@Citations(dobj.references)
-			@PanelRow("File name", dobj.fileName)
-			@for(size <- dobj.size){
-				@PanelRow("Size in bytes", size.toString)
+			@for(specComm <- dobj.specification.self.comments){
+				@property("Description", specComm)
 			}
 			@for(l3meta <- dobj.specificInfo.left.toOption){
-				@PanelRow("Title", l3meta.title)
 				@for(description <- l3meta.description){
-					@PanelRow("Description", description)
+					@property("Description", description)
 				}
-				@PanelRow("Temporal coverage from (UTC)", l3meta.temporal.interval.start.getDateTimeStr)
-				@PanelRow("Temporal coverage to (UTC)", l3meta.temporal.interval.stop.getDateTimeStr)
+				@property(s"Temporal coverage from (${conf.defaultTimezoneId})", l3meta.temporal.interval.start.getDateTimeStr)
+				@property(s"Temporal coverage to (${conf.defaultTimezoneId})", l3meta.temporal.interval.stop.getDateTimeStr)
 				@for(resolution <- l3meta.temporal.resolution){
-					@PanelRow("Temporal resolution", resolution)
+					@property("Temporal resolution", resolution)
 				}
 			}
-			@resourcePanelRow("Data type", dobj.specification.self)
-			@for(specComm <- dobj.specification.self.comments){
-				@PanelRow("Description", specComm)
+			@resourceproperty("Data affiliation", dobj.specification.project.self)
+			@for(coll <- dobj.parentCollections){
+				@HtmlProperty{Part of}{@resourceLink(coll)}
 			}
-			@PanelRow("Data level", dobj.specification.dataLevel.toString)
-			@resourcePanelRow("Format", dobj.specification.format)
-			@resourcePanelRow("Encoding", dobj.specification.encoding)
+			@for(ack <- dobj.references.acknowledgements.toSeq.flatten){
+				@property("Acknowledgement", ack)
+			}
+			@Citations(dobj.references)
+			@if(dobj.previousVersion) {
+				@HtmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
+			}
+			@property("File name", dobj.fileName)
+			@for(size <- dobj.size){
+				@property("File size", formatBytes(size))
+			}
+			@resourceproperty("Data type", dobj.specification.self)
+			@property("Data level", dobj.specification.dataLevel.toString)
 
 			@documentationLink(dobj.specification.documentation)
-			@PanelRow("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
-			@PanelRow("SHA-256 hashsum (base64)", dobj.hash.base64)
-			@if(uploadComplete) {
-				@accessUrlRow(dobj)
-			}
-			@for(keywords <- dobj.keywords){
-				@PanelRow("Keywords", keywords.mkString(", "))
-			}
-		}
-	</div>
 
-	@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
-		@PanelWide("Previewable variables"){
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Value type</th>
-						<th>Unit</th>
-						<th>Quantity kind</th>
-					</tr>
-				</thead>
-				<tbody>
-					@for(varInfo <- variables){
-						<tr>
-							<td>@(varInfo.label)</td>
-							<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
-							<td>@(varInfo.valueType.unit.getOrElse(""))</td>
-							<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
-						</tr>
-					}
-				</tbody>
-			</table>
-		}
-	}
-
-	<div class="row">
-
-		@for(acquisition <- dobj.acquisition; station = acquisition.station){
-			@Panel("Acquisition", 4){
+			@for(acquisition <- dobj.acquisition; station = acquisition.station){
+				<h2 class="fs-3 mt-5">Acquisition</h2>
 				@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
-					@PanelRow("Location", location)
+					@property("Location", location)
 				}
-				@agentPanelRow("Station", station.org)
+				@agentproperty("Station", station.org)
 				@if(dobj.production.flatMap(_.host).isEmpty){
 					@for(responsibleOrganization <- station.responsibleOrganization){
-						@agentPanelRow("Responsible organization", responsibleOrganization)
+						@agentproperty("Responsible organization", responsibleOrganization)
 					}
 				}
 				@for(site <- acquisition.site){
-					@resourcePanelRow("Ecosystem", site.ecosystem)
+					@resourceproperty("Ecosystem", site.ecosystem)
 				}
 				@for(interval <- acquisition.interval){
-					@PanelRow("Start time (UTC)", interval.start.getDateTimeStr)
-					@PanelRow("Stop time (UTC)", interval.stop.getDateTimeStr)
+					@property(s"Start time (${conf.defaultTimezoneId})", interval.start.getDateTimeStr)
+					@property(s"Stop time (${conf.defaultTimezoneId})", interval.stop.getDateTimeStr)
 				}
 				@for(instrument <- acquisition.instruments){
-					@resourcePanelRow("Instrument", instrument)
+					@resourceproperty("Instrument", instrument)
 				}
 				@for(height <- acquisition.samplingHeight){
-					@PanelRow("Sampling height", height.toString)
+					@property("Sampling height", height.toString)
 				}
 			}
-		}
 
-		@for(production <- dobj.production){
-			@Panel("Production", 4){
-				@agentPanelRow("File made by", production.creator)
+			@for(production <- dobj.production){
+				<h2 class="fs-3 mt-5">Production</h2>
+				@agentproperty("File made by", production.creator)
 				@for(host <- production.host){
-					@agentPanelRow("Host organization", host)
+					@agentproperty("Host organization", host)
 				}
-				@PanelRow("Production dateTime (UTC)", production.dateTime.getDateTimeStr)
+				@property(s"Production time (${conf.defaultTimezoneId})", production.dateTime.getDateTimeStr)
 				@for(comment <- production.comment){
-					@PanelRow("Comment", comment)
+					@property("Comment", comment)
 				}
 				@for(contributor <- production.contributors.sorted){
-					@agentPanelRow("Contributor", contributor)
+					@agentproperty("Contributor", contributor)
 				}
 				@for(source <- production.sources.sorted){
-					@resourcePanelRow("Source object", source.asUriResource)
+					@resourceproperty("Source object", source.asUriResource)
 				}
 				@for(doc <- production.documentation){
-					@resourcePanelRow("Documentation", doc.asUriResource)
+					@resourceproperty("Documentation", doc.asUriResource)
 				}
 			}
-		}
 
-		@Panel("Submission", 4){
-			@agentPanelRow("Submitted by", dobj.submission.submitter)
-			@PanelRow("Submission started (UTC)", dobj.submission.start.getDateTimeStr)
-			@PanelRow("Submission ended (UTC)", dobj.submission.stop.getDateTimeStr)
-		}
-	</div>
+			<br>
 
-	<div class="row">
-		@Panel("Spatial coverage", 6){
-			@for(covText <- coverageText){
-				@PanelRow("Coverage", covText)
+			@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
+				<h2 class="fs-3 mt-5">Previewable variables</h2>
+				<div class="col-md-12">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Value type</th>
+							<th>Unit</th>
+							@if(envri != Envri.SITES){<th>Quantity kind</th>}
+						</tr>
+					</thead>
+					<tbody>
+						@for(varInfo <- variables){
+							<tr>
+								<td>@(varInfo.label)</td>
+								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
+								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
+								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>}
+							</tr>
+						}
+					</tbody>
+				</table>
+				</div>
+			}
+			</div>
+
+			<div class="row gy-2">
+				<h2 class="fs-3 mt-5">Statistics</h2>
+				@HtmlProperty{Downloads}{
+					@extras.downloadStats.getOrElse("Not available")
+				}
+				@HtmlProperty{Previews}{
+					@extras.previewStats.getOrElse("Not available")
+				}
+			</div>
+
+			<div class="row gy-2">
+				<h2 class="fs-3 mt-5">Submission</h2>
+				@agentproperty("Submitted by", dobj.submission.submitter)
+				@if(!uploadComplete) {
+					@property(s"Submission started (${conf.defaultTimezoneId})", dobj.submission.start.getDateTimeStr)
+				} else {
+					@property(s"Submission time (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
+				}
+			</div>
+
+			<div class="row gy-2">
+				<h2 class="fs-3 mt-5">Technical information</h2>
+				@resourceproperty("Format", dobj.specification.format)
+				@resourceproperty("Encoding", dobj.specification.encoding)
+				@property("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
+				@property("SHA-256 hashsum (base64)", dobj.hash.base64)
+			</div>
+		</div>
+
+		<div class="col-md-4">
+			@card(12, "bg-light"){
+				<div class="card-img-top">
+					@defining(s"/objects/${dobj.hash.id}"){dobjLink =>
+					<iframe src="/station/?icon=@icon&dobj=@dobjLink"></iframe>
+					}
+				</div>
+			}{
+				<div class="row gy-2">
+					@for(covText <- coverageText){ @property("Coverage", covText) }
+					@for(acquisition <- dobj.acquisition; station = acquisition.station){
+						@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){
+							@property("Location", location)
+						}
+						@agentproperty("Station", station.org)
+					}
+				</div>
 			}
 
-			@defining(s"/objects/${dobj.hash.id}"){dobjLink =>
-				<iframe src="/station/?icon=@icon&dobj=@dobjLink"></iframe>
-			}
-		}
+			<div class="row">
+				@card(12, "bg-light"){@Html("")}{
+					<div class="row gy-2">
+						@HtmlProperty{Metadata}{
+							@objMetaDownloadButton(dobj, "JSON", "json") •
+							@objMetaDownloadButton(dobj, "RDF/XML", "xml") •
+							@objMetaDownloadButton(dobj, "RDF/Turtle", "ttl")
+						}
+						@for(keywords <- dobj.keywords){
+							@HtmlProperty{Keywords}{
+								@keywords.map(keyword(_))
+							}
+						}
+					</div>
+				}
+			</div>
+
+		</div>
 	</div>
 
 @*** uncomment for debug ****
@@ -193,16 +221,15 @@
 ****************************@
 }
 
+@splitTitle = @{dobj.references.title.map(_.split(",")).getOrElse(Array(""))}
 @pageHeading = @{
-	if(dobj.specification.project.self.uri === vocab.icosProject) {
-		"ICOS RI Data Object Landing Page"
-	}
-	else {
-		envri match {
-			case Envri.SITES => "SITES Data Object Landing Page"
-			case _ => "Data Object Landing Page at Carbon Portal"
-		}
-	}
+	if(splitTitle.size > 1)
+		dobj.references.title.map(_.split(",").dropRight(1).mkString(",")).getOrElse(pageTitle)
+	else
+		dobj.references.title.getOrElse(pageTitle)
+}
+@pageSubHeading = @{
+	if(splitTitle.size > 1) dobj.references.title.map(_.split(",").last) else None
 }
 
 @pageTitle = @{
@@ -210,21 +237,20 @@
 		.getOrElse(dobj.fileName)
 }
 
-@resourcePanelRow(label: String, res: UriResource) = {
-	@PanelHtmlRow{@label}{
+@resourceproperty(label: String, res: UriResource) = {
+	@HtmlProperty{@label}{
 		@resourceLink(res)
 	}
 }
 
-@agentPanelRow(label: String, agent: Agent) = {
-	@PanelHtmlRow{@label}{
+@agentproperty(label: String, agent: Agent) = {
+	@HtmlProperty{@label}{
 		@agentLink(agent)
 	}
 }
 
 @icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
 @uploadComplete = @{dobj.submission.stop.isDefined}
-@summaryStyleContext = @{if(uploadComplete) "success" else "warning"}
 
 @coverageText = @{
 	dobj.coverage.map(_.textSpecification).filter(_.length < 200)
@@ -247,7 +273,11 @@
 	//val schemaOrg = JsonLD(dobj, handleProxies)
 
 	if(spec.theme.self.uri === vocab.atmoTheme && spec.project.self.uri === vocab.icosProject && spec.dataLevel == 1)
-		AtcLandingPage(pageTitle, headerExtra, schemaOrg) _
+		AtcLandingPage(pageTitle, pageHeading, headerExtra, schemaOrg, pageSubHeading) _
 	else
-		ServerSidePage(pageTitle, pageHeading, envri, headerExtra = headerExtra, extraMetaTags = Some(schemaOrg)) _
+		ServerSidePage(pageTitle, pageHeading, envri, cpauthHostOpt = Some(conf.authHost), headerExtra = headerExtra, extraMetaTags = Some(schemaOrg), subHeading = pageSubHeading, conf = Some(conf)) _
+}
+
+@keyword(label: String) = {
+	<span class="badge rounded-pill bg-secondary text-light">@{label}</span>
 }

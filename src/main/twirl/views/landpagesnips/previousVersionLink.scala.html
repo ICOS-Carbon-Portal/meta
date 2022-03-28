@@ -3,19 +3,15 @@
 @(vers: Iterable[URI])
 @vers.toList match{
 	case Nil => {
-		not available
+		none
 	}
 	case uri :: Nil => {
-		<a href=@{uri}>available</a>
+		<a href=@{uri}>View previous version</a>
 	}
 	case _ => {
 		<span>
-			<span>multiple: </span>
 			@for((uri, i) <- vers.zipWithIndex){
-				@if(i > 0){
-					<span>, </span>
-				}
-				<a href=@{uri.getRawPath}>@{s"previous #${i + 1}"}</a>
+				<a href=@{uri.getRawPath}>@{s"view #${i + 1}"}</a>@if(i < vers.size - 1){<span>,</span>}
 			}
 		</span>
 	}

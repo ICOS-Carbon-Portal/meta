@@ -1,0 +1,9 @@
+@(width: Int, style: String)(header: Html)(body: Html)
+<div class="col-md-@width mb-3">
+	<div class="card @style">
+		@header
+		<div class="card-body">
+			@body
+		</div>
+	</div>
+</div>

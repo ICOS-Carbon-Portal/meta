@@ -52,6 +52,7 @@ object TestConfig {
 		dataHost = "data.icos-cp.eu",
 		metaHost = "meta.icos-cp.eu",
 		metaItemPrefix = new URI("http://meta.icos-cp.eu/"),
-		dataItemPrefix = new URI("https://meta.icos-cp.eu/")
+		dataItemPrefix = new URI("https://meta.icos-cp.eu/"),
+		defaultTimezoneId = "UTC"
 	))
 }

@@ -3,7 +3,7 @@
 
 @(refs: References)
 @for(cit <- refs.citationString){
-	@PanelHtmlRow{Citation}{@Html(cit)}
+	@HtmlProperty{Citation}{@Html(cit)}
 }
 @for(cit <- refs.citationBibTex){
 	@citationCollapsible("BibTex", cit)
@@ -13,19 +13,16 @@
 }
 
 @citationCollapsible(label: String, value: String) = {
-	<div class="row">
-		<div class="col-md-12">
-			<details>
-				<summary class="d-block">
-					<label class="fw-bold" style="margin-bottom: 5px;">Citation:</label>
-					<span class="btn-link" style="cursor:pointer;">@label</span>
-				</summary>
-				<div class="card bg-light">
-					<div class="card-body">
-						<pre class="user-select-all w-100 m-0">@value</pre>
-					</div>
+	@HtmlProperty(Html("")){
+		<details>
+			<summary class="d-inline-block">
+				<span class="btn-link" style="cursor:pointer;">@label</span>
+			</summary>
+			<div class="card bg-light">
+				<div class="card-body">
+					<pre class="user-select-all w-100 m-0">@value</pre>
 				</div>
-			</details>
-		</div>
-	</div>
+			</div>
+		</details>
+	}
 }

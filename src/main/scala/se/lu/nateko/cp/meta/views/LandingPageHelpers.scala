@@ -14,20 +14,20 @@ object LandingPageHelpers{
 
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
-	private def formatDateTime(inst: Instant): String = {
+	private def formatDateTime(inst: Instant)(implicit conf: EnvriConfig): String = {
 		val formatter: DateTimeFormatter = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd HH:mm:ss")
-			.withZone(ZoneId.of("UTC"))
+			.withZone(ZoneId.of(conf.defaultTimezoneId))
 
 		formatter.format(inst)
 	}
 
 	implicit class PresentableInstant(val inst: Instant) extends AnyVal{
-		def getDateTimeStr: String = formatDateTime(inst)
+		def getDateTimeStr(implicit conf: EnvriConfig): String = formatDateTime(inst)
 	}
 
 	implicit class OptionalInstant(val inst: Option[Instant]) extends AnyVal{
-		def getDateTimeStr: String = {
+		def getDateTimeStr(implicit conf: EnvriConfig): String = {
 			inst match {
 				case Some(i) => formatDateTime(i)
 				case None => "Not done"

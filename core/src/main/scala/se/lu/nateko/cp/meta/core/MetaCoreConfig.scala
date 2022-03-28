@@ -18,6 +18,6 @@ object MetaCoreConfig{
 
 	implicit val handleProxiesConfigFormat = jsonFormat2(HandleProxiesConfig)
 	implicit val envriFormat = enumFormat(Envri)
-	implicit val envriConfigFormat = jsonFormat5(EnvriConfig)
+	implicit val envriConfigFormat = jsonFormat6(EnvriConfig)
 	implicit val metaCoreConfigFormat = jsonFormat2(MetaCoreConfig.apply)
 }

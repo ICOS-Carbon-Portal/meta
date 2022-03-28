@@ -128,8 +128,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }
 
-	private def getIcosCitation(dobj: DataObject): CitationInfo = {
-		val zoneId = ZoneId.of("UTC")
+	private def getIcosCitation(dobj: DataObject)(implicit envri: Envri.Value): CitationInfo = {
+		val zoneId = ZoneId.of(envri.defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
 
@@ -170,8 +170,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	}
 
-	private def getSitesCitation(dobj: DataObject): CitationInfo = {
-		val zoneId = ZoneId.of("UTC+01:00")
+	private def getSitesCitation(dobj: DataObject)(implicit envri: Envri.Value): CitationInfo = {
+		val zoneId = ZoneId.of(envri.defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
 
@@ -231,7 +231,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	}
 
 	private def getDocCitation(dobj: DocObject)(implicit envri: Envri.Value): CitationInfo = {
-		val zoneId = ZoneId.of("UTC")
+		val zoneId = ZoneId.of(envri.defaultTimezoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
 		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."

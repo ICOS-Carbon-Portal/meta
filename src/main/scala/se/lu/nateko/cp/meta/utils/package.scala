@@ -73,7 +73,7 @@ package object utils {
 			}
 			else false
 		}
-		
+
 		def next(): IndexedSeq[T] =
 			if(!hasNext)
 				throw new NoSuchElementException("slidingByKey iterator empty")
@@ -89,6 +89,14 @@ package object utils {
 				if(next != null) group.append(next)
 				nextGroup
 			}
-		
+
+	}
+
+	def formatBytes(size: Long): String = {
+		val k: Double = 1024
+		val sizes = Seq("Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+		val i: Double = Math.floor(Math.log(size.toDouble) / Math.log(k))
+
+		s"${Math.round(size / Math.pow(k, i))} ${sizes(i.toInt)}"
 	}
 }

@@ -1,24 +1,27 @@
 @import se.lu.nateko.cp.viewscore._
 @import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import landpagesnips._
 
 @(
 	title: String, header: String, envri: Envri.Value,
 	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
-	bootstrapJavascript: Boolean = false
+	bootstrapJavascript: Boolean = false,
+	subHeading: Option[String] = None,
+	conf: Option[EnvriConfig] = None
 )(body: Html)
 @template{
 	@extraMetaTags
 	@LandingPageStyle()
 }{
-	@pageHeader(header, headerExtra)
+	@pageHeader(header, headerExtra, subHeading)
 	@body
 }
 
 @bootstrapVersion = @{Some(5)}
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion = bootstrapVersion, bootstrapJavascript = bootstrapJavascript) _
-	else CpCommonPage(title, menu, cpauthHostOpt, bootstrapVersion = bootstrapVersion, bootstrapJavascript = bootstrapJavascript) _
+	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion, bootstrapJavascript, cpauthHostOpt, conf.map(_.dataHost)) _
+	else CpCommonPage(title, menu, cpauthHostOpt, bootstrapVersion, bootstrapJavascript, conf.map(_.dataHost)) _
 }

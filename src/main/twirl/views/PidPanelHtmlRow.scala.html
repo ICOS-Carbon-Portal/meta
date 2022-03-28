@@ -1,7 +1,7 @@
 @import java.net.URI
 
 @(pidOpt: Option[String], handleProxy: URI)
-@PanelHtmlRow{PID}{
+@HtmlProperty{PID}{
 	@pidOpt match{
 		case None => {
 			<span>Not assigned</span>

@@ -1,83 +1,84 @@
 @import java.net.URI
-@import se.lu.nateko.cp.meta.core.data.{Envri, DocObject}
+@import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.utils._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
+@import se.lu.nateko.cp.meta.utils.urlEncode
 
-@(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value)
-@ServerSidePage(doc.fileName, pageHeading, envri, headerExtra = headerExtra){
-	<div class="row">
-		@Panel("Summary", 8, summaryStyleContext){
+@(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
+@ServerSidePage(doc.fileName, pageHeading, envri, headerExtra = headerExtra, subHeading = Some("Document")){
+	<div class="row py-2 gy-4">
+		<div class="col-md-8">
+			@if(doc.nextVersion) {
+				<div class="alert alert-warning">
+					A newer version is available:
+					@nextVersionLink(doc.nextVersion)
+				</div>
+			}
 			@if(!uploadComplete) {
-				@PanelRow("Status - Not complete", "Metadata uploaded. Document not uploaded. No PID assigned.")
+				<div class="alert alert-warning">
+					<h4 class="alert-heading">Incomplete upload</h4>
+					<div>Metadata uploaded. Document not uploaded. No PID assigned.</div>
+				</div>
 			}
-			@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
-			@if(uploadComplete) {
-				@PidPanelHtmlRow(doc.pid, handleProxies.basic)
-				@accessUrlRow(doc)
-			}
-			@PanelHtmlRow{Previous version}{@versionLink(doc.previousVersion.flattenToSeq)}
-			@PanelHtmlRow{Next version}{@versionLink(doc.nextVersion)}
-			@for(coll <- doc.parentCollections){
-				@PanelHtmlRow{Part of}{
-					@resourceLink(coll)
+			<div class="row gy-2">
+				@for(description <- doc.description){
+					@property("Description", description)
 				}
-			}
-		}
-		<div class="col-md-4">
-			<div class="row">
-				@Panel("Metadata download", 12){
-					@objMetaDownloadButton(doc, "JSON", "json")
-					@objMetaDownloadButton(doc, "RDF/XML", "xml")
-					@objMetaDownloadButton(doc, "RDF/Turtle", "ttl")
+				@if(doc.references.title) {
+					@property("File name", doc.fileName)
 				}
-				@Panel("Download count", 6){
+				@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
+				@if(uploadComplete) {
+					@PidPanelHtmlRow(doc.pid, handleProxies.basic)
+				}
+				@if(doc.previousVersion) {
+					@HtmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
+				}
+				@for(coll <- doc.parentCollections){
+					@HtmlProperty{Part of}{@resourceLink(coll)}
+				}
+				@Citations(doc.references)
+				@for(size <- doc.size){
+					@property("File size", formatBytes(size))
+				}
+				@property("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
+				@property("SHA-256 hashsum (base64)", doc.hash.base64)
+
+				<h2 class="fs-3 mt-5">Submission</h2>
+					@HtmlProperty{Submitted by}{
+						@agentLink(doc.submission.submitter)
+					}
+					@property(s"Submission started (${conf.defaultTimezoneId})", doc.submission.start.getDateTimeStr)
+					@property(s"Submission ended (${conf.defaultTimezoneId})", doc.submission.stop.getDateTimeStr)
+
+				<h2 class="fs-3 mt-5">Statistics</h2>
+				@HtmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
 			</div>
 		</div>
-	</div>
-
-	<div class="row">
-		@Panel("Content", 12){
-			@Citations(doc.references)
-			@PanelRow("File name", doc.fileName)
-			@for(title <- doc.references.title){
-				@PanelRow("Title", title)
+		<div class="col-md-4">
+			<div class="row">
+				@card(12, "bg-light"){@Html("")}{
+				<div class="row gy-2">
+					@HtmlProperty{Metadata}{
+						@metaDownloadButton(doc.hash.id, doc.fileName, "JSON", "json") •
+						@metaDownloadButton(doc.hash.id, doc.fileName, "RDF/XML", "xml") •
+						@metaDownloadButton(doc.hash.id, doc.fileName, "RDF/Turtle", "ttl")
+					}
+				</div>
 			}
-			@for(description <- doc.description){
-				@PanelRow("Description", description)
-			}
-			@for(size <- doc.size){
-				@PanelRow("Size in bytes", size.toString)
-			}
-			@PanelRow("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
-			@PanelRow("SHA-256 hashsum (base64)", doc.hash.base64)
-			@if(uploadComplete) {
-				@accessUrlRow(doc)
-			}
-		}
-	</div>
-
-	<div class="row">
-		@Panel("Submission", 4){
-			@PanelHtmlRow{Submitted by}{
-				@agentLink(doc.submission.submitter)
-			}
-			@PanelRow("Submission started (UTC)", doc.submission.start.getDateTimeStr)
-			@PanelRow("Submission ended (UTC)", doc.submission.stop.getDateTimeStr)
-		}
+			</div>
+		</div>
 	</div>
 }
 
 @pageHeading = @{
-	envri match {
-		case Envri.SITES => "SITES Document Landing Page"
-		case _ => "Document Landing Page at Carbon Portal"
-	}
+	doc.references.title.getOrElse(doc.fileName)
 }
 
 @accessUrl(link: URI) = {
@@ -91,4 +92,3 @@
 }
 
 @uploadComplete = @{doc.submission.stop.isDefined}
-@summaryStyleContext = @{if(uploadComplete) "success" else "warning"}

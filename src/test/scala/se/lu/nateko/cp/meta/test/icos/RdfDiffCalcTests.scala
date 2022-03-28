@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 	implicit val envriConfs = Map(
-		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"))
+		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 	)
 
 	type A = ATC.type

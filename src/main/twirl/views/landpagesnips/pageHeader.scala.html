@@ -1,19 +1,10 @@
 @(header: String, headerExtra: Option[Html] = None, subTitle: Option[String] = None)
-@headerExtra match{
-	case None => {
-		<div class="border-bottom mb-4 py-2">
-			<h1>
-				@header
-				@for(sub <- subTitle){
-					<small class="test-muted">@sub</small>
-				}
-			</h1>
-		</div>
-	}
-	case Some(extra) => {
-		<div class="d-sm-flex justify-content-between align-items-center border-bottom mb-4 py-2">
-			<h1>@header</h1>
-			@extra
-		</div>
-	}
-}
+<div class="d-sm-flex justify-content-between align-items-end border-bottom mb-4 py-2">
+	<div>
+		<h1>@header</h1>
+		@for(sub <- subTitle){
+			<div class="fs-3 text-muted">@sub</div>
+		}
+	</div>
+	@headerExtra
+</div>

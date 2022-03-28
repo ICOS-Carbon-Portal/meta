@@ -94,7 +94,7 @@ object UploadApp {
 	def whenDone[T](fut: Future[T])(cb: T => Unit): Future[T] = fut.andThen{
 		case Success(res) => cb(res)
 		case Failure(err) => {
-			showAlert(err.getMessage, "alert alert-danger")
+			showAlert(err.getMessage, "alert alert-danger text-break")
 			progressBar.hide()
 		}
 	}

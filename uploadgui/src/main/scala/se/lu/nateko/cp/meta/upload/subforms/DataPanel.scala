@@ -9,6 +9,7 @@ import formcomponents._
 import Utils._
 import se.lu.nateko.cp.meta.SubmitterProfile
 import UploadApp.whenDone
+import java.net.URI
 
 
 class DataPanel(
@@ -19,6 +20,7 @@ class DataPanel(
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[Seq[String]] = extraKeywords.values
+	def licence: Try[Option[URI]] = licenceUrl.value
 
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
@@ -27,6 +29,7 @@ class DataPanel(
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
 	private val keywordList = new KeywordDataList("keyword-list")
 	keywordList.values = gcmdKeywords
+	private val licenceUrl = new UriOptInput("licenceselect", notifyUpdate)
 	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
@@ -38,6 +41,7 @@ class DataPanel(
 		nRowsInput.value = None
 		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
+		licenceUrl.value = None
 		extraKeywords.setValues(Seq())
 		disableVarInfoButton()
 	}
@@ -114,9 +118,10 @@ class DataPanel(
 				onSpecSelected()
 			}
 			extraKeywords.setValues(dto.references.flatMap(_.keywords).getOrElse(Seq()))
+			licenceUrl.value = dto.references.flatMap(_.licence)
 			dto.specificInfo.fold(
 				_ => nRowsInput.reset(),
-				l2 => nRowsInput.value = l2.nRows
+				stationTs => nRowsInput.value = stationTs.nRows
 			)
 			show()
 

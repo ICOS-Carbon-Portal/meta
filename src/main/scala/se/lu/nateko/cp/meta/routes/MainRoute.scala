@@ -32,8 +32,10 @@ object MainRoute {
 		implicit val sparqlMarsh = db.sparql.marshaller
 		implicit val envriConfigs = config.core.envriConfigs
 
+		val sparqler = new Rdf4jSparqlRunner(db.repo)
 		val sparqlRoute = SparqlRoute(config.sparql)
-		val staticRoute = StaticRoute(config.onto, config.auth(Envri.ICOS))
+
+		val staticRoute = StaticRoute(sparqler, config.onto, config.auth(Envri.ICOS))
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)
@@ -49,8 +51,6 @@ object MainRoute {
 		val filesRoute = FilesRoute(db.fileService)
 
 		val dtoDlRoute = DtoDownloadRoute(db.uriSerializer)
-
-		val sparqler = new Rdf4jSparqlRunner(db.repo)
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(sparqler, db.instanceServers, authRouting, config.sparql).route

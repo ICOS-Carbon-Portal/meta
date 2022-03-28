@@ -116,6 +116,8 @@ class Form(
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
 		objSpec <- dataPanel.objSpec;
+		keywords <- dataPanel.keywords;
+		licence <- dataPanel.licence;
 		specInfo <- specificInfo
 	) yield DataObjectDto(
 		hashSum = hash,
@@ -126,8 +128,8 @@ class Form(
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
 		references = Some(ReferencesDto(
-			keywords = dataPanel.keywords.toOption.map(_.map(_.trim).filter(!_.isEmpty)),
-			licence = None //TODO Add license selection support to UploadGUI
+			keywords = Option(keywords.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty),
+			licence = licence
 		))
 	)
 

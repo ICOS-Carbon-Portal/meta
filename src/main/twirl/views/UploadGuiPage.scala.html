@@ -1,8 +1,9 @@
 @import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 @import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.Licence
 @import Envri.Envri
 
-@(devVersion: Boolean, envri: Envri, authConf: PublicAuthConfig)
+@(devVersion: Boolean, licences: Seq[Licence], envri: Envri, authConf: PublicAuthConfig)
 @ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapJavascript = true){
 	<style type="text/css">
 	#main {
@@ -70,6 +71,7 @@
 	@if(envri == Envri.SITES) {
 		#new-doi-button,
 		.keywords-block,
+		.licence-block,
 		.l3option,
 		.sampling-height-block,
 		.instrument-block {
@@ -250,6 +252,15 @@
 											keyword</button>
 									</div>
 								</div>
+							</div>
+							<div class="mb-3 licence-block">
+								<label class="form-label" for="licence">Licence @optional</label>
+								<select class="form-select" id="licenceselect">
+									<option value=""></option>
+									@for(lic <- licences){
+										<option value=@(lic.url)>@(lic.name)</option>
+									}
+								</select>
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>

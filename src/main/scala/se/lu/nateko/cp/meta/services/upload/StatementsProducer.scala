@@ -27,6 +27,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -67,6 +68,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
+		val licUri: Option[URI] = meta.references.flatMap(_.licence).filter{uri =>
+			!CitationMaker.defaultLicences.get(envri).map(_.url).contains(uri)
+		}
 
 		val specificStatements = meta.specificInfo.fold(
 			elProd => getSpatioTemporalStatements(hashSum, elProd),
@@ -78,7 +82,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
 		makeSt(objectUri, metaVocab.hasKeywords, meta.references.flatMap(_.keywords).map(_.mkString(",")).map(vocab.lit)) ++
-		makeSt(objectUri, metaVocab.dcterms.license, meta.references.flatMap(_.licence).map(_.toRdf))
+		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf))
 	}
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {

@@ -15,13 +15,12 @@ class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOp
 		case Right(value) => value.mkString("\n")
 	})
 
-class UriInput(elemId: String, cb: () => Unit) extends GenericTextInput[URI](elemId, cb, fail("Malformed URL (must start with http[s]://)"))(s => {
-	if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))
-	else Failure(new Exception("Malformed URL (must start with http[s]://)"))
-}, uri => uri.toString())
+class UriInput(elemId: String, cb: () => Unit) extends GenericTextInput[URI](elemId, cb, fail("Malformed URL (must start with http[s]://)"))(
+	UriInput.parser, uri => uri.toString()
+)
 
 object UriInput {
-	def parser(s: String) = {
+	def parser(s: String): Try[URI] = {
 		if(s.startsWith("https://") || s.startsWith("http://")) Try(new URI(s))
 		else Failure(new Exception("Malformed URL (must start with http[s]://)"))
 	}
@@ -42,10 +41,8 @@ class NonEmptyUriListInput(elemId: String, cb: () => Unit) extends GenericTextIn
 object UriListInput{
 
 	def parser(value: String): Try[Seq[URI]] = Try(
-		value.split("\n").map(_.trim).filterNot(_.isEmpty).map(line => {
-			if (line.startsWith("https://") || line.startsWith("http://")) new URI(line)
-			else throw new Exception("Malformed URL (must start with http[s]://)")
-		}).toIndexedSeq
+		value.split("\n").map(_.trim).filterNot(_.isEmpty)
+			.map(line => UriInput.parser(line).get).toIndexedSeq
 	)
 
 	def serializer = {

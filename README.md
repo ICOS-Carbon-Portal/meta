@@ -144,8 +144,9 @@ Clarifications:
 - `references` (optional) JSON object with additional "library-like" information; the list of its properties is planned to grow in the future.
 	- `keywords` (optional) an array of strings to be used as keywords specific to this particular object. Please note that CP metadata allows specifying keywords also on the data object specification (data type) level, and on the project level. Keywords common to all data objects of a certain data type should be associated directly with the corresponding specification (this is done by CP staff on request from the data uploaders).
 	- `licence` (optional) URL that identifies a licence for the data object. If not specified, the licence associated with the data object specification ("data type") is used. If no licence is associated with a data object spec, then the licence associated with the project (that the spec is associated with) is used. Finally, if no licence is associated with the project, then CP (or SITES) data licence is used by default (depending on the ENVRI). The licence URL must come from a list of supported licences, for example:
-		+ https://data.icos-cp.eu/licence
-		+ https://data.fieldsites.se/licence
+		+ http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence (ICOS default)
+		+ https://meta.fieldsites.se/ontologies/sites/sitesLicence (SITES default)
+		+ https://creativecommons.org/publicdomain/zero/1.0/ (CC0 1.0 Public Domain)
 		+ (the up-to-date list of supported licences can be obtained using [SPARQL client](https://meta.icos-cp.eu/sparqlclient/) and query `select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>}`)
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:

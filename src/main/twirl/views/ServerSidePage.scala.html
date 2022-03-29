@@ -4,8 +4,12 @@
 @import landpagesnips._
 
 @(
-	title: String, header: String, envri: Envri.Value,
-	menu: Seq[CpMenuItem] = CpMenu.default, cpauthHostOpt: Option[String] = None, headerExtra: Option[Html] = None,
+	title: String,
+	header: String,
+	envri: Envri.Value,
+	menu: Seq[CpMenuItem] = CpMenu.default,
+	cpauthHostOpt: Option[String] = None,
+	headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
 	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,

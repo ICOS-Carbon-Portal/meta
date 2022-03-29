@@ -20,18 +20,18 @@
 				@for(description <- coll.description){
 					@property("Description", description)
 				}
-				@HtmlProperty{Creator}{
+				@htmlProperty{Creator}{
 					@agentLink(coll.creator)
 				}
 				@if(coll.previousVersion) {
-					@HtmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
+					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
 				}
-				@Citations(coll.references)
+				@citations(coll.references)
 
 				<h2 class="fs-3 mt-5">Content</h2>
 				@property("Number of items", coll.members.size.toString)
 				@for((item, i) <- coll.members.zipWithIndex){
-					@HtmlProperty{
+					@htmlProperty{
 						@if(i == 0) {Items}
 					}{
 						@staticDataItemLink(item)
@@ -39,7 +39,7 @@
 				}
 
 				<h2 class="fs-3 mt-5">Statistics</h2>
-				@HtmlProperty{Downloads}{
+				@htmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
 			</div>
@@ -48,7 +48,7 @@
 			<div class="row">
 				@card(12, "bg-light"){@Html("")}{
 					<div class="row gy-2">
-						@HtmlProperty{Metadata}{
+						@htmlProperty{Metadata}{
 							@collMetaDownloadButton(coll, "JSON", "json") •
 							@collMetaDownloadButton(coll, "RDF/XML", "xml") •
 							@collMetaDownloadButton(coll, "RDF/Turtle", "ttl")

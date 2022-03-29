@@ -3,7 +3,7 @@
 
 @(refs: References)
 @for(cit <- refs.citationString){
-	@HtmlProperty{Citation}{@Html(cit)}
+	@htmlProperty{Citation}{@Html(cit)}
 }
 @for(cit <- refs.citationBibTex){
 	@citationCollapsible("BibTex", cit)
@@ -13,7 +13,7 @@
 }
 
 @citationCollapsible(label: String, value: String) = {
-	@HtmlProperty(Html("")){
+	@htmlProperty(Html("")){
 		<details>
 			<summary class="d-inline-block">
 				<span class="btn-link" style="cursor:pointer;">@label</span>

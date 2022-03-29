@@ -36,12 +36,12 @@
 					@PidPanelHtmlRow(doc.pid, handleProxies.basic)
 				}
 				@if(doc.previousVersion) {
-					@HtmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
+					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
 				}
 				@for(coll <- doc.parentCollections){
-					@HtmlProperty{Part of}{@resourceLink(coll)}
+					@htmlProperty{Part of}{@resourceLink(coll)}
 				}
-				@Citations(doc.references)
+				@citations(doc.references)
 				@for(size <- doc.size){
 					@property("File size", formatBytes(size))
 				}
@@ -49,14 +49,14 @@
 				@property("SHA-256 hashsum (base64)", doc.hash.base64)
 
 				<h2 class="fs-3 mt-5">Submission</h2>
-					@HtmlProperty{Submitted by}{
+					@htmlProperty{Submitted by}{
 						@agentLink(doc.submission.submitter)
 					}
 					@property(s"Submission started (${conf.defaultTimezoneId})", doc.submission.start.getDateTimeStr)
 					@property(s"Submission ended (${conf.defaultTimezoneId})", doc.submission.stop.getDateTimeStr)
 
 				<h2 class="fs-3 mt-5">Statistics</h2>
-				@HtmlProperty{Downloads}{
+				@htmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
 			</div>
@@ -65,7 +65,7 @@
 			<div class="row">
 				@card(12, "bg-light"){@Html("")}{
 				<div class="row gy-2">
-					@HtmlProperty{Metadata}{
+					@htmlProperty{Metadata}{
 						@metaDownloadButton(doc.hash.id, doc.fileName, "JSON", "json") •
 						@metaDownloadButton(doc.hash.id, doc.fileName, "RDF/XML", "xml") •
 						@metaDownloadButton(doc.hash.id, doc.fileName, "RDF/Turtle", "ttl")

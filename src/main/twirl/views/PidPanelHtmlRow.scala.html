@@ -1,7 +1,8 @@
 @import java.net.URI
+@import landpagesnips.htmlProperty
 
 @(pidOpt: Option[String], handleProxy: URI)
-@HtmlProperty{PID}{
+@htmlProperty{PID}{
 	@pidOpt match{
 		case None => {
 			<span>Not assigned</span>

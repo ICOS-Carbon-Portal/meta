@@ -3,13 +3,12 @@
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
-@import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.services.ExportService
 @import se.lu.nateko.cp.meta.utils.rdf4j._
 @import se.lu.nateko.cp.meta.utils._
 @import landpagesnips._
 
-@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(
 	pageTitle,
 	pageHeading,
@@ -58,14 +57,14 @@
 			}
 			@resourceproperty("Data affiliation", dobj.specification.project.self)
 			@for(coll <- dobj.parentCollections){
-				@HtmlProperty{Part of}{@resourceLink(coll)}
+				@htmlProperty{Part of}{@resourceLink(coll)}
 			}
 			@for(ack <- dobj.references.acknowledgements.toSeq.flatten){
 				@property("Acknowledgement", ack)
 			}
-			@Citations(dobj.references)
+			@citations(dobj.references)
 			@if(dobj.previousVersion) {
-				@HtmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
+				@htmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
 			}
 			@property("File name", dobj.fileName)
 			@for(size <- dobj.size){
@@ -154,10 +153,10 @@
 
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Statistics</h2>
-				@HtmlProperty{Downloads}{
+				@htmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
-				@HtmlProperty{Previews}{
+				@htmlProperty{Previews}{
 					@extras.previewStats.getOrElse("Not available")
 				}
 			</div>
@@ -203,13 +202,13 @@
 			<div class="row">
 				@card(12, "bg-light"){@Html("")}{
 					<div class="row gy-2">
-						@HtmlProperty{Metadata}{
+						@htmlProperty{Metadata}{
 							@objMetaDownloadButton(dobj, "JSON", "json") •
 							@objMetaDownloadButton(dobj, "RDF/XML", "xml") •
 							@objMetaDownloadButton(dobj, "RDF/Turtle", "ttl")
 						}
 						@for(keywords <- dobj.keywords){
-							@HtmlProperty{Keywords}{
+							@htmlProperty{Keywords}{
 								@keywords.map(keyword(_))
 							}
 						}
@@ -247,13 +246,13 @@
 }
 
 @resourceproperty(label: String, res: UriResource) = {
-	@HtmlProperty{@label}{
+	@htmlProperty{@label}{
 		@resourceLink(res)
 	}
 }
 
 @agentproperty(label: String, agent: Agent) = {
-	@HtmlProperty{@label}{
+	@htmlProperty{@label}{
 		@agentLink(agent)
 	}
 }

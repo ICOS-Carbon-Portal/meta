@@ -25,7 +25,7 @@ import scala.util.Failure
 import scala.util.Try
 import scala.util.Success
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, vocab: CpVocab, statisticsClient: StatisticsClient) {
+class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient) {
 
 	import PageContentMarshalling.{getHtml, getJson}
 
@@ -37,7 +37,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, vocab: CpVocab,
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield {
 				val extras = LandingPageExtras(dlCount, previewCount)
-				LandingPage(obj, extras, handleProxies, vocab)
+				LandingPage(obj, extras, handleProxies)
 			}
 		makeMarshaller(template, MessagePage("Data object not found", ""))
 	}

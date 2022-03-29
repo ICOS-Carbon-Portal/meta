@@ -1,8 +1,9 @@
 @import java.net.URI
+@import landpagesnips.htmlProperty
 
 @(doiOpt: Option[String], handleProxy: URI)
 @for(doi <- doiOpt){
-	@HtmlProperty{DOI}{
+	@htmlProperty{DOI}{
 		<span>
 			@{doi} (<a href=@{handleProxy.toString + doi}>target</a>,
 			<a target="_blank" href=@{"https://search.datacite.org/works/" + doi}>metadata</a>)

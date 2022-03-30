@@ -48,6 +48,10 @@
 				@property("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", doc.hash.base64)
 
+				@for(licence <- doc.references.licence){
+					@licenceProperty(licence)
+				}
+
 				<h2 class="fs-3 mt-5">Submission</h2>
 					@htmlProperty{Submitted by}{
 						@agentLink(doc.submission.submitter)

@@ -75,6 +75,10 @@
 
 			@documentationLink(dobj.specification.documentation)
 
+			@for(licence <- dobj.references.licence){
+				@licenceProperty(licence)
+			}
+
 			@for(acquisition <- dobj.acquisition; station = acquisition.station){
 				<h2 class="fs-3 mt-5">Acquisition</h2>
 				@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){

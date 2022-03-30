@@ -14,7 +14,6 @@
 @ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
-			<h2>About</h2>
 			@for(icos <- icosSpecifics){
 				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
 					@metadataRow("Discontinued", "(former ICOS station)")
@@ -84,83 +83,78 @@
 				}
 			}
 			@for(fundings <- station.funding){
-				<h2>Acknowledgements</h2>
-				@PanelWide("Funding"){
-					<table class="table">
-						<thead>
+				<h2 class="fs-3 mt-5">Acknowledgements</h2>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Funder</th>
+							<th>Award number</th>
+							<th>Award</th>
+							<th>Start date</th>
+							<th>End date</th>
+							<th>Comment</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for(funding <- fundings){
 							<tr>
-								<th>Funder</th>
-								<th>Award number</th>
-								<th>Award</th>
-								<th>Start date</th>
-								<th>End date</th>
-								<th>Comment</th>
+								<td>@agentLink(funding.funder.org)</td>
+								<td>@optLinkText(funding.awardNumber, funding.awardUrl)</td>
+								<td>@optLinkText(funding.awardTitle, funding.awardUrl)</td>
+								<td>@(funding.start.fold("")(_.toString))</td>
+								<td>@(funding.stop.fold("")(_.toString))</td>
+								<td>@{funding.self.comments.headOption.getOrElse("")}</td>
 							</tr>
-						</thead>
-						<tbody>
-							@for(funding <- fundings){
-								<tr>
-									<td>@agentLink(funding.funder.org)</td>
-									<td>@optLinkText(funding.awardNumber, funding.awardUrl)</td>
-									<td>@optLinkText(funding.awardTitle, funding.awardUrl)</td>
-									<td>@(funding.start.fold("")(_.toString))</td>
-									<td>@(funding.stop.fold("")(_.toString))</td>
-									<td>@{funding.self.comments.headOption.getOrElse("")}</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				}
+						}
+					</tbody>
+				</table>
 			}
 			@if(!stExt.staff.isEmpty){
-				<h2>Staff and roles</h2>
-				@PanelWide("Current staff"){
+				<h2 class="fs-3 mt-5">Current staff</h2>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Role (ICOS vocabulary)</th>
+							<th>Start date</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for(memb <- stExt.currentStaff){
+							<tr>
+								<td>@agentLink(memb.person)</td>
+								<td>@resourceLink(memb.role)</td>
+								<td>@(memb.start.fold("")(_.toString.take(10)))</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				@if(!stExt.formerStaff.isEmpty){
+					<h2 class="fs-3 mt-5">Former staff</h2>
 					<table class="table">
 						<thead>
 							<tr>
 								<th>Name</th>
 								<th>Role (ICOS vocabulary)</th>
 								<th>Start date</th>
+								<th>End date</th>
 							</tr>
 						</thead>
 						<tbody>
-							@for(memb <- stExt.currentStaff){
+							@for(memb <- stExt.formerStaff){
 								<tr>
 									<td>@agentLink(memb.person)</td>
 									<td>@resourceLink(memb.role)</td>
 									<td>@(memb.start.fold("")(_.toString.take(10)))</td>
+									<td>@(memb.end.fold("")(_.toString.take(10)))</td>
 								</tr>
 							}
 						</tbody>
 					</table>
 				}
-				@if(!stExt.formerStaff.isEmpty){
-					@PanelWide("Former staff"){
-						<table class="table">
-							<thead>
-								<tr>
-									<th>Name</th>
-									<th>Role (ICOS vocabulary)</th>
-									<th>Start date</th>
-									<th>End date</th>
-								</tr>
-							</thead>
-							<tbody>
-								@for(memb <- stExt.formerStaff){
-									<tr>
-										<td>@agentLink(memb.person)</td>
-										<td>@resourceLink(memb.role)</td>
-										<td>@(memb.start.fold("")(_.toString.take(10)))</td>
-										<td>@(memb.end.fold("")(_.toString.take(10)))</td>
-									</tr>
-								}
-							</tbody>
-						</table>
-					}
-				}
 			}
 			@if(station.fullCoverage.isDefined) {
-				<h2>Location</h2>
+				<h2 class="fs-3 mt-5">Location</h2>
 				@for(pos <- station.location){
 					@metadataRow("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
 					@for(alt <- pos.alt){
@@ -173,7 +167,7 @@
 				}
 			}
 			@if(!station.pictures.isEmpty) {
-				<h2>Pictures</h2>
+				<h2 class="fs-3 mt-5">Pictures</h2>
 				@for(picture <- station.pictures) {
 					<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">
 				}

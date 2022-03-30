@@ -2,59 +2,57 @@
 @import se.lu.nateko.cp.meta.core.data.Envri.Envri
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views._
-@import landpagesnips.resourceLink
+@import landpagesnips._
 
 @(info: ResourceViewInfo)(implicit envri: Envri)
 @ServerSidePage("Metadata Entity Page", info.res.uri.toString, envri, CpMenu.default){
-	<div class="row">
-		@Panel("Basic information", 10){
-			@PanelRow("URI", info.res.uri.toString)
-			@for(label <- info.res.label) {
-				@PanelRow("Label", label)
-			}
-			@for(comment <- info.res.comments) {
-				@PanelRow("Comment", comment)
-			}
-			@for((rdfType, idx) <- info.types.zipWithIndex){
-				@PanelHtmlRow{
-					@if(info.types.size > 1){
-						@{"Type " + (idx + 1)}
-					} else {Type}
-				}{
-					@resourceLink(rdfType)
+	<div class="row gy-2">
+		<div class="col-md-8">
+			<div class="row gy-2">
+				@property("URI", info.res.uri.toString)
+				@for(label <- info.res.label) {
+					@property("Label", label)
 				}
-			}
-		}
-	</div>
-
-	<div class="row">
-		@Panel("Property values", 10){
-			@for((prop, value) <- info.propValues){
-				@PanelHtmlRow{
-					@resourceLink(prop)
-				}{
-					@value match {
-						case Left(objValue) => {
-							@resourceLink(objValue)
-						}
-						case Right(litValue) => {
-							@litValue
+				@for(comment <- info.res.comments) {
+					@property("Comment", comment)
+				}
+				@for((rdfType, idx) <- info.types.zipWithIndex){
+					@htmlProperty{
+						@if(info.types.size > 1){
+							@{"Type " + (idx + 1)}
+						} else {Type}
+					}{
+						@resourceLink(rdfType)
+					}
+				}
+				<h2 class="fs-3 mt-5">Property values</h2>
+				@for((prop, value) <- info.propValues){
+					@htmlProperty{
+						@resourceLink(prop)
+					}{
+						@value match {
+							case Left(objValue) => {
+								@resourceLink(objValue)
+							}
+							case Right(litValue) => {
+								@litValue
+							}
 						}
 					}
 				}
-			}
-		}
-	</div>
+			</div>
+		</div>
 
-	<div class="row">
-		@Panel("Usages of this Resource by others", 10){
-			@for((subject, prop) <- info.usage){
-				@PanelHtmlRow{
-					@resourceLink(subject)
-				}{
-					@resourceLink(prop)
+		<div class="col-md-12">
+			<div class="row gy-2">
+				<h2 class="fs-3 mt-5">Usages of this resource by others</h2>
+				@for((subject, prop) <- info.usage){
+					<div class="col-md-12">
+						<label class="fw-bold">@resourceLink(subject)</label>
+						<span>@resourceLink(prop)</span>
+					</div>
 				}
-			}
-		}
+			</div>
+		</div>
 	</div>
 }

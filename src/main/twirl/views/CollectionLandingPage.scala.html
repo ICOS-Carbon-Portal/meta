@@ -16,7 +16,7 @@
 				</div>
 			}
 			<div class="row gy-2">
-				@DoiPanelHtmlRow(coll.doi, handleProxies.doi)
+				@doiProperty(coll.doi, handleProxies.doi)
 				@for(description <- coll.description){
 					@property("Description", description)
 				}

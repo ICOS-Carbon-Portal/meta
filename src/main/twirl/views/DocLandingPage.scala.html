@@ -31,9 +31,9 @@
 				@if(doc.references.title) {
 					@property("File name", doc.fileName)
 				}
-				@DoiPanelHtmlRow(doc.doi, handleProxies.doi)
+				@doiProperty(doc.doi, handleProxies.doi)
 				@if(uploadComplete) {
-					@PidPanelHtmlRow(doc.pid, handleProxies.basic)
+					@pidProperty(doc.pid, handleProxies.basic)
 				}
 				@if(doc.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}

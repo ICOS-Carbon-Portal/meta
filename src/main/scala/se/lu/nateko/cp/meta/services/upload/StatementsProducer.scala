@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -76,11 +77,18 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			stationData => getStationDataStatements(hashSum, stationData)
 		)
 
+		val keywordsLit: Option[Literal] = for(
+			refs <- meta.references;
+			rawKeywords <- refs.keywords;
+			keywords = rawKeywords.map(_.trim).filterNot(_.isEmpty);
+			if !keywords.isEmpty
+		) yield vocab.lit(keywords.mkString(","))
+
 		specificStatements ++ Seq(
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
-		makeSt(objectUri, metaVocab.hasKeywords, meta.references.flatMap(_.keywords).map(_.mkString(",")).map(vocab.lit)) ++
+		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
 		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf))
 	}
 

@@ -115,8 +115,10 @@
 				@for(comment <- production.comment){
 					@property("Comment", comment)
 				}
-				@for(contributor <- production.contributors.sorted){
-					@agentproperty("Contributor", contributor)
+				@if(production.contributors){
+					@htmlProperty{Contributors}{
+						@contributors(production.contributors)
+					}
 				}
 				@for(source <- production.sources.sorted){
 					@resourceproperty("Source object", source.asUriResource)
@@ -282,4 +284,13 @@
 
 @keyword(label: String) = {
 	<span class="badge rounded-pill bg-secondary text-light">@{label}</span>
+}
+
+@contributors(contributors: Seq[Agent]) = {
+	@for((c, i) <- contributors.sorted.zipWithIndex){@Html(contributor(c, i).body.trim())}
+}
+
+@contributor(contributor: Agent, i: Int) = {
+	@if(i > 0){<span>, </span>}
+	<a href=@{contributor.self.uri.getRawPath}>@{agentString(contributor)}</a>
 }

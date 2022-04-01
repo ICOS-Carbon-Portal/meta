@@ -152,6 +152,11 @@ case class DataObject(
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)
 			.filter(_.nonEmpty)
 			.map(_.toSeq.sorted)
+
+	def isPreviewable: Boolean = specificInfo.fold(
+		spatioTemporal => spatioTemporal.variables.nonEmpty,
+		stationTimeSeries => stationTimeSeries.columns.nonEmpty
+	)
 }
 
 case class DocObject(

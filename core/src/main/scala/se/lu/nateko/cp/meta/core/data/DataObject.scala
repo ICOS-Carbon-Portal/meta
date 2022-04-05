@@ -109,6 +109,7 @@ sealed trait StaticObject extends CitableItem{
 	def pid: Option[String]
 	def doi: Option[String]
 	def fileName: String
+	def size: Option[Long]
 	def submission: DataSubmission
 	def previousVersion: OptionalOneOrSeq[URI]
 	def nextVersion: Option[URI]

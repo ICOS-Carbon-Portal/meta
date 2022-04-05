@@ -10,6 +10,7 @@ import Utils._
 import se.lu.nateko.cp.meta.SubmitterProfile
 import UploadApp.whenDone
 import java.net.URI
+import java.time.Instant
 
 
 class DataPanel(
@@ -20,7 +21,8 @@ class DataPanel(
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[Seq[String]] = extraKeywords.values
-	def licence: Try[Option[URI]] = licenceUrl.value
+	def licence: Try[Option[URI]] = licenceUrl.value.withErrorContext("Data licence URL")
+	def moratorium: Try[Option[Instant]] = moratoriumInput.value.withErrorContext("Delayed publication instant (moratorium)")
 
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
 	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
@@ -30,6 +32,7 @@ class DataPanel(
 	private val keywordList = new KeywordDataList("keyword-list")
 	keywordList.values = gcmdKeywords
 	private val licenceUrl = new UriOptInput("licenceselect", notifyUpdate)
+	private val moratoriumInput = new InstantOptInput("moratoriuminput", notifyUpdate)
 	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
@@ -42,6 +45,7 @@ class DataPanel(
 		dataTypeKeywords.setList(Seq.empty)
 		keywordsInput.value = ""
 		licenceUrl.value = None
+		moratoriumInput.value = None
 		extraKeywords.setValues(Seq())
 		disableVarInfoButton()
 	}
@@ -119,6 +123,7 @@ class DataPanel(
 			}
 			extraKeywords.setValues(dto.references.flatMap(_.keywords).getOrElse(Seq()))
 			licenceUrl.value = dto.references.flatMap(_.licence)
+			moratoriumInput.value = dto.references.flatMap(_.moratorium)
 			dto.specificInfo.fold(
 				_ => nRowsInput.reset(),
 				stationTs => nRowsInput.value = stationTs.nRows

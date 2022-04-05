@@ -118,6 +118,7 @@ class Form(
 		objSpec <- dataPanel.objSpec;
 		keywords <- dataPanel.keywords;
 		licence <- dataPanel.licence;
+		moratorium <- dataPanel.moratorium;
 		specInfo <- specificInfo
 	) yield DataObjectDto(
 		hashSum = hash,
@@ -129,7 +130,8 @@ class Form(
 		preExistingDoi = doi,
 		references = Some(ReferencesDto(
 			keywords = Option(keywords.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty),
-			licence = licence
+			licence = licence,
+			moratorium = moratorium
 		))
 	)
 

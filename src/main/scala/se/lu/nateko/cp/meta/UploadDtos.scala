@@ -93,4 +93,4 @@ case class SubmitterProfile(
 	authorizedProjects: Option[Seq[URI]]
 )
 
-case class ReferencesDto(keywords: Option[Seq[String]], licence: Option[URI])
+case class ReferencesDto(keywords: Option[Seq[String]], licence: Option[URI], moratorium: Option[Instant])

@@ -253,6 +253,10 @@
 									</div>
 								</div>
 							</div>
+							<div class="mb-3">
+								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>
+								<input id="nrows" type="text" class="form-control" min="0" disabled>
+							</div>
 							<div class="mb-3 licence-block">
 								<label class="form-label" for="licence">Licence @optional</label>
 								<select class="form-select" id="licenceselect">
@@ -263,8 +267,8 @@
 								</select>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>
-								<input id="nrows" type="text" class="form-control" min="0" disabled>
+								<label class="form-label" for="moratoriuminput">Moratorium @optional</label>
+								<input id="moratoriuminput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
 							</div>
 						</div>
 					</div>

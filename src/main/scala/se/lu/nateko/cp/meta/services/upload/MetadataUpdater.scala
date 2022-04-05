@@ -73,10 +73,12 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
 		val (subj, pred) = sp
-		val isProvTime = pred === metaVocab.prov.endedAtTime || pred === metaVocab.prov.startedAtTime
+		val isProvStartTime = pred === metaVocab.prov.startedAtTime
+		val isProvTime = pred === metaVocab.prov.endedAtTime || isProvStartTime
 
 		if(subj == acq && isProvTime) Sticky
-		else if(subj == subm && isProvTime) Fixed
+		else if(subj == subm && isProvStartTime) Fixed
+		else if(subj == subm && isProvTime) Sticky
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
 		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain

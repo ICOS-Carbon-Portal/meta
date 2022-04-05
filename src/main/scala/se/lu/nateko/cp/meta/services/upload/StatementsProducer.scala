@@ -84,12 +84,19 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			if !keywords.isEmpty
 		) yield vocab.lit(keywords.mkString(","))
 
+		val moratoriumStatements = meta.references.flatMap(_.moratorium)
+			.filter(_.compareTo(Instant.now()) > 0).map{moratorium =>
+				val submissionUri = vocab.getSubmission(hashSum)
+				makeSt(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(moratorium))
+			}
+
 		specificStatements ++ Seq(
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf))
+		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
+		moratoriumStatements
 	}
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {

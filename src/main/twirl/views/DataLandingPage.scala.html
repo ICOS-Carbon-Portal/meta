@@ -36,6 +36,14 @@
 				</div>
 			</div>
 		}
+		@if(underMoratorium){
+			<div class="col-12">
+				<div class="alert alert-warning">
+					<h4 class="alert-heading">Under moratorium</h4>
+					@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
+				</div>
+			</div>
+		}
 		<div class="col-md-8">
 			<div class="row gy-2">
 			@doiProperty(dobj.doi, handleProxies.doi)
@@ -173,7 +181,7 @@
 				@if(!uploadComplete) {
 					@property(s"Submission started (${conf.defaultTimezoneId})", dobj.submission.start.getDateTimeStr)
 				} else {
-					@property(s"Submission time (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
+					@property(s"Publication time (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
 				}
 			</div>
 
@@ -264,7 +272,8 @@
 }
 
 @icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
-@uploadComplete = @{dobj.submission.stop.isDefined}
+@uploadComplete = @{dobj.size.isDefined}
+@underMoratorium = @{uploadComplete && !dobj.accessUrl.isDefined}
 
 @coverageText = @{
 	dobj.coverage.map(_.textSpecification).filter(_.length < 200)

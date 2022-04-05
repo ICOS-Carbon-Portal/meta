@@ -59,7 +59,11 @@ class TimeIntevalInput(fromInput: InstantInput, toInput: InstantInput){
 
 class InstantInput(elemId: String, cb: () => Unit) extends GenericTextInput[Instant](elemId, cb, fail("no timestamp provided"))(
 	s => Try(Instant.parse(s)),
-	i => i.toString()
+	i => i.toString
+)
+class InstantOptInput(elemId: String, cb: () => Unit) extends GenericTextInput[Option[Instant]](elemId, cb, Success(None))(
+	s => if(s.trim.isEmpty) Success(None) else Try(Some(Instant.parse(s.trim))),
+	_.fold("")(_.toString)
 )
 class TextInput(elemId: String, cb: () => Unit, hint: String) extends GenericTextInput[String](elemId, cb, fail(s"Missing $hint"))(s => Try(s), s => s)
 

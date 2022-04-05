@@ -1,32 +1,34 @@
 package se.lu.nateko.cp.meta.services
 
 import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DataProductionDto
+import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ReferencesDto
+import se.lu.nateko.cp.meta.SpatioTemporalDto
+import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.DataProduction
+import se.lu.nateko.cp.meta.core.data.DocObject
+import se.lu.nateko.cp.meta.core.data.LatLonBox
+import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
+import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.meta.utils._
+
+import java.net.URI
+import java.time.Instant
 import scala.util.Success
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 import UriSerializer.Hash
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.SpatioTemporalDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
-import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.core.data.DataProduction
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import java.net.URI
-import se.lu.nateko.cp.meta.core.data.UriResource
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader._
@@ -81,7 +83,13 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = Some(ReferencesDto(dobj.references.keywords, dobj.references.licence.map(_.url)))
+			references = Some(
+				ReferencesDto(
+					keywords = dobj.references.keywords,
+					licence = dobj.references.licence.map(_.url),
+					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0)
+				)
+			)
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",

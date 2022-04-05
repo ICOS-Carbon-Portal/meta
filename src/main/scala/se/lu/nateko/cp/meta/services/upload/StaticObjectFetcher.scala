@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j._
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import java.time.Instant
 
 class StaticObjectFetcher(
 	val server: InstanceServer,
@@ -55,12 +56,15 @@ class StaticObjectFetcher(
 			) Left(getSpatioTempMeta(dobj, valTypeLookup, production))
 			else Right(getStationTimeSerMeta(dobj, valTypeLookup, production))
 
+		val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
+		val size = getOptionalLong(dobj, metaVocab.hasSizeInBytes)
+
 		val init = DataObject(
 			hash = getHashsum(dobj, metaVocab.hasSha256sum),
-			accessUrl = getAccessUrl(hash, spec),
+			accessUrl = if(hasBeenPublished) getAccessUrl(hash, spec) else None,
 			fileName = getSingleString(dobj, metaVocab.hasName),
-			size = getOptionalLong(dobj, metaVocab.hasSizeInBytes),
-			pid = submission.stop.flatMap(_ => getPid(hash, spec.format.uri)),
+			size = size,
+			pid = if(size.isDefined) getPid(hash, spec.format.uri) else None,
 			doi = getOptionalString(dobj, metaVocab.hasDoi),
 			submission = submission,
 			specification = spec,

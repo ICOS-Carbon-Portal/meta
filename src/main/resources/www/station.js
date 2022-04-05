@@ -13,7 +13,6 @@ function initMap(locations) {
 
 	var map = L.map(mapDiv, {
 		minZoom: 1,
-		maxZoom: 14,
 		maxBounds: [[-90, -180],[90, 180]],
 		scrollWheelZoom: window.top === window.self
 	});
@@ -67,18 +66,20 @@ function initMap(locations) {
 
 	var allGeoms = locations.flatMap(loc => collectGeometries(loc.geoJson));
 
-	if(allGeoms.length === 1 && allGeoms[0].type === 'Point'){
-		const zoom = isSites ? 12 : 4;
+	var len = allGeoms.length;
+
+	if(len === 1 && allGeoms[0].type === 'Point'){
+		 const zoom = isSites ? 12 : 4;
 		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
 
-	} else if(allGeoms.length > 0){
+	} else if(len > 0 ){
 		const bounds = featureGroups.reduce(
 			function(acc, curr){
 				return acc.extend(curr.getBounds());
 			},
 			featureGroups[0].getBounds()
 		);
-		map.fitBounds(bounds);
+		map.fitBounds(bounds, {maxZoom: isSites ? 14 : 18} );
 	}
 
 }
@@ -130,11 +131,11 @@ function getLmUrl(layer){
 
 function getBaseMaps(maxZoom){
 	var topoLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb'), {
-		maxZoom: 15
+		maxNativeZoom: 14
 	});
 
 	var topoTonedLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb_nedtonad'), {
-		maxZoom: 15
+		maxNativeZoom:14
 	});
 
 	var topo = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -148,7 +149,6 @@ function getBaseMaps(maxZoom){
 	var osm = L.tileLayer(window.location.protocol + "//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom
 	});
-
 	return isSites
 	? {
 		"Topographic": topoLM,

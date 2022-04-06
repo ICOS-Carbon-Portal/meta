@@ -270,7 +270,7 @@
 
 @icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
 @uploadComplete = @{dobj.size.isDefined}
-@underMoratorium = @{uploadComplete && !dobj.accessUrl.isDefined}
+@underMoratorium = @{uploadComplete && dobj.submission.stop.exists(_.compateTo(Instant.now()) > 0)}
 
 @coverageText = @{
 	dobj.coverage.map(_.textSpecification).filter(_.length < 200)

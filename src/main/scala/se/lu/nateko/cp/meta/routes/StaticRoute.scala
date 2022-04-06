@@ -20,18 +20,19 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 import java.net.URI
 import scala.language.postfixOps
 import scala.util.Using
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 object StaticRoute {
 
-	private[this] val pages: PartialFunction[(String, Envri), Html] = {
-		case ("labeling", _) => views.html.LabelingPage()
-		case ("sparqlclient", envri) => views.html.SparqlClientPage(envri)
-		case ("station", envri) => views.html.StationPage(envri)
+	private[this] val pages: PartialFunction[(String, Envri, EnvriConfig), Html] = {
+		case ("labeling", _, envriConfig) => views.html.LabelingPage()(envriConfig)
+		case ("sparqlclient", envri, envriConfig) => views.html.SparqlClientPage()(envri, envriConfig)
+		case ("station", envri, _) => views.html.StationPage(envri)
 	}
 
 	import PageContentMarshalling.twirlHtmlEntityMarshaller
 
-	def apply(sparql: SparqlRunner, config: OntoConfig, authConf: PublicAuthConfig)(implicit evnrConfs: EnvriConfigs): Route = {
+	def apply(sparql: SparqlRunner, config: OntoConfig)(implicit envriConfigs: EnvriConfigs): Route = {
 
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
@@ -46,7 +47,7 @@ object StaticRoute {
 						//exclude other ENVRIES' default licences from the list
 						toExclude.contains(licUri)
 					}
-					complete(views.html.UploadGuiPage(devVersion, licences, envri, authConf))
+					complete(views.html.UploadGuiPage(devVersion, licences)(envri, envriConfigs(envri)))
 				} ~
 				path(Segment){getFromResource}
 			}
@@ -59,7 +60,7 @@ object StaticRoute {
 				config.instOntoServers.get(ontId) match {
 					case Some(ontConfig) => extractEnvri{envri =>
 							pathSingleSlash{
-								complete(views.html.MetaentryPage(ontConfig.serviceTitle, envri, authConf))
+								complete(views.html.MetaentryPage(ontConfig.serviceTitle)(envri, envriConfigs(envri)))
 							}
 						}
 					case None =>
@@ -74,9 +75,10 @@ object StaticRoute {
 		} ~
 		(get & pathPrefix(Segment)){page =>
 			extractEnvri{envri =>
-				if(pages.isDefinedAt(page, envri)) {
+				val conf = envriConfigs(envri)
+				if(pages.isDefinedAt(page, envri, conf)) {
 					pathSingleSlash{
-						complete(pages(page, envri))
+						complete(pages(page, envri, conf))
 					} ~
 					pathEnd{
 						redirect(s"/$page/", StatusCodes.Found)
@@ -90,7 +92,7 @@ object StaticRoute {
 		(post & path("sparqlclient" /)){
 			extractEnvri{envri =>
 				formField("query"){query =>
-					complete(views.html.SparqlClientPage(envri, Some(query)))
+					complete(views.html.SparqlClientPage(Some(query))(envri, envriConfigs(envri)))
 				} ~
 				complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
 			}

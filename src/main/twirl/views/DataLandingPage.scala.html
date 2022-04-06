@@ -12,12 +12,9 @@
 @ServerSidePage(
 	pageTitle,
 	pageHeading,
-	envri,
-	cpauthHostOpt = Some(conf.authHost),
 	headerExtra = headerExtra,
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
-	conf = Some(conf)
 ) {
 	<div class="row py-2 gy-4">
 		@if(dobj.nextVersion) {

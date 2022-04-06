@@ -1,4 +1,7 @@
-@CpCommonPage("Station labelling status - ICOS", bootstrapVersion = Some(5)){
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
+
+@()(implicit conf: EnvriConfig)
+@CpCommonPage("Station labelling status - ICOS", authHost = conf.authHost, bootstrapVersion = Some(5), dataHost = conf.dataHost){
 	<style type="text/css">
 		.cp-lnk:hover{
 			cursor: pointer;

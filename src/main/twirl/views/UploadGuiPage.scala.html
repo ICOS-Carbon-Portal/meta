@@ -1,10 +1,10 @@
 @import java.net.URI
-@import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 @import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import Envri.Envri
 
-@(devVersion: Boolean, licences: Seq[(URI, String)], envri: Envri, authConf: PublicAuthConfig)
-@ServerSidePage("Upload", "Upload", envri, cpauthHostOpt = Some(authConf.authHost), headerExtra = Some(header), bootstrapJavascript = true){
+@(devVersion: Boolean, licences: Seq[(URI, String)])(implicit envri: Envri, conf: EnvriConfig)
+@ServerSidePage("Upload", "Upload", headerExtra = Some(header), bootstrapJavascript = true){
 	<style type="text/css">
 	#main {
 		max-width: 1280px;

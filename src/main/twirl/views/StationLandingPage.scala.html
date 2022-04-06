@@ -11,7 +11,7 @@
 @import landpagesnips._
 
 @(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
-@ServerSidePage(stationShortName(station), station.org.name, envri, CpMenu.default){
+@ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
 			@for(icos <- icosSpecifics){

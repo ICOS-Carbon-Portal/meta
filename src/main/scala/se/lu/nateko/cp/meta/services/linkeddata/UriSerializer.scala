@@ -125,6 +125,7 @@ class Rdf4jUriSerializer(
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
 		implicit val envri = inferEnvri(uri)
+		implicit val envriConfig = envries(envri)
 		getViewInfo(uri, repo).fold(
 			err => HttpResponse(
 				status = StatusCodes.InternalServerError,

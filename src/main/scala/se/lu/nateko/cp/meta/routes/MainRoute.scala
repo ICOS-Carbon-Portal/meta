@@ -22,6 +22,7 @@ object MainRoute {
 		case ex =>
 			val extractEnvri = AuthenticationRouting.extractEnvriDirective
 			extractEnvri { implicit envri =>
+				implicit val envriConfig = envriConfigs(envri)
 				implicit val errMarsh = errorMarshaller
 				complete(StatusCodes.InternalServerError -> ex)
 			}
@@ -35,7 +36,7 @@ object MainRoute {
 		val sparqler = new Rdf4jSparqlRunner(db.repo)
 		val sparqlRoute = SparqlRoute(config.sparql)
 
-		val staticRoute = StaticRoute(sparqler, config.onto, config.auth(Envri.ICOS))
+		val staticRoute = StaticRoute(sparqler, config.onto)
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)

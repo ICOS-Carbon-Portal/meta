@@ -3,8 +3,8 @@
 @import java.net.URI
 @import se.lu.nateko.cp.viewscore.CpMenu
 
-@(title: String, message: String)(implicit envri: Envri.Value)
-@ServerSidePage(title, title, envri, CpMenu.default){
+@(title: String, message: String)(implicit envri: Envri.Value, conf: EnvriConfig)
+@ServerSidePage(title, title, CpMenu.default){
 	@for(line <- message.linesIterator) {
 	<p>@line</p>
 	}

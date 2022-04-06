@@ -6,15 +6,12 @@
 @(
 	title: String,
 	header: String,
-	envri: Envri.Value,
 	menu: Seq[CpMenuItem] = CpMenu.default,
-	cpauthHostOpt: Option[String] = None,
 	headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
 	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,
-	conf: Option[EnvriConfig] = None
-)(body: Html)
+)(body: Html)(implicit envri: Envri.Value, conf: EnvriConfig)
 @template{
 	@extraMetaTags
 	@LandingPageStyle()
@@ -26,6 +23,6 @@
 @bootstrapVersion = @{Some(5)}
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion, bootstrapJavascript, cpauthHostOpt, conf.map(_.dataHost)) _
-	else CpCommonPage(title, menu, cpauthHostOpt, bootstrapVersion, bootstrapJavascript, conf.map(_.dataHost)) _
+	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion, bootstrapJavascript, conf.authHost, conf.dataHost) _
+	else CpCommonPage(title, menu, conf.authHost, bootstrapVersion, bootstrapJavascript, conf.dataHost) _
 }

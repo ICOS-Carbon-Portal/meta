@@ -120,7 +120,7 @@ object PageContentMarshalling{
 		)
 	}
 
-	def errorMarshaller(implicit envri: Envri): ToEntityMarshaller[Throwable] = Marshaller(
+	def errorMarshaller(implicit envri: Envri, conf: EnvriConfig): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {
 
 			val msg = extractMessage(err)

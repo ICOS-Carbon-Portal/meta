@@ -1,4 +1,5 @@
 @import java.net.URI
+@import java.time.Instant
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
@@ -270,7 +271,7 @@
 
 @icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
 @uploadComplete = @{dobj.size.isDefined}
-@underMoratorium = @{uploadComplete && dobj.submission.stop.exists(_.compateTo(Instant.now()) > 0)}
+@underMoratorium = @{uploadComplete && dobj.submission.stop.exists(_.compareTo(Instant.now()) > 0)}
 
 @coverageText = @{
 	dobj.coverage.map(_.textSpecification).filter(_.length < 200)

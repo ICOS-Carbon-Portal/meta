@@ -14,33 +14,34 @@
 @ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
+			<div class="row gy-2">
 			@for(icos <- icosSpecifics){
 				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
-					@metadataRow("Discontinued", "(former ICOS station)")
+					@property("Discontinued", "(former ICOS station)")
 				}
-				@metadataRow("Station ID", station.id)
+				@property("Station ID", station.id)
 				@for(cls <- icos.stationClass){
-					@metadataRow("ICOS Station class", cls.toString)
+					@property("ICOS Station class", cls.toString)
 				}
 				@for(cc <- icos.countryCode){
-					@metadataRow("Country code", cc.code)
+					@property("Country code", cc.code)
 				}
 				@for(lblDate <- icos.labelingDate){
-					@metadataRow("ICOS Labeling date", lblDate.toString)
+					@property("ICOS Labeling date", lblDate.toString)
 				}
 				@for(tz <- icos.timeZoneOffset){
-					@metadataRow("Time zone offset", tz.toString)
+					@property("Time zone offset", tz.toString)
 				}
 			}
 			@for(descr <- station.org.self.comments){
-				@metadataRow("Description", descr)
+				@property("Description", descr)
 			}
 			@for(eco <- ecoSpecifics){
 				@for(climateZone <- eco.climateZone) {
-					@metadataHtmlRow{Climate zone}{@resourceLink(climateZone)}
+					@htmlProperty{Climate zone}{@resourceLink(climateZone)}
 				}
 				@if(!eco.ecosystems.isEmpty) {
-					@metadataHtmlRow{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
+					@htmlProperty{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
 						@for((ecoType, i) <- eco.ecosystems.zipWithIndex) {
 							@if(i > 0) {<span> / </span>}
 							@resourceLink(ecoType)
@@ -48,40 +49,41 @@
 					}
 				}
 				@for(temperature <- eco.meanAnnualTemp) {
-					@metadataRow("Mean annual temperature", s"$temperature °C")
+					@property("Mean annual temperature", s"$temperature °C")
 				}
 			}
 			@for(eco <- etcSpecifics){
 				@for(meanAnnualPrecip <- eco.meanAnnualPrecip){
-					@metadataRow("Mean annual precipitation", s"$meanAnnualPrecip mm")
+					@property("Mean annual precipitation", s"$meanAnnualPrecip mm")
 				}
 				@for(meanAnnualRad <- eco.meanAnnualRad){
-					@metadataHtmlRow{Mean annual incoming SW radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
+					@htmlProperty{Mean annual incoming SW radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
 				}
 				@for(doc <- eco.stationDocs){
-					@metadataHtmlRow{Documentation resource}{
+					@htmlProperty{Documentation resource}{
 						<a target="_blank" href=@doc>@{doc.toString}</a>
 					}
 				}
 				@for(pub <- eco.stationPubs){
-					@metadataHtmlRow{Data publication}{
+					@htmlProperty{Data publication}{
 						<a target="_blank" href=@pub>@{pub.toString}</a>
 					}
 				}
 			}
 			@for(sites <- sitesSpecifics){
 				@for(operationalPeriod <- sites.operationalPeriod) {
-					@metadataRow("Operational period", operationalPeriod)
+					@property("Operational period", operationalPeriod)
 				}
 			}
 			@for(document <- stationDocs) {
-				@metadataHtmlRow{Documentation}{<a href=@{document.res}>@{document.name}</a>}
+				@htmlProperty{Documentation}{<a href=@{document.res}>@{document.name}</a>}
 			}
 			@for(org <- station.responsibleOrganization) {
-				@metadataHtmlRow{Organization}{
+				@htmlProperty{Organization}{
 					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
 			}
+			</div>
 			@for(fundings <- station.funding){
 				<h2 class="fs-3 mt-5">Acknowledgements</h2>
 				<table class="table">
@@ -155,12 +157,14 @@
 			}
 			@if(station.fullCoverage.isDefined) {
 				<h2 class="fs-3 mt-5">Location</h2>
+				<div class="row gy-2">
 				@for(pos <- station.location){
-					@metadataRow("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
+					@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
 					@for(alt <- pos.alt){
-						@metadataRow("Elevation", s"${alt.toInt} m")
+						@property("Elevation", s"${alt.toInt} m")
 					}
 				}
+				</div>
 				@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
 					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
 					<a href="@maplink">Open map</a>

@@ -20,9 +20,7 @@
 	@body
 }
 
-@bootstrapVersion = @{Some(5)}
-
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title, bootstrapVersion, bootstrapJavascript, conf.authHost, conf.dataHost) _
-	else CpCommonPage(title, menu, conf.authHost, bootstrapVersion, bootstrapJavascript, conf.dataHost) _
+	if(envri == Envri.SITES) SitesPage(title, bootstrapJavascript, conf.authHost, conf.dataHost) _
+	else CpCommonPage(title, menu, conf.authHost, bootstrapJavascript, conf.dataHost) _
 }

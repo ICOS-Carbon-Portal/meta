@@ -5,11 +5,14 @@ import java.net.URI
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils.encodeURIComponent
+import scala.scalajs.js.Thenable.Implicits.thenable2future
 import org.scalajs.dom.File
-import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.ext.AjaxException
+import org.scalajs.dom.fetch
 import org.scalajs.dom.raw.XMLHttpRequest
-import JsonSupport._
+import org.scalajs.dom.RequestInit
+import org.scalajs.dom.RequestCredentials
+import org.scalajs.dom.Response
+import JsonSupport.given
 import play.api.libs.json._
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
@@ -21,21 +24,21 @@ object Backend {
 	import SparqlQueries._
 
 	private def whoAmI: Future[Option[String]] =
-		Ajax.get("/whoami", withCredentials = true)
+		fetch("/whoami", new RequestInit{credentials = RequestCredentials.include})
 		.recoverWith(recovery("fetch user information"))
-		.map(xhr =>
-			parseTo[JsObject](xhr).value("email") match {
-				case JsString(email) => Some(email)
-				case _ => None
-			})
+		.flatMap(parseTo[JsObject](_))
+		.map(_.value("email") match {
+			case JsString(email) => Some(email)
+			case _ => None
+		})
 
-	private def envri: Future[Envri] = Ajax.get("/upload/envri")
+	private def envri: Future[Envri] = fetch("/upload/envri")
 		.recoverWith(recovery("fetch envri"))
-		.map(parseTo[Envri])
+		.flatMap(parseTo[Envri])
 
-	private def authHost: Future[EnvriConfig] = Ajax.get("/upload/envriconfig")
+	private def authHost: Future[EnvriConfig] = fetch("/upload/envriconfig")
 		.recoverWith(recovery("fetch envri config"))
-		.map(parseTo[EnvriConfig])
+		.flatMap(parseTo[EnvriConfig])
 
 	def fetchConfig: Future[InitAppInfo] = whoAmI.zip(envri).zip(authHost).map {
 		case ((whoAmI, envri), authHost) => InitAppInfo(whoAmI, envri, authHost)
@@ -164,11 +167,10 @@ object Backend {
 		}.toMap
 	}
 
-	private def parseTo[T : Reads](xhr: XMLHttpRequest): T = {
-		Json.parse(xhr.responseText).as[T]
-	}
+	private def parseTo[T : Reads](xhr: Response): Future[T] =
+		xhr.text().map(Json.parse(_).as[T])
 
-	private def recovery(hint: String): PartialFunction[Throwable, Future[XMLHttpRequest]] = {
+	private def recovery(hint: String): PartialFunction[Throwable, Future[Response]] = {
 		case AjaxException(xhr) =>
 			val msg = if(xhr.responseText.isEmpty)
 				s"Got HTTP status ${xhr.status} when trying to $hint"

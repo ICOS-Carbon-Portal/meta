@@ -46,7 +46,7 @@ object UriListInput{
 	)
 
 	def serializer = {
-		list: Seq[URI] => list.map(_.toString).mkString("\n")
+		(list: Seq[URI]) => list.map(_.toString).mkString("\n")
 	}
 
 	val emptyError = fail(s"uri list cannot be empty")

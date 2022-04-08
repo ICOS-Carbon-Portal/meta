@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data
 
 object UploadApp {
 	import Utils._
-	import JsonSupport._
+	import JsonSupport.given
 
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")

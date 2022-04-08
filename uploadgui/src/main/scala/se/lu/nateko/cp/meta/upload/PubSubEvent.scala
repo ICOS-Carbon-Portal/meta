@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.upload.formcomponents.ItemTypeRadio.ItemType
 
 sealed trait PubSubEvent
 
-final case object ModeChanged extends PubSubEvent
+case object ModeChanged extends PubSubEvent
 final case class ItemTypeSelected(itemType: ItemType) extends PubSubEvent
 final case class LevelSelected(level: Int) extends PubSubEvent
 final case class ObjSpecSelected(spec: ObjSpec) extends PubSubEvent
@@ -15,4 +15,4 @@ final case class GotUploadDto(dto: UploadDto) extends PubSubEvent
 final case class GotAgentList(agents: IndexedSeq[NamedUri]) extends PubSubEvent
 final case class GotOrganizationList(orgs: IndexedSeq[NamedUri]) extends PubSubEvent
 
-final case object FormInputUpdated extends PubSubEvent
+case object FormInputUpdated extends PubSubEvent

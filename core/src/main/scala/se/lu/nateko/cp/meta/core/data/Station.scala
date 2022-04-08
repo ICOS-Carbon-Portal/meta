@@ -5,7 +5,6 @@ import java.time.LocalDate
 import scala.util.Try
 import spray.json._
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import se.lu.nateko.cp.meta.core.toTypedJson
 
 case class Station(
 	org: Organization,
@@ -106,35 +105,4 @@ object IcosStationClass extends Enumeration{
 	val Two = Value("2")
 	val Associated = Value("Associated")
 	def parse(s: String): Try[Value] = Try(withName(s))
-}
-
-object StationSpecifics extends CommonJsonSupport{
-	import JsonSupport.given
-	import CommonJsonSupport.TypeField
-
-	given JsonFormat[IcosStationClass.IcosStationClass] = enumFormat(IcosStationClass)
-	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
-	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
-	given RootJsonFormat[PlainIcosSpecifics] = jsonFormat7(PlainIcosSpecifics.apply)
-
-	private val EtcSpec = "etc"
-	private val SitesSpec = "sites"
-	private val PlainIcosSpec = "plainicos"
-	given RootJsonFormat[StationSpecifics] with{
-		def write(ss: StationSpecifics): JsValue = ss match{
-			case NoStationSpecifics => JsObject.empty
-			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
-			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
-			case icos: PlainIcosSpecifics => icos.toTypedJson(PlainIcosSpec)
-		}
-
-		def read(value: JsValue) =
-			value.asJsObject("StationSpecifics must be a JSON object").fields.get(TypeField) match{
-				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
-				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
-				case Some(JsString(PlainIcosSpec)) => value.convertTo[PlainIcosSpecifics]
-				case None => NoStationSpecifics
-				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
-			}
-	}
 }

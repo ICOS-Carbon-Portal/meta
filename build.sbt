@@ -18,7 +18,7 @@ lazy val metaCore = (project in file("core"))
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
-			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test" exclude("org.scala-lang.modules", "scala-xml_3")
+			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",

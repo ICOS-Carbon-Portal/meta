@@ -4,6 +4,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import spray.json.JsonFormat
 
 
 case class MetaCoreConfig(
@@ -13,11 +14,10 @@ case class MetaCoreConfig(
 
 case class HandleProxiesConfig(basic: URI, doi: URI)
 
-object MetaCoreConfig{
-	import CommonJsonSupport._
+object MetaCoreConfig extends CommonJsonSupport{
 
-	implicit val handleProxiesConfigFormat = jsonFormat2(HandleProxiesConfig)
-	implicit val envriFormat = enumFormat(Envri)
-	implicit val envriConfigFormat = jsonFormat6(EnvriConfig)
-	implicit val metaCoreConfigFormat = jsonFormat2(MetaCoreConfig.apply)
+	given JsonFormat[HandleProxiesConfig] = jsonFormat2(HandleProxiesConfig.apply)
+	given JsonFormat[Envri] = enumFormat(Envri)
+	given JsonFormat[EnvriConfig] = jsonFormat6(EnvriConfig.apply)
+	given JsonFormat[MetaCoreConfig] = jsonFormat2(MetaCoreConfig.apply)
 }

@@ -1,27 +1,24 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "2.13.7"
+ThisBuild / scalaVersion := "3.1.1"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
-	"-deprecation",
-	"-Wdead-code",
-	"-Wnumeric-widen",
-	"-Wunused"
+	"-deprecation"
 )
-val jvmScalacOptions = commonScalacOptions :+ "-target:jvm-1.11"
+val jvmScalacOptions = commonScalacOptions :+ "-Xtarget:11"
 
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.6.14",
+		version := "0.7.0",
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
-			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test" exclude("org.scala-lang.modules", "scala-xml_3")
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",
@@ -49,8 +46,8 @@ lazy val metaCore = (project in file("core"))
 		credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 	)
 
-val akkaVersion = "2.6.17"
-val akkaHttpVersion = "10.2.7"
+val akkaVersion = "2.6.18"
+val akkaHttpVersion = "10.2.8"
 val rdf4jVersion = "2.4.6"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
@@ -79,10 +76,10 @@ lazy val meta = (project in file("."))
 		scalacOptions ++= jvmScalacOptions,
 
 		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion,
-			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion,
-			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion,
-			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,
+			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
@@ -95,14 +92,14 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"com.sun.mail"           % "javax.mail"                         % "1.6.2",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.12",
-			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.1",
-			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0",
-			"com.github.workingDog" %% "scalakml"                           % "1.5"   % "test",
-			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test",
-			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion % "test",
-			"org.scalatest"         %% "scalatest"                          % "3.2.9" % "test"
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.12" cross CrossVersion.for3Use2_13,
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.5" cross CrossVersion.for3Use2_13,
+			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0" cross CrossVersion.for3Use2_13,
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0" cross CrossVersion.for3Use2_13,
+			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test",
+			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
+			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test" exclude("org.scala-lang.modules", "scala-xml_3")
 		),
 
 		Test / test := {
@@ -159,17 +156,17 @@ lazy val uploadgui = (project in file("uploadgui"))
 	.enablePlugins(ScalaJSPlugin)
 	.settings(
 		name := "uploadgui",
-		version := "0.1.2",
+		version := "0.1.3",
 		scalacOptions ++= commonScalacOptions,
 
 		scalaJSUseMainModuleInitializer := true,
 
 		libraryDependencies ++= Seq(
-			"org.scala-js"      %%% "scalajs-dom"       % "1.1.0",
-			"io.github.cquiroz" %%% "scala-java-time"   % "2.2.2",
-			"com.typesafe.play" %%% "play-json"         % "2.9.2",
-			"se.lu.nateko.cp"   %%% "doi-common"        % "0.1.3",
-			"org.scalatest"     %%% "scalatest"         % "3.2.9" % "test"
+			"org.scala-js"      %%% "scalajs-dom"       % "2.1.0",
+			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
+			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC6",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.2.0" cross CrossVersion.for3Use2_13,
+			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)
 	)
 

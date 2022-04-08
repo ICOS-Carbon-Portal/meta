@@ -8,7 +8,7 @@ import java.time.{LocalDateTime, LocalDate}
 
 trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 
-	implicit object urlFormat extends RootJsonFormat[URI] {
+	given RootJsonFormat[URI] with{
 		def write(uri: URI): JsValue = JsString(uri.toString)
 
 		def read(value: JsValue): URI = value match{
@@ -21,7 +21,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		}
 	}
 
-	implicit object javaLocalDateTimeFormat extends RootJsonFormat[LocalDateTime] {
+	given RootJsonFormat[LocalDateTime] with{
 
 		def write(dt: LocalDateTime) = JsString(dt.toString)
 
@@ -31,7 +31,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		}
 	}
 
-	implicit object javaLocalDateFormat extends RootJsonFormat[LocalDate] {
+	given RootJsonFormat[LocalDate] with{
 
 		def write(dt: LocalDate) = JsString(dt.toString)
 
@@ -41,7 +41,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		}
 	}
 
-	implicit object javaTimeInstantFormat extends RootJsonFormat[Instant] {
+	given RootJsonFormat[Instant] with{
 
 		def write(instant: Instant) = JsString(instant.toString)
 
@@ -51,7 +51,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		}
 	}
 
-	implicit val timeIntervalFormat = jsonFormat2(TimeInterval)
+	given JsonFormat[TimeInterval] = jsonFormat2(TimeInterval.apply)
 
 	def enumFormat[T <: Enumeration](theEnum: T) = new RootJsonFormat[theEnum.Value] {
 		def write(v: theEnum.Value) = JsString(v.toString)
@@ -71,12 +71,12 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 
 }
 
-object CommonJsonSupport extends CommonJsonSupport{
-	val TypeField = "_type"
-	implicit class TypeableSprayJsonableObject[T : RootJsonWriter](val v: T){
-		def toTypedJson(typ: String) = JsObject(
-			v.toJson.asJsObject.fields + (TypeField -> JsString(typ))
-		)
-	}
+extension [T: RootJsonWriter](v: T){
+	def toTypedJson(typ: String) = JsObject(
+		v.toJson.asJsObject.fields + (CommonJsonSupport.TypeField -> JsString(typ))
+	)
+}
 
+object CommonJsonSupport{
+	val TypeField = "_type"
 }

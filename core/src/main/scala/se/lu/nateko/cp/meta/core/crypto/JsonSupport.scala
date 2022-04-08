@@ -6,7 +6,7 @@ import scala.util.Failure
 
 object JsonSupport extends DefaultJsonProtocol{
 
-	implicit object sha256sumFormat extends RootJsonFormat[Sha256Sum]{
+	given RootJsonFormat[Sha256Sum] with{
 		import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 		def write(hash: Sha256Sum) = JsString(hash.base64Url)

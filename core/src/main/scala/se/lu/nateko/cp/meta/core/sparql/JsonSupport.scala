@@ -5,10 +5,10 @@ import spray.json._
 
 object JsonSupport extends CommonJsonSupport{
 
-	implicit val boundLitFormat = jsonFormat2(BoundLiteral)
-	implicit val boundUriFormat = jsonFormat1(BoundUri)
+	given JsonFormat[BoundLiteral] = jsonFormat2(BoundLiteral.apply)
+	given JsonFormat[BoundUri] = jsonFormat1(BoundUri.apply)
 
-	implicit object boundValueFormat extends RootJsonFormat[BoundValue] {
+	given RootJsonFormat[BoundValue] with{
 		def write(bv: BoundValue) = bv match{
 			case uri: BoundUri => uri.toJson
 			case lit: BoundLiteral => lit.toJson
@@ -23,7 +23,7 @@ object JsonSupport extends CommonJsonSupport{
 			case _ => deserializationError("JsObject expected")
 		}
 	}
-	implicit val sparqlResultHeadFormat = jsonFormat1(SparqlResultHead)
-	implicit val sparqlResultResultsFormat = jsonFormat1(SparqlResultResults)
-	implicit val sparqlSelectResultFormat = jsonFormat2(SparqlSelectResult)
+	given JsonFormat[SparqlResultHead] = jsonFormat1(SparqlResultHead.apply)
+	given JsonFormat[SparqlResultResults] = jsonFormat1(SparqlResultResults.apply)
+	given JsonFormat[SparqlSelectResult] = jsonFormat2(SparqlSelectResult.apply)
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate
 import scala.util.Try
 import spray.json._
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
+import se.lu.nateko.cp.meta.core.toTypedJson
 
 case class Station(
 	org: Organization,
@@ -34,6 +35,7 @@ case class Funding(
 )
 
 object FunderIdType extends Enumeration{
+	type FunderIdType = Value
 	val Crossref = Value("Crossref Funder ID")
 	val GRID, ISNI, ROR, Other = Value
 }
@@ -99,6 +101,7 @@ case class EtcStationSpecifics(
 }
 
 object IcosStationClass extends Enumeration{
+	type IcosStationClass = Value
 	val One = Value("1")
 	val Two = Value("2")
 	val Associated = Value("Associated")
@@ -106,17 +109,18 @@ object IcosStationClass extends Enumeration{
 }
 
 object StationSpecifics extends CommonJsonSupport{
-	import JsonSupport.{uriResourceFormat, plainStaticObjectFormat, siteFormat, countryCodeFormat, dataThemeFormat}
-	import CommonJsonSupport._
-	implicit val stationClassFormat = enumFormat(IcosStationClass)
-	implicit val etcStationSpecificsFormat = jsonFormat14(EtcStationSpecifics)
-	implicit val sitesStationSpecificsFormat = jsonFormat6(SitesStationSpecifics)
-	implicit val plainIcosSpecificsFormat = jsonFormat7(PlainIcosSpecifics)
+	import JsonSupport.given
+	import CommonJsonSupport.TypeField
+
+	given JsonFormat[IcosStationClass.IcosStationClass] = enumFormat(IcosStationClass)
+	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
+	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
+	given RootJsonFormat[PlainIcosSpecifics] = jsonFormat7(PlainIcosSpecifics.apply)
 
 	private val EtcSpec = "etc"
 	private val SitesSpec = "sites"
 	private val PlainIcosSpec = "plainicos"
-	implicit object stationSpecificsFormat extends RootJsonFormat[StationSpecifics]{
+	given RootJsonFormat[StationSpecifics] with{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)

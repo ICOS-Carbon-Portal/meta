@@ -10,14 +10,17 @@ import org.scalajs.dom.File
 import org.scalajs.dom.fetch
 import org.scalajs.dom.raw.XMLHttpRequest
 import org.scalajs.dom.RequestInit
+import org.scalajs.dom.Headers
 import org.scalajs.dom.RequestCredentials
 import org.scalajs.dom.Response
+import org.scalajs.dom.HttpMethod
 import JsonSupport.given
 import play.api.libs.json._
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.doi.Doi
+import scala.scalajs.js.Dictionary
 
 object Backend {
 
@@ -45,9 +48,9 @@ object Backend {
 	}
 
 	def submitterIds: Future[IndexedSeq[SubmitterProfile]] =
-		Ajax.get("/upload/submitterids", withCredentials = true)
+		fetch("/upload/submitterids", new RequestInit{credentials = RequestCredentials.include})
 			.recoverWith(recovery("fetch the list of available submitter ids"))
-			.map(parseTo[IndexedSeq[SubmitterProfile]])
+			.flatMap(parseTo[IndexedSeq[SubmitterProfile]])
 			.flatMap{ s =>
 				if(s.isEmpty)
 					Future.failed(new Exception("""You are not authorized to upload data.
@@ -106,28 +109,27 @@ object Backend {
 			}
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
-			Ajax
-			.put(url, file)
-			.recoverWith {
-				case AjaxException(xhr) =>
-					val msg = if(xhr.responseText.isEmpty)
-						"File could not be found"
-					else xhr.responseText
-
-					Future.failed(new Exception(msg))
-			}
-			.flatMap(xhr => xhr.status match {
+			fetch(url, new RequestInit{
+				body = file
+				method = HttpMethod.PUT
+			})
+			.toFuture
+			.flatMap(resp => resp.status match {
 				case 200 => Future.successful(())
-				case _ => Future.failed(new Exception(xhr.responseText))
+				case _ => resp.text().toFuture.flatMap(msg => Future.failed(new Exception(msg)))
 			})
 		} else Future.successful(())
 	}
 
-	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] = Ajax
-		.post("/sparql", query)
+	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] =
+		fetch("/sparql", new RequestInit{
+			body = query
+			method = HttpMethod.POST
+		})
 		.recoverWith(recovery("execute a SPARQL query"))
-		.map(xhr =>
-			(parseTo[JsObject](xhr) \ "results" \ "bindings")
+		.flatMap(parseTo[JsObject])
+		.map(jsobj =>
+			(jsobj \ "results" \ "bindings")
 				.validate[JsArray]
 				.map(_.value.collect(parseBinding))
 				.get.toVector
@@ -135,31 +137,47 @@ object Backend {
 
 	def submitMetadata[T : Writes](dto: T): Future[URI] = {
 		val json = Json.toJson(dto)
-		Ajax.post("/upload", Json.prettyPrint(json), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
-			.recoverWith(recovery("upload metadata"))
-			.map(xhr => new URI(xhr.responseText))
+		fetch("/upload", new RequestInit{
+			method = HttpMethod.POST
+			body = Json.prettyPrint(json)
+			headers = Dictionary("Content-Type" -> "application/json")
+			credentials = RequestCredentials.include
+		})
+		.recoverWith(recovery("upload metadata"))
+		.flatMap(_.text().toFuture)
+		.map(new URI(_))
 	}
 
-	def uploadFile(file: File, dataURL: URI): Future[String] = Ajax
-		.put(dataURL.toString, file, headers = Map("Content-Type" -> "application/octet-stream"), withCredentials = true)
+	def uploadFile(file: File, dataURL: URI): Future[String] =
+		fetch(dataURL.toString, new RequestInit{
+			method = HttpMethod.PUT
+			body = file
+			headers = Dictionary("Content-Type" -> "application/octet-stream")
+			credentials = RequestCredentials.include
+		})
 		.recoverWith(recovery("upload file"))
-		.map(_.responseText)
+		.flatMap(_.text())
 
-	def getMetadata(uri: URI): Future[UploadDto] = Ajax.get(s"/dtodownload?uri=$uri")
+	def getMetadata(uri: URI): Future[UploadDto] = fetch(s"/dtodownload?uri=$uri")
 		.recoverWith(recovery("fetch existing object"))
-		.map(parseTo[UploadDto])
+		.flatMap(parseTo[UploadDto])
 
-	def createDraftDoi(uri: URI): Future[Doi] = Ajax
-		.post(s"/dois/createDraft", Json.prettyPrint(Json.toJson(uri)), headers = Map("Content-Type" -> "application/json"), withCredentials = true)
+	def createDraftDoi(uri: URI): Future[Doi] =
+		fetch("/dois/createDraft", new RequestInit{
+			method = HttpMethod.POST
+			body = Json.prettyPrint(Json.toJson(uri))
+			headers = Dictionary("Content-Type" -> "application/json")
+			credentials = RequestCredentials.include
+		})
 		.recoverWith(recovery("create draft DOI"))
-		.map(parseTo[Doi])
+		.flatMap(parseTo[Doi])
 
 	def getKeywordList(implicit envri: Envri.Envri): Future[IndexedSeq[String]] =
 		if (envri == Envri.SITES) Future.successful(IndexedSeq.empty)
-		else Ajax
-			.get("/uploadgui/gcmdkeywords.json")
+		else
+			fetch("/uploadgui/gcmdkeywords.json")
 			.recoverWith(recovery("fetch keyword list"))
-			.map(parseTo[IndexedSeq[String]])
+			.flatMap(parseTo[IndexedSeq[String]])
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{
@@ -167,15 +185,12 @@ object Backend {
 		}.toMap
 	}
 
-	private def parseTo[T : Reads](xhr: Response): Future[T] =
-		xhr.text().map(Json.parse(_).as[T])
+	private def parseTo[T : Reads](resp: Response): Future[T] =
+		resp.text().map(Json.parse(_).as[T])
 
 	private def recovery(hint: String): PartialFunction[Throwable, Future[Response]] = {
-		case AjaxException(xhr) =>
-			val msg = if(xhr.responseText.isEmpty)
-				s"Got HTTP status ${xhr.status} when trying to $hint"
-			else s"Error when trying to $hint: " + xhr.responseText
-
+		case err =>
+			val msg = s"Error when trying to $hint: ${err.getMessage}"
 			Future.failed(new Exception(msg))
 	}
 }

@@ -85,21 +85,27 @@ function initMap(locations) {
 }
 
 function hasFeatureLabels(geoJson){
-	if(geoJson.type === 'FeatureCollection')
-		return geoJson.features.some(hasFeatureLabels);
-	else if(geoJson.type === 'Feature')
-		return geoJson.properties && !!(geoJson.properties.label);
-	else return false;
+	switch(geoJson.type){
+		case 'FeatureCollection': 
+			return geoJson.features.some(hasFeatureLabels);
+		case 'Feature': 
+			return geoJson.properties && !!(geoJson.properties.label);
+		default:
+			return false;
+	}
 }
 
 function collectGeometries(geoJson){
-	if(geoJson.type === 'FeatureCollection')
-		return geoJson.features.flatMap(collectGeometries);
-	else if(geoJson.type === 'Feature')
-		return collectGeometries(geoJson.geometry);
-	else if(geoJson.type === 'GeometryCollection')
-		return geoJson.geometries.flatMap(collectGeometries);
-	else return geoJson;
+	switch(geoJson.type){
+		case 'FeatureCollection': 
+			return geoJson.features.flatMap(collectGeometries);
+		case 'Feature': 
+			return collectGeometries(geoJson.geometry);
+		case 'GeometryCollection':
+			return geoJson.geometries.flatMap(collectGeometries);
+		default:
+			return geoJson;
+	}
 }
 
 function getMask(geoJson){

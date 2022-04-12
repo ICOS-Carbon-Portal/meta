@@ -79,7 +79,7 @@ function initMap(locations) {
 			},
 			featureGroups[0].getBounds()
 		);
-		map.fitBounds(bounds, {maxZoom: isSites ? 14 : 18} );
+		map.fitBounds(bounds, {maxZoom: 14 } );
 	}
 
 }

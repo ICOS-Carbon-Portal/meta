@@ -88,8 +88,10 @@ function hasFeatureLabels(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.some(hasFeatureLabels);
+      break;
 		case 'Feature': 
 			return geoJson.properties && !!(geoJson.properties.label);
+      break;
 		default:
 			return false;
 	}
@@ -99,10 +101,13 @@ function collectGeometries(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.flatMap(collectGeometries);
+      break;
 		case 'Feature': 
 			return collectGeometries(geoJson.geometry);
+      break;
 		case 'GeometryCollection':
 			return geoJson.geometries.flatMap(collectGeometries);
+      break;
 		default:
 			return geoJson;
 	}

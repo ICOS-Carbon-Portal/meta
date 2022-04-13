@@ -43,17 +43,18 @@ function initMap(locations) {
 					}
 				},
 				onEachFeature(feature, layer) {
-          // if (typeof overlays[feature.properties.name] === "undefined") {
-          //   overlays[feature.properties.name] = L.featureGroup();
-          // }
-          // overlays[feature.properties.name].addLayer(layer);
-          
 					if (isSites && label) {
-            overlays.push(layer);
-						layer.bindPopup(label); 
-          //   overlays[label].addLayer(layer);
+            if (typeof overlays[label] === 'undefined') { 
+              overlays[label] = L.featureGroup();
+            }
+            overlays[label].addLayer(layer);
+            
+            console.log("layername1: '" + label + " ':" + label);
+						layer.bindPopup(label);  
+            console.log("layer:", layer);
              console.log("label: " + label);
 					} else if (feature.properties && feature.properties.label) {
+            overlays.push(layer);
 						layer.bindPopup(feature.properties.label);
             // overlays[feature.properties.label].addLayer(layer);
             console.log("feature.properties.label: " + feature.properties.label);

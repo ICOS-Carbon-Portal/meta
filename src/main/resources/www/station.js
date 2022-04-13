@@ -7,6 +7,7 @@ if (queryParams.coverage || queryParams.station || queryParams.dobj) {
 	});
 }
 
+
 function initMap(locations) {
 	var mapDiv = document.getElementById("map");
 	if (!mapDiv) return;
@@ -16,12 +17,12 @@ function initMap(locations) {
 		maxBounds: [[-90, -180],[90, 180]],
 		scrollWheelZoom: window.top === window.self
 	});
-
+ 
 	var baseMaps = getBaseMaps(18);
 	map.addLayer(baseMaps.Topographic);
-	L.control.layers(baseMaps).addTo(map);
-	const icon = getIcon(queryParams.icon);
 
+	const icon = getIcon(queryParams.icon);
+  var overlays = [];
 	const featureGroups = locations.map(function({label, geoJson}){
 		const fg = new L.FeatureGroup();
 
@@ -42,10 +43,20 @@ function initMap(locations) {
 					}
 				},
 				onEachFeature(feature, layer) {
+          // if (typeof overlays[feature.properties.name] === "undefined") {
+          //   overlays[feature.properties.name] = L.featureGroup();
+          // }
+          // overlays[feature.properties.name].addLayer(layer);
+          
 					if (isSites && label) {
+            overlays.push(layer);
 						layer.bindPopup(label); 
+          //   overlays[label].addLayer(layer);
+             console.log("label: " + label);
 					} else if (feature.properties && feature.properties.label) {
 						layer.bindPopup(feature.properties.label);
+            // overlays[feature.properties.label].addLayer(layer);
+            console.log("feature.properties.label: " + feature.properties.label);
 					}
 				},
 				style: function (feature) {
@@ -59,15 +70,18 @@ function initMap(locations) {
 		);
 
 		if (!hasFeatureLabels(geoJson) && label) fg.bindPopup(label);
+    console.log("fg:", fg);
 
 		map.addLayer(fg);
 		return fg;
 	});
 
+  console.log("locations:", locations);
 	var allGeoms = locations.flatMap(loc => collectGeometries(loc.geoJson));
+  console.log("allGeoms", allGeoms);
+
 
 	var len = allGeoms.length;
-
 	if(len === 1 && allGeoms[0].type === 'Point'){
 		 const zoom = isSites ? 12 : 4;
 		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
@@ -82,14 +96,24 @@ function initMap(locations) {
 		map.fitBounds(bounds, {maxZoom: 14 } );
 	}
 
+  L.control.layers(baseMaps, overlays, {collapsed: true}).addTo(map);
+}
+
+function onEachFeature(feature, layer){
+  if(typeof overlays[feature.properties.name] === 'undefined'){
+    overlays[feature.properties.name] = L.FeatureGroup();
+  }
+  overlays[feature.properties.name].addLayer(layer);
 }
 
 function hasFeatureLabels(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.some(hasFeatureLabels);
+      break;
 		case 'Feature': 
 			return geoJson.properties && !!(geoJson.properties.label);
+      break;
 		default:
 			return false;
 	}
@@ -99,10 +123,13 @@ function collectGeometries(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.flatMap(collectGeometries);
+      break;
 		case 'Feature': 
 			return collectGeometries(geoJson.geometry);
+      break;
 		case 'GeometryCollection':
 			return geoJson.geometries.flatMap(collectGeometries);
+      break;
 		default:
 			return geoJson;
 	}

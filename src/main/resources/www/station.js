@@ -48,16 +48,11 @@ function initMap(locations) {
               overlays[label] = L.featureGroup();
             }
             overlays[label].addLayer(layer);
-            
-            console.log("layername1: '" + label + " ':" + label);
 						layer.bindPopup(label);  
-            console.log("layer:", layer);
-             console.log("label: " + label);
 					} else if (feature.properties && feature.properties.label) {
             overlays.push(layer);
 						layer.bindPopup(feature.properties.label);
-            // overlays[feature.properties.label].addLayer(layer);
-            console.log("feature.properties.label: " + feature.properties.label);
+            //overlays[feature.properties.label].addLayer(layer);
 					}
 				},
 				style: function (feature) {
@@ -71,16 +66,12 @@ function initMap(locations) {
 		);
 
 		if (!hasFeatureLabels(geoJson) && label) fg.bindPopup(label);
-    console.log("fg:", fg);
 
 		map.addLayer(fg);
 		return fg;
 	});
 
-  console.log("locations:", locations);
 	var allGeoms = locations.flatMap(loc => collectGeometries(loc.geoJson));
-  console.log("allGeoms", allGeoms);
-
 
 	var len = allGeoms.length;
 	if(len === 1 && allGeoms[0].type === 'Point'){

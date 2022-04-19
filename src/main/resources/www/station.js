@@ -2,7 +2,7 @@ var queryParams = processQuery(window.location.search);
 var isSites = window.location.host.endsWith("fieldsites.se");
 
 if (queryParams.coverage || queryParams.station || queryParams.dobj) {
-   getGeoJson(queryParams).then(function (geoJsonArray) {
+  getGeoJson(queryParams).then(function (geoJsonArray) {
     initMap(geoJsonArray);
   });
 }
@@ -25,9 +25,7 @@ function initMap(locations) {
 
   const icon = getIcon(queryParams.icon);
   var overlays = [];
-  var layercontrol = L.control
-    .layers(baseMaps, overlays)
-    .addTo(map);
+  var layercontrol = L.control.layers(baseMaps, overlays).addTo(map);
 
   const featureGroups = locations.map(function ({
     label,
@@ -49,12 +47,11 @@ function initMap(locations) {
             }).addTo(map);
             return null;
           } else {
-            return icon ? L.marker(latlng, { icon }) : L.marker(latlng);
+						return icon ? L.marker(latlng, { icon }) : L.marker(latlng);
           }
         },
         onEachFeature(feature, layer) {
           if (isSites && label) {
-        
             layercontrol.addOverlay(layer, label);
             !!description
               ? layer.bindPopup(label + ": " + description)
@@ -73,8 +70,15 @@ function initMap(locations) {
             "GeometryCollection",
           ];
           if (supported.includes(feature.geometry.type))
-            return { color: "rgb(50,50,255)", weight: 2 };
-          else return { color: "rgb(50,255,50)", weight: 2 };
+            return {
+              color: "rgb(50,50,255)",
+              weight: 2,
+            };
+          else
+            return {
+              color: "rgb(50,255,50)",
+              weight: 2,
+            };
         },
       })
     );
@@ -95,7 +99,9 @@ function initMap(locations) {
     const bounds = featureGroups.reduce(function (acc, curr) {
       return acc.extend(curr.getBounds());
     }, featureGroups[0].getBounds());
-    map.fitBounds(bounds, { maxZoom: 14 });
+    map.fitBounds(bounds, {
+      maxZoom: 14,
+    });
   }
 }
 
@@ -103,10 +109,8 @@ function hasFeatureLabels(geoJson) {
   switch (geoJson.type) {
     case "FeatureCollection":
       return geoJson.features.some(hasFeatureLabels);
-      break;
     case "Feature":
       return geoJson.properties && !!geoJson.properties.label;
-      break;
     default:
       return false;
   }
@@ -116,13 +120,10 @@ function collectGeometries(geoJson) {
   switch (geoJson.type) {
     case "FeatureCollection":
       return geoJson.features.flatMap(collectGeometries);
-      break;
     case "Feature":
       return collectGeometries(geoJson.geometry);
-      break;
     case "GeometryCollection":
       return geoJson.geometries.flatMap(collectGeometries);
-      break;
     default:
       return geoJson;
   }
@@ -227,13 +228,19 @@ function getGeoJson(queryParams) {
     : queryParams.dobj
     ? getDobjLocations(queryParams.dobj)
     : Promise.resolve([
-        { geoJson: JSON.parse(decodeURIComponent(queryParams.coverage)) },
+        {
+          geoJson: JSON.parse(decodeURIComponent(queryParams.coverage)),
+        },
       ]);
 }
 
 function getDobjLocations(dobjUrl) {
   return getJson(dobjUrl).then((res) => {
-    return [{ geoJson: res.coverageGeo }];
+    return [
+      {
+        geoJson: res.coverageGeo,
+      },
+    ];
   });
 }
 

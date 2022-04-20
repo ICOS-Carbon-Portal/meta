@@ -19,15 +19,15 @@ function initMap(locations) {
 
 	var baseMaps = getBaseMaps(18);
 	map.addLayer(baseMaps.Topographic);
-	L.control.layers(baseMaps).addTo(map);
 	const icon = getIcon(queryParams.icon);
+  var overlays = [];
+  var layercontrol = L.control.layers(baseMaps, overlays).addTo(map);
 
-	const featureGroups = locations.map(function({label, geoJson}){
+	const featureGroups = locations.map(function({label, description, geoJson}){
 		const fg = new L.FeatureGroup();
 
 		fg.addLayer(
 			L.geoJson(geoJson, {
-
 				pointToLayer: function (feature, latlng) {
 					if(feature.properties && feature.properties.radius){ //this point is a circle
 						L.circle(latlng, {
@@ -43,8 +43,12 @@ function initMap(locations) {
 				},
 				onEachFeature(feature, layer) {
 					if (isSites && label) {
-						layer.bindPopup(label); 
+						layercontrol.addOverlay(layer, label);
+            !!description
+              ? layer.bindPopup(label + ": " + description)
+              : layer.bindPopup(label);
 					} else if (feature.properties && feature.properties.label) {
+						layercontrol.addOverlay(layer, feature.properties.label);
 						layer.bindPopup(feature.properties.label);
 					}
 				},
@@ -71,7 +75,6 @@ function initMap(locations) {
 	if(len === 1 && allGeoms[0].type === 'Point'){
 		 const zoom = isSites ? 12 : 4;
 		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
-
 	} else if(len > 0 ){
 		const bounds = featureGroups.reduce(
 			function(acc, curr){
@@ -222,7 +225,8 @@ function getStationLocations(stationUrl) {
 			const sitesCoverage = result.specificInfo._type === 'sites'
 				? result.specificInfo.sites.map(site => {
 					return {
-						"label": `<b>${site.location.label}</b><br>${site.ecosystem.label}`,
+						"label": `<b>${site.location.label}</b>`,
+						"description": `<br>${site.ecosystem.label}`,
 						"geoJson": site.location.geo
 					}
 				})

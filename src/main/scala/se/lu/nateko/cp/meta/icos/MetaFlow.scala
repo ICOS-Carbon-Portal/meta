@@ -69,9 +69,9 @@ object MetaFlow {
 			}
 		}
 
-		val stopAtc = atcSource.state.map{applyDiff("ATC")}.to(Sink.ignore).run()
-		val stopOtc = otcSource.state.map{applyDiff("OTC")}.to(Sink.ignore).run()
-		val stopEtc = etcSource.state.map{applyDiff("ETC")}.to(Sink.ignore).run()
+		val stopAtc = atcSource.state.map{applyDiff[ATC.type]("ATC")}.to(Sink.ignore).run()
+		val stopOtc = otcSource.state.map{applyDiff[OTC.type]("OTC")}.to(Sink.ignore).run()
+		val stopEtc = etcSource.state.map{applyDiff[ETC.type]("ETC")}.to(Sink.ignore).run()
 		new MetaFlow(atcSource,
 			() => {
 				stopAtc()

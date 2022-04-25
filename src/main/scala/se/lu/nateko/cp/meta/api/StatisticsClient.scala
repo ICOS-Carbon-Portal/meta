@@ -19,13 +19,14 @@ import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
 import akka.http.scaladsl.settings.ConnectionPoolSettings
+import spray.json.RootJsonFormat
 
 
 object StatisticsClient extends DefaultJsonProtocol {
 	case class RestHeartCount(count: Int)
 	case class StatsApiCount(downloadCount: Int)
-	implicit val statsFormat = jsonFormat1(StatsApiCount)
-	implicit val restHeartFormat = jsonFormat1(RestHeartCount)
+	given RootJsonFormat[StatsApiCount] = jsonFormat1(StatsApiCount.apply)
+	given RootJsonFormat[RestHeartCount] = jsonFormat1(RestHeartCount.apply)
 }
 
 class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {

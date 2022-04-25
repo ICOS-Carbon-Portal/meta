@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.icos
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.meta.api.UriId
@@ -62,7 +63,7 @@ private class IcosMetaInstancesFetcher(
 	val server: InstanceServer,
 	val plainObjFetcher: PlainStaticObjectFetcher
 )(implicit envriConfigs: EnvriConfigs) extends DobjMetaFetcher{
-	private[this] implicit val factory = server.factory
+	private[this] given factory: ValueFactory = server.factory
 	val vocab = new CpVocab(factory)
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(

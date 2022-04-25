@@ -174,7 +174,7 @@ object EtcMetaSource{
 	type EtcCompany = TcGenericOrg[E]
 	type EtcMembership = Membership[E]
 	class SensorModel(val modelId: String, val compId: Int, val name: String)
-	implicit val envri = Envri.ICOS
+	given Envri.Envri = Envri.ICOS
 
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)

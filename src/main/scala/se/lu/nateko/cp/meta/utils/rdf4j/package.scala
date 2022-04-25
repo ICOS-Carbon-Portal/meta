@@ -25,7 +25,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 
 package object rdf4j {
 
-	implicit class EnrichedValueFactory(val factory: ValueFactory) extends AnyVal{
+	extension(factory: ValueFactory){
 		def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
 		def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 		def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
@@ -37,30 +37,30 @@ package object rdf4j {
 			factory.createStatement(triple._1, triple._2, triple._3)
 	}
 
-	implicit class StringToStringLiteralConverter(val label: String) extends AnyVal{
-		def toRdf(implicit factory: ValueFactory): Literal = factory.createLiteral(label, XMLSchema.STRING)
+	extension (label: String)(using factory: ValueFactory){
+		def toRdf: Literal = factory.createLiteral(label, XMLSchema.STRING)
 	}
 
-	implicit class EnrichedRdf4jUri(val uri: IRI) extends AnyVal{
+	extension (uri: IRI){
 		def toJava: JavaUri = JavaUri.create(uri.stringValue)
 		def ===(other: IRI): Boolean = uri == other
 		def ===(other: JavaUri): Boolean = toJava == other
 	}
 
-	implicit class EnrichedJavaUri(val uri: JavaUri) extends AnyVal{
+	extension (uri: JavaUri){
 		def toRdf(implicit factory: ValueFactory): IRI = factory.createIRI(uri)
 		def ===(other: IRI): Boolean = other.toJava == uri
 		def ===(other: JavaUri): Boolean = uri == other
 	}
 
-	implicit class IterableCloseableIteration[T](val res: CloseableIteration[T, _]) extends AnyVal{
+	extension [T](res: CloseableIteration[T, _]){
 		def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
 			override def hasNext: Boolean = res.hasNext()
 			override def next(): T = res.next()
 		}
 	}
 
-	implicit class Rdf4jRepoWithAccessAndTransactions(val repo: Repository) extends AnyVal{
+	extension (repo: Repository){
 
 		def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
 		def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] = {

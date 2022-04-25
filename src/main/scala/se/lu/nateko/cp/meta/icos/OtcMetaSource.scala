@@ -316,7 +316,7 @@ class OtcMetaSource(
 
 class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
-	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
+	given bup: BaseUriProvider = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
 
 	val dummyUri = new java.net.URI(bup.baseUri + "dummy")
 

@@ -242,15 +242,15 @@ object SequenceDiff{
 
 	def empty[T <: TC] = new SequenceDiff[T](Nil, Map.empty)
 
-	implicit class SeqDiffSeqEnriched[T <: TC](val seq: Seq[SequenceDiff[T]]) {
+	extension [T <: TC](seq: Seq[SequenceDiff[T]])
 		def join: SequenceDiff[T] = {
 			val rdfDiff = seq.flatMap(_.rdfDiff)
 			val lookup = Map(seq.flatMap(_.cpIdLookup): _*)
 			new SequenceDiff(rdfDiff, lookup)
 		}
-	}
 
-	implicit class RdfUpdSeqEnriched(val rdfupd: Seq[RdfUpdate]) extends AnyVal{
+
+	extension (rdfupd: Seq[RdfUpdate])
 		def toSeqDiff[T <: TC] = new SequenceDiff[T](rdfupd, Map.empty)
-	}
+
 }

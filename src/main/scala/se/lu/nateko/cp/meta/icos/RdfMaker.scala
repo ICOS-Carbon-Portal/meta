@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
@@ -18,8 +19,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
-	private implicit val envri = Envri.ICOS
-	private[this] implicit val factory = vocab.factory
+	private given Envri.Envri = Envri.ICOS
+	private[this] given factory: ValueFactory = vocab.factory
 	private type Triple = (IRI, IRI, Value)
 
 	def createStatement(subj: Resource, pred: IRI, v: Value): Statement =

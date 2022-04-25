@@ -17,7 +17,7 @@ lazy val metaCore = (project in file("core"))
 		version := "0.7.0",
 		scalacOptions ++= jvmScalacOptions,
 		libraryDependencies ++= Seq(
-			"io.spray"              %% "spray-json"                         % "1.3.6",
+			"io.spray"              %% "spray-json"                         % "1.3.6" cross CrossVersion.for3Use2_13,
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(
@@ -75,6 +75,14 @@ lazy val meta = (project in file("."))
 		version := "0.7.0",
 		scalacOptions ++= jvmScalacOptions,
 
+		libraryDependencies := {
+			libraryDependencies.value.map{
+				case m if m.name.startsWith("twirl-api") =>
+					m.cross(CrossVersion.for3Use2_13)
+				case m => m
+			}
+		},
+
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion cross CrossVersion.for3Use2_13,
@@ -96,7 +104,7 @@ lazy val meta = (project in file("."))
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.5" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0" cross CrossVersion.for3Use2_13,
-			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test",
+			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
 			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test" exclude("org.scala-lang.modules", "scala-xml_3")
@@ -109,8 +117,6 @@ lazy val meta = (project in file("."))
 
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
-
-		scalacOptions += "-Wunused:-imports",
 
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first

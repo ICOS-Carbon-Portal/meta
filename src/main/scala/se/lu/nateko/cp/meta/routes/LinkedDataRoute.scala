@@ -16,9 +16,10 @@ import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import spray.json.DefaultJsonProtocol._
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
 
 object LinkedDataRoute {
-	private implicit val instServerMarshaller = InstanceServerSerializer.marshaller
+	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
 
 	def apply(
 		config: InstanceServersConfig,

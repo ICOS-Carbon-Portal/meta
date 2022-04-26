@@ -8,11 +8,14 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UpdateDto
 import se.lu.nateko.cp.meta.ReplaceDto
 import java.net.URI
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import se.lu.nateko.cp.meta.InstOntoServerConfig
-import spray.json.JsBoolean
+import spray.json._
+import DefaultJsonProtocol.BooleanJsonFormat
+import scala.language.implicitConversions
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{
+
+//	import SprayJsonSupport._
 
 	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, InstOntoServerConfig]): Route = {
 		val ontoInfos = ontoConfs.map{

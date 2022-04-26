@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.query.UpdateExecutionException
 import org.semanticweb.owlapi.model.{IRI => OwlIri}
@@ -24,7 +25,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
 
-	private implicit val factory = instServer.factory
+	private given factory: ValueFactory = instServer.factory
 
 	private val rdfsLabelInfo = DataPropertyDto(
 		ResourceDto("label", RDFS.LABEL.toJava, None),

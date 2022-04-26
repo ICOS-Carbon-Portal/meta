@@ -172,6 +172,7 @@ case class CpmetaConfig(
 object ConfigLoader extends CpmetaJsonProtocol{
 
 	import MetaCoreConfig.given
+	import DefaultJsonProtocol._
 
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat5(InstanceServerConfig.apply)

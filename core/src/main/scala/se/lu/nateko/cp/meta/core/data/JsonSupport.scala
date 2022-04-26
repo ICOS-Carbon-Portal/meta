@@ -4,6 +4,7 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import se.lu.nateko.cp.meta.core.toTypedJson
 import spray.json._
+import DefaultJsonProtocol._
 
 object JsonSupport extends CommonJsonSupport{
 

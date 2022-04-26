@@ -29,9 +29,9 @@ package object rdf4j {
 		def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
 		def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 		def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
-		def createLiteral(label: String, dtype: JavaUri) = factory.createLiteral(label, createIRI(dtype))
-		def createLiteral(dt: Instant) = factory.createLiteral(dt.toString, XMLSchema.DATETIME)
-		def createStringLiteral(label: String) = factory.createLiteral(label, XMLSchema.STRING)
+		def createLiteral(label: String, dtype: JavaUri): Literal = factory.createLiteral(label, createIRI(dtype))
+		def createLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XMLSchema.DATETIME)
+		def createStringLiteral(label: String): Literal = factory.createLiteral(label, XMLSchema.STRING)
 
 		def tripleToStatement(triple: (IRI, IRI, Value)): Statement =
 			factory.createStatement(triple._1, triple._2, triple._3)
@@ -48,7 +48,7 @@ package object rdf4j {
 	}
 
 	extension (uri: JavaUri){
-		def toRdf(implicit factory: ValueFactory): IRI = factory.createIRI(uri)
+		def toRdf(using factory: ValueFactory): IRI = factory.createIRI(uri)
 		def ===(other: IRI): Boolean = other.toJava == uri
 		def ===(other: JavaUri): Boolean = uri == other
 	}

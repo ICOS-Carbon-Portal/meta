@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.core.etcupload
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import spray.json._
+import DefaultJsonProtocol._
 
 object JsonSupport extends CommonJsonSupport{
 

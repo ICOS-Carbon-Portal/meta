@@ -27,7 +27,7 @@ import se.lu.nateko.cp.meta.core.data._
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import se.lu.nateko.cp.meta.utils.rdf4j.{toJava, ===}
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter

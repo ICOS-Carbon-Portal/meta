@@ -28,7 +28,7 @@ case class PidEntry(
 
 case class PidUpdate(`type`: String, parsed_data: JsValue)
 
-object EpicPidClient extends ProductFormats with StandardFormats with AdditionalFormats with BasicFormats{
+object EpicPidClient extends ProductFormats, StandardFormats, AdditionalFormats, BasicFormats{
 
 	def default(implicit system: ActorSystem) = new EpicPidClient(ConfigLoader.default.dataUploadService.epicPid)
 

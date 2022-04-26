@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.UploadDtoReader
 
 object DtoDownloadRoute extends CpmetaJsonProtocol{
 
-	implicit val uriFromStringUnmarshaller = Unmarshaller[String, Uri](_ => s => Future.fromTry(Try(Uri(s))))
+	given Unmarshaller[String, Uri] = Unmarshaller(_ => s => Future.fromTry(Try(Uri(s))))
 
 	def apply(uriSer: UriSerializer): Route = {
 		val service = new UploadDtoReader(uriSer)

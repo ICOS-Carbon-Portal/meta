@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 

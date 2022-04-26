@@ -3,8 +3,9 @@ package se.lu.nateko.cp.meta.core.crypto
 import spray.json._
 import scala.util.Success
 import scala.util.Failure
+import DefaultJsonProtocol._
 
-object JsonSupport extends DefaultJsonProtocol{
+object JsonSupport{
 
 	given RootJsonFormat[Sha256Sum] with{
 		import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

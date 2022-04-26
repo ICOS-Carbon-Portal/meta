@@ -30,7 +30,8 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
-
+import spray.json.RootJsonReader
+import spray.json.DefaultJsonProtocol.RootJsObjectFormat
 
 object LabelingApiRoute extends CpmetaJsonProtocol{
 
@@ -48,8 +49,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 		case err => throw err
 	}
 
-	private implicit val urlUnmarshaller: Unmarshaller[String, URI] =
-		Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
+	private given Unmarshaller[String, URI] = Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
 
 	def apply(
 		service: StationLabelingService,

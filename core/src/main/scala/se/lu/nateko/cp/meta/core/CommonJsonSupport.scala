@@ -6,7 +6,7 @@ import spray.json._
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.{LocalDateTime, LocalDate}
 
-trait CommonJsonSupport extends DefaultJsonProtocol{common =>
+trait CommonJsonSupport {
 
 	given RootJsonFormat[URI] with{
 		def write(uri: URI): JsValue = JsString(uri.toString)
@@ -51,7 +51,7 @@ trait CommonJsonSupport extends DefaultJsonProtocol{common =>
 		}
 	}
 
-	given JsonFormat[TimeInterval] = jsonFormat2(TimeInterval.apply)
+	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
 	def enumFormat[T <: Enumeration](theEnum: T) = new RootJsonFormat[theEnum.Value] {
 		def write(v: theEnum.Value) = JsString(v.toString)

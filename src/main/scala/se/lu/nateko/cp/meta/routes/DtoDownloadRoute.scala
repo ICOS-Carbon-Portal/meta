@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
+import scala.language.implicitConversions
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.StatusCodes

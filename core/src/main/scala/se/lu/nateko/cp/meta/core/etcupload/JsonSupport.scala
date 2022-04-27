@@ -18,5 +18,5 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	given JsonFormat[DataType.DataType] = enumFormat(DataType)
-	given JsonFormat[EtcUploadMetadata] = jsonFormat8(EtcUploadMetadata.apply)
+	given RootJsonFormat[EtcUploadMetadata] = jsonFormat8(EtcUploadMetadata.apply)
 }

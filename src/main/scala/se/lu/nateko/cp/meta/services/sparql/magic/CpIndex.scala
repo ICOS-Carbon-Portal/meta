@@ -55,7 +55,7 @@ trait ObjInfo extends ObjSpecific{
 class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
 	import CpIndex._
 
-	implicit val factory = sail.getValueFactory
+	given factory: ValueFactory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val objs = new ArrayBuffer[ObjEntry](nObjects)

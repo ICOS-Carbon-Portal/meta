@@ -14,16 +14,17 @@ import scala.collection.immutable.Seq
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services._
 import se.lu.nateko.cp.meta.services.upload._
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
-import se.lu.nateko.cp.meta.core.etcupload.JsonSupport._
+import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import scala.language.implicitConversions
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -122,7 +123,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 					}
 				} ~
 				extractEnvri { implicit envri =>
-					import MetaCoreConfig.{envriConfigFormat, envriFormat}
+					import MetaCoreConfig.given
 					path("envri"){
 						complete(envri)
 					} ~

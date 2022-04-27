@@ -385,7 +385,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 		lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.varNameRegexFilter)
 
 		it("is recognized as a GeneralCategFilter on VariableName"){
-			val GeneralCategFilter(categ, cond) = fetchNode.fetchRequest.filter
+			val GeneralCategFilter(categ, cond: (String => Boolean)) = fetchNode.fetchRequest.filter
 			assert(categ == VariableName)
 			assert(cond("SWC_1_5_1"))
 			assert(cond("blabla") == false)

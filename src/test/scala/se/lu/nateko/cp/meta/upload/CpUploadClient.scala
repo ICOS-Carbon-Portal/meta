@@ -27,7 +27,7 @@ import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.core.data.JsonSupport.dataObjectFormat
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import java.net.URI
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import se.lu.nateko.cp.meta.core.data.DataObject

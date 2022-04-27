@@ -1,13 +1,14 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import scala.language.implicitConversions
+
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.Multipart
 import akka.http.scaladsl.model.ResponseEntity
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller

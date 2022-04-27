@@ -22,7 +22,7 @@ import akka.http.scaladsl.model.RequestEntity
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 object L3UpdateWorkbench extends CpmetaJsonProtocol{
-	implicit val system = ActorSystem("l3update_workbench")
+	given system: ActorSystem = ActorSystem("l3update_workbench")
 	import system.dispatcher
 
 	val uploadConfBase = new CpUploadClient.Config(

@@ -15,7 +15,7 @@ object DanglingCleanup{
 		}
 	}
 
-	private class StatPattCollector extends AbstractQueryModelVisitor{
+	private class StatPattCollector extends AbstractQueryModelVisitor[Exception]{
 		import scala.collection.mutable.{Set, Buffer}
 		val dangling = Buffer.empty[(AnonVar,StatementPattern)]
 		val used = Set.empty[AnonVar]

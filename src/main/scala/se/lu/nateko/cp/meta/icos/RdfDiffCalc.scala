@@ -47,7 +47,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 						funder = updFunder,
 						core = f.core.copy(funder = updFunder.core)
 					)
-				case _ => f
+				case null => f
 			}
 
 		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)

@@ -28,7 +28,7 @@ import se.lu.nateko.cp.meta.DataObjectDto
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config, vocab)
-	private implicit val envri = Envri.ICOS
+	private given Envri.Envri = Envri.ICOS
 
 	def transform(meta: EtcUploadMetadata): Try[DataObjectDto] = {
 

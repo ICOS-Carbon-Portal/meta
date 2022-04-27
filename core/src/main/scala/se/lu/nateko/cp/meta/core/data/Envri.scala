@@ -22,9 +22,9 @@ object Envri extends Enumeration{
 
 	val ICOS, SITES = Value
 
-	def infer(uri: URI)(implicit configs: EnvriConfigs): Option[Envri] = infer(uri.getHost)
+	def infer(uri: URI)(using EnvriConfigs): Option[Envri] = infer(uri.getHost)
 
-	def infer(hostname: String)(implicit configs: EnvriConfigs): Option[Envri] = configs.collectFirst{
+	def infer(hostname: String)(using configs: EnvriConfigs): Option[Envri] = configs.collectFirst{
 		case (envri, conf) if conf.matchesHost(hostname) => envri
 	}
 

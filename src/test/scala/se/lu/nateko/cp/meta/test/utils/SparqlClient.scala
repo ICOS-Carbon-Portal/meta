@@ -8,12 +8,12 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
-import se.lu.nateko.cp.meta.core.sparql.JsonSupport._
+import se.lu.nateko.cp.meta.core.sparql.JsonSupport.given
 import java.net.URI
 import scala.util.Success
 import scala.util.Failure
 
-class SparqlClient(url: URI)(implicit system: ActorSystem) {
+class SparqlClient(url: URI)(using system: ActorSystem) {
 	import system.dispatcher
 
 	private val sparqlJson = MediaType.custom("application/sparql-results+json", binary = false)

@@ -49,7 +49,7 @@ object PatternFinder{
 			node => test(node).orElse(other(node))
 	}
 
-	private class Visitor[T](test: TopNodeSearch[T]) extends AbstractQueryModelVisitor{
+	private class Visitor[T](test: TopNodeSearch[T]) extends AbstractQueryModelVisitor[Exception]{
 
 		var result: Option[T] = None
 

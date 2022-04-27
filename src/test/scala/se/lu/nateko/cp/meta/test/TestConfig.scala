@@ -47,7 +47,7 @@ object TestConfig {
 	def getObjectProperty(localName: String): OWLObjectProperty =
 		factory.getOWLObjectProperty(localName, prefixManager)
 
-	implicit val envriConfs = Map(Envri.ICOS -> EnvriConfig(
+	given envriConfs: Envri.EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu",
 		dataHost = "data.icos-cp.eu",
 		metaHost = "meta.icos-cp.eu",

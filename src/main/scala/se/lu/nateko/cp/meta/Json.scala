@@ -12,7 +12,10 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers.liftMarshaller
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-//import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers.
+import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpEntity
 
 extension (js: JsValue)
 	def +(kv: (String, String)): JsObject =
@@ -23,11 +26,16 @@ extension (js: JsValue)
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import DefaultJsonProtocol._
 
-	private def writerToRespMarsh[T : RootJsonWriter](v: T): ToResponseMarshallable =
-		ToResponseMarshallable(v)(liftMarshaller(SprayJsonSupport.sprayJsonMarshaller))
+	export DefaultJsonProtocol.immSeqFormat
+	export DefaultJsonProtocol.mapFormat
+	export DefaultJsonProtocol.RootJsObjectFormat
 
-	given [T: JsonFormat]: Conversion[Seq[T],ToResponseMarshallable] = writerToRespMarsh(_)(immSeqFormat[T])
-	given [T: RootJsonWriter]: Conversion[T,ToResponseMarshallable] = writerToRespMarsh(_)
+	given [T: RootJsonWriter]: Conversion[T,ToResponseMarshallable] =
+		ToResponseMarshallable(_)(liftMarshaller(SprayJsonSupport.sprayJsonMarshaller))
+
+	given [T: RootJsonReader]: FromRequestUnmarshaller[T] = Unmarshaller
+		.strict[HttpRequest, HttpEntity](_.entity)
+		.andThen(SprayJsonSupport.sprayJsonUnmarshaller)
 
 	given RootJsonFormat[ResourceDto] = jsonFormat3(ResourceDto.apply)
 	given RootJsonFormat[LiteralValueDto] = jsonFormat2(LiteralValueDto.apply)

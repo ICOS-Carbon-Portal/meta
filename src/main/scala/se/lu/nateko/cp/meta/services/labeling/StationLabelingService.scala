@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -11,7 +12,6 @@ import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
 
 
 class StationLabelingService(
@@ -24,7 +24,7 @@ class StationLabelingService(
 	protected val server: InstanceServer = instanceServers(config.instanceServerId)
 	protected val provInfoServer: InstanceServer = instanceServers(config.provisionalInfoInstanceServerId)
 	protected val icosInfoServer: InstanceServer = instanceServers(config.icosMetaInstanceServerId)
-	protected implicit val factory = provInfoServer.factory
+	protected given factory: ValueFactory = provInfoServer.factory
 	protected val vocab = new StationsVocab(factory)
 	protected val metaVocab = new CpmetaVocab(factory)
 	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)

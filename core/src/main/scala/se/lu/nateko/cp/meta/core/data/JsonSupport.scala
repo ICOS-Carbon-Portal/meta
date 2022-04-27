@@ -8,19 +8,19 @@ import DefaultJsonProtocol._
 
 object JsonSupport extends CommonJsonSupport{
 
-	given JsonFormat[UriResource] = jsonFormat3(UriResource.apply)
-	given JsonFormat[Project] = jsonFormat2(Project.apply)
-	given JsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
-	given JsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
+	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
+	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
+	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
+	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
 	given JsonFormat[DatasetClass.DatasetClass] = enumFormat(DatasetClass)
-	given JsonFormat[DatasetSpec] = jsonFormat3(DatasetSpec.apply)
-	given JsonFormat[DataObjectSpec] = jsonFormat9(DataObjectSpec.apply)
+	given RootJsonFormat[DatasetSpec] = jsonFormat3(DatasetSpec.apply)
+	given RootJsonFormat[DataObjectSpec] = jsonFormat9(DataObjectSpec.apply)
 
-	given JsonFormat[Position] = jsonFormat4(Position.apply)
-	given JsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
-	given JsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
-	given JsonFormat[Polygon] = jsonFormat2(Polygon.apply)
-	given JsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[Position] = jsonFormat4(Position.apply)
+	given RootJsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
+	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
+	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
+	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -90,16 +90,16 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given JsonFormat[Organization] = jsonFormat4(Organization.apply)
-	given JsonFormat[Instrument] = jsonFormat8(Instrument.apply)
-	given JsonFormat[Person] = jsonFormat4(Person.apply)
-	given JsonFormat[Site] = jsonFormat3(Site.apply)
+	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
+	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
+	given RootJsonFormat[Person] = jsonFormat4(Person.apply)
+	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
 	given JsonFormat[FunderIdType.FunderIdType] = enumFormat(FunderIdType)
-	given JsonFormat[Funder] = jsonFormat2(Funder.apply)
-	given JsonFormat[Funding] = jsonFormat7(Funding.apply)
-	given JsonFormat[Station] = jsonFormat8(Station.apply)
+	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
+	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
+	given RootJsonFormat[Station] = jsonFormat8(Station.apply)
 
-	given JsonFormat[Agent] with{
+	given RootJsonFormat[Agent] with{
 
 		def write(agent: Agent): JsValue = agent match{
 			case person: Person => person.toJson
@@ -117,24 +117,24 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given JsonFormat[DataProduction] = jsonFormat7(DataProduction.apply)
-	given JsonFormat[DataAcquisition] = jsonFormat6(DataAcquisition.apply)
-	given JsonFormat[DataSubmission] = jsonFormat3(DataSubmission.apply)
+	given RootJsonFormat[DataProduction] = jsonFormat7(DataProduction.apply)
+	given RootJsonFormat[DataAcquisition] = jsonFormat6(DataAcquisition.apply)
+	given RootJsonFormat[DataSubmission] = jsonFormat3(DataSubmission.apply)
 
-	given JsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
+	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
-	given JsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given JsonFormat[VarMeta] = jsonFormat3(VarMeta.apply)
-	given JsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
-	given JsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
+	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat3(VarMeta.apply)
+	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
+	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 
-	given JsonFormat[TabularIngestionExtract] = jsonFormat2(TabularIngestionExtract.apply)
-	given JsonFormat[VarInfo] = jsonFormat3(VarInfo.apply)
-	given JsonFormat[NetCdfExtract] = jsonFormat1(NetCdfExtract.apply)
-	given JsonFormat[TimeSeriesExtract] = jsonFormat2(TimeSeriesExtract.apply)
-	given JsonFormat[SpatialTimeSeriesExtract] = jsonFormat2(SpatialTimeSeriesExtract.apply)
+	given RootJsonFormat[TabularIngestionExtract] = jsonFormat2(TabularIngestionExtract.apply)
+	given RootJsonFormat[VarInfo] = jsonFormat3(VarInfo.apply)
+	given RootJsonFormat[NetCdfExtract] = jsonFormat1(NetCdfExtract.apply)
+	given RootJsonFormat[TimeSeriesExtract] = jsonFormat2(TimeSeriesExtract.apply)
+	given RootJsonFormat[SpatialTimeSeriesExtract] = jsonFormat2(SpatialTimeSeriesExtract.apply)
 
-	given JsonFormat[IngestionMetadataExtract] with{
+	given RootJsonFormat[IngestionMetadataExtract] with{
 
 		def write(uploadInfo: IngestionMetadataExtract): JsValue = uploadInfo match{
 			case ts: TimeSeriesExtract => ts.toJson
@@ -155,13 +155,13 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given JsonFormat[UploadCompletionInfo] = jsonFormat2(UploadCompletionInfo.apply)
-	given JsonFormat[Licence] = jsonFormat4(Licence.apply)
-	given JsonFormat[References] = jsonFormat9(References.apply)
-	given JsonFormat[DocObject] = jsonFormat12(DocObject.apply)
+	given RootJsonFormat[UploadCompletionInfo] = jsonFormat2(UploadCompletionInfo.apply)
+	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
+	given RootJsonFormat[References] = jsonFormat9(References.apply)
+	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
 
 	given RootJsonFormat[DataObject] with {
-		private given defFormat: JsonFormat[DataObject] = jsonFormat13(DataObject.apply)
+		private given defFormat: RootJsonFormat[DataObject] = jsonFormat13(DataObject.apply)
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
@@ -189,9 +189,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given JsonFormat[StaticCollection] = jsonFormat9(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] = jsonFormat9(StaticCollection.apply)
 
-	given JsonFormat[StaticDataItem] with{
+	given RootJsonFormat[StaticDataItem] with{
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
 			case pdo: PlainStaticObject => pdo.toJson

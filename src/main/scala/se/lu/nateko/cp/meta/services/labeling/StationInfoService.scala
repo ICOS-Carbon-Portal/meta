@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsObject
 import spray.json.JsString
 import java.time.Instant

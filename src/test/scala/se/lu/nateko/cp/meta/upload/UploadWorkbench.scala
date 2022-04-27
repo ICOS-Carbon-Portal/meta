@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import scala.concurrent.Await
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker
 import scala.concurrent.duration.DurationInt
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.CitationConfig
 import akka.stream.Materializer
@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker2
 import se.lu.nateko.cp.meta.upload.drought.FluxdataUpload
 
 object UploadWorkbench{
-	implicit val system = ActorSystem("upload_workbench")
+	given system: ActorSystem = ActorSystem("upload_workbench")
 	import system.dispatcher
 
 	val uploadConfBase = new CpUploadClient.Config(

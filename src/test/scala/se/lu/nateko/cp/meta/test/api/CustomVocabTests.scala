@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 class CustomVocabTests extends AnyFunSpec{
 
 	private[this] object Vocab extends CustomVocab{
-		implicit val bup = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
+		given bup: BaseUriProvider = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
 		val factory: ValueFactory = new MemValueFactory
 		def encode(s: String) = CustomVocab.urlEncode(s)
 	}
@@ -33,13 +33,13 @@ class CustomVocabTests extends AnyFunSpec{
 	describe("equality of URIs"){
 
 		it("Works as expected even for CustomVocabs with different ValueFactories"){
-			val tempVocab = new CustomVocab{
-				implicit val bup = makeUriProvider(Vocab.bup.baseUri)
+			object tempVocab extends CustomVocab{
+				given BaseUriProvider = makeUriProvider(Vocab.bup.baseUri)
 				val factory: ValueFactory = new MemValueFactory
+				val bebe = getRelativeRaw("bebe")
 			}
-			import tempVocab.bup
 
-			assert(Vocab.getRelativeRaw("bebe") === tempVocab.getRelativeRaw("bebe"))
+			assert(Vocab.getRelativeRaw("bebe") === tempVocab.bebe)
 		}
 	}
 }

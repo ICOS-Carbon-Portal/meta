@@ -47,14 +47,14 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def metaFetcher(implicit envri: Envri) = metaFetchers.get(envri).toTry{
+	def metaFetcher(using envri: Envri) = metaFetchers.get(envri).toTry{
 		new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly")
 	}
 
-	def getStation(station: IRI)(implicit envri: Envri): Try[Option[Station]] = metaFetcher
+	def getStation(station: IRI)(using Envri): Try[Option[Station]] = metaFetcher
 		.flatMap(_.getOptionalStation(station))
 
-	def getDataObjSpecification(objHash: Sha256Sum)(implicit envri: Envri): Try[IRI] = {
+	def getDataObjSpecification(objHash: Sha256Sum)(using envri: Envri): Try[IRI] = {
 		val dataObjUri = vocab.getStaticObject(objHash)
 
 		allDataObjs(envri).getUriValues(dataObjUri, metaVocab.hasObjectSpec, AtMostOne).headOption.toTry{
@@ -62,20 +62,20 @@ class DataObjectInstanceServers(
 		}
 	}
 
-	def getObjSpecificationFormat(objectSpecification: IRI)(implicit envri: Envri): Try[IRI] = metaFetcher.flatMap{
+	def getObjSpecificationFormat(objectSpecification: IRI)(using Envri): Try[IRI] = metaFetcher.flatMap{
 		_.getOptionalSpecificationFormat(objectSpecification).toTry{
 			new UploadUserErrorException(s"Object Specification '$objectSpecification' has no format")
 		}
 	}
 
-	def getDataObjSpecification(spec: IRI)(implicit envri: Envri): Try[DataObjectSpec] = metaFetcher.map(_.getSpecification(spec))
+	def getDataObjSpecification(spec: IRI)(using Envri): Try[DataObjectSpec] = metaFetcher.map(_.getSpecification(spec))
 
-	def getInstServerForFormat(format: IRI)(implicit envri: Envri): Try[InstanceServer] =
+	def getInstServerForFormat(format: IRI)(using envri: Envri): Try[InstanceServer] =
 		perFormat.get(envri).flatMap(_.get(format)).toTry{
 			new UploadUserErrorException(s"ENVRI $envri unknown or has no instance server configured for format '$format'")
 		}
 
-	def getInstServerForStaticObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] = docServers
+	def getInstServerForStaticObj(objHash: Sha256Sum)(using envri: Envri): Try[InstanceServer] = docServers
 		.get(envri)
 		.filter{
 			_.hasStatement(
@@ -84,55 +84,55 @@ class DataObjectInstanceServers(
 		}
 		.fold(getInstServerForDataObj(objHash: Sha256Sum))(Success(_))
 
-	def isExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): Boolean =
+	def isExistingDataObject(hash: Sha256Sum)(using Envri): Boolean =
 		getInstServerForDataObj(hash).map{
 			_.hasStatement(
 				vocab.getStaticObject(hash), RDF.TYPE, metaVocab.dataObjectClass
 			)
 		}.getOrElse(false)
 
-	def isExistingDocument(hash: Sha256Sum)(implicit envri: Envri): Boolean =
+	def isExistingDocument(hash: Sha256Sum)(using envri: Envri): Boolean =
 		docServers.get(envri).map{
 			_.hasStatement(
 				vocab.getStaticObject(hash), RDF.TYPE, metaVocab.docObjectClass
 			)
 		}.getOrElse(false)
 
-	private def getInstServerForDataObj(objHash: Sha256Sum)(implicit envri: Envri): Try[InstanceServer] =
+	private def getInstServerForDataObj(objHash: Sha256Sum)(using Envri): Try[InstanceServer] =
 		for(
 			objSpec <- getDataObjSpecification(objHash);
 			format <- getObjSpecificationFormat(objSpec);
 			server <- getInstServerForFormat(format)
 		) yield server
 
-	def getDocInstServer(implicit envri: Envri): Try[InstanceServer] = docServers.get(envri).toTry{
+	def getDocInstServer(using envri: Envri): Try[InstanceServer] = docServers.get(envri).toTry{
 		new UploadUserErrorException(s"ENVRI '$envri' has no document instance server configured for it")
 	}
 
-	def getCollectionCreator(coll: Sha256Sum)(implicit envri: Envri): Option[IRI] =
+	def getCollectionCreator(coll: Sha256Sum)(using Envri): Option[IRI] =
 		collFetcherLite.flatMap(_.getCreatorIfCollExists(coll))
 
-	def collectionExists(coll: Sha256Sum)(implicit envri: Envri): Boolean =
+	def collectionExists(coll: Sha256Sum)(using Envri): Boolean =
 		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
-	def collectionExists(coll: IRI)(implicit envri: Envri): Boolean =
+	def collectionExists(coll: IRI)(using Envri): Boolean =
 		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
 
-	def collFetcher(citer: CitationMaker)(implicit envri: Envri): Option[CollectionFetcher] = for(
+	def collFetcher(citer: CitationMaker)(using envri: Envri): Option[CollectionFetcher] = for(
 		collServer <- collectionServers.get(envri);
 		fetcher <- metaFetchers.get(envri)
 	) yield new CollectionFetcher(collServer, fetcher.plainObjFetcher, citer)
 
-	def collFetcherLite(implicit envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
+	def collFetcherLite(using envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
 		.map(new CollectionFetcherLite(_, vocab))
 
-	def dataObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
+	def dataObjExists(dobj: IRI)(using envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)
 
-	def docObjExists(dobj: IRI)(implicit envri: Envri): Boolean =
+	def docObjExists(dobj: IRI)(using envri: Envri): Boolean =
 		docServers(envri).hasStatement(dobj, RDF.TYPE, metaVocab.docObjectClass)
 
-	def getObjSubmitter(obj: ObjectUploadDto)(implicit envri: Envri): Option[IRI] = {
+	def getObjSubmitter(obj: ObjectUploadDto)(using envri: Envri): Option[IRI] = {
 		val objUri = vocab.getStaticObject(obj.hashSum)
 		val server = obj match{
 			case _: DataObjectDto => allDataObjs(envri)

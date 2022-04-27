@@ -10,12 +10,9 @@ import se.lu.nateko.cp.meta.ReplaceDto
 import java.net.URI
 import se.lu.nateko.cp.meta.InstOntoServerConfig
 import spray.json._
-import DefaultJsonProtocol.BooleanJsonFormat
 import scala.language.implicitConversions
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{
-
-//	import SprayJsonSupport._
 
 	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, InstOntoServerConfig]): Route = {
 		val ontoInfos = ontoConfs.map{
@@ -52,7 +49,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 			} ~
 			pathSuffix("checkIfUriIsFree"){
 				parameter("uri"){ uriStr =>
-					complete(JsBoolean(!instOnto.hasIndividual(uriStr)))
+					complete((!instOnto.hasIndividual(uriStr)).toString)
 				}
 			} ~
 			pathSuffix("getRangeValues"){

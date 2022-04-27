@@ -6,8 +6,8 @@ import DefaultJsonProtocol._
 
 object JsonSupport extends CommonJsonSupport{
 
-	given JsonFormat[BoundLiteral] = jsonFormat2(BoundLiteral.apply)
-	given JsonFormat[BoundUri] = jsonFormat1(BoundUri.apply)
+	given RootJsonFormat[BoundLiteral] = jsonFormat2(BoundLiteral.apply)
+	given RootJsonFormat[BoundUri] = jsonFormat1(BoundUri.apply)
 
 	given RootJsonFormat[BoundValue] with{
 		def write(bv: BoundValue) = bv match{
@@ -24,7 +24,7 @@ object JsonSupport extends CommonJsonSupport{
 			case _ => deserializationError("JsObject expected")
 		}
 	}
-	given JsonFormat[SparqlResultHead] = jsonFormat1(SparqlResultHead.apply)
-	given JsonFormat[SparqlResultResults] = jsonFormat1(SparqlResultResults.apply)
-	given JsonFormat[SparqlSelectResult] = jsonFormat2(SparqlSelectResult.apply)
+	given RootJsonFormat[SparqlResultHead] = jsonFormat1(SparqlResultHead.apply)
+	given RootJsonFormat[SparqlResultResults] = jsonFormat1(SparqlResultResults.apply)
+	given RootJsonFormat[SparqlSelectResult] = jsonFormat2(SparqlSelectResult.apply)
 }

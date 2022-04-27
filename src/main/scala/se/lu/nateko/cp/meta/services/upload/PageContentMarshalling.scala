@@ -9,7 +9,7 @@ import akka.http.scaladsl.model._
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.services.citation.{Doi, CitationClient}
@@ -120,7 +120,7 @@ object PageContentMarshalling{
 		)
 	}
 
-	def errorMarshaller(implicit envri: Envri, conf: EnvriConfig): ToEntityMarshaller[Throwable] = Marshaller(
+	def errorMarshaller(using envri: Envri, conf: EnvriConfig): ToEntityMarshaller[Throwable] = Marshaller(
 		_ => err => {
 
 			val msg = extractMessage(err)

@@ -106,12 +106,12 @@ object AttributionProvider{
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime
-				start.map(s => s.compareTo(prodTime) < 0).getOrElse(true) &&
-				end.map(e => e.compareTo(prodTime) > 0).getOrElse(true)
+				(start.map(s => s.compareTo(prodTime) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(prodTime) > 0).getOrElse(true))
 			},
 			l2 => l2.acquisition.interval.fold(true){acqInt =>
-				start.map(s => s.compareTo(acqInt.stop) < 0).getOrElse(true) &&
-				end.map(e => e.compareTo(acqInt.start) > 0).getOrElse(true)
+				(start.map(s => s.compareTo(acqInt.stop) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(acqInt.start) > 0).getOrElse(true))
 			}
 		)
 	}

@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 import HierarchicalBitmap._
 
-final class FilterOps(val self: Filter) extends AnyVal{
+extension (self: Filter){
 
 	def optimize: Filter = flatten.mergeIntervals.removeRedundantReqProps
 
@@ -91,7 +91,7 @@ final class FilterOps(val self: Filter) extends AnyVal{
 					}
 
 					propFilters.toList match{
-						case ContFilter(`prop`, cond1) :: ContFilter(`prop`, cond2) :: Nil =>
+						case ContFilter(`prop`, cond1: FilterRequest[VT]) :: ContFilter(`prop`, cond2: FilterRequest[VT]) :: Nil =>
 							makeFilter(cond1, cond2)
 								.map{intFilt =>
 									ContFilter(prop, intFilt)

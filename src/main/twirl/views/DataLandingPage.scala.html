@@ -1,13 +1,13 @@
 @import java.net.URI
 @import java.time.Instant
-@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.data.*
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
-@import se.lu.nateko.cp.meta.views.LandingPageHelpers._
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.{given,*}
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.ExportService
-@import se.lu.nateko.cp.meta.utils.rdf4j._
-@import se.lu.nateko.cp.meta.utils._
-@import landpagesnips._
+@import se.lu.nateko.cp.meta.utils.rdf4j.*
+@import se.lu.nateko.cp.meta.utils.*
+@import landpagesnips.*
 
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(

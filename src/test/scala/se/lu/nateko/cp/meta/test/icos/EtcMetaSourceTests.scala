@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.core.data.PositionUtil
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
-	import se.lu.nateko.cp.meta.icos.EtcMetaSource._
+	import se.lu.nateko.cp.meta.icos.EtcMetaSource.*
 
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
 		InstrumentDeployment[E](

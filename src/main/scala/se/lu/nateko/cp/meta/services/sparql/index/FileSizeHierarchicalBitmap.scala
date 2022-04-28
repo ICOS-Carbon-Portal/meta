@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing file sizes in bytes

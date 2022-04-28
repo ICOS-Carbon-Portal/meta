@@ -89,7 +89,7 @@ object MetaDb{
 }
 
 class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
-	import MetaDb._
+	import MetaDb.*
 
 	private val log = system.log
 

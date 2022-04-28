@@ -33,7 +33,7 @@ object GcpUploadMetaGenerator extends CpmetaJsonProtocol {
 		}.toIndexedSeq
 
 		val inJsonText = Source.fromFile(folder + inFile).getLines().mkString("\n")
-		import spray.json._
+		import spray.json.*
 
 		val oldMeta = inJsonText.parseJson.convertTo[DataObjectDto]
 

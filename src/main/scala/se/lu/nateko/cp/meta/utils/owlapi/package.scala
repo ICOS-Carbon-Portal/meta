@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.utils.owlapi
 
 
-import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.io.XMLUtils
 import java.util.Optional
 import java.util.stream.{Stream => JavaStream}

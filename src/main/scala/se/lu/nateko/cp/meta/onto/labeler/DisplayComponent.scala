@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.model.parameters.Imports
 
 

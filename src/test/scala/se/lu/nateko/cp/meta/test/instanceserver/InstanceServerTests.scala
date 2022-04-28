@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.eclipse.rdf4j.model.vocabulary.RDF

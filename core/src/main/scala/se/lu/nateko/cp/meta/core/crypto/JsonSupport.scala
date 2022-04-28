@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.core.crypto
 
-import spray.json._
+import spray.json.*
 import scala.util.Success
 import scala.util.Failure
-import DefaultJsonProtocol._
+import DefaultJsonProtocol.*
 
 object JsonSupport{
 

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 

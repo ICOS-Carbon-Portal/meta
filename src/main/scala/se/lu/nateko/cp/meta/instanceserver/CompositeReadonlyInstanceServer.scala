@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.instanceserver
 
 import scala.util.Try
 import scala.util.Success
-import org.eclipse.rdf4j.model._
+import org.eclipse.rdf4j.model.*
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceServer*) extends InstanceServer{

@@ -10,7 +10,7 @@ import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.sail.Sail
 
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.services.citation._
+import se.lu.nateko.cp.meta.services.citation.*
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection

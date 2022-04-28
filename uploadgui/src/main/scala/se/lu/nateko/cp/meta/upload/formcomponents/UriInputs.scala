@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 
 import java.net.URI
 import scala.util.{ Success, Try, Failure }
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
 

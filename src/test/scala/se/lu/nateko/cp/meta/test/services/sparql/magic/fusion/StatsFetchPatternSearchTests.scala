@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion

@@ -3,9 +3,9 @@ package se.lu.nateko.cp.meta.services.upload
 import java.net.URI
 import java.util.concurrent.ExecutionException
 
-import akka.http.scaladsl.marshalling.Marshalling._
+import akka.http.scaladsl.marshalling.Marshalling.*
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.*
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.services.citation.{Doi, CitationClient}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import se.lu.nateko.cp.meta.utils.getStackTrace
-import spray.json._
+import spray.json.*
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -3,8 +3,8 @@ package se.lu.nateko.cp.meta.routes
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.CpmetaConfig
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer

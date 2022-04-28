@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer.AtMostOne
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.utils.*
 import scala.util.Success
 import se.lu.nateko.cp.meta.instanceserver.CompositeReadonlyInstanceServer
 import se.lu.nateko.cp.meta.services.citation.CitationMaker

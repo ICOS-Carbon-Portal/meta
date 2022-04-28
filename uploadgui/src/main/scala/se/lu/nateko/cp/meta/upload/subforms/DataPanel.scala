@@ -2,11 +2,11 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import scala.util.Try
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 
-import formcomponents._
-import Utils._
+import formcomponents.*
+import Utils.*
 import se.lu.nateko.cp.meta.SubmitterProfile
 import UploadApp.whenDone
 import java.net.URI

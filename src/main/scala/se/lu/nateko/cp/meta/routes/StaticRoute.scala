@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.language.postfixOps

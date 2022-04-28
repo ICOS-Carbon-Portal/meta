@@ -5,8 +5,8 @@ import java.time.LocalDateTime
 
 import org.scalatest.funspec.AnyFunSpec
 
-import se.lu.nateko.cp.meta.ingestion.badm._
-import se.lu.nateko.cp.meta.ingestion.badm.Parser._
+import se.lu.nateko.cp.meta.ingestion.badm.*
+import se.lu.nateko.cp.meta.ingestion.badm.Parser.*
 
 class ParserTests extends AnyFunSpec{
 

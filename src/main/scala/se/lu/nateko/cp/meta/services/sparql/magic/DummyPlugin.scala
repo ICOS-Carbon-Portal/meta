@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.sail.Sail
 
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import scala.util.Using
 
 class DummyPlugin extends MagicTupleFuncPlugin {

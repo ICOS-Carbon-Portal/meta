@@ -28,7 +28,7 @@ import akka.http.scaladsl.model.headers.SameSite
 import akka.http.javadsl.server.MissingCookieRejection
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
-	import AuthenticationRouting._
+	import AuthenticationRouting.*
 
 	private val extractEnvri = extractEnvriDirective
 	private def authConfig(implicit envri: Envri) = authConf(envri)

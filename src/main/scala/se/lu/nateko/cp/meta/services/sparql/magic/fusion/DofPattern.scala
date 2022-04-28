@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.query.algebra._
+import org.eclipse.rdf4j.query.algebra.*
 
 /**
   * Data object fetch pattern

@@ -11,7 +11,7 @@ import java.time.temporal.TemporalUnit
 import java.time.temporal.ChronoUnit
 
 class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val now: () => Instant) {
-	import QuotaManager._
+	import QuotaManager.*
 
 	private val idGen = new AtomicLong(0)
 	private val q = TrieMap.empty[ClientId, ClientHistory]

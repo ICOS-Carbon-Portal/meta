@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -27,7 +27,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import CitationStyle._
+import CitationStyle.*
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -39,7 +39,7 @@ class CitationInfo(
 )
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) extends FetchingHelper {
-	import CitationMaker._
+	import CitationMaker.*
 	private given envriConfs: Envri.EnvriConfigs = coreConf.envriConfigs
 
 	private def defaultTimezoneId(using envri: Envri): String = envriConfs(envri).defaultTimezoneId

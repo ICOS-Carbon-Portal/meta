@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.core.sparql
 
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import spray.json._
-import DefaultJsonProtocol._
+import spray.json.*
+import DefaultJsonProtocol.*
 
 object JsonSupport extends CommonJsonSupport{
 

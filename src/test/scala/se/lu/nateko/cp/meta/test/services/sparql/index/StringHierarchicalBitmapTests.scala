@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 import StringHierarchicalBitmap.Ord
 import scala.util.Random
 

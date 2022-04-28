@@ -5,12 +5,12 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import scala.util.{Try, Success}
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto}
 import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 
-import formcomponents._
-import Utils._
+import formcomponents.*
+import Utils.*
 import se.lu.nateko.cp.meta.core.data.Envri
 
 

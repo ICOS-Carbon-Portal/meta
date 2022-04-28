@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import java.time.LocalDate
 import scala.util.Try
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 
 case class Station(

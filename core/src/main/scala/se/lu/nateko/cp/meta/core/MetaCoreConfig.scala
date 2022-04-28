@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import spray.json.{JsonFormat, RootJsonFormat}
-import spray.json.DefaultJsonProtocol._
+import spray.json.DefaultJsonProtocol.*
 
 
 case class MetaCoreConfig(

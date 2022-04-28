@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.headers.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery

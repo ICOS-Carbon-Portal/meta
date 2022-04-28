@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 
 extension (self: Filter){
 

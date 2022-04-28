@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.api
 
-import spray.json._
+import spray.json.*
 import java.net.URL
-import DefaultJsonProtocol._
+import DefaultJsonProtocol.*
 
 sealed trait HandleData
 

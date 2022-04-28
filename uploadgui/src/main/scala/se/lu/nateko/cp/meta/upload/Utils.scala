@@ -5,7 +5,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import org.scalajs.dom.{document, html}
-import org.scalajs.dom.ext._
+import org.scalajs.dom.ext.*
 
 object Utils {
 

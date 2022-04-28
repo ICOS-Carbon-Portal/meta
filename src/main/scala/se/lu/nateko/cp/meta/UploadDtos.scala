@@ -4,8 +4,8 @@ import java.net.URI
 import java.time.Instant
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data._
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.doi.*
 
 sealed trait UploadDto{
 	def submitterId: String

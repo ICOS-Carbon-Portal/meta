@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption._
+import java.nio.file.StandardOpenOption.*
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.FileIO
 import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow

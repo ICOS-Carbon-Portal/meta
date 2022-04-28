@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.core
 
 import java.net.URI
 import java.time.Instant
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.{LocalDateTime, LocalDate}
 

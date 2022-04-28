@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.Cookie
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import java.nio.file.Path
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import akka.http.scaladsl.model.HttpEntity
@@ -37,7 +37,7 @@ import akka.http.scaladsl.model.MediaTypes
 class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSystem) extends CpmetaJsonProtocol{
 
 	import system.dispatcher
-	import CpUploadClient._
+	import CpUploadClient.*
 
 	private val cookie = Cookie("cpauthToken", conf.cpauthToken)
 	private val metaHost = Host(conf.metaHost)

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
-import ItemTypeRadio._
+import ItemTypeRadio.*
 
 class ItemTypeRadio(elemId: String, cb: ItemType => Unit) extends Radio[ItemType](elemId, cb, itemTypeParser, itemTypeSerializer)
 

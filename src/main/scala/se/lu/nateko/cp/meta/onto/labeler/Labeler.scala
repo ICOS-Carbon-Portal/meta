@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.search.EntitySearcher
-import se.lu.nateko.cp.meta.utils.owlapi._
+import se.lu.nateko.cp.meta.utils.owlapi.*
 import org.semanticweb.owlapi.model.OWLAnnotationProperty
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 

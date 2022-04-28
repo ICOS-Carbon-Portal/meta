@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
 
-import PatternFinder._
+import PatternFinder.*
 
 object EarlyDobjInitSearch{
 

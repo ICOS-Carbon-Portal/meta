@@ -1,13 +1,13 @@
 package se.lu.nateko.cp.meta.upload.drought
 
 import se.lu.nateko.cp.doi.core.DoiClient
-import se.lu.nateko.cp.doi._
-import se.lu.nateko.cp.doi.meta._
+import se.lu.nateko.cp.doi.*
+import se.lu.nateko.cp.doi.meta.*
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import java.net.URI
 import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import akka.Done
 import java.time.Instant
@@ -16,8 +16,8 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient
 
 
 class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: ExecutionContext){
-	import DroughtDoiMaker2._
-	import DoiMaker._
+	import DroughtDoiMaker2.*
+	import DoiMaker.*
 
 	def publishDoi(doiMeta: DoiMeta, objHash: Sha256Sum): Future[Doi] = {
 		val target = UploadWorkbench.toCpDobj(objHash)

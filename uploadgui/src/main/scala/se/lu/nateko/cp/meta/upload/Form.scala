@@ -3,15 +3,15 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.*
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
-import Utils._
-import se.lu.nateko.cp.meta.upload.formcomponents._
-import ItemTypeRadio._
+import Utils.*
+import se.lu.nateko.cp.meta.upload.formcomponents.*
+import ItemTypeRadio.*
 import UploadApp.{hideAlert, whenDone, progressBar}
-import se.lu.nateko.cp.meta.upload.subforms._
+import se.lu.nateko.cp.meta.upload.subforms.*
 import se.lu.nateko.cp.meta.{SpatioTemporalDto, StationTimeSeriesDto}
 import java.net.URI
 

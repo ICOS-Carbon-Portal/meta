@@ -15,7 +15,7 @@ import org.scalajs.dom.RequestCredentials
 import org.scalajs.dom.Response
 import org.scalajs.dom.HttpMethod
 import JsonSupport.given
-import play.api.libs.json._
+import play.api.libs.json.*
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
@@ -24,7 +24,7 @@ import scala.scalajs.js.Dictionary
 
 object Backend {
 
-	import SparqlQueries._
+	import SparqlQueries.*
 
 	private def whoAmI: Future[Option[String]] =
 		fetch("/whoami", new RequestInit{credentials = RequestCredentials.include})

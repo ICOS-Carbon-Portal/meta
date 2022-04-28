@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import org.eclipse.rdf4j.query.algebra.Group
 import org.eclipse.rdf4j.query.algebra.Count
 import org.eclipse.rdf4j.query.algebra.Var

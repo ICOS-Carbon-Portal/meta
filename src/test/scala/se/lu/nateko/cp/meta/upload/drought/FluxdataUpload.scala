@@ -9,14 +9,14 @@ import akka.Done
 import java.io.InputStreamReader
 import com.opencsv.CSVReader
 import java.nio.file.Paths
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import scala.concurrent.ExecutionContext
 import java.nio.file.Files
@@ -53,8 +53,8 @@ class FluxdataUpload(
 	citer: CitationClient
 )(implicit ctxt: ExecutionContext){
 
-	import FluxdataUpload._
-	import DroughtMeta2._
+	import FluxdataUpload.*
+	import DroughtMeta2.*
 
 	private val haveDois: Boolean = (spec != fluxnetHhSpec)
 	private val project: Project = if(spec == atmoSpec) Atmo else (

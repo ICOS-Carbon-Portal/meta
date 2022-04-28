@@ -4,7 +4,7 @@ import java.net.URI
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
@@ -172,7 +172,7 @@ case class CpmetaConfig(
 object ConfigLoader extends CpmetaJsonProtocol{
 
 	import MetaCoreConfig.given
-	import DefaultJsonProtocol._
+	import DefaultJsonProtocol.*
 
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat5(InstanceServerConfig.apply)

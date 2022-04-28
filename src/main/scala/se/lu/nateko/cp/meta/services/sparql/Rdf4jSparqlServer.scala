@@ -51,7 +51,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
-	import Rdf4jSparqlServer._
+	import Rdf4jSparqlServer.*
 
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val canceller = Executors.newSingleThreadScheduledExecutor()

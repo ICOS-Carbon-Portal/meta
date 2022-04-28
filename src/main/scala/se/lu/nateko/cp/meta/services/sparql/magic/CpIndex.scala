@@ -17,10 +17,10 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
-import se.lu.nateko.cp.meta.services.sparql.index._
-import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.time.Instant
 import java.util.ArrayList
@@ -53,7 +53,7 @@ trait ObjInfo extends ObjSpecific{
 }
 
 class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
-	import CpIndex._
+	import CpIndex.*
 
 	given factory: ValueFactory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
@@ -235,7 +235,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 	}
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
-		import vocab._
+		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 
 

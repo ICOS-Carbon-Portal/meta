@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.MalformedRequestContentRejection
 import akka.http.scaladsl.server.RejectionHandler
@@ -17,8 +17,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.icos.AtcMetaSource
-import se.lu.nateko.cp.meta.services._
-import se.lu.nateko.cp.meta.services.upload._
+import se.lu.nateko.cp.meta.services.*
+import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
 import se.lu.nateko.cp.meta.core.etcupload.StationId
@@ -112,7 +112,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			} ~
 			get{
-				import spray.json._
+				import spray.json.*
 				path("etc" / "utcOffset"){
 					parameter("stationId"){
 						case StationId(stationId) =>

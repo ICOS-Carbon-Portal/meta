@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import scala.annotation.tailrec
-import org.eclipse.rdf4j.query.algebra._
+import org.eclipse.rdf4j.query.algebra.*
 
 package object fusion{
 

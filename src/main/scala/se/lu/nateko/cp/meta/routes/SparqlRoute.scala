@@ -6,18 +6,18 @@ import akka.http.caching.scaladsl.Cache
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.HttpEntity.Default
 import akka.http.scaladsl.model.HttpEntity.Strict
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import akka.http.scaladsl.server.RouteResult.Complete
 import akka.http.scaladsl.server.RouteResult.Rejected
-import akka.http.scaladsl.server.directives.CachingDirectives._
+import akka.http.scaladsl.server.directives.CachingDirectives.*
 import akka.stream.Materializer
 import akka.stream.scaladsl.Concat
 import akka.stream.scaladsl.Keep
@@ -37,7 +37,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Random
 
 object SparqlRoute {

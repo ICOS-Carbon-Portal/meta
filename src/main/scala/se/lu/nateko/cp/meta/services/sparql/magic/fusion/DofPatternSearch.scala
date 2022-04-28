@@ -2,15 +2,15 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
-import org.eclipse.rdf4j.query.algebra._
+import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 
 
-import DofPatternSearch._
-import StatsFetchPatternSearch._
+import DofPatternSearch.*
+import StatsFetchPatternSearch.*
 
 class DofPatternSearch(meta: CpmetaVocab){
 

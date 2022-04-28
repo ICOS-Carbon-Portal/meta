@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.test.persistence.postgres
 
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import se.lu.nateko.cp.meta.persistence.postgres._
+import se.lu.nateko.cp.meta.persistence.postgres.*
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer

@@ -10,12 +10,12 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 
-import formcomponents._
+import formcomponents.*
 import UploadApp.whenDone
-import Utils._
+import Utils.*
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 

@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 
 object StringHierarchicalBitmap{
-	import HierarchicalBitmap._
+	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
 

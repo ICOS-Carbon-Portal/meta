@@ -4,7 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 import java.{util => ju}
 
 /**

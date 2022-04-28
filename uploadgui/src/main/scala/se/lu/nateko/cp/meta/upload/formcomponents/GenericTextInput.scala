@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 
 import scala.util.{Try, Success}
 import org.scalajs.dom.html
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 
 
 

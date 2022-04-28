@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.mail
 
-import javax.mail._
-import javax.mail.internet._
+import javax.mail.*
+import javax.mail.internet.*
 import java.util.Date
 import java.util.Properties
 import se.lu.nateko.cp.meta.{ConfigLoader, EmailConfig}

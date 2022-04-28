@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta
 
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.doi.*
 import scala.util.Failure
 import scala.util.Success
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -24,7 +24,7 @@ extension (js: JsValue)
 
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
-	import DefaultJsonProtocol._
+	import DefaultJsonProtocol.*
 
 	export DefaultJsonProtocol.immSeqFormat
 	export DefaultJsonProtocol.mapFormat

@@ -15,11 +15,11 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.query.UpdateExecutionException
 import org.semanticweb.owlapi.model.{IRI => OwlIri}
 
-import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 

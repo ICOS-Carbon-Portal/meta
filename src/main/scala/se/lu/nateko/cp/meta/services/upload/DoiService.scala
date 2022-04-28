@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.upload
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
@@ -15,12 +15,12 @@ import se.lu.nateko.cp.doi.core.DoiClient
 import se.lu.nateko.cp.doi.core.DoiClientConfig
 import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
 import se.lu.nateko.cp.doi.meta.GenericName
-import se.lu.nateko.cp.doi.meta._
+import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DocObject
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import se.lu.nateko.cp.meta.core.data.JsonSupport.*
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.Agent

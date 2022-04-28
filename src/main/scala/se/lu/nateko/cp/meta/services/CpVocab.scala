@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.{TC, TcId, ETC, TcConf, Role}
 
 class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab {
-	import CpVocab._
+	import CpVocab.*
 	import CustomVocab.urlEncode
 
 	private val baseResourceUriProviders: Map[Envri, BaseUriProvider] = envriConfigs.map{

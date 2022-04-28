@@ -36,21 +36,21 @@ object CitationStyle extends Enumeration{
 }
 
 trait PlainDoiCiter{
-	import CitationStyle._
+	import CitationStyle.*
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 }
 
 class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 	implicit system: ActorSystem, mat: Materializer
 ) extends PlainDoiCiter{
-	import CitationStyle._
+	import CitationStyle.*
 
 	private type Key = (Doi, CitationStyle)
 	private val cache = TrieMap.empty[Key, Future[String]]
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
-	import CitationStyle._
+	import CitationStyle.*
 
 	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
 

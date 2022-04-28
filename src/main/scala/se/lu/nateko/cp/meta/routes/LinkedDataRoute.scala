@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.language.postfixOps
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.headers.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import spray.json.DefaultJsonProtocol._
+import spray.json.DefaultJsonProtocol.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 
 object LinkedDataRoute {

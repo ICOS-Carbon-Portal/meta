@@ -12,8 +12,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
-	import RdfDiffCalc._
-	import SequenceDiff._
+	import RdfDiffCalc.*
+	import SequenceDiff.*
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(

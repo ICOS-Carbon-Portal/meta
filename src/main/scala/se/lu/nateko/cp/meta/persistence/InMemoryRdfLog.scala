@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.persistence
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.api.CloseableIterator
 

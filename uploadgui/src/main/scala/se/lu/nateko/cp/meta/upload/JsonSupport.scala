@@ -2,14 +2,14 @@ package se.lu.nateko.cp.meta.upload
 
 import java.time.Instant
 
-import play.api.libs.json._
-import se.lu.nateko.cp.meta._
+import play.api.libs.json.*
+import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.doi.*
 
 object JsonSupport {
 

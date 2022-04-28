@@ -3,15 +3,15 @@ package se.lu.nateko.cp.meta.api
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.{Marshaller, Marshal}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.*
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.headers.Location
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.{ConfigLoader, EpicPidConfig}
 import scala.concurrent.Future
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 case class PidEntry(
@@ -43,7 +43,7 @@ object EpicPidClient extends ProductFormats, StandardFormats, AdditionalFormats,
 
 class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem){
 
-	import EpicPidClient._
+	import EpicPidClient.*
 	import DefaultJsonProtocol.immSeqFormat
 
 	private val http = Http()

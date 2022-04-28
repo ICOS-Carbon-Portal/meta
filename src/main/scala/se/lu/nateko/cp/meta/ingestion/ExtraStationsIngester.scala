@@ -14,11 +14,11 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
-	import IcosStationsIngester._
+	import IcosStationsIngester.*
 
 	def getStatements(vf: ValueFactory): Ingestion.Statements = Future{
 		val stationListInput = getClass.getResourceAsStream(extraStationsPath)

@@ -2,15 +2,15 @@ package se.lu.nateko.cp.meta.services
 
 import java.net.URI
 import org.eclipse.rdf4j.model.IRI
-import spray.json._
+import spray.json.*
 
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import Envri.{Envri, EnvriConfigs}
 
 

@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta._
+import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.onto.Onto
 
 class OntoTests extends AnyFunSpec{

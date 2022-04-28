@@ -76,7 +76,7 @@ trait StationInfoService { self: StationLabelingService =>
 
 	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory = {
 		val statusStr = statusLit.stringValue
-		import LifecycleService.AppStatus._
+		import LifecycleService.AppStatus.*
 
 		def statusIs(status: AppStatus): Boolean = status.toString == statusStr
 

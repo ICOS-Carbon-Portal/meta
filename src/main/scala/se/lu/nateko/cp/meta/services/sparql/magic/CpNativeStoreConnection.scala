@@ -117,7 +117,7 @@ class CpNativeStoreConnection(
 		SeqMap(
 			metaVocab.hasBiblioInfo -> (() => {
 				import se.lu.nateko.cp.meta.core.data.JsonSupport.{given RootJsonFormat[References]}
-				import spray.json._
+				import spray.json.*
 				val refs = citer.getReferences(subj)
 				refsCache = Some(refs)
 				refs.map(js => valueFactory.createStringLiteral(js.toJson.compactPrint))

@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
 import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.core.data.Envri
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue

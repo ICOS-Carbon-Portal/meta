@@ -1,13 +1,13 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import java.net.{URI => JavaUri}
-import org.eclipse.rdf4j.model._
+import org.eclipse.rdf4j.model.*
 import org.eclipse.rdf4j.model.vocabulary.{RDF, XMLSchema}
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 trait InstanceServer extends AutoCloseable{
-	import InstanceServer._
+	import InstanceServer.*
 
 	/**
 	 * Makes a new IRI for the new instance, but does not add any triples to the repository.

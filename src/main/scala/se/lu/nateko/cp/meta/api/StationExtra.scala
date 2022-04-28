@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.api
 
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.Position
@@ -19,7 +19,7 @@ class StationExtra(val station: Station, val staff: Seq[Membership]){
 }
 
 object StationExtra{
-	import DefaultJsonProtocol._
+	import DefaultJsonProtocol.*
 	import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 
 	given JsonFormat[Role] with{

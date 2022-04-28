@@ -6,7 +6,7 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.unmarshalling.{Unmarshal, FromEntityUnmarshaller}
@@ -30,12 +30,12 @@ object StatisticsClient extends DefaultJsonProtocol {
 }
 
 class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {
-	import StatisticsClient._
+	import StatisticsClient.*
 	private val http = Http()
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
 	private def dbUri(implicit envri: Envri) = {
-		import config.previews._
+		import config.previews.*
 		Uri(s"$baseUri/$dbName")
 	}
 

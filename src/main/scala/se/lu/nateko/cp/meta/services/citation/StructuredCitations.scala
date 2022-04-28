@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 
 class StructuredCitations(
 	obj: StaticObject,

@@ -172,8 +172,6 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 						if (isNewItemOrVersion) Sha256Sum.fromString(metadataUri.getPath().split("/").last).toOption.map(Left(_))
 						else dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
-				case _ =>
-					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")
 			}.foreach{dto =>
 				typeControl.value.foreach(setFileAndFilenameVisibility)
 				bus.publish(GotUploadDto(dto))

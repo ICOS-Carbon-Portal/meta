@@ -6,7 +6,6 @@ import scala.util.{ Success, Try, Failure }
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import org.scalajs.dom.raw._
 import org.scalajs.dom.ext._
 import scala.scalajs.js
 
@@ -133,7 +132,7 @@ class HtmlElements(selector: String) {
 
 	def show(): Unit = {
 		dom.document.querySelectorAll(selector).foreach {
-			case section: HTMLElement =>
+			case section: dom.HTMLElement =>
 				section.style.display = "block"
 		}
 		enabled = true
@@ -141,7 +140,7 @@ class HtmlElements(selector: String) {
 
 	def hide(): Unit = {
 		dom.document.querySelectorAll(selector).foreach {
-			case section: HTMLElement =>
+			case section: dom.HTMLElement =>
 				section.style.display = "none"
 		}
 		enabled = false

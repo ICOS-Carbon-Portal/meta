@@ -111,11 +111,11 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	) yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
-		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))
+		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))
 	}
 
 	private def inferCollEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
-		envri => obj.stringValue.startsWith(collectionPrefix(envriConfs(envri)))
+		envri => obj.stringValue.startsWith(collectionPrefix(using envriConfs(envri)))
 	}
 
 	private def extractHash(iri: IRI): Option[Sha256Sum] =

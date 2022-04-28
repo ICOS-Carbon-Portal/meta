@@ -15,8 +15,9 @@ import org.eclipse.rdf4j.query.algebra.Union
 import org.eclipse.rdf4j.query.algebra.ValueExpr
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
-import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, _}
+import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, *}
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import DofPatternFusion.*

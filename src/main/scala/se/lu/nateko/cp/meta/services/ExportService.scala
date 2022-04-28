@@ -50,9 +50,9 @@ object ExportService{
 			.toIndexedSeq
 	}
 
-	def schemaOrg(dobj: DataObject, handleProxies: HandleProxiesConfig)(implicit conf: EnvriConfig, envri: Envri): JsObject = {
+	def schemaOrg(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject = {
 
-		val landingPage = JsString(staticObjLandingPage(dobj.hash)(conf).toString)
+		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)
 
 		val description: JsValue = {
 			val l3Descr = dobj.specificInfo.left.toSeq.flatMap(_.description)

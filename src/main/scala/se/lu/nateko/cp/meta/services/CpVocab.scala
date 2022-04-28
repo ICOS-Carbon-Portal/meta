@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix, objectPathPrefix}
 import se.lu.nateko.cp.meta.core.data.{staticObjLandingPage, staticObjAccessUrl, staticCollLandingPage}
 import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
 import se.lu.nateko.cp.meta.icos.{TC, TcId, ETC, TcConf, Role}
@@ -24,7 +25,7 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 			envri -> makeUriProvider(s"${envriConf.metaItemPrefix}resources/")
 	}
 
-	private def getConfig(using envri: Envri) = envriConfigs(envri)
+	private given (using envri: Envri): EnvriConfig = envriConfigs(envri)
 
 	private given (using envri: Envri): BaseUriProvider = baseResourceUriProviders(envri)
 
@@ -64,10 +65,10 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(using icosBup)
 
-	def getStaticObject(hash: Sha256Sum)(using Envri) = factory.createIRI(staticObjLandingPage(hash)(getConfig).toString)
-	def getCollection(hash: Sha256Sum)(using Envri) = factory.createIRI(staticCollLandingPage(hash)(getConfig).toString)
+	def getStaticObject(hash: Sha256Sum)(using Envri) = factory.createIRI(staticObjLandingPage(hash).toString)
+	def getCollection(hash: Sha256Sum)(using Envri) = factory.createIRI(staticCollLandingPage(hash).toString)
 
-	def getStaticObjectAccessUrl(hash: Sha256Sum)(using Envri) = staticObjAccessUrl(hash)(getConfig)
+	def getStaticObjectAccessUrl(hash: Sha256Sum)(using Envri) = staticObjAccessUrl(hash)
 
 	def getAcquisition(hash: Sha256Sum)(using Envri) = getRelativeRaw(AcqPrefix + hash.id)
 	def getProduction(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + hash.id)

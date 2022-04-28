@@ -149,8 +149,8 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 			case boo: BoolProperty => Some(boolBitmap(boo))
 		}
 
-		case ContFilter(prop, filterReq) =>
-			Some(bitmap(prop).filter(filterReq))
+		case cf: ContFilter =>
+			Some(bitmap(cf.property).filter(cf.condition))
 
 		case CategFilter(category, values) if category == DobjUri =>
 			val objIndices: Seq[Int] = values
@@ -159,13 +159,13 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 				.flatten
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
 
-		case CategFilter(category, values) =>
-			val perValue = categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+		case cf: CategFilter =>
+			val perValue = categMap(cf.category)
+			or(cf.values.map(v => perValue.getOrElse(v, emptyBitmap)))
 
-		case GeneralCategFilter(category, condition) => or(
-			categMap(category).collect{
-				case (cat, bm) if condition(cat) => bm
+		case gcf: GeneralCategFilter => or(
+			categMap(gcf.category).collect{
+				case (cat, bm) if gcf.condition(cat) => bm
 			}.toSeq
 		)
 

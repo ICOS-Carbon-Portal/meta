@@ -19,6 +19,7 @@ import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
 import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
 import org.eclipse.rdf4j.sail.SailException
+import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 
@@ -28,7 +29,7 @@ trait MagicTupleFuncPlugin extends SailConnectionListener{
 	def expressionEnricher: QueryModelVisitor[SailException]
 }
 
-class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeOrMemoryStore) extends NotifyingSailWrapper(baseSail){
+class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeStore) extends NotifyingSailWrapper(baseSail){
 
 	baseSail.setEvaluationStrategyFactory{
 		val fedResolver = baseSail.getFederatedServiceResolver()

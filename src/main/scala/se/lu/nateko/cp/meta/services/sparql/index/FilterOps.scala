@@ -82,19 +82,13 @@ extension (self: Filter){
 			if(minMaxes.isEmpty) And(rest) else{
 				val collapsed = minMaxes.groupBy(_.property).flatMap{case (prop, propFilters) => {
 
-					type VT = prop.ValueType
-
-					def makeFilter(cond1: FilterRequest[VT], cond2: FilterRequest[VT]): Option[IntervalFilter[VT]] = (cond1, cond2) match{
-						case (min: MinFilter[VT], max: MaxFilter[VT]) => Some(IntervalFilter(min, max))
-						case (max: MaxFilter[VT], min: MinFilter[VT]) => Some(IntervalFilter(min, max))
-						case _ => None
-					}
+					val PropValFilterReq = ContFilter.FilterExtractor(prop)
 
 					propFilters.toList match{
-						case ContFilter(`prop`, cond1: FilterRequest[VT]) :: ContFilter(`prop`, cond2: FilterRequest[VT]) :: Nil =>
-							makeFilter(cond1, cond2)
+						case PropValFilterReq(cond1) :: PropValFilterReq(cond2) :: Nil =>
+							makeIntervalFilter(cond1, cond2)
 								.map{intFilt =>
-									ContFilter(prop, intFilt)
+									ContFilter(PropValFilterReq.property, intFilt)
 								}
 								.fold(propFilters)(Seq(_))
 						case _ =>
@@ -107,4 +101,10 @@ extension (self: Filter){
 		case Or(filters) => Or(filters.map(_.mergeIntervals))
 		case other => other
 	}
+}
+
+private def makeIntervalFilter[T](cond1: FilterRequest[T], cond2: FilterRequest[T]): Option[IntervalFilter[T]] = (cond1, cond2) match{
+	case (min: MinFilter[T], max: MaxFilter[T]) => Some(IntervalFilter(min, max))
+	case (max: MaxFilter[T], min: MinFilter[T]) => Some(IntervalFilter(min, max))
+	case _ => None
 }

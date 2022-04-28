@@ -170,7 +170,7 @@ select distinct ?coll ?station where{
 		.results.bindings.flatMap{b =>
 			varNames.map(
 				vName => b.get(vName).collect{case BoundUri(uri) => Seq(uri)}
-			).reduce{(opSeq1, opSeq2) =>
+			).reduce[Option[Seq[URI]]]{(opSeq1, opSeq2) =>
 				for(s1 <- opSeq1; s2 <- opSeq2) yield s1 ++ s2
 			}
 		}

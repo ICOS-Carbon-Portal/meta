@@ -67,7 +67,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 				prop <- varProps.get(QVar(v)).collect{case cp: CategProp => cp}
 			) yield{
 				val regex = new Regex(lit.stringValue)
-				GeneralCategFilter[prop.ValueType](prop, v => regex.matches(v.toString))
+				GeneralCategFilter(prop, v => regex.matches(v.toString))
 			}
 			case _ => None
 		}
@@ -80,7 +80,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[index.Filter] = {
 		import Compare.CompareOp._
 
-		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
+		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter] = {
 
 			val reqOpt: Option[FilterRequest[prop.ValueType]] = op match{
 				case EQ => Some(EqualsFilter(limit))

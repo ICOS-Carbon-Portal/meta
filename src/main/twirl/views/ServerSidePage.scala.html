@@ -11,11 +11,13 @@
 	extraMetaTags: Option[Html] = None,
 	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,
+	breadcrumbs: Option[Html] = None,
 )(body: Html)(implicit envri: Envri.Value, conf: EnvriConfig)
 @template{
 	@extraMetaTags
 	@LandingPageStyle()
 }{
+	@breadcrumbs
 	@pageHeader(header, headerExtra, subHeading)
 	@body
 }

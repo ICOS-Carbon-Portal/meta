@@ -16,6 +16,7 @@
 	headerExtra = headerExtra,
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
+	breadcrumbs = Some(breadcrumbs(breadcrumbList)),
 ) {
 	<div class="row py-2 gy-4">
 		@if(dobj.nextVersion) {
@@ -300,4 +301,18 @@
 @contributor(contributor: Agent, i: Int) = {
 	@if(i > 0){<span>, </span>}
 	<a href=@{contributor.self.uri.getRawPath}>@{agentString(contributor)}</a>
+}
+
+@breadcrumbList = @{
+	Map(
+		Envri.ICOS -> IndexedSeq(
+			("Home", "https://www.icos-cp.eu/"),
+			("Data & Services", "https://www.icos-cp.eu/data-services"),
+			("ICOS Data Portal", s"//${conf.dataHost}/portal"),
+		),
+		Envri.SITES -> IndexedSeq(
+			("Home", "https://www.fieldsites.se"),
+			("Data catalogue", s"//${conf.dataHost}/portal"),
+		)
+	)
 }

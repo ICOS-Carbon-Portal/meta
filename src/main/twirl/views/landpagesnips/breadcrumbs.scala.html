@@ -1,0 +1,12 @@
+@import se.lu.nateko.cp.meta.core.data._
+
+@(breadcrumbs: Map[Envri.Value, IndexedSeq[(String, String)]])(implicit envri: Envri.Value)
+@if(breadcrumbs(envri).nonEmpty){
+	<nav aria-label="breadcrumb">
+		<ol class="breadcrumb bg-light p-2">
+			@for((label, url) <- breadcrumbs(envri)){
+				<li class="breadcrumb-item"><a href="@url">@label</a></li>
+			}
+		</ol>
+	</nav>
+}

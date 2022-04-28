@@ -5,6 +5,8 @@ import java.io.IOException
 import java.nio.file.Paths
 import java.nio.file.Files
 
+import scala.compiletime.uninitialized
+
 import akka.event.LoggingAdapter
 
 import org.eclipse.rdf4j.sail.Sail
@@ -22,8 +24,8 @@ class CpNativeStore(
 	log: LoggingAdapter
 ) extends SailWrapper{
 
-	private var indexh: IndexProvider = _
-	private var citer: CitationProvider = _
+	private var indexh: IndexProvider = uninitialized
+	private var citer: CitationProvider = uninitialized
 	private val storageDir = Paths.get(conf.path)
 
 	val isFreshInit: Boolean = initStorageFolder() || conf.recreateAtStartup

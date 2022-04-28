@@ -27,6 +27,7 @@ import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
@@ -442,10 +443,10 @@ object CpIndex{
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 	private class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(implicit factory: ValueFactory) extends ObjInfo{
-		var spec: IRI = _
-		var submitter: IRI = _
-		var station: IRI = _
-		var site: IRI = _
+		var spec: IRI = uninitialized
+		var submitter: IRI = uninitialized
+		var station: IRI = uninitialized
+		var site: IRI = uninitialized
 		var size: Long = -1
 		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue

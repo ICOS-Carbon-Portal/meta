@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 
 class CustomVocabTests extends AnyFunSpec{
 
-	private[this] object Vocab extends CustomVocab{
+	private object Vocab extends CustomVocab{
 		given bup: BaseUriProvider = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
 		val factory: ValueFactory = new MemValueFactory
 		def encode(s: String) = CustomVocab.urlEncode(s)

@@ -5,12 +5,12 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import java.sql.Connection
 
 class ResultSetIterator[T](connectionFactory: () => Connection, resultFactory: ResultSet => T, selectQuery: String) extends CloseableIterator[T]{
-	private[this] val conn = connectionFactory()
-	private[this] val st = conn.createStatement()
-	private[this] val rs = st.executeQuery(selectQuery)
+	private val conn = connectionFactory()
+	private val st = conn.createStatement()
+	private val rs = st.executeQuery(selectQuery)
 
-	private[this] var doesHaveNext = false
-	private[this] var closed = false
+	private var doesHaveNext = false
+	private var closed = false
 
 	increment()
 

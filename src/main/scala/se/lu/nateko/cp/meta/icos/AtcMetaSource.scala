@@ -37,7 +37,7 @@ class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends T
 	import system.dispatcher
 
 	def log = system.log
-	private[this] var listener: ActorRef = system.deadLetters
+	private var listener: ActorRef = system.deadLetters
 
 	override def registerListener(actor: ActorRef): Unit = {
 		if(listener != system.deadLetters) listener ! Status.Success

@@ -10,7 +10,7 @@ import scala.util.Random
 
 class StringHierarchicalBitmapTests extends AnyFunSpec{
 
-	private[this] val EnableTrace = false
+	private val EnableTrace = false
 
 	def initBm(strings: Array[String]): HierarchicalBitmap[String] = {
 		val bm = StringHierarchicalBitmap(strings.apply)

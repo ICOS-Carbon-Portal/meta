@@ -19,10 +19,10 @@ import java.{util => ju}
 class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private val values = emptyBitmap
-	private[this] var n = 0
-	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null
-	private[this] var firstKey: Option[K] = None
-	private[this] var seenDifferentKeys: Boolean = false
+	private var n = 0
+	private var children: HashMap[Coord, HierarchicalBitmap[K]] = null
+	private var firstKey: Option[K] = None
+	private var seenDifferentKeys: Boolean = false
 
 	def all: ImmutableRoaringBitmap = values
 

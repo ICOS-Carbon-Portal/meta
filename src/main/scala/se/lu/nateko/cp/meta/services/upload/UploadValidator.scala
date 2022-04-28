@@ -39,7 +39,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
 	given ValueFactory = metaVocab.factory
 
-	private [this] val ok: Try[NotUsed] = Success(NotUsed)
+	private val ok: Try[NotUsed] = Success(NotUsed)
 
 	def validateObject(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = meta match {
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)

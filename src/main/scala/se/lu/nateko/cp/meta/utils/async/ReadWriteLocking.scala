@@ -4,7 +4,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 trait ReadWriteLocking {
 
-	private[this] val (rl, wl) = {
+	private val (rl, wl) = {
 		val rwl = new ReentrantReadWriteLock
 		(rwl.readLock, rwl.writeLock)
 	}

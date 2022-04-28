@@ -64,7 +64,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 	import MetadataUpdater._
 	import StatementStability._
 
-	private[this] val stickyPredicates = {
+	private val stickyPredicates = {
 		import metaVocab._
 		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
 	}

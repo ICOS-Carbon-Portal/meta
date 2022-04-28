@@ -24,7 +24,7 @@ class FormElement(elemId: String) {
 }
 
 class ProgressBar(elemId: String){
-	private[this] val progressBar = new HtmlElements(elemId)
+	private val progressBar = new HtmlElements(elemId)
 
 	def show(): Unit = {
 		progressBar.show()
@@ -107,8 +107,8 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
 class Button(elemId: String, onClick: () => Unit){
-	private[this] val button = getElementById[html.Button](elemId).get
-	private[this] var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
+	private val button = getElementById[html.Button](elemId).get
+	private var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
 
 	def enable(): Unit = {
 		button.disabled = false
@@ -127,7 +127,7 @@ class Button(elemId: String, onClick: () => Unit){
 }
 
 class HtmlElements(selector: String) {
-	private[this] var enabled = false
+	private var enabled = false
 	def areEnabled: Boolean = enabled
 
 	def show(): Unit = {

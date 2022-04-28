@@ -13,9 +13,9 @@ import java.time.temporal.ChronoUnit
 class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val now: () => Instant) {
 	import QuotaManager._
 
-	private[this] val idGen = new AtomicLong(0)
-	private[this] val q = TrieMap.empty[ClientId, ClientHistory]
-	private[this] val longRunning = new AtomicLong(-1) //only one long-running non-localhost query at a time
+	private val idGen = new AtomicLong(0)
+	private val q = TrieMap.empty[ClientId, ClientHistory]
+	private val longRunning = new AtomicLong(-1) //only one long-running non-localhost query at a time
 
 	def logNewQueryStart(clientIdOpt: Option[ClientId]): QueryQuotaManager = {
 		val id = idGen.incrementAndGet()

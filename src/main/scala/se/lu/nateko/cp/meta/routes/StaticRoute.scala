@@ -24,7 +24,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 object StaticRoute {
 
-	private[this] val pages: PartialFunction[(String, Envri, EnvriConfig), Html] = {
+	private val pages: PartialFunction[(String, Envri, EnvriConfig), Html] = {
 		case ("labeling", _, envriConfig) => views.html.LabelingPage()(envriConfig)
 		case ("sparqlclient", envri, envriConfig) => views.html.SparqlClientPage()(envri, envriConfig)
 		case ("station", envri, _) => views.html.StationPage(envri)

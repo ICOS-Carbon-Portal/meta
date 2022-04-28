@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j._
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
 	private given Envri.Envri = Envri.ICOS
-	private[this] given factory: ValueFactory = vocab.factory
+	private given factory: ValueFactory = vocab.factory
 	private type Triple = (IRI, IRI, Value)
 
 	def createStatement(subj: Resource, pred: IRI, v: Value): Statement =

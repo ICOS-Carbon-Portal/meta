@@ -138,8 +138,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 
 private class AgentAggregator{
 	var stations: IndexedSeq[NamedUri] = IndexedSeq.empty
-	private[this] var _agents: IndexedSeq[NamedUri] = IndexedSeq.empty
-	private[this] var _orgs: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private var _agents: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private var _orgs: IndexedSeq[NamedUri] = IndexedSeq.empty
 
 	def agents_=(agents: IndexedSeq[NamedUri]): Unit = _agents = agents
 	def orgs_=(orgs: IndexedSeq[NamedUri]): Unit = _orgs = orgs

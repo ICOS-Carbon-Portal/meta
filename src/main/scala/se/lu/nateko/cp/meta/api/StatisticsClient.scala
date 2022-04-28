@@ -39,7 +39,7 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 		Uri(s"$baseUri/$dbName")
 	}
 
-	private[this] val connPoolSetts = {
+	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
 		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)

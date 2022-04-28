@@ -12,7 +12,7 @@ class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
 	val Min = toMillis("2010-01-01T00:00:00Z")
 	val Max = toMillis("2020-01-01T00:00:00Z")
 
-	private[this] val EnableTrace = false
+	private val EnableTrace = false
 
 	def toMillis(s: String): Long = Instant.parse(s).toEpochMilli
 

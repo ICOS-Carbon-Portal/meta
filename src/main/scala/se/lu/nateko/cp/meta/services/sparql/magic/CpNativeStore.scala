@@ -22,14 +22,14 @@ class CpNativeStore(
 	log: LoggingAdapter
 ) extends SailWrapper{
 
-	private[this] var indexh: IndexProvider = _
-	private[this] var citer: CitationProvider = _
-	private[this] val storageDir = Paths.get(conf.path)
+	private var indexh: IndexProvider = _
+	private var citer: CitationProvider = _
+	private val storageDir = Paths.get(conf.path)
 
 	val isFreshInit: Boolean = initStorageFolder() || conf.recreateAtStartup
-	private[this] val indices = if(isFreshInit) "" else conf.indices
+	private val indices = if(isFreshInit) "" else conf.indices
 
-	private[this] val nativeSail = new CpInnerNativeStore(storageDir, indices, isFreshInit, () => indexh, () => citer)
+	private val nativeSail = new CpInnerNativeStore(storageDir, indices, isFreshInit, () => indexh, () => citer)
 
 	setBaseSail(nativeSail)
 

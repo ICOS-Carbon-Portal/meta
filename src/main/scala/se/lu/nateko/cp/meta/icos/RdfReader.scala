@@ -21,8 +21,8 @@ import se.lu.nateko.cp.meta.core.data.Funder
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
-	private[this] val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
-	private[this] val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
+	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
+	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 
 	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = cpOwnMetasFetcher.getPlainOrgs[T]
 
@@ -63,7 +63,7 @@ private class IcosMetaInstancesFetcher(
 	val server: InstanceServer,
 	val plainObjFetcher: PlainStaticObjectFetcher
 )(implicit envriConfigs: EnvriConfigs) extends DobjMetaFetcher{
-	private[this] given factory: ValueFactory = server.factory
+	private given factory: ValueFactory = server.factory
 	val vocab = new CpVocab(factory)
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(

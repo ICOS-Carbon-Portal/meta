@@ -150,7 +150,7 @@ object SparqlRoute {
 
 class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat: Materializer) extends Cache[Sha256Sum, RouteResult]{
 
-	private[this] val inner = LfuCache.apply[Sha256Sum, RouteResult](system)
+	private val inner = LfuCache.apply[Sha256Sum, RouteResult](system)
 	val quota = new CachedSource.Quota[ByteString](_.length, maxCacheableQuerySize)
 
 	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] = {

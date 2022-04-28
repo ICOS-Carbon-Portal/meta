@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class InMemoryRdfLog extends RdfUpdateLog{
 
-	private[this] val log = new ConcurrentLinkedQueue[RdfUpdate]()
+	private val log = new ConcurrentLinkedQueue[RdfUpdate]()
 
 	def appendAll(updates: IterableOnce[RdfUpdate]): Unit = {
 		log.addAll(updates.iterator.toIndexedSeq.asJava)

@@ -9,7 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 abstract class PanelSubform(selector: String)(implicit bus: PubSubBus) {
 	protected val htmlElements = new HtmlElements(selector)
 	protected def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
-	private[this] var gotPeepsOrgs: Boolean = false
+	private var gotPeepsOrgs: Boolean = false
 
 
 	def resetForm(): Unit

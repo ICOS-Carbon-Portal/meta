@@ -11,7 +11,7 @@ class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 
 	import scala.collection.mutable.Map
 	private val cache: Map[IRI, InstanceLabeler] = Map()
-	private[this] val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
+	private val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
 
 	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {
 		try{

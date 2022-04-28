@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 
 import java.time.Instant
 
@@ -80,7 +80,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[index.Filter] = {
 		import Compare.CompareOp._
 
-		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter] = {
+		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
 
 			val reqOpt: Option[FilterRequest[prop.ValueType]] = op match{
 				case EQ => Some(EqualsFilter(limit))

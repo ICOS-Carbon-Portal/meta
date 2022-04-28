@@ -71,7 +71,7 @@ package object fusion{
 		val parent = anyNode.getParentNode
 		if(parent == null) anyNode else treeTop(parent)
 	}
-	implicit class EnhancedQueryModelNode(val node: QueryModelNode) extends AnyVal{
+	extension (node: QueryModelNode){
 		@tailrec def isAncestorOf(other: QueryModelNode): Boolean =
 			if(other == null) false
 			else if(other eq node) true

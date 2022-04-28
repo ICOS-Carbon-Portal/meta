@@ -10,10 +10,9 @@ import akka.http.scaladsl.model.Uri.Path.{Segment, Slash, Empty}
 import scala.collection.mutable.Buffer
 
 package object utils {
-	implicit class ToTryConvertibleOption[T](val inner: Option[T]) extends AnyVal{
+	extension [T](inner: Option[T])
 		def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 			.getOrElse(Failure(error))
-	}
 
 	def transformEither[L0, R0, L, R](left: L0 => L, right: R0 => R)(either: Either[L0, R0]): Either[L, R] =
 		either.fold[Either[L, R]](l => Left(left(l)), r => Right(right(r)))
@@ -33,18 +32,16 @@ package object utils {
 		traceWriter.toString
 	}
 
-	implicit class OptionalItemOrSeqOps[T](val item: Option[Either[T, Seq[T]]]) extends AnyVal{
+	extension [T](item: Option[Either[T, Seq[T]]])
 		def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
 			either.fold(Seq(_), identity)
 		}
-	}
 
-	implicit class AnyRefWithSafeOptTypecast(val inner: AnyRef) extends AnyVal{
+	extension (inner: AnyRef)
 		def asOptInstanceOf[T: ClassTag]: Option[T] = inner match{
 			case t: T => Some(t)
 			case _ => None
 		}
-	}
 
 	def parseJsonStringArray(s: String): Option[Array[String]] = {
 		import spray.json._

@@ -13,15 +13,14 @@ object PatternFinder{
 
 	def takeNode[T <: QMN]: NodeSearch[T, T] = Some.apply
 
-	implicit class TopNodeSearchOps[O](val test: TopNodeSearch[O]) extends AnyVal{
+	extension [O] (test: TopNodeSearch[O])
 		def recursive: TopNodeSearch[O] = node => {
 			val finder = new Visitor(test)
 			node.visit(finder)
 			finder.result
 		}
-	}
 
-	implicit class NodeSearchOps[I <: QMN, O](val test: NodeSearch[I, O]) extends AnyVal{
+	extension [I <: QMN, O](test: NodeSearch[I, O]){
 
 		def thenSearch[O2](other: O => Option[O2]): NodeSearch[I, O2] = node => test(node).flatMap(other)
 

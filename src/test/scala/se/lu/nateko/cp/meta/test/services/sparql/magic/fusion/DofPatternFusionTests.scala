@@ -77,7 +77,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.filenameRegex)
 
 		it("is not supposed to treat the filter 'magically'"){
-			val magicRegexExists = dofNode.fetchRequest.filter.exists{case gcf: GeneralCategFilter =>}
+			val magicRegexExists = dofNode.fetchRequest.filter.exists{case gcf: GeneralCategFilter[?] =>}
 			assert(!magicRegexExists)
 		}
 		it("the 'magic' query node is not supposed to produce fileName bindings"){
@@ -385,8 +385,8 @@ class DofPatternFusionTests extends AnyFunSpec{
 		lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.varNameRegexFilter)
 
 		it("is recognized as a GeneralCategFilter on VariableName"){
-			val gcf = fetchNode.fetchRequest.filter.asInstanceOf[GeneralCategFilter]
-			assert(gcf.category == VariableName)
+			val gcf @ GeneralCategFilter(category, condition) = fetchNode.fetchRequest.filter
+			assert(category == VariableName)
 			assert(gcf.testUnsafe("SWC_1_5_1"))
 			assert(gcf.testUnsafe("blabla") == false)
 		}
@@ -412,7 +412,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 				case Or(subs) =>
 					assert(subs.size == 2)
 					assert(!subs.collect{case Not(Exists(HasVarList)) =>}.isEmpty)
-					assert(!subs.collect{case gcf: GeneralCategFilter if gcf.category == VariableName =>}.isEmpty)
+					assert(!subs.collect{case GeneralCategFilter(VariableName, _) =>}.isEmpty)
 				case _ => fail("Expected an OR top filter")
 			}
 		}

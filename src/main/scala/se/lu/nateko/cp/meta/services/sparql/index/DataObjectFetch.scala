@@ -17,24 +17,18 @@ package object index{
 	object All extends Filter
 	object Nothing extends Filter
 	final case class Exists(prop: Property) extends Filter
-
-	final class CategFilter(val category: CategProp, val values: Seq[category.ValueType]) extends Filter
-	object CategFilter{
-		def unapply(f: CategFilter) = (f.category, f.values)
-	}
-
-	final class GeneralCategFilter(val category: CategProp, val condition: category.ValueType => Boolean) extends Filter{
+	final case class CategFilter[T <: AnyRef](category: CategProp{type ValueType = T}, values: Seq[T]) extends Filter
+	final case class GeneralCategFilter[T](category: CategProp{type ValueType = T}, condition: T => Boolean) extends Filter{
 		override def toString = s"GeneralCategFilter($category)"
 		def testUnsafe(v: AnyRef): Boolean = condition(v.asInstanceOf[category.ValueType])
 	}
 
-	final class ContFilter(val property: ContProp, val condition: FilterRequest[property.ValueType]) extends Filter
+	final case class ContFilter[T](property: ContProp{type ValueType = T}, condition: FilterRequest[T]) extends Filter
 	object ContFilter{
-		def unapply(f: ContFilter) = (f.property, f.condition)
 		class FilterExtractor(val property: ContProp){
-			def unapply(f: ContFilter): Option[FilterRequest[property.ValueType]] = f match{
+			def unapply(f: ContFilter[?]): Option[FilterRequest[property.ValueType]] = f match{
 				case ContFilter(`property`, filtReq) => Some(filtReq.asInstanceOf[FilterRequest[property.ValueType]])
-				case _ => None
+				case ContFilter(_, _) => None
 			}
 		}
 	}

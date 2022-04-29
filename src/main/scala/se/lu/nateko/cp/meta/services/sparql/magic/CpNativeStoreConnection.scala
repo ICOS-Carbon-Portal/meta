@@ -96,7 +96,7 @@ class CpNativeStoreConnection(
 		}
 
 		val base: StatIter = super
-			.getStatementsInternal(subj, pred, obj, includeInferred, contexts: _*)
+			.getStatementsInternal(subj, pred, obj, includeInferred, contexts*)
 			.asInstanceOf[StatIter]
 
 		if(subj == null || obj != null) base //lookup by magic values/predicates not possible

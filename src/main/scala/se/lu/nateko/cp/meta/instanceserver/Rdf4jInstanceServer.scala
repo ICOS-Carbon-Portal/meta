@@ -28,7 +28,7 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 				predicate.getOrElse(null),
 				obj.getOrElse(null),
 				false,
-				readContexts :_*)
+				readContexts*)
 		)
 
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
@@ -38,19 +38,19 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 				predicate.getOrElse(null),
 				obj.getOrElse(null),
 				false,
-				readContexts :_*)
+				readContexts*)
 		)
 
 	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = repo.transact(conn => 
 		updates.foreach(update => {
-			if(update.isAssertion) conn.add(update.statement, writeContexts :_*)
-			else conn.remove(update.statement, writeContexts :_*)
+			if(update.isAssertion) conn.add(update.statement, writeContexts*)
+			else conn.remove(update.statement, writeContexts*)
 		})
 	)
 
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] = {
 		repo.accessEagerly{ conn =>
-			statements.iterator.filter(st => !conn.hasStatement(st, false, readContexts :_*)).toIndexedSeq
+			statements.iterator.filter(st => !conn.hasStatement(st, false, readContexts*)).toIndexedSeq
 		}
 	}
 

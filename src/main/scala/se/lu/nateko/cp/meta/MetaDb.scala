@@ -204,7 +204,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 					then initRepo
 					else {
 						log.info(s"Ingesting from RDF log $logName ...")
-						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts: _*)
+						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts*)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
 					}

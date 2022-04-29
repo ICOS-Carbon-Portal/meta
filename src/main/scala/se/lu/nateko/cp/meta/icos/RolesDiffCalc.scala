@@ -10,7 +10,7 @@ object RolesDiffCalc{
 			current.headOption.toSeq.map(curHead => latest.head.copy(cpId = curHead.cpId))
 
 		else { //the rest are rare corner cases for when person occupied same role (at same org) intermittently
-			val remainingLatest = Set(latest: _*)
+			val remainingLatest = Set(latest*)
 
 			current.flatMap{c =>
 				if(remainingLatest.isEmpty) None else Some(remainingLatest.maxBy(l => similarity(c, l))).map{res =>

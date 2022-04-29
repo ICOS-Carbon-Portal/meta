@@ -161,7 +161,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 				//println(s"will filter child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if borderFilter(coord) => bm.filter(req)
 				//case (coord, _) if logAndreject(coord) => ???
-			}.toSeq :_*
+			}.toSeq*
 		)
 
 		if(children == null){

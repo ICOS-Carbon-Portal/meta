@@ -245,7 +245,7 @@ object SequenceDiff{
 	extension [T <: TC](seq: Seq[SequenceDiff[T]])
 		def join: SequenceDiff[T] = {
 			val rdfDiff = seq.flatMap(_.rdfDiff)
-			val lookup = Map(seq.flatMap(_.cpIdLookup): _*)
+			val lookup = Map(seq.flatMap(_.cpIdLookup)*)
 			new SequenceDiff(rdfDiff, lookup)
 		}
 

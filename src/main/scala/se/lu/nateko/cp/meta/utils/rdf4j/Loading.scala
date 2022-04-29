@@ -42,7 +42,7 @@ object Loading {
 		def commitChunk(chunk: Seq[Statement]): Try[Unit] =
 			repo.transact(conn => {
 				for(statement <- chunk){
-					conn.add(statement, contexts :_*)
+					conn.add(statement, contexts*)
 				}
 			})
 

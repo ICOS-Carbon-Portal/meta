@@ -158,7 +158,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 				.collect{case iri: IRI => iri}
 				.collect{case CpVocab.DataObject(hash, _) => idLookup.get(hash)}
 				.flatten
-			Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
+			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>
 			val perValue = categMap(category)
@@ -192,10 +192,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		if(condHappened) None else Some(seq)
 	}
 	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if(bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms: _*))
+		if(bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*))
 
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms: _*))
+		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)

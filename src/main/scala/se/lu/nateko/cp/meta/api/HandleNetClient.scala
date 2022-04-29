@@ -194,6 +194,6 @@ object HandleNetClient{
 			withSize(key.getModulus.toByteArray),
 			Seq(Array.fill(4)(0)) //handle.net code makes a too large array (forgets that the flags are written without size)
 		)
-		Array.concat[Byte](arraySeq.flatten: _*)
+		Array.concat[Byte](arraySeq.flatten*)
 	}
 }

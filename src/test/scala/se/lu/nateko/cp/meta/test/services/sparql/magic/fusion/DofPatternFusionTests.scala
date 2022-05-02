@@ -8,10 +8,10 @@ import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion._
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
-import se.lu.nateko.cp.meta.services.sparql.index._
-import PatternFinder._
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import PatternFinder.*
 
 object ChosenTest extends Tag("fusion.ChosenTest")
 
@@ -77,7 +77,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.filenameRegex)
 
 		it("is not supposed to treat the filter 'magically'"){
-			val magicRegexExists = dofNode.fetchRequest.filter.exists{case GeneralCategFilter(_, _) =>}
+			val magicRegexExists = dofNode.fetchRequest.filter.exists{case gcf: GeneralCategFilter[?] =>}
 			assert(!magicRegexExists)
 		}
 		it("the 'magic' query node is not supposed to produce fileName bindings"){
@@ -385,10 +385,10 @@ class DofPatternFusionTests extends AnyFunSpec{
 		lazy val (query @ _, fetchNode @ _) = getFetchNode(TestQueries.varNameRegexFilter)
 
 		it("is recognized as a GeneralCategFilter on VariableName"){
-			val GeneralCategFilter(categ, cond) = fetchNode.fetchRequest.filter
-			assert(categ == VariableName)
-			assert(cond("SWC_1_5_1"))
-			assert(cond("blabla") == false)
+			val gcf @ GeneralCategFilter(category, condition) = fetchNode.fetchRequest.filter
+			assert(category == VariableName)
+			assert(gcf.testUnsafe("SWC_1_5_1"))
+			assert(gcf.testUnsafe("blabla") == false)
 		}
 	}
 
@@ -412,7 +412,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 				case Or(subs) =>
 					assert(subs.size == 2)
 					assert(!subs.collect{case Not(Exists(HasVarList)) =>}.isEmpty)
-					assert(!subs.collect{case GeneralCategFilter(categ, _) if categ == VariableName =>}.isEmpty)
+					assert(!subs.collect{case GeneralCategFilter(VariableName, _) =>}.isEmpty)
 				case _ => fail("Expected an OR top filter")
 			}
 		}

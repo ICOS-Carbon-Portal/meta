@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.core.data.WdcggExtract
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
@@ -45,9 +44,6 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 					new PidMinter(handles, vocab)
 
 				case Some(extract) => extract match {
-					case wdcgg: WdcggExtract =>
-						new WdcggUploadCompleter(server, wdcgg, vocab, metaVocab)
-
 					case _: TimeSeriesExtract | _: SpatialTimeSeriesExtract =>
 						new TimeSeriesUploadCompleter(server, extract, handles, vocab, metaVocab)
 

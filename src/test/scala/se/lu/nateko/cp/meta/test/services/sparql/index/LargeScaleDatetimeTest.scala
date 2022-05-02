@@ -3,7 +3,7 @@ import java.time.Instant
 import scala.io.Source
 import se.lu.nateko.cp.meta.services.sparql.index.DatetimeHierarchicalBitmap
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.*
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 class LargeScaleDatetimeTest extends AnyFunSpec{

@@ -6,23 +6,23 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.*
 import akka.stream.Materializer
-import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, ValueFactory}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.{CpmetaConfig, api}
-import se.lu.nateko.cp.meta.api._
+import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
-import se.lu.nateko.cp.meta.core.data.JsonSupport.{stationFormat, dataObjectSpecFormat, uriResourceFormat, instumentFormat}
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
 import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
@@ -64,9 +64,10 @@ class Rdf4jUriSerializer(
 )(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
 
 	import InstanceServerSerializer.statementIterMarshaller
-	import Rdf4jUriSerializer._
+	import Rdf4jUriSerializer.*
 	import UriSerializer.Hash
 
+	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, repo, config.core)
 	val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
@@ -78,10 +79,10 @@ class Rdf4jUriSerializer(
 		.compose(uri => () => getStatementsIter(uri, repo))
 
 	val marshaller: ToResponseMarshaller[Uri] = Marshaller.oneOf(
-		Marshaller(
+		Marshaller[Uri, HttpResponse](
 			implicit exeCtxt => uri => {
-				implicit val envri = inferEnvri(uri)
-				implicit val envriConfig = envries(envri)
+				given envri: Envri = inferEnvri(uri)
+				given EnvriConfig = envries(envri)
 				getMarshallings(uri)
 			}
 		),
@@ -144,7 +145,7 @@ class Rdf4jUriSerializer(
 		)
 	}
 
-	private def makeIri(uri: Uri) = JavaUri.create(uri.toString).toRdf(repo.getValueFactory)
+	private def makeIri(uri: Uri) = JavaUri.create(uri.toString).toRdf
 
 	private def isObjSpec(uri: Uri)(implicit envri: Envri): Boolean =
 		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(servers.metaVocab.hasDataLevel), None)
@@ -152,7 +153,7 @@ class Rdf4jUriSerializer(
 	private def isLabeledRes(uri: Uri)(implicit envri: Envri): Boolean =
 		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(RDFS.LABEL), None)
 
-	private def getMarshallings(uri: Uri)(implicit envri: Envri, envriConfig: EnvriConfig, ctxt: ExecutionContext): FLMHR = uri.path match {
+	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR = uri.path match {
 
 		case Hash.Object(hash) =>
 			delegatedRepr(() => fetchStaticObj(hash))

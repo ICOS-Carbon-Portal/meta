@@ -27,12 +27,12 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.util.Using
 
-class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, mat: Materializer){
+class CitationProviderFactory(conf: CpmetaConfig)(using system: ActorSystem, mat: Materializer){
 
 	def getProvider(sail: Sail): CitationProvider = {
 
@@ -55,7 +55,7 @@ class CitationProviderFactory(conf: CpmetaConfig)(implicit system: ActorSystem, 
 }
 
 class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
-	private implicit val envriConfs = coreConf.envriConfigs
+	private given envriConfs: Envri.EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
 	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
@@ -111,11 +111,11 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	) yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
-		envri => obj.stringValue.startsWith(objectPrefix(envriConfs(envri)))
+		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))
 	}
 
 	private def inferCollEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
-		envri => obj.stringValue.startsWith(collectionPrefix(envriConfs(envri)))
+		envri => obj.stringValue.startsWith(collectionPrefix(using envriConfs(envri)))
 	}
 
 	private def extractHash(iri: IRI): Option[Sha256Sum] =

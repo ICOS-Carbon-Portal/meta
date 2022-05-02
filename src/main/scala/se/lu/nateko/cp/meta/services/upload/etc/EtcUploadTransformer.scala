@@ -20,15 +20,15 @@ import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import scala.util.Success
 import se.lu.nateko.cp.meta.DataObjectDto
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config, vocab)
-	private implicit val envri = Envri.ICOS
+	private given Envri.Envri = Envri.ICOS
 
 	def transform(meta: EtcUploadMetadata): Try[DataObjectDto] = {
 

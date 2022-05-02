@@ -8,7 +8,7 @@ import scala.util.control.NoStackTrace
 
 
 class Sha256Sum(private val bytes: Array[Byte]) {
-	import Sha256Sum._
+	import Sha256Sum.*
 	assert(byteLengthCorrect(bytes), byteLengthMessage)
 
 	def getBytes: Seq[Byte] = bytes.toSeq

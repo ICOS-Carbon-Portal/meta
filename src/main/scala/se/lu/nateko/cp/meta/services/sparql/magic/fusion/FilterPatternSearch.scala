@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.utils.AnyRefWithSafeOptTypecast
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 
 import java.time.Instant
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap._
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.*
 import se.lu.nateko.cp.meta.services.sparql.index
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index.*
 
 import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
 import org.eclipse.rdf4j.query.algebra.{And, Or, Not, Exists}
@@ -25,7 +25,7 @@ import scala.util.matching.Regex
 import org.eclipse.rdf4j.query.algebra.StatementPattern
 
 class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
-	import FilterPatternSearch._
+	import FilterPatternSearch.*
 
 	def parseFilterExpr(expr: ValueExpr): Option[index.Filter] = expr match {
 		case and: And => for(
@@ -67,7 +67,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 				prop <- varProps.get(QVar(v)).collect{case cp: CategProp => cp}
 			) yield{
 				val regex = new Regex(lit.stringValue)
-				GeneralCategFilter[prop.ValueType](prop, v => regex.matches(v.toString))
+				GeneralCategFilter(prop, v => regex.matches(v.toString))
 			}
 			case _ => None
 		}
@@ -78,7 +78,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	private def isDobj(v: Var): Boolean = varProps.get(QVar(v)) == Some(DobjUri)
 
 	private def getFilter(left: Var, right: ValueConstant, op: Compare.CompareOp): Option[index.Filter] = {
-		import Compare.CompareOp._
+		import Compare.CompareOp.*
 
 		def makeContFilter(prop: ContProp)(limit: prop.ValueType): Option[ContFilter[prop.ValueType]] = {
 
@@ -112,7 +112,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 }
 
 object FilterPatternSearch{
-	import Compare.CompareOp._
+	import Compare.CompareOp.*
 
 	def swapOp(op: Compare.CompareOp): Compare.CompareOp = op match{
 		case EQ => EQ

@@ -6,7 +6,7 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.unmarshalling.{Unmarshal, FromEntityUnmarshaller}
@@ -19,26 +19,27 @@ import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
 import akka.http.scaladsl.settings.ConnectionPoolSettings
+import spray.json.RootJsonFormat
 
 
 object StatisticsClient extends DefaultJsonProtocol {
 	case class RestHeartCount(count: Int)
 	case class StatsApiCount(downloadCount: Int)
-	implicit val statsFormat = jsonFormat1(StatsApiCount)
-	implicit val restHeartFormat = jsonFormat1(RestHeartCount)
+	given RootJsonFormat[StatsApiCount] = jsonFormat1(StatsApiCount.apply)
+	given RootJsonFormat[RestHeartCount] = jsonFormat1(RestHeartCount.apply)
 }
 
 class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {
-	import StatisticsClient._
+	import StatisticsClient.*
 	private val http = Http()
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
 	private def dbUri(implicit envri: Envri) = {
-		import config.previews._
+		import config.previews.*
 		Uri(s"$baseUri/$dbName")
 	}
 
-	private[this] val connPoolSetts = {
+	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
 		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)

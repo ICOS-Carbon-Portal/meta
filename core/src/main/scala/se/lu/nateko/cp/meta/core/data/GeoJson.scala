@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.core.data
 
-import spray.json._
+import spray.json.*
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success

@@ -7,8 +7,8 @@ trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 
 	def ++[A >: T](other: => CloseableIterator[A]) = new CloseableIterator[A]{
 
-		private[this] var thatInitialized = false
-		private[this] lazy val that = {
+		private var thatInitialized = false
+		private lazy val that = {
 			thatInitialized = true
 			other
 		}
@@ -34,7 +34,7 @@ object CloseableIterator{
 
 	class Wrap[T](inner: Iterator[T], closer: () => Unit) extends AbstractIterator[T] with CloseableIterator[T]{
 
-		private[this] var closed: Boolean = false
+		private var closed: Boolean = false
 
 		def close(): Unit = synchronized{
 			if(!closed){

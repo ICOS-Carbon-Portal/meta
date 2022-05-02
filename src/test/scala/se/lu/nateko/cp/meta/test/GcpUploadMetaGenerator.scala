@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 import se.lu.nateko.cp.meta.core.data.Envri
 
 /**
@@ -33,7 +33,7 @@ object GcpUploadMetaGenerator extends CpmetaJsonProtocol {
 		}.toIndexedSeq
 
 		val inJsonText = Source.fromFile(folder + inFile).getLines().mkString("\n")
-		import spray.json._
+		import spray.json.*
 
 		val oldMeta = inJsonText.parseJson.convertTo[DataObjectDto]
 

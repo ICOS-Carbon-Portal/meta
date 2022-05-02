@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
 import org.scalajs.dom.{html, document}
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.util.Success
 import scala.util.Try
 import scala.collection.mutable
@@ -20,7 +20,7 @@ object DataListInput {
 
 class DataList[T](elemId: String, val labeller: T => String) {
 	private val list = getElementById[html.DataList](elemId).get
-	private[this] var _values = IndexedSeq.empty[T]
+	private var _values = IndexedSeq.empty[T]
 	private val valLookup = mutable.Map.empty[String, T]
 	protected val lookupIsActive: Boolean = true
 
@@ -63,12 +63,12 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 		}
 	}
 
-	private [this] val formDiv = getElementById[html.Div](elemId).get
-	private [this] val template = querySelector[html.Div](formDiv, ".data-list").get
-	private [this] var _ordId: Long = 0L
-	private [this] val addButton = querySelector[html.Button](formDiv, "#add-element").get
+	private val formDiv = getElementById[html.Div](elemId).get
+	private val template = querySelector[html.Div](formDiv, ".data-list").get
+	private var _ordId: Long = 0L
+	private val addButton = querySelector[html.Button](formDiv, "#add-element").get
 
-	private[this] val elems = mutable.Buffer.empty[DataListEditableInput[T]]
+	private val elems = mutable.Buffer.empty[DataListEditableInput[T]]
 
 	addButton.onclick = _ => {
 		elems.append(new DataListEditableInput(list)).foreach(_.focus())
@@ -92,7 +92,7 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 			dataListInput.focus()
 		}
 
-		private[this] val id: Long = {_ordId += 1; _ordId}
+		private val id: Long = {_ordId += 1; _ordId}
 		val div = deepClone(template)
 
 		formDiv.insertBefore(div, addButton.parentElement)

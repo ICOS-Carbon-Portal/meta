@@ -8,13 +8,15 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{PidEntry, PidUpdate, EpicPidClient}
 import spray.json.JsString
 import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
+import scala.compiletime.uninitialized
 
 
 class EpicPidClientTest extends AnyFunSpec with BeforeAndAfterAll{
 
-	implicit var system: ActorSystem = _
-	var ep: EpicPidClient = _
+	private var system: ActorSystem = uninitialized
+	given ActorSystem = system
+	var ep: EpicPidClient = uninitialized
 
 	override def beforeAll(): Unit = {
 		system = ActorSystem("EpicPidTestSystem")

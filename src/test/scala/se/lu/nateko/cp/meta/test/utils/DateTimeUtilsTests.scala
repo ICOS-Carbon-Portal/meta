@@ -4,7 +4,7 @@ import org.scalatest.funspec.AnyFunSpec
 
 class DateTimeUtilsTests extends AnyFunSpec{
 
-	//import se.lu.nateko.cp.meta.utils.DateTimeUtils._
+	//import se.lu.nateko.cp.meta.utils.DateTimeUtils.*
 
 	def dateTimeToUtc(s: String) = s
 

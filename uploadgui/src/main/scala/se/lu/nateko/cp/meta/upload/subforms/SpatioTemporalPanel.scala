@@ -3,11 +3,11 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import scala.util.{Try, Success}
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, SpatioTemporalDto}
 
-import formcomponents._
-import Utils._
+import formcomponents.*
+import Utils.*
 import se.lu.nateko.cp.meta.core.data.TemporalCoverage
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI

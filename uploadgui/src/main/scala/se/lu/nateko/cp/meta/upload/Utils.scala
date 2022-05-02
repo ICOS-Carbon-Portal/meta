@@ -5,7 +5,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import org.scalajs.dom.{document, html}
-import org.scalajs.dom.ext._
+import org.scalajs.dom.ext.*
 
 object Utils {
 
@@ -28,13 +28,11 @@ object Utils {
 
 	def fail(msg: String) = Failure(new Exception(msg))
 
-	implicit class TryWithErrorEnrichment[T](val inner: Try[T]) extends AnyVal{
+	extension [T](inner: Try[T])
 		def withErrorContext(ctxt: String): Try[T] = inner.recoverWith{
 			case err: Throwable => Failure(new Exception(ctxt + ": " + err.getMessage, err))
 		}
-	}
 
-	implicit class OptionWithMissingErrorEnrichment[T](val inner: Option[T]) extends AnyVal{
+	extension [T](inner: Option[T])
 		def withMissingError(msg: String): Try[T] = inner.fold[Try[T]]{Failure(new Exception(msg))}(Success(_))
-	}
 }

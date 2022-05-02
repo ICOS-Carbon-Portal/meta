@@ -18,4 +18,4 @@ final class IllegalLabelingStatusException(message: String) extends ServiceExcep
 
 final class PidMintingException(message: String) extends ServiceException(message)
 
-final object CacheSizeLimitExceeded extends ServiceException("Cache size limit exceeded.")
+object CacheSizeLimitExceeded extends ServiceException("Cache size limit exceeded.")

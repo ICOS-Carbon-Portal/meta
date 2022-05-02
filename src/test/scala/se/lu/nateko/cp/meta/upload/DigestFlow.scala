@@ -30,8 +30,8 @@ object DigestFlow{
 
 private class DigestFlow[T](digest: String, map: Array[Byte] => T) extends GraphStageWithMaterializedValue[FlowShape[ByteString, ByteString], Future[T]]{
 
-	private[this] val in: Inlet[ByteString] = Inlet("DigestComputerInput")
-	private[this] val out: Outlet[ByteString] = Outlet("DigestComputerOutput")
+	private val in: Inlet[ByteString] = Inlet("DigestComputerInput")
+	private val out: Outlet[ByteString] = Outlet("DigestComputerOutput")
 
 	override val shape = FlowShape(in, out)
 

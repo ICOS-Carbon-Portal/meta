@@ -1,12 +1,13 @@
 package se.lu.nateko.cp.meta.core.etcupload
 
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
-import spray.json._
+import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
+import spray.json.*
+import DefaultJsonProtocol.*
 
 object JsonSupport extends CommonJsonSupport{
 
-	implicit object stationIdFormat extends RootJsonFormat[StationId] {
+	given RootJsonFormat[StationId] with {
 
 		def write(id: StationId) = JsString(id.id)
 
@@ -16,6 +17,6 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val dataTypeFormat = enumFormat(DataType)
-	implicit val etcUploatMetaFormat = jsonFormat8(EtcUploadMetadata)
+	given JsonFormat[DataType.DataType] = enumFormat(DataType)
+	given RootJsonFormat[EtcUploadMetadata] = jsonFormat8(EtcUploadMetadata.apply)
 }

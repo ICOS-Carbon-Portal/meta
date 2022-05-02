@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.core.data
 
 import org.scalatest.funsuite.AnyFunSuite
-import spray.json._
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
+import spray.json.*
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 
 class GeoFeaturesTests extends AnyFunSuite {
 

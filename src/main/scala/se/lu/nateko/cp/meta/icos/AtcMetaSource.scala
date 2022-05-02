@@ -25,7 +25,7 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
@@ -33,11 +33,11 @@ import se.lu.nateko.cp.meta.utils.Validated
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
 
 class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
-	import AtcMetaSource._
+	import AtcMetaSource.*
 	import system.dispatcher
 
 	def log = system.log
-	private[this] var listener: ActorRef = system.deadLetters
+	private var listener: ActorRef = system.deadLetters
 
 	override def registerListener(actor: ActorRef): Unit = {
 		if(listener != system.deadLetters) listener ! Status.Success

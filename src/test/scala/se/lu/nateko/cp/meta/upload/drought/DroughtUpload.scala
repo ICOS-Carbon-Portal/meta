@@ -15,8 +15,8 @@ import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.upload._
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.doi.*
 
 
 object DroughtUpload{
@@ -42,7 +42,7 @@ object DroughtUpload{
 	}
 
 	def fileMetaEntries(fileName: String, project: DroughtMeta2.Project): IndexedSeq[FileEntry] = {
-		import DroughtMeta2._
+		import DroughtMeta2.*
 
 		def metaFile(fname: String) = baseDir.resolve(s"meta/$fname").toFile
 

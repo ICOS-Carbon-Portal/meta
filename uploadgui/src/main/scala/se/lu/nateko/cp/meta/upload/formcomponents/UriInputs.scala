@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 
 import java.net.URI
 import scala.util.{ Success, Try, Failure }
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
 
@@ -46,7 +46,7 @@ object UriListInput{
 	)
 
 	def serializer = {
-		list: Seq[URI] => list.map(_.toString).mkString("\n")
+		(list: Seq[URI]) => list.map(_.toString).mkString("\n")
 	}
 
 	val emptyError = fail(s"uri list cannot be empty")

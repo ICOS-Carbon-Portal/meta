@@ -39,8 +39,8 @@ private class CachingSinkQueue[T](
 	inner: SinkQueueWithCancel[T], cache: Buffer[Future[Option[T]]], quota: CachedSource.Quota[T]
 )(implicit exe: ExecutionContext) extends SinkQueueWithCancel[T]{
 
-	private[this] var cursor: Int = 0
-	private[this] var cost: Int = 0
+	private var cursor: Int = 0
+	private var cost: Int = 0
 
 	override def pull(): Future[Option[T]] = cache.synchronized{
 		if(cursor >= cache.length) innerPull()

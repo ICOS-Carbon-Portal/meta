@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import scala.util.Using
 
 trait UserInfoService { self: StationLabelingService =>

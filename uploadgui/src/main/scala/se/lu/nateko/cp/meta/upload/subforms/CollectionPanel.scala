@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, StaticCollectionDto}
 
-import formcomponents._
-import Utils._
+import formcomponents.*
+import Utils.*
 
 class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection-section"){
 	def title = collectionTitle.value.withErrorContext("Collection title")

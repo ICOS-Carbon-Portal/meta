@@ -8,6 +8,7 @@ import scala.util.Try
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.ValueFactory
 
 import akka.NotUsed
 import se.lu.nateko.cp.cpauth.core.UserId
@@ -26,8 +27,8 @@ import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
@@ -36,9 +37,9 @@ import se.lu.nateko.cp.meta.core.data.DatasetClass
 
 class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
-	implicit val factory = metaVocab.factory
+	given ValueFactory = metaVocab.factory
 
-	private [this] val ok: Try[NotUsed] = Success(NotUsed)
+	private val ok: Try[NotUsed] = Success(NotUsed)
 
 	def validateObject(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = meta match {
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)

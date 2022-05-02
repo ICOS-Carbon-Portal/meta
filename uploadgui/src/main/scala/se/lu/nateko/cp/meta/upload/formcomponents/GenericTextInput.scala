@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 
 import scala.util.{Try, Success}
 import org.scalajs.dom.html
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 
 
 
@@ -12,8 +12,8 @@ private abstract class TextInputElement extends html.Object{
 }
 
 abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T], serializer: T => String) {
-	private[this] val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
-	private[this] var _value: Try[T] = init
+	private val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
+	private var _value: Try[T] = init
 
 	def value: Try[T] = _value
 	def value_=(t: T): Unit = {

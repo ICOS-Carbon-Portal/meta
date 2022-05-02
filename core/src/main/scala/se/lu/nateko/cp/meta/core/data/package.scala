@@ -1,31 +1,28 @@
-package se.lu.nateko.cp.meta.core
+package se.lu.nateko.cp.meta.core.data
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
 
-package object data{
+def staticObjLandingPage(hash: Sha256Sum)(using EnvriConfig) = new URI(
+	s"$objectPrefix${hash.id}"
+)
 
-	type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
+def staticObjAccessUrl(hash: Sha256Sum)(using envri: EnvriConfig) = new URI(
+	s"https://${envri.dataHost}/$objectPathPrefix${hash.id}"
+)
 
-	def staticObjLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
-		s"$objectPrefix${hash.id}"
-	)
+def staticCollLandingPage(hash: Sha256Sum)(using EnvriConfig) = new URI(
+	s"$collectionPrefix${hash.id}"
+)
 
-	def staticObjAccessUrl(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
-		s"https://${envri.dataHost}/$objectPathPrefix${hash.id}"
-	)
+def staticCollAccessUrl(landingPage: URI)(using envri: EnvriConfig) = new URI(
+	s"https://${envri.dataHost}${landingPage.getPath}"
+)
 
-	def staticCollLandingPage(hash: Sha256Sum)(implicit envri: EnvriConfig) = new URI(
-		s"$collectionPrefix${hash.id}"
-	)
+def objectPrefix(using envri: EnvriConfig): String = s"${envri.dataItemPrefix}$objectPathPrefix"
+def collectionPrefix(using envri: EnvriConfig): String = s"${envri.dataItemPrefix}$collectionPathPrefix"
 
-	def staticCollAccessUrl(landingPage: URI)(implicit envri: EnvriConfig) = new URI(
-		s"https://${envri.dataHost}${landingPage.getPath}"
-	)
+val objectPathPrefix = "objects/"
+val collectionPathPrefix = "collections/"
 
-	def objectPrefix(implicit envri: EnvriConfig): String = s"${envri.dataItemPrefix}$objectPathPrefix"
-	def collectionPrefix(implicit envri: EnvriConfig): String = s"${envri.dataItemPrefix}$collectionPathPrefix"
-
-	val objectPathPrefix = "objects/"
-	val collectionPathPrefix = "collections/"
-}
+type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]

@@ -11,7 +11,7 @@ import scala.util.Success
 
 class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{
 
-	private implicit val system = ActorSystem("CachedSourceTests")
+	private given system: ActorSystem = ActorSystem("CachedSourceTests")
 	import system.dispatcher
 
 	override def afterAll(): Unit = {

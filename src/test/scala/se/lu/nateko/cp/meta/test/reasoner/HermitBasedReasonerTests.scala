@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.test.reasoner
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig
-import se.lu.nateko.cp.meta.utils.owlapi._
+import se.lu.nateko.cp.meta.utils.owlapi.*
 import java.net.URI
 
 class HermitBasedReasonerTests extends AnyFunSpec{

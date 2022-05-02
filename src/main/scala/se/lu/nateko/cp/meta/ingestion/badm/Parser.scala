@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.ingestion.badm
 import java.text.ParseException
 import java.time.LocalDate
 
-import BadmConsts._
+import BadmConsts.*
 import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVReaderBuilder
 
@@ -67,7 +67,7 @@ object Parser {
 				BadmValue(re.qualifier, re.value)
 			}.toIndexedSeq
 			val firstRaw = raw.head
-			import firstRaw._
+			import firstRaw.*
 			BadmEntry(variable, values, valueDate, station, submissionDate)
 		}
 		raw.filter(_.qualifier != DateQualifier).groupBy(_.id).toSeq

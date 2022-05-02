@@ -17,9 +17,9 @@ trait CustomVocab {
 	protected class BaseUriProvider(val baseUri: String)
 	protected def makeUriProvider(uri: String) = new BaseUriProvider(uri)
 
-	def getRelativeRaw(local: String)(implicit bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
-	def getRelative(local: UriId)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(local.urlSafeString)
-	def getRelative(suffix: String, local: UriId)(implicit bup: BaseUriProvider): IRI = getRelativeRaw(suffix + local.urlSafeString)
+	def getRelativeRaw(local: String)(using bup: BaseUriProvider): IRI = factory.createIRI(bup.baseUri, local)
+	def getRelative(local: UriId)(using BaseUriProvider): IRI = getRelativeRaw(local.urlSafeString)
+	def getRelative(suffix: String, local: UriId)(using BaseUriProvider): IRI = getRelativeRaw(suffix + local.urlSafeString)
 
 	def lit(litVal: String, dtype: IRI) = factory.createLiteral(litVal, dtype)
 	def lit(litVal: String) = factory.createLiteral(litVal, XMLSchema.STRING)

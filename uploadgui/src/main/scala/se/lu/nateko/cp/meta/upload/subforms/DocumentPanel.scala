@@ -2,11 +2,11 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DocObjectDto}
 import se.lu.nateko.cp.meta.core.data.Envri
 
-import formcomponents._
+import formcomponents.*
 
 class DocumentPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".document-section"){
 	def title = documentTitle.value

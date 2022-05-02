@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 import scala.util.Random
 import java.time.Instant
 
@@ -12,7 +12,7 @@ class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
 	val Min = toMillis("2010-01-01T00:00:00Z")
 	val Max = toMillis("2020-01-01T00:00:00Z")
 
-	private[this] val EnableTrace = false
+	private val EnableTrace = false
 
 	def toMillis(s: String): Long = Instant.parse(s).toEpochMilli
 

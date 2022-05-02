@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.utils.owlapi._
+import se.lu.nateko.cp.meta.utils.owlapi.*
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
@@ -19,7 +19,7 @@ object TestConfig {
 	val factory = manager.getOWLDataFactory
 	lazy val owlOnto = {
 		getOntologyFromJarResourceFile("/../classes/owl/uiannotations.owl", manager)
-		getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
+		getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
 		getOntologyFromJarResourceFile("/owl/cpmetaui.owl", manager)
 	}
 
@@ -47,7 +47,7 @@ object TestConfig {
 	def getObjectProperty(localName: String): OWLObjectProperty =
 		factory.getOWLObjectProperty(localName, prefixManager)
 
-	implicit val envriConfs = Map(Envri.ICOS -> EnvriConfig(
+	given envriConfs: Envri.EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu",
 		dataHost = "data.icos-cp.eu",
 		metaHost = "meta.icos-cp.eu",

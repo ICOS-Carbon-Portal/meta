@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class Rdf4jSparqlRunner(repo: Repository) extends SparqlRunner {
 

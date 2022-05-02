@@ -4,7 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 import java.{util => ju}
 
 /**
@@ -19,10 +19,10 @@ import java.{util => ju}
 class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[K], ord: Ordering[K]){
 
 	private val values = emptyBitmap
-	private[this] var n = 0
-	private[this] var children: HashMap[Coord, HierarchicalBitmap[K]] = null
-	private[this] var firstKey: Option[K] = None
-	private[this] var seenDifferentKeys: Boolean = false
+	private var n = 0
+	private var children: HashMap[Coord, HierarchicalBitmap[K]] = null
+	private var firstKey: Option[K] = None
+	private var seenDifferentKeys: Boolean = false
 
 	def all: ImmutableRoaringBitmap = values
 
@@ -161,7 +161,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 				//println(s"will filter child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if borderFilter(coord) => bm.filter(req)
 				//case (coord, _) if logAndreject(coord) => ???
-			}.toSeq :_*
+			}.toSeq*
 		)
 
 		if(children == null){

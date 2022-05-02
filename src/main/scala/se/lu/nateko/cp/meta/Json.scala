@@ -1,36 +1,52 @@
 package se.lu.nateko.cp.meta
 
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
-import se.lu.nateko.cp.doi._
+import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.doi.*
 import scala.util.Failure
 import scala.util.Success
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers.liftMarshaller
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpEntity
 
-object CpmetaJsonProtocol{
-	implicit class ExtendableJsObj(val js: JsValue) extends AnyVal{
-		def +(kv: (String, String)): JsObject = {
-			val jsKv: (String, JsValue) = (kv._1, JsString(kv._2))
-			JsObject(js.asJsObject.fields + jsKv)
-		}
-	}
-}
+extension (js: JsValue)
+	def +(kv: (String, String)): JsObject =
+		val jsKv: (String, JsValue) = (kv._1, JsString(kv._2))
+		JsObject(js.asJsObject.fields + jsKv)
+
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
-	import CpmetaJsonProtocol._
+	import DefaultJsonProtocol.*
 
-	implicit val resourceDtoFormat = jsonFormat3(ResourceDto)
-	implicit val literalValueDtoFormat = jsonFormat2(LiteralValueDto)
-	implicit val objectValueDtoFormat = jsonFormat2(ObjectValueDto)
+	export DefaultJsonProtocol.immSeqFormat
+	export DefaultJsonProtocol.mapFormat
+	export DefaultJsonProtocol.RootJsObjectFormat
 
-	implicit val minRestrictionDtoFormat = jsonFormat1(MinRestrictionDto)
-	implicit val maxRestrictionDtoFormat = jsonFormat1(MaxRestrictionDto)
-	implicit val regexpRestrictionDtoFormat = jsonFormat1(RegexpRestrictionDto)
-	implicit val oneOfRestrictionDtoFormat = jsonFormat1(OneOfRestrictionDto)
+	given [T: RootJsonWriter]: Conversion[T,ToResponseMarshallable] =
+		ToResponseMarshallable(_)(liftMarshaller(SprayJsonSupport.sprayJsonMarshaller))
 
-	implicit object ValueDtoFormat extends JsonFormat[ValueDto]{
+	given [T: RootJsonReader]: FromRequestUnmarshaller[T] = Unmarshaller
+		.strict[HttpRequest, HttpEntity](_.entity)
+		.andThen(SprayJsonSupport.sprayJsonUnmarshaller)
+
+	given RootJsonFormat[ResourceDto] = jsonFormat3(ResourceDto.apply)
+	given RootJsonFormat[LiteralValueDto] = jsonFormat2(LiteralValueDto.apply)
+	given RootJsonFormat[ObjectValueDto] = jsonFormat2(ObjectValueDto.apply)
+
+	given RootJsonFormat[MinRestrictionDto] = jsonFormat1(MinRestrictionDto.apply)
+	given RootJsonFormat[MaxRestrictionDto] = jsonFormat1(MaxRestrictionDto.apply)
+	given RootJsonFormat[RegexpRestrictionDto] = jsonFormat1(RegexpRestrictionDto.apply)
+	given RootJsonFormat[OneOfRestrictionDto] = jsonFormat1(OneOfRestrictionDto.apply)
+
+	given JsonFormat[ValueDto] with{
 		override def write(dto: ValueDto) = dto match{
 			case dto: LiteralValueDto => dto.toJson + ("type" -> "literal")
 			case dto: ObjectValueDto => dto.toJson + ("type" -> "object")
@@ -38,7 +54,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		override def read(value: JsValue) = ???
 	}
 
-	implicit object RestrictionDtoFormat extends JsonFormat[DataRestrictionDto]{
+	given JsonFormat[DataRestrictionDto] with{
 		override def write(dto: DataRestrictionDto) = dto match{
 			case dto: MinRestrictionDto => dto.toJson + ("type" -> "minValue")
 			case dto: MaxRestrictionDto => dto.toJson + ("type" -> "maxValue")
@@ -48,12 +64,12 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		override def read(value: JsValue) = ???
 	}
 
-	implicit val dataRangeDtoFormat = jsonFormat2(DataRangeDto)
-	implicit val cardinalityDtoFormat = jsonFormat2(CardinalityDto)
-	implicit val dataPropertyDtoFormat = jsonFormat3(DataPropertyDto)
-	implicit val objectPropertyDtoFormat = jsonFormat2(ObjectPropertyDto)
+	given RootJsonFormat[DataRangeDto] = jsonFormat2(DataRangeDto.apply)
+	given RootJsonFormat[CardinalityDto] = jsonFormat2(CardinalityDto.apply)
+	given RootJsonFormat[DataPropertyDto] = jsonFormat3(DataPropertyDto.apply)
+	given RootJsonFormat[ObjectPropertyDto] = jsonFormat2(ObjectPropertyDto.apply)
 
-	implicit object PropertyDtoFormat extends JsonFormat[PropertyDto]{
+	given JsonFormat[PropertyDto] with{
 		override def write(dto: PropertyDto) = dto match{
 			case dto: DataPropertyDto => dto.toJson + ("type" -> "dataProperty")
 			case dto: ObjectPropertyDto => dto.toJson + ("type" -> "objectProperty")
@@ -61,13 +77,13 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		override def read(value: JsValue) = ???
 	}
 
-	implicit val classDtoFormat = jsonFormat2(ClassDto)
-	implicit val classInfoDtoFormat = jsonFormat3(ClassInfoDto)
-	implicit val individualDtoFormat = jsonFormat3(IndividualDto)
-	implicit val updateDtoFormat = jsonFormat4(UpdateDto)
-	implicit val replaceDtoFormat = jsonFormat4(ReplaceDto)
+	given RootJsonFormat[ClassDto] = jsonFormat2(ClassDto.apply)
+	given RootJsonFormat[ClassInfoDto] = jsonFormat3(ClassInfoDto.apply)
+	given RootJsonFormat[IndividualDto] = jsonFormat3(IndividualDto.apply)
+	given RootJsonFormat[UpdateDto] = jsonFormat4(UpdateDto.apply)
+	given RootJsonFormat[ReplaceDto] = jsonFormat4(ReplaceDto.apply)
 
-	implicit object doiFormat extends RootJsonFormat[Doi]{
+	given RootJsonFormat[Doi] with{
 
 			override def write(doi: Doi): JsValue = JsString(doi.toString)
 
@@ -81,14 +97,14 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		}
 	}
 
-	implicit val dataProductionDtoFormat = jsonFormat7(DataProductionDto)
-	implicit val stationDataMetadataFormat = jsonFormat8(StationTimeSeriesDto)
-	implicit val elaboratedProductMetadataFormat = jsonFormat9(SpatioTemporalDto)
-	implicit val referencesDtoFormat = jsonFormat3(ReferencesDto)
-	implicit val dataObjectDtoFormat = jsonFormat8(DataObjectDto)
-	implicit val docObjectDtoFormat = jsonFormat8(DocObjectDto)
+	given RootJsonFormat[DataProductionDto] = jsonFormat7(DataProductionDto.apply)
+	given RootJsonFormat[StationTimeSeriesDto] = jsonFormat8(StationTimeSeriesDto.apply)
+	given RootJsonFormat[SpatioTemporalDto] = jsonFormat9(SpatioTemporalDto.apply)
+	given RootJsonFormat[ReferencesDto] = jsonFormat3(ReferencesDto.apply)
+	given RootJsonFormat[DataObjectDto] = jsonFormat8(DataObjectDto.apply)
+	given RootJsonFormat[DocObjectDto] = jsonFormat8(DocObjectDto.apply)
 
-	implicit object objectUploadDtoFormat extends RootJsonFormat[ObjectUploadDto]{
+	given RootJsonFormat[ObjectUploadDto] with{
 		override def write(umd: ObjectUploadDto) = umd match{
 			case data: DataObjectDto => data.toJson
 			case doc: DocObjectDto => doc.toJson
@@ -100,20 +116,20 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		}
 	}
 
-	implicit val staticCollDtoFormat = jsonFormat6(StaticCollectionDto)
+	given RootJsonFormat[StaticCollectionDto] = jsonFormat6(StaticCollectionDto.apply)
 
-	implicit object uploadDtoWriter extends RootJsonWriter[UploadDto]{
+	given RootJsonWriter[UploadDto] with{
 		override def write(dto: UploadDto) = dto match {
 			case oud: ObjectUploadDto => oud.toJson
 			case scd: StaticCollectionDto => scd.toJson
 		}
 	}
 
-	implicit val userIdFormat = jsonFormat1(UserId)
+	given RootJsonFormat[UserId] = jsonFormat1(UserId.apply)
 
-	implicit val fileDeletionFormat = jsonFormat2(FileDeletionDto)
-	implicit val labelingUserFormat = jsonFormat9(LabelingUserDto)
-	implicit val labelingStatusUpdateFormat = jsonFormat3(LabelingStatusUpdate)
+	given RootJsonFormat[FileDeletionDto] = jsonFormat2(FileDeletionDto.apply)
+	given RootJsonFormat[LabelingUserDto] = jsonFormat9(LabelingUserDto.apply)
+	given RootJsonFormat[LabelingStatusUpdate] = jsonFormat3(LabelingStatusUpdate.apply)
 
-	implicit val submitterProfileDtoFormat = jsonFormat5(SubmitterProfile)
+	given RootJsonFormat[SubmitterProfile] = jsonFormat5(SubmitterProfile.apply)
 }

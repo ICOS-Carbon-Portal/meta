@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema
@@ -23,15 +24,15 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.utils._
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
-	private implicit val factory = vocab.factory
+	private given factory: ValueFactory = vocab.factory
 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
 	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {

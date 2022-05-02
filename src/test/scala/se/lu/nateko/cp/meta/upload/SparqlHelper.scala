@@ -1,13 +1,13 @@
 package se.lu.nateko.cp.meta.upload
 
-import se.lu.nateko.cp.doi.meta._
+import se.lu.nateko.cp.doi.meta.*
 import scala.concurrent.Future
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import java.net.URI
 
 class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
-	import se.lu.nateko.cp.meta.core.sparql._
+	import se.lu.nateko.cp.meta.core.sparql.*
 	import system.dispatcher
 	val sparql = new SparqlClient(endpoint)
 

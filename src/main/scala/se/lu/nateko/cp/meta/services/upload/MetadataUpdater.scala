@@ -14,13 +14,13 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 abstract class MetadataUpdater(vocab: CpVocab) {
-	import MetadataUpdater._
-	import StatementStability._
+	import MetadataUpdater.*
+	import StatementStability.*
 
 	protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability
 
@@ -50,8 +50,8 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 }
 
 class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab) {
-	import MetadataUpdater._
-	import StatementStability._
+	import MetadataUpdater.*
+	import StatementStability.*
 
 	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
 		val pred = sp._2
@@ -61,11 +61,11 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 }
 
 class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
-	import MetadataUpdater._
-	import StatementStability._
+	import MetadataUpdater.*
+	import StatementStability.*
 
-	private[this] val stickyPredicates = {
-		import metaVocab._
+	private val stickyPredicates = {
+		import metaVocab.*
 		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
 	}
 

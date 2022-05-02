@@ -15,11 +15,12 @@ import org.eclipse.rdf4j.query.algebra.Union
 import org.eclipse.rdf4j.query.algebra.ValueExpr
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
-import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, _}
+import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, *}
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import DofPatternFusion._
+import DofPatternFusion.*
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -163,13 +164,13 @@ class DofPatternFusion(meta: CpmetaVocab){
 		def endVar(steps: IRI*): Iterable[QVar] = steps.reverse.toList match{
 			case Nil => patt.dobjVar
 			case head :: tail => for(
-				prev <- endVar(tail:_*);
+				prev <- endVar(tail*);
 				statPatts <- patt.propPaths.get(prev).toSeq;
 				statPat <- statPatts.filter(_.pred === head)
 			) yield statPat.targetVar
 		}
 
-		def propVar(prop: Property, steps: IRI*) = endVar(steps:_*).map(_ -> prop)
+		def propVar(prop: Property, steps: IRI*) = endVar(steps*).map(_ -> prop)
 		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
 		Seq(
 			propVar(DobjUri),

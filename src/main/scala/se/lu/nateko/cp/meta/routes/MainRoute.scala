@@ -2,8 +2,9 @@ package se.lu.nateko.cp.meta.routes
 
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.CpmetaConfig
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.marshalling.ToEntityMarshaller
+import akka.http.scaladsl.model.*
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -15,15 +16,16 @@ import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorSystem
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 object MainRoute {
 
-	def exceptionHandler(implicit envriConfigs: EnvriConfigs) = ExceptionHandler{
+	def exceptionHandler(using envriConfigs: EnvriConfigs) = ExceptionHandler{
 		case ex =>
 			val extractEnvri = AuthenticationRouting.extractEnvriDirective
 			extractEnvri { implicit envri =>
-				implicit val envriConfig = envriConfigs(envri)
-				implicit val errMarsh = errorMarshaller
+				given EnvriConfig = envriConfigs(envri)
+				given ToEntityMarshaller[Throwable] = errorMarshaller
 				complete(StatusCodes.InternalServerError -> ex)
 			}
 	}

@@ -27,15 +27,15 @@ trait CpIdSwapper[E]{
 
 object Entity{
 
-	implicit class IdSwapOps[E](e: E)(implicit swapper: CpIdSwapper[E]){
-		def withCpId(id: UriId): E = swapper.withCpId(e, id)
+	extension [E: CpIdSwapper](e: E){
+		def withCpId(id: UriId): E = summon[CpIdSwapper[E]].withCpId(e, id)
 	}
 
-	implicit def persCpIdSwapper[T <: TC] = new CpIdSwapper[TcPerson[T]]{
+	given [T <: TC]: CpIdSwapper[TcPerson[T]] with{
 		def withCpId(p: TcPerson[T], id: UriId) = p.copy(cpId = id)
 	}
 
-	implicit def orgCpIdSwapper[T <: TC] = new CpIdSwapper[TcOrg[T]]{
+	given [T <: TC]: CpIdSwapper[TcOrg[T]] with{
 		def withCpId(org: TcOrg[T], id: UriId) = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
@@ -43,27 +43,27 @@ object Entity{
 		}
 	}
 
-	implicit def funderCpIdSwapper[T <: TC] = new CpIdSwapper[TcFunder[T]]{
+	given [T <: TC]: CpIdSwapper[TcFunder[T]] with{
 		def withCpId(org: TcFunder[T], id: UriId) = org.copy(cpId = id)
 	}
 
-	implicit def plainOrgCpIdSwapper[T <: TC] = new CpIdSwapper[TcPlainOrg[T]]{
+	given [T <: TC]: CpIdSwapper[TcPlainOrg[T]] with{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
 
-	implicit def stationCpIdSwapper[T <: TC] = new CpIdSwapper[TcStation[T]]{
+	given [T <: TC]: CpIdSwapper[TcStation[T]] with{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
-	implicit def instrCpIdSwapper[T <: TC] = new CpIdSwapper[TcInstrument[T]]{
+	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
 		//noop, because instrument cpIds are expected to be stable
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
 	}
 
-	implicit def instrDeploymentCpIdSwapper[T <: TC] = new CpIdSwapper[InstrumentDeployment[T]] {
+	given [T <: TC]: CpIdSwapper[InstrumentDeployment[T]] with{
 		//swapping station info, not deployments own cpid
 		def withCpId(depl: InstrumentDeployment[T], id: UriId) = depl.copy(stationUriId = id)
 	}

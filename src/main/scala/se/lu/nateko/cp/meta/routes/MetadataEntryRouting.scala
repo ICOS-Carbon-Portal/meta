@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.routes
 
 import se.lu.nateko.cp.meta.onto.InstOnto
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.*
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.UpdateDto
 import se.lu.nateko.cp.meta.ReplaceDto
 import java.net.URI
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import se.lu.nateko.cp.meta.InstOntoServerConfig
-import spray.json.JsBoolean
+import spray.json.*
+import scala.language.implicitConversions
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{
 
@@ -49,7 +49,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 			} ~
 			pathSuffix("checkIfUriIsFree"){
 				parameter("uri"){ uriStr =>
-					complete(JsBoolean(!instOnto.hasIndividual(uriStr)))
+					complete((!instOnto.hasIndividual(uriStr)).toString)
 				}
 			} ~
 			pathSuffix("getRangeValues"){

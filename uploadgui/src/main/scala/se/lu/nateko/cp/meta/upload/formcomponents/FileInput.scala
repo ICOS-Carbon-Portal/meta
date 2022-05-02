@@ -8,7 +8,7 @@ import org.scalajs.dom
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.upload.FileHasher
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.upload.UploadApp
 
 class FileInput(elemId: String, cb: () => Unit){

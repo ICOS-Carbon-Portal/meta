@@ -10,11 +10,11 @@ import se.lu.nateko.cp.meta.utils.async.{ok, error, executeSequentially}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import scala.io.Source
 import scala.util.Success
 import scala.util.Failure
-import spray.json._
+import spray.json.*
 import akka.Done
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods
@@ -22,7 +22,7 @@ import akka.http.scaladsl.model.RequestEntity
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 object L3UpdateWorkbench extends CpmetaJsonProtocol{
-	implicit val system = ActorSystem("l3update_workbench")
+	given system: ActorSystem = ActorSystem("l3update_workbench")
 	import system.dispatcher
 
 	val uploadConfBase = new CpUploadClient.Config(

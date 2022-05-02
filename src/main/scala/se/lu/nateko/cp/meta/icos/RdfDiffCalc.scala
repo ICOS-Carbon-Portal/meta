@@ -8,12 +8,12 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
-	import RdfDiffCalc._
-	import SequenceDiff._
+	import RdfDiffCalc.*
+	import SequenceDiff.*
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
@@ -47,7 +47,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 						funder = updFunder,
 						core = f.core.copy(funder = updFunder.core)
 					)
-				case _ => f
+				case null => f
 			}
 
 		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
@@ -242,15 +242,15 @@ object SequenceDiff{
 
 	def empty[T <: TC] = new SequenceDiff[T](Nil, Map.empty)
 
-	implicit class SeqDiffSeqEnriched[T <: TC](val seq: Seq[SequenceDiff[T]]) {
+	extension [T <: TC](seq: Seq[SequenceDiff[T]])
 		def join: SequenceDiff[T] = {
 			val rdfDiff = seq.flatMap(_.rdfDiff)
-			val lookup = Map(seq.flatMap(_.cpIdLookup): _*)
+			val lookup = Map(seq.flatMap(_.cpIdLookup)*)
 			new SequenceDiff(rdfDiff, lookup)
 		}
-	}
 
-	implicit class RdfUpdSeqEnriched(val rdfupd: Seq[RdfUpdate]) extends AnyVal{
+
+	extension (rdfupd: Seq[RdfUpdate])
 		def toSeqDiff[T <: TC] = new SequenceDiff[T](rdfupd, Map.empty)
-	}
+
 }

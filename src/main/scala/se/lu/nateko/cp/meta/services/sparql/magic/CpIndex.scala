@@ -17,16 +17,17 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
-import se.lu.nateko.cp.meta.services.sparql.index._
-import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
@@ -53,9 +54,9 @@ trait ObjInfo extends ObjSpecific{
 }
 
 class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
-	import CpIndex._
+	import CpIndex.*
 
-	implicit val factory = sail.getValueFactory
+	given factory: ValueFactory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
 	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
 	private val objs = new ArrayBuffer[ObjEntry](nObjects)
@@ -149,15 +150,15 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 			case boo: BoolProperty => Some(boolBitmap(boo))
 		}
 
-		case ContFilter(prop, filterReq) =>
-			Some(bitmap(prop).filter(filterReq))
+		case ContFilter(property, condition) =>
+			Some(bitmap(property).filter(condition))
 
 		case CategFilter(category, values) if category == DobjUri =>
 			val objIndices: Seq[Int] = values
 				.collect{case iri: IRI => iri}
 				.collect{case CpVocab.DataObject(hash, _) => idLookup.get(hash)}
 				.flatten
-			Some(ImmutableRoaringBitmap.bitmapOf(objIndices:_*))
+			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>
 			val perValue = categMap(category)
@@ -191,10 +192,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		if(condHappened) None else Some(seq)
 	}
 	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if(bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms: _*))
+		if(bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*))
 
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms: _*))
+		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
@@ -235,7 +236,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 	}
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
-		import vocab._
+		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 
 
@@ -442,10 +443,10 @@ object CpIndex{
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 	private class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(implicit factory: ValueFactory) extends ObjInfo{
-		var spec: IRI = _
-		var submitter: IRI = _
-		var station: IRI = _
-		var site: IRI = _
+		var spec: IRI = uninitialized
+		var submitter: IRI = uninitialized
+		var station: IRI = uninitialized
+		var site: IRI = uninitialized
 		var size: Long = -1
 		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue

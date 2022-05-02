@@ -1,14 +1,15 @@
 package se.lu.nateko.cp.meta.core.sparql
 
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import spray.json._
+import spray.json.*
+import DefaultJsonProtocol.*
 
 object JsonSupport extends CommonJsonSupport{
 
-	implicit val boundLitFormat = jsonFormat2(BoundLiteral)
-	implicit val boundUriFormat = jsonFormat1(BoundUri)
+	given RootJsonFormat[BoundLiteral] = jsonFormat2(BoundLiteral.apply)
+	given RootJsonFormat[BoundUri] = jsonFormat1(BoundUri.apply)
 
-	implicit object boundValueFormat extends RootJsonFormat[BoundValue] {
+	given RootJsonFormat[BoundValue] with{
 		def write(bv: BoundValue) = bv match{
 			case uri: BoundUri => uri.toJson
 			case lit: BoundLiteral => lit.toJson
@@ -23,7 +24,7 @@ object JsonSupport extends CommonJsonSupport{
 			case _ => deserializationError("JsObject expected")
 		}
 	}
-	implicit val sparqlResultHeadFormat = jsonFormat1(SparqlResultHead)
-	implicit val sparqlResultResultsFormat = jsonFormat1(SparqlResultResults)
-	implicit val sparqlSelectResultFormat = jsonFormat2(SparqlSelectResult)
+	given RootJsonFormat[SparqlResultHead] = jsonFormat1(SparqlResultHead.apply)
+	given RootJsonFormat[SparqlResultResults] = jsonFormat1(SparqlResultResults.apply)
+	given RootJsonFormat[SparqlSelectResult] = jsonFormat2(SparqlSelectResult.apply)
 }

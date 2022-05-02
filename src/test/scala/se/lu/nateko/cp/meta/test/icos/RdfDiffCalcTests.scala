@@ -6,20 +6,20 @@ import org.eclipse.rdf4j.model.Statement
 import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data._
-import se.lu.nateko.cp.meta.icos._
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.icos.*
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import RdfDiffCalcTests._
+import RdfDiffCalcTests.*
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
-	implicit val envriConfs = Map(
+	given Envri.EnvriConfigs = Map(
 		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 	)
 

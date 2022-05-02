@@ -40,7 +40,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService, DoiService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedValueFactory
+import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import org.eclipse.rdf4j.sail.Sail
 
@@ -89,7 +89,7 @@ object MetaDb{
 }
 
 class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
-	import MetaDb._
+	import MetaDb.*
 
 	private val log = system.log
 
@@ -98,7 +98,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		validateConfig(config0)
 		import system.dispatcher
 
-		val citerFactory = new CitationProviderFactory(config0)
+		val citerFactory: CitationProviderFactory = new CitationProviderFactory(config0)
 		val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
 
 		val config = if(didNotExist)
@@ -200,11 +200,11 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo = if(conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup))
-						initRepo
+				val repo = if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
+					then initRepo
 					else {
 						log.info(s"Ingesting from RDF log $logName ...")
-						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts: _*)
+						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts*)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
 					}

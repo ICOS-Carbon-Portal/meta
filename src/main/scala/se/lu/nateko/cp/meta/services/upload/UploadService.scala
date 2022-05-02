@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
@@ -23,9 +23,10 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.upload.completion.Report
 import se.lu.nateko.cp.meta.ConfigLoader
+import org.eclipse.rdf4j.model.ValueFactory
 
 class AccessUri(val uri: URI)
 
@@ -39,7 +40,7 @@ class UploadService(
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher
 
-	private implicit val factory = vocab.factory
+	private given ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)

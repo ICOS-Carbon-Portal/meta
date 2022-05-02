@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-import HierarchicalBitmap._
+import HierarchicalBitmap.*
 import StringHierarchicalBitmap.Ord
 import scala.util.Random
 
 class StringHierarchicalBitmapTests extends AnyFunSpec{
 
-	private[this] val EnableTrace = false
+	private val EnableTrace = false
 
 	def initBm(strings: Array[String]): HierarchicalBitmap[String] = {
 		val bm = StringHierarchicalBitmap(strings.apply)
@@ -75,7 +75,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	describe("filtering"){
 
 		val strings = Array("zulu", "mememe", "bebebe", "aardvark")
-		implicit val bm = initBm(strings)
+		given HierarchicalBitmap[String] = initBm(strings)
 
 		it("EqualsFilter works"){
 			testFilter(EqualsFilter("bababa"), Seq())
@@ -114,7 +114,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	describe("bitmap with large number of identical strings"){
 		val kaboom = "kaboom!"
 		val strings = Array.fill(StringHierarchicalBitmap.SpilloverThreshold)(kaboom)
-		implicit val bm = initBm(strings)
+		given HierarchicalBitmap[String] = initBm(strings)
 		it("EqualsFilter works"){
 			testFilter(EqualsFilter(kaboom), strings.indices)
 		}

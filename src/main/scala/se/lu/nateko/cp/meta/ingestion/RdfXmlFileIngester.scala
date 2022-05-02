@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 //TODO Consider rewriting using a parser only, without loading all statements into memory
 class RdfFileIngester(resourcePath: String, format: RDFFormat)(implicit ctxt: ExecutionContext) extends Ingester{
 
-	private[this] val baseUri = "http://dummy.org"
+	private val baseUri = "http://dummy.org"
 
 	def getStatements(valueFactory: ValueFactory): Ingestion.Statements = Future{
 

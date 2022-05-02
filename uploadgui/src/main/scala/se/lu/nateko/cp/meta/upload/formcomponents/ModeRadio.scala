@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
-import ModeRadio._
+import ModeRadio.*
 
 class ModeRadio(elemId: String, cb: Mode => Unit) extends Radio[Mode](elemId, cb, ModeParser, ModeSerializer) {
 	def isNewItemOrVersion: Boolean = value match {

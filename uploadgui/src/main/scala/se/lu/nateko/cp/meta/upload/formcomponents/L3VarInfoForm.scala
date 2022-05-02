@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 
 import scala.util.{Try, Success}
 import org.scalajs.dom.html
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.collection.mutable
 
 class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
@@ -23,11 +23,11 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 		}
 	}
 
-	private [this] val formDiv = getElementById[html.Div](elemId).get
-	private [this] val template = querySelector[html.Div](formDiv, ".l3varinfo-element").get
-	private [this] var _ordId: Long = 0L
+	private val formDiv = getElementById[html.Div](elemId).get
+	private val template = querySelector[html.Div](formDiv, ".l3varinfo-element").get
+	private var _ordId: Long = 0L
 
-	private[this] val elems = mutable.Buffer.empty[L3VarInfoInput]
+	private val elems = mutable.Buffer.empty[L3VarInfoInput]
 
 	querySelector[html.Button](formDiv, "#l3varadd-button").foreach{
 		_.onclick = _ => {
@@ -48,8 +48,8 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 			notifyUpdate()
 		}
 
-		private[this] val id: Long = {_ordId += 1; _ordId}
-		private[this] val div = deepClone(template)
+		private val id: Long = {_ordId += 1; _ordId}
+		private val div = deepClone(template)
 
 		formDiv.appendChild(div)
 

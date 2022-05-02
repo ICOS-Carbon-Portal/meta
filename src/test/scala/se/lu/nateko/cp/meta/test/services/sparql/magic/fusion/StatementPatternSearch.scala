@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.query.algebra._
+import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.model.IRI
 
 object StatementPatternSearch{
-	import PatternFinder._
+	import PatternFinder.*
 
 	def byPredicate(predValue: IRI): TopNodeSearch[StatementPattern] = takeNode
 		.ifIs[StatementPattern]

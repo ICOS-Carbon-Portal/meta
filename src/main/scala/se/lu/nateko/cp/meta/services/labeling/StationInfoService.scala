@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsObject
 import spray.json.JsString
 import java.time.Instant
@@ -76,7 +76,7 @@ trait StationInfoService { self: StationLabelingService =>
 
 	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory = {
 		val statusStr = statusLit.stringValue
-		import LifecycleService.AppStatus._
+		import LifecycleService.AppStatus.*
 
 		def statusIs(status: AppStatus): Boolean = status.toString == statusStr
 

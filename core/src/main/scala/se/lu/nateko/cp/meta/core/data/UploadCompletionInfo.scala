@@ -9,8 +9,6 @@ case class NetCdfExtract(varInfo: Seq[VarInfo]) extends IngestionMetadataExtract
 
 case class VarInfo(name: String, min: Double, max: Double)
 
-case class WdcggExtract(tabular: TabularIngestionExtract, nRows: Int, customMetadata: Map[String, String]) extends IngestionMetadataExtract
-
 case class TimeSeriesExtract(tabular: TabularIngestionExtract, nRows: Option[Int]) extends IngestionMetadataExtract
 
 case class SpatialTimeSeriesExtract(tabular: TabularIngestionExtract, coverage: GeoFeature) extends IngestionMetadataExtract

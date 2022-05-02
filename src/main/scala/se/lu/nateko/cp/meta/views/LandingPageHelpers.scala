@@ -4,9 +4,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-import se.lu.nateko.cp.meta.core.data._
-import se.lu.nateko.cp.meta.core.data.JsonSupport._
-import spray.json._
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import spray.json.*
 import java.net.URI
 
 
@@ -14,7 +14,7 @@ object LandingPageHelpers{
 
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
-	private def formatDateTime(inst: Instant)(implicit conf: EnvriConfig): String = {
+	private def formatDateTime(inst: Instant)(using conf: EnvriConfig): String = {
 		val formatter: DateTimeFormatter = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd HH:mm:ss")
 			.withZone(ZoneId.of(conf.defaultTimezoneId))
@@ -22,12 +22,12 @@ object LandingPageHelpers{
 		formatter.format(inst)
 	}
 
-	implicit class PresentableInstant(val inst: Instant) extends AnyVal{
-		def getDateTimeStr(implicit conf: EnvriConfig): String = formatDateTime(inst)
-	}
+	extension (inst: Instant)
+		def getDateTimeStr(using EnvriConfig): String = formatDateTime(inst)
 
-	implicit class OptionalInstant(val inst: Option[Instant]) extends AnyVal{
-		def getDateTimeStr(implicit conf: EnvriConfig): String = {
+
+	extension (inst: Option[Instant]){
+		def getDateTimeStr(using EnvriConfig): String = {
 			inst match {
 				case Some(i) => formatDateTime(i)
 				case None => "Not done"
@@ -41,7 +41,7 @@ object LandingPageHelpers{
 		case org: Organization =>
 			org.name
 	}
-	implicit object AgentOrdering extends Ordering[Agent]{
+	given Ordering[Agent] with{
 
 		override def compare(a1: Agent, a2: Agent): Int = {
 			val majorComp = typeComp(a1, a2)
@@ -57,11 +57,11 @@ object LandingPageHelpers{
 		}
 	}
 
-	implicit val uriResourceOrdering = Ordering.by[UriResource, String]{res =>
+	given Ordering[UriResource] = Ordering.by[UriResource, String]{res =>
 		res.label.getOrElse(res.uri.getPath.split('/').last)
 	}
 
-	implicit val plainStaticObjectOrdering = Ordering.by[PlainStaticObject, String](_.name)
+	given Ordering[PlainStaticObject] = Ordering.by[PlainStaticObject, String](_.name)
 
 	def stationUriShortener(uri: URI): String = {
 		val icosStationPref = "http://meta.icos-cp.eu/resources/stations/"

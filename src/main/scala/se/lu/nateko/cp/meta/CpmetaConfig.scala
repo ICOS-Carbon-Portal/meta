@@ -4,7 +4,7 @@ import java.net.URI
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
@@ -171,37 +171,38 @@ case class CpmetaConfig(
 
 object ConfigLoader extends CpmetaJsonProtocol{
 
-	import MetaCoreConfig.envriFormat
+	import MetaCoreConfig.given
+	import DefaultJsonProtocol.*
 
-	implicit val ingestionConfigFormat = jsonFormat3(IngestionConfig)
-	implicit val instanceServerConfigFormat = jsonFormat5(InstanceServerConfig)
-	implicit val dataObjectInstServerDefinitionFormat = jsonFormat2(DataObjectInstServerDefinition)
-	implicit val dataObjectInstServersConfigFormat = jsonFormat3(DataObjectInstServersConfig)
-	implicit val instanceServersConfigFormat = jsonFormat5(InstanceServersConfig)
-	implicit val dbServerFormat = jsonFormat2(DbServer)
-	implicit val dbCredentialsFormat = jsonFormat3(DbCredentials)
-	implicit val rdflogConfigFormat = jsonFormat2(RdflogConfig)
-	implicit val publicAuthConfigFormat = jsonFormat4(PublicAuthConfig)
-	implicit val schemaOntologyConfigFormat = jsonFormat2(SchemaOntologyConfig)
-	implicit val instOntoServerConfigFormat = jsonFormat4(InstOntoServerConfig)
-	implicit val ontoConfigFormat = jsonFormat2(OntoConfig)
-	implicit val dataSubmitterConfigFormat = jsonFormat6(DataSubmitterConfig)
-	implicit val submittersConfigFormat = jsonFormat1(SubmittersConfig)
-	implicit val epicPidFormat = jsonFormat4(EpicPidConfig)
-	implicit val etcUploadConfigFormat = jsonFormat6(EtcConfig)
-	implicit val handleClientFormat = jsonFormat6(HandleNetClientConfig)
+	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
+	given RootJsonFormat[InstanceServerConfig] = jsonFormat5(InstanceServerConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat2(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
+	given RootJsonFormat[InstanceServersConfig] = jsonFormat5(InstanceServersConfig.apply)
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
+	given RootJsonFormat[PublicAuthConfig] = jsonFormat4(PublicAuthConfig.apply)
+	given RootJsonFormat[SchemaOntologyConfig] = jsonFormat2(SchemaOntologyConfig.apply)
+	given RootJsonFormat[InstOntoServerConfig] = jsonFormat4(InstOntoServerConfig.apply)
+	given RootJsonFormat[OntoConfig] = jsonFormat2(OntoConfig.apply)
+	given RootJsonFormat[DataSubmitterConfig] = jsonFormat6(DataSubmitterConfig.apply)
+	given RootJsonFormat[SubmittersConfig] = jsonFormat1(SubmittersConfig.apply)
+	given RootJsonFormat[EpicPidConfig] = jsonFormat4(EpicPidConfig.apply)
+	given RootJsonFormat[EtcConfig] = jsonFormat6(EtcConfig.apply)
+	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
-	implicit val uploadServiceConfigFormat = jsonFormat6(UploadServiceConfig)
-	implicit val emailConfigFormat = jsonFormat6(EmailConfig)
-	implicit val labelingServiceConfigFormat = jsonFormat9(LabelingServiceConfig)
-	implicit val sparqlConfigFormat = jsonFormat8(SparqlServerConfig)
-	implicit val rdfStorageConfigFormat = jsonFormat4(RdfStorageConfig)
-	implicit val citationConfigFormat = jsonFormat3(CitationConfig)
-	implicit val restHeartConfigFormat = jsonFormat2(RestheartConfig)
-	implicit val statsClientConfigFormat = jsonFormat2(StatsClientConfig)
-	implicit val doiClientConfigFormat = jsonFormat4(DoiClientConfig)
+	given RootJsonFormat[UploadServiceConfig] = jsonFormat6(UploadServiceConfig.apply)
+	given RootJsonFormat[EmailConfig] = jsonFormat6(EmailConfig.apply)
+	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
+	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat3(CitationConfig.apply)
+	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
+	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
+	given RootJsonFormat[DoiClientConfig] = jsonFormat4(DoiClientConfig.apply)
 
-	implicit val cpmetaConfigFormat = jsonFormat14(CpmetaConfig)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

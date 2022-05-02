@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.*
 import se.lu.nateko.cp.meta.services.FileStorageService
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

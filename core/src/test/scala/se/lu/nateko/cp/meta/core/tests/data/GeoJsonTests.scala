@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
 import org.scalatest.funsuite.AnyFunSuite
-import GeoJson._
+import GeoJson.*
 
 class GeoJsonTests extends AnyFunSuite{
 

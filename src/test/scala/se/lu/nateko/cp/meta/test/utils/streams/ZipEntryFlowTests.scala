@@ -18,7 +18,7 @@ import scala.concurrent.duration.DurationInt
 
 class ZipEntryFlowTests extends AnyFunSuite with BeforeAndAfterAll{
 
-	private implicit val system = ActorSystem("ZipEntryStreamingTests")
+	private given system: ActorSystem = ActorSystem("ZipEntryStreamingTests")
 
 	override def afterAll(): Unit = {
 		system.terminate()

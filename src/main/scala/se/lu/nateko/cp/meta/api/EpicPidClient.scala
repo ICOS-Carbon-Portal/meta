@@ -3,17 +3,16 @@ package se.lu.nateko.cp.meta.api
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.{Marshaller, Marshal}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.*
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.headers.Location
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.{ConfigLoader, EpicPidConfig}
 import scala.concurrent.Future
-import spray.json._
+import spray.json.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-
 
 case class PidEntry(
 	idx: Int,
@@ -29,7 +28,7 @@ case class PidEntry(
 
 case class PidUpdate(`type`: String, parsed_data: JsValue)
 
-object EpicPidClient{
+object EpicPidClient extends ProductFormats, StandardFormats, AdditionalFormats, BasicFormats{
 
 	def default(implicit system: ActorSystem) = new EpicPidClient(ConfigLoader.default.dataUploadService.epicPid)
 
@@ -42,16 +41,17 @@ object EpicPidClient{
 	private case object PidExists extends WriteOpResult
 }
 
-class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends DefaultJsonProtocol {
+class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem){
 
-	import EpicPidClient._
+	import EpicPidClient.*
+	import DefaultJsonProtocol.immSeqFormat
 
 	private val http = Http()
 
 	import system.dispatcher
 
-	implicit val pidExistingFormat = jsonFormat9(PidEntry)
-	implicit val pidUpdateFormat = jsonFormat2(PidUpdate)
+	given RootJsonFormat[PidEntry] = jsonFormat9(PidEntry.apply)
+	given RootJsonFormat[PidUpdate] = jsonFormat2(PidUpdate.apply)
 
 	private def getHeaders(extraHeaders: List[HttpHeader] = Nil): List[HttpHeader] = {
 		val authorization = headers.Authorization(
@@ -77,7 +77,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		method: HttpMethod,
 		extraHeaders: List[HttpHeader] = Nil,
 		payload: T
-	) (implicit m: Marshaller[T, RequestEntity]): Future[HttpResponse] =
+	) (using Marshaller[T, RequestEntity]): Future[HttpResponse] =
 		Marshal(payload).to[RequestEntity].flatMap(entity =>
 			http.singleRequest(
 				HttpRequest(
@@ -159,8 +159,7 @@ class EpicPidClient(config: EpicPidConfig)(implicit system: ActorSystem) extends
 		}
 
 	private def createOrReportExistence(suffix: String, newEntries: Seq[PidUpdate]): Future[WriteOpResult] =
-		if(config.dryRun) Future.successful(Ok)
-	else {
+		if (config.dryRun) Future.successful(Ok) else {
 		val pid = getPid(suffix)
 		httpSend(
 			uri = config.url + pid,

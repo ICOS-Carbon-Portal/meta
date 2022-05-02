@@ -1,12 +1,13 @@
 package se.lu.nateko.cp.meta.core.crypto
 
-import spray.json._
+import spray.json.*
 import scala.util.Success
 import scala.util.Failure
+import DefaultJsonProtocol.*
 
-object JsonSupport extends DefaultJsonProtocol{
+object JsonSupport{
 
-	implicit object sha256sumFormat extends RootJsonFormat[Sha256Sum]{
+	given RootJsonFormat[Sha256Sum] with{
 		import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 		def write(hash: Sha256Sum) = JsString(hash.base64Url)

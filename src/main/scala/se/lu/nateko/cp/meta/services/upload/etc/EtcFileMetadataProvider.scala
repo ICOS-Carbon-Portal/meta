@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 
@@ -18,9 +18,9 @@ class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(implicit system: 
 
 	import system.dispatcher
 
-	private[this] val metaSrc = new EtcMetaSource(conf, vocab)
-	private[this] var inner: Option[EtcFileMetadataStore] = None
-	private[this] var retryCount: Int = 0
+	private val metaSrc = new EtcMetaSource(conf, vocab)
+	private var inner: Option[EtcFileMetadataStore] = None
+	private var retryCount: Int = 0
 
 	def lookupFile(key: EtcFileMetaKey) = inner.flatMap(_.lookupFile(key))
 

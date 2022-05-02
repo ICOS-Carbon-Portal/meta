@@ -20,7 +20,7 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.ConnectionContext
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
@@ -35,12 +35,12 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.utils.async._
-import se.lu.nateko.cp.meta.utils.akkahttp._
+import se.lu.nateko.cp.meta.utils.async.*
+import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
 
 class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
-	import HandleNetClient._
+	import HandleNetClient.*
 	import system.dispatcher
 	private val http = Http()
 	val pidFactory = new PidFactory(conf)
@@ -194,6 +194,6 @@ object HandleNetClient{
 			withSize(key.getModulus.toByteArray),
 			Seq(Array.fill(4)(0)) //handle.net code makes a too large array (forgets that the flags are written without size)
 		)
-		Array.concat[Byte](arraySeq.flatten: _*)
+		Array.concat[Byte](arraySeq.flatten*)
 	}
 }

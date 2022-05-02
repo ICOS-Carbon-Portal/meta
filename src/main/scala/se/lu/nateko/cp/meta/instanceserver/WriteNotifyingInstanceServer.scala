@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.model.Value
 
 class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceServer {
 
-	private[this] var cb: Function0[Unit] = () => ()
+	private var cb: Function0[Unit] = () => ()
 
 	def setSubscriber(sub: () => Unit): Unit = cb = sub
 	def unsetSubscriber(): Unit = cb = () => ()

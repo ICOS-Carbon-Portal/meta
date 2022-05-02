@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta
 
 import se.lu.nateko.cp.meta.core.data.{Polygon => GeoPolygon, Position, Circle}
 import com.scalakml.io.{KmzFileReader, KmlPrintWriter}
-import com.scalakml.kml._
+import com.scalakml.kml.*
 import xml.PrettyPrinter
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import spray.json.JsObject
@@ -19,7 +19,7 @@ object KmlGeoJsonWorkbench {
 	val workDir = "/home/oleg/Downloads/ETC_kmz/"
 
 	def saveKmzs = {
-		import sys.process._
+		import sys.process.*
 		for((id, url) <- getKmzUrls){
 			(url #> new File(workDir + id.id + ".kmz")).!!
 		}

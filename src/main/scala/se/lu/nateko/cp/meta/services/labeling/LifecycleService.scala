@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.mail.SendMail
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 
@@ -19,7 +19,7 @@ import scala.util.Failure
 
 trait LifecycleService { self: StationLabelingService =>
 
-	import LifecycleService._
+	import LifecycleService.*
 	import AppStatus.AppStatus
 
 	private val mailer = SendMail(config.mailing)
@@ -71,7 +71,7 @@ trait LifecycleService { self: StationLabelingService =>
 		.map(_.toLowerCase)
 
 	private def userHasRole(user: UserId, role: Role.Role, station: IRI): Boolean = {
-		import Role._
+		import Role.*
 		role match{
 			case PI =>
 				userIsPiOrDeputy(user, station)
@@ -187,8 +187,8 @@ object LifecycleService{
 		val DG = Value("ICOS DG")
 	}
 
-	import AppStatus._
-	import Role._
+	import AppStatus.*
+	import Role.*
 
 	val transitions: Map[AppStatus, Map[AppStatus, Role]] = Map(
 		neverSubmitted -> Map(step1submitted -> PI),

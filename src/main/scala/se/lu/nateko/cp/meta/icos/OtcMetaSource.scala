@@ -23,11 +23,11 @@ import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -316,7 +316,7 @@ class OtcMetaSource(
 
 class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 
-	implicit val bup = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
+	given bup: BaseUriProvider = makeUriProvider("http://meta.icos-cp.eu/ontologies/otcmeta/")
 
 	val dummyUri = new java.net.URI(bup.baseUri + "dummy")
 

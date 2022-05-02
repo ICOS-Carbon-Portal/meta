@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
 import org.scalajs.dom.{html, document}
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 
 class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = false, cb: () => Unit = () => ()){
 	private val select = getElementById[html.Select](elemId).get

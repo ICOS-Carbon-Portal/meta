@@ -19,9 +19,9 @@ import se.lu.nateko.cp.meta.core.data.Envri
 
 object Playground {
 
-	implicit val system = ActorSystem("playground")
+	given system: ActorSystem = ActorSystem("playground")
 	import system.dispatcher
-	implicit val envri = Envri.ICOS
+	given envri: Envri.Envri = Envri.ICOS
 
 	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 

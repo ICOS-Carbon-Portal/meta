@@ -1,34 +1,36 @@
 package se.lu.nateko.cp.meta.core.data
 
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
-import se.lu.nateko.cp.meta.core.crypto.JsonSupport.sha256sumFormat
-import spray.json._
+import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
+import se.lu.nateko.cp.meta.core.toTypedJson
+import spray.json.*
+import DefaultJsonProtocol.*
 
 object JsonSupport extends CommonJsonSupport{
 
-	implicit val uriResourceFormat = jsonFormat3(UriResource)
-	implicit val projectFormat = jsonFormat2(Project)
-	implicit val dataThemeFormat = jsonFormat3(DataTheme)
-	implicit val plainStaticObjectFormat = jsonFormat3(PlainStaticObject)
-	implicit val dsClassFormat = enumFormat(DatasetClass)
-	implicit val datasetSpecFormat = jsonFormat3(DatasetSpec)
-	implicit val dataObjectSpecFormat = jsonFormat9(DataObjectSpec)
+	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
+	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
+	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
+	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
+	given JsonFormat[DatasetClass.DatasetClass] = enumFormat(DatasetClass)
+	given RootJsonFormat[DatasetSpec] = jsonFormat3(DatasetSpec.apply)
+	given RootJsonFormat[DataObjectSpec] = jsonFormat9(DataObjectSpec.apply)
 
-	implicit val positionFormat = jsonFormat4(Position.apply)
-	implicit val spatialCoverageFormat = jsonFormat4(LatLonBox)
-	implicit val geoTrackFormat = jsonFormat2(GeoTrack)
-	implicit val geoPolygonFormat = jsonFormat2(Polygon)
-	implicit val circleFeatureFormat = jsonFormat3(Circle)
+	given RootJsonFormat[Position] = jsonFormat4(Position.apply)
+	given RootJsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
+	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
+	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
+	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
 
-	implicit object countryCodeFormat extends JsonFormat[CountryCode]{
+	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
 		def read(v: JsValue): CountryCode = v match{
 			case JsString(CountryCode(cc)) => cc
 			case _ => deserializationError(s"Expected an ISO ALPHA-2 country code string, got ${v.compactPrint}")
 		}
 	}
-	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]{
 
+	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]{
 		def write(geo: GeoFeature): JsValue = geo match {
 			case llb: LatLonBox => llb.toJson
 			case gt: GeoTrack => gt.toJson
@@ -59,7 +61,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit object geoFeatureFormat extends RootJsonFormat[GeoFeature]{
+	given RootJsonFormat[GeoFeature] with{
 		def write(geo: GeoFeature): JsValue = {
 			val base = vanillaGeoFeatureFormat.write(geo)
 			val geoJson = GeoJson.fromFeatureWithLabels(geo)
@@ -71,12 +73,12 @@ object JsonSupport extends CommonJsonSupport{
 
 	}
 
-	implicit val geometryCollectionFormat: JsonFormat[FeatureCollection] = {
-		implicit val featSeqFormat = immSeqFormat(vanillaGeoFeatureFormat)
-		jsonFormat2(FeatureCollection)
+	given JsonFormat[FeatureCollection] = {
+		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(vanillaGeoFeatureFormat)
+		jsonFormat2(FeatureCollection.apply)
 	}
 
-	implicit object orcidFormat extends JsonFormat[Orcid]{
+	given JsonFormat[Orcid] with{
 		def write(id: Orcid): JsValue = JsString(id.shortId)
 
 		def read(value: JsValue) = value match{
@@ -88,16 +90,16 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val orgFormat = jsonFormat4(Organization)
-	implicit val instumentFormat = jsonFormat8(Instrument)
-	implicit val personFormat = jsonFormat4(Person)
-	implicit val siteFormat = jsonFormat3(Site)
-	implicit val funderItTypeFormat = enumFormat(FunderIdType)
-	implicit val funderFormat = jsonFormat2(Funder)
-	implicit val fundingFormat = jsonFormat7(Funding)
-	implicit val stationFormat = jsonFormat8(Station)
+	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
+	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
+	given RootJsonFormat[Person] = jsonFormat4(Person.apply)
+	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
+	given JsonFormat[FunderIdType.FunderIdType] = enumFormat(FunderIdType)
+	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
+	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
+	given RootJsonFormat[Station] = jsonFormat8(Station.apply)
 
-	implicit object agentFormat extends JsonFormat[Agent]{
+	given RootJsonFormat[Agent] with{
 
 		def write(agent: Agent): JsValue = agent match{
 			case person: Person => person.toJson
@@ -115,28 +117,26 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val dataProductionFormat = jsonFormat7(DataProduction)
-	implicit val dataAcquisitionFormat = jsonFormat6(DataAcquisition)
-	implicit val dataSubmissionFormat = jsonFormat3(DataSubmission)
+	given RootJsonFormat[DataProduction] = jsonFormat7(DataProduction.apply)
+	given RootJsonFormat[DataAcquisition] = jsonFormat6(DataAcquisition.apply)
+	given RootJsonFormat[DataSubmission] = jsonFormat3(DataSubmission.apply)
 
-	implicit val temporalCoverageFormat = jsonFormat2(TemporalCoverage)
+	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
-	implicit val valueTypeFormat = jsonFormat3(ValueType)
-	implicit val varMetaFormat = jsonFormat3(VarMeta)
-	implicit val stationTimeSerMetaFormat = jsonFormat5(StationTimeSeriesMeta)
-	implicit val spatioTempMetaFormat = jsonFormat8(SpatioTemporalMeta)
+	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat3(VarMeta.apply)
+	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
+	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 
-	implicit val tabularIngestionFormat = jsonFormat2(TabularIngestionExtract)
-	implicit val wdcggExtractFormat = jsonFormat3(WdcggExtract)
-	implicit val varInfoFormat = jsonFormat3(VarInfo)
-	implicit val netCdfExtractFormat = jsonFormat1(NetCdfExtract)
-	implicit val ecocsvExtractFormat = jsonFormat2(TimeSeriesExtract)
-	implicit val socatExtractFormat = jsonFormat2(SpatialTimeSeriesExtract)
+	given RootJsonFormat[TabularIngestionExtract] = jsonFormat2(TabularIngestionExtract.apply)
+	given RootJsonFormat[VarInfo] = jsonFormat3(VarInfo.apply)
+	given RootJsonFormat[NetCdfExtract] = jsonFormat1(NetCdfExtract.apply)
+	given RootJsonFormat[TimeSeriesExtract] = jsonFormat2(TimeSeriesExtract.apply)
+	given RootJsonFormat[SpatialTimeSeriesExtract] = jsonFormat2(SpatialTimeSeriesExtract.apply)
 
-	implicit object ingestionMetadataExtractFormat extends JsonFormat[IngestionMetadataExtract]{
+	given RootJsonFormat[IngestionMetadataExtract] with{
 
 		def write(uploadInfo: IngestionMetadataExtract): JsValue = uploadInfo match{
-			case wdcgg: WdcggExtract => wdcgg.toJson
 			case ts: TimeSeriesExtract => ts.toJson
 			case sts: SpatialTimeSeriesExtract => sts.toJson
 			case ncdf: NetCdfExtract => ncdf.toJson
@@ -144,9 +144,7 @@ object JsonSupport extends CommonJsonSupport{
 
 		def read(value: JsValue): IngestionMetadataExtract =  value match {
 			case JsObject(fields)  =>
-				if(fields.contains("customMetadata"))
-					value.convertTo[WdcggExtract]
-				else if(fields.contains("coverage"))
+				if(fields.contains("coverage"))
 					value.convertTo[SpatialTimeSeriesExtract]
 				else if(fields.contains("varInfo"))
 					value.convertTo[NetCdfExtract]
@@ -157,13 +155,13 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val uploadCompletionFormat = jsonFormat2(UploadCompletionInfo)
-	implicit val licenceFormat = jsonFormat4(Licence)
-	implicit val referencesFormat = jsonFormat9(References.apply)
-	implicit val docObjectFormat = jsonFormat12(DocObject)
+	given RootJsonFormat[UploadCompletionInfo] = jsonFormat2(UploadCompletionInfo.apply)
+	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
+	given RootJsonFormat[References] = jsonFormat9(References.apply)
+	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
 
-	implicit object dataObjectFormat extends RootJsonFormat[DataObject] {
-		private val defFormat = jsonFormat13(DataObject)
+	given RootJsonFormat[DataObject] with {
+		private given defFormat: RootJsonFormat[DataObject] = jsonFormat13(DataObject.apply)
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
@@ -175,7 +173,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit object staticObjectFormat extends RootJsonFormat[StaticObject]{
+	given RootJsonFormat[StaticObject] with{
 		override def read(value: JsValue): StaticObject = value match {
 			case JsObject(fields)  =>
 				if(fields.contains("specification"))
@@ -191,9 +189,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
+	given RootJsonFormat[StaticCollection] = jsonFormat9(StaticCollection.apply)
 
-	implicit object staticDataItemFormat extends JsonFormat[StaticDataItem]{
-		implicit val statCollFormat = jsonFormat9(StaticCollection)
+	given RootJsonFormat[StaticDataItem] with{
 
 		def write(sdi: StaticDataItem): JsValue = sdi match{
 			case pdo: PlainStaticObject => pdo.toJson
@@ -211,6 +209,32 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	implicit val staticCollFormat = staticDataItemFormat.statCollFormat
+	import CommonJsonSupport.TypeField
+
+	given JsonFormat[IcosStationClass.IcosStationClass] = enumFormat(IcosStationClass)
+	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
+	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
+	given RootJsonFormat[PlainIcosSpecifics] = jsonFormat7(PlainIcosSpecifics.apply)
+
+	private val EtcSpec = "etc"
+	private val SitesSpec = "sites"
+	private val PlainIcosSpec = "plainicos"
+	given RootJsonFormat[StationSpecifics] with{
+		def write(ss: StationSpecifics): JsValue = ss match{
+			case NoStationSpecifics => JsObject.empty
+			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
+			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
+			case icos: PlainIcosSpecifics => icos.toTypedJson(PlainIcosSpec)
+		}
+
+		def read(value: JsValue) =
+			value.asJsObject("StationSpecifics must be a JSON object").fields.get(TypeField) match{
+				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
+				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
+				case Some(JsString(PlainIcosSpec)) => value.convertTo[PlainIcosSpecifics]
+				case None => NoStationSpecifics
+				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
+			}
+	}
 
 }

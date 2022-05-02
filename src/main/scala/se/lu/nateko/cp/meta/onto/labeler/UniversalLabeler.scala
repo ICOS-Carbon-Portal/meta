@@ -4,14 +4,14 @@ import org.semanticweb.owlapi.model.{IRI => OwlIri}
 import org.semanticweb.owlapi.model.OWLOntology
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.IRI
 
 class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler{
 
 	import scala.collection.mutable.Map
 	private val cache: Map[IRI, InstanceLabeler] = Map()
-	private[this] val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
+	private val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
 
 	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {
 		try{

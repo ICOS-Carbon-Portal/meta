@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.api.CustomVocab
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
-	implicit val bup = makeUriProvider(CpmetaVocab.MetaPrefix)
+	private given BaseUriProvider = makeUriProvider(CpmetaVocab.MetaPrefix)
 
 //	val stationClass = getRelativeRaw("Station")
 	val ingosStationClass = getRelativeRaw("IngosStation")
@@ -165,7 +165,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object prov extends CustomVocab {
 		val factory = top.factory
-		implicit val bup = makeUriProvider(CpmetaVocab.ProvPrefix)
+		private given BaseUriProvider = makeUriProvider(CpmetaVocab.ProvPrefix)
 
 		val wasAssociatedWith = getRelativeRaw("wasAssociatedWith")
 		val hadPrimarySource = getRelativeRaw("hadPrimarySource")
@@ -175,7 +175,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object dcterms extends CustomVocab {
 		val factory = top.factory
-		implicit val bup = makeUriProvider(CpmetaVocab.DctermsPrefix)
+		private given BaseUriProvider = makeUriProvider(CpmetaVocab.DctermsPrefix)
 
 		val licenseDocClass = getRelativeRaw("LicenseDocument")
 
@@ -190,7 +190,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object ssn extends CustomVocab{
 		val factory = top.factory
-		implicit val bup = makeUriProvider(CpmetaVocab.SsnPrefix)
+		private given BaseUriProvider = makeUriProvider(CpmetaVocab.SsnPrefix)
 
 		val deploymentClass = getRelativeRaw("Deployment")
 		val forProperty = getRelativeRaw("forProperty")
@@ -199,7 +199,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
 	object sites extends CustomVocab {
 		val factory = top.factory
-		implicit val bup = makeUriProvider(CpmetaVocab.SitesPrefix)
+		private given BaseUriProvider = makeUriProvider(CpmetaVocab.SitesPrefix)
 		val stationClass = getRelativeRaw("Station")
 	}
 }

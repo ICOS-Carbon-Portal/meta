@@ -1,14 +1,14 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.api.StationExtra
-@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.data.*
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.urlEncode
-@import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedRdf4jUri
+@import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.stationUriShortener
 @import akka.http.scaladsl.model.Uri
-@import landpagesnips._
+@import landpagesnips.*
 
 @(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){

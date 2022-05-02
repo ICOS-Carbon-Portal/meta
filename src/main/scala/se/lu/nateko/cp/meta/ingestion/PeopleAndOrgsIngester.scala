@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.icos.Researcher
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.data.Envri

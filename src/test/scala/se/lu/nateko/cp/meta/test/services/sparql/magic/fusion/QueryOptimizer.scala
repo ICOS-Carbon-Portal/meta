@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.query.impl.SimpleDataset
-import org.eclipse.rdf4j.query.algebra.evaluation.impl._
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
 
 object QueryOptimizer{
 

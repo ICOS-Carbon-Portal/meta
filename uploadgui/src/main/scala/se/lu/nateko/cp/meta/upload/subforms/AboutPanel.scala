@@ -12,15 +12,15 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.SubmitterProfile
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, StaticCollectionDto}
 
-import formcomponents._
+import formcomponents.*
 import ItemTypeRadio.{ItemType, Collection, Data, Document}
 import UploadApp.whenDone
-import Utils._
+import Utils.*
 import java.net.URI
-import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio._
+import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio.*
 
 
 class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
@@ -172,8 +172,6 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, e
 						if (isNewItemOrVersion) Sha256Sum.fromString(metadataUri.getPath().split("/").last).toOption.map(Left(_))
 						else dto.isNextVersionOf
 					existingDoiInput.value = dto.preExistingDoi
-				case _ =>
-					UploadApp.showAlert(s"$metadataUri cannot be found", "alert alert-danger")
 			}.foreach{dto =>
 				typeControl.value.foreach(setFileAndFilenameVisibility)
 				bus.publish(GotUploadDto(dto))

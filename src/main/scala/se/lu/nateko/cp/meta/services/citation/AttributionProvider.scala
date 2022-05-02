@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.icos.Role
 import se.lu.nateko.cp.meta.icos.PI
@@ -30,7 +30,7 @@ import scala.util.Try
 import scala.util.Using
 
 final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
-	import AttributionProvider._
+	import AttributionProvider.*
 
 	override val server = new Rdf4jInstanceServer(repo)
 	private val sparql = new Rdf4jSparqlRunner(repo)
@@ -106,12 +106,12 @@ object AttributionProvider{
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime
-				start.map(s => s.compareTo(prodTime) < 0).getOrElse(true) &&
-				end.map(e => e.compareTo(prodTime) > 0).getOrElse(true)
+				(start.map(s => s.compareTo(prodTime) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(prodTime) > 0).getOrElse(true))
 			},
 			l2 => l2.acquisition.interval.fold(true){acqInt =>
-				start.map(s => s.compareTo(acqInt.stop) < 0).getOrElse(true) &&
-				end.map(e => e.compareTo(acqInt.start) > 0).getOrElse(true)
+				(start.map(s => s.compareTo(acqInt.stop) < 0).getOrElse(true) &&
+				end.map(e => e.compareTo(acqInt.start) > 0).getOrElse(true))
 			}
 		)
 	}

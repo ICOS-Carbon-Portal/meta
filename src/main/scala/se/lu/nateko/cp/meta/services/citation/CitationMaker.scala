@@ -7,14 +7,14 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data._
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
-import se.lu.nateko.cp.meta.utils.rdf4j._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Duration
@@ -27,7 +27,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import CitationStyle._
+import CitationStyle.*
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -39,8 +39,10 @@ class CitationInfo(
 )
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) extends FetchingHelper {
-	import CitationMaker._
-	private implicit val envriConfs = coreConf.envriConfigs
+	import CitationMaker.*
+	private given envriConfs: Envri.EnvriConfigs = coreConf.envriConfigs
+
+	private def defaultTimezoneId(using envri: Envri): String = envriConfs(envri).defaultTimezoneId
 
 	val server = new Rdf4jInstanceServer(repo)
 	val vocab = new CpVocab(server.factory)
@@ -128,10 +130,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }
 
-	private def getIcosCitation(dobj: DataObject)(implicit envri: Envri.Value): CitationInfo = {
-		val zoneId = ZoneId.of(envri.defaultTimezoneId)
+	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {
+		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
-		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
+		val isIcosProject = dobj.specification.project.self.uri.===(vocab.icosProject)
 
 		def titleOpt = dobj.specificInfo.fold(
 			spatioTemp => Some(spatioTemp.title),
@@ -170,8 +172,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	}
 
-	private def getSitesCitation(dobj: DataObject)(implicit envri: Envri.Value): CitationInfo = {
-		val zoneId = ZoneId.of(envri.defaultTimezoneId)
+	private def getSitesCitation(dobj: DataObject)(using Envri): CitationInfo = {
+		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
 
@@ -230,8 +232,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case _ => Seq.empty
 	}
 
-	private def getDocCitation(dobj: DocObject)(implicit envri: Envri.Value): CitationInfo = {
-		val zoneId = ZoneId.of(envri.defaultTimezoneId)
+	private def getDocCitation(dobj: DocObject)(using envri: Envri): CitationInfo = {
+		val zoneId = ZoneId.of(defaultTimezoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
 		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."

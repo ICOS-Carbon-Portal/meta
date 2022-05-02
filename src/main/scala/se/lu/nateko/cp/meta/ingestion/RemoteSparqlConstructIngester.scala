@@ -18,7 +18,7 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers
 import akka.stream.scaladsl.StreamConverters
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
@@ -26,13 +26,13 @@ class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: Acto
 
 	import system.dispatcher
 
-	override def getStatements(factory: ValueFactory): Ingestion.Statements = {
+	override def getStatements(using factory: ValueFactory): Ingestion.Statements = {
 		makeQuery().flatMap(
 			resp => resp.status match {
 				case StatusCodes.OK =>
 
 					val inputStr = resp.entity.dataBytes.runWith(StreamConverters.asInputStream())
-					val graphUri: IRI = rdfGraph.toRdf(factory)
+					val graphUri: IRI = rdfGraph.toRdf
 					val collector = new ContextStatementCollector(factory, graphUri)
 					val parser = new TurtleParser(factory)
 

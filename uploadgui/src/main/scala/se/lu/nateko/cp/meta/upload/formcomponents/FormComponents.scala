@@ -6,11 +6,10 @@ import scala.util.{ Success, Try, Failure }
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import org.scalajs.dom.raw._
-import org.scalajs.dom.ext._
+import org.scalajs.dom.ext.*
 import scala.scalajs.js
 
-import se.lu.nateko.cp.meta.upload.Utils._
+import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.doi.Doi
@@ -25,7 +24,7 @@ class FormElement(elemId: String) {
 }
 
 class ProgressBar(elemId: String){
-	private[this] val progressBar = new HtmlElements(elemId)
+	private val progressBar = new HtmlElements(elemId)
 
 	def show(): Unit = {
 		progressBar.show()
@@ -108,8 +107,8 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
 class Button(elemId: String, onClick: () => Unit){
-	private[this] val button = getElementById[html.Button](elemId).get
-	private[this] var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
+	private val button = getElementById[html.Button](elemId).get
+	private var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
 
 	def enable(): Unit = {
 		button.disabled = false
@@ -128,12 +127,12 @@ class Button(elemId: String, onClick: () => Unit){
 }
 
 class HtmlElements(selector: String) {
-	private[this] var enabled = false
+	private var enabled = false
 	def areEnabled: Boolean = enabled
 
 	def show(): Unit = {
 		dom.document.querySelectorAll(selector).foreach {
-			case section: HTMLElement =>
+			case section: dom.HTMLElement =>
 				section.style.display = "block"
 		}
 		enabled = true
@@ -141,7 +140,7 @@ class HtmlElements(selector: String) {
 
 	def hide(): Unit = {
 		dom.document.querySelectorAll(selector).foreach {
-			case section: HTMLElement =>
+			case section: dom.HTMLElement =>
 				section.style.display = "none"
 		}
 		enabled = false

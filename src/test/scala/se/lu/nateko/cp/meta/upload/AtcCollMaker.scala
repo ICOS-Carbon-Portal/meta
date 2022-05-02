@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
-import se.lu.nateko.cp.doi._
-import se.lu.nateko.cp.doi.meta._
+import se.lu.nateko.cp.doi.*
+import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.core.data.DataObject
 import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
@@ -14,11 +14,11 @@ import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import scala.concurrent.Future
 import akka.Done
-import se.lu.nateko.cp.meta.utils.async._
+import se.lu.nateko.cp.meta.utils.async.*
 import se.lu.nateko.cp.meta.services.upload.UploadService
 
 class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: ExecutionContext) {
-	import AtcCollMaker._
+	import AtcCollMaker.*
 	import maker.sparqlHelper.sparql
 
 	def makeColls(): Future[Done] = for(
@@ -170,7 +170,7 @@ select distinct ?coll ?station where{
 		.results.bindings.flatMap{b =>
 			varNames.map(
 				vName => b.get(vName).collect{case BoundUri(uri) => Seq(uri)}
-			).reduce{(opSeq1, opSeq2) =>
+			).reduce[Option[Seq[URI]]]{(opSeq1, opSeq2) =>
 				for(s1 <- opSeq1; s2 <- opSeq2) yield s1 ++ s2
 			}
 		}

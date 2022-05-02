@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.icos
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import se.lu.nateko.cp.meta.api.UriId
@@ -15,13 +16,13 @@ import se.lu.nateko.cp.meta.services.upload.DobjMetaFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.EnrichedJavaUri
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import se.lu.nateko.cp.meta.core.data.Funder
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
-	private[this] val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
-	private[this] val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
+	private val cpOwnMetasFetcher = new IcosMetaInstancesFetcher(cpInsts, plainFetcher)
+	private val tcMetasFetcher = new IcosMetaInstancesFetcher(tcInsts, plainFetcher)
 
 	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] = cpOwnMetasFetcher.getPlainOrgs[T]
 
@@ -62,7 +63,7 @@ private class IcosMetaInstancesFetcher(
 	val server: InstanceServer,
 	val plainObjFetcher: PlainStaticObjectFetcher
 )(implicit envriConfigs: EnvriConfigs) extends DobjMetaFetcher{
-	private[this] implicit val factory = server.factory
+	private given factory: ValueFactory = server.factory
 	val vocab = new CpVocab(factory)
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = for(
@@ -202,7 +203,6 @@ private class IcosMetaInstancesFetcher(
 	) yield gen ++ fund
 
 
-
 	private def getEntities[T <: TC : TcConf, E](cls: IRI, requireTcId: Boolean = false)(make: (Option[TcId[T]], IRI) => E): Validated[Seq[E]] = {
 		val seqV = for(
 			uri <- getDirectClassMembers(cls);
@@ -218,9 +218,7 @@ private class IcosMetaInstancesFetcher(
 		getOptionalString(uri, tcIdPred).map(tcConf.makeId)
 	}
 
-
 	private def stationClass[T <: TC](implicit tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
-
 
 	private def getDirectClassMembers(cls: IRI): IndexedSeq[IRI] = getPropValueHolders(RDF.TYPE, cls)
 

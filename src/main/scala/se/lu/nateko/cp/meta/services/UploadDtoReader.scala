@@ -22,7 +22,7 @@ import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.utils._
+import se.lu.nateko.cp.meta.utils.*
 
 import java.net.URI
 import java.time.Instant
@@ -31,7 +31,7 @@ import scala.util.Success
 import UriSerializer.Hash
 
 class UploadDtoReader(uriSer: UriSerializer){
-	import UploadDtoReader._
+	import UploadDtoReader.*
 
 	def readDto(uri: Uri): Option[UploadDto] = uri.path match{
 		case Hash.Object(_) =>

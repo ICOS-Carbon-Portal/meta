@@ -5,12 +5,12 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import scala.util.{Try, Success}
 
-import se.lu.nateko.cp.meta.upload._
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto}
 import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 
-import formcomponents._
-import Utils._
+import formcomponents.*
+import Utils.*
 import se.lu.nateko.cp.meta.core.data.Envri
 
 
@@ -138,8 +138,8 @@ class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends Panel
 
 private class AgentAggregator{
 	var stations: IndexedSeq[NamedUri] = IndexedSeq.empty
-	private[this] var _agents: IndexedSeq[NamedUri] = IndexedSeq.empty
-	private[this] var _orgs: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private var _agents: IndexedSeq[NamedUri] = IndexedSeq.empty
+	private var _orgs: IndexedSeq[NamedUri] = IndexedSeq.empty
 
 	def agents_=(agents: IndexedSeq[NamedUri]): Unit = _agents = agents
 	def orgs_=(orgs: IndexedSeq[NamedUri]): Unit = _orgs = orgs

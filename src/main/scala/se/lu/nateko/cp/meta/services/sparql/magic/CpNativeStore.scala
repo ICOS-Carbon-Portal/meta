@@ -2,21 +2,17 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.Files
 
+import scala.compiletime.uninitialized
+
 import akka.event.LoggingAdapter
 
-import org.eclipse.rdf4j.sail.nativerdf.NativeStore
-import org.eclipse.rdf4j.sail.nativerdf.CpNativeStoreConnection
-import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.SailException
 
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.services.citation._
-import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
+import se.lu.nateko.cp.meta.services.citation.*
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
@@ -28,43 +24,14 @@ class CpNativeStore(
 	log: LoggingAdapter
 ) extends SailWrapper{
 
-	private[this] var indexh: IndexProvider = _
-	private[this] var citer: CitationProvider = _
-	private[this] val storageDir = Paths.get(conf.path)
+	private var indexh: IndexProvider = uninitialized
+	private var citer: CitationProvider = uninitialized
+	private val storageDir = Paths.get(conf.path)
 
 	val isFreshInit: Boolean = initStorageFolder() || conf.recreateAtStartup
-	private[this] val indices = if(isFreshInit) "" else conf.indices
+	private val indices = if(isFreshInit) "" else conf.indices
 
-	private object nativeSail extends NativeStore(storageDir.toFile, indices) with ReadWriteLocking{
-
-		private[this] var useCpConnection: Boolean = !isFreshInit
-
-		if(!isFreshInit) setEvaluationStrategyFactory{
-			val indexThunk = () => indexh.index
-			new CpEvaluationStrategyFactory(getFederatedServiceResolver, indexThunk)
-		}
-
-		def getSpecificConnection(cpSpecific: Boolean): SailConnection = writeLocked{
-			useCpConnection = cpSpecific
-			val conn = getConnection()
-			useCpConnection = !isFreshInit
-			conn
-		}
-
-		override def getConnectionInternal(): NotifyingSailConnection =
-			if(useCpConnection)
-				try {
-					val conn = new CpNativeStoreConnection(this, citer)
-					conn.addConnectionListener(indexh)
-					conn
-				}
-				catch {
-					case e: IOException =>
-						throw new SailException(e)
-				}
-			else
-				super.getConnectionInternal()
-	}
+	private val nativeSail = new CpInnerNativeStore(storageDir, indices, isFreshInit, () => indexh, () => citer)
 
 	setBaseSail(nativeSail)
 

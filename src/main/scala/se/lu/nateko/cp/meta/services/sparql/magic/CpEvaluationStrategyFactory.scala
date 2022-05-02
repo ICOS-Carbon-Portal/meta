@@ -18,8 +18,8 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
 import se.lu.nateko.cp.meta.services.CpVocab
 import scala.jdk.CollectionConverters.IteratorHasAsJava
-import se.lu.nateko.cp.meta.utils.rdf4j._
-import se.lu.nateko.cp.meta.services.sparql.index._
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.FilterPatternSearch
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter

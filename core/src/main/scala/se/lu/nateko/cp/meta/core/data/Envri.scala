@@ -20,7 +20,8 @@ object Envri extends Enumeration{
 	type Envri = Value
 	type EnvriConfigs = Map[Envri, EnvriConfig]
 
-	val ICOS, SITES = Value
+	val ICOS  = Value("ICOS")  //need the name string for ScalaJS
+	val SITES = Value("SITES") //need the name string for ScalaJS
 
 	def infer(uri: URI)(using EnvriConfigs): Option[Envri] = infer(uri.getHost)
 

@@ -58,10 +58,10 @@ object Backend {
 				else Future.successful(s)
 			}
 
-	def stationInfo(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri.Envri): Future[IndexedSeq[Station]] =
+	def stationInfo(orgClass: Option[URI], producingOrg: Option[URI])(using Envri): Future[IndexedSeq[Station]] =
 		sparqlSelect(stations(orgClass, producingOrg)).map(_.map(toStation))
 
-	def getObjSpecs(implicit envri: Envri.Envri): Future[IndexedSeq[ObjSpec]] =
+	def getObjSpecs(using Envri): Future[IndexedSeq[ObjSpec]] =
 		sparqlSelect(objSpecs).map(_.map(toObjSpec))
 
 	def getSites(station: URI): Future[IndexedSeq[NamedUri]] =
@@ -70,7 +70,7 @@ object Backend {
 	def getSamplingPoints(site: URI): Future[IndexedSeq[SamplingPoint]] =
 		sparqlSelect(samplingpoints(site)).map((_.map(toSamplingPoint)))
 
-	def getL3SpatialCoverages(implicit envri: Envri.Envri): Future[IndexedSeq[SpatialCoverage]] =
+	def getL3SpatialCoverages(using Envri): Future[IndexedSeq[SpatialCoverage]] =
 		if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
 		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
 
@@ -83,10 +83,10 @@ object Backend {
 			}
 		).toIndexedSeq.sortBy(_.name)
 
-	def getPeople(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
+	def getPeople(using Envri): Future[IndexedSeq[NamedUri]] =
 		sparqlSelect(people).map(_.map(toPerson)).map(disambiguateNames)
 
-	def getOrganizations(implicit envri: Envri.Envri): Future[IndexedSeq[NamedUri]] =
+	def getOrganizations(using Envri): Future[IndexedSeq[NamedUri]] =
 		sparqlSelect(organizations).map(_.map(toOrganization)).map(disambiguateNames)
 
 	def getDatasetColumns(dataset: URI): Future[IndexedSeq[DatasetVar]] =
@@ -172,7 +172,7 @@ object Backend {
 		.recoverWith(recovery("create draft DOI"))
 		.flatMap(parseTo[Doi])
 
-	def getKeywordList(implicit envri: Envri.Envri): Future[IndexedSeq[String]] =
+	def getKeywordList(using envri: Envri): Future[IndexedSeq[String]] =
 		if (envri == Envri.SITES) Future.successful(IndexedSeq.empty)
 		else
 			fetch("/uploadgui/gcmdkeywords.json")

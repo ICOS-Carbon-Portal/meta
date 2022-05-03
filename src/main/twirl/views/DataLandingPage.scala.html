@@ -26,8 +26,8 @@
 					@nextVersionLink(dobj.nextVersion)
 				</div>
 			</div>
-		}
-		@if(!uploadComplete) {
+		} else {}
+		@if(uploadComplete) {} else {
 			<div class="col-12">
 				<div class="alert alert-warning">
 					<h4 class="alert-heading">Upload incomplete</h4>
@@ -42,13 +42,13 @@
 					@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
 				</div>
 			</div>
-		}
+		} else {}
 		<div class="col-md-8">
 			<div class="row gy-2">
 			@doiProperty(dobj.doi, handleProxies.doi)
 			@if(uploadComplete) {
 				@pidProperty(dobj.pid, handleProxies.basic)
-			}
+			} else {}
 			@for(specComm <- dobj.specification.self.comments){
 				@property("Description", specComm)
 			}
@@ -72,7 +72,7 @@
 			@citations(dobj.references)
 			@if(dobj.previousVersion) {
 				@htmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
-			}
+			} else {}
 			@property("File name", dobj.fileName)
 			@for(size <- dobj.size){
 				@property("File size", formatBytes(size))
@@ -96,7 +96,7 @@
 					@for(responsibleOrganization <- station.responsibleOrganization){
 						@agentproperty("Responsible organization", responsibleOrganization)
 					}
-				}
+				} else {}
 				@for(site <- acquisition.site){
 					@resourceproperty("Ecosystem", site.ecosystem)
 				}
@@ -126,7 +126,7 @@
 					@htmlProperty{Contributors}{
 						@contributors(production.contributors)
 					}
-				}
+				} else {}
 				@for(source <- production.sources.sorted){
 					@resourceproperty("Source object", source.asUriResource)
 				}
@@ -146,7 +146,7 @@
 							<th>Name</th>
 							<th>Value type</th>
 							<th>Unit</th>
-							@if(envri != Envri.SITES){<th>Quantity kind</th>}
+							@if(envri != Envri.SITES){<th>Quantity kind</th>} else {}
 						</tr>
 					</thead>
 					<tbody>
@@ -155,7 +155,7 @@
 								<td>@(varInfo.label)</td>
 								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
-								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>}
+								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>} else {}
 							</tr>
 						}
 					</tbody>
@@ -299,7 +299,7 @@
 }
 
 @contributor(contributor: Agent, i: Int) = {
-	@if(i > 0){<span>, </span>}
+	@if(i > 0){<span>, </span>} else {}
 	<a href=@{contributor.self.uri.getRawPath}>@{agentString(contributor)}</a>
 }
 

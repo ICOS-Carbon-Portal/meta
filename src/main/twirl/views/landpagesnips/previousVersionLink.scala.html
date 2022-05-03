@@ -11,7 +11,7 @@
 	case _ => {
 		<span>
 			@for((uri, i) <- vers.zipWithIndex){
-				<a href=@{uri.getRawPath}>@{s"view #${i + 1}"}</a>@if(i < vers.size - 1){<span>,</span>}
+				<a href=@{uri.getRawPath}>@{s"view #${i + 1}"}</a>@if(i < vers.size - 1){<span>,</span>} else {}
 			}
 		</span>
 	}

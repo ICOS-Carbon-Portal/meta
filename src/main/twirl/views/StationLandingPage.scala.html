@@ -18,7 +18,7 @@
 			@for(icos <- icosSpecifics){
 				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
 					@property("Discontinued", "(former ICOS station)")
-				}
+				} else {}
 				@property("Station ID", station.id)
 				@for(cls <- icos.stationClass){
 					@property("ICOS Station class", cls.toString)
@@ -40,10 +40,10 @@
 				@for(climateZone <- eco.climateZone) {
 					@htmlProperty{Climate zone}{@resourceLink(climateZone)}
 				}
-				@if(!eco.ecosystems.isEmpty) {
+				@if(eco.ecosystems.isEmpty) {} else {
 					@htmlProperty{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
 						@for((ecoType, i) <- eco.ecosystems.zipWithIndex) {
-							@if(i > 0) {<span> / </span>}
+							@if(i > 0) {<span> / </span>} else {}
 							@resourceLink(ecoType)
 						}
 					}
@@ -111,7 +111,7 @@
 					</tbody>
 				</table>
 			}
-			@if(!stExt.staff.isEmpty){
+			@if(stExt.staff.isEmpty) {} else {
 				<h2 class="fs-3 mt-5">Current staff</h2>
 				<table class="table">
 					<thead>
@@ -131,7 +131,7 @@
 						}
 					</tbody>
 				</table>
-				@if(!stExt.formerStaff.isEmpty){
+				@if(stExt.formerStaff.isEmpty) {} else {
 					<h2 class="fs-3 mt-5">Former staff</h2>
 					<table class="table">
 						<thead>
@@ -155,7 +155,7 @@
 					</table>
 				}
 			}
-			@if(station.fullCoverage.isDefined) {
+			@if(station.fullCoverage.isEmpty) {} else {
 				<h2 class="fs-3 mt-5">Location</h2>
 				<div class="row gy-2">
 				@for(pos <- station.location){
@@ -170,7 +170,7 @@
 					<a href="@maplink">Open map</a>
 				}
 			}
-			@if(!station.pictures.isEmpty) {
+			@if(station.pictures.isEmpty) {} else {
 				<h2 class="fs-3 mt-5">Pictures</h2>
 				@for(picture <- station.pictures) {
 					<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">

@@ -14,7 +14,7 @@
 					A newer version is available:
 					@nextVersionLink(coll.nextVersion)
 				</div>
-			}
+			} else {}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
 				@for(description <- coll.description){
@@ -25,14 +25,14 @@
 				}
 				@if(coll.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
-				}
+				} else {}
 				@citations(coll.references)
 
 				<h2 class="fs-3 mt-5">Content</h2>
 				@property("Number of items", coll.members.size.toString)
 				@for((item, i) <- coll.members.zipWithIndex){
 					@htmlProperty{
-						@if(i == 0) {Items}
+						@if(i == 0) {Items} else {}
 					}{
 						@staticDataItemLink(item)
 					}

@@ -10,7 +10,7 @@
 					@for((document, i) <- documents.zipWithIndex){
 						@if(i > 0) {
 							<span>, </span>
-						}
+						} else {}
 						<a href=@{document.res}>@{document.name}</a>
 					}
 				</span>

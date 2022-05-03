@@ -17,8 +17,8 @@
 					A newer version is available:
 					@nextVersionLink(doc.nextVersion)
 				</div>
-			}
-			@if(!uploadComplete) {
+			} else {}
+			@if(uploadComplete) {} else {
 				<div class="alert alert-warning">
 					<h4 class="alert-heading">Incomplete upload</h4>
 					<div>Metadata uploaded. Document not uploaded. No PID assigned.</div>
@@ -28,16 +28,16 @@
 				@for(description <- doc.description){
 					@property("Description", description)
 				}
-				@if(doc.references.title) {
+				@if(doc.references.title.isDefined) {
 					@property("File name", doc.fileName)
-				}
+				} else {}
 				@doiProperty(doc.doi, handleProxies.doi)
 				@if(uploadComplete) {
 					@pidProperty(doc.pid, handleProxies.basic)
-				}
+				} else {}
 				@if(doc.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
-				}
+				} else {}
 				@for(coll <- doc.parentCollections){
 					@htmlProperty{Part of}{@resourceLink(coll)}
 				}

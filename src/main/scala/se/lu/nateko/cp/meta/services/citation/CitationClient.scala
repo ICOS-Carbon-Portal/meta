@@ -27,13 +27,8 @@ object Doi{
 	}
 }
 
-object CitationStyle extends Enumeration{
-	type CitationStyle = Value
-	val HTML   = Value
-	val BIBTEX = Value("bibtex")
-	val RIS    = Value("ris")
-	val TEXT   = Value
-}
+enum CitationStyle:
+	case HTML, bibtex, ris, TEXT
 
 trait PlainDoiCiter{
 	import CitationStyle.*
@@ -112,10 +107,10 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			val (doi, style) = key
 			HttpRequest(
 				uri = style match {
-					case CitationStyle.BIBTEX => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
-					case CitationStyle.RIS =>    s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
-					case CitationStyle.HTML =>   s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-					case _                  =>   s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+					case CitationStyle.bibtex => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
+					case CitationStyle.ris    => s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
+					case CitationStyle.HTML   => s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
+					case CitationStyle.TEXT   => s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
 				}
 			)
 		}.flatMap{resp =>

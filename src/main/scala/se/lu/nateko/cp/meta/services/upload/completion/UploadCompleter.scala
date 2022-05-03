@@ -8,7 +8,7 @@ import scala.util.Try
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
 import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
@@ -23,7 +23,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher
 
-	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] = {
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] = {
 		for(
 			(specific, server) <- Future.fromTry(getSpecificCompleter(hash, info.ingestionResult));
 			specificUpdates <- specific.getUpdates(hash);
@@ -37,7 +37,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 	private def getSpecificCompleter(
 		hash: Sha256Sum,
 		ingestionResult: Option[IngestionMetadataExtract]
-	)(implicit envri: Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
+	)(using Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
 		servers.getInstServerForStaticObj(hash).map{server =>
 			val completer = ingestionResult match{
 				case None =>
@@ -54,7 +54,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 			(completer, server)
 		}
 
-	private def getUploadStopTimeUpdates(server: InstanceServer, hash: Sha256Sum)(implicit envri: Envri): Seq[RdfUpdate] = {
+	private def getUploadStopTimeUpdates(server: InstanceServer, hash: Sha256Sum)(using Envri): Seq[RdfUpdate] = {
 		val submissionUri = vocab.getSubmission(hash)
 		if(server.hasStatement(Some(submissionUri), Some(metaVocab.prov.endedAtTime), None)) Nil
 		else {
@@ -63,7 +63,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 		}
 	}
 
-	private def getBytesSizeUpdates(server: InstanceServer, hash: Sha256Sum, size: Long)(implicit envri: Envri): Seq[RdfUpdate] = {
+	private def getBytesSizeUpdates(server: InstanceServer, hash: Sha256Sum, size: Long)(using Envri): Seq[RdfUpdate] = {
 		val dobj = vocab.getStaticObject(hash)
 		if(server.hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
 		else{

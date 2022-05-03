@@ -19,7 +19,7 @@ import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport.*
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.meta.core.data.Person

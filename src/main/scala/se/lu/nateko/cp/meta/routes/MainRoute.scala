@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.services.upload.DoiService

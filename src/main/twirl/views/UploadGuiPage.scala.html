@@ -1,7 +1,6 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
-@import Envri.Envri
 
 @(devVersion: Boolean, licences: Seq[(URI, String)])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage("Upload", "Upload", headerExtra = Some(header), bootstrapJavascript = true){
@@ -509,7 +508,7 @@
 }
 
 @optionalsite = @{
-	if (envri == Envri.ICOS) optional
+	if (envri == Envri.ICOS) optional else {}
 }
 
 @optional = {

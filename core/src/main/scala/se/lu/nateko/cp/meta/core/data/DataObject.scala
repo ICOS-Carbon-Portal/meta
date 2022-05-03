@@ -37,13 +37,12 @@ case class DataObjectSpec(
 	def isSpatiotemporal: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.SpatioTemporal)
 }
 
-object DatasetClass extends Enumeration{
-	type DatasetClass = Value
-	val StationTimeSeries, SpatioTemporal = Value
-}
+enum DatasetClass:
+	case StationTimeSeries, SpatioTemporal
+
 case class DatasetSpec(
 	self: UriResource,
-	dsClass: DatasetClass.DatasetClass,
+	dsClass: DatasetClass,
 	resolution: Option[String]
 )
 

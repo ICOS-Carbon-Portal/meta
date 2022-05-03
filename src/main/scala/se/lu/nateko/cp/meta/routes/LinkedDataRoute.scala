@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer

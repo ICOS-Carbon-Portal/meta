@@ -43,7 +43,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
 
-	private def getDatasetClass(ds: IRI): DatasetClass.DatasetClass = {
+	private def getDatasetClass(ds: IRI): DatasetClass = {
 		val types = server.getTypes(ds).toSet
 		if(types.contains(metaVocab.tabularDatasetSpecClass)) DatasetClass.StationTimeSeries
 		else if(types.contains(metaVocab.datasetSpecClass)) DatasetClass.SpatioTemporal
@@ -112,7 +112,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		val (lblDate, discont) = getLabelingDateAndDiscontinuation(stat)
 		PlainIcosSpecifics(
 			theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
-			stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.withName),
+			stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.valueOf),
 			labelingDate = lblDate,
 			discontinued = discont,
 			countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
@@ -250,7 +250,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		id = for(
 			idStr <- getOptionalString(iri, metaVocab.funderIdentifier);
 			idTypeStr <- getOptionalString(iri, metaVocab.funderIdentifierType);
-			idType <- Try(FunderIdType.withName(idTypeStr)).toOption
+			idType <- Try(FunderIdType.valueOf(idTypeStr)).toOption
 		) yield idStr -> idType
 	)
 

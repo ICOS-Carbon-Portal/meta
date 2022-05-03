@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.SKOS
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
@@ -40,7 +40,7 @@ class CitationInfo(
 
 class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) extends FetchingHelper {
 	import CitationMaker.*
-	private given envriConfs: Envri.EnvriConfigs = coreConf.envriConfigs
+	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
 	private def defaultTimezoneId(using envri: Envri): String = envriConfs(envri).defaultTimezoneId
 
@@ -51,11 +51,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	def getItemCitationInfo(item: CitableItem) = References.empty.copy(
 		citationString = getDoiCitation(item, CitationStyle.HTML),
-		citationBibTex = getDoiCitation(item, CitationStyle.BIBTEX),
-		citationRis    = getDoiCitation(item, CitationStyle.RIS)
+		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
+		citationRis    = getDoiCitation(item, CitationStyle.ris)
 	)
 
-	def getCitationInfo(sobj: StaticObject)(implicit envri: Envri.Value): References = sobj match{
+	def getCitationInfo(sobj: StaticObject)(using envri: Envri): References = sobj match{
 
 		case data: DataObject =>
 			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
@@ -67,8 +67,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
 			References(
 				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(data, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(data, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
+				citationBibTex = getDoiCitation(data, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(data, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,
 				title = citInfo.title,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
@@ -83,8 +83,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 			References.empty.copy(
 				citationString = getDoiCitation(doc, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(doc, CitationStyle.BIBTEX).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(doc, CitationStyle.RIS).orElse(Some(structuredCitations.toRis)),
+				citationBibTex = getDoiCitation(doc, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(doc, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
 				authors = citInfo.authors,
 				title = citInfo.title
 			)

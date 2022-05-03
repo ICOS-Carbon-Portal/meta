@@ -21,7 +21,7 @@ object Playground {
 
 	given system: ActorSystem = ActorSystem("playground")
 	import system.dispatcher
-	given envri: Envri.Envri = Envri.ICOS
+	given envri: Envri = Envri.ICOS
 
 	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 

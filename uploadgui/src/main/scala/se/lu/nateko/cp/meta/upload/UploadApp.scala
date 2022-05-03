@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.upload.formcomponents.{HtmlElements, ProgressBar}
 

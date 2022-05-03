@@ -174,7 +174,7 @@ object EtcMetaSource{
 	type EtcCompany = TcGenericOrg[E]
 	type EtcMembership = Membership[E]
 	class SensorModel(val modelId: String, val compId: Int, val name: String)
-	given Envri.Envri = Envri.ICOS
+	given Envri = Envri.ICOS
 
 
 	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
@@ -406,7 +406,7 @@ object EtcMetaSource{
 					case "ASCII" => false
 					case "Binary" => true
 				}.require("file format must be 'ASCRII' or 'Binary'");
-			fileType <- lookUp(Vars.fileType).map(DataType.withName)
+			fileType <- lookUp(Vars.fileType).map(DataType.valueOf)
 		) yield {
 			EtcFileMetaKey(station = stationId, loggerId = loggerId, fileId = fileId, dataType = fileType) ->
 				EtcFileMeta(fileType, isBinary)

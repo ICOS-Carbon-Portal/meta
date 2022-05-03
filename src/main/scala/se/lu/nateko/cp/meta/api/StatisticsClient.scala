@@ -13,7 +13,7 @@ import akka.http.scaladsl.unmarshalling.{Unmarshal, FromEntityUnmarshaller}
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
@@ -34,7 +34,7 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 	private val http = Http()
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-	private def dbUri(implicit envri: Envri) = {
+	private def dbUri(using Envri) = {
 		import config.previews.*
 		Uri(s"$baseUri/$dbName")
 	}
@@ -65,18 +65,18 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 				None
 		}
 
-	def getPreviewCount(dobjHash: Sha256Sum)(implicit envri: Envri): Future[Option[Int]] = {
+	def getPreviewCount(dobjHash: Sha256Sum)(using Envri): Future[Option[Int]] = {
 		getStatistic[Seq[RestHeartCount]](s"$dbUri/portaluse/_aggrs/getPreviewCountForPid?avars={'pid':'${dobjHash.id}'}&np")
 			.map(_.map(_.map(_.count).sum))
 	}
 
-	def getObjDownloadCount(obj: StaticObject)(implicit envri: Envri): Future[Option[Int]] =
+	def getObjDownloadCount(obj: StaticObject)(using Envri): Future[Option[Int]] =
 		getDownloadCount(obj.hash.base64Url)
 
-	def getCollDownloadCount(uri: URI)(implicit envri: Envri): Future[Option[Int]] =
+	def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]] =
 		getDownloadCount(uri.getPath.split('/').last)
 
-	private def getDownloadCount(hash: String)(implicit envri: Envri): Future[Option[Int]] = {
+	private def getDownloadCount(hash: String)(using envri: Envri): Future[Option[Int]] = {
 		val uri = Uri(config.downloadsUri).withQuery(Uri.Query("hashId" -> hash))
 		val dataHost = envriConfs.get(envri).map(_.dataHost)
 		getStatistic[Seq[StatsApiCount]](uri, dataHost).map(_.map(_.map(_.downloadCount).sum))

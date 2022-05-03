@@ -12,7 +12,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
 	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
-	given JsonFormat[DatasetClass.DatasetClass] = enumFormat(DatasetClass)
+	given JsonFormat[DatasetClass] = enumFormat(DatasetClass.valueOf, DatasetClass.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat3(DatasetSpec.apply)
 	given RootJsonFormat[DataObjectSpec] = jsonFormat9(DataObjectSpec.apply)
 
@@ -94,7 +94,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat4(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
-	given JsonFormat[FunderIdType.FunderIdType] = enumFormat(FunderIdType)
+	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
 	given RootJsonFormat[Station] = jsonFormat8(Station.apply)
@@ -211,7 +211,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	import CommonJsonSupport.TypeField
 
-	given JsonFormat[IcosStationClass.IcosStationClass] = enumFormat(IcosStationClass)
+	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
 	given RootJsonFormat[PlainIcosSpecifics] = jsonFormat7(PlainIcosSpecifics.apply)

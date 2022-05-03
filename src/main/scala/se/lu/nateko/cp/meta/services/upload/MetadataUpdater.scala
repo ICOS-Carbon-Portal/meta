@@ -16,15 +16,15 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 
 abstract class MetadataUpdater(vocab: CpVocab) {
 	import MetadataUpdater.*
 	import StatementStability.*
 
-	protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability
+	protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability
 
-	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement], server: InstanceServer)(implicit envri: Envri): Seq[RdfUpdate] = {
+	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement], server: InstanceServer)(using Envri): Seq[RdfUpdate] = {
 		val statDiff = if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
 			val oldBySp = new BySubjPred(oldStatements)
 			val newBySp = new BySubjPred(newStatements)
@@ -110,10 +110,8 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 
 object MetadataUpdater{
 
-	object StatementStability extends Enumeration{
-		type StatementStability = Value
-		val Plain, Sticky, Fixed = Value
-	}
+	enum StatementStability:
+		case Plain, Sticky, Fixed
 
 	type SubjPred = (Resource, IRI)
 

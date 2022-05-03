@@ -11,7 +11,7 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
+import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig, EnvriConfigs}
 import java.net.URI
 
 object TestConfig {
@@ -47,7 +47,7 @@ object TestConfig {
 	def getObjectProperty(localName: String): OWLObjectProperty =
 		factory.getOWLObjectProperty(localName, prefixManager)
 
-	given envriConfs: Envri.EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
+	given envriConfs: EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu",
 		dataHost = "data.icos-cp.eu",
 		metaHost = "meta.icos-cp.eu",

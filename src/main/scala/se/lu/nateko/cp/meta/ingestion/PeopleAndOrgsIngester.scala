@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import scala.concurrent.ExecutionContext

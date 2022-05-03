@@ -7,10 +7,9 @@ import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix, objectPathPrefix}
 import se.lu.nateko.cp.meta.core.data.{staticObjLandingPage, staticObjAccessUrl, staticCollLandingPage}
-import se.lu.nateko.cp.meta.core.data.Envri.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.data.{ Envri, EnvriConfigs }
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }

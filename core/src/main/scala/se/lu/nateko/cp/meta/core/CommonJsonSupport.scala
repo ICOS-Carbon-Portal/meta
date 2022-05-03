@@ -53,19 +53,19 @@ trait CommonJsonSupport {
 
 	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
-	def enumFormat[T <: Enumeration](theEnum: T) = new RootJsonFormat[theEnum.Value] {
-		def write(v: theEnum.Value) = JsString(v.toString)
+	def enumFormat[T <: reflect.Enum](valueOf: String => T, values: Array[T]) = new RootJsonFormat[T] {
+		def write(v: T) = JsString(v.toString)
 
-		def read(value: JsValue): theEnum.Value = value match{
+		def read(value: JsValue): T = value match{
 			case JsString(s) =>
 				try{
-					theEnum.withName(s)
+					valueOf(s)
 				}catch{
-					case _: NoSuchElementException => deserializationError(
-						"Expected one of: " + theEnum.values.map(_.toString).mkString("'", "', '", "'")
+					case _: IllegalArgumentException => deserializationError(
+						"Expected one of: " + values.mkString("'", "', '", "'")
 					)
 				}
-			case _ => deserializationError("Expected a string")
+			case _ => deserializationError("Expected a JSON string")
 		}
 	}
 

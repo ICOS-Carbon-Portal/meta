@@ -4,8 +4,8 @@ import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmEntry, BadmValue}
 
-case class EtcFileMeta(dtype: DataType.Value, isBinary: Boolean)
-case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType.Value)
+case class EtcFileMeta(dtype: DataType, isBinary: Boolean)
+case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType)
 case class EtcLoggerMeta(serial: String, model: String)
 
 private class EtcStation(val stationId: StationId, val utcOffset: Int)

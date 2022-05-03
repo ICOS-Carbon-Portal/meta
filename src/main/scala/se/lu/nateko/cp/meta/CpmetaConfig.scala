@@ -9,7 +9,6 @@ import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.meta.core.data.Envri
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)

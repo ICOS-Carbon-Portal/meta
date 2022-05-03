@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
-	private given Envri.Envri = Envri.ICOS
+	private given Envri = Envri.ICOS
 	private given factory: ValueFactory = vocab.factory
 	private type Triple = (IRI, IRI, Value)
 

@@ -25,10 +25,10 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import scala.util.Success
 import se.lu.nateko.cp.meta.DataObjectDto
 
-class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) {
+class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(using ActorSystem) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config, vocab)
-	private given Envri.Envri = Envri.ICOS
+	private given Envri = Envri.ICOS
 
 	def transform(meta: EtcUploadMetadata): Try[DataObjectDto] = {
 

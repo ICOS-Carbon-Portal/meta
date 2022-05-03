@@ -13,7 +13,7 @@ import java.net.URI
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator
 

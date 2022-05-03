@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.StatusCodes

@@ -20,7 +20,6 @@ import scala.util.Failure
 trait LifecycleService { self: StationLabelingService =>
 
 	import LifecycleService.*
-	import AppStatus.AppStatus
 
 	private val mailer = SendMail(config.mailing)
 
@@ -70,18 +69,13 @@ trait LifecycleService { self: StationLabelingService =>
 		.flatten
 		.map(_.toLowerCase)
 
-	private def userHasRole(user: UserId, role: Role.Role, station: IRI): Boolean = {
-		import Role.*
-		role match{
-			case PI =>
-				userIsPiOrDeputy(user, station)
-			case TC =>
-				getTcUsers(station).contains(user.email.toLowerCase)
-			case DG =>
-				config.dgUserId.equalsIgnoreCase(user.email)
-
-			case _ => false
-		}
+	private def userHasRole(user: UserId, role: Role, station: IRI): Boolean = role match{
+		case Role.PI =>
+			userIsPiOrDeputy(user, station)
+		case Role.TC =>
+			getTcUsers(station).contains(user.email.toLowerCase)
+		case Role.DG =>
+			config.dgUserId.equalsIgnoreCase(user.email)
 	}
 
 	private def getCurrentStatus(station: IRI): Try[AppStatus] = {
@@ -163,29 +157,30 @@ trait LifecycleService { self: StationLabelingService =>
 
 object LifecycleService{
 
-	object AppStatus extends Enumeration{
-		type AppStatus = Value
+	enum AppStatus(title: String):
+		case neverSubmitted    extends AppStatus("NEVER SUBMITTED")
+		case step1notsubmitted extends AppStatus("NOT SUBMITTED")
+		case step1submitted    extends AppStatus("SUBMITTED")
+		case step1acknowledged extends AppStatus("ACKNOWLEDGED")
+		case step1approved     extends AppStatus("APPROVED")
+		case rejected          extends AppStatus("REJECTED")
+		case step2ontrack      extends AppStatus("STEP2ONTRACK")
+		case step2started_old  extends AppStatus("STEP2STARTED")
+		case step2delayed      extends AppStatus("STEP2DELAYED")
+		case step2stalled      extends AppStatus("STEP2STALLED")
+		case step2approved     extends AppStatus("STEP2APPROVED")
+		case step3approved     extends AppStatus("STEP3APPROVED")
+		override def toString = title
 
-		val neverSubmitted    = Value("NEVER SUBMITTED")
-		val step1notsubmitted = Value("NOT SUBMITTED")
-		val step1submitted    = Value("SUBMITTED")
-		val step1acknowledged = Value("ACKNOWLEDGED")
-		val step1approved     = Value("APPROVED")
-		val rejected          = Value("REJECTED")
-		val step2ontrack      = Value("STEP2ONTRACK")
-		val step2started_old  = Value("STEP2STARTED")
-		val step2delayed      = Value("STEP2DELAYED")
-		val step2stalled      = Value("STEP2STALLED")
-		val step2approved     = Value("STEP2APPROVED")
-		val step3approved     = Value("STEP3APPROVED")
+	object AppStatus{
+		val lookup: Map[String, AppStatus] = AppStatus.values.map(as => as.toString -> as).toMap
 	}
 
-	object Role extends Enumeration{
-		type Role = Value
-		val PI = Value("Station PI")
-		val TC = Value("ICOS TC representative")
-		val DG = Value("ICOS DG")
-	}
+	enum Role(title: String):
+		case PI extends Role("Station PI")
+		case TC extends Role("ICOS TC representative")
+		case DG extends Role("ICOS DG")
+		override def toString = title
 
 	import AppStatus.*
 	import Role.*
@@ -255,12 +250,9 @@ object LifecycleService{
 		}
 	}
 
-	private def lookupAppStatus(name: String): Try[AppStatus] = try{
-		Success(AppStatus.withName(name))
-	} catch{
-		case _: NoSuchElementException =>
-			val msg = s"Unsupported labeling application status '$name'"
-			Failure(new IllegalLabelingStatusException(msg))
-	}
+	private def lookupAppStatus(name: String): Try[AppStatus] = AppStatus.lookup.get(name).fold{
+		val msg = s"Unsupported labeling application status '$name'"
+		Failure(new IllegalLabelingStatusException(msg))
+	}(Success.apply)
 
 }

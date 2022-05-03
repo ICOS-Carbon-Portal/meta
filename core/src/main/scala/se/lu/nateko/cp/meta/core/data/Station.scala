@@ -33,13 +33,10 @@ case class Funding(
 	stop: Option[LocalDate],
 )
 
-object FunderIdType extends Enumeration{
-	type FunderIdType = Value
-	val Crossref = Value("Crossref Funder ID")
-	val GRID, ISNI, ROR, Other = Value
-}
+enum FunderIdType:
+	case `Crossref Funder ID`, GRID, ISNI, ROR, Other
 
-case class Funder(org: Organization, id: Option[(String,FunderIdType.Value)])
+case class Funder(org: Organization, id: Option[(String, FunderIdType)])
 
 sealed trait StationSpecifics
 
@@ -62,7 +59,7 @@ case class SitesStationSpecifics(
 
 sealed trait IcosStationSpecifics extends StationSpecifics{
 	def theme: Option[DataTheme]
-	def stationClass: Option[IcosStationClass.Value]
+	def stationClass: Option[IcosStationClass]
 	def labelingDate: Option[LocalDate]
 	def discontinued: Boolean
 	def countryCode: Option[CountryCode]
@@ -72,7 +69,7 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 
 case class PlainIcosSpecifics(
 	theme: Option[DataTheme],
-	stationClass: Option[IcosStationClass.Value],
+	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
 	countryCode: Option[CountryCode],
@@ -82,7 +79,7 @@ case class PlainIcosSpecifics(
 
 case class EtcStationSpecifics(
 	theme: Option[DataTheme],
-	stationClass: Option[IcosStationClass.Value],
+	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
 	countryCode: Option[CountryCode],
@@ -99,10 +96,8 @@ case class EtcStationSpecifics(
 	override def ecosystems = ecosystemType.toSeq
 }
 
-object IcosStationClass extends Enumeration{
-	type IcosStationClass = Value
-	val One = Value("1")
-	val Two = Value("2")
-	val Associated = Value("Associated")
-	def parse(s: String): Try[Value] = Try(withName(s))
+enum IcosStationClass{
+	case `1`
+	case `2`
+	case Associated
 }

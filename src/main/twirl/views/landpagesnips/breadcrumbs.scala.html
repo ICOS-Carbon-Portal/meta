@@ -1,6 +1,6 @@
 @import se.lu.nateko.cp.meta.core.data._
 
-@(breadcrumbs: Map[Envri.Value, IndexedSeq[(String, String)]])(implicit envri: Envri.Value)
+@(breadcrumbs: Map[Envri, IndexedSeq[(String, String)]])(implicit envri: Envri)
 @if(breadcrumbs(envri).isEmpty) {} else {
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb bg-light p-2">

@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.doi.*
 
 object JsonSupport {
@@ -70,7 +70,7 @@ object JsonSupport {
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 
 	given Reads[Envri] with{
-		def reads(js: JsValue) = js.validate[String].map(Envri.withName)
+		def reads(js: JsValue) = js.validate[String].map(Envri.valueOf)
 	}
 
 	given Reads[EnvriConfig] = Json.reads[EnvriConfig]

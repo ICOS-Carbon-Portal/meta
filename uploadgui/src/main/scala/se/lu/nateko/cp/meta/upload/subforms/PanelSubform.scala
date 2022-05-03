@@ -16,7 +16,7 @@ abstract class PanelSubform(selector: String)(implicit bus: PubSubBus) {
 	def hide(): Unit = htmlElements.hide()
 	def show(): Unit = htmlElements.show()
 
-	def getPeopleAndOrganizations()(implicit envri: Envri.Envri) = if(!gotPeepsOrgs){
+	def getPeopleAndOrganizations()(implicit envri: Envri) = if(!gotPeepsOrgs){
 		val done = for(
 			people <- Backend.getPeople;
 			organizations <- Backend.getOrganizations

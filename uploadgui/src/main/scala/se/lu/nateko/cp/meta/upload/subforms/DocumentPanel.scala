@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 
 import formcomponents.*
 
-class DocumentPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".document-section"){
+class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".document-section"){
 	def title = documentTitle.value
 	def description = documentDescription.value
 	def authors = documentAuthors.values

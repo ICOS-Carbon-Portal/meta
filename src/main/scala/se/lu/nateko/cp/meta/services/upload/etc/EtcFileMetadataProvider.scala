@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
 
-class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem) extends EtcFileMetadataStore{
+class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{
 
 	import system.dispatcher
 

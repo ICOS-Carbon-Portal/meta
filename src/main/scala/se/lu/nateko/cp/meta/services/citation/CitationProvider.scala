@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.core.data.StaticCollection
@@ -55,7 +55,7 @@ class CitationProviderFactory(conf: CpmetaConfig)(using system: ActorSystem, mat
 }
 
 class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
-	private given envriConfs: Envri.EnvriConfigs = coreConf.envriConfigs
+	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
 	private val metaVocab = new CpmetaVocab(repo.getValueFactory)

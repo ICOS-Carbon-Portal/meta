@@ -22,7 +22,7 @@ class Form(
 	keyWords: IndexedSeq[String],
 	onUpload: (UploadDto, Option[dom.File]) => Unit,
 	createDoi: URI => Unit
-)(implicit envri: Envri.Envri, envriConf: EnvriConfig, bus: PubSubBus) {
+)(using envri: Envri, envriConf: EnvriConfig, bus: PubSubBus) {
 
 	val aboutPanel = new AboutPanel(subms)
 	val dataPanel = new DataPanel(objSpecs, keyWords, () => aboutPanel.submitterOpt)

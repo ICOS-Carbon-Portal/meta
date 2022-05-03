@@ -15,8 +15,8 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.SparqlServer
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion

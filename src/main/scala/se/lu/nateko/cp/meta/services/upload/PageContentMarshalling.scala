@@ -8,7 +8,7 @@ import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshall
 import akka.http.scaladsl.model.*
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
@@ -29,7 +29,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 	import PageContentMarshalling.{getHtml, getJson}
 
-	implicit def staticObjectMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticObject]] = {
+	given staticObjectMarshaller (using Envri, EnvriConfig) : ToResponseMarshaller[() => Option[StaticObject]] = {
 		import statisticsClient.executionContext
 		val template: StaticObject => Future[Html] = obj =>
 			for(
@@ -42,7 +42,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		makeMarshaller(template, MessagePage("Data object not found", ""))
 	}
 
-	implicit def statCollMarshaller(implicit envri: Envri, conf: EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] = {
+	given statCollMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Option[StaticCollection]] = {
 		import statisticsClient.executionContext
 		val template: StaticCollection => Future[Html] = coll =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
@@ -58,7 +58,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		notFoundPage: => Html,
 	): ToResponseMarshaller[() => Option[T]] = {
 
-		def fetchHtmlMaker()(implicit dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
+		def fetchHtmlMaker(using dataItemOpt: Option[T], ctxt: ExecutionContext): Future[HttpCharset => HttpResponse] = dataItemOpt match {
 			case Some(obj) =>
 				templateFetcher(obj).map { html =>
 					charset => HttpResponse(entity = getHtml(html, charset))
@@ -70,10 +70,11 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 				)
 		}
 
-		Marshaller {implicit exeCtxt => producer =>
-			implicit val dataItemOpt: Option[T] = producer()
+		Marshaller {exeCtxt => producer =>
+			given ExecutionContext = exeCtxt
+			given dataItemOpt: Option[T] = producer()
 			for (
-				htmlMaker <- fetchHtmlMaker()
+				htmlMaker <- fetchHtmlMaker
 			) yield List(
 				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
 				WithFixedContentType(ContentTypes.`application/json`, () => getJson(Success(dataItemOpt)))
@@ -84,7 +85,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 object PageContentMarshalling{
 
-	implicit val twirlHtmlEntityMarshaller: ToEntityMarshaller[Html] = Marshaller(
+	given twirlHtmlEntityMarshaller: ToEntityMarshaller[Html] = Marshaller(
 		_ => html => Future.successful(
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil
 		)

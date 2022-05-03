@@ -14,7 +14,7 @@ import Utils.*
 import se.lu.nateko.cp.meta.core.data.Envri
 
 
-class ProductionPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".production-section"){
+class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".production-section"){
 
 	def dataProductionDtoOpt: Try[Option[DataProductionDto]] =
 		if(!productionSwitch.checked) Success(None) else dataProductionDto.map(Some.apply)

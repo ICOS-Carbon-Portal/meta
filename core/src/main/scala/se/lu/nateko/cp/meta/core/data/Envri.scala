@@ -15,13 +15,12 @@ case class EnvriConfig(
 		host == dataItemPrefix.getHost || host == metaItemPrefix.getHost
 }
 
-object Envri extends Enumeration{
+enum Envri:
+	case ICOS, SITES
 
-	type Envri = Value
-	type EnvriConfigs = Map[Envri, EnvriConfig]
+type EnvriConfigs = Map[Envri, EnvriConfig]
 
-	val ICOS  = Value("ICOS")  //need the name string for ScalaJS
-	val SITES = Value("SITES") //need the name string for ScalaJS
+object Envri{
 
 	def infer(uri: URI)(using EnvriConfigs): Option[Envri] = infer(uri.getHost)
 

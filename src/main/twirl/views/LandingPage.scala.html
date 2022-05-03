@@ -3,7 +3,7 @@
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import java.net.URI
 
-@(obj: StaticObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(obj: StaticObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @{
 	obj match {
 		case dobj: DataObject => DataLandingPage(dobj, extras, handleProxies)

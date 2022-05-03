@@ -172,7 +172,7 @@ object AtcMetaSource{
 
 	def parseLocalDate(ts: String): Validated[LocalDate] = Validated(LocalDate.parse(ts.take(10)))
 
-	def parseStationClass(s: String): Validated[IcosStationClass.Value] = Validated.fromTry(IcosStationClass.parse(s.trim))
+	def parseStationClass(s: String): Validated[IcosStationClass] = Validated(IcosStationClass.valueOf(s.trim))
 
 	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
 		val demand = lookUpMandatory(stationsId) _

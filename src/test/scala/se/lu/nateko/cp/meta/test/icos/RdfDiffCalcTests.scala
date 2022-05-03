@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
-	given Envri.EnvriConfigs = Map(
+	given EnvriConfigs = Map(
 		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 	)
 

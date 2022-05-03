@@ -9,13 +9,11 @@ case class EtcUploadMetadata(
 	fileName: String,
 	station: StationId,
 	logger: Int,
-	dataType: DataType.Value,
+	dataType: DataType,
 	fileId: Int,
 	acquisitionStart: LocalDateTime,
 	acquisitionStop: LocalDateTime
 )
 
-object DataType extends Enumeration{
-	type DataType = Value
-	val EC, BM, ST, SAHEAT = Value
-}
+enum DataType:
+	case EC, BM, ST, SAHEAT

@@ -18,7 +18,6 @@ import JsonSupport.given
 import play.api.libs.json.*
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
 import se.lu.nateko.cp.doi.Doi
 import scala.scalajs.js.Dictionary
 

@@ -16,7 +16,6 @@ import play.twirl.api.Html
 import se.lu.nateko.cp.meta.{CpmetaConfig, api}
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}

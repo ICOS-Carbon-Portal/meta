@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import Envri.{Envri, EnvriConfigs}
 
 
 object ExportService{
@@ -131,7 +130,6 @@ object ExportService{
 		val publisherLogo: JsValue = envri match {
 			case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
 			case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
-			case _ => JsNull
 		}
 
 		val producer = dobj.production.map(p => agentToSchemaOrg(p.host.getOrElse(p.creator))).getOrElse(JsNull)

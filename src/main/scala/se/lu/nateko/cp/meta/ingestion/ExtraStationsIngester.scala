@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.ValueFactory
 
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.Envri.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -71,12 +71,11 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 
 private object IcosStationsIngester{
 
-	object Project extends Enumeration{
-		val INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE, NEON = Value
-	}
+	enum Project:
+		case INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE, NEON
 
 	case class Station(
-		project: Project.Value,
+		project: Project,
 		id: String,
 		name: String,
 		country: String,
@@ -89,7 +88,7 @@ private object IcosStationsIngester{
 		def parse(line: String): Station = {
 			val Seq(projStr, id, name, country, latStr, lonStr, elevStr) = line.trim.split('\t').toSeq
 			Station(
-				Project.withName(projStr), id, name, country,
+				Project.valueOf(projStr), id, name, country,
 				lat = optDouble(latStr),
 				lon = optDouble(lonStr),
 				elevation = elevStr.toFloat

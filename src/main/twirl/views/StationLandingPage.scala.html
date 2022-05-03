@@ -1,7 +1,6 @@
 @import java.net.URI
 @import se.lu.nateko.cp.meta.api.StationExtra
 @import se.lu.nateko.cp.meta.core.data.*
-@import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.urlEncode
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -10,7 +9,7 @@
 @import akka.http.scaladsl.model.Uri
 @import landpagesnips.*
 
-@(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri.Value, conf: EnvriConfig)
+@(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">

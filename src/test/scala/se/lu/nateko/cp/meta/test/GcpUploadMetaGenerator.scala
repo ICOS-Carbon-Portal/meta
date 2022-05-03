@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 import se.lu.nateko.cp.meta.core.data.Envri
+import org.eclipse.rdf4j.model.ValueFactory
 
 /**
  * One-off code to produce upload metadata packages for GCP dataset publication
@@ -22,10 +23,10 @@ object GcpUploadMetaGenerator extends CpmetaJsonProtocol {
 	val folder = "/home/maintenance/Documents/CP/L3metadata/GCPupload/"
 
 	def updatePackageWithContributors(inFile: String, outFile: String): Unit = {
-		implicit val factory = new MemValueFactory
+		given factory: ValueFactory = new MemValueFactory
 		import TestConfig.envriConfs
 		val vocab = new CpVocab(factory)
-		implicit val envri = Envri.ICOS
+		given Envri = Envri.ICOS
 
 		val contribs = Source.fromFile(folder + "gcpPeople.txt").getLines().map{line =>
 			val Seq(lname, fname) = line.split(", ").toSeq

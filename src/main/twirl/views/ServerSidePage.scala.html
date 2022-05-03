@@ -12,7 +12,7 @@
 	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,
 	breadcrumbs: Option[Html] = None,
-)(body: Html)(implicit envri: Envri.Value, conf: EnvriConfig)
+)(body: Html)(implicit envri: Envri, conf: EnvriConfig)
 @template{
 	@extraMetaTags
 	@LandingPageStyle()

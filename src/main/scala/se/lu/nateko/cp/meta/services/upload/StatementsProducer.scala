@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
@@ -35,7 +35,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	private given factory: ValueFactory = vocab.factory
 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
-	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
+	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
@@ -65,7 +65,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
 	}
 
-	private def getDobjStatements(meta: DataObjectDto)(implicit envri: Envri): Seq[Statement] = {
+	private def getDobjStatements(meta: DataObjectDto)(using envri: Envri): Seq[Statement] = {
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
@@ -100,7 +100,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		moratoriumStatements
 	}
 
-	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(implicit envri: Envri): Seq[Statement] = {
+	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms
 		Seq(
 			makeSt(collIri, RDF.TYPE, metaVocab.collectionClass),
@@ -115,7 +115,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			}
 	}
 
-	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(implicit envri: Envri): Seq[Statement] = {
+	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] = {
 		val objectUri = vocab.getStaticObject(hash)
 		val covUri = vocab.getSpatialCoverage(hash)
 
@@ -137,7 +137,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		})
 	}
 
-	private def getPositionStatements(aquisitionUri: IRI, point: Position)(implicit envri: Envri): Seq[Statement] = {
+	private def getPositionStatements(aquisitionUri: IRI, point: Position)(using Envri): Seq[Statement] = {
 		val samplUri = vocab.getPosition(point)
 
 		Seq(
@@ -150,7 +150,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(samplUri, RDFS.LABEL, point.label.map(vocab.lit))
 	}
 
-	private def getSpatioTemporalStatements(hash: Sha256Sum, meta: SpatioTemporalDto)(implicit envri: Envri): Seq[Statement] = {
+	private def getSpatioTemporalStatements(hash: Sha256Sum, meta: SpatioTemporalDto)(using Envri): Seq[Statement] = {
 		val objUri = vocab.getStaticObject(hash)
 		val acq = vocab.getAcquisition(hash)
 		Seq(
@@ -171,7 +171,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		meta.variables.toSeq.flatten.flatMap(getL3VarInfoStatements(objUri, hash, _))
 	}
 
-	private def getStationDataStatements(hash: Sha256Sum, meta: StationTimeSeriesDto)(implicit envri: Envri): Seq[Statement] = {
+	private def getStationDataStatements(hash: Sha256Sum, meta: StationTimeSeriesDto)(using Envri): Seq[Statement] = {
 		val objectUri = vocab.getStaticObject(hash)
 		val aquisitionUri = vocab.getAcquisition(hash)
 		val acqStart = meta.acquisitionInterval.map(_.start)
@@ -192,7 +192,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
 	}
 
-	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(implicit envri: Envri): Seq[Statement] = {
+	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(using Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
 		val objectUri = vocab.getStaticObject(hash)
 		Seq(
@@ -213,7 +213,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(implicit envri: Envri): Seq[Statement] = {
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] = {
 		spatial match{
 			case Left(feature) =>
 				getGeoFeatureStatements(hash, feature)
@@ -228,7 +228,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(implicit envri: Envri): Seq[Statement] = {
+	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {
 		val vUri = vocab.getVarInfo(hash, varName)
 		Seq(
 			makeSt(objIri, metaVocab.hasActualVariable, vUri),

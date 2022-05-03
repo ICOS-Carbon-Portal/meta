@@ -23,7 +23,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio.*
 
 
-class AboutPanel(subms: IndexedSeq[SubmitterProfile])(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform("about-section"){
+class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envri: Envri) extends PanelSubform("about-section"){
 
 	def submitterOpt: Option[SubmitterProfile] = submitterIdSelect.value
 	def submitter: Try[SubmitterProfile] = submitterOpt.withMissingError("Submitter Id not set")

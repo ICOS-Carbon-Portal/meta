@@ -21,18 +21,17 @@ import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.model.headers.`X-Forwarded-For`
 import spray.json.JsObject
 import spray.json.JsNull
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfigs}
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.model.headers.SameSite
 import akka.http.javadsl.server.MissingCookieRejection
 
-class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(implicit configs: EnvriConfigs) extends CpmetaJsonProtocol{
+class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(using EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting.*
 
 	private val extractEnvri = extractEnvriDirective
-	private def authConfig(implicit envri: Envri) = authConf(envri)
-	private def authenticator(implicit envri: Envri) = Authenticator(authConfig).get
+	private def authConfig(using envri: Envri) = authConf(envri)
+	private def authenticator(using Envri) = Authenticator(authConfig).get
 
 	private def user(inner: UserId => Route): Route = extractEnvri{implicit envri =>
 		cookie(authConfig.authCookieName)(cookie => {
@@ -99,7 +98,7 @@ object AuthenticationRouting {
 			.recover(_ => complete(StatusCodes.Forbidden))
 
 
-	def extractEnvriDirective(implicit configs: EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
+	def extractEnvriDirective(using EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
 		Envri.infer(h) match{
 			case None => complete(StatusCodes.BadRequest -> s"Unexpected host $h, cannot find corresponding ENVRI")
 			case Some(envri) => provide(envri)

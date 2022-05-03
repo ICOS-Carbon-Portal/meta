@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.upload
 import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri.Envri
+import se.lu.nateko.cp.meta.core.data.Envri
 
 object SparqlQueries {
 

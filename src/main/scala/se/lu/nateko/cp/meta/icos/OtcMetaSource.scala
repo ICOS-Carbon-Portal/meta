@@ -88,7 +88,7 @@ class OtcMetaSource(
 				latOpt <- qresValue(b, "lat").flatMap(parseDouble).optional;
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
-				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.withName(v.stringValue)).optional;
+				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.valueOf(v.stringValue)).optional;
 				ccode <- qresValue(b, "countryCode").map{v =>
 					val CountryCode(cc) = v.stringValue
 					cc

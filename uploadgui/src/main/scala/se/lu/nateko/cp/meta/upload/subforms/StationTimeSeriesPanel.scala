@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 
 
-class StationTimeSeriesPanel(implicit bus: PubSubBus, envri: Envri.Envri) extends PanelSubform(".acq-section"){
+class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".acq-section"){
 	def station: Try[Station] = stationSelect.value.withMissingError("Station not chosen")
 	def site = siteSelect.value
 	def timeInterval: Try[Option[TimeInterval]] = timeIntevalInput.value.withErrorContext("Acqusition time interval")

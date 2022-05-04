@@ -4,7 +4,7 @@
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.{given,*}
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
-@import se.lu.nateko.cp.meta.services.ExportService
+@import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.meta.utils.*
 @import landpagesnips.*
@@ -286,7 +286,7 @@
 
 @schemaOrg = {
 	<script type="application/ld+json">
-		@Html(ExportService.schemaOrg(dobj, handleProxies).prettyPrint)
+		@Html(SchemaOrg.json(dobj, handleProxies).prettyPrint)
 	</script>
 }
 

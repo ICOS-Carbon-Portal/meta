@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.metaexport
 
 import java.net.URI
 import org.eclipse.rdf4j.model.IRI
@@ -13,9 +13,9 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 
-object ExportService{
+object SchemaOrg{
 
-	def dataObjs(sparqler: SparqlRunner)(implicit configs: EnvriConfigs, envri: Envri): Seq[URI] = {
+	def dataObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] = {
 
 		val metaItemPrefix = configs(envri).metaItemPrefix
 
@@ -49,7 +49,7 @@ object ExportService{
 			.toIndexedSeq
 	}
 
-	def schemaOrg(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject = {
+	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject = {
 
 		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)
 
@@ -174,8 +174,12 @@ object ExportService{
 				"@type" -> JsString("DataCatalog"),
 				"name"  -> JsString(conf.dataHost)
 			),
-			"license"               -> JsString("https://creativecommons.org/licenses/by/4.0/"),
-			"acquireLicensePage"    -> JsString(s"https://${conf.dataHost}/licence"),
+			"license"               -> dobj.references.licence.flatMap(_.baseLicence).fold(JsNull)(
+				lic => JsString(lic.toString)
+			),
+			"acquireLicensePage"    -> dobj.references.licence.fold(JsNull)(
+				lic => JsString(lic.url.toString)
+			),
 			"datePublished"         -> published,
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,

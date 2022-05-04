@@ -99,7 +99,7 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
 			"com.sun.mail"           % "javax.mail"                         % "1.6.2",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.4.12" cross CrossVersion.for3Use2_13,
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.5.0" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.5" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0" cross CrossVersion.for3Use2_13,

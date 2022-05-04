@@ -43,7 +43,7 @@ import java.net.URI
 import scala.collection.mutable.ListBuffer
 import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
 
-class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
 	import system.dispatcher
 
@@ -66,7 +66,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 
 
 	def fetchFromEtc(): Future[Validated[State]] = {
-		val peopleFut = fetchFromTsv(Types.people, getPerson(_))
+		val peopleFut = fetchFromTsv(Types.people, getPerson)
 
 		val futfutValVal = for(
 			peopleVal <- peopleFut;
@@ -80,10 +80,10 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield {
-				val membExtractor: Lookup => Validated[EtcMembership] = getMembership(
+				val membExtractor: Lookup ?=> Validated[EtcMembership] = getMembership(
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
-				)(_)
+				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
 					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
@@ -102,18 +102,18 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 					fundings <- parseFundings(lookups, fundersLookup, vocab)
 				) yield fundings
 			};
-			stations <- fetchFromTsv(Types.stations, getStation(fundLookupV)(_))
+			stations <- fetchFromTsv(Types.stations, getStation(fundLookupV))
 		) yield stations
 	}
 
 	def getFileMeta: Future[Validated[EtcFileMetadataStore]] = {
-		val utcFut = fetchFromTsv(Types.stations, getSiteUtc(_))
+		val utcFut = fetchFromTsv(Types.stations, getSiteUtc)
 
 		val fileMetaFut = utcFut.flatMap{utcInfo =>
 			val idLookup = utcInfo.map(_.map{
 				case (tcId, id, _) => tcId -> id
 			}.toMap)
-			fetchFromTsv[(EtcFileMetaKey, EtcFileMeta)](Types.files, getSingleFileMeta(idLookup)(_))
+			fetchFromTsv[(EtcFileMetaKey, EtcFileMeta)](Types.files, getSingleFileMeta(idLookup))
 		}
 
 		for(utcV <- utcFut; fileMetaV <- fileMetaFut) yield
@@ -135,21 +135,21 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 			).map(_.flatMap(identity))
 		) yield Validated.liftFuture{
 			for(modelDict <- modelDictVal; compDict <- compDictVal; deplDict <- deplDictVal) yield
-				fetchFromTsv(Types.sensors, getSensor(modelDict, compDict, deplDict)(_))
+				fetchFromTsv(Types.sensors, getSensor(modelDict, compDict, deplDict))
 		}
 		futfutValVal.flatten.map(_.flatMap(identity))
 	}
 
 	private def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
-		fetchFromTsv(Types.companies, getCompany(vocab)(_)).map(_.map(_.toMap))
+		fetchFromTsv(Types.companies, getCompany(vocab)).map(_.map(_.toMap))
 
 	private def getSensorModelDict: Future[Validated[Map[String, SensorModel]]] =
-		fetchFromTsv(Types.sensorModels, getSensorModel(_)).map(_.map(_.toMap))
+		fetchFromTsv(Types.sensorModels, getSensorModel).map(_.map(_.toMap))
 
 	private def getDeploymentsDict(stations: Seq[EtcStation]): Future[Validated[Map[String, Seq[InstrumentDeployment[E]]]]] = {
 		val stationLookup = stations.map(s => s.tcId -> s).toMap
 
-		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)(_)).map(_.map(mergeInstrDeployments))
+		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)).map(_.map(mergeInstrDeployments))
 	}
 
 	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
@@ -159,8 +159,8 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(implicit system: ActorSyste
 		.flatMap(_.entity.toStrict(3.seconds))
 		.map(ent => parseTsv(ent.data))
 
-	private def fetchFromTsv[T](tableType: String, extractor: Lookup => Validated[T]): Future[Validated[Seq[T]]] = 
-		fetchAndParseTsv(tableType).map(lookups => Validated.sequence(lookups.map(extractor)))
+	private def fetchFromTsv[T](tableType: String, extractor: Lookup ?=> Validated[T]): Future[Validated[Seq[T]]] =
+		fetchAndParseTsv(tableType).map(lookups => Validated.sequence(lookups.map(extractor(using _))))
 
 }
 
@@ -261,33 +261,33 @@ object EtcMetaSource{
 		"AFFILIATED" -> None
 	)
 
-	def lookUp(varName: String)(implicit lookup: Lookup): Validated[String] =
+	def lookUp(varName: String)(using lookup: Lookup): Validated[String] =
 		new Validated(lookup.get(varName).filter(_.length > 0))
 
-	def lookUpOrcid(varName: String)(implicit lookup: Lookup): Validated[Option[Orcid]] =
+	def lookUpOrcid(varName: String)(using Lookup): Validated[Option[Orcid]] =
 		lookUp(varName).optional.flatMap{
 			case Some(Orcid(orc)) => Validated.ok(Some(orc))
 			case None => Validated.ok(None)
 			case Some(badOrcid) => new Validated(None, Seq(s"Could not parse Orcid id from string $badOrcid"))
 		}
 
-	def getNumber(varName: String)(implicit lookup: Lookup): Validated[Number] = lookUp(varName).flatMap{
+	def getNumber(varName: String)(using Lookup): Validated[Number] = lookUp(varName).flatMap{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
 	private def getLocalDateTime(
 		varName: String, defaultTime: LocalTime, defaultMonth: Int, defaultDay: Int
-	)(implicit lookup: Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
+	)(using Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
 		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt)
 		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(defaultTime))
 		case Badm.Date(BadmYear(year)) => Validated.ok(LocalDate.of(year, defaultMonth, defaultDay).atTime(defaultTime))
 		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
 	}
 
-	private def getLocalDate(varName: String, defaultMonth: Int, defaultDay: Int)(implicit lookup: Lookup): Validated[LocalDate] =
+	private def getLocalDate(varName: String, defaultMonth: Int, defaultDay: Int)(using Lookup): Validated[LocalDate] =
 		getLocalDateTime(varName, LocalTime.NOON, defaultMonth, defaultDay).map(_.toLocalDate)
 
-	def getPosition(implicit lookup: Lookup): Validated[Option[Position]] =
+	def getPosition(using Lookup): Validated[Option[Position]] =
 		for(
 			latOpt <- getNumber(Vars.lat).optional;
 			lonOpt <- getNumber(Vars.lon).optional;
@@ -295,7 +295,7 @@ object EtcMetaSource{
 		) yield for(lat <- latOpt; lon <- lonOpt)
 			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
 
-	def getPerson(implicit lookup: Lookup): Validated[EtcPerson] =
+	def getPerson(using Lookup): Validated[EtcPerson] =
 		for(
 			fname <- lookUp(Vars.fname).require("person must have first name");
 			lname <- lookUp(Vars.lname).require("person must have last name");
@@ -313,7 +313,7 @@ object EtcMetaSource{
 		case _ => Validated.error(s + " is not a valid country code")
 	}
 
-	private def getCompany(vocab: CpVocab)(implicit lookup: Lookup): Validated[(Int, EtcCompany)] =
+	private def getCompany(vocab: CpVocab)(using Lookup): Validated[(Int, EtcCompany)] =
 		for(
 			tcId <- getNumber(Vars.companyTcId).map(_.intValue).require("company must have integer id");
 			name <- lookUp(Vars.companyName).require("company must have a name");
@@ -322,14 +322,14 @@ object EtcMetaSource{
 			core = Organization(UriResource(orgUri, None, Nil), name, None, None)
 		) yield tcId -> TcGenericOrg(cpId, Some(makeId(tcId.toString)), core)
 
-	private def getSensorModel(implicit lookup: Lookup): Validated[(String, SensorModel)] =
+	private def getSensorModel(using Lookup): Validated[(String, SensorModel)] =
 		for(
 			modelId <- lookUp(Vars.sensorModelId).require("sensor model must have id");
 			compId <- getNumber(Vars.companyTcId).map(_.intValue).require("sensor model must have vendor company id");
 			name <- lookUp(Vars.sensorName).require("sensor model must have name")
 		) yield modelId -> new SensorModel(modelId, compId, name)
 
-	private def getSiteUtc(implicit lookup: Lookup): Validated[(Int, StationId, Option[Int])] =
+	private def getSiteUtc(using Lookup): Validated[(Int, StationId, Option[Int])] =
 		for(
 			techId <- lookUp(Vars.stationTcId).map(_.toInt);
 			stationId <- lookUp(Vars.siteId).map{case StationId(sId) => sId};
@@ -337,7 +337,7 @@ object EtcMetaSource{
 		) yield (techId, stationId, utc)
 
 	def parseFunders(vocab: CpVocab, lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
-		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(_)))
+		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(using _)))
 		.map(
 			_.distinct.map{funderName =>
 				val cpId = UriId.escaped(funderName)
@@ -358,7 +358,8 @@ object EtcMetaSource{
 	def parseFundings(
 		lookups: Seq[Lookup], funders: Map[String, TcFunder[ETC.type]], vocab: CpVocab
 	): Validated[Map[String, Seq[TcFunding[ETC.type]]]] = {
-		val tcIdToFundingVs = lookups.map{implicit lookup =>
+		val tcIdToFundingVs = lookups.map{lookup =>
+			given Lookup = lookup
 			for(
 				stationTcId <- lookUp(Vars.stationTcId).require("missing ETC technical station id in funding table");
 				funderName <- lookUp(Vars.fundingOrgName).require(s"missing funder name for funding of station $stationTcId");
@@ -394,7 +395,7 @@ object EtcMetaSource{
 
 	private def getSingleFileMeta(
 		stationLookupV: Validated[Map[Int, StationId]]
-	)(implicit lookup: Lookup): Validated[(EtcFileMetaKey, EtcFileMeta)] =
+	)(using Lookup): Validated[(EtcFileMetaKey, EtcFileMeta)] =
 		for(
 			stationTcId <- lookUp(Vars.stationTcId).map(_.toInt).require("technical station id missing");
 			stationLookup <- stationLookupV;
@@ -428,7 +429,7 @@ object EtcMetaSource{
 
 	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
-	)(implicit lookup: Lookup): Validated[EtcStation] = for(
+	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getPosition;
 		tcIdStr <- lookUp(Vars.stationTcId);
 		fundingsLookup <- fundingsV;
@@ -495,7 +496,7 @@ object EtcMetaSource{
 	def getMembership(
 		people: Map[TcId[E], EtcPerson],
 		stations: Map[TcId[E], EtcStation]
-	)(implicit lookup: Lookup): Validated[EtcMembership] = {
+	)(using Lookup): Validated[EtcMembership] = {
 		val require = requireVar("membership") _
 		for(
 			persId <- require(Vars.persId);
@@ -514,26 +515,24 @@ object EtcMetaSource{
 		}
 	}
 
-	def getLogger(sensorsVal: Validated[Seq[EtcInstrument]]): Lookup => Validated[EtcInstrument] = {
+	def getLogger(sensorsVal: Validated[Seq[EtcInstrument]])(using Lookup): Validated[EtcInstrument] = {
 		val sensorsDictVal = sensorsVal.map(_.map(sens => sens.tcId -> sens).toMap)
-		implicit lookUp => {
-			val require = requireVar("instrument") _
-			for(
-				stId <- require(Vars.stationTcId).map(_.toInt);
-				loggerId <- require(Vars.loggerId).map(_.toInt);
-				sensorTcId <- require(Vars.loggerSensorId);
-				sensorDict <- sensorsDictVal;
-				instr <- new Validated(sensorDict.get(makeId(sensorTcId))).require(s"Could not look up logger by sensor id $sensorTcId")
-			) yield
-				instr.copy(tcId = CpVocab.getEtcInstrTcId(stId, loggerId))
-		}
+		val require = requireVar("instrument") _
+		for(
+			stId <- require(Vars.stationTcId).map(_.toInt);
+			loggerId <- require(Vars.loggerId).map(_.toInt);
+			sensorTcId <- require(Vars.loggerSensorId);
+			sensorDict <- sensorsDictVal;
+			instr <- new Validated(sensorDict.get(makeId(sensorTcId))).require(s"Could not look up logger by sensor id $sensorTcId")
+		) yield
+			instr.copy(tcId = CpVocab.getEtcInstrTcId(stId, loggerId))
 	}
 
 	def getSensor(
 		modelDict: Map[String, SensorModel],
 		compDict: Map[Int, EtcCompany],
 		deploymentsDict: Map[String, Seq[InstrumentDeployment[E]]]
-	)(implicit lookup: Lookup): Validated[EtcInstrument] = for(
+	)(using Lookup): Validated[EtcInstrument] = for(
 		tcIdStr <- lookUp(Vars.sensorId).require("sensor must have id");
 		modelId <- lookUp(Vars.sensorModelId).require("sensor must have model id");
 		serial <- lookUp(Vars.sensorSerial).require("sensor must have serial number");
@@ -550,7 +549,7 @@ object EtcMetaSource{
 
 	private def getSensorDeployment(
 		stationLookup: Map[TcId[E], EtcStation]
-	)(implicit l: Lookup): Validated[(String, InstrumentDeployment[E])] = for(
+	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for(
 		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
 		varName <- lookUp(Vars.sensorVar).optional;
 		sensorId <- lookUp(Vars.sensorId).require("sensor deployment must have sensor id");
@@ -621,7 +620,7 @@ object EtcMetaSource{
 	private def minOptInst(i1: Option[Instant], i2: Option[Instant]): Option[Instant] =
 		Seq(i1, i2).flatten.sorted.headOption
 
-	private def requireVar(hint: String)(varName: String)(implicit lookup: Lookup) =
+	private def requireVar(hint: String)(varName: String)(using Lookup) =
 		lookUp(varName).require(s"$varName is required for $hint info")
 
 	private val koppenZones = Set(

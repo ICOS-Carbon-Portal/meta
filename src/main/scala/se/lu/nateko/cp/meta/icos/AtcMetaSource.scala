@@ -32,7 +32,7 @@ import se.lu.nateko.cp.meta.utils.Validated
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
 
-class AtcMetaSource(allowedUser: UserId)(implicit system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
+class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
 	import AtcMetaSource.*
 	import system.dispatcher
 
@@ -86,6 +86,7 @@ object AtcMetaSource{
 	val undefinedOrgId = "41"
 
 	val IdCol = "#Id"
+	val WigosIdCol = "WIGOSId"
 	val StationIdCol = "ShortName"
 	val StationNameCol = "FullName"
 	val StationClassCol = "Class"
@@ -174,12 +175,13 @@ object AtcMetaSource{
 
 	def parseStationClass(s: String): Validated[IcosStationClass] = Validated(IcosStationClass.valueOf(s.trim))
 
-	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){implicit row =>
+	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){
 		val demand = lookUpMandatory(stationsId) _
 
 		for(
 			stIdStr <- demand(StationIdCol);
 			tcId <- demand(IdCol);
+			wigosId <- demand(WigosIdCol);
 			lat <- demand(LatCol).map(_.toDouble);
 			lon <- demand(LonCol).map(_.toDouble);
 			alt <- demand(AltCol).map(_.toFloat);
@@ -203,7 +205,8 @@ object AtcMetaSource{
 				coverage = None,
 				responsibleOrganization = None,
 				pictures = Nil,
-				specificInfo = PlainIcosSpecifics(
+				specificInfo = AtcStationSpecifics(
+					wigosId = wigosId,
 					theme = None,
 					stationClass = stClass,
 					countryCode = country,
@@ -226,11 +229,11 @@ object AtcMetaSource{
 
 		val stationLookup = stations.map(s => s.tcId -> s).toMap
 
-		val peopleLookupVal = parseFromCsv(contacts)(parsePerson(_)).map{ppl =>
+		val peopleLookupVal = parseFromCsv(contacts)(parsePerson).map{ppl =>
 			(for(pers <- ppl; id <- pers.tcIdOpt) yield id -> pers).toMap
 		}
 
-		parseFromCsv(roles){implicit row =>
+		parseFromCsv(roles){
 			val demand = lookUpMandatory("roles") _
 
 			for(
@@ -252,23 +255,23 @@ object AtcMetaSource{
 		}
 	}
 
-	def lookUpMandatory(tableName: String)(varName: String)(implicit row: Lookup): Validated[String] =
+	def lookUpMandatory(tableName: String)(varName: String)(using row: Lookup): Validated[String] =
 		lookUp(varName).require(s"$varName not found in $tableName table on row ${row.mkString(", ")}")
 
-	def parseFromCsv[T](path: Path)(extractor: Lookup => Validated[T]): Validated[IndexedSeq[T]] = Validated{
+	def parseFromCsv[T](path: Path)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] = Validated{
 
 		val lines = scala.io.Source.fromFile(path.toFile).getLines()
 
 		val colNames: Array[String] = lines.next().split(';').map(_.trim)
 
 		val seqOfValidated = lines.map{lineStr =>
-			extractor(colNames.zip(lineStr.split(';').map(_.trim)).toMap)
+			extractor(using colNames.zip(lineStr.split(';').map(_.trim)).toMap)
 		}
 
 		Validated.sequence(seqOfValidated)
 	}.flatMap(identity)
 
-	def parsePerson(implicit row: Lookup): Validated[TcPerson[A]] =
+	def parsePerson(using Lookup): Validated[TcPerson[A]] =
 		for(
 			fname <- lookUp(FirstNameCol).require("person must have first name");
 			lname <- lookUp(LastNameCol).require("person must have last name");
@@ -279,7 +282,7 @@ object AtcMetaSource{
 		) yield
 			TcPerson(cpId, Some(tcId), fname, lname, email.map(_.toLowerCase), orcid)
 
-	def lookUpDate(colName: String)(implicit row: Lookup): Validated[Option[Instant]] = {
+	def lookUpDate(colName: String)(using Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>
 			dsOpt.map{ds =>
 				Instant.parse(ds.replace(' ', 'T') + "Z")
@@ -297,7 +300,7 @@ object AtcMetaSource{
 	}
 
 	private def parseOrgs(file: Path, idCol: String, nameCol: String, websiteCol: Option[String] = None) =
-		parseFromCsv(file){implicit row =>
+		parseFromCsv(file){
 			val demand = lookUpMandatory("instruments") _
 			for(
 				idStr <- demand(idCol) if idStr != undefinedOrgId;
@@ -329,7 +332,7 @@ object AtcMetaSource{
 		}
 
 	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[TcInstrument[A]]] = {
-		parseFromCsv(instruments){implicit row =>
+		parseFromCsv(instruments){
 			val demand = lookUpMandatory("instruments") _
 			for(
 				id <- demand(InstrIdCol).map(makeId);

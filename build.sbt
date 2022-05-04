@@ -8,14 +8,13 @@ val commonScalacOptions = Seq(
 	"-feature",
 	"-deprecation"
 )
-val jvmScalacOptions = commonScalacOptions :+ "-Xtarget:11"
 
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.2",
-		scalacOptions ++= jvmScalacOptions,
+		version := "0.7.3",
+		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6" cross CrossVersion.for3Use2_13,
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
@@ -73,7 +72,7 @@ lazy val meta = (project in file("."))
 	.settings(
 		name := "meta",
 		version := "0.7.0",
-		scalacOptions ++= jvmScalacOptions,
+		scalacOptions ++= commonScalacOptions,
 
 		libraryDependencies := {
 			libraryDependencies.value.map{
@@ -182,7 +181,7 @@ lazy val jobAd = (project in file("jobAd"))
 	.settings(
 		name := "jobAd",
 		version := "1.0",
-		scalacOptions ++= jvmScalacOptions,
+		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % akkaVersion,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,

@@ -28,7 +28,7 @@ class StaticObjectFetcher(
 
 	override protected val vocab = citer.vocab
 
-	def fetch(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
+	def fetch(hash: Sha256Sum)(using Envri): Option[StaticObject] = {
 		val dataObjUri = vocab.getStaticObject(hash)
 		if(server.hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass))
 			Some(getExistingDataObject(hash))
@@ -37,7 +37,7 @@ class StaticObjectFetcher(
 		else None
 	}
 
-	private def getExistingDataObject(hash: Sha256Sum)(implicit envri: Envri): DataObject = {
+	private def getExistingDataObject(hash: Sha256Sum)(using Envri): DataObject = {
 		val dobj = vocab.getStaticObject(hash)
 
 		val production: Option[DataProduction] = getOptionalUri(dobj, metaVocab.wasProducedBy)
@@ -77,7 +77,7 @@ class StaticObjectFetcher(
 		init.copy(references = citer.getCitationInfo(init))
 	}
 
-	private def getExistingDocumentObject(hash: Sha256Sum)(implicit envri: Envri): DocObject = {
+	private def getExistingDocumentObject(hash: Sha256Sum)(using Envri): DocObject = {
 		val doc = vocab.getStaticObject(hash)
 		val submission = getSubmission(getSingleUri(doc, metaVocab.wasSubmittedBy))
 		val init = DocObject(
@@ -100,11 +100,11 @@ class StaticObjectFetcher(
 		init.copy(references = citer.getCitationInfo(init))
 	}
 
-	private def getPid(hash: Sha256Sum, format: URI)(implicit envri: Envri): Option[String] = {
+	private def getPid(hash: Sha256Sum, format: URI)(using Envri): Option[String] = {
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 	}
 
-	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(implicit envri: Envri): Option[URI] = {
+	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri): Option[URI] = {
 
 		if(metaVocab.wdcggFormat === spec.format.uri)
 			Some(new URI("https://gaw.kishou.go.jp/"))

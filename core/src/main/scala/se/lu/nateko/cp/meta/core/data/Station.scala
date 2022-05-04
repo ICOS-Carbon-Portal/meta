@@ -67,7 +67,31 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def documentation: Seq[PlainStaticObject]
 }
 
-case class PlainIcosSpecifics(
+case class AtcStationSpecifics(
+	wigosId: String,
+	theme: Option[DataTheme],
+	stationClass: Option[IcosStationClass],
+	labelingDate: Option[LocalDate],
+	discontinued: Boolean,
+	countryCode: Option[CountryCode],
+	timeZoneOffset: Option[Int],
+	documentation: Seq[PlainStaticObject]
+) extends IcosStationSpecifics
+
+object AtcStationSpecifics{
+	def apply(base: IcosStationSpecifics, wigosId: String): AtcStationSpecifics = AtcStationSpecifics(
+		wigosId = wigosId,
+		theme = base.theme,
+		stationClass = base.stationClass,
+		labelingDate = base.labelingDate,
+		discontinued = base.discontinued,
+		countryCode = base.countryCode,
+		timeZoneOffset = base.timeZoneOffset,
+		documentation = base.documentation
+	)
+}
+
+case class OtcStationSpecifics(
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
@@ -96,8 +120,24 @@ case class EtcStationSpecifics(
 	override def ecosystems = ecosystemType.toSeq
 }
 
-enum IcosStationClass{
-	case `1`
-	case `2`
-	case Associated
+object EtcStationSpecifics{
+	def apply(base: IcosStationSpecifics): EtcStationSpecifics = EtcStationSpecifics(
+		theme = base.theme,
+		stationClass = base.stationClass,
+		labelingDate = base.labelingDate,
+		discontinued = base.discontinued,
+		countryCode = base.countryCode,
+		climateZone = None,
+		ecosystemType = None,
+		meanAnnualTemp = None,
+		meanAnnualPrecip = None,
+		meanAnnualRad = None,
+		stationDocs = Nil,
+		stationPubs = Nil,
+		timeZoneOffset = base.timeZoneOffset,
+		documentation = base.documentation
+	)
 }
+
+enum IcosStationClass:
+	case `1`, `2`, Associated

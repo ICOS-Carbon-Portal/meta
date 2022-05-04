@@ -201,6 +201,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				(iri, meta.hasDocumentationUri, vocab.lit(stDoc))
 			} ++
 			plainIcosStationSpecTriples(iri, eco)
+		case atc: AtcStationSpecifics =>
+			(iri, meta.hasWigosId, vocab.lit(atc.wigosId)) +:
+			plainIcosStationSpecTriples(iri, atc)
 		case icos: IcosStationSpecifics =>
 			plainIcosStationSpecTriples(iri, icos)
 		case _ => Seq.empty

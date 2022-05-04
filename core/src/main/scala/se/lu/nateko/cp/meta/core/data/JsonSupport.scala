@@ -212,26 +212,30 @@ object JsonSupport extends CommonJsonSupport{
 	import CommonJsonSupport.TypeField
 
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
+	given RootJsonFormat[AtcStationSpecifics] = jsonFormat8(AtcStationSpecifics.apply)
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
+	given RootJsonFormat[OtcStationSpecifics] = jsonFormat7(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
-	given RootJsonFormat[PlainIcosSpecifics] = jsonFormat7(PlainIcosSpecifics.apply)
 
+	private val AtcSpec = "atc"
 	private val EtcSpec = "etc"
+	private val OtcSpec = "otc"
 	private val SitesSpec = "sites"
-	private val PlainIcosSpec = "plainicos"
 	given RootJsonFormat[StationSpecifics] with{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
+			case etc: AtcStationSpecifics => etc.toTypedJson(AtcSpec)
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
+			case etc: OtcStationSpecifics => etc.toTypedJson(OtcSpec)
 			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
-			case icos: PlainIcosSpecifics => icos.toTypedJson(PlainIcosSpec)
 		}
 
 		def read(value: JsValue) =
 			value.asJsObject("StationSpecifics must be a JSON object").fields.get(TypeField) match{
+				case Some(JsString(AtcSpec)) => value.convertTo[AtcStationSpecifics]
 				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
+				case Some(JsString(OtcSpec)) => value.convertTo[OtcStationSpecifics]
 				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
-				case Some(JsString(PlainIcosSpec)) => value.convertTo[PlainIcosSpecifics]
 				case None => NoStationSpecifics
 				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
 			}

@@ -124,7 +124,7 @@ class OtcMetaSource(
 						coverage = coverOpt,
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
-						specificInfo = PlainIcosSpecifics(None, statClass, None, false, ccode, None, Seq.empty),
+						specificInfo = OtcStationSpecifics(None, statClass, None, false, ccode, None, Seq.empty),
 						funding = None
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get),

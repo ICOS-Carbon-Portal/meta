@@ -1303,7 +1303,7 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasKeyword">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:comment>A &quot;virtual&quot; property, created for keyword search in SPARQL. A multi-value counterpart of cpmeta:hasKeywords, which contains a string with JSON-array of keywords.</rdfs:comment>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A &quot;virtual&quot; property, created for keyword search in SPARQL. A multi-value counterpart of cpmeta:hasKeywords, which contains a string with comma-separated list of keywords.</rdfs:comment>
     </owl:DatatypeProperty>
     
 
@@ -1570,6 +1570,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
@@ -1766,7 +1767,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId">
-        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
@@ -1784,9 +1785,19 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">umbrella property for organizing id-related properties</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasTcId -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasTcId">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -1891,6 +1902,18 @@
             </rdfs:Datatype>
         </rdfs:range>
         <rdfs:label>western bound</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStringId"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AS"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">WIGOS ID</rdfs:label>
     </owl:DatatypeProperty>
     
 

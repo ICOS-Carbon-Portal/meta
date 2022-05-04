@@ -44,7 +44,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 			coverage = None,
 			responsibleOrganization = None,
 			pictures = Seq.empty,
-			specificInfo = PlainIcosSpecifics(None, None, None, true, Some(se), None, Nil),
+			specificInfo = AtcStationSpecifics("wigos", None, None, None, true, Some(se), None, Nil),
 			funding = None
 		),
 		responsibleOrg = None,

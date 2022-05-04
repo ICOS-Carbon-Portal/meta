@@ -19,6 +19,9 @@
 					@property("Discontinued", "(former ICOS station)")
 				} else {}
 				@property("Station ID", station.id)
+				@for(wigos <- wigosId){
+					@property("WIGOS ID", wigos)
+				}
 				@for(cls <- icos.stationClass){
 					@property("ICOS Station class", cls.toString)
 				}
@@ -234,6 +237,12 @@
 @icosSpecifics = @{
 	Option(station.specificInfo).collect{
 		case icos: IcosStationSpecifics => icos
+	}
+}
+
+@wigosId = @{
+	Option(station.specificInfo).collect{
+		case atc: AtcStationSpecifics => atc.wigosId
 	}
 }
 

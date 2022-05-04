@@ -149,6 +149,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasAtcId = getRelativeRaw("hasAtcId")
 	val hasEtcId = getRelativeRaw("hasEtcId")
 	val hasOtcId = getRelativeRaw("hasOtcId")
+	val hasWigosId = getRelativeRaw("hasWigosId")
 
 	val ancillaryValueClass = getRelativeRaw("AncillaryValue")
 	val ancillaryEntryClass = getRelativeRaw("AncillaryEntry")

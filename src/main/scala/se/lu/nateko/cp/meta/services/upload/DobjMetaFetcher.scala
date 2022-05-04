@@ -83,34 +83,29 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				operationalPeriod = getOptionalString(stat, metaVocab.hasOperationalPeriod),
 				documentation = getDocumentationObjs(stat)
 			)
-		else if(server.resourceHasType(stat, metaVocab.ecoStationClass)){
-			val icosSpecif = getIcosStationSpecifics(stat, vocab.etc)
-			EtcStationSpecifics(
-				theme = icosSpecif.theme,
-				stationClass = icosSpecif.stationClass,
-				labelingDate = icosSpecif.labelingDate,
-				discontinued = icosSpecif.discontinued,
-				countryCode = icosSpecif.countryCode,
+		else if(server.resourceHasType(stat, metaVocab.ecoStationClass))
+			EtcStationSpecifics(getBasicIcosSpecifics(stat, vocab.etc)).copy(
 				climateZone = getOptionalUri(stat, metaVocab.hasClimateZone).map(getLabeledResource),
 				ecosystemType = getOptionalUri(stat, metaVocab.hasEcosystemType).map(getLabeledResource),
 				meanAnnualTemp = getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp),
 				meanAnnualPrecip = getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip),
 				meanAnnualRad = getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation),
 				stationDocs = server.getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
-				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
-				timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
-				documentation = getDocumentationObjs(stat)
+				stationPubs = server.getUriLiteralValues(stat, metaVocab.hasAssociatedPublication)
 			)
-		} else if(server.resourceHasType(stat, metaVocab.atmoStationClass))
-			getIcosStationSpecifics(stat, vocab.atc)
+		else if(server.resourceHasType(stat, metaVocab.atmoStationClass))
+			AtcStationSpecifics(
+				getBasicIcosSpecifics(stat, vocab.atc),
+				getSingleString(stat, metaVocab.hasWigosId)
+			)
 		else if(server.resourceHasType(stat, metaVocab.oceStationClass))
-			getIcosStationSpecifics(stat, vocab.otc)
+			getBasicIcosSpecifics(stat, vocab.otc)
 		else NoStationSpecifics
 	}
 
-	private def getIcosStationSpecifics(stat: IRI, thematicCenter: IRI) = {
+	private def getBasicIcosSpecifics(stat: IRI, thematicCenter: IRI): IcosStationSpecifics = {
 		val (lblDate, discont) = getLabelingDateAndDiscontinuation(stat)
-		PlainIcosSpecifics(
+		OtcStationSpecifics(
 			theme = getOptionalUri(thematicCenter, metaVocab.hasDataTheme).map(getDataTheme),
 			stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.valueOf),
 			labelingDate = lblDate,

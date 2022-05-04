@@ -101,7 +101,7 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
 		hash <- extractHash(maybeDobj);
 		envri <- inferObjectEnvri(maybeDobj);
-		obj <- objFetcher.fetch(hash)(envri)
+		obj <- objFetcher.fetch(hash)(using envri)
 	) yield obj
 
 	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for(

@@ -49,7 +49,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 			} ~
 			pathSuffix("checkIfUriIsFree"){
 				parameter("uri"){ uriStr =>
-					complete((!instOnto.hasIndividual(uriStr)).toString)
+					complete(JsBoolean(!instOnto.hasIndividual(uriStr)))
 				}
 			} ~
 			pathSuffix("getRangeValues"){

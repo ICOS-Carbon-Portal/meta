@@ -33,6 +33,9 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given [T: RootJsonWriter]: Conversion[T,ToResponseMarshallable] =
 		ToResponseMarshallable(_)(liftMarshaller(SprayJsonSupport.sprayJsonMarshaller))
 
+	given Conversion[JsValue,ToResponseMarshallable] =
+		ToResponseMarshallable(_)(liftMarshaller(SprayJsonSupport.sprayJsValueMarshaller))
+
 	given [T: RootJsonReader]: FromRequestUnmarshaller[T] = Unmarshaller
 		.strict[HttpRequest, HttpEntity](_.entity)
 		.andThen(SprayJsonSupport.sprayJsonUnmarshaller)

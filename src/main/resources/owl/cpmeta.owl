@@ -2871,7 +2871,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/ValueType -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ValueType">
-        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpecifyingThing"/>
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
         <rdfs:comment>Domain-specific meaning of the values</rdfs:comment>
         <rdfs:label>Value Type</rdfs:label>

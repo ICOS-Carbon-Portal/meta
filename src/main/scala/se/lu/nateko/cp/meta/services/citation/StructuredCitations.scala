@@ -31,11 +31,11 @@ class StructuredCitations(
 		val authorsOpt = citInfo.authors.map{
 			_.map {
 				_ match {
-					case p: Person => s"${p.lastName}, ${p.firstName.head}."
+					case p: Person => s"${p.lastName}, ${p.firstName}"
 					case o: Organization => o.name
 				}
 			}
-			.mkString(", ")
+			.mkString(" and ")
 		}
 
 		val kwords = keywords.filterNot(_.isEmpty).map(kws => kws.mkString(", "))
@@ -68,7 +68,7 @@ class StructuredCitations(
 			.map{
 				_.map {
 					_ match {
-						case p: Person => "AU" -> Some(s"${p.lastName}, ${p.firstName.head}.")
+						case p: Person => "AU" -> Some(s"${p.lastName}, ${p.firstName}")
 						case o: Organization => "AU" -> Some(o.name)
 					}
 				}

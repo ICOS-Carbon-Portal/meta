@@ -1,0 +1,72 @@
+@import se.lu.nateko.cp.meta.services.metaexport.Inspire
+@import java.time.Instant
+
+@(dobj: Inspire)
+<?xml version="1.0" encoding="UTF-8"?>
+<mdb:MD_Metadata xmlns="http://standards.iso.org/iso/19115/-3/mdb/1.0"
+	xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/1.0"
+	xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/1.0"
+	xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0"
+	xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0 mdb.xsd"
+>
+	<mdb:metadataStandard>
+		<cit:CI_Citation>
+			<cit:title>
+				<gco:CharacterString>ISO 19115-1</gco:CharacterString>
+			</cit:title>
+			<cit:edition>
+				<gco:CharacterString>2014</gco:CharacterString>
+			</cit:edition>
+		</cit:CI_Citation>
+	</mdb:metadataStandard>
+
+	<mdb:dateInfo>
+		@citDateTime(Inspire.templateCompileTimestamp, "lastUpdate")
+	</mdb:dateInfo>
+
+	<mdb:dateInfo>
+		@citDateTime(Inspire.RevisionDateTime, "lastRevision")
+	</mdb:dateInfo>
+
+	<mdb:identificationInfo>
+		<mri:MD_DataIdentification id="@{dobj.id}">
+			<mri:citation>
+				<cit:CI_Citation>
+					@for(title <- dobj.title){
+						<cit:title>
+							<gco:CharacterString>@title</gco:CharacterString>
+						</cit:title>
+					}
+					@citDateTimeProp(dobj.creation, "creation")
+					@for(pubDate <- dobj.publication){
+						@citDateTimeProp(pubDate, "publication")
+					}
+				</cit:CI_Citation>
+			</mri:citation>
+		</mri:MD_DataIdentification>
+	</mdb:identificationInfo>
+
+</mdb:MD_Metadata>
+
+
+@citDateTimeProp(ts: Instant, dateType: String) = {
+	<cit:date>
+		@citDateTime(ts.toString, dateType)
+	</cit:date>
+}
+
+@citDateTime(ts: String, dateType: String) = {
+	<cit:CI_Date>
+		<cit:date>
+			<gco:DateTime>@ts</gco:DateTime>
+		</cit:date>
+		<cit:dateType>
+			<cit:CI_DateTypeCode
+				codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode"
+				codeListValue="@dateType"
+			>@dateType</cit:CI_DateTypeCode>
+		</cit:dateType>
+	</cit:CI_Date>
+}

@@ -92,16 +92,20 @@ class Rdf4jUriSerializer(
 	)
 
 	def fetchStaticObject(uri: Uri): Option[StaticObject] = uri.path match {
-		case Hash.Object(hash) => fetchStaticObj(hash)(inferEnvri(uri))
+		case Hash.Object(hash) =>
+			given Envri = inferEnvri(uri)
+			fetchStaticObj(hash)
 		case _ => None
 	}
 
 	def fetchStaticCollection(uri: Uri): Option[StaticCollection] = uri.path match {
-		case Hash.Collection(hash) => fetchStaticColl(hash)(inferEnvri(uri))
+		case Hash.Collection(hash) =>
+			given Envri = inferEnvri(uri)
+			fetchStaticColl(hash)
 		case _ => None
 	}
 
-	private def fetchStaticObj(hash: Sha256Sum)(implicit envri: Envri): Option[StaticObject] = {
+	private def fetchStaticObj(hash: Sha256Sum)(using envri: Envri): Option[StaticObject] = {
 		import servers.vocab
 		for(
 			server <- servers.getInstServerForStaticObj(hash).toOption;
@@ -113,10 +117,10 @@ class Rdf4jUriSerializer(
 		) yield dobj
 	}
 
-	private def fetchStaticColl(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] =
+	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Option[StaticCollection] =
 		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
 
-	private def fetchStation(iri: IRI)(implicit  envri: Envri): Try[Option[StationExtra]] = servers.getStation(iri).map{stOpt =>
+	private def fetchStation(iri: IRI)(using Envri): Try[Option[StationExtra]] = servers.getStation(iri).map{stOpt =>
 		stOpt.map{st =>
 			val membs = citer.attrProvider.getMemberships(st).toIndexedSeq
 			new StationExtra(st, membs)

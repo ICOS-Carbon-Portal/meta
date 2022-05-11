@@ -58,9 +58,9 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(using Envri.ICOS))
 
-	val icosProject = getRelativeRaw("projects/icos")(using icosBup)
-	val atmoTheme = getRelativeRaw("themes/atmosphere")(using icosBup)
-	val oceanTheme = getRelativeRaw("themes/ocean")(using icosBup)
+	val Seq(icosProject, atmoTheme, ecoTheme, oceanTheme) = Seq(
+		"projects/icos", "themes/atmosphere", "themes/ecosystem", "themes/ocean"
+	).map(getRelativeRaw(_)(using icosBup))
 
 	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(using icosBup)
 

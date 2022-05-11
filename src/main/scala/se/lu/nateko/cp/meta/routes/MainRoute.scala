@@ -44,7 +44,7 @@ object MainRoute {
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)
 		val doiService = new DoiService(config, db.uriSerializer)
 		val doiRoute = DoiRoute(doiService, authRouting, config.core)
-		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers)
+		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)

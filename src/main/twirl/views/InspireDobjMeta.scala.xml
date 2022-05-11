@@ -1,50 +1,108 @@
 @import se.lu.nateko.cp.meta.services.metaexport.Inspire
+@import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
 @import java.time.Instant
 
-@(dobj: Inspire)
+@(dobj: Inspire, envri: Envri, conf: EnvriConfig)
 <?xml version="1.0" encoding="UTF-8"?>
-<mdb:MD_Metadata xmlns="http://standards.iso.org/iso/19115/-3/mdb/1.0"
+<mdb:MD_Metadata
+	xmlns="http://standards.iso.org/iso/19115/-3/mdb/1.0"
 	xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/1.0"
 	xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/1.0"
 	xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0"
 	xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
+	xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0 mdb.xsd"
 >
 	<mdb:metadataStandard>
-		<cit:CI_Citation>
-			<cit:title>
-				<gco:CharacterString>ISO 19115-1</gco:CharacterString>
-			</cit:title>
+		@citation(Inspire.StandardVersion){
 			<cit:edition>
-				<gco:CharacterString>2014</gco:CharacterString>
+				@charStr(Inspire.StandardEdition)
 			</cit:edition>
-		</cit:CI_Citation>
+		}
 	</mdb:metadataStandard>
 
+	<mdb:metadataIdentifier>
+		<mcc:MD_Identifier>
+			@if(dobj.hasPid){
+				<mcc:authority>
+					@citation("Handle System")()
+				</mcc:authority>
+				<mcc:codeSpace>
+					@charStr("INFO:HDL/")
+				</mcc:codeSpace>
+				<mcc:description>
+					@charStr("See https://handle.net and RFC3650 at https://www.ietf.org/rfc/rfc3650.txt")
+				</mcc:description>
+			} else {}
+			<mcc:code>
+				@charStr(dobj.id)
+			</mcc:code>
+		</mcc:MD_Identifier>
+	</mdb:metadataIdentifier>
+
 	<mdb:dateInfo>
-		@citDateTime(Inspire.templateCompileTimestamp, "lastUpdate")
+		@citDateTime(Instant.now.toString, "creation")
 	</mdb:dateInfo>
 
 	<mdb:dateInfo>
 		@citDateTime(Inspire.RevisionDateTime, "lastRevision")
 	</mdb:dateInfo>
 
+	<mdb:contact>
+		<cit:CI_Responsibility>
+			<cit:role>
+				<cit:CI_RoleCode
+					codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode"
+					codeListValue="publisher"
+				>publisher</cit:CI_RoleCode>
+			</cit:role>
+			<cit:party>
+				<cit:CI_Organisation>
+					<cit:name>
+						@charStr(s"$envri Data Portal")
+					</cit:name>
+					<cit:contactInfo>
+						<cit:CI_Contact>
+							<cit:onlineResource>
+								<cit:CI_OnlineResource>
+									<cit:linkage>
+										@charStr(s"https://www${conf.dataHost.stripPrefix("data")}/")
+									</cit:linkage>
+									<cit:protocol>
+										@charStr("http")
+									</cit:protocol>
+									<cit:function>
+										<cit:CI_OnLineFunctionCode
+											codeList="@{codeListUrl("CI_OnLineFunctionCode")}" codeListValue="download"/>
+									</cit:function>
+								</cit:CI_OnlineResource>
+							</cit:onlineResource>
+						</cit:CI_Contact>
+					</cit:contactInfo>
+				</cit:CI_Organisation>
+			</cit:party>
+		</cit:CI_Responsibility>
+	</mdb:contact>
+
 	<mdb:identificationInfo>
-		<mri:MD_DataIdentification id="@{dobj.id}">
+		<mri:MD_DataIdentification>
+
 			<mri:citation>
-				<cit:CI_Citation>
-					@for(title <- dobj.title){
-						<cit:title>
-							<gco:CharacterString>@title</gco:CharacterString>
-						</cit:title>
-					}
+				@citation(dobj.title){
 					@citDateTimeProp(dobj.creation, "creation")
 					@for(pubDate <- dobj.publication){
 						@citDateTimeProp(pubDate, "publication")
 					}
-				</cit:CI_Citation>
+				}
 			</mri:citation>
+
+			@for(topic <- dobj.topics){
+				<mri:topicCategory>
+					<mri:MD_TopicCategoryCode>@topic</mri:MD_TopicCategoryCode>
+				</mri:topicCategory>
+			}
+
 		</mri:MD_DataIdentification>
 	</mdb:identificationInfo>
 
@@ -64,9 +122,26 @@
 		</cit:date>
 		<cit:dateType>
 			<cit:CI_DateTypeCode
-				codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode"
+				codeList="@{codeListUrl("CI_DateTypeCode")}"
 				codeListValue="@dateType"
 			>@dateType</cit:CI_DateTypeCode>
 		</cit:dateType>
 	</cit:CI_Date>
+}
+
+@citation(title: String)(body: Xml = Xml("")) = {
+	<cit:CI_Citation>
+		<cit:title>
+			@charStr(title)
+		</cit:title>
+		@body
+	<cit:CI_Citation>
+}
+
+@charStr(str: String) = {
+	<gco:CharacterString>@str</gco:CharacterString>
+}
+
+@codeListUrl(fragment: String) = @{
+	s"http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#${fragment}"
 }

@@ -57,6 +57,7 @@ class MetaDb (
 	val config: CpmetaConfig
 )(implicit mat: Materializer, configs: EnvriConfigs, system: ActorSystem) extends AutoCloseable{
 
+	export uploadService.servers.vocab
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, dataCiter,config)
 
 	override def close(): Unit = {

@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
@@ -27,7 +28,8 @@ object LinkedDataRoute {
 	def apply(
 		config: InstanceServersConfig,
 		uriSerializer: UriSerializer,
-		instanceServers: Map[String, InstanceServer]
+		instanceServers: Map[String, InstanceServer],
+		vocab: CpVocab
 	)(using envriConfs: EnvriConfigs): Route = {
 
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
@@ -85,7 +87,7 @@ object LinkedDataRoute {
 										complete(
 											HttpEntity(
 												ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`),
-												views.xml.InspireDobjMeta(Inspire(dobj)).body
+												views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri)).body
 											)
 										)
 									}

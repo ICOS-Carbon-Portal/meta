@@ -83,13 +83,12 @@ object LinkedDataRoute {
 							val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
 							uriSerializer.fetchStaticObject(canonUri) match{
 								case Some(dobj: DataObject) =>
+									val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
+									val printer = new scala.xml.PrettyPrinter(120, 3)
+									val fineXml = printer.format(scala.xml.XML.loadString(xml.body))
+									val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 									respondWithHeader(attachmentHeader(fileName)){
-										complete(
-											HttpEntity(
-												ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`),
-												views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri)).body
-											)
-										)
+										complete(HttpEntity(contentType, fineXml))
 									}
 								case _ =>
 									complete(StatusCodes.NotFound -> s"No data object with SHA-256 hashsum of ${hash.base64Url}")

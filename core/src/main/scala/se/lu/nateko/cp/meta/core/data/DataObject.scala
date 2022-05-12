@@ -98,7 +98,7 @@ case class SpatioTemporalMeta(
 	variables: Option[Seq[VarMeta]]
 ){
 	def acquisition: Option[DataAcquisition] = station.map{
-		DataAcquisition(_, None, None, None, None, samplingHeight)
+		DataAcquisition(_, None, Some(temporal.interval), None, None, samplingHeight)
 	}
 }
 

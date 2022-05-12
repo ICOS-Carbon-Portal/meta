@@ -1,5 +1,6 @@
 @import se.lu.nateko.cp.meta.services.metaexport.Inspire
 @import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
+@import se.lu.nateko.cp.meta.core.data.{GeoFeature,LatLonBox}
 @import java.time.Instant
 
 @(dobj: Inspire, envri: Envri, conf: EnvriConfig)
@@ -11,6 +12,8 @@
 	xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0"
 	xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
 	xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0"
+	xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0"
+	xmlns:gml="http://www.opengis.net/gml/3.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0 mdb.xsd"
 >
@@ -52,10 +55,7 @@
 	<mdb:contact>
 		<cit:CI_Responsibility>
 			<cit:role>
-				<cit:CI_RoleCode
-					codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode"
-					codeListValue="publisher"
-				>publisher</cit:CI_RoleCode>
+				@codeListValue("CI_RoleCode", "publisher")
 			</cit:role>
 			<cit:party>
 				<cit:CI_Organisation>
@@ -73,8 +73,7 @@
 										@charStr("http")
 									</cit:protocol>
 									<cit:function>
-										<cit:CI_OnLineFunctionCode
-											codeList="@{codeListUrl("CI_OnLineFunctionCode")}" codeListValue="download"/>
+										@codeListValue("CI_OnLineFunctionCode", "information")
 									</cit:function>
 								</cit:CI_OnlineResource>
 							</cit:onlineResource>
@@ -103,6 +102,32 @@
 				</mri:topicCategory>
 			}
 
+			<mri:extent>
+				<gex:EX_Extent>
+					@for(interval <- dobj.tempCoverage){
+						<gex:temporalElement>
+							<gex:EX_TemporalExtent>
+								<gex:extent>
+									<gml:TimePeriod>
+										<gml:begin>
+											@timeInstant(interval.start)
+										</gml:begin>
+										<gml:end>
+											@timeInstant(interval.stop)
+										</gml:end>
+									</gml:TimePeriod>
+								</gex:extent>
+							</gex:EX_TemporalExtent>
+						</gex:temporalElement>
+					}
+					@for(geo <- dobj.coverage){
+						<gex:geographicElement>
+							@geoFeature(geo)
+						</gex:geographicElement>
+					}
+				</gex:EX_Extent>
+			</mri:extent>
+
 		</mri:MD_DataIdentification>
 	</mdb:identificationInfo>
 
@@ -121,10 +146,7 @@
 			<gco:DateTime>@ts</gco:DateTime>
 		</cit:date>
 		<cit:dateType>
-			<cit:CI_DateTypeCode
-				codeList="@{codeListUrl("CI_DateTypeCode")}"
-				codeListValue="@dateType"
-			>@dateType</cit:CI_DateTypeCode>
+			@codeListValue("CI_DateTypeCode", dateType)
 		</cit:dateType>
 	</cit:CI_Date>
 }
@@ -135,13 +157,54 @@
 			@charStr(title)
 		</cit:title>
 		@body
-	<cit:CI_Citation>
+	</cit:CI_Citation>
 }
 
 @charStr(str: String) = {
 	<gco:CharacterString>@str</gco:CharacterString>
 }
 
-@codeListUrl(fragment: String) = @{
-	s"http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#${fragment}"
+@codeListValue(list: String, value: String) = {
+	<cit:@list
+		codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#@{list}"
+		codeListValue="@value"/>
+}
+
+@timeInstant(inst: Instant) = {
+	<gml:TimeInstant>
+		<gml:timePosition>@inst</gml:timePosition>
+	</gml:TimeInstant>
+}
+
+@geoFeature(geo: GeoFeature) = {
+	@geo match {
+		case LatLonBox(min, max, _, _) => {
+			<gex:EX_GeographicBoundingBox>
+				@gexGcoDecimal("westBoundLongitude", min.lon)
+				@gexGcoDecimal("eastBoundLongitude", max.lon)
+				@gexGcoDecimal("southBoundLatitude", min.lat)
+				@gexGcoDecimal("northBoundLatitude", max.lat)
+			</gex:EX_GeographicBoundingBox>
+		}
+
+		case _ => {
+			<gex:EX_BoundingPolygon>
+				<gex:polygon>
+					@gmlObject(geo)
+				</gex:polygon>
+			</gex:EX_BoundingPolygon>
+		}
+	}
+}
+
+@gexGcoDecimal(tag: String, d: Double) = {
+	<gex:@tag><gco:Decimal>@d</dco:Decimal></gex:@tag>
+}
+
+@gmlObject(geo: GeoFeature) = {
+	@geo match {
+		case _ => {
+			<gml:Object>@geo</gml:Object>
+		}
+	}
 }

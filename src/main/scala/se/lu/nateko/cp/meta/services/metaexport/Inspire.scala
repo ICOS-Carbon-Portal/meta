@@ -6,6 +6,7 @@ import scala.quoted.Expr
 import scala.quoted.Quotes
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 
 
 object Inspire{
@@ -21,6 +22,7 @@ object Inspire{
 }
 
 class Inspire(dobj: DataObject, vocab: CpVocab) {
+	export dobj.coverage
 
 	def id: String = dobj.pid.getOrElse(dobj.hash.id)
 	def hasPid: Boolean = dobj.pid.isDefined
@@ -43,4 +45,9 @@ class Inspire(dobj: DataObject, vocab: CpVocab) {
 
 		Inspire.TopicEnvironment +: extraTopics
 	}
+
+	def tempCoverage: Option[TimeInterval] = dobj.specificInfo.fold(
+		stm => Some(stm.temporal.interval),
+		_.acquisition.interval
+	)
 }

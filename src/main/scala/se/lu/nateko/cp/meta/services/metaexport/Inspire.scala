@@ -22,16 +22,17 @@ object Inspire{
 }
 
 class Inspire(dobj: DataObject, vocab: CpVocab) {
-	export dobj.coverage
+	export dobj.{coverage,fileName}
 
 	def id: String = dobj.pid.getOrElse(dobj.hash.id)
 	def hasPid: Boolean = dobj.pid.isDefined
 	def title = dobj.references.title.getOrElse(dobj.fileName)
 
+	def description: Option[String] = dobj.specificInfo.fold(_.description, _.productionInfo.flatMap(_.comment))
+
 	def publication: Option[Instant] = dobj.submission.stop
 
 	def creation: Instant = dobj.production.map(_.dateTime)
-		.orElse(dobj.acquisition.flatMap(_.interval).map(_.stop))
 		.getOrElse(dobj.submission.start)
 
 	def topics: Seq[String] = {

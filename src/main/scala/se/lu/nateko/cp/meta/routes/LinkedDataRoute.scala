@@ -85,7 +85,8 @@ object LinkedDataRoute {
 								case Some(dobj: DataObject) =>
 									val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
 									val printer = new scala.xml.PrettyPrinter(120, 3)
-									val fineXml = printer.format(scala.xml.XML.loadString(xml.body))
+									val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+										printer.format(scala.xml.XML.loadString(xml.body))
 									val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 									respondWithHeader(attachmentHeader(fileName)){
 										complete(HttpEntity(contentType, fineXml))

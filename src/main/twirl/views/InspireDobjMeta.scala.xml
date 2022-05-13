@@ -1,6 +1,5 @@
 @import se.lu.nateko.cp.meta.services.metaexport.Inspire
-@import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
-@import se.lu.nateko.cp.meta.core.data.{GeoFeature,LatLonBox}
+@import se.lu.nateko.cp.meta.core.data._
 @import java.time.Instant
 
 @(dobj: Inspire, envri: Envri, conf: EnvriConfig)
@@ -13,6 +12,7 @@
 	xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0"
 	xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0"
 	xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0"
+	xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0"
 	xmlns:gml="http://www.opengis.net/gml/3.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0 mdb.xsd"
@@ -84,17 +84,41 @@
 		</cit:CI_Responsibility>
 	</mdb:contact>
 
+	<mdb:referenceSystemInfo>
+		<mrs:MD_ReferenceSystem>
+			<mrs:referenceSystemIdentifier>
+				<mcc:MD_Identifier>
+					<mcc:authority>
+						@citation("World Geodetic System")()
+					</mcc:authority>
+					<mcc:code>
+						@charStr("WGS 84")
+					</mcc:code>
+				</mcc:MD_Identifier>
+			</mrs:referenceSystemIdentifier>
+		</mrs:MD_ReferenceSystem>
+	</mdb:referenceSystemInfo>
+
 	<mdb:identificationInfo>
 		<mri:MD_DataIdentification>
 
 			<mri:citation>
 				@citation(dobj.title){
+					@if(dobj.fileName != dobj.title){
+						<cit:alternateTitle>@{dobj.fileName}</cit:alternateTitle>
+					} else {}
 					@citDateTimeProp(dobj.creation, "creation")
 					@for(pubDate <- dobj.publication){
 						@citDateTimeProp(pubDate, "publication")
 					}
 				}
 			</mri:citation>
+
+			@for(descr <- dobj.description){
+				<mri:abstract>
+					@charStr(descr)
+				</mri:abstract>
+			}
 
 			@for(topic <- dobj.topics){
 				<mri:topicCategory>
@@ -203,8 +227,55 @@
 
 @gmlObject(geo: GeoFeature) = {
 	@geo match {
-		case _ => {
-			<gml:Object>@geo</gml:Object>
+		case p: Position => {
+			@gmlTag("Point", p.label){
+				<gml:pos>@{p.lat6} @{p.lon6}@{p.alt.fold("")(alt => s" $alt")}</gml:pos>
+			}
+		}
+		case b: LatLonBox => {
+			@gmlObject(b.asPolygon)
+		}
+		case p: Polygon => {
+			@gmlTag("Polygon", p.label){
+				<gml:exterior>
+					<gml:LinearRing>
+						@posList(p.vertices :+ p.vertices.head)
+					</gml:LinearRing>
+				</gml:exterior>
+			}
+		}
+		case t: GeoTrack => {
+			@gmlTag("LineString", t.label){
+				@posList(t.points)
+			}
+		}
+		case c: Circle => {
+			<gml:CircleByCenterPoint numArc="1">
+				<gml:pos>@{c.center.lat6} @{c.center.lon6}</gml:pos>
+				<gml:radius uom="m">@{c.radius}</gml:radius>
+			</gml:CircleByCenterPoint>
+		}
+		case coll: FeatureCollection => {
+			@gmlTag("MultiGeometry", coll.label){
+				@for(memb <- coll.features){
+					<gml:geometryMember>
+						@gmlObject(memb)
+					</gml:geometryMember>
+				}
+			}
 		}
 	}
+}
+
+@gmlTag(tag: String, geoLabel: Option[String])(body: Xml) = {
+	<gml:@tag>
+		@for(label <- geoLabel){
+			<gml:name>@label</gml:name>
+		}
+		@body
+	</gml:@tag>
+}
+
+@posList(points: Seq[Position]) = {
+	<gml:posList dimension="2">@{points.map(p => s"${p.lat6} ${p.lon6}").mkString(" ")}</gml:posList>
 }

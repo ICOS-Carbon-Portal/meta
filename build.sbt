@@ -1,3 +1,4 @@
+import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
 ThisBuild / scalaVersion := "3.1.1"
@@ -48,9 +49,10 @@ lazy val metaCore = (project in file("core"))
 val akkaVersion = "2.6.18"
 val akkaHttpVersion = "10.2.8"
 val rdf4jVersion = "2.4.6"
+val owlApiVersion = "5.1.20"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
-val noJsonLd = ExclusionRule(organization = "com.github.jsonld-java")
+val noOwlApiDistr = ExclusionRule("net.sourceforge.owlapi", "owlapi-distribution")
 
 val frontendBuild = taskKey[Int]("Builds the front end apps")
 frontendBuild := {
@@ -96,7 +98,10 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
-			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.3.8.510" excludeAll(noGeronimo, noJsonLd),
+			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
+			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
+			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
+			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "javax.mail"                         % "1.6.2",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.8.11",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.5.2" cross CrossVersion.for3Use2_13,

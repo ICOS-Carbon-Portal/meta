@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.core.data.TimeInterval
 
 object Inspire{
 	val StandardVersion = "ISO 19115-1"
-	val StandardEdition = "2004"
+	val StandardEdition = "2014"
 
 	val RevisionDateTime = "2022-05-11T17:00:00+02:00"
 

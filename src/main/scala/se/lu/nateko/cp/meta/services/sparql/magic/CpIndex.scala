@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
@@ -469,7 +469,7 @@ object CpIndex{
 	}
 
 	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match{
-		case lit: Literal if lit.getDatatype === XMLSchema.DATETIME =>
+		case lit: Literal if lit.getDatatype === XSD.DATETIME =>
 			try{
 				mod(Instant.parse(lit.stringValue).toEpochMilli)
 			}catch{
@@ -478,7 +478,7 @@ object CpIndex{
 	}
 
 	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match{
-		case lit: Literal if lit.getDatatype === XMLSchema.LONG =>
+		case lit: Literal if lit.getDatatype === XSD.LONG =>
 			try{
 				mod(lit.longValue)
 			}catch{
@@ -487,7 +487,7 @@ object CpIndex{
 	}
 
 	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match{
-		case lit: Literal if lit.getDatatype === XMLSchema.FLOAT =>
+		case lit: Literal if lit.getDatatype === XSD.FLOAT =>
 			try{
 				mod(lit.floatValue)
 			}catch{

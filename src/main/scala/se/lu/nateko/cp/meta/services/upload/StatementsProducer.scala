@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DocObjectDto
@@ -55,7 +55,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 		specificStatements ++ Seq(
 			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
-			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XMLSchema.BASE64BINARY)),
+			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XSD.BASE64BINARY)),
 			makeSt(objectUri, metaVocab.wasSubmittedBy, submissionUri),
 			makeSt(submissionUri, RDF.TYPE, metaVocab.submissionClass),
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
@@ -142,8 +142,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 		Seq(
 			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
-			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XMLSchema.DOUBLE)),
-			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XMLSchema.DOUBLE)),
+			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XSD.DOUBLE)),
+			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XSD.DOUBLE)),
 			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
 		) ++
 		makeSt(samplUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++

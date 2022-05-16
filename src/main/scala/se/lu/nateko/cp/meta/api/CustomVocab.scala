@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 
 trait CustomVocab {
 	import CustomVocab.urlEncode
@@ -22,16 +22,16 @@ trait CustomVocab {
 	def getRelative(suffix: String, local: UriId)(using BaseUriProvider): IRI = getRelativeRaw(suffix + local.urlSafeString)
 
 	def lit(litVal: String, dtype: IRI) = factory.createLiteral(litVal, dtype)
-	def lit(litVal: String) = factory.createLiteral(litVal, XMLSchema.STRING)
-	def lit(litVal: Int): Literal = lit(litVal.toString, XMLSchema.INTEGER) //INTEGER, not INT!
+	def lit(litVal: String) = factory.createLiteral(litVal, XSD.STRING)
+	def lit(litVal: Int): Literal = lit(litVal.toString, XSD.INTEGER) //INTEGER, not INT!
 	def lit(litVal: Long) = factory.createLiteral(litVal)
 	def lit(litVal: Boolean) = factory.createLiteral(litVal)
 	def lit(litVal: Double) = factory.createLiteral(litVal)
 	def lit(litVal: Float) = factory.createLiteral(litVal)
-	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
-	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XMLSchema.DATE)
-	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XMLSchema.DATETIME)
-	def lit(litVal: URI) = factory.createLiteral(litVal.toASCIIString, XMLSchema.ANYURI)
+	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XSD.DATETIME)
+	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XSD.DATE)
+	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XSD.DATETIME)
+	def lit(litVal: URI) = factory.createLiteral(litVal.toASCIIString, XSD.ANYURI)
 }
 
 object CustomVocab{

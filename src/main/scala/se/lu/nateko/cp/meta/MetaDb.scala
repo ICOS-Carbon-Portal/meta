@@ -151,7 +151,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		val native = new CpNativeStore(config.rdfStorage, indexInit, citationFactory, log)
 
 		val repo = new SailRepository(native)
-		repo.initialize()
+		native.initialize()
 		(repo, native.isFreshInit, native.getCitationClient)
 	}
 

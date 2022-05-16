@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import org.eclipse.rdf4j.model.Namespace
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.impl.SimpleNamespace
-import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XMLSchema }
+import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XSD }
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
@@ -32,7 +32,7 @@ object InstanceServerSerializer {
 
 	val turtleContType = getContType("text/turtle", ".ttl")
 	val xmlContType = getContType("application/rdf+xml", ".rdf")
-	private val basicNamespaces = Seq(XMLSchema.NS, OWL.NS, RDFS.NS, RDF.NS)
+	private val basicNamespaces = Seq(XSD.NS, OWL.NS, RDFS.NS, RDF.NS)
 
 
 	private val statementProdMarshaller: ToResponseMarshaller[StatementProducer] = Marshaller(

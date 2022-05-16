@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.instanceserver
 
 import java.net.{URI => JavaUri}
 import org.eclipse.rdf4j.model.*
-import org.eclipse.rdf4j.model.vocabulary.{RDF, XMLSchema}
+import org.eclipse.rdf4j.model.vocabulary.{RDF, XSD}
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
@@ -89,22 +89,22 @@ trait InstanceServer extends AutoCloseable{
 	}
 
 	final def getStringValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] =
-		getLiteralValues(subj, pred, XMLSchema.STRING, exp)
+		getLiteralValues(subj, pred, XSD.STRING, exp)
 
 	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Int] =
-		getLiteralValues(subj, pred, XMLSchema.INTEGER, exp).map(_.toInt)
+		getLiteralValues(subj, pred, XSD.INTEGER, exp).map(_.toInt)
 
 	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Long] =
-		getLiteralValues(subj, pred, XMLSchema.LONG, exp).map(_.toLong)
+		getLiteralValues(subj, pred, XSD.LONG, exp).map(_.toLong)
 
 	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Double] =
-		getLiteralValues(subj, pred, XMLSchema.DOUBLE, exp).map(_.toDouble)
+		getLiteralValues(subj, pred, XSD.DOUBLE, exp).map(_.toDouble)
 
 	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Float] =
-		getLiteralValues(subj, pred, XMLSchema.FLOAT, exp).map(_.toFloat)
+		getLiteralValues(subj, pred, XSD.FLOAT, exp).map(_.toFloat)
 
 	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[JavaUri] =
-		getLiteralValues(subj, pred, XMLSchema.ANYURI, exp).map(new JavaUri(_))
+		getLiteralValues(subj, pred, XSD.ANYURI, exp).map(new JavaUri(_))
 }
 
 object InstanceServer{

@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
@@ -218,13 +218,13 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			(deplIri, meta.hasVariableName, vocab.lit(varName))
 		} ++:
 		depl.pos.map{p =>
-			(deplIri, meta.hasLatitude, vocab.lit(p.lat6, XMLSchema.DOUBLE))
+			(deplIri, meta.hasLatitude, vocab.lit(p.lat6, XSD.DOUBLE))
 		} ++:
 		depl.pos.map{p =>
-			(deplIri, meta.hasLongitude, vocab.lit(p.lon6, XMLSchema.DOUBLE))
+			(deplIri, meta.hasLongitude, vocab.lit(p.lon6, XSD.DOUBLE))
 		} ++:
 		depl.pos.flatMap(_.alt).map{alt =>
-			(deplIri, meta.hasSamplingHeight, vocab.lit(f"$alt%.2f", XMLSchema.FLOAT))
+			(deplIri, meta.hasSamplingHeight, vocab.lit(f"$alt%.2f", XSD.FLOAT))
 		} ++:
 		depl.start.map{start =>
 			(deplIri, meta.hasStartTime, vocab.lit(start))

@@ -8,14 +8,14 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import org.eclipse.rdf4j.IsolationLevel
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
+import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.sail.Sail
@@ -28,15 +28,15 @@ extension(factory: ValueFactory){
 	def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 	def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
 	def createLiteral(label: String, dtype: JavaUri): Literal = factory.createLiteral(label, createIRI(dtype))
-	def createLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XMLSchema.DATETIME)
-	def createStringLiteral(label: String): Literal = factory.createLiteral(label, XMLSchema.STRING)
+	def createLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XSD.DATETIME)
+	def createStringLiteral(label: String): Literal = factory.createLiteral(label, XSD.STRING)
 
 	def tripleToStatement(triple: (IRI, IRI, Value)): Statement =
 		factory.createStatement(triple._1, triple._2, triple._3)
 }
 
 extension (label: String)(using factory: ValueFactory){
-	def toRdf: Literal = factory.createLiteral(label, XMLSchema.STRING)
+	def toRdf: Literal = factory.createLiteral(label, XSD.STRING)
 }
 
 extension (uri: IRI){
@@ -111,11 +111,11 @@ extension (repo: Repository){
 	}
 }
 
-def asString(lit: Literal): Option[String] = if(lit.getDatatype === XMLSchema.STRING) Some(lit.stringValue) else None
+def asString(lit: Literal): Option[String] = if(lit.getDatatype === XSD.STRING) Some(lit.stringValue) else None
 
-def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.LONG) Try(lit.longValue).toOption else None
-def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XMLSchema.FLOAT) Try(lit.floatValue).toOption else None
+def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XSD.LONG) Try(lit.longValue).toOption else None
+def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XSD.FLOAT) Try(lit.floatValue).toOption else None
 
-def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XMLSchema.DATETIME)
+def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XSD.DATETIME)
 	Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
 else None

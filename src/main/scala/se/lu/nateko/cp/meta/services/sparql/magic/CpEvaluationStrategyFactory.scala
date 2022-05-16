@@ -23,6 +23,9 @@ import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.FilterPatternSearch
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.QueryEvaluationContext
+import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
 
 
 class CpEvaluationStrategyFactory(
@@ -30,21 +33,18 @@ class CpEvaluationStrategyFactory(
 	indexThunk: () => CpIndex
 ) extends AbstractEvaluationStrategyFactory{
 
-	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource) =
-		new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, new TupleFunctionRegistry){
+	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
+		new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, new TupleFunctionRegistry, 0, stats){
 
-			override def evaluate(expr: TupleExpr, bindings: BindingSet): CloseableIteration[BindingSet, QueryEvaluationException] = {
-				expr match {
+			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match{
 
-					case doFetch: DataObjectFetchNode =>
-						iteration(bindingsForObjectFetch(doFetch, bindings))
+				case doFetch: DataObjectFetchNode =>
+					qEvalStep(bindingsForObjectFetch(doFetch, _))
 
-					case statsFetch: StatsFetchNode =>
-						iteration(bindingsForStatsFetch(statsFetch))
+				case statsFetch: StatsFetchNode =>
+					qEvalStep(_ => bindingsForStatsFetch(statsFetch))
 
-					case _ =>
-						super.evaluate(expr, bindings)
-				}
+				case _ => super.precompile(expr, context)
 			}
 		}
 
@@ -111,8 +111,10 @@ class CpEvaluationStrategyFactory(
 
 	}
 
-	def iteration(iter: Iterator[BindingSet]) =
-		new CloseableIteratorIteration[BindingSet, QueryEvaluationException](iter.asJava)
+	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
+		override def evaluate(bindings: BindingSet) =
+			new CloseableIteratorIteration[BindingSet, QueryEvaluationException](eval(bindings).asJava)
+	}
 
 }
 

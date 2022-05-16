@@ -19,7 +19,7 @@ import akka.stream.scaladsl.Source
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
@@ -292,7 +292,7 @@ class OtcMetaSource(
 	}
 
 	private def parseDate(v: Value): Option[Instant] = v match {
-		case lit: Literal if lit.getDatatype == XMLSchema.DATE =>
+		case lit: Literal if lit.getDatatype == XSD.DATE =>
 			Some(Instant.parse(lit.stringValue + "T12:00:00Z"))
 		case _ => None
 	}
@@ -304,9 +304,9 @@ class OtcMetaSource(
 			Validated.error(s"Expected $v to be a RDF literal of type $dtype")
 	}
 
-	private def parseDouble(v: Value) = parseLiteral(v, XMLSchema.DOUBLE).map(_.toDouble)
-	private def parseString(v: Value) = parseLiteral(v, XMLSchema.STRING)
-	private def parseUriLiteral(v: Value) = parseLiteral(v, XMLSchema.ANYURI).map(new java.net.URI(_))
+	private def parseDouble(v: Value) = parseLiteral(v, XSD.DOUBLE).map(_.toDouble)
+	private def parseString(v: Value) = parseLiteral(v, XSD.STRING)
+	private def parseUriLiteral(v: Value) = parseLiteral(v, XSD.ANYURI).map(new java.net.URI(_))
 	private def ensureIriValue(v: Value): Validated[IRI] = v match{
 		case iri: IRI => Validated.ok(iri)
 		case _ => Validated.error(s"expected an IRI value, got $v")

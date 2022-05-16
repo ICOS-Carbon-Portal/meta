@@ -5,7 +5,7 @@ import java.time.{Instant, LocalDate}
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
@@ -50,19 +50,19 @@ trait FetchingHelper {
 		server.getFloatValues(subj, pred, InstanceServer.AtMostOne).headOption
 
 	protected def getOptionalBool(subj: IRI, pred: IRI): Option[Boolean] =
-		server.getLiteralValues(subj, pred, XMLSchema.BOOLEAN, InstanceServer.AtMostOne).headOption.map(_.toLowerCase == "true")
+		server.getLiteralValues(subj, pred, XSD.BOOLEAN, InstanceServer.AtMostOne).headOption.map(_.toLowerCase == "true")
 
 	protected def getSingleDouble(subj: IRI, pred: IRI): Double =
 		server.getDoubleValues(subj, pred, InstanceServer.ExactlyOne).head
 
 	def getOptionalInstant(subj: IRI, pred: IRI): Option[Instant] =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.AtMostOne).headOption.map(parseInstant)
+		server.getLiteralValues(subj, pred, XSD.DATETIME, InstanceServer.AtMostOne).headOption.map(parseInstant)
 
 	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
-		server.getLiteralValues(subj, pred, XMLSchema.DATETIME, InstanceServer.ExactlyOne).map(parseInstant).head
+		server.getLiteralValues(subj, pred, XSD.DATETIME, InstanceServer.ExactlyOne).map(parseInstant).head
 
 	protected def getOptionalLocalDate(subj: IRI, pred: IRI): Option[LocalDate] =
-		server.getLiteralValues(subj, pred, XMLSchema.DATE, InstanceServer.AtMostOne).headOption.map(LocalDate.parse)
+		server.getLiteralValues(subj, pred, XSD.DATE, InstanceServer.AtMostOne).headOption.map(LocalDate.parse)
 
 	protected def getSingleUriLiteral(subj: IRI, pred: IRI): URI =
 		server.getUriLiteralValues(subj, pred, InstanceServer.ExactlyOne).head
@@ -71,7 +71,7 @@ trait FetchingHelper {
 		server.getUriLiteralValues(subj, pred, InstanceServer.AtMostOne).headOption
 
 	protected def getHashsum(dataObjUri: IRI, pred: IRI): Sha256Sum = {
-		val hash: String = server.getLiteralValues(dataObjUri, pred, XMLSchema.BASE64BINARY, InstanceServer.ExactlyOne).head
+		val hash: String = server.getLiteralValues(dataObjUri, pred, XSD.BASE64BINARY, InstanceServer.ExactlyOne).head
 		Sha256Sum.fromBase64(hash).get
 	}
 

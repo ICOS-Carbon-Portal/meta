@@ -40,7 +40,6 @@ class IndexHandler(fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(im
 class DummyIndexProvider extends IndexProvider{
 	val index = {
 		val sail = new MemoryStore
-		sail.initialize()
 		new CpIndex(sail)(NoLogging)
 	}
 	def statementAdded(s: Statement): Unit = {}

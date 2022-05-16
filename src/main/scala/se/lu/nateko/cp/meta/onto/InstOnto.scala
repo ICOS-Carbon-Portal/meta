@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 class InstOnto (instServer: InstanceServer, val onto: Onto){
@@ -30,19 +30,19 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 	private val rdfsLabelInfo = DataPropertyDto(
 		ResourceDto("label", RDFS.LABEL.toJava, None),
 		CardinalityDto(None, None),
-		DataRangeDto(XMLSchema.STRING.toJava, Nil)
+		DataRangeDto(XSD.STRING.toJava, Nil)
 	)
 
 	private val rdfsCommentInfo = DataPropertyDto(
 		ResourceDto("comment", RDFS.COMMENT.toJava, None),
 		CardinalityDto(None, None),
-		DataRangeDto(XMLSchema.STRING.toJava, Nil)
+		DataRangeDto(XSD.STRING.toJava, Nil)
 	)
 
 	private val rdfsSeeAlsoInfo = DataPropertyDto(
 		ResourceDto("seeAlso", RDFS.SEEALSO.toJava, None),
 		CardinalityDto(None, None),
-		DataRangeDto(XMLSchema.ANYURI.toJava, Nil)
+		DataRangeDto(XSD.ANYURI.toJava, Nil)
 	)
 
 	def getWriteContext: URI = {

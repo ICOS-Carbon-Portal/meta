@@ -6,7 +6,7 @@ import java.sql.Timestamp
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 import se.lu.nateko.cp.meta.RdflogConfig
@@ -137,7 +137,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	private def getConnection() = Postgres.getConnection(serv, creds).get
 
 	private def safeDatatype(lit: Literal): String =
-		if(lit.getDatatype == null) XMLSchema.STRING.stringValue
+		if(lit.getDatatype == null) XSD.STRING.stringValue
 		else lit.getDatatype.stringValue
 
 }

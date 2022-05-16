@@ -24,6 +24,7 @@ import scala.util.Try
 import se.lu.nateko.cp.meta.core.data.References
 import scala.collection.immutable.SeqMap
 import spray.json.RootJsonFormat
+import org.slf4j.LoggerFactory
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
@@ -32,6 +33,7 @@ class CpNativeStoreConnection(
 
 	private given valueFactory: ValueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
+	private val logger = LoggerFactory.getLogger(this.getClass)
 	//private val sailStore = sail.getSailStore
 
 	override def evaluateInternal(

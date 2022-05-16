@@ -6,7 +6,7 @@ import java.{util => ju}
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 
@@ -71,7 +71,7 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 		getOptInstant(bs, "start"),
 		getOptInstant(bs, "end"),
 		getOptInt(bs, "weight"),
-		getOptLiteral(bs, "extra", XMLSchema.STRING).map(_.stringValue)
+		getOptLiteral(bs, "extra", XSD.STRING).map(_.stringValue)
 	)
 
 	private def parsePerson(bs: BindingSet) = Option(bs.getValue("person")).collect{
@@ -129,9 +129,9 @@ object AttributionProvider{
 		case lit: Literal if(lit.getDatatype == litType) => lit
 	}
 
-	def getOptInstant(bs: BindingSet, name: String): Option[Instant] = getOptLiteral(bs, name, XMLSchema.DATETIME)
+	def getOptInstant(bs: BindingSet, name: String): Option[Instant] = getOptLiteral(bs, name, XSD.DATETIME)
 		.map(lit => Instant.parse(lit.stringValue))
 
-	def getOptInt(bs: BindingSet, name: String): Option[Int] = getOptLiteral(bs, name, XMLSchema.INTEGER)
+	def getOptInt(bs: BindingSet, name: String): Option[Int] = getOptLiteral(bs, name, XSD.INTEGER)
 		.map(lit => lit.intValue)
 }

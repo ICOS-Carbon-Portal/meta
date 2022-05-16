@@ -64,7 +64,6 @@ class InstanceServerTests extends AnyFunSpec{
 		describe("makeNewInstance"){
 
 			val repo = new SailRepository(new MemoryStore)
-			repo.initialize()
 			val server = new Rdf4jInstanceServer(repo, ctxt)
 
 			it("makes a correct URI if prefix ends with '/'"){
@@ -81,7 +80,6 @@ class InstanceServerTests extends AnyFunSpec{
 
 		describe("Reading with global context"){
 			val repo = new SailRepository(new MemoryStore)
-			repo.initialize()
 			val server1 = new Rdf4jInstanceServer(repo, ctxt)
 			val server2 = new Rdf4jInstanceServer(repo, ctxt2)
 			

@@ -8,7 +8,7 @@ import scala.util.Failure
 
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import org.eclipse.rdf4j.IsolationLevels
+import org.eclipse.rdf4j.common.transaction.IsolationLevels
 
 
 object RdfUpdateLogIngester{

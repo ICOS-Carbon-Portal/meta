@@ -22,6 +22,7 @@ import org.eclipse.rdf4j.sail.SailException
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 
 trait MagicTupleFuncPlugin extends SailConnectionListener{
 	def makeFunctions: Seq[TupleFunction]
@@ -37,14 +38,9 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeSto
 		plugins.flatMap(_.makeFunctions).foreach(tupleFunctionReg.add)
 
 		new AbstractEvaluationStrategyFactory{
-			override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource) =
-				new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, tupleFunctionReg)
+			override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
+				new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, tupleFunctionReg, 0, stats)
 		}
-	}
-
-	override def initialize(): Unit = {
-		super.initialize()
-		plugins.foreach(_.initialize(baseSail))
 	}
 
 	override def getConnection(): NotifyingSailConnection = new NotifyingSailConnectionWrapper(baseSail.getConnection){

@@ -28,7 +28,7 @@ extension(factory: ValueFactory){
 	def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 	def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
 	def createLiteral(label: String, dtype: JavaUri): Literal = factory.createLiteral(label, createIRI(dtype))
-	def createLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XSD.DATETIME)
+	def createDateTimeLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XSD.DATETIME)
 	def createStringLiteral(label: String): Literal = factory.createLiteral(label, XSD.STRING)
 
 	def tripleToStatement(triple: (IRI, IRI, Value)): Statement =

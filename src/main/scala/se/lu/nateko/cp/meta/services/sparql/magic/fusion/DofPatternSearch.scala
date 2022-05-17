@@ -83,6 +83,8 @@ class DofPatternSearch(meta: CpmetaVocab){
 			case other => other
 		}
 
+		case root: QueryRoot => find0(root.getArg)
+
 		case proj: Projection => find0(proj.getArg) match{
 			case pdofp: ProjectionDofPattern => pdofp
 			case any => ProjectionDofPattern(any, None, None, None, None)

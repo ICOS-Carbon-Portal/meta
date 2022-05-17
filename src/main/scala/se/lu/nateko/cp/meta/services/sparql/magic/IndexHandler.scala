@@ -18,7 +18,7 @@ trait IndexProvider extends SailConnectionListener{
 	def index: CpIndex
 }
 
-class IndexHandler(fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(implicit ctxt: ExecutionContext) extends IndexProvider {
+class IndexHandler(fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends IndexProvider {
 
 	val index = new CpIndex(fromSail)(log)
 	index.flush()
@@ -40,6 +40,7 @@ class IndexHandler(fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(im
 class DummyIndexProvider extends IndexProvider{
 	val index = {
 		val sail = new MemoryStore
+		sail.init()
 		new CpIndex(sail)(NoLogging)
 	}
 	def statementAdded(s: Statement): Unit = {}

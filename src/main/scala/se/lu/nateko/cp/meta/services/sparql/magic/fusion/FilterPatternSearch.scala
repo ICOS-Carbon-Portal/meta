@@ -19,7 +19,6 @@ import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.XSD
 import scala.util.Try
 import scala.util.matching.Regex
 import org.eclipse.rdf4j.query.algebra.StatementPattern

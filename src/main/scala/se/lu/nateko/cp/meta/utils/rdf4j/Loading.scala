@@ -27,7 +27,11 @@ object Loading {
 		})
 	}
 
-	def emptyInMemory: Repository = new SailRepository(new MemoryStore)
+	def emptyInMemory: Repository = {
+		val repo = new SailRepository(new MemoryStore)
+		repo.init()
+		repo
+	}
 
 	private val chunkSize = 1000
 

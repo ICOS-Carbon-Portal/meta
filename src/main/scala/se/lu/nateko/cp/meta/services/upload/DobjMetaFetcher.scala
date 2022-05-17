@@ -4,9 +4,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XSD
 
 import scala.util.Try
 

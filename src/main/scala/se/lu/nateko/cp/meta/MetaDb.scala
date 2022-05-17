@@ -43,6 +43,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import org.eclipse.rdf4j.sail.Sail
+import org.eclipse.rdf4j.model.ValueFactory
 
 
 class MetaDb (
@@ -89,15 +90,15 @@ object MetaDb{
 
 }
 
-class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
+class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	import MetaDb.*
 
 	private val log = system.log
+	private given ExecutionContext = system.dispatcher
 
 	def apply(config0: CpmetaConfig): Future[MetaDb] = {
 
 		validateConfig(config0)
-		import system.dispatcher
 
 		val citerFactory: CitationProviderFactory = new CitationProviderFactory(config0)
 		val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
@@ -108,16 +109,16 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
 
-		implicit val envriConfs = config.core.envriConfigs
+		given EnvriConfigs = config.core.envriConfigs
 
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
 			val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config)(ctxt).andThen{
+			makeInstanceServers(repo, Ingestion.allProviders, config)(using ctxt).andThen{
 				case _ =>
 					ctxt.shutdown()
 					log.info("instance servers created")
-			}(system.dispatcher)
+			}
 		}
 
 		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
@@ -147,11 +148,11 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 	private def makeInitRepo(config: CpmetaConfig, citationFactory: CitationProviderFactory): (Repository, Boolean, CitationClient) = {
 		import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
-		val indexInit: Sail => IndexHandler = new IndexHandler(_, system.scheduler, log)(system.dispatcher)
+		val indexInit = (sail: Sail) => new IndexHandler(sail, system.scheduler, log)
 		val native = new CpNativeStore(config.rdfStorage, indexInit, citationFactory, log)
 
 		val repo = new SailRepository(native)
-		native.initialize()
+		repo.init()
 		(repo, native.isFreshInit, native.getCitationClient)
 	}
 
@@ -162,7 +163,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
-		implicit val factory = repo.getValueFactory
+		given factory: ValueFactory = repo.getValueFactory
 
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
 			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
@@ -272,7 +273,7 @@ class MetaDbFactory(implicit system: ActorSystem, mat: Materializer) {
 		repo: Repository,
 		providersFactory: => Map[String, StatementProvider],
 		config: CpmetaConfig
-	)(implicit ctxt: ExecutionContext): Future[Map[String, InstanceServer]] = {
+	)(using ExecutionContext): Future[Map[String, InstanceServer]] = {
 
 		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
 		val valueFactory = repo.getValueFactory

@@ -456,7 +456,7 @@ object CpIndex{
 
 		private def dateTimeFromLong(dt: Long): Option[Literal] =
 			if(dt == Long.MinValue) None
-			else Some(factory.createLiteral(Instant.ofEpochMilli(dt)))
+			else Some(factory.createDateTimeLiteral(Instant.ofEpochMilli(dt)))
 
 		def sizeInBytes: Option[Long] = if(size >= 0) Some(size) else None
 		def samplingHeightMeters: Option[Float] = if(samplingHeight == Float.NaN) None else Some(samplingHeight)

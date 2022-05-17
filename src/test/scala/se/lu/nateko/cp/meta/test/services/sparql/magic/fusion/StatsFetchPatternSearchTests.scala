@@ -85,8 +85,7 @@ class StatsFetchPatternSearchTests extends AnyFunSpec{
 object StatsFetchPatternSearchTests{
 	val query = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
-	select (count(?dobj) as ?count) ?spec ?submitter
-	(if(bound(?stationOpt), ?stationOpt, <https://dummy.unbound.station>) as ?station0)
+	select (count(?dobj) as ?count) ?spec ?submitter ?stationOpt
 	where{
 		?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
 		?dobj cpmeta:hasObjectSpec ?spec .
@@ -120,10 +119,7 @@ object StatsFetchPatternSearchTests{
 	(if(bound(?stationName), CONCAT(?stPrefix, ?stationName), "(not applicable)") as ?stationLabel)
 	where{
 		{
-			select
-				(if(bound(?stationOpt), ?stationOpt, <https://dummy.unbound.station>) as ?station0)
-				?submitter ?spec (count(?dobj) as ?count)
-			where{
+			select ?stationOpt ?submitter ?spec (count(?dobj) as ?count) where{
 				?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
 				?dobj cpmeta:hasObjectSpec ?spec .
 				OPTIONAL{?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?stationOpt }
@@ -134,6 +130,7 @@ object StatsFetchPatternSearchTests{
 			}
 			group by ?spec ?submitter ?stationOpt
 		}
+		BIND (coalesce(?stationOpt, <https://dummy.unbound.station>) as ?station0)
 		OPTIONAL{?station0 cpmeta:hasName ?stationName}
 		OPTIONAL{?station0 cpmeta:hasStationId ?stId}
 		BIND( IF(bound(?stId), CONCAT("(", ?stId, ") "),"") AS ?stPrefix)

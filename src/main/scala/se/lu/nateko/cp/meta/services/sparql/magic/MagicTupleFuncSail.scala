@@ -43,6 +43,11 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeSto
 		}
 	}
 
+	override def init(): Unit = {
+		super.init()
+		plugins.foreach(_.initialize(baseSail))
+	}
+
 	override def getConnection(): NotifyingSailConnection = new NotifyingSailConnectionWrapper(baseSail.getConnection){
 
 		plugins.foreach(getWrappedConnection.addConnectionListener)

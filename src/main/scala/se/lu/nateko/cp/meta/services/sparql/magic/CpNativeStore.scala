@@ -41,12 +41,13 @@ class CpNativeStore(
 		override def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)
 	}
 
-	def initialize(): Unit = {
+	override def init(): Unit = {
 		if(isFreshInit) log.warning(
 			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
 		)
 		log.info("Initializing triple store...")
 		nativeSail.setForceSync(!isFreshInit)
+		nativeSail.init()
 		if(isFreshInit || conf.disableCpIndex){
 			log.info("Triple store initialized, using a dummy as Carbon Portal index")
 			indexh = new DummyIndexProvider

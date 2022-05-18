@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider;
 class CpInnerNativeStore extends NativeStore{
 
 	private Boolean useCpConnection;
+	private String readonlyErrMessage = null;
 	private final Boolean disableMagic;
 	private final Supplier<IndexProvider> indexProvThunk;
 	private final Supplier<CitationProvider> citProvThunk;
@@ -37,6 +38,10 @@ class CpInnerNativeStore extends NativeStore{
 		);
 	}
 
+	public void makeReadonly(String errMessage){
+		this.readonlyErrMessage = errMessage;
+	}
+
 	public synchronized SailConnection getSpecificConnection(Boolean cpSpecific){
 		this.useCpConnection = cpSpecific;
 		SailConnection conn = super.getConnection();
@@ -49,15 +54,21 @@ class CpInnerNativeStore extends NativeStore{
 		if(this.useCpConnection) {
 			try {
 				CpNativeStoreConnection conn = new CpNativeStoreConnection(this, this.citProvThunk.get());
-				conn.addConnectionListener(this.indexProvThunk.get());
-				return conn;
+				if(this.readonlyErrMessage == null) conn.addConnectionListener(this.indexProvThunk.get());
+				return maybeReadonly(conn);
 			}
 			catch(Exception e){
 				throw new SailException(e);
 			}
 		} else {
-			return super.getConnectionInternal();
+			return maybeReadonly(super.getConnectionInternal());
 		}
+	}
+
+	private NotifyingSailConnection maybeReadonly(NotifyingSailConnection base){
+		return this.readonlyErrMessage == null
+			? base
+			: new ReadonlyConnectionWrapper(base, this.readonlyErrMessage);
 	}
 
 }

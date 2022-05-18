@@ -35,6 +35,7 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
+	def makeReadonly(errorMessage: String): Unit = nativeSail.makeReadonly(errorMessage)
 	def getCitationClient: CitationClient = citer.doiCiter
 
 	private val originalSail: Sail = new SailWrapper(nativeSail){

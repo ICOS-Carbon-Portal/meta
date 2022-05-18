@@ -222,7 +222,7 @@
 }
 
 @gexGcoDecimal(tag: String, d: Double) = {
-	<gex:@tag><gco:Decimal>@d</dco:Decimal></gex:@tag>
+	<gex:@tag><gco:Decimal>@d</gco:Decimal></gex:@tag>
 }
 
 @gmlObject(geo: GeoFeature) = {

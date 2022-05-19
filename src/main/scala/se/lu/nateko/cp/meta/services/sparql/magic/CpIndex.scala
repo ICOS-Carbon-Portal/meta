@@ -22,6 +22,7 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
@@ -31,6 +32,7 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
+import CpIndex.*
 
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
@@ -53,20 +55,31 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Literal]
 }
 
-class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
-	import CpIndex.*
+class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking{
 
+	import data.*
+
+	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
+		this(sail, IndexData(nObjects))(log)
+		//Mass-import of the statistics data
+		Using(sail.getConnection)(_
+			.getStatements(null, null, null, false)
+			.asPlainScalaIterator
+			.foreach(s => put(RdfUpdate(s, true)))
+		)
+		flush()
+		contMap.valuesIterator.foreach(_.optimizeAndTrim())
+		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
+	}
 	given factory: ValueFactory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
-	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
-	private val objs = new ArrayBuffer[ObjEntry](nObjects)
-	private val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
-	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
-	private val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
-	private val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
-	private val initOk = emptyBitmap
+
+	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
+	//Mass-import of the specification info
+	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
 
 	def size: Int = objs.length
+	def serializableData: Serializable = data
 
 	private def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
@@ -93,22 +106,6 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 		case SubmissionStart => DatetimeHierarchicalBitmap(idx => objs(idx).submissionStart)
 		case SubmissionEnd =>   DatetimeHierarchicalBitmap(idx => objs(idx).submissionEnd)
 	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
-
-	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
-
-	//Mass-import of the specification info
-	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
-
-	//Mass-import of the statistics data
-	Using(sail.getConnection)(_
-		.getStatements(null, null, null, false)
-		.asPlainScalaIterator
-		.foreach(s => put(RdfUpdate(s, true)))
-	)
-	flush()
-	contMap.valuesIterator.foreach(_.optimizeAndTrim())
-	stats.filterInPlace{case (_, bm) => !bm.isEmpty}
-
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
@@ -442,7 +439,17 @@ object CpIndex{
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
-	private class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(implicit factory: ValueFactory) extends ObjInfo{
+	class IndexData(nObjects: Int) extends Serializable{
+		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
+		val objs = new ArrayBuffer[ObjEntry](nObjects)
+		val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
+		val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
+		val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
+		val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
+		val initOk = emptyBitmap
+	}
+
+	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(using factory: ValueFactory) extends ObjInfo with Serializable{
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
 		var station: IRI = uninitialized

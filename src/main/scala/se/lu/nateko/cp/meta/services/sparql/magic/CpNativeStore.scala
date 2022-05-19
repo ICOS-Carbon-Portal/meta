@@ -16,6 +16,12 @@ import se.lu.nateko.cp.meta.services.citation.*
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
+import scala.concurrent.Future
+import akka.Done
+import java.io.ObjectOutputStream
+import java.io.FileOutputStream
+import scala.util.Using
+import java.nio.file.{Paths,Files}
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
@@ -35,7 +41,25 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
-	def makeReadonly(errorMessage: String): Unit = nativeSail.makeReadonly(errorMessage)
+	def makeReadonly(errorMessage: String): Future[Done] = {
+		import scala.concurrent.ExecutionContext.Implicits.global
+		Future{
+			nativeSail.makeReadonly(errorMessage)
+			if(indexh == null) Future.successful(Done)
+			else {
+				val path = Paths.get("./sparqlMagicIndex.bin")
+				Files.deleteIfExists(path)
+				val tryWrite = Using(
+					ObjectOutputStream(FileOutputStream(path.toFile))
+				){oos =>
+					oos.writeObject(indexh.index.serializableData)
+					Done
+				}
+				Future.fromTry(tryWrite)
+			}
+		}.flatten
+	}
+
 	def getCitationClient: CitationClient = citer.doiCiter
 
 	private val originalSail: Sail = new SailWrapper(nativeSail){

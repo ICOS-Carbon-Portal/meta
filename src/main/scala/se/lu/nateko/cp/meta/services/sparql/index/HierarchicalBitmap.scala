@@ -16,7 +16,7 @@ import java.{util => ju}
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[K], ord: Ordering[K]){
+class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends java.io.Serializable{
 
 	private val values = emptyBitmap
 	private var n = 0

@@ -33,11 +33,11 @@ object ContFilter{
 
 case class SortBy(property: ContProp, descending: Boolean)
 
-sealed trait Property{type ValueType}
+sealed trait Property extends java.io.Serializable{type ValueType}
 
 sealed trait BoolProperty extends Property{type ValueType = Boolean}
-object DeprecationFlag extends BoolProperty
-object HasVarList extends BoolProperty
+case object DeprecationFlag extends BoolProperty
+case object HasVarList extends BoolProperty
 
 type TypedCategProp[T <: AnyRef] = CategProp{type ValueType = T}
 

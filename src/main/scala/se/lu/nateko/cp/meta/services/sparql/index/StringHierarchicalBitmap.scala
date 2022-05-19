@@ -6,7 +6,7 @@ object StringHierarchicalBitmap{
 
 	val SpilloverThreshold = 513
 
-	implicit object Ord extends Ordering[String]{
+	given Ord: Ordering[String] with{
 
 		def compare(x: String, y: String): Int = {
 			val lx = x.length; val ly = y.length
@@ -28,7 +28,7 @@ object StringHierarchicalBitmap{
 
 	def apply(stringLookup: Int => String): HierarchicalBitmap[String] = {
 
-		val geo = new Geo[String]{
+		given Geo[String] with{
 
 			val spilloverThreshold: Int = SpilloverThreshold
 
@@ -40,7 +40,7 @@ object StringHierarchicalBitmap{
 				else key.charAt(depth - 1).toShort
 		}
 
-		new HierarchicalBitmap[String](0, None)(geo, Ord)
+		new HierarchicalBitmap[String](0, None)
 	}
 
 }

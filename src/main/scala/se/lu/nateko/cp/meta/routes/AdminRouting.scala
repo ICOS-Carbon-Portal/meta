@@ -13,11 +13,15 @@ import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import scala.concurrent.Future
+import akka.Done
 
 class AdminRouting(
 	sparqler: SparqlRunner,
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
+	makeMetaReadonly: String => Future[Done],
 	conf: SparqlServerConfig
 ) {
 
@@ -26,7 +30,13 @@ class AdminRouting(
 	val route = pathPrefix("admin"){
 		permitAdmins{
 			pathPrefix("insert")(operationRoute(true)) ~
-			pathPrefix("delete")(operationRoute(false))
+			pathPrefix("delete")(operationRoute(false)) ~
+			(path("switchToReadonlyMode") & post){
+				val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
+				onSuccess(makeMetaReadonly(msg)){
+					_ => complete(StatusCodes.OK)
+				}
+			}
 		} ~
 		complete(StatusCodes.Forbidden -> "Only SPARQL admins are allowed here")
 	}

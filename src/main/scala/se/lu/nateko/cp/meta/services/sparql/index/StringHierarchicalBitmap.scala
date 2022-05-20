@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+
 
 object StringHierarchicalBitmap{
 	import HierarchicalBitmap.*
@@ -26,13 +28,13 @@ object StringHierarchicalBitmap{
 	}
 
 
-	def apply(stringLookup: Int => String): HierarchicalBitmap[String] = {
+	def fileName(idx: IndexData): HierarchicalBitmap[String] = {
 
 		given Geo[String] with{
 
 			val spilloverThreshold: Int = SpilloverThreshold
 
-			def keyLookup(value: Int): String = stringLookup(value)
+			def keyLookup(value: Int): String = idx.objs(value).fName
 
 			def coordinate(key: String, depth: Int): Coord =
 				if(depth < 1) 0

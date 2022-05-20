@@ -9,7 +9,6 @@ import org.eclipse.rdf4j.query.algebra.Order
 import org.eclipse.rdf4j.query.algebra.Group
 import org.eclipse.rdf4j.query.algebra.Filter
 import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
-import se.lu.nateko.cp.meta.services.sparql.index.FileName
 import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 
 object DofPatternRewrite{
@@ -35,8 +34,7 @@ object DofPatternRewrite{
 
 		exprs.filter(_ ne deepest).foreach(replaceNode)
 
-		//excluding FileName property, as it is supposed to be bound by vanilla SPARQL execution
-		val propVars = fusion.propVars.collect{case (qvar, prop) if prop != FileName => (prop, qvar.name)}
+		val propVars = fusion.propVars.collect{case (qvar, prop) => (prop, qvar.name)}
 		val fetchExpr = new DataObjectFetchNode(fusion.fetch, propVars)
 
 		safelyReplace(deepest, fetchExpr)

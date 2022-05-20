@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.index
 import java.time.Instant
 import HierarchicalBitmap.*
 import scala.annotation.tailrec
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
  * Factory for HierarchivalBitmap[Float] suitable for representing air/water sampling heights
@@ -18,13 +19,13 @@ object SamplingHeightHierarchicalBitmap{
 		)
 	}.toShort
 
-	def apply(heightLookup: Int => Float): HierarchicalBitmap[Float] = {
+	def apply(idx: IndexData): HierarchicalBitmap[Float] = {
 
-		implicit val geo = new Geo[Float]{
+		given Geo[Float] with{
 
 			val spilloverThreshold: Int = SpilloverThreshold
 
-			def keyLookup(value: Int): Float = heightLookup(value)
+			def keyLookup(value: Int): Float = idx.objs(value).samplingHeight
 
 			def coordinate(key: Float, depth: Int): Coord = getCoordinate(key, depth)
 		}

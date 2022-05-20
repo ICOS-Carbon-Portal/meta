@@ -10,7 +10,7 @@ import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
-
+import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 
 object Main extends App with CpmetaJsonProtocol{
 
@@ -20,8 +20,15 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 	val metaFactory = new MetaDbFactory
+	system.log.info("Trying to restore SPARQL magic index...")
+	val indexDataFut = IndexHandler.restore()
 	val startup = for(
-		db <- metaFactory(config);
+		idxOpt <- indexDataFut.map(Option(_)).recover{
+			case err =>
+				system.log.info(s"Failed to restore SPARQL index (${err.getMessage})")
+				None
+		};
+		db <- metaFactory(config, idxOpt);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		route = MainRoute(db, metaflow, config);
 		binding <- Http().newServerAt("localhost", config.port).bind(route)

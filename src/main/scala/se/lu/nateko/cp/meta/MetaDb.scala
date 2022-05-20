@@ -45,6 +45,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.model.ValueFactory
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 
 class MetaDb (
@@ -98,13 +99,13 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(config0: CpmetaConfig): Future[MetaDb] = {
+	def apply(config0: CpmetaConfig, indexData: Option[IndexData]): Future[MetaDb] = {
 
 		validateConfig(config0)
 
 		val citerFactory: CitationProviderFactory = new CitationProviderFactory(config0)
 		//val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
-		val indexInit = (sail: Sail) => new IndexHandler(sail, system.scheduler, log)
+		val indexInit = (sail: Sail) => new IndexHandler(indexData, sail, system.scheduler, log)
 		val native = new CpNativeStore(config0.rdfStorage, indexInit, citerFactory, log)
 
 		val repo = new SailRepository(native)

@@ -74,6 +74,7 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
 		val index = indexThunk()
+		val f = index.factory
 
 		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
 
@@ -83,20 +84,20 @@ class CpEvaluationStrategyFactory(
 				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
 			prop match{
-				case DobjUri         => setter(_.uri)
+				case DobjUri         => setter(_.uri(f))
 				case Spec            => setter(_.spec)
 				case Station         => setter(_.station)
 				case Site            => setter(_.site)
 				case Submitter       => setter(_.submitter)
-				case FileName        => (_, _) => ()
+				case FileName        => setterOpt(_.fileName.map(f.createLiteral))
 				case _: BoolProperty => (_, _) => ()
 				case _: StringCategProp => (_, _) => ()
-				case FileSize        => setterOpt(_.sizeInBytes.map(index.factory.createLiteral))
-				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(index.factory.createLiteral))
-				case SubmissionStart => setterOpt(_.submissionStartTime)
-				case SubmissionEnd   => setterOpt(_.submissionEndTime)
-				case DataStart       => setterOpt(_.dataStartTime)
-				case DataEnd         => setterOpt(_.dataEndTime)
+				case FileSize        => setterOpt(_.sizeInBytes.map(f.createLiteral))
+				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
+				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
+				case SubmissionEnd   => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
+				case DataStart       => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
+				case DataEnd         => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
 			}
 		}
 

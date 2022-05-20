@@ -13,14 +13,24 @@ import org.eclipse.rdf4j.sail.SailConnectionListener
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import akka.event.NoLogging
 import akka.event.LoggingAdapter
+import scala.concurrent.Future
+import akka.Done
+
+import java.io.ObjectOutputStream
+import java.io.FileOutputStream
+import java.io.ObjectInputStream
+import java.io.FileInputStream
+import scala.util.Using
+import java.nio.file.{Paths,Files}
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 trait IndexProvider extends SailConnectionListener{
 	def index: CpIndex
 }
 
-class IndexHandler(fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends IndexProvider {
+class IndexHandler(data: Option[IndexData], fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends IndexProvider {
 
-	val index = new CpIndex(fromSail)(log)
+	val index = data.fold(new CpIndex(fromSail)(log))(idx => new CpIndex(fromSail, idx)(log))
 	index.flush()
 
 	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
@@ -45,4 +55,27 @@ class DummyIndexProvider extends IndexProvider{
 	}
 	def statementAdded(s: Statement): Unit = {}
 	def statementRemoved(s: Statement): Unit = {}
+}
+
+object IndexHandler{
+	import scala.concurrent.ExecutionContext.Implicits.global
+
+	def storagePath = Paths.get("./sparqlMagicIndex.bin")
+
+	def store(idx: CpIndex): Future[Done] = Future{
+
+		Files.deleteIfExists(storagePath)
+
+		Using(ObjectOutputStream(FileOutputStream(storagePath.toFile))){oos =>
+			oos.writeObject(idx.serializableData)
+			Done
+		}.get
+	}
+
+
+	def restore(): Future[IndexData] = Future{
+		Using(ObjectInputStream(FileInputStream(storagePath.toFile))){ois =>
+			ois.readObject.asInstanceOf[IndexData]
+		}.get
+	}
 }

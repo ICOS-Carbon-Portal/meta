@@ -19,7 +19,7 @@ class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
 
 object MetaFlow {
 
-	def initiate(db: MetaDb, conf: CpmetaConfig)(implicit mat: Materializer, system: ActorSystem): Try[MetaFlow] = Try{
+	def initiate(db: MetaDb, conf: CpmetaConfig)(using mat: Materializer, system: ActorSystem): Try[MetaFlow] = Try{
 
 		implicit val envriConfs = conf.core.envriConfigs
 		
@@ -59,8 +59,10 @@ object MetaFlow {
 			val diffV = diffCalc.calcDiff(state)
 			if(diffV.errors.isEmpty) {
 				diffV.foreach{updates =>
-					icosServer.applyAll(updates)
-					system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
+					icosServer.applyAll(updates).fold(
+						err => system.log.error(err, s"Problem applying $tip station-metadata diff"),
+						_ => system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
+					)
 				}
 			} else{
 				val nUpdates = diffV.result.fold(0)(_.size)

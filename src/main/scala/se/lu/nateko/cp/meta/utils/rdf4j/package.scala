@@ -7,6 +7,7 @@ import scala.collection.AbstractIterator
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import scala.util.Using
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
@@ -61,23 +62,12 @@ extension [T](res: CloseableIteration[T, _]){
 extension (repo: Repository){
 
 	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
-	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] = {
-		val conn = repo.getConnection
-		isoLevel.fold(conn.begin)(conn.begin)
-		
-		try{
+	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
+		Using(repo.getConnection){conn =>
+			isoLevel.fold(conn.begin)(conn.begin)
 			action(conn)
-			Success(conn.commit())
+			conn.commit()
 		}
-		catch{
-			case err: Throwable =>
-				conn.rollback()
-				Failure(err)
-		}
-		finally{
-			conn.close()
-		}
-	}
 
 	def access[T](accessor: RepositoryConnection => CloseableIteration[T, _]): CloseableIterator[T] = access(accessor, () => ())
 

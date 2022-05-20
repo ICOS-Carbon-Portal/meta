@@ -8,6 +8,8 @@ import org.eclipse.rdf4j.sail.nativerdf.NativeStore;
 import org.eclipse.rdf4j.sail.NotifyingSailConnection;
 import org.eclipse.rdf4j.sail.SailConnection;
 import org.eclipse.rdf4j.sail.SailException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.lu.nateko.cp.meta.services.citation.CitationProvider;
 
@@ -18,6 +20,7 @@ class CpInnerNativeStore extends NativeStore{
 	private final Boolean disableMagic;
 	private final Supplier<IndexProvider> indexProvThunk;
 	private final Supplier<CitationProvider> citProvThunk;
+	private static final Logger logger = LoggerFactory.getLogger(NativeStore.class);
 
 	public CpInnerNativeStore(
 		Path storageFolder,
@@ -39,36 +42,38 @@ class CpInnerNativeStore extends NativeStore{
 	}
 
 	public void makeReadonly(String errMessage){
+		logger.info("Switching CpInnerNativeStore to read-only mode");
 		this.readonlyErrMessage = errMessage;
 	}
 
 	public synchronized SailConnection getSpecificConnection(Boolean cpSpecific){
 		this.useCpConnection = cpSpecific;
-		SailConnection conn = super.getConnection();
-		this.useCpConnection = !this.disableMagic;
-		return conn;
+		try{
+			NotifyingSailConnection writable = getConnection();
+
+			if(this.readonlyErrMessage == null) {
+				writable.addConnectionListener(this.indexProvThunk.get());
+				return writable;
+			}
+
+			return new ReadonlyConnectionWrapper(writable, this.readonlyErrMessage);
+		} finally{
+			this.useCpConnection = !this.disableMagic;
+		}
 	}
 
 	@Override
-	protected NotifyingSailConnection getConnectionInternal() {
+	protected NotifyingSailConnection getConnectionInternal() throws SailException{
 		if(this.useCpConnection) {
 			try {
-				CpNativeStoreConnection conn = new CpNativeStoreConnection(this, this.citProvThunk.get());
-				if(this.readonlyErrMessage == null) conn.addConnectionListener(this.indexProvThunk.get());
-				return maybeReadonly(conn);
+				return new CpNativeStoreConnection(this, this.citProvThunk.get());
 			}
 			catch(Exception e){
 				throw new SailException(e);
 			}
 		} else {
-			return maybeReadonly(super.getConnectionInternal());
+			return super.getConnectionInternal();
 		}
-	}
-
-	private NotifyingSailConnection maybeReadonly(NotifyingSailConnection base){
-		return this.readonlyErrMessage == null
-			? base
-			: new ReadonlyConnectionWrapper(base, this.readonlyErrMessage);
 	}
 
 }

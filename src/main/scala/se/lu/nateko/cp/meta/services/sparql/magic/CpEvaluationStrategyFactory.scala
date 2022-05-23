@@ -30,7 +30,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
 
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
-	indexThunk: () => CpIndex
+	index: CpIndex
 ) extends AbstractEvaluationStrategyFactory{
 
 	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
@@ -49,7 +49,6 @@ class CpEvaluationStrategyFactory(
 		}
 
 	private def bindingsForStatsFetch(statFetch: StatsFetchNode): Iterator[BindingSet] = {
-		val index = indexThunk()
 		import statFetch.{group, countVarName}
 
 		val allStatEntries = index.statEntries(group.filter)
@@ -73,7 +72,6 @@ class CpEvaluationStrategyFactory(
 	}
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
-		val index = indexThunk()
 		val f = index.factory
 
 		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>

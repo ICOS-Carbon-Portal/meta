@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.sail.nativerdf.NativeStore;
 import org.eclipse.rdf4j.sail.NotifyingSailConnection;
 import org.eclipse.rdf4j.sail.SailConnection;
 import org.eclipse.rdf4j.sail.SailException;
+import org.eclipse.rdf4j.sail.SailConnectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,58 +16,44 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider;
 
 class CpInnerNativeStore extends NativeStore{
 
-	private Boolean useCpConnection;
+	public SailConnectionListener listener = null;
+	public CitationProvider citer = null;
+	private final Boolean disableIndex;
+	private Boolean useCpConnection = false;
 	private String readonlyErrMessage = null;
-	private final Boolean disableMagic;
-	private final Supplier<IndexProvider> indexProvThunk;
-	private final Supplier<CitationProvider> citProvThunk;
 	private static final Logger logger = LoggerFactory.getLogger(NativeStore.class);
 
-	public CpInnerNativeStore(
-		Path storageFolder,
-		String indexDef,
-		Boolean disableMagic,
-		Supplier<IndexProvider> indexProvThunk,
-		Supplier<CitationProvider> citProvThunk
-	) {
+	public CpInnerNativeStore(Path storageFolder, String indexDef, Boolean disableIndex) {
 		super(storageFolder.toFile(), indexDef);
-
-		this.disableMagic = disableMagic;
-		this.useCpConnection = !disableMagic;
-		this.indexProvThunk = indexProvThunk;
-		this.citProvThunk = citProvThunk;
-
-		if(!disableMagic) setEvaluationStrategyFactory(
-			new CpEvaluationStrategyFactory(getFederatedServiceResolver(), () -> indexProvThunk.get().index())
-		);
+		this.disableIndex = disableIndex;
 	}
 
-	public void makeReadonly(String errMessage){
+	public synchronized void makeReadonly(String errMessage){
 		logger.info("Switching CpInnerNativeStore to read-only mode");
-		this.readonlyErrMessage = errMessage;
+		readonlyErrMessage = errMessage;
 	}
 
-	public synchronized SailConnection getSpecificConnection(Boolean cpSpecific){
-		this.useCpConnection = cpSpecific;
+	public synchronized SailConnection getCpConnection(){
+		useCpConnection = true;
 		try{
 			NotifyingSailConnection writable = getConnection();
 
-			if(this.readonlyErrMessage == null) {
-				writable.addConnectionListener(this.indexProvThunk.get());
+			if(readonlyErrMessage == null) {
+				if(listener != null) writable.addConnectionListener(listener);
 				return writable;
 			}
-
+			//no need to update SPARQL index if connection is read-only, hence no listening
 			return new ReadonlyConnectionWrapper(writable, this.readonlyErrMessage);
 		} finally{
-			this.useCpConnection = !this.disableMagic;
+			useCpConnection = false;
 		}
 	}
 
 	@Override
 	protected NotifyingSailConnection getConnectionInternal() throws SailException{
-		if(this.useCpConnection) {
+		if(useCpConnection && citer != null) {
 			try {
-				return new CpNativeStoreConnection(this, this.citProvThunk.get());
+				return new CpNativeStoreConnection(this, citer, disableIndex);
 			}
 			catch(Exception e){
 				throw new SailException(e);

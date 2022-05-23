@@ -13,41 +13,39 @@ import org.eclipse.rdf4j.sail.Sail
 
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.citation.*
+import se.lu.nateko.cp.meta.utils.async.ok
 
 import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import org.eclipse.rdf4j.sail.SailConnection
 import scala.concurrent.Future
 import akka.Done
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import org.eclipse.rdf4j.sail.SailConnectionListener
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
-	indexInit: Sail => IndexProvider,
+	listenerFactory: CpIndex => SailConnectionListener,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
 ) extends SailWrapper{
 
-	private var indexh: IndexProvider = uninitialized
-	private var citer: CitationProvider = uninitialized
+	private var cpIndex: Option[CpIndex] = None
 	private val storageDir = Paths.get(conf.path)
 
 	val isFreshInit: Boolean = initStorageFolder() || conf.recreateAtStartup
 	private val indices = if(isFreshInit) "" else conf.indices
+	private val disableCpIndex = isFreshInit || conf.disableCpIndex
 
-	private val nativeSail = new CpInnerNativeStore(storageDir, indices, isFreshInit, () => indexh, () => citer)
+	private val nativeSail = new CpInnerNativeStore(storageDir, indices, disableCpIndex)
 
 	setBaseSail(nativeSail)
 
 	def makeReadonly(errorMessage: String): Future[Done] = {
 		nativeSail.makeReadonly(errorMessage)
-		if(indexh == null) Future.successful(Done)
-		else IndexHandler.store(indexh.index)
+		cpIndex.fold(ok)(IndexHandler.store)
 	}
 
-	def getCitationClient: CitationClient = citer.doiCiter
-
-	private val originalSail: Sail = new SailWrapper(nativeSail){
-		override def getConnection(): SailConnection = nativeSail.getSpecificConnection(false)
-	}
+	def getCitationClient: CitationClient = nativeSail.citer.doiCiter
 
 	override def init(): Unit = {
 		if(isFreshInit) log.warning(
@@ -56,19 +54,33 @@ class CpNativeStore(
 		log.info("Initializing triple store...")
 		nativeSail.setForceSync(!isFreshInit)
 		nativeSail.init()
-		if(isFreshInit || conf.disableCpIndex){
-			log.info("Triple store initialized, using a dummy as Carbon Portal index")
-			indexh = new DummyIndexProvider
-		} else {
-			log.info("Triple store initialized, initializing Carbon Portal index...")
-			indexh = indexInit(originalSail)
-			log.info(s"Carbon Portal index initialized with info on ${indexh.index.size} data objects")
-		}
-		citer = citationFactory.getProvider(originalSail)
+		log.info("Triple store initialized")
+		nativeSail.citer = citationFactory.getProvider(nativeSail)
 		log.info("Initialized citation provider")
 	}
 
-	override def getConnection(): SailConnection = nativeSail.getSpecificConnection(!isFreshInit)
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit = {
+		cpIndex = if(disableCpIndex){
+			log.info("Using a dummy as Carbon Portal index")
+			None
+		} else {
+			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")
+			val idx = idxData.fold(new CpIndex(nativeSail)(log))(idx => new CpIndex(nativeSail, idx)(log))
+			idx.flush()
+			nativeSail.listener = listenerFactory(idx)
+			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
+			Some(idx)
+		}
+		cpIndex.foreach{idx =>
+			nativeSail.setEvaluationStrategyFactory(
+				new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), idx)
+			)
+		}
+	}
+
+	override def getConnection(): SailConnection =
+		if(isFreshInit) nativeSail.getConnection()
+		else nativeSail.getCpConnection()
 
 	private def initStorageFolder(): Boolean = {
 

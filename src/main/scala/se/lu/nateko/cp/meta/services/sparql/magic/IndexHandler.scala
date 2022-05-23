@@ -24,14 +24,7 @@ import scala.util.Using
 import java.nio.file.{Paths,Files}
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
-trait IndexProvider extends SailConnectionListener{
-	def index: CpIndex
-}
-
-class IndexHandler(data: Option[IndexData], fromSail: Sail, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends IndexProvider {
-
-	val index = data.fold(new CpIndex(fromSail)(log))(idx => new CpIndex(fromSail, idx)(log))
-	index.flush()
+class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends SailConnectionListener {
 
 	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
@@ -47,16 +40,6 @@ class IndexHandler(data: Option[IndexData], fromSail: Sail, scheduler: Scheduler
 
 }
 
-class DummyIndexProvider extends IndexProvider{
-	val index = {
-		val sail = new MemoryStore
-		sail.init()
-		new CpIndex(sail)(NoLogging)
-	}
-	def statementAdded(s: Statement): Unit = {}
-	def statementRemoved(s: Statement): Unit = {}
-}
-
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -64,7 +47,7 @@ object IndexHandler{
 
 	def store(idx: CpIndex): Future[Done] = Future{
 
-		Files.deleteIfExists(storagePath)
+		dropStorage()
 
 		Using(ObjectOutputStream(FileOutputStream(storagePath.toFile))){oos =>
 			oos.writeObject(idx.serializableData)
@@ -72,6 +55,7 @@ object IndexHandler{
 		}.get
 	}
 
+	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	def restore(): Future[IndexData] = Future{
 		Using(ObjectInputStream(FileInputStream(storagePath.toFile))){ois =>

@@ -27,14 +27,15 @@ object StringHierarchicalBitmap{
 		}
 	}
 
+	def fileName(idx: IndexData) = apply(idx.objs(_).fName)
 
-	def fileName(idx: IndexData): HierarchicalBitmap[String] = {
+	def apply(kLookup: Int => String): HierarchicalBitmap[String] = {
 
 		given Geo[String] with{
 
 			val spilloverThreshold: Int = SpilloverThreshold
 
-			def keyLookup(value: Int): String = idx.objs(value).fName
+			def keyLookup(value: Int): String = kLookup(value)
 
 			def coordinate(key: String, depth: Int): Coord =
 				if(depth < 1) 0

@@ -28,20 +28,23 @@ import org.slf4j.LoggerFactory
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
-	citer: CitationProvider
+	citer: CitationProvider,
+	disableIndex: Boolean
 ) extends NativeStoreConnection(sail){
 
 	private given valueFactory: ValueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
 	private val logger = LoggerFactory.getLogger(this.getClass)
-	//private val sailStore = sail.getSailStore
 
 	override def evaluateInternal(
 		expr: TupleExpr,
 		dataset: Dataset,
 		bindings: BindingSet,
 		includeInferred: Boolean
-	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = try{
+	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] =
+
+	if(disableIndex) super.evaluateInternal(expr, dataset, bindings, includeInferred)
+	else try{
 
 		logger.debug("Original query model:\n{}", expr)
 

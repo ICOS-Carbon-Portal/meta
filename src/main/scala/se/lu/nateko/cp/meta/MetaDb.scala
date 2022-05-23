@@ -45,7 +45,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 
 
 class MetaDb (
@@ -56,12 +56,11 @@ class MetaDb (
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	val repo: Repository,
-	store: CpNativeStore,
+	val store: CpNativeStore,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable{
 
 	export uploadService.servers.vocab
-	export store.makeReadonly
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, store.getCitationClient,config)
 
 	override def close(): Unit = {
@@ -99,14 +98,14 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(config0: CpmetaConfig, indexData: Option[IndexData]): Future[MetaDb] = {
+	def apply(config0: CpmetaConfig): Future[MetaDb] = {
 
 		validateConfig(config0)
 
 		val citerFactory: CitationProviderFactory = new CitationProviderFactory(config0)
 		//val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
-		val indexInit = (sail: Sail) => new IndexHandler(indexData, sail, system.scheduler, log)
-		val native = new CpNativeStore(config0.rdfStorage, indexInit, citerFactory, log)
+		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
+		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, citerFactory, log)
 
 		val repo = new SailRepository(native)
 		repo.init()

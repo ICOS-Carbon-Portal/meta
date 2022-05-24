@@ -21,15 +21,7 @@ object SamplingHeightHierarchicalBitmap{
 
 	def apply(idx: IndexData): HierarchicalBitmap[Float] = {
 
-		given Geo[Float] with{
-
-			val spilloverThreshold: Int = SpilloverThreshold
-
-			def keyLookup(value: Int): Float = idx.objs(value).samplingHeight
-
-			def coordinate(key: Float, depth: Int): Coord = getCoordinate(key, depth)
-		}
-
+		given Geo[Float] = new SamplingHeightGeo(idx)
 		import scala.math.Ordering.Float.IeeeOrdering
 
 		new HierarchicalBitmap[Float](0, None)
@@ -41,6 +33,13 @@ object SamplingHeightHierarchicalBitmap{
 			res *= 10; i += 1
 		}
 		res
+	}
+
+	class SamplingHeightGeo(idx: IndexData) extends Geo[Float]{
+		private def this() = this(null)//for Kryo deserialization
+		val spilloverThreshold: Int = SpilloverThreshold
+		def keyLookup(value: Int): Float = idx.objs(value).samplingHeight
+		def coordinate(key: Float, depth: Int): Coord = getCoordinate(key, depth)
 	}
 
 }

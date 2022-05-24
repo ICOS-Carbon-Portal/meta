@@ -18,6 +18,7 @@ import java.io.Serializable
  * - a key may correspond to multiple values, but every value has a single key
 */
 class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable{
+	private def this() = this(0, None)(using null, null) //for Kryo deserialization
 
 	private val values = emptyBitmap
 	private var n = 0

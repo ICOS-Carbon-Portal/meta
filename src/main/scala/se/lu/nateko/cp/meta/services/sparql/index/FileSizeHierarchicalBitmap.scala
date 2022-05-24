@@ -20,17 +20,15 @@ object FileSizeHierarchicalBitmap{
 	}
 
 	def apply(idx: IndexData): HierarchicalBitmap[Long] = {
-
-		implicit val geo = new Geo[Long]{
-
-			val spilloverThreshold: Int = SpilloverThreshold
-
-			def keyLookup(value: Int): Long = idx.objs(value).size
-
-			def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
-		}
-
+		given Geo[Long] = LongGeo(idx)
 		new HierarchicalBitmap[Long](0, None)
+	}
+
+	class LongGeo(idx: IndexData) extends Geo[Long]{
+		private def this() = this(null)//for Kryo deserialization
+		val spilloverThreshold: Int = SpilloverThreshold
+		def keyLookup(value: Int): Long = idx.objs(value).size
+		def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
 	}
 
 }

@@ -42,7 +42,10 @@ class CpNativeStore(
 
 	def makeReadonly(errorMessage: String): Future[Done] = {
 		nativeSail.makeReadonly(errorMessage)
-		cpIndex.fold(ok)(IndexHandler.store)
+		cpIndex.fold(ok){idx =>
+			idx.flush()
+			IndexHandler.store(idx)
+		}
 	}
 
 	def getCitationClient: CitationClient = nativeSail.citer.doiCiter

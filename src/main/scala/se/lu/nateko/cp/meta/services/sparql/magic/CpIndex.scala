@@ -34,7 +34,9 @@ import scala.util.Using
 
 import CpIndex.*
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
+	private def this() = this(null, null, null, null)//for Kryo deserialization
+}
 case class StatEntry(key: StatKey, count: Int)
 
 trait ObjSpecific{
@@ -436,7 +438,8 @@ object CpIndex{
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 	class IndexData(nObjects: Int) extends Serializable{
-		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
+		def this() = this(0)
+		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects * 2)
 		val objs = new ArrayBuffer[ObjEntry](nObjects)
 		val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
 		val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
@@ -446,6 +449,7 @@ object CpIndex{
 	}
 
 	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
+		private def this() = this(null, 0, null)//for Kryo deserialization
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
 		var station: IRI = uninitialized

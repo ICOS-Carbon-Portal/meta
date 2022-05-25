@@ -38,6 +38,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
+import java.io.OutputStream
+import java.io.InputStream
+import org.eclipse.rdf4j.sail.memory.model.MemIRI
+import se.lu.nateko.cp.meta.services.sparql.index.Property
 
 class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends SailConnectionListener {
 
@@ -58,6 +62,9 @@ class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(us
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global
 
+	def storagePath = Paths.get("./sparqlMagicIndex.bin")
+	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
+
 	val kryo = Kryo()
 	kryo.setRegistrationRequired(false)
 	kryo.setReferences(true)
@@ -67,31 +74,34 @@ object IndexHandler{
 	kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
 	kryo.register(classOf[IRI], IriSerializer)
 	kryo.register(classOf[NativeIRI], IriSerializer)
+	kryo.register(classOf[MemIRI], IriSerializer)
 	kryo.register(classOf[Some[?]], OptionSomeSerializer)
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
+	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
 	kryo.register(classOf[ObjEntry])
 	kryo.register(classOf[StatKey])
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
-
-	def storagePath = Paths.get("./sparqlMagicIndex.bin")
+	kryo.register(classOf[Property], PropertySerializer)
 
 	def store(idx: CpIndex): Future[Done] = Future{
-
 		dropStorage()
+		Using(FileOutputStream(storagePath.toFile))(storeToStream(idx, _)).get
+	}.flatten
 
-		Using(Output(FileOutputStream(storagePath.toFile))){output =>
-			kryo.writeObject(output, idx.serializableData)
-			Done
-		}.get
+	def storeToStream(idx: CpIndex, os: OutputStream): Future[Done] = Future{
+		val output = Output(os)
+		kryo.writeObject(output, idx.serializableData)
+		output.flush()
+		Done
 	}
 
-	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
+	def restore(): Future[IndexData] = Future.fromTry{
+		Using(FileInputStream(storagePath.toFile))(restoreFromStream)
+	}.flatten
 
-	def restore(): Future[IndexData] = Future{
-		Using(Input(FileInputStream(storagePath.toFile))){input =>
-			kryo.readObject(input, classOf[IndexData])
-		}.get
+	def restoreFromStream(is: InputStream): Future[IndexData] = Future{
+		kryo.readObject(Input(is), classOf[IndexData])
 	}
 }
 
@@ -128,16 +138,33 @@ object OptionSomeSerializer extends Serializer[Some[?]]{
 object IriSerializer extends Serializer[IRI]{
 	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
 		kryo.writeObject(output, iri.stringValue)
+
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI =
 		Values.iri(kryo.readObject(input, classOf[String]))
 }
 
-object HashmapSerializer extends Serializer[HashMap[?,?]]{
-	override def write(kryo: Kryo, output: Output, hmap: HashMap[?,?]): Unit =
-		kryo.writeObject(output, hmap.iterator.map(_.toArray).toArray)
 
-	override def read(kryo: Kryo, input: Input, tpe: Class[? <: HashMap[?,?]]): HashMap[?,?] = {
+class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Object)] => T) extends Serializer[T]{
+	override def write(kryo: Kryo, output: Output, m: T): Unit =
+		kryo.writeObject(output, m.iterator.map(_.toArray).toArray)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = {
 		val nested = kryo.readObject[Array[Array[Object]]](input, classOf[Array[Array[Object]]])
-		HashMap.from(nested.iterator.map{arr => arr(0) -> arr(1)})
+		println("reading a map...")
+		nested.foreach(a => println(s"${a(0)} -> ${a(1)}"))
+		val m= buildr(nested.iterator.map{arr => arr(0) -> arr(1)})
+		println(s"Have read map $m")
+		m
+	}
+}
+
+object HashmapSerializer extends MapSerializer[HashMap[?,?]](HashMap.from)
+object AnyRefMapSerializer extends MapSerializer[AnyRefMap[?,?]](AnyRefMap.from)
+
+object PropertySerializer extends Serializer[Property]{
+	import scala.reflect.runtime.universe
+	override def write(kryo: Kryo, output: Output, p: Property): Unit = {}
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Property]): Property = {
+		???
 	}
 }

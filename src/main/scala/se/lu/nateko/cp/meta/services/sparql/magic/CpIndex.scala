@@ -438,7 +438,7 @@ object CpIndex{
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 	class IndexData(nObjects: Int) extends Serializable{
-		def this() = this(0)
+		private def this() = this(0)//for Kryo deserialization
 		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects * 2)
 		val objs = new ArrayBuffer[ObjEntry](nObjects)
 		val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]

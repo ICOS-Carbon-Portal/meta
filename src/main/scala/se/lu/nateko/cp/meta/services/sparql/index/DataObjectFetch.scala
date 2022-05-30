@@ -39,8 +39,6 @@ sealed trait BoolProperty extends Property{type ValueType = Boolean}
 case object DeprecationFlag extends BoolProperty
 case object HasVarList extends BoolProperty
 
-type TypedCategProp[T <: AnyRef] = CategProp{type ValueType = T}
-
 sealed trait ContProp extends Property
 
 sealed trait LongProperty extends ContProp{type ValueType = Long}
@@ -67,3 +65,32 @@ case object Site extends OptUriProperty
 case object Submitter extends UriProperty
 case object VariableName extends StringCategProp
 case object Keyword extends StringCategProp
+
+object Property{
+	import scala.deriving.Mirror.SumOf
+	import scala.compiletime.{erasedValue, summonInline}
+	type ConcreteProp = Property & Singleton
+	/** TODO ATTENTION Fragile code. findSubSingletons should be re-written to support automatic discovery of all singletons
+	 * inheriting from Property. Then the explicit listing will not be needed.*/
+	val allConcrete: Set[ConcreteProp] = {
+		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight)
+		Iterable(
+			findSubSingletons[StringCategProp],
+			findSubSingletons[UriProperty],
+			findSubSingletons[OptUriProperty],
+			findSubSingletons[BoolProperty],
+			findSubSingletons[DateProperty],
+			specials
+		).flatten.toSet
+	}
+
+	private inline def findSubSingletons[T](using m: SumOf[T]): List[T & Singleton] =
+		getSingles[m.MirroredElemTypes, m.MirroredType]
+
+	private inline def getSingles[MET <: Tuple, T]: List[T & Singleton] = {
+		inline erasedValue[MET] match{
+			case _: EmptyTuple => Nil
+			case _: (t *: ts) => summonInline[ValueOf[t]].value.asInstanceOf[T & Singleton] :: getSingles[ts, T]
+		}
+	}
+}

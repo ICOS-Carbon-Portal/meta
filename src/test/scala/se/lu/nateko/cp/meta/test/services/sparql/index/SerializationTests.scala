@@ -1,8 +1,21 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import akka.event.NoLogging
+import org.eclipse.rdf4j.model.util.Values
+import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
+import org.eclipse.rdf4j.sail.Sail
+import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.services.sparql.index.All
+import se.lu.nateko.cp.meta.services.sparql.index.CategFilter
+import se.lu.nateko.cp.meta.services.sparql.index.ContFilter
+import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.MinFilter
+import se.lu.nateko.cp.meta.services.sparql.index.Property
+import se.lu.nateko.cp.meta.services.sparql.index.Station
+import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
@@ -10,37 +23,22 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.time.Instant
 import scala.concurrent.Future
 import scala.util.Using
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
-import se.lu.nateko.cp.meta.services.sparql.index.ContFilter
-import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.MinFilter
-import java.time.Instant
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.All
-import org.scalatest.compatible.Assertion
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.services.sparql.index.CategFilter
-import se.lu.nateko.cp.meta.services.sparql.index.Station
-import org.eclipse.rdf4j.model.util.Values
 
 class SerializationTests extends AsyncFunSpec{
 
 	def saveToBytes(idx: CpIndex): Future[Array[Byte]] = {
-		val tryFut = Using(ByteArrayOutputStream()){os =>
-			IndexHandler.storeToStream(idx, os).map{_ => os.toByteArray}
-		}
-		Future.fromTry(tryFut).flatten
+		val os = ByteArrayOutputStream()
+		IndexHandler.storeToStream(idx, os).map{_ => os.toByteArray}
 	}
 
 	def loadFromBytes(arr: Array[Byte]): Future[IndexData] = {
-		val tryFut = Using(ByteArrayInputStream(arr)){is =>
-			IndexHandler.restoreFromStream(is)
-		}
-		Future.fromTry(tryFut).flatten
+		val is = ByteArrayInputStream(arr)
+		IndexHandler.restoreFromStream(is)
 	}
+
 	def roundTrip(sail: Sail): Future[(CpIndex, CpIndex)] =
 		for(
 			idx <- Future(CpIndex(sail, 5)(NoLogging));
@@ -87,13 +85,8 @@ class SerializationTests extends AsyncFunSpec{
 			idx.fetch(DataObjectFetch(filter, None, 0)).toSeq.size
 		}
 
-		origAndCopy("has two stations", ())(
-			toData.andThen{d =>
-				println("\nId lookup:")
-				println(d.idLookup)
-				println("\nCateg maps:")
-				println(d.categMaps)
-			}
+		origAndCopy("has two stations", 2)(
+			toData.andThen(_.categMaps(Station).size)
 		)
 	}
 }

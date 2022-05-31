@@ -22,6 +22,7 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
@@ -31,13 +32,16 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
+import CpIndex.*
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
+	private def this() = this(null, null, null, null)//for Kryo deserialization
+}
 case class StatEntry(key: StatKey, count: Int)
 
 trait ObjSpecific{
 	def hash: Sha256Sum
-	def uri: IRI
+	def uri(factory: ValueFactory): IRI
 }
 
 trait ObjInfo extends ObjSpecific{
@@ -45,28 +49,41 @@ trait ObjInfo extends ObjSpecific{
 	def submitter: IRI
 	def station: IRI
 	def site: IRI
+	def fileName: Option[String]
 	def sizeInBytes: Option[Long]
 	def samplingHeightMeters: Option[Float]
-	def dataStartTime: Option[Literal]
-	def dataEndTime: Option[Literal]
-	def submissionStartTime: Option[Literal]
-	def submissionEndTime: Option[Literal]
+	def dataStartTime: Option[Instant]
+	def dataEndTime: Option[Instant]
+	def submissionStartTime: Option[Instant]
+	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends ReadWriteLocking{
-	import CpIndex.*
+class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking{
+
+	import data.*
+
+	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
+		this(sail, IndexData(nObjects))(log)
+		//Mass-import of the statistics data
+		Using(sail.getConnection)(_
+			.getStatements(null, null, null, false)
+			.asPlainScalaIterator
+			.foreach(s => put(RdfUpdate(s, true)))
+		)
+		flush()
+		contMap.valuesIterator.foreach(_.optimizeAndTrim())
+		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
+	}
 
 	given factory: ValueFactory = sail.getValueFactory
 	private val vocab = new CpmetaVocab(factory)
-	private val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects)
-	private val objs = new ArrayBuffer[ObjEntry](nObjects)
-	private val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
-	private val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
-	private val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
-	private val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
-	private val initOk = emptyBitmap
+
+	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
+	//Mass-import of the specification info
+	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
 
 	def size: Int = objs.length
+	def serializableData: Serializable = data
 
 	private def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
@@ -76,39 +93,14 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 
 	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = contMap.getOrElseUpdate(prop, prop match {
 		/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-		case FileName => StringHierarchicalBitmap{idx =>
-			val uri = objs(idx).uri
-			//this is to avoid storing all the file names in memory
-			Using(sail.getConnection){conn =>
-				val iter = conn.getStatements(uri, vocab.hasName, null, false)
-				val res = if(iter.hasNext()) iter.next().getObject.stringValue else ""
-				iter.close()
-				res
-			}.getOrElse("")
-		}
-		case FileSize =>        FileSizeHierarchicalBitmap(idx => objs(idx).size)
-		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(idx => objs(idx).samplingHeight)
-		case DataStart =>       DatetimeHierarchicalBitmap(idx => objs(idx).dataStart)
-		case DataEnd =>         DatetimeHierarchicalBitmap(idx => objs(idx).dataEnd)
-		case SubmissionStart => DatetimeHierarchicalBitmap(idx => objs(idx).submissionStart)
-		case SubmissionEnd =>   DatetimeHierarchicalBitmap(idx => objs(idx).submissionEnd)
+		case FileName =>        StringHierarchicalBitmap.fileName(data)
+		case FileSize =>        FileSizeHierarchicalBitmap(data)
+		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(data)
+		case DataStart =>       DatetimeHierarchicalBitmap.dataStart(data)
+		case DataEnd =>         DatetimeHierarchicalBitmap.dataEnd(data)
+		case SubmissionStart => DatetimeHierarchicalBitmap.submStart(data)
+		case SubmissionEnd =>   DatetimeHierarchicalBitmap.submEnd(data)
 	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
-
-	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
-
-	//Mass-import of the specification info
-	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
-
-	//Mass-import of the statistics data
-	Using(sail.getConnection)(_
-		.getStatements(null, null, null, false)
-		.asPlainScalaIterator
-		.foreach(s => put(RdfUpdate(s, true)))
-	)
-	flush()
-	contMap.valuesIterator.foreach(_.optimizeAndTrim())
-	stats.filterInPlace{case (_, bm) => !bm.isEmpty}
-
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
@@ -242,7 +234,7 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
 
-		def handleContinuousPropUpdate[T](prop: ContProp{ type ValueType = T}, key: T, idx: Int): Unit = {
+		def handleContinuousPropUpdate(prop: ContProp, key: prop.ValueType, idx: Int): Unit = {
 			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
 			if(isAssertion) {
 				if(!bitmap(prop).add(key, idx)){
@@ -287,7 +279,10 @@ class CpIndex(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) extends Re
 			}
 
 			case `hasName` => modForDobj(subj){oe =>
-				handleContinuousPropUpdate(FileName, obj.stringValue, oe.idx)
+				val fName = obj.stringValue
+				if(isAssertion) oe.fName = fName
+				else if(oe.fName == fName) oe.fileName == null
+				handleContinuousPropUpdate(FileName, fName, oe.idx)
 			}
 
 			case `wasAssociatedWith` => subj match{
@@ -442,30 +437,44 @@ object CpIndex{
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
-	private class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String)(implicit factory: ValueFactory) extends ObjInfo{
+	class IndexData(nObjects: Int) extends Serializable{
+		private def this() = this(0)//for Kryo deserialization
+		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects * 2)
+		val objs = new ArrayBuffer[ObjEntry](nObjects)
+		val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
+		val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
+		val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
+		val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
+		val initOk = emptyBitmap
+	}
+
+	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
+		private def this() = this(null, 0, null)//for Kryo deserialization
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
 		var station: IRI = uninitialized
 		var site: IRI = uninitialized
 		var size: Long = -1
+		var fName: String = uninitialized
 		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue
 		var submissionStart: Long = Long.MinValue
 		var submissionEnd: Long = Long.MinValue
 
-		private def dateTimeFromLong(dt: Long): Option[Literal] =
+		private def dateTimeFromLong(dt: Long): Option[Instant] =
 			if(dt == Long.MinValue) None
-			else Some(factory.createDateTimeLiteral(Instant.ofEpochMilli(dt)))
+			else Some(Instant.ofEpochMilli(dt))
 
 		def sizeInBytes: Option[Long] = if(size >= 0) Some(size) else None
+		def fileName: Option[String] = Option(fName)
 		def samplingHeightMeters: Option[Float] = if(samplingHeight == Float.NaN) None else Some(samplingHeight)
-		def dataStartTime: Option[Literal] = dateTimeFromLong(dataStart)
-		def dataEndTime: Option[Literal] = dateTimeFromLong(dataEnd)
-		def submissionStartTime: Option[Literal] = dateTimeFromLong(submissionStart)
-		def submissionEndTime: Option[Literal] = dateTimeFromLong(submissionEnd)
+		def dataStartTime: Option[Instant] = dateTimeFromLong(dataStart)
+		def dataEndTime: Option[Instant] = dateTimeFromLong(dataEnd)
+		def submissionStartTime: Option[Instant] = dateTimeFromLong(submissionStart)
+		def submissionEndTime: Option[Instant] = dateTimeFromLong(submissionEnd)
 
-		def uri: IRI = factory.createIRI(prefix + hash.base64Url)
+		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
 	}
 
 	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match{

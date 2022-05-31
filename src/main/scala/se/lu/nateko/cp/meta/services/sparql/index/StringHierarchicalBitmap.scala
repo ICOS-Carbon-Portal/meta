@@ -1,13 +1,15 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+
 
 object StringHierarchicalBitmap{
 	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
 
-	implicit object Ord extends Ordering[String]{
-
+	given Ord: Ordering[String] = new StringOrdering
+	class StringOrdering extends Ordering[String]{
 		def compare(x: String, y: String): Int = {
 			val lx = x.length; val ly = y.length
 			val lmin = Math.min(lx, ly)
@@ -25,22 +27,24 @@ object StringHierarchicalBitmap{
 		}
 	}
 
+	def fileName(idx: IndexData) = apply(idx.objs(_).fName)
 
-	def apply(stringLookup: Int => String): HierarchicalBitmap[String] = {
+	def apply(kLookup: Int => String): HierarchicalBitmap[String] = {
+		given Geo[String] = StringGeo(kLookup)
+		new HierarchicalBitmap[String](0, None)
+	}
 
-		val geo = new Geo[String]{
+	class StringGeo(kLookup: Int => String) extends Geo[String]{
+		private def this() = this(null)//for Kryo deserialization
+		val spilloverThreshold: Int = SpilloverThreshold
 
-			val spilloverThreshold: Int = SpilloverThreshold
+		def keyLookup(value: Int): String = kLookup(value)
 
-			def keyLookup(value: Int): String = stringLookup(value)
+		def coordinate(key: String, depth: Int): Coord =
+			if(depth < 1) 0
+			else if(depth > key.length) Short.MinValue
+			else key.charAt(depth - 1).toShort
 
-			def coordinate(key: String, depth: Int): Coord =
-				if(depth < 1) 0
-				else if(depth > key.length) Short.MinValue
-				else key.charAt(depth - 1).toShort
-		}
-
-		new HierarchicalBitmap[String](0, None)(geo, Ord)
 	}
 
 }

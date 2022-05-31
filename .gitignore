@@ -1,11 +1,3 @@
-#Front end
-/webbapps/station-map/local-config.json
-/webbapps/station-map/queries.txt
-/webbapps/station-map/test.html
-/webbapps/station-map/sparql.html
-/webbapps/station-map/table.js
-/webbapps/station-map/table.html
-
 #Node specific
 node_modules
 npm-debug.log
@@ -60,3 +52,4 @@ src/main/resources/gcmdkeywords.json
 /rdfStorage/
 /ssl/
 /atcmeta/
+/sparqlMagicIndex.bin

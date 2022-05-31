@@ -1,0 +1,67 @@
+@prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf4j: <http://rdf4j.org/schema/rdf4j#> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions#> .
+
+<http://meta.icos-cp.eu/resources/acq_hoidzqcaqmCU3mOZ435r2crG> a cpmeta:DataAcquisition;
+  prov:endedAtTime "2018-12-31T22:00:00Z"^^xsd:dateTime;
+  prov:startedAtTime "2017-12-31T22:00:00Z"^^xsd:dateTime;
+  prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> .
+
+<http://meta.icos-cp.eu/resources/subm_hoidzqcaqmCU3mOZ435r2crG> a cpmeta:DataSubmission;
+  prov:endedAtTime "2019-05-16T12:24:27.257Z"^^xsd:dateTime;
+  prov:startedAtTime "2019-05-16T12:24:10.273Z"^^xsd:dateTime;
+  prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/ETC> .
+
+<https://meta.icos-cp.eu/objects/hoidzqcaqmCU3mOZ435r2crG> a cpmeta:DataObject;
+  cpmeta:hasName "ICOSETC_FI-Sii_FLUXNET_HH_01.csv";
+  cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct>;
+  cpmeta:hasSha256sum "hoidzqcaqmCU3mOZ435r2crG5WvHqLqiOTAgtbz6rXM"^^xsd:base64Binary;
+  cpmeta:hasSizeInBytes "18622519"^^xsd:long;
+  cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_hoidzqcaqmCU3mOZ435r2crG>;
+  cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_hoidzqcaqmCU3mOZ435r2crG>;
+  cpmeta:hasNumberOfRows 17520 .
+
+<http://meta.icos-cp.eu/resources/acq_8KgcKLxNMRE-AtEEEFH6e_yd> a cpmeta:DataAcquisition;
+  prov:endedAtTime "2018-12-31T23:00:00Z"^^xsd:dateTime;
+  prov:startedAtTime "1995-12-31T23:00:00Z"^^xsd:dateTime;
+  prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> .
+
+<http://meta.icos-cp.eu/resources/prod_8KgcKLxNMRE-AtEEEFH6e_yd> a cpmeta:DataProduction;
+  cpmeta:hasEndTime "2019-05-24T12:37:54Z"^^xsd:dateTime;
+  cpmeta:wasPerformedBy <http://meta.icos-cp.eu/resources/organizations/ETC>;
+  rdfs:comment "The financial support of the Research Foundation-Flanders (FWO) to the ICOS infrastructure is acknowledged";
+  cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/people/Ivan_Janssens> .
+
+<http://meta.icos-cp.eu/resources/subm_8KgcKLxNMRE-AtEEEFH6e_yd> a cpmeta:DataSubmission;
+  prov:endedAtTime "2019-07-12T10:19:30.710Z"^^xsd:dateTime;
+  prov:startedAtTime "2019-07-08T16:12:57.060Z"^^xsd:dateTime;
+  prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> .
+
+<https://meta.icos-cp.eu/objects/8KgcKLxNMRE-AtEEEFH6e_yd> a cpmeta:DataObject;
+  cpmeta:hasName "FLX_BE-Bra_FLUXNET2015_FULLSET_HH_1996-2018_beta-3.csv.zip";
+  cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct>;
+  cpmeta:hasSha256sum "8KgcKLxNMRE+AtEEEFH6e/ydfuOojWOnujDmNHp5HGw"^^xsd:base64Binary;
+  cpmeta:hasSizeInBytes "164974434"^^xsd:long;
+  cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_8KgcKLxNMRE-AtEEEFH6e_yd>;
+  cpmeta:wasProducedBy <http://meta.icos-cp.eu/resources/prod_8KgcKLxNMRE-AtEEEFH6e_yd>;
+  cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_8KgcKLxNMRE-AtEEEFH6e_yd>;
+  cpmeta:hasNumberOfRows 403248;
+  cpmeta:hasKeywords "Drought 2018" .
+
+<http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> a cpmeta:SimpleObjectSpec;
+  cpmeta:hasDataLevel 2;
+  cpmeta:containsDataset <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetDataset> .
+
+<http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetDataset> a cpmeta:TabularDatasetSpec .
+
+<http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> a cpmeta:SimpleObjectSpec;
+  cpmeta:hasDataLevel 2;
+  cpmeta:containsDataset <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetL2AndNrtDataset> .
+
+<http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetL2AndNrtDataset> a cpmeta:TabularDatasetSpec .

@@ -35,6 +35,7 @@ object StaticRoute {
 	def apply(sparql: SparqlRunner, config: OntoConfig)(implicit envriConfigs: EnvriConfigs): Route = {
 
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
+		val extractEnvriOpt = AuthenticationRouting.extractEnvriOptDirective
 
 		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = (get & pathPrefix(pathPref)){
 			extractEnvri{envri =>
@@ -74,7 +75,7 @@ object StaticRoute {
 			getFromResource("gcmdkeywords.json")
 		} ~
 		(get & pathPrefix(Segment)){page =>
-			extractEnvri{envri =>
+			extractEnvriOpt{envri =>
 				val conf = envriConfigs(envri)
 				if(pages.isDefinedAt(page, envri, conf)) {
 					pathSingleSlash{

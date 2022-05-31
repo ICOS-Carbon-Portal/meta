@@ -13,7 +13,7 @@ object Loading {
 
 	def fromResource(path: String, baseUri: String): Repository = fromResource(path, baseUri, RDFFormat.RDFXML)
 
-	def fromResource(path: String, baseUri: String, format: RDFFormat): Repository = {
+	def fromResource(path: String, baseUri: String, format: RDFFormat): SailRepository = {
 		val repo = emptyInMemory
 		loadResource(repo, path, baseUri, format).get //will cast an exception if loading failed
 		repo
@@ -27,7 +27,7 @@ object Loading {
 		})
 	}
 
-	def emptyInMemory: Repository = {
+	def emptyInMemory: SailRepository = {
 		val repo = new SailRepository(new MemoryStore)
 		repo.init()
 		repo

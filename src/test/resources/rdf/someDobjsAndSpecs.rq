@@ -1,0 +1,30 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+	?s ?p ?o
+}
+from <http://meta.icos-cp.eu/resources/etcprodcsv/>
+where{
+	?s ?p ?o
+}
+limit 100
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+construct{
+	?spec cpmeta:hasDataLevel ?level .
+	?spec a ?specType .
+	?spec cpmeta:containsDataset ?dset .
+	?dset a ?dsetType .
+} where{
+	?spec cpmeta:hasDataLevel ?level .
+	?spec a ?specType .
+	OPTIONAL {
+		?spec cpmeta:containsDataset ?dset .
+		?dset a ?dsetType .
+	}
+	?spec ?pred ?obj .
+}

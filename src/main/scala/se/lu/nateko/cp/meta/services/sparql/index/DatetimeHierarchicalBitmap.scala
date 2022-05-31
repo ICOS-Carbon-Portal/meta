@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
 import HierarchicalBitmap.*
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing java.time.Instant keys
@@ -20,17 +21,19 @@ object DatetimeHierarchicalBitmap{
 	}
 
 	def apply(millisLookup: Int => Long): HierarchicalBitmap[Long] = {
-
-		implicit val geo = new Geo[Long]{
-
-			val spilloverThreshold: Int = SpilloverThreshold
-
-			def keyLookup(value: Int): Long = millisLookup(value)
-
-			def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
-		}
-
+		given Geo[Long] = LongGeo(millisLookup)
 		new HierarchicalBitmap[Long](0, None)
 	}
 
+	def dataStart(idx: IndexData) = apply(value => idx.objs(value).dataStart)
+	def dataEnd(idx: IndexData) = apply(value => idx.objs(value).dataEnd)
+	def submStart(idx: IndexData) = apply(value => idx.objs(value).submissionStart)
+	def submEnd(idx: IndexData) = apply(value => idx.objs(value).submissionEnd)
+
+	class LongGeo(lookup: Int => Long) extends Geo[Long]{
+		private def this() = this(null)//for Kryo deserialization
+		val spilloverThreshold: Int = SpilloverThreshold
+		def keyLookup(value: Int): Long = lookup(value)
+		def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
+	}
 }

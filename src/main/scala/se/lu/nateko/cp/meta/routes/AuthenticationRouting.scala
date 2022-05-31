@@ -92,11 +92,19 @@ object AuthenticationRouting {
 			)
 		}.result()
 
-	val ensureLocalRequest: Directive0 =
+	val optEnsureLocalRequest: Directive0 =
 		optionalHeaderValueByType(`X-Forwarded-For`)
 			.require(_.isEmpty)
-			.recover(_ => complete(StatusCodes.Forbidden))
 
+	val ensureLocalRequest: Directive0 = optEnsureLocalRequest
+		.recover(_ => complete(StatusCodes.Forbidden -> "This is a private API method"))
+
+	def extractEnvriOptDirective(using EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
+		Envri.infer(h) match{
+			case None => reject
+			case Some(envri) => provide(envri)
+		}
+	}
 
 	def extractEnvriDirective(using EnvriConfigs): Directive1[Envri] = extractHost.flatMap{h =>
 		Envri.infer(h) match{

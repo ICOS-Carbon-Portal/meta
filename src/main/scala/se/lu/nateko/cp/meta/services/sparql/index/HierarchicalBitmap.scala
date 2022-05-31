@@ -6,6 +6,7 @@ import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import HierarchicalBitmap.*
 import java.{util => ju}
+import java.io.Serializable
 
 /**
  * Assumptions:
@@ -16,7 +17,8 @@ import java.{util => ju}
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[K], ord: Ordering[K]){
+class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable{
+	private def this() = this(0, None)(using null, null) //for Kryo deserialization
 
 	private val values = emptyBitmap
 	private var n = 0
@@ -238,7 +240,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(implicit geo: Geo[
 
 object HierarchicalBitmap{
 	type Coord = Short
-	trait Geo[K]{
+	trait Geo[K] extends Serializable{
 		/** depth zero always returns zero */
 		def coordinate(key: K, depth: Int): Coord
 		def keyLookup(value: Int): K

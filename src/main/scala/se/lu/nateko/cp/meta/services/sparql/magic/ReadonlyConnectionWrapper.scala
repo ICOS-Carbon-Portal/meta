@@ -27,5 +27,9 @@ class ReadonlyConnectionWrapper(conn: NotifyingSailConnection, errorMessage: Str
 	override def startUpdate(modify: UpdateContext): Unit = writeFail
 	override def begin(): Unit = writeFail
 
-	private def writeFail: Nothing = throw new IllegalAccessException(errorMessage) with NoStackTrace
+	private def writeFail: Nothing = throw WritingForbiddenException(errorMessage)
+
+
 }
+
+class WritingForbiddenException(msg: String) extends IllegalAccessException(msg) with NoStackTrace

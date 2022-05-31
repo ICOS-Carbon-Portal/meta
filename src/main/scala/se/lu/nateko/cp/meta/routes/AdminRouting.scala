@@ -24,19 +24,24 @@ class AdminRouting(
 	makeMetaReadonly: String => Future[Done],
 	conf: SparqlServerConfig
 ) {
-
+	import AuthenticationRouting.optEnsureLocalRequest
 	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _
 
+	private val readonlyModeRoute = (post & withoutRequestTimeout){
+		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
+		onSuccess(makeMetaReadonly(msg)){
+			_ => complete(StatusCodes.OK -> "Switched the triple store to read-only mode. SPARQL index dumped to disk")
+		}
+	}
+
 	val route = pathPrefix("admin"){
+		path("switchToReadonlyMode"){
+			optEnsureLocalRequest{readonlyModeRoute} ~
+			permitAdmins{readonlyModeRoute}
+		} ~
 		permitAdmins{
 			pathPrefix("insert")(operationRoute(true)) ~
-			pathPrefix("delete")(operationRoute(false)) ~
-			(path("switchToReadonlyMode") & post){
-				val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
-				onSuccess(makeMetaReadonly(msg)){
-					_ => complete(StatusCodes.OK)
-				}
-			}
+			pathPrefix("delete")(operationRoute(false))
 		} ~
 		complete(StatusCodes.Forbidden -> "Only SPARQL admins are allowed here")
 	}

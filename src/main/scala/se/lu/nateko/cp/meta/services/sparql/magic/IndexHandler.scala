@@ -103,10 +103,12 @@ object IndexHandler{
 		case Failure(_) => os.close()
 	}
 
-	def restore(): Future[IndexData] =
-		restoreFromStream(FileInputStream(storagePath.toFile)).andThen{
+	def restore(): Future[IndexData] = Future{
+		val is = FileInputStream(storagePath.toFile)
+		restoreFromStream(is).andThen{
 			case _ => dropStorage()
 		}
+	}.flatten
 
 	def restoreFromStream(is: InputStream): Future[IndexData] = Future{
 		val input = Input(is)

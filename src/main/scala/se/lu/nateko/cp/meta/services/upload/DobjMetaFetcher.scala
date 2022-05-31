@@ -150,7 +150,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate -> discontinued
 	}
 
-	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prod: Option[DataProduction]): StationTimeSeriesMeta = {
+	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): StationTimeSeriesMeta = {
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 
 		val acq = DataAcquisition(
@@ -174,24 +174,15 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 		val columns = getOptionalString(dobj, metaVocab.hasActualColumnNames).flatMap(parseJsonStringArray)
 			.map{
-				_.flatMap{colName =>
-					vtLookup.lookup(colName).map{vtUri =>
-						val valType = getValueType(vtUri)
-						VarMeta(colName, valType, None)
-					}
-				}.toIndexedSeq
-			}.orElse{ //if no actualColumnNames info is available, then all the mandatory columns have to be there
-				Some(
-					vtLookup.plainMandatory.map{
-						case (colName, valTypeIri) => VarMeta(colName, getValueType(valTypeIri), None)
-					}
-				)
+				_.flatMap(vtLookup.lookup).toIndexedSeq
+			}.orElse{ //if no actualColumnNames info is available, then all the plain mandatory columns have to be there
+				Some(vtLookup.plainMandatory)
 			}.filter(_.nonEmpty)
 
 		StationTimeSeriesMeta(acq, prod, nRows, coverage, columns)
 	}
 
-	protected def getSpatioTempMeta(dobj: IRI, vtLookup: ValueTypeLookup[IRI], prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
+	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
 
 		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
 		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")

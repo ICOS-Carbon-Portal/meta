@@ -113,6 +113,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val operatesOn = getRelativeRaw("operatesOn")
 	val hasDepiction = getRelativeRaw("hasDepiction")
 	val hasValueType = getRelativeRaw("hasValueType")
+	val hasValueFormat = getRelativeRaw("hasValueFormat")
 	val hasUnit = getRelativeRaw("hasUnit")
 	val hasQuantityKind = getRelativeRaw("hasQuantityKind")
 	val hasMinValue = getRelativeRaw("hasMinValue")

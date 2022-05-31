@@ -131,16 +131,15 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
 
-	def getValTypeLookup(datasetSpec: IRI): ValueTypeLookup[IRI] =
-		new ValueTypeLookup(getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec))
+	def getValTypeLookup(datasetSpec: IRI) = VarMetaLookup(
+		getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec)
+	)
 
-	protected def getL3VarInfo(vi: IRI, vtLookup: ValueTypeLookup[IRI]): Option[VarMeta] = for(
+	protected def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): Option[VarMeta] = for(
 		varName <- getOptionalString(vi, RDFS.LABEL);
-		valTypeUri <- vtLookup.lookup(varName)
+		varMeta <- vtLookup.lookup(varName)
 	) yield
-		VarMeta(
-			label = varName,
-			valueType = getValueType(valTypeUri),
+		varMeta.copy(
 			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
 				getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
 			}
@@ -153,23 +152,24 @@ trait CpmetaFetcher extends FetchingHelper{
 		getOptionalString(vt, metaVocab.hasUnit)
 	)
 
-	protected def getDatasetVars(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasVariable).map{dv =>
-		new DatasetVariable[IRI](
-			title = getSingleString(dv, metaVocab.hasVariableTitle),
-			valueType = getSingleUri(dv, metaVocab.hasValueType),
-			isRegex = getOptionalBool(dv, metaVocab.isRegexVariable).getOrElse(false),
-			isOptional = getOptionalBool(dv, metaVocab.isOptionalVariable).getOrElse(false)
-		)
-	}
+	private def getDatasetVars(ds: IRI) =
+		import metaVocab.*
+		getDatasetVarsOrCols(ds, hasVariable, hasVariableTitle, isRegexVariable, isOptionalVariable)
 
-	protected def getDatasetColumns(ds: IRI): Seq[DatasetVariable[IRI]] = server.getUriValues(ds, metaVocab.hasColumn).map{dv =>
-		new DatasetVariable[IRI](
-			title = getSingleString(dv, metaVocab.hasColumnTitle),
-			valueType = getSingleUri(dv, metaVocab.hasValueType),
-			isRegex = getOptionalBool(dv, metaVocab.isRegexColumn).getOrElse(false),
-			isOptional = getOptionalBool(dv, metaVocab.isOptionalColumn).getOrElse(false)
-		)
-	}
+	private def getDatasetColumns(ds: IRI) =
+		import metaVocab.*
+		getDatasetVarsOrCols(ds, hasColumn, hasColumnTitle, isRegexColumn, isOptionalColumn)
+
+	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
+		server.getUriValues(ds, varProp).map{dv =>
+			DatasetVariable(
+				title = getSingleString(dv, titleProp),
+				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
+				valueFormat = getSingleUri(dv, metaVocab.hasValueFormat).toJava,
+				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
+				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
+			)
+		}
 
 	protected def getInstrumentLite(instr: IRI): UriResource = {
 		val label = getOptionalString(instr, metaVocab.hasName).orElse{

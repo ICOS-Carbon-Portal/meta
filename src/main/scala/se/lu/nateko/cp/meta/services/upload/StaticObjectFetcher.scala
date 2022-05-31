@@ -47,7 +47,7 @@ class StaticObjectFetcher(
 		val spec = getSpecification(specIri)
 		val submission = getSubmission(getSingleUri(dobj, metaVocab.wasSubmittedBy))
 		val valTypeLookup = getOptionalUri(specIri, metaVocab.containsDataset)
-			.fold(new ValueTypeLookup[IRI](Nil))(getValTypeLookup)
+			.fold(VarMetaLookup(Nil))(getValTypeLookup)
 
 		val levelSpecificInfo = if(
 				spec.isSpatiotemporal || (

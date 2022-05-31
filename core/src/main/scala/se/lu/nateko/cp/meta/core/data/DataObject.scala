@@ -86,7 +86,7 @@ case class StationTimeSeriesMeta(
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-case class VarMeta(label: String, valueType: ValueType, minMax: Option[(Double, Double)])
+case class VarMeta(label: String, valueType: ValueType, valueFormat: URI, minMax: Option[(Double, Double)])
 case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],

@@ -80,9 +80,9 @@ class DofPatternFusionTests extends AnyFunSpec{
 			val magicRegexExists = dofNode.fetchRequest.filter.exists{case gcf: GeneralCategFilter[?] =>}
 			assert(!magicRegexExists)
 		}
-		it("the 'magic' query node is not supposed to produce fileName bindings"){
+		it("the 'magic' query node is supposed to produce fileName bindings"){
 			val bindsFileName = dofNode.getBindingNames().contains("fileName")
-			assert(!bindsFileName)
+			assert(bindsFileName)
 		}
 
 		it("hasSizeInBytes value is required to be present"){
@@ -229,7 +229,7 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		it("Expected variables are detected and dealt with"){
 			val actualVars = fetchNode.varNames.values.toSet
-			val expectedVars = Set("dobj", "spec", "timeStart", "timeEnd", "fileSize", "height")
+			val expectedVars = Set("dobj", "spec", "fileName", "timeStart", "timeEnd", "fileSize", "height")
 			assert(actualVars === expectedVars)
 		}
 

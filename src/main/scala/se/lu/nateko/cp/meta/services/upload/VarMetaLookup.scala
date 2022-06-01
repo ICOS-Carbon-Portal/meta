@@ -5,7 +5,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.data.ValueType
 import se.lu.nateko.cp.meta.core.data.VarMeta
 
-class DatasetVariable(val title: String, val valueType: ValueType, val valueFormat: URI, val isRegex: Boolean, val isOptional: Boolean){
+class DatasetVariable(val title: String, val valueType: ValueType, val valueFormat: Option[URI], val isRegex: Boolean, val isOptional: Boolean){
 	def plain: Option[VarMeta] = if(!isRegex) Some(VarMeta(title, valueType, valueFormat, None)) else None
 }
 

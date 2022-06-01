@@ -165,7 +165,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			DatasetVariable(
 				title = getSingleString(dv, titleProp),
 				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
-				valueFormat = getSingleUri(dv, metaVocab.hasValueFormat).toJava,
+				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
 				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
 				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
 			)

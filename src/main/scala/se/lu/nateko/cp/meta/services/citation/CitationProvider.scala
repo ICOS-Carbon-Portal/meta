@@ -28,11 +28,13 @@ import se.lu.nateko.cp.meta.services.upload.CollectionFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import CitationClient.CitationCache
 
 import java.net.URI
 import scala.util.Using
+import scala.concurrent.Future
 
-class CitationProviderFactory(conf: CpmetaConfig)(using system: ActorSystem, mat: Materializer){
+class CitationProviderFactory(citCache: CitationCache, conf: CpmetaConfig)(using system: ActorSystem, mat: Materializer){
 
 	def getProvider(sail: Sail): CitationProvider = {
 
@@ -47,9 +49,8 @@ class CitationProviderFactory(conf: CpmetaConfig)(using system: ActorSystem, mat
 				}
 			}.get
 		}
-
-		val doiCiter = new CitationClient(dois, conf.citations)
-		new CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
+		val doiCiter = CitationClient(dois, conf.citations, citCache)
+		CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
 	}
 
 }

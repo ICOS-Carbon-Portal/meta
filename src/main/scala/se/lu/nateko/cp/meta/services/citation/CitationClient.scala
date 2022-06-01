@@ -17,8 +17,14 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.{timeLimit, errorLite}
 import se.lu.nateko.cp.meta.CitationConfig
+import java.nio.file.Paths
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import akka.event.LoggingAdapter
 
-case class Doi private(val prefix: String, val suffix: String)
+case class Doi private(val prefix: String, val suffix: String){
+	override def toString = s"$prefix/$suffix"
+}
 
 object Doi{
 	def unapply(s: String): Option[Doi] = s.split('/').toList match{
@@ -35,13 +41,13 @@ trait PlainDoiCiter{
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 }
 
-class CitationClient(knownDois: List[Doi], config: CitationConfig)(
-	implicit system: ActorSystem, mat: Materializer
-) extends PlainDoiCiter{
+class CitationClient (
+	knownDois: List[Doi], config: CitationConfig, initCache: CitationClient.CitationCache
+)(using system: ActorSystem, mat: Materializer) extends PlainDoiCiter{
 	import CitationStyle.*
+	import CitationClient.Key
 
-	private type Key = (Doi, CitationStyle)
-	private val cache = TrieMap.empty[Key, Future[String]]
+	private val cache = initCache
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
@@ -134,4 +140,54 @@ class CitationClient(knownDois: List[Doi], config: CitationConfig)(
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
+}
+
+object CitationClient{
+	import spray.json.*
+	import scala.concurrent.ExecutionContext.Implicits.global
+	private type Key = (Doi, CitationStyle)
+	type CitationCache = TrieMap[Key, Future[String]]
+	opaque type CitationDump = JsValue
+	val cacheDumpFile = Paths.get("./citationsCacheDump.json")
+
+	def dumpCache(client: CitationClient): CitationDump = {
+		val arrays = client.cache.iterator.flatMap{case ((doi, style), fut) =>
+			fut.value.flatMap(_.toOption).map{cit =>
+				val strs = Vector(doi.toString, style.toString, cit)
+				JsArray(strs.map(JsString.apply))
+			}
+		}.toVector
+		JsArray(arrays)
+	}
+
+	def reconstructCache(dump: CitationDump): CitationCache = {
+		val tuples = dump match{
+			case JsArray(arrs) => arrs.collect{
+				case JsArray(cells) =>
+					val toParse = cells.collect{case JsString(s) => s}
+					assert(toParse.length == 3, "Citation dump had en entry with a wrong number of calues")
+					val doi = Doi.unapply(toParse(0)).getOrElse(throw Exception(s"Bad DOI ${toParse(0)}"))
+					val style = CitationStyle.valueOf(toParse(1))
+					val fut = Future.successful(toParse(2))
+					doi -> style -> fut
+			}
+			case _ => throw Exception("Citation dump was not a JSON array")
+		}
+		TrieMap.apply(tuples*)
+	}
+
+	def saveCache(client: CitationClient): Future[Done] = Future{
+		import StandardOpenOption.*
+		Files.writeString(cacheDumpFile, dumpCache(client).prettyPrint, WRITE, CREATE, TRUNCATE_EXISTING)
+		Done
+	}
+
+	def readCache(log: LoggingAdapter): Future[CitationCache] = Future{
+		val dump: CitationDump = Files.readString(cacheDumpFile).parseJson
+		reconstructCache(dump)
+	}.recover{
+		case err: Throwable =>
+			log.error(err, "Could not read citation string cache dump")
+			TrieMap.empty
+	}
 }

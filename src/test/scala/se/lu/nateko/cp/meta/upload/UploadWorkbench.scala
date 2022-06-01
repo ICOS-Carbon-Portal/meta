@@ -16,6 +16,7 @@ import scala.concurrent.Future
 import akka.Done
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker2
 import se.lu.nateko.cp.meta.upload.drought.FluxdataUpload
+import scala.collection.concurrent.TrieMap
 
 object UploadWorkbench{
 	given system: ActorSystem = ActorSystem("upload_workbench")
@@ -32,7 +33,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = new CitationClient(Nil, new CitationConfig("apa", false, 10))
+	val citer = new CitationClient(Nil, new CitationConfig("apa", false, 10), TrieMap.empty)
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)

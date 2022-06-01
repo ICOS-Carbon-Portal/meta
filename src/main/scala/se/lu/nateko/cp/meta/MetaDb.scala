@@ -98,12 +98,11 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(config0: CpmetaConfig): Future[MetaDb] = {
+	def apply(citCache: CitationClient.CitationCache, config0: CpmetaConfig): Future[MetaDb] = {
 
 		validateConfig(config0)
 
-		val citerFactory: CitationProviderFactory = new CitationProviderFactory(config0)
-		//val (repo, didNotExist, citer) = makeInitRepo(config0, citerFactory)
+		val citerFactory = CitationProviderFactory(citCache, config0)
 		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
 		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, citerFactory, log)
 

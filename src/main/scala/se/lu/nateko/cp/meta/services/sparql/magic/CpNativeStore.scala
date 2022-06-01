@@ -21,6 +21,7 @@ import scala.concurrent.Future
 import akka.Done
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import org.eclipse.rdf4j.sail.SailConnectionListener
+import scala.concurrent.ExecutionContext
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
@@ -40,12 +41,14 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
-	def makeReadonly(errorMessage: String): Future[Done] = {
+	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[Done] = {
 		nativeSail.makeReadonly(errorMessage)
-		cpIndex.fold(ok){idx =>
+		val indexDump = cpIndex.fold(ok){idx =>
 			idx.flush()
 			IndexHandler.store(idx)
 		}
+		val citationsDump = CitationClient.saveCache(getCitationClient)
+		Future.sequence(Seq(indexDump, citationsDump)).map(_ => Done)
 	}
 
 	def getCitationClient: CitationClient = nativeSail.citer.doiCiter
@@ -64,7 +67,7 @@ class CpNativeStore(
 
 	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit = {
 		cpIndex = if(disableCpIndex){
-			log.info("Using a dummy as Carbon Portal index")
+			log.info("Magic SPARQL index is disabled")
 			None
 		} else {
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")

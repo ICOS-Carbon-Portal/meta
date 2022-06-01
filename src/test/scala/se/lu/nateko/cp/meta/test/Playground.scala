@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.core.data.Envri
+import scala.collection.concurrent.TrieMap
 
 object Playground {
 
@@ -30,7 +31,7 @@ object Playground {
 	)
 
 	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))
-	val citer = new CitationClient(Nil, metaConf.citations)
+	val citer = new CitationClient(Nil, metaConf.citations, TrieMap.empty)
 
 	def stop() = system.terminate()
 

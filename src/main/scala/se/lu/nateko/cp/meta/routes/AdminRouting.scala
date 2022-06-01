@@ -16,6 +16,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import scala.concurrent.Future
 import akka.Done
+import scala.util.Failure
+import scala.util.Success
 
 class AdminRouting(
 	sparqler: SparqlRunner,
@@ -29,8 +31,9 @@ class AdminRouting(
 
 	private val readonlyModeRoute = (post & withoutRequestTimeout){
 		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
-		onSuccess(makeMetaReadonly(msg)){
-			_ => complete(StatusCodes.OK -> "Switched the triple store to read-only mode. SPARQL index dumped to disk")
+		onComplete(makeMetaReadonly(msg)){
+			case Success(_) => complete(StatusCodes.OK -> "Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk")
+			case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
 		}
 	}
 

@@ -1,7 +1,7 @@
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "3.1.1"
+ThisBuild / scalaVersion := "3.1.2"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",

@@ -66,7 +66,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 				prop <- varProps.get(QVar(v)).collect{case cp: CategProp => cp}
 			) yield{
 				val regex = new Regex(lit.stringValue)
-				GeneralCategFilter(prop, v => regex.matches(v.toString))
+				GeneralCategFilter[prop.ValueType](prop, v => regex.matches(v.toString))
 			}
 			case _ => None
 		}

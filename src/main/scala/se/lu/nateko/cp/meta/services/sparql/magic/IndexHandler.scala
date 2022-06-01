@@ -79,6 +79,7 @@ object IndexHandler{
 	kryo.register(classOf[NativeIRI], IriSerializer)
 	kryo.register(classOf[MemIRI], IriSerializer)
 	kryo.register(classOf[Some[?]], OptionSomeSerializer)
+	kryo.register(classOf[None.type], SingletonSerializer(None))
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)

@@ -42,7 +42,8 @@ class CpEvaluationStrategyFactory(
 					qEvalStep(bindingsForObjectFetch(doFetch, _))
 
 				case statsFetch: StatsFetchNode =>
-					qEvalStep(_ => bindingsForStatsFetch(statsFetch))
+					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
+					qEvalStep(_ => statsBindings.iterator)
 
 				case _ => super.precompile(expr, context)
 			}

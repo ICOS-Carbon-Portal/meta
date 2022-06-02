@@ -109,7 +109,7 @@ lazy val meta = (project in file("."))
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7" exclude("com.sun.activation", "jakarta.activation"),
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.27",
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.5.3" cross CrossVersion.for3Use2_13,
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.5.4" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.6.5" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-common"                         % "0.2.0" cross CrossVersion.for3Use2_13,
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.2.0" cross CrossVersion.for3Use2_13,

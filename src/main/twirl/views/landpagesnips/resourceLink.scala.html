@@ -5,8 +5,8 @@
 <a href=@resUri>@{res.label.getOrElse(res.uri.toString)}</a>
 
 @resUri = @{
-	val uriStr = res.uri.toString
-	if(envri == Envri.ICOS && (uriStr.startsWith("https://meta.") || uriStr.startsWith("http://meta.")))
+	if(res.uri.getHost.startsWith("meta."))
 		res.uri.getRawPath
-	else uriStr
+	else
+		res.uri.toString
 }

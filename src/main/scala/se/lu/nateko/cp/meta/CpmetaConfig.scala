@@ -81,7 +81,6 @@ case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	documentServers: Map[Envri, String],
-	epicPid: EpicPidConfig,
 	handle: HandleNetClientConfig,
 	etc: EtcConfig
 )
@@ -105,13 +104,6 @@ case class LabelingServiceConfig(
 	calLabEmails: Seq[String],
 	mailing: EmailConfig,
 	ontoId: String
-)
-
-case class EpicPidConfig(
-	url: String,
-	prefix: String,
-	password: String,
-	dryRun: Boolean
 )
 
 case class HandleNetClientConfig(
@@ -187,11 +179,10 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[OntoConfig] = jsonFormat2(OntoConfig.apply)
 	given RootJsonFormat[DataSubmitterConfig] = jsonFormat6(DataSubmitterConfig.apply)
 	given RootJsonFormat[SubmittersConfig] = jsonFormat1(SubmittersConfig.apply)
-	given RootJsonFormat[EpicPidConfig] = jsonFormat4(EpicPidConfig.apply)
 	given RootJsonFormat[EtcConfig] = jsonFormat6(EtcConfig.apply)
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
-	given RootJsonFormat[UploadServiceConfig] = jsonFormat6(UploadServiceConfig.apply)
+	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	given RootJsonFormat[EmailConfig] = jsonFormat6(EmailConfig.apply)
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)

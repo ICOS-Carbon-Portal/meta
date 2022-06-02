@@ -78,7 +78,7 @@
 				}
 			}
 			@for(document <- stationDocs) {
-				@htmlProperty{Documentation}{<a href=@{document.res}>@{document.name}</a>}
+				@htmlProperty{Documentation}{<a href=@{document.res.getRawPath}>@{document.name}</a>}
 			}
 			@for(org <- station.responsibleOrganization) {
 				@htmlProperty{Organization}{

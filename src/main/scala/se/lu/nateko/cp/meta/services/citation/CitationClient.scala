@@ -21,6 +21,7 @@ import java.nio.file.Paths
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import akka.event.LoggingAdapter
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 
 case class Doi private(val prefix: String, val suffix: String){
 	override def toString = s"$prefix/$suffix"
@@ -53,28 +54,19 @@ class CitationClient (
 	import system.{dispatcher, scheduler, log}
 	import CitationStyle.*
 
-	if(config.eagerWarmUp) scheduler.scheduleOnce(5.seconds)(warmUpCache())
+	if(config.eagerWarmUp) scheduler.scheduleOnce(35.seconds)(warmUpCache())
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] = {
 		val key = doi -> citationStyle
-		val fut = cache.getOrElseUpdate(key, fetchTimeLimited(key))
-		fut.failed.foreach{_ =>
-			scheduler.scheduleOnce(10.seconds){
-				fetchIfNeeded(key)
-			}
-		}
-		fut
-	}
-
-	//not waiting for HTTP; only returns string if the result previously cached
-	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
-
-	private def fetchTimeLimited(key: Key): Future[String] =
-		timeLimit(fetchCitation(key), config.timeoutSec.seconds, scheduler).recoverWith{
+		timeLimit(fetchIfNeeded(key), config.timeoutSec.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
 				new Exception("Citation formatting service timed out")
 			)
 		}
+	}
+
+	//not waiting for HTTP; only returns string if the result previously cached
+	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
 
 	private def fetchIfNeeded(key: Key): Future[String] = {
 
@@ -84,14 +76,14 @@ class CitationClient (
 			res
 		}
 
-		cache.get(key).map{fut =>
+		cache.get(key).fold(recache()){fut =>
 			fut.value match{
 				case Some(Failure(_)) =>
 					//if this citation is a completed failure at the moment
 					recache()
 				case _ => fut
 			}
-		}.getOrElse(recache())
+		}
 	}
 
 	private def warmUpCache(): Unit = {
@@ -109,17 +101,19 @@ class CitationClient (
 		}
 	}
 
-	private def fetchCitation(key: Key): Future[String] = http.singleRequest{
-			val (doi, style) = key
-			HttpRequest(
+	private def fetchCitation(key: Key): Future[String] =
+		val (doi, style) = key
+		http.singleRequest(
+			request = HttpRequest(
 				uri = style match {
 					case CitationStyle.bibtex => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
 					case CitationStyle.ris    => s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
 					case CitationStyle.HTML   => s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
 					case CitationStyle.TEXT   => s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
 				}
-			)
-		}.flatMap{resp =>
+			),
+			settings = ConnectionPoolSettings(system).withMaxConnections(6).withMaxOpenRequests(10000)
+		).flatMap{resp =>
 			Unmarshal(resp).to[String].flatMap{payload =>
 				if(resp.status.isSuccess) Future.successful(payload)
 				//the payload is the error message/page from the citation service

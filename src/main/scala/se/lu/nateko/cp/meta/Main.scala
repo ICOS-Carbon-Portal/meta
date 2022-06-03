@@ -51,10 +51,10 @@ object Main extends App with CpmetaJsonProtocol{
 	) yield {
 		sys.addShutdownHook{
 			metaflow.cancel()
-			db.close()
-			println("Metadata db has been shut down")
-			val doneFuture = binding.unbind()
-				.flatMap(_ => system.terminate())(ExecutionContext.Implicits.global)
+			val doneFuture = binding.unbind().map{_ =>
+				db.close()
+				println("Metadata db has been shut down")
+			}(using ExecutionContext.Implicits.global)
 			Await.result(doneFuture, 5.seconds)
 			println("meta service shutdown successful")
 		}

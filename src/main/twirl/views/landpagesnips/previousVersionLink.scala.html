@@ -6,7 +6,7 @@
 		none
 	}
 	case uri :: Nil => {
-		<a href=@{uri}>View previous version</a>
+		<a href=@{uri.getRawPath}>View previous version</a>
 	}
 	case _ => {
 		<span>

@@ -1,12 +1,13 @@
 @import se.lu.nateko.cp.meta.core.data.UriResource
-@import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
-@(res: UriResource)(implicit envri: Envri)
+@(res: UriResource)(implicit conf: EnvriConfig)
 <a href=@resUri>@{res.label.getOrElse(res.uri.toString)}</a>
 
 @resUri = @{
 	val uriStr = res.uri.toString
-	if(envri == Envri.ICOS && (uriStr.startsWith("https://meta.") || uriStr.startsWith("http://meta.")))
+	if(uriStr.startsWith(conf.metaItemPrefix.toString) || uriStr.startsWith(conf.dataItemPrefix.toString))
 		res.uri.getRawPath
-	else uriStr
+	else
+		uriStr
 }

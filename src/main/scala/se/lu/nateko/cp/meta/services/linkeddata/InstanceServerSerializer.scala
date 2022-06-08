@@ -25,6 +25,8 @@ import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import scala.util.Using
+import java.io.IOException
+import akka.stream.StreamDetachedException
 
 object InstanceServerSerializer {
 
@@ -89,7 +91,13 @@ object InstanceServerSerializer {
 					statements.foreach(rdfWriter.handleStatement)
 					rdfWriter.endRDF()
 				}
-				.failed.foreach(ctxt.reportFailure)
+				.failed.filter{//swallow the exception raised if entityBytes' consumer cancels
+					case io: IOException =>
+						io.getCause match
+							case _: StreamDetachedException => false
+							case _ => true
+					case _ => true
+				}.foreach(ctxt.reportFailure)
 			)
 		}
 		HttpResponse(entity = HttpEntity(returnedContType, entityBytes))

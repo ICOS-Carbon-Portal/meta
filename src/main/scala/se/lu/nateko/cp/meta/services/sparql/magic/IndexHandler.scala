@@ -48,7 +48,8 @@ import scala.util.Failure
 
 class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends SailConnectionListener {
 
-	private def flushIndex(): Unit = throttle(() => index.flush(), 1.second, scheduler)
+	//important that this is a val, not a def, otherwise throttle will work very wrongly
+	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
 	def statementAdded(s: Statement): Unit = {
 		index.put(RdfUpdate(s, true))

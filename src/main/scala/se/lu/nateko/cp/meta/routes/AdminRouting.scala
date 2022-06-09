@@ -23,7 +23,7 @@ class AdminRouting(
 	sparqler: SparqlRunner,
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
-	makeMetaReadonly: String => Future[Done],
+	makeMetaReadonly: String => Future[String],
 	conf: SparqlServerConfig
 ) {
 	import AuthenticationRouting.optEnsureLocalRequest
@@ -32,7 +32,7 @@ class AdminRouting(
 	private val readonlyModeRoute = (post & withoutRequestTimeout){
 		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
 		onComplete(makeMetaReadonly(msg)){
-			case Success(_) => complete(StatusCodes.OK -> "Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk")
+			case Success(successMsg) => complete(StatusCodes.OK -> successMsg)
 			case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
 		}
 	}

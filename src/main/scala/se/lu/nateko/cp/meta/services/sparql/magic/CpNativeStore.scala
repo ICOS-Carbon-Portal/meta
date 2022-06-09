@@ -22,6 +22,8 @@ import akka.Done
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import org.eclipse.rdf4j.sail.SailConnectionListener
 import scala.concurrent.ExecutionContext
+import scala.util.Success
+import scala.util.Failure
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
@@ -41,14 +43,19 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
-	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[Done] = {
+	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[String] = {
 		nativeSail.makeReadonly(errorMessage)
 		val indexDump = cpIndex.fold(ok){idx =>
 			idx.flush()
 			IndexHandler.store(idx)
 		}
 		val citationsDump = CitationClient.saveCache(getCitationClient)
-		Future.sequence(Seq(indexDump, citationsDump)).map(_ => Done)
+		Future.sequence(Seq(indexDump, citationsDump)).map(_ =>
+			"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
+		).andThen{
+			case Success(msg) => log.info(msg)
+			case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
+		}
 	}
 
 	def getCitationClient: CitationClient = nativeSail.citer.doiCiter

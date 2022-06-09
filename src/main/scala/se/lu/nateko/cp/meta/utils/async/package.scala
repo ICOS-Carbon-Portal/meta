@@ -38,15 +38,19 @@ def timeLimit[T](
 def throttle(
 	action: () => Unit,
 	delay: FiniteDuration,
-	using: Scheduler
-)(using ExecutionContext): () => Unit = {
+	scheduler: Scheduler
+)(using ctxt: ExecutionContext): () => Unit = {
 	val ongoing = new AtomicBoolean(false)
 
 	() => {
 		val wasOngoing = ongoing.getAndSet(true)
-		if(!wasOngoing) using.scheduleOnce(delay){
-			action()
-			ongoing.set(false)
+		if(!wasOngoing) scheduler.scheduleOnce(delay){
+			try
+				action()
+			catch
+				case err: Throwable => ctxt.reportFailure(err)
+			finally
+				ongoing.set(false)
 		}
 	}
 }

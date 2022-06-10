@@ -1,0 +1,38 @@
+@import se.lu.nateko.cp.meta.core.data.Organization
+@import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.api.OrganizationExtra
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import landpagesnips.*
+
+@(orgExt: OrganizationExtra[Organization])(implicit envri: Envri, conf: EnvriConfig)
+@ServerSidePage(title, header, CpMenu.default, subHeading = Some("Organization")){
+	<div class="row gy-2">
+		<div class="col-md-8">
+			<div class="row gy-2">
+				@property("Name", org.name)
+				@for(email <- org.email){
+					@property("Email", email)
+				}
+				@for(website <- org.website) {
+					@htmlProperty{Website}{
+						<a href=@{website}>@website</a>
+					}
+				}
+				@for(comment <- org.self.comments){
+					@property("Comment", comment)
+				}
+			</div>
+			@staff(orgExt)
+		</div>
+	</div>
+}
+
+@org = @{orgExt.org}
+@header = @{
+	org.name + org.self.label.fold(""){lbl => s" ($lbl)"}
+}
+
+@title = @{
+	org.self.label.getOrElse(org.name)
+}

@@ -28,6 +28,7 @@ import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import scala.util.Try
 import scala.util.Using
+import se.lu.nateko.cp.meta.core.data.Organization
 
 final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
 	import AttributionProvider.*
@@ -37,7 +38,7 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 
 	def getAuthors(dobj: DataObject): Seq[Person] = dobj.specificInfo.fold[Seq[Person]](
 		_ => Nil,
-		l2 => getMemberships(l2.acquisition.station)
+		l2 => getMemberships(l2.acquisition.station.org)
 			.filter(getTcSpecificFilter(dobj))
 			.filter(_.isRelevantFor(dobj))
 			.toIndexedSeq
@@ -46,14 +47,14 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 			.distinct
 	)
 
-	def getMemberships(station: Station): IndexedSeq[Membership] = {
-		val query = membsQuery(station.org.self.uri)
+	def getMemberships(org: Organization): IndexedSeq[Membership] = {
+		val query = membsQuery(org.self.uri)
 		Using(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.toIndexedSeq).get
 			.flatMap(parseMembership)
 	}
 
-	private def membsQuery(station: URI) = s"""select distinct ?person ?role ?weight ?extra ?start ?end where{
-		|	?memb <${metaVocab.atOrganization}> <$station> ;
+	private def membsQuery(org: URI) = s"""select distinct ?person ?role ?weight ?extra ?start ?end where{
+		|	?memb <${metaVocab.atOrganization}> <$org> ;
 		|		<${metaVocab.hasRole}> ?role .
 		|	?person <${metaVocab.hasMembership}> ?memb .
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }

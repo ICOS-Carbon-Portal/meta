@@ -58,14 +58,14 @@ trait CpmetaFetcher extends FetchingHelper{
 		else getOrganization(uri)
 	}
 
-	protected def getOrganization(org: IRI) = Organization(
+	def getOrganization(org: IRI) = Organization(
 		self = getLabeledResource(org),
 		name = getSingleString(org, metaVocab.hasName),
 		email = getOptionalString(org, metaVocab.hasEmail),
 		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava)
 	)
 
-	protected def getPerson(pers: IRI) = Person(
+	def getPerson(pers: IRI) = Person(
 		self = getLabeledResource(pers),
 		firstName = getSingleString(pers, metaVocab.hasFirstName),
 		lastName = getSingleString(pers, metaVocab.hasLastName),

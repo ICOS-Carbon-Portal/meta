@@ -1,5 +1,5 @@
 @import java.net.URI
-@import se.lu.nateko.cp.meta.api.StationExtra
+@import se.lu.nateko.cp.meta.api.OrganizationExtra
 @import se.lu.nateko.cp.meta.core.data.*
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.urlEncode
@@ -9,7 +9,7 @@
 @import akka.http.scaladsl.model.Uri
 @import landpagesnips.*
 
-@(stExt: StationExtra, vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
+@(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){
 	<div class="row form-group">
 		<div class="col-sm-8">
@@ -113,50 +113,7 @@
 					</tbody>
 				</table>
 			}
-			@if(stExt.staff.isEmpty) {} else {
-				<h2 class="fs-3 mt-5">Current staff</h2>
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Role (ICOS vocabulary)</th>
-							<th>Start date</th>
-						</tr>
-					</thead>
-					<tbody>
-						@for(memb <- stExt.currentStaff){
-							<tr>
-								<td>@agentLink(memb.person)</td>
-								<td>@resourceLink(memb.role)</td>
-								<td>@(memb.start.fold("")(_.toString.take(10)))</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-				@if(stExt.formerStaff.isEmpty) {} else {
-					<h2 class="fs-3 mt-5">Former staff</h2>
-					<table class="table">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Role (ICOS vocabulary)</th>
-								<th>Start date</th>
-								<th>End date</th>
-							</tr>
-						</thead>
-						<tbody>
-							@for(memb <- stExt.formerStaff){
-								<tr>
-									<td>@agentLink(memb.person)</td>
-									<td>@resourceLink(memb.role)</td>
-									<td>@(memb.start.fold("")(_.toString.take(10)))</td>
-									<td>@(memb.end.fold("")(_.toString.take(10)))</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				}
-			}
+			@staff(stExt)
 			@if(station.fullCoverage.isEmpty) {} else {
 				<h2 class="fs-3 mt-5">Location</h2>
 				<div class="row gy-2">
@@ -201,7 +158,7 @@
 	</div>
 }
 
-@station = @{stExt.station}
+@station = @{stExt.org}
 
 @portalLink = @{
 	val stationUri = stationUriShortener(station.org.self.uri)

@@ -120,12 +120,21 @@ class Rdf4jUriSerializer(
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Option[StaticCollection] =
 		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
 
-	private def fetchStation(iri: IRI)(using Envri): Try[Option[StationExtra]] = servers.getStation(iri).map{stOpt =>
+	private def fetchStation(uri: Uri)(using Envri): TOOE[Station] = servers.getStation(makeIri(uri)).map{stOpt =>
 		stOpt.map{st =>
-			val membs = citer.attrProvider.getMemberships(st).toIndexedSeq
-			new StationExtra(st, membs)
+			val membs = citer.attrProvider.getMemberships(st.org).toIndexedSeq
+			OrganizationExtra(st, membs)
 		}
 	}
+
+	private def fetchOrg(uri: Uri)(using Envri): TOOE[Organization] = servers
+		.metaFetcher
+		.map(f =>
+			Try(f.getOrganization(makeIri(uri))).toOption.map{org =>
+				val membs = citer.attrProvider.getMemberships(org).toIndexedSeq
+				OrganizationExtra(org, membs)
+			}
+		)
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
 		implicit val envri = inferEnvri(uri)
@@ -165,14 +174,26 @@ class Rdf4jUriSerializer(
 			delegatedRepr(() => fetchStaticColl(hash))
 
 		case Slash(Segment("resources", Slash(Segment("stations", stId)))) => oneOf(
-			customHtml[StationExtra](
-				() => fetchStation(makeIri(uri)),
+			customHtml[OrganizationExtra[Station]](
+				() => fetchStation(uri),
 				st => views.html.StationLandingPage(st, citer.vocab),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
 				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.getMessage}")
 			),
 			customJson(() => {
-				fetchStation(makeIri(uri.withQuery(Uri.Query.Empty)))
+				fetchStation(uri.withQuery(Uri.Query.Empty))
+			})
+		)
+
+		case Slash(Segment("resources", Slash(Segment("organizations", orgId)))) => oneOf(
+			customHtml[OrganizationExtra[Organization]](
+				() => fetchOrg(uri),
+				org => views.html.OrgLandingPage(org),
+				views.html.MessagePage("Organization not found", s"No organization whose URL ends with $orgId"),
+				err => views.html.MessagePage("Organization metadata error", s"Error fetching metadata for organization $orgId :\n${err.getMessage}")
+			),
+			customJson(() => {
+				fetchOrg(uri.withQuery(Uri.Query.Empty))
 			})
 		)
 
@@ -232,6 +253,7 @@ class Rdf4jUriSerializer(
 private object Rdf4jUriSerializer{
 
 	type FLMHR = Future[List[Marshalling[HttpResponse]]]
+	type TOOE[O] = Try[Option[OrganizationExtra[O]]]
 
 	val Limit = 500
 

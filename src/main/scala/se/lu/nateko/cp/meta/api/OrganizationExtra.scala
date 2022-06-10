@@ -11,14 +11,14 @@ import java.time.Instant
 import AttributionProvider.{Membership, personOrdering}
 
 
-class StationExtra(val station: Station, val staff: Seq[Membership]){
+class OrganizationExtra[+O](val org: O, val staff: Seq[Membership]){
 	val (currentStaff, formerStaff) = {
 		val now = Instant.now()
 		staff.sortBy(_.person).partition(m => m.end.fold(true)(end => end.isAfter(now)))
 	}
 }
 
-object StationExtra{
+object OrganizationExtra{
 	import DefaultJsonProtocol.*
 	import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 
@@ -38,10 +38,10 @@ object StationExtra{
 
 	given RootJsonFormat[Membership] = jsonFormat6(Membership.apply)
 
-	given JsonWriter[StationExtra] with{
-		override def write(se: StationExtra): JsValue = {
-			val core = se.station.toJson.asJsObject
-			val allFields = core.fields + ("staff" -> se.staff.toJson)
+	given [O : JsonWriter]: JsonWriter[OrganizationExtra[O]] with{
+		override def write(oe: OrganizationExtra[O]): JsValue = {
+			val core = oe.org.toJson.asJsObject
+			val allFields = core.fields + ("staff" -> oe.staff.toJson)
 			JsObject(allFields)
 		}
 	}

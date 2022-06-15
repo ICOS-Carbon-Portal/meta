@@ -259,7 +259,7 @@ object SchemaOrg{
 
 		case org: Organization => orgToSchemaOrg(org, None)
 
-		case Person(self, firstName, lastName, _) => {
+		case Person(self, firstName, lastName, _, _) => {
 			JsObject(
 				"@type"      -> JsString("Person"),
 				"@id"        -> JsString(self.uri.toString),

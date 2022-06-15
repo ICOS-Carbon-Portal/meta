@@ -7,7 +7,8 @@ import java.time.Instant
 case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
 sealed trait Agent{
-	val self: UriResource
+	def self: UriResource
+	def email: Option[String]
 }
 case class Organization(
 	self: UriResource,
@@ -15,7 +16,7 @@ case class Organization(
 	email: Option[String],
 	website: Option[URI]
 ) extends Agent
-case class Person(self: UriResource, firstName: String, lastName: String, orcid: Option[Orcid]) extends Agent
+case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
 
 case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoFeature])
 

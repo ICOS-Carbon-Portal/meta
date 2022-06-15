@@ -1,0 +1,27 @@
+@import se.lu.nateko.cp.meta.core.data.Person
+@import se.lu.nateko.cp.meta.core.data.Envri
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.viewscore.CpMenu
+@import landpagesnips.*
+
+@(pers: Person)(implicit envri: Envri, conf: EnvriConfig)
+@ServerSidePage(title, title, CpMenu.default, subHeading = Some("Person")){
+	<div class="row gy-2">
+		<div class="col-md-8">
+			<div class="row gy-2">
+				@property("First name", pers.firstName)
+				@property("Last name", pers.lastName)
+				@for(emailStr <- pers.email) {
+					@htmlProperty{Email}{@email(emailStr)}
+				}
+				@for(orcid <- pers.orcid) {
+					@htmlProperty{OrcidID}{<a href=@orcid.id>@orcid.shortId</a>}
+				}
+			</div>
+		</div>
+	</div>
+}
+
+@title = @{
+	pers.firstName + " " + pers.lastName
+}

@@ -1,0 +1,14 @@
+@(email: String)
+<span>
+	@ename
+	<i class="fas fa-at"></i>
+	@edomain
+</span>
+
+@ename = @{
+	email.take(email.indexOf('@'))
+}
+
+@edomain = @{
+	email.drop(email.indexOf('@') + 1)
+}

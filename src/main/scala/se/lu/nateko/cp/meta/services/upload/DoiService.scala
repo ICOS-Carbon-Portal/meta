@@ -139,7 +139,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 				nameIdentifiers = Nil,
 				affiliation = Nil
 			)
-		case Person(_, firstName, lastName, orcid) =>
+		case Person(_, firstName, lastName, _, orcid) =>
 			Creator(
 				name = PersonalName(firstName, lastName),
 				nameIdentifiers = orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,

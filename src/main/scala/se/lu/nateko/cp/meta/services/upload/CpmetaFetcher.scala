@@ -69,6 +69,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		self = getLabeledResource(pers),
 		firstName = getSingleString(pers, metaVocab.hasFirstName),
 		lastName = getSingleString(pers, metaVocab.hasLastName),
+		email = getOptionalString(pers, metaVocab.hasEmail),
 		orcid = getOptionalString(pers, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
 	)
 

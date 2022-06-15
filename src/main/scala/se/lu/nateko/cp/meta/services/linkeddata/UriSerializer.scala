@@ -53,6 +53,13 @@ object UriSerializer{
 		}
 	}
 
+	object UriPath{
+		def unapplySeq(path: Uri.Path): Seq[String] = path match {
+			case Uri.Path.Slash(tail) => unapplySeq(tail)
+			case Uri.Path.Segment(head, tail) => head +: unapplySeq(tail)
+			case Uri.Path.Empty => Seq.empty
+		}
+	}
 }
 
 class Rdf4jUriSerializer(
@@ -64,7 +71,7 @@ class Rdf4jUriSerializer(
 
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
-	import UriSerializer.Hash
+	import UriSerializer.*
 
 	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
@@ -173,7 +180,7 @@ class Rdf4jUriSerializer(
 		case Hash.Collection(hash) =>
 			delegatedRepr(() => fetchStaticColl(hash))
 
-		case Slash(Segment("resources", Slash(Segment("stations", stId)))) => oneOf(
+		case UriPath("resources", "stations", stId) => oneOf(
 			customHtml[OrganizationExtra[Station]](
 				() => fetchStation(uri),
 				st => views.html.StationLandingPage(st, citer.vocab),
@@ -185,7 +192,7 @@ class Rdf4jUriSerializer(
 			})
 		)
 
-		case Slash(Segment("resources", Slash(Segment("organizations", orgId)))) => oneOf(
+		case UriPath("resources", "organizations", orgId) => oneOf(
 			customHtml[OrganizationExtra[Organization]](
 				() => fetchOrg(uri),
 				org => views.html.OrgLandingPage(org),
@@ -197,7 +204,7 @@ class Rdf4jUriSerializer(
 			})
 		)
 
-		case Slash(Segment("resources", Slash(Segment("instruments", instrId)))) => oneOf(
+		case UriPath("resources", "instruments", instrId) => oneOf(
 			customHtml[Instrument](
 				() => servers.metaFetcher.map(_.getInstrument(makeIri(uri))),
 				inst => views.html.InstrumentLandingPage(inst),
@@ -206,6 +213,18 @@ class Rdf4jUriSerializer(
 			),
 			customJson(() =>
 				servers.metaFetcher.map(_.getInstrument(makeIri(uri)))
+			)
+		)
+
+		case UriPath("resources", "people", persId) => oneOf(
+			customHtml[Person](
+				() => servers.metaFetcher.map(f => Option(f.getPerson(makeIri(uri)))),
+				pers => views.html.PersonLandingPage(pers),
+				views.html.MessagePage("Person not found", s"No person page whose URL ends with $persId"),
+				err => views.html.MessagePage("Person metadata error", s"Error fetching metadata for person $persId :\n${err.getMessage}")
+			),
+			customJson(() =>
+				servers.metaFetcher.map(f => Option(f.getPerson(makeIri(uri))))
 			)
 		)
 

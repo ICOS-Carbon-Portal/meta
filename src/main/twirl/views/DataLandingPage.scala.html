@@ -169,9 +169,11 @@
 				@htmlProperty{Downloads}{
 					@extras.downloadStats.getOrElse("Not available")
 				}
-				@htmlProperty{Previews}{
-					@extras.previewStats.getOrElse("Not available")
-				}
+				@if(dobj.isPreviewable){
+					@htmlProperty{Previews}{
+						@extras.previewStats.getOrElse("Not available")
+					}
+				} else {}
 			</div>
 
 			<div class="row gy-2">

@@ -18,14 +18,12 @@ class CpInnerNativeStore extends NativeStore{
 
 	public SailConnectionListener listener = null;
 	public CitationProvider citer = null;
-	private final Boolean disableIndex;
 	private Boolean useCpConnection = false;
 	private String readonlyErrMessage = null;
 	private static final Logger logger = LoggerFactory.getLogger(NativeStore.class);
 
-	public CpInnerNativeStore(Path storageFolder, String indexDef, Boolean disableIndex) {
+	public CpInnerNativeStore(Path storageFolder, String indexDef) {
 		super(storageFolder.toFile(), indexDef);
-		this.disableIndex = disableIndex;
 	}
 
 	public synchronized void makeReadonly(String errMessage){
@@ -53,7 +51,7 @@ class CpInnerNativeStore extends NativeStore{
 	protected NotifyingSailConnection getConnectionInternal() throws SailException{
 		if(useCpConnection && citer != null) {
 			try {
-				return new CpNativeStoreConnection(this, citer, disableIndex);
+				return new CpNativeStoreConnection(this, citer);
 			}
 			catch(Exception e){
 				throw new SailException(e);

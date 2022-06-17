@@ -7,84 +7,26 @@ import org.eclipse.rdf4j.model.*
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.QueryEvaluationException
-import org.eclipse.rdf4j.query.algebra.*
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
+//import org.eclipse.rdf4j.query.algebra.*
+//import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.sail.SailException
 import org.eclipse.rdf4j.sail.evaluation.SailTripleSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternRewrite
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.util.Try
 import se.lu.nateko.cp.meta.core.data.References
 import scala.collection.immutable.SeqMap
-import spray.json.RootJsonFormat
-import org.slf4j.LoggerFactory
 
 class CpNativeStoreConnection(
 	sail: NativeStore,
-	citer: CitationProvider,
-	disableIndex: Boolean
+	citer: CitationProvider
 ) extends NativeStoreConnection(sail){
 
 	private given valueFactory: ValueFactory = sail.getValueFactory
 	private val metaVocab = new CpmetaVocab(valueFactory)
-	private val logger = LoggerFactory.getLogger(this.getClass)
-
-	override def evaluateInternal(
-		expr: TupleExpr,
-		dataset: Dataset,
-		bindings: BindingSet,
-		includeInferred: Boolean
-	): CloseableIteration[_ <: BindingSet, QueryEvaluationException] =
-
-	if(disableIndex) super.evaluateInternal(expr, dataset, bindings, includeInferred)
-	else try{
-
-		logger.debug("Original query model:\n{}", expr)
-
-		val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-		val dofps = new DofPatternSearch(metaVocab)
-		val fuser = new DofPatternFusion(metaVocab)
-
-		val pattern = dofps.find(queryExpr)
-		val fusions = fuser.findFusions(pattern)
-		DofPatternRewrite.rewrite(queryExpr, fusions)
-
-		logger.debug("Fused query model:\n{}", queryExpr)
-
-		flush()
-		val tripleSource = new SailTripleSource(this, includeInferred, valueFactory)
-		val strategy = getEvaluationStrategy(dataset, tripleSource)
-
-		Seq( //taken from SailSourceConnection.evaluateInternal
-			new BindingAssigner,
-			new ConstantOptimizer(strategy),
-			new CompareOptimizer(),
-			new ConjunctiveConstraintSplitter(),
-			new DisjunctiveConstraintOptimizer(),
-			new SameTermFilterOptimizer(),
-			new QueryModelNormalizer(),
-			//new QueryJoinOptimizer(sailStore.getEvaluationStatistics()),
-			new IterativeEvaluationOptimizer(),
-			new FilterOptimizer()
-			//new OrderLimitOptimizer()
-		).foreach(_.optimize(queryExpr, dataset, bindings))
-
-		logger.debug("Fully optimized final query model:\n{}", queryExpr)
-
-		strategy.evaluate(queryExpr, EmptyBindingSet.getInstance)
-	}
-	catch {
-		case iae: IllegalArgumentException =>
-			iae.printStackTrace()
-			throw iae
-	}
 
 	override def getStatementsInternal(
 		subj: Resource, pred: IRI, obj: Value,
@@ -121,8 +63,8 @@ class CpNativeStoreConnection(
 		var refsCache: Option[Option[References]] = None
 		SeqMap(
 			metaVocab.hasBiblioInfo -> (() => {
-				import se.lu.nateko.cp.meta.core.data.JsonSupport.{given RootJsonFormat[References]}
 				import spray.json.*
+				import se.lu.nateko.cp.meta.core.data.JsonSupport.{given RootJsonFormat[References]}
 				val refs = citer.getReferences(subj)
 				refsCache = Some(refs)
 				refs.map(js => valueFactory.createStringLiteral(js.toJson.compactPrint))

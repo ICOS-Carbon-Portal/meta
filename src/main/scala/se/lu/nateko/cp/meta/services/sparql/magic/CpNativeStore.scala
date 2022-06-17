@@ -39,7 +39,7 @@ class CpNativeStore(
 	private val indices = if(isFreshInit) "" else conf.indices
 	private val disableCpIndex = isFreshInit || conf.disableCpIndex
 
-	private val nativeSail = new CpInnerNativeStore(storageDir, indices, disableCpIndex)
+	private val nativeSail = new CpInnerNativeStore(storageDir, indices)
 
 	setBaseSail(nativeSail)
 
@@ -75,6 +75,8 @@ class CpNativeStore(
 	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit = {
 		cpIndex = if(disableCpIndex){
 			log.info("Magic SPARQL index is disabled")
+			val standardOptimizationsOn = nativeSail.getEvaluationStrategyFactory.getOptimizerPipeline.isPresent
+			log.info(s"Vanilla RDF4J optimizations enabled: $standardOptimizationsOn")
 			None
 		} else {
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")

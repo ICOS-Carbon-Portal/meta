@@ -76,7 +76,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	}
 
 	given factory: ValueFactory = sail.getValueFactory
-	private val vocab = new CpmetaVocab(factory)
+	val vocab = new CpmetaVocab(factory)
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 	//Mass-import of the specification info

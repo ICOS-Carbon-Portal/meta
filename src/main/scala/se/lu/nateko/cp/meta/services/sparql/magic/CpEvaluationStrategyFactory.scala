@@ -1,40 +1,39 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
+import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
-import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.AbstractEvaluationStrategyFactory
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.TupleFunctionEvaluationStrategy
-import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
-import org.eclipse.rdf4j.query.algebra.TupleExpr
-import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.QueryEvaluationException
-import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
-import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DataObjectFetchNode
-import se.lu.nateko.cp.meta.services.CpVocab
-import scala.jdk.CollectionConverters.IteratorHasAsJava
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.FilterPatternSearch
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.QueryEvaluationContext
+import org.eclipse.rdf4j.query.algebra.TupleExpr
+import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
+import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
+import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
+import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
+import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
 	index: CpIndex
-) extends AbstractEvaluationStrategyFactory{
+) extends StrictEvaluationStrategyFactory(fedResolver){
+	import index.{vocab => metaVocab}
+	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
-		new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, new TupleFunctionRegistry, 0, stats){
+		new StrictEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
 			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match{
 
@@ -46,6 +45,42 @@ class CpEvaluationStrategyFactory(
 					qEvalStep(_ => statsBindings.iterator)
 
 				case _ => super.precompile(expr, context)
+			}
+
+			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
+				logger.debug("Original query model:\n{}", expr)
+
+				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
+				val dofps = new DofPatternSearch(metaVocab)
+				val fuser = new DofPatternFusion(metaVocab)
+
+				val pattern = dofps.find(queryExpr)
+				val fusions = fuser.findFusions(pattern)
+				DofPatternRewrite.rewrite(queryExpr, fusions)
+
+				logger.debug("Fused query model:\n{}", queryExpr)
+
+				Seq( //taken from StandardQueryOptimizerPipeline
+					new BindingAssigner(),
+					new BindingSetAssignmentInliner(),
+					new ConstantOptimizer(strat),
+					new RegexAsStringFunctionOptimizer(tripleSrc.getValueFactory()),
+					new CompareOptimizer(),
+					new ConjunctiveConstraintSplitter(),
+					new DisjunctiveConstraintOptimizer(),
+					new SameTermFilterOptimizer(),
+					new UnionScopeChangeOptimizer(),
+					new QueryModelNormalizer(),
+					new ProjectionRemovalOptimizer(), // Make sure this is after the UnionScopeChangeOptimizer
+					//new QueryJoinOptimizer(evaluationStatistics),
+					new IterativeEvaluationOptimizer(),
+					new FilterOptimizer(),
+					//new OrderLimitOptimizer(),
+					new ParentReferenceCleaner()
+				).foreach(_.optimize(queryExpr, dataSet, bindings))
+
+				logger.debug("Fully optimized final query model:\n{}", queryExpr)
+				queryExpr
 			}
 		}
 

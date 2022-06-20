@@ -35,6 +35,8 @@ class CpEvaluationStrategyFactory(
 	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
 		new StrictEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
+			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
+
 			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match{
 
 				case doFetch: DataObjectFetchNode =>
@@ -60,27 +62,10 @@ class CpEvaluationStrategyFactory(
 
 				logger.debug("Fused query model:\n{}", queryExpr)
 
-				Seq( //taken from StandardQueryOptimizerPipeline
-					new BindingAssigner(),
-					new BindingSetAssignmentInliner(),
-					new ConstantOptimizer(strat),
-					new RegexAsStringFunctionOptimizer(tripleSrc.getValueFactory()),
-					new CompareOptimizer(),
-					new ConjunctiveConstraintSplitter(),
-					new DisjunctiveConstraintOptimizer(),
-					new SameTermFilterOptimizer(),
-					new UnionScopeChangeOptimizer(),
-					new QueryModelNormalizer(),
-					new ProjectionRemovalOptimizer(), // Make sure this is after the UnionScopeChangeOptimizer
-					//new QueryJoinOptimizer(evaluationStatistics),
-					new IterativeEvaluationOptimizer(),
-					new FilterOptimizer(),
-					//new OrderLimitOptimizer(),
-					new ParentReferenceCleaner()
-				).foreach(_.optimize(queryExpr, dataSet, bindings))
+				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
-				logger.debug("Fully optimized final query model:\n{}", queryExpr)
-				queryExpr
+				logger.debug("Fully optimized final query model:\n{}", finalExpr)
+				finalExpr
 			}
 		}
 

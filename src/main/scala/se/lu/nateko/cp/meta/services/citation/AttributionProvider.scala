@@ -29,6 +29,7 @@ import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import scala.util.Try
 import scala.util.Using
 import se.lu.nateko.cp.meta.core.data.Organization
+import scala.collection.mutable
 
 final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
 	import AttributionProvider.*
@@ -38,55 +39,68 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 
 	def getAuthors(dobj: DataObject): Seq[Person] = dobj.specificInfo.fold[Seq[Person]](
 		_ => Nil,
-		l2 => getMemberships(l2.acquisition.station.org)
+		l2 => getMemberships(l2.acquisition.station.org.self.uri)
 			.filter(getTcSpecificFilter(dobj))
-			.filter(_.isRelevantFor(dobj))
+			.filter(_.role.isRelevantFor(dobj))
 			.toIndexedSeq
 			.sorted
 			.map(_.person)
 			.distinct
 	)
 
-	def getMemberships(org: Organization): IndexedSeq[Membership] = {
-		val query = membsQuery(org.self.uri)
-		Using(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.toIndexedSeq).get
-			.flatMap(parseMembership)
-	}
+	def getMemberships(org: URI): IndexedSeq[Membership] = sparqlAndParse{
+			s"""select distinct ?person $roleDetailsVars where{
+			|	?memb <${metaVocab.atOrganization}> <$org> .
+			|	?person <${metaVocab.hasMembership}> ?memb .
+			|	$roleDetailsQuerySegment
+			|}""".stripMargin
+		}{bs =>
+			for(person <- parsePerson(bs); role <- parseRoleDetails(bs)) yield Membership(person, role)
+		}
 
-	private def membsQuery(org: URI) = s"""select distinct ?person ?role ?weight ?extra ?start ?end where{
-		|	?memb <${metaVocab.atOrganization}> <$org> ;
-		|		<${metaVocab.hasRole}> ?role .
-		|	?person <${metaVocab.hasMembership}> ?memb .
+	def getPersonRoles(person: URI): IndexedSeq[PersonRole] = sparqlAndParse{
+			s"""select distinct ?org $roleDetailsVars where{
+			|	<$person> <${metaVocab.hasMembership}> ?memb .
+			|	?memb <${metaVocab.atOrganization}> ?org .
+			|	$roleDetailsQuerySegment
+			|}""".stripMargin
+		}{bs =>
+			for(org <- parseUriRes(bs, "org");role <- parseRoleDetails(bs)) yield PersonRole(org, role)
+		}
+
+	private def sparqlAndParse[T](query: String)(parser: BindingSet => Option[T]): IndexedSeq[T] =
+		Using(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.toIndexedSeq).get
+			.flatMap(parser)
+
+	private val roleDetailsVars = "?role ?weight ?extra ?start ?end"
+	private val roleDetailsQuerySegment = s"""?memb <${metaVocab.hasRole}> ?role .
 		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
 		|	OPTIONAL{?memb <${metaVocab.hasExtraRoleInfo}> ?extra }
 		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
-		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }
-	|}""".stripMargin
+		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }""".stripMargin
 
-	private def parseMembership(bs: BindingSet): Option[Membership] = for(
-		role <- parseRole(bs);
-		person <- parsePerson(bs)
-	) yield Membership(
-		person,
-		role,
-		getOptInstant(bs, "start"),
-		getOptInstant(bs, "end"),
-		getOptInt(bs, "weight"),
-		getOptLiteral(bs, "extra", XSD.STRING).map(_.stringValue)
-	)
+	private def parseRoleDetails(bs: BindingSet): Option[RoleDetails] = parseUriRes(bs, "role").map{role =>
+		RoleDetails(
+			role,
+			getOptInstant(bs, "start"),
+			getOptInstant(bs, "end"),
+			getOptInt(bs, "weight"),
+			getOptLiteral(bs, "extra", XSD.STRING).map(_.stringValue)
+		)
+	}
 
 	private def parsePerson(bs: BindingSet) = Option(bs.getValue("person")).collect{
 		case iri: IRI => Try{getPerson(iri)}.toOption
 	}.flatten
 
-	private def parseRole(bs: BindingSet): Option[UriResource] = Option(bs.getValue("role")).collect{
+	private def parseUriRes(bs: BindingSet, varName: String): Option[UriResource] = Option(bs.getValue(varName)).collect{
 		case iri: IRI => getLabeledResource(iri)
 	}
 
 	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
-		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.weight.isDefined && {
+		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
 			val speciesOk = for(
-				extra <- memb.extra;
+				extra <- memb.role.extra;
 				l2 <- dobj.specificInfo.toOption;
 				cols <- l2.columns
 			) yield{
@@ -103,7 +117,7 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 
 object AttributionProvider{
 
-	case class Membership(person: Person, role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
+	case class RoleDetails(role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime
@@ -117,14 +131,24 @@ object AttributionProvider{
 		)
 	}
 
-	implicit val personOrdering: ju.Comparator[Person] = Ordering
-		.by[Person, String](_.lastName.toUpperCase)
-		.thenComparing(Ordering.by[Person, String](_.firstName))
+	case class Membership(person: Person, role: RoleDetails)
+	case class PersonRole(org: UriResource, role: RoleDetails)
 
-	implicit val membershipOrdering: ju.Comparator[Membership] = Ordering
-		.by((m: Membership) => m.weight)
+	given personOrdering: Ordering[Person] = Ordering
+		.by[Person, String](_.lastName.toUpperCase)
+		.orElseBy(_.firstName)
+
+	given membershipOrdering: Ordering[Membership] = Ordering
+		.by((m: Membership) => m.role.weight)
 		.reverse
-		.thenComparing(Ordering.by[Membership, Person](_.person))
+		.orElseBy(_.person)
+
+	given personRoleOrdering: Ordering[PersonRole] = Ordering
+		.by((pr: PersonRole) => pr.role.end.isEmpty)
+		.orElseBy((pr: PersonRole) => pr.role.end)
+		.orElseBy((pr: PersonRole) => pr.role.start.isDefined)
+		.orElseBy((pr: PersonRole) => pr.role.start)
+		.reverse
 
 	def getOptLiteral(bs: BindingSet, name: String, litType: IRI): Option[Literal] = Option(bs.getValue(name)).collect{
 		case lit: Literal if(lit.getDatatype == litType) => lit

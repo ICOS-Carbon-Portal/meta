@@ -16,8 +16,8 @@
 			@for(memb <- orgExt.currentStaff){
 				<tr>
 					<td>@agentLink(memb.person)</td>
-					<td>@resourceLink(memb.role)</td>
-					<td>@(memb.start.fold("")(_.toString.take(10)))</td>
+					<td>@resourceLink(memb.role.role)</td>
+					<td>@(memb.role.start.fold("")(_.toString.take(10)))</td>
 				</tr>
 			}
 		</tbody>
@@ -37,9 +37,9 @@
 				@for(memb <- orgExt.formerStaff){
 					<tr>
 						<td>@agentLink(memb.person)</td>
-						<td>@resourceLink(memb.role)</td>
-						<td>@(memb.start.fold("")(_.toString.take(10)))</td>
-						<td>@(memb.end.fold("")(_.toString.take(10)))</td>
+						<td>@resourceLink(memb.role.role)</td>
+						<td>@(memb.role.start.fold("")(_.toString.take(10)))</td>
+						<td>@(memb.role.end.fold("")(_.toString.take(10)))</td>
 					</tr>
 				}
 			</tbody>

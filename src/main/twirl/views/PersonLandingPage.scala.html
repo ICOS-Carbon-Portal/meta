@@ -1,10 +1,10 @@
-@import se.lu.nateko.cp.meta.core.data.Person
+@import se.lu.nateko.cp.meta.api.PersonExtra
 @import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips.*
 
-@(pers: Person)(implicit envri: Envri, conf: EnvriConfig)
+@(persExtra: PersonExtra)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, title, CpMenu.default, subHeading = Some("Person")){
 	<div class="row gy-2">
 		<div class="col-md-8">
@@ -18,10 +18,34 @@
 					@htmlProperty{OrcidID}{<a href=@orcid.id>@orcid.shortId</a>}
 				}
 			</div>
+			@if(persExtra.roles.isEmpty) {} else {
+				<h2 class="fs-3 mt-5">Roles</h2>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Role (ICOS vocabulary)</th>
+							<th>Organization</th>
+							<th>Start date</th>
+							<th>End date</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for(persRole <- persExtra.sortedRoles){
+							<tr>
+								<td>@resourceLink(persRole.role.role)</td>
+								<td>@resourceLink(persRole.org)</td>
+								<td>@(persRole.role.start.fold("")(_.toString.take(10)))</td>
+								<td>@(persRole.role.end.fold("")(_.toString.take(10)))</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
 		</div>
 	</div>
 }
 
+@pers = @{persExtra.person}
 @title = @{
 	pers.firstName + " " + pers.lastName
 }

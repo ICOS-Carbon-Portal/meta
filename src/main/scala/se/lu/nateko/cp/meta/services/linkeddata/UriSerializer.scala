@@ -129,7 +129,7 @@ class Rdf4jUriSerializer(
 
 	private def fetchStation(uri: Uri)(using Envri): TOOE[Station] = servers.getStation(makeIri(uri)).map{stOpt =>
 		stOpt.map{st =>
-			val membs = citer.attrProvider.getMemberships(st.org).toIndexedSeq
+			val membs = citer.attrProvider.getMemberships(st.org.self.uri)
 			OrganizationExtra(st, membs)
 		}
 	}
@@ -138,10 +138,18 @@ class Rdf4jUriSerializer(
 		.metaFetcher
 		.map(f =>
 			Try(f.getOrganization(makeIri(uri))).toOption.map{org =>
-				val membs = citer.attrProvider.getMemberships(org).toIndexedSeq
+				val membs = citer.attrProvider.getMemberships(org.self.uri)
 				OrganizationExtra(org, membs)
 			}
 		)
+	private def fetchPerson(uri: Uri)(using Envri): Try[Option[PersonExtra]] = servers
+		.metaFetcher
+		.map{f =>
+			Try(f.getPerson(makeIri(uri))).toOption.map{pers =>
+				val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
+				PersonExtra(pers, roles)
+			}
+		}
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
 		implicit val envri = inferEnvri(uri)
@@ -173,7 +181,6 @@ class Rdf4jUriSerializer(
 		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(RDFS.LABEL), None)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR = uri.path match {
-
 		case Hash.Object(hash) =>
 			delegatedRepr(() => fetchStaticObj(hash))
 
@@ -217,15 +224,13 @@ class Rdf4jUriSerializer(
 		)
 
 		case UriPath("resources", "people", persId) => oneOf(
-			customHtml[Person](
-				() => servers.metaFetcher.map(f => Option(f.getPerson(makeIri(uri)))),
+			customHtml[PersonExtra](
+				() => fetchPerson(uri),
 				pers => views.html.PersonLandingPage(pers),
 				views.html.MessagePage("Person not found", s"No person page whose URL ends with $persId"),
 				err => views.html.MessagePage("Person metadata error", s"Error fetching metadata for person $persId :\n${err.getMessage}")
 			),
-			customJson(() =>
-				servers.metaFetcher.map(f => Option(f.getPerson(makeIri(uri))))
-			)
+			customJson(() => fetchPerson(uri))(using OrganizationExtra.persExtraWriter)
 		)
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(

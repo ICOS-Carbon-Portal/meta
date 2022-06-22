@@ -12,12 +12,12 @@ import org.eclipse.rdf4j.sail.SailConnectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.lu.nateko.cp.meta.services.citation.CitationProvider;
+import se.lu.nateko.cp.meta.services.sparql.magic.StatementsEnricher;
 
 class CpInnerNativeStore extends NativeStore{
 
 	public SailConnectionListener listener = null;
-	public CitationProvider citer = null;
+	public StatementsEnricher enricher = null;
 	private Boolean useCpConnection = false;
 	private String readonlyErrMessage = null;
 	private static final Logger logger = LoggerFactory.getLogger(NativeStore.class);
@@ -49,9 +49,9 @@ class CpInnerNativeStore extends NativeStore{
 
 	@Override
 	protected NotifyingSailConnection getConnectionInternal() throws SailException{
-		if(useCpConnection && citer != null) {
+		if(useCpConnection && enricher != null) {
 			try {
-				return new CpNativeStoreConnection(this, citer);
+				return new CpNativeStoreConnection(this, enricher);
 			}
 			catch(Exception e){
 				throw new SailException(e);

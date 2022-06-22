@@ -58,7 +58,7 @@ class CpNativeStore(
 		}
 	}
 
-	def getCitationClient: CitationClient = nativeSail.citer.doiCiter
+	def getCitationClient: CitationClient = nativeSail.enricher.citer.doiCiter
 
 	override def init(): Unit = {
 		if(isFreshInit) log.warning(
@@ -68,7 +68,7 @@ class CpNativeStore(
 		nativeSail.setForceSync(!isFreshInit)
 		nativeSail.init()
 		log.info("Triple store initialized")
-		nativeSail.citer = citationFactory.getProvider(nativeSail)
+		nativeSail.enricher = StatementsEnricher(citationFactory.getProvider(nativeSail))
 		log.info("Initialized citation provider")
 	}
 
@@ -88,7 +88,7 @@ class CpNativeStore(
 		}
 		cpIndex.foreach{idx =>
 			nativeSail.setEvaluationStrategyFactory(
-				new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), idx)
+				new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), idx, nativeSail.enricher)
 			)
 		}
 	}

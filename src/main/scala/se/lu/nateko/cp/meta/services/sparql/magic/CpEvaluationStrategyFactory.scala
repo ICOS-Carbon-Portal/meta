@@ -27,12 +27,14 @@ import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
-	index: CpIndex
+	index: CpIndex,
+	enricher: StatementsEnricher
 ) extends StrictEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
-	override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
+	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
+		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
 		new StrictEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
@@ -68,6 +70,7 @@ class CpEvaluationStrategyFactory(
 				finalExpr
 			}
 		}
+	}
 
 	private def bindingsForStatsFetch(statFetch: StatsFetchNode): Iterator[BindingSet] = {
 		import statFetch.{group, countVarName}

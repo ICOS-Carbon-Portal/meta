@@ -59,7 +59,7 @@ class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaC
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
-	private val metaVocab = new CpmetaVocab(repo.getValueFactory)
+	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	private val citer = new CitationMaker(doiCiter, repo, coreConf)
 
 	private val (objFetcher, collFetcher) = {

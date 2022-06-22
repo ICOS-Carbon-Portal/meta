@@ -133,7 +133,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
 			.toIndexedSeq
 			.collect{
-				case Rdf4jStatement(provSt, _, _) if fetcher.server.hasStatement(provSt, appStatus, vocab.lit("STEP3APPROVED")) => provSt
+				case Rdf4jStatement(provSt, _, _) if fetcher.server.hasStatement(Some(provSt), Some(appStatus), None) => provSt
 			}
 			.headOption
 

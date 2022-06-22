@@ -17,5 +17,5 @@ class CpEnrichedTripleSource(base: TripleSource, enricher: StatementsEnricher) e
 		enricher.enrich(base.getStatements(subj, pred, obj, ctxts*), subj, pred, obj)
 
 
-	override def getValueFactory(): ValueFactory = enricher.citer.metaVocab.factory
+	override def getValueFactory(): ValueFactory = base.getValueFactory
 }

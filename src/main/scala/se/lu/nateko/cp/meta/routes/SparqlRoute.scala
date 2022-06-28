@@ -46,9 +46,16 @@ object SparqlRoute {
 
 	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
 
-	def apply(conf: SparqlServerConfig)(implicit marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route = {
+	val withPermissiveCorsHeader: Directive0 = optionalHeaderValueByType(Origin).tflatMap{
+		case Tuple1(Some(orHeader)) =>
+			val headers = orHeader.origins.map(`Access-Control-Allow-Origin`.apply)
+			respondWithHeaders(headers)
+		case Tuple1(None) => respondWithHeaders(`Access-Control-Allow-Origin`.*)
+	}
 
-		val makeResponse: String => Route = query => respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route = {
+
+		val makeResponse: String => Route = query => withPermissiveCorsHeader{
 			handleExceptions(MainRoute.exceptionHandler){
 				handleRejections(RejectionHandler.default){
 					getClientIp{ip =>
@@ -60,19 +67,24 @@ object SparqlRoute {
 			}
 		}
 
+		val badRequestResponse: Route = withPermissiveCorsHeader{
+			complete(StatusCodes.BadRequest -> (
+				"Expected a SPARQL query provided as 'query' URL parameter.\n" +
+				"Alternatively, the query can be HTTP POSTed as 'query' Form field or as a plain text payload\n" +
+				"See the specification at https://www.w3.org/TR/sparql11-protocol/#query-operation\n" +
+				"Human users may want to use the Web app at https://meta.icos-cp.eu/sparqlclient/"
+			))
+		}
+
 		val plainRoute =
 			get{
 				parameter("query")(makeResponse) ~
-				complete(StatusCodes.BadRequest -> (
-					"Expected a SPARQL query provided as 'query' URL parameter.\n" +
-					"Alternatively, the query can be HTTP POSTed as 'query' Form field or as a plain text payload\n" +
-					"See the specification at https://www.w3.org/TR/sparql11-protocol/#query-operation\n" +
-					"Human users may want to use the Web app at https://meta.icos-cp.eu/sparqlclient/"
-				))
+				badRequestResponse
 			} ~
 			post{
 				formField("query")(makeResponse) ~
-				entity(as[String])(makeResponse)
+				entity(as[String])(makeResponse) ~
+				badRequestResponse
 			} ~
 			options{
 				respondWithHeaders(

@@ -145,6 +145,7 @@ case class DoiClientConfig(
 
 case class CpmetaConfig(
 	port: Int,
+	httpBindInterface: String,
 	dataUploadService: UploadServiceConfig,
 	stationLabelingService: LabelingServiceConfig,
 	instanceServers: InstanceServersConfig,
@@ -192,7 +193,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[DoiClientConfig] = jsonFormat4(DoiClientConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

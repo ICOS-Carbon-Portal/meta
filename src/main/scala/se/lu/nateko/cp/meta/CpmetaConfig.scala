@@ -197,10 +197,12 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
-		val default = ConfigFactory.load
-		if(confFile.exists)
-			ConfigFactory.parseFile(confFile).withFallback(default)
-		else default
+		if(!confFile.exists) ConfigFactory.load
+		else
+			ConfigFactory.parseFile(confFile)
+				.withFallback(ConfigFactory.defaultApplication)
+				.withFallback(ConfigFactory.defaultReferenceUnresolved)
+				.resolve
 	}
 
 	private val renderOpts = ConfigRenderOptions.concise.setJson(true)

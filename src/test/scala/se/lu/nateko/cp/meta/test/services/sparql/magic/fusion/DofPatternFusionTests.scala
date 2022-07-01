@@ -5,13 +5,17 @@ import org.scalatest.Tag
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
+import org.eclipse.rdf4j.query.algebra.{Filter => Rdf4jFilter}
+import org.eclipse.rdf4j.query.algebra.FunctionCall
 import org.eclipse.rdf4j.query.algebra.TupleExpr
+import org.eclipse.rdf4j.query.algebra.ValueConstant
 
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import PatternFinder.*
+import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
 
 object ChosenTest extends Tag("fusion.ChosenTest")
 
@@ -23,7 +27,6 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 	private def parseQuery(q: String): TupleExpr = parser.parseQuery(q, "http://dummy.org").getTupleExpr
 
-
 	def getFetchNode(queryStr: String): (TupleExpr, DataObjectFetchNode) = {
 		val query = parseQuery(queryStr)
 		val pattern = dofps.find(query)
@@ -32,6 +35,32 @@ class DofPatternFusionTests extends AnyFunSpec{
 
 		val fetchOpt = takeNode.ifIs[DataObjectFetchNode].recursive(query)
 		query -> fetchOpt.getOrElse(fail("DataObjectFetch expression did not appear in the query!"))
+	}
+
+	describe("Trivial query listing all data objects"){
+		lazy val (query @ _, dofNode) = getFetchNode(TestQueries.allDataObjects)
+		it("has no filter, no sorting, no offset"){
+			assert(dofNode.fetchRequest === DataObjectFetch(All, None, 0))
+		}
+		it("binds 'dobj' var to data object uri and 'spec' var to data object spec uri"){
+			assert(dofNode.varNames === Map(DobjUri -> "dobj", Spec -> "spec"))
+		}
+	}
+
+	describe("By-filename-lookup query with object spec filter"){
+		lazy val (query, dofNode) = getFetchNode(TestQueries.byFilenameWithSpecFilter)
+
+		it("filters by equality filter on file name"){
+			val filter = ContFilter(FileName, EqualsFilter("SE-Deg_BM_20200323_L02_F01.dat"))
+			assert(dofNode.fetchRequest === DataObjectFetch(filter, None, 0))
+		}
+
+		it("keeps the spec filter in the query after fusion"){
+			val filterExpr = takeNode.ifIs[Rdf4jFilter].recursive(query)
+			assert(filterExpr.nonEmpty)
+			val specFilt = filterExpr.get.getCondition.asInstanceOf[FunctionCall].getArgs.toArray.last.asInstanceOf[ValueConstant]
+			assert(specFilt.getValue.stringValue === "http://meta.icos-cp.eu/")
+		}
 	}
 
 	describe("Union query with two spec values blocks with incompatiple value sets"){

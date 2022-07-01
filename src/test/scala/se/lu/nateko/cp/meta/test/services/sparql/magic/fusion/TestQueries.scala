@@ -264,4 +264,18 @@ object TestQueries{
 	|}
 	|order by desc(?submTime)
 	|offset 10 limit 20""".stripMargin
+
+	val allDataObjects = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?dobj
+		|where {
+		|	?dobj cpmeta:hasObjectSpec ?spec .
+		|}""".stripMargin
+
+	val byFilenameWithSpecFilter = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?dobj
+		|where {
+		|	?dobj cpmeta:hasObjectSpec ?spec .
+		|	?dobj cpmeta:hasName "SE-Deg_BM_20200323_L02_F01.dat"^^xsd:string .
+		|	FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+		|}""".stripMargin
 }

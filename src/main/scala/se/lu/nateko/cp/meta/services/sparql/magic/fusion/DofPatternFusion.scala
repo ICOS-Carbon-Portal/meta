@@ -121,8 +121,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val filtExprs = filtsAndExprs.collect{case (_, te: TupleExpr) => te}
 
 			val categFiltsAndExprs = varProps.toSeq.flatMap{
-				case (v, prop: CategProp) => getCategFilter(v, prop, patt.varValues)
-				case _ => None
+				(v, prop) => getPropValueFilter(v, prop, patt.varValues)
 			}
 
 			val categFilts: Seq[Filter] = categFiltsAndExprs.map(_._1)
@@ -240,26 +239,35 @@ object DofPatternFusion{
 		}
 	}
 
-	def getCategFilter(v: QVar, cp: CategProp, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = {
+	def getPropValueFilter(v: QVar, prop: Property, vvals: Map[QVar, ValueInfoPattern]): Option[(Filter, Set[TupleExpr])] = {
 
 		val valsExprsOpt: Option[(Seq[Value], Set[TupleExpr])] = vvals.get(v).flatMap{vip =>
 			vip.vals.map(_.toSeq -> vip.providers.toSet)
 		}
 
-		valsExprsOpt.map{
-			case (vals, exprs) =>
-				val filter: Filter = if(vals.isEmpty) Nothing else {
-					val iris = vals.collect{case iri: IRI => iri}
-					cp match{
-						case uriProp: UriProperty => CategFilter(uriProp, iris)
-						case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
-						case strProp: StringCategProp => CategFilter(
-							strProp,
-							vals.collect{case lit: Literal => asString(lit)}.flatten
-						)
-					}
+		valsExprsOpt.map{(vals, exprs) =>
+			val filter: Filter = if(vals.isEmpty) Nothing else {
+				prop match {
+					case catp: CategProp =>
+						val iris = vals.collect{case iri: IRI => iri}
+						catp match{
+							case uriProp: UriProperty => CategFilter(uriProp, iris)
+							case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
+							case strProp: StringCategProp => CategFilter(
+								strProp,
+								vals.collect{case lit: Literal => asString(lit)}.flatten
+							)
+						}
+
+					case _ =>
+						vals.flatMap(FilterPatternSearch.parsePropValueFilter(prop, _)).toList match{
+							case Nil => Nothing
+							case only :: Nil => only
+							case several => Or(several)
+						}
 				}
-				filter -> exprs
+			}
+			filter -> exprs
 		}
 	}
 }

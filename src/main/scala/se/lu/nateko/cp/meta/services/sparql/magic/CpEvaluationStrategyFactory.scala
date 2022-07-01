@@ -123,8 +123,7 @@ class CpEvaluationStrategyFactory(
 			}
 		}
 
-		val fetchRequest = new RequestInitializer(doFetch.varNames, bindings)
-			.enrichWithFilters(doFetch.fetchRequest)
+		val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindings)
 
 		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
@@ -142,18 +141,17 @@ class CpEvaluationStrategyFactory(
 }
 
 
-private class RequestInitializer(varNames: Map[Property, String], bindings: BindingSet){
+private def getFilterEnrichedDobjFetch(dofNode: DataObjectFetchNode, bindings: BindingSet): DataObjectFetch = {
 
-	def enrichWithFilters(orig: DataObjectFetch): DataObjectFetch = {
-
-		val extraFilters: Seq[Filter] = varNames.flatMap{ case (prop, varName) =>
-			Option(bindings.getValue(varName)).flatMap(
-				FilterPatternSearch.parsePropValueFilter(prop, _)
-			)
-		}.toIndexedSeq
-
-		if(extraFilters.isEmpty) orig else orig.copy(
-			filter = And(extraFilters :+ orig.filter).optimize
+	val extraFilters: Seq[Filter] = dofNode.varNames.flatMap{ case (prop, varName) =>
+		Option(bindings.getValue(varName)).flatMap(
+			FilterPatternSearch.parsePropValueFilter(prop, _)
 		)
-	}
+	}.toIndexedSeq
+
+	val orig = dofNode.fetchRequest
+
+	if(extraFilters.isEmpty) orig else orig.copy(
+		filter = And(extraFilters :+ orig.filter).optimize
+	)
 }

@@ -4,7 +4,7 @@ import HierarchicalBitmap.*
 
 extension (self: Filter){
 
-	def optimize: Filter = flatten.mergeIntervals.removeRedundantReqProps
+	def optimize: Filter = flatten.mergeIntervals.removeRedundantReqProps.flatten
 
 	def flatten: Filter = self match{
 		case And(filters) =>

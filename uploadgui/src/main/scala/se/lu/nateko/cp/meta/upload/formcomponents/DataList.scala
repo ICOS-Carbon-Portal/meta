@@ -106,10 +106,10 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 		}
 
 		Seq("data-list-input").foreach{inputClass =>
-			querySelector[html.Input](div, s".$inputClass").foreach{_.id = s"${inputClass}-$id"}
+			querySelector[html.Input](div, s".$inputClass").foreach{_.id = s"${inputClass}-$elemId-$id"}
 		}
 
-		private val dataListInput = new DataListInput[T](s"data-list-input-$id", list, notifyUpdate)
+		private val dataListInput = new DataListInput[T](s"data-list-input-$elemId-$id", list, notifyUpdate)
 
 		div.style.display = ""
 

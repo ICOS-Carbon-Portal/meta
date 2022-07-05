@@ -78,7 +78,8 @@ object MetaDb{
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
 					logName = Some(servDef.label),
-					skipLogIngestionAtStart = None,
+					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
+					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 					writeContexts = Seq(writeCtxt),
 					ingestion = None
@@ -163,7 +164,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
 			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
-			val instServConf = InstanceServerConfig(Nil, None, None, Some(readContexts), None)
+			val instServConf = InstanceServerConfig(Nil, None, None, None, Some(readContexts), None)
 			envri -> makeInstanceServer(repo, instServConf, config)
 		}
 
@@ -201,8 +202,11 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 				val repo = if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
 					then initRepo
 					else {
-						log.info(s"Ingesting from RDF log $logName ...")
-						val res = RdfUpdateLogIngester.ingest(rdfLog.updates, initRepo, true, writeContexts*)
+						val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
+						val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
+						log.info(s"Ingesting from RDF log $logName $msgDetail...")
+						val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
+						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContexts*)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
 					}

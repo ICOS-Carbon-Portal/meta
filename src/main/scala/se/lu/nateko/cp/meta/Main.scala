@@ -25,7 +25,9 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val optIndexDataFut: Future[Option[IndexData]] =
 		import config.{rdfStorage => conf}
-		if(conf.recreateAtStartup || conf.disableCpIndex) Future.successful(None)
+		val recreateIndex: Boolean = conf.recreateAtStartup || conf.recreateCpIndexAtStartup
+		if(recreateIndex) IndexHandler.dropStorage()
+		if(recreateIndex || conf.disableCpIndex) Future.successful(None)
 		else {
 			log.info("Trying to restore SPARQL magic index...")
 			val indexDataFut = IndexHandler.restore()

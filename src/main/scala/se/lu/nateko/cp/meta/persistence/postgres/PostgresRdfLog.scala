@@ -65,10 +65,12 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		}
 	}
 
-	def updates: CloseableIterator[RdfUpdate] = rdfUpdateIterators.plain
-	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = rdfUpdateIterators.timed
+	private def allUpdQuery = s"SELECT * FROM $logName ORDER BY id"
+	def updates: CloseableIterator[RdfUpdate] = rdfUpdateIterator(allUpdQuery).plain
+	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = rdfUpdateIterator(allUpdQuery).timed
+	def updatesFromId(id: Int) = rdfUpdateIterator(s"SELECT * FROM $logName WHERE id >= $id ORDER BY id").plain
 
-	private def rdfUpdateIterators = new RdfUpdateResultSetIterator(getConnection, factory, s"SELECT * FROM $logName ORDER BY id")
+	private def rdfUpdateIterator(query: String) = new RdfUpdateResultSetIterator(getConnection, factory, query)
 
 /*	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
 		val conn = getConnection

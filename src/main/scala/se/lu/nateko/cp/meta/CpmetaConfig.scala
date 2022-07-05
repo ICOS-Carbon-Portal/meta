@@ -23,11 +23,12 @@ case class InstanceServerConfig(
 	writeContexts: Seq[URI],
 	logName: Option[String],
 	skipLogIngestionAtStart: Option[Boolean],
+	logIngestionFromId: Option[Int],
 	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
 )
 
-case class DataObjectInstServerDefinition(label: String, format: URI)
+case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
 
 case class DataObjectInstServersConfig(
 	commonReadContexts: Seq[URI],
@@ -126,7 +127,13 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class RdfStorageConfig(path: String, recreateAtStartup: Boolean, indices: String, disableCpIndex: Boolean)
+case class RdfStorageConfig(
+	path: String,
+	recreateAtStartup: Boolean,
+	indices: String,
+	disableCpIndex: Boolean,
+	recreateCpIndexAtStartup: Boolean
+)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
 
@@ -167,8 +174,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	import DefaultJsonProtocol.*
 
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
-	given RootJsonFormat[InstanceServerConfig] = jsonFormat5(InstanceServerConfig.apply)
-	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat2(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[InstanceServersConfig] = jsonFormat5(InstanceServersConfig.apply)
 	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
@@ -187,7 +194,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[EmailConfig] = jsonFormat6(EmailConfig.apply)
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat3(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)

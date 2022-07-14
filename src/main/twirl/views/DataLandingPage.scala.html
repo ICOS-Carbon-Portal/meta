@@ -204,6 +204,12 @@
 				</div>
 			}{
 				<div class="row gy-2">
+					@for(sp <- dobj.acquisition.flatMap(_.samplingPoint)){
+						@for(label <- sp.label){
+							@property("Sampling point", label)
+						}
+						@property("Coordinates", sp.textSpecification)
+					}
 					@for(covText <- coverageText){ @property("Coverage", covText) }
 					@for(acquisition <- dobj.acquisition; station = acquisition.station){
 						@for(location <- acquisition.site.flatMap(_.location).flatMap(_.label)){

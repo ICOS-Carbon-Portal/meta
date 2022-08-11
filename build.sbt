@@ -162,7 +162,7 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := """
-			import se.lu.nateko.cp.meta.upload.UploadWorkbench._
+			import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}
 		""",
 
 		Test / console / cleanupCommands := "system.terminate()"

@@ -42,13 +42,20 @@ trait PlainDoiCiter{
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 }
 
-class CitationClient (
+trait CitationClient extends PlainDoiCiter{
+	def cache: CitationClient.CitationCache
+	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String]
+	//not waiting for HTTP; only returns string if the result previously cached
+	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
+}
+
+class CitationClientImpl (
 	knownDois: List[Doi], config: CitationConfig, initCache: CitationClient.CitationCache
-)(using system: ActorSystem, mat: Materializer) extends PlainDoiCiter{
+)(using system: ActorSystem, mat: Materializer) extends CitationClient{
 	import CitationStyle.*
 	import CitationClient.Key
 
-	private val cache = initCache
+	val cache = initCache
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
@@ -65,8 +72,6 @@ class CitationClient (
 		}
 	}
 
-	//not waiting for HTTP; only returns string if the result previously cached
-	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
 
 	private def fetchIfNeeded(key: Key): Future[String] = {
 
@@ -139,7 +144,7 @@ class CitationClient (
 object CitationClient{
 	import spray.json.*
 	import scala.concurrent.ExecutionContext.Implicits.global
-	private type Key = (Doi, CitationStyle)
+	type Key = (Doi, CitationStyle)
 	type CitationCache = TrieMap[Key, Future[String]]
 	opaque type CitationDump = JsValue
 	val cacheDumpFile = Paths.get("./citationsCacheDump.json")

@@ -1,0 +1,6 @@
+construct{
+	?s ?p ?o
+} from <http://meta.icos-cp.eu/resources/etcbin/>
+where{
+	?s ?p ?o
+}

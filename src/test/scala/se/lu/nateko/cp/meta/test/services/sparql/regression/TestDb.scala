@@ -94,7 +94,12 @@ class TestDb {
 }
 
 object TestDb{
-	val graphIriToFile = Seq("cpmeta", "ecocsv", "excel", "extrastations", "icos", "netcdf").map{id =>
+	val graphIriToFile = Seq(
+			"atmprodcsv", "cpmeta", "ecocsv", "etcbin", "etcprodcsv", "excel",
+			"extrastations", "icos", "netcdf", "stationentry", "stationlabeling"
+		).map{id =>
 			s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
-		}.toMap + ("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl")
+		}.toMap +
+		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
+		("http://meta.icos-cp.eu/collections/" -> "collections.rdf")
 }

@@ -1,6 +1,0 @@
-construct{
-	?s ?p ?o
-} from <http://meta.icos-cp.eu/resources/netcdf/>
-where{
-	?s ?p ?o
-}

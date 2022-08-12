@@ -1,28 +1,34 @@
 package se.lu.nateko.cp.meta.routes
 
-import scala.language.implicitConversions
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.meta.services.upload.*
+import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.StatusCodes
+import se.lu.nateko.cp.meta.services.upload.*
+
 import java.net.URI
-import se.lu.nateko.cp.doi.DoiMeta
+import scala.language.implicitConversions
+import scala.util.Failure
+import scala.util.Success
 
 object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
+		doiCitClient: CitationClient,
 		coreConf: MetaCoreConfig
 	): Route = {
 
-		implicit val configs = coreConf.envriConfigs
+		given EnvriConfigs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
 		pathPrefix("dois" / "createDraft"){
@@ -36,12 +42,23 @@ object DoiRoute extends CpmetaJsonProtocol{
 								)(complete(_))
 							}
 						} ~
-						complete(StatusCodes.BadRequest -> "Expected JSON string with landing page URL as payload")
+						requirePost
 					}
 				}
 			} ~
 			complete(StatusCodes.BadRequest -> "Only POST requests to this URL")
+		} ~
+		pathPrefix("dois" / "dropCache"){
+			post{
+				path(Remaining){maybeDoi =>
+					doiCitClient.dropCache(Doi.parse(maybeDoi).get)
+					complete(StatusCodes.OK)
+				}
+			} ~
+			requirePost
 		}
 
 	}
+
+	private def requirePost = complete(StatusCodes.BadRequest -> "Expected JSON string with landing page URL as payload")
 }

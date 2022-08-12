@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig.apply
 import se.lu.nateko.cp.meta.api.CloseableIterator
@@ -22,7 +23,6 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
-import se.lu.nateko.cp.meta.services.citation.Doi
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
@@ -47,7 +47,6 @@ class TestDb {
 
 	val repo: Future[Repository] = {
 		object CitationClientDummy extends CitationClient{
-			override def cache: CitationCache = TrieMap.empty
 			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 		}
 		val citerFactory: CitationProviderFactory =

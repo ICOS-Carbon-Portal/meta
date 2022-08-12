@@ -22,17 +22,7 @@ import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.settings.ConnectionPoolSettings
-
-case class Doi private(val prefix: String, val suffix: String){
-	override def toString = s"$prefix/$suffix"
-}
-
-object Doi{
-	def unapply(s: String): Option[Doi] = s.split('/').toList match{
-		case prefix :: suffix :: Nil => Some(Doi(prefix, suffix))
-		case _ => None
-	}
-}
+import se.lu.nateko.cp.doi.Doi
 
 enum CitationStyle:
 	case HTML, bibtex, ris, TEXT
@@ -43,10 +33,13 @@ trait PlainDoiCiter{
 }
 
 trait CitationClient extends PlainDoiCiter{
-	def cache: CitationClient.CitationCache
+	protected def cache: CitationClient.CitationCache = TrieMap.empty
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String]
 	//not waiting for HTTP; only returns string if the result previously cached
 	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
+
+	def dropCache(doi: Doi): Unit = CitationStyle.values.foreach(style => cache.remove(doi -> style))
+
 }
 
 class CitationClientImpl (
@@ -55,7 +48,7 @@ class CitationClientImpl (
 	import CitationStyle.*
 	import CitationClient.Key
 
-	val cache = initCache
+	override protected val cache = initCache
 
 	private val http = Http()
 	import system.{dispatcher, scheduler, log}
@@ -165,7 +158,7 @@ object CitationClient{
 				case JsArray(cells) =>
 					val toParse = cells.collect{case JsString(s) => s}
 					assert(toParse.length == 3, "Citation dump had en entry with a wrong number of calues")
-					val doi = Doi.unapply(toParse(0)).getOrElse(throw Exception(s"Bad DOI ${toParse(0)}"))
+					val doi = Doi.parse(toParse(0)).get
 					val style = CitationStyle.valueOf(toParse(1))
 					val fut = Future.successful(toParse(2))
 					doi -> style -> fut

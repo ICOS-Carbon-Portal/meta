@@ -1,24 +1,26 @@
 package se.lu.nateko.cp.meta.upload.drought
 
-import se.lu.nateko.cp.meta.services.CpVocab
-import scala.io.Source
 import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVReaderBuilder
+import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationStyle
+
 import java.io.File
 import java.io.FileReader
 import java.net.URI
-import scala.jdk.CollectionConverters.IteratorHasAsScala
-import DroughtUpload.ifNotEmpty
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.Doi
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import java.time.LocalDate
-import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.Instant
-import se.lu.nateko.cp.meta.services.citation.CitationStyle
+import java.time.LocalDate
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.io.Source
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
+
+import DroughtUpload.ifNotEmpty
 
 class AffiliationEntry(val id: Int, val name: String)
 
@@ -126,7 +128,7 @@ object DroughtMeta2{
 			authors = getPersons(14 to 17),
 			contribs = getPersons(18 to 21),
 			ack = ifNotEmpty(arr(22)),
-			papers = getNonEmpty(23 to 24).flatMap(s => Doi.unapply(s))
+			papers = getNonEmpty(23 to 24).flatMap(Doi.parse(_).toOption)
 		)
 	}
 

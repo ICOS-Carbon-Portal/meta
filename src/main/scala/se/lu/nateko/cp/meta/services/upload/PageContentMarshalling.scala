@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
-import se.lu.nateko.cp.meta.services.citation.{Doi, CitationClient}
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import se.lu.nateko.cp.meta.utils.getStackTrace

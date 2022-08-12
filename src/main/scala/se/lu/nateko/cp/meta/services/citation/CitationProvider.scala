@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.HandleNetClient
@@ -45,8 +46,8 @@ object CitationProviderFactory{
 					.getStatements(null, hasDoi, null, false)
 					.asPlainScalaIterator
 					.map(_.getObject.stringValue)
-					.toList.distinct.collect{
-						case Doi(doi) => doi
+					.toList.distinct.flatMap{
+						Doi.parse(_).toOption
 					}
 				}.get
 			}

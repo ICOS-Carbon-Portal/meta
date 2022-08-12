@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.SKOS
 import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
@@ -123,9 +124,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
 
-	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] = {
-		case Doi(doi) => presentDoiCitation(doiCiter.getCitationEager(doi, style))
-	}
+	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
+		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
+			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
+		)
 
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }

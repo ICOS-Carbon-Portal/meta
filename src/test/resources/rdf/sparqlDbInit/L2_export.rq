@@ -1,0 +1,31 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?dobj ?pred ?propVal .
+	?provObj ?provPred ?provPropVal .
+}
+from <http://meta.icos-cp.eu/resources/atmprodcsv/>
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+where{
+	{
+		{
+			?spec cpmeta:hasDataLevel "2"^^xsd:integer .
+			?dobj cpmeta:hasObjectSpec ?spec .
+		} UNION {
+			{
+				?spec cpmeta:hasDataLevel "1"^^xsd:integer .
+				filter(contains(str(?spec), "Growing"))
+			}
+			?dobj cpmeta:hasObjectSpec ?spec .
+			filter not exists{[] cpmeta:isNextVersionOf ?dobj}
+		}
+	}
+	{
+		{
+			values ?provLink {cpmeta:wasAcquiredBy cpmeta:wasProducedBy cpmeta:wasSubmittedBy}
+			?dobj ?provLink ?provObj .
+			?provObj ?provPred ?provPropVal .
+		} UNION {
+			?dobj ?pred ?propVal
+		}
+	}
+}

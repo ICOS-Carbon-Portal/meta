@@ -1,0 +1,19 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?dobj ?pred ?propVal .
+	?provObj ?provPred ?provPropVal .
+}
+from <http://meta.icos-cp.eu/resources/etcbin/>
+where{
+	?dobj a cpmeta:DataObject .
+	filter(contains(str(?dobj), "ig"))
+	{
+		{
+			values ?provLink {cpmeta:wasAcquiredBy cpmeta:wasProducedBy cpmeta:wasSubmittedBy}
+			?dobj ?provLink ?provObj .
+			?provObj ?provPred ?provPropVal .
+		} UNION {
+			?dobj ?pred ?propVal
+		}
+	}
+}

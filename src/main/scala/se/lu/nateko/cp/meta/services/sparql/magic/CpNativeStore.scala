@@ -68,7 +68,7 @@ class CpNativeStore(
 		nativeSail.setForceSync(!isFreshInit)
 		nativeSail.init()
 		log.info("Triple store initialized")
-		nativeSail.enricher = StatementsEnricher(citationFactory.getProvider(nativeSail))
+		nativeSail.enricher = StatementsEnricher(citationFactory(nativeSail))
 		log.info("Initialized citation provider")
 	}
 

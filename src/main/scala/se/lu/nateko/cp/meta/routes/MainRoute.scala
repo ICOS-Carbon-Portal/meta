@@ -1,22 +1,25 @@
 package se.lu.nateko.cp.meta.routes
 
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.CpmetaConfig
+import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
-import se.lu.nateko.cp.meta.icos.MetaFlow
-import se.lu.nateko.cp.meta.services.upload.DoiService
-import scala.concurrent.ExecutionContext
-import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.icos.MetaFlow
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.services.upload.DoiService
+import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
+
+import scala.concurrent.ExecutionContext
 
 object MainRoute {
 
@@ -30,10 +33,10 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(implicit system: ActorSystem, ctxt: ExecutionContext): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using ActorSystem, ExecutionContext): Route = {
 
-		implicit val sparqlMarsh = db.sparql.marshaller
-		implicit val envriConfigs = config.core.envriConfigs
+		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
+		given EnvriConfigs = config.core.envriConfigs
 
 		val sparqler = new Rdf4jSparqlRunner(db.repo)
 		val sparqlRoute = SparqlRoute(config.sparql)
@@ -43,7 +46,7 @@ object MainRoute {
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSource, config.core)
 		val doiService = new DoiService(config, db.uriSerializer)
-		val doiRoute = DoiRoute(doiService, authRouting, config.core)
+		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)

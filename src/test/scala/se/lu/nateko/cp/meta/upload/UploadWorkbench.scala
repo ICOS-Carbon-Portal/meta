@@ -8,7 +8,7 @@ import scala.concurrent.Await
 import se.lu.nateko.cp.meta.upload.drought.DroughtDoiMaker
 import scala.concurrent.duration.DurationInt
 import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.CitationConfig
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
@@ -33,7 +33,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = new CitationClient(Nil, new CitationConfig("apa", false, 10), TrieMap.empty)
+	val citer = CitationClientImpl(Nil, new CitationConfig("apa", false, 10), TrieMap.empty)
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)

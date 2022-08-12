@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:rdf4j="http://rdf4j.org/schema/rdf4j#"
+	xmlns:sesame="http://www.openrdf.org/schema/sesame#"
+	xmlns:owl="http://www.w3.org/2002/07/owl#"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	xmlns:fn="http://www.w3.org/2005/xpath-functions#">
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_BIK">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Bialystok</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.2294</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">23.0128</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BIK</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">183.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_GIF">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Gif sur Yvette</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">48.71</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.1475</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GIF</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">160.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_HEI">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Heidelberg</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.4172</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.675</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HEI</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">113.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_HUN">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Hegyhatsal</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">46.9558</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">16.6522</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HUN</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HU</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">248.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_KAS">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Kasprowy Wierch</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.2333</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">19.9833</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">KAS</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1987.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_MHD">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Mace Head</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.3261</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-9.9036</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">MHD</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">5.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_SCH">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Schauinsland</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.9167</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">7.9166</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SCH</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1205.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_VKV">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Voevikov</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">59.95</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">30.7</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">VKV</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RU</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">70.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CH-Aws">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Alp Weissenstein</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">46.583306</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">9.790417</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH-Aws</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1988.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CH-Cha">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Chamau grassland</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.21022</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.41044</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH-Cha</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">394.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CH-Fru">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Fruebuel grassland</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.11583</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.53778</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH-Fru</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">975.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-Abr">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Albuera</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">38.701839</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-6.785881</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-Abr</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">279.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-LM1">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Majadas del Tietar North</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">39.94269</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.778683</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-LM1</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">266.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-LM2">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Majadas del Tietar South</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">39.934592</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.775881</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-LM2</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">270.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_SE-Ros">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Rosinedal-3</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">64.1725</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">19.738</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SE-Ros</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">157.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CH-Lae">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Laegern</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.47808</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.365</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH-Lae</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">689.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CH-Oe2">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Oensingen crop</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.28631</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">7.73433</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH-Oe2</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">452.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_CES">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Cabauw</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">51.970258</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.926161</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CES</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">NL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/INGOS_WAO">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Weybourne Atmospheric Observatory</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">52.95</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.12</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">WAO</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GB</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">15.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_BIK">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Bialystok</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.231998</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">23.027</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BIK</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">183.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_BIS">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Biscarrosse</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">44.3781</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.2311</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BIS</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">73.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_BRM">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Beromunster</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.1896</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.1755</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BRM</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">797.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_BSD">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Bilsdale</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">54.359</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.15</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BSD</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GB</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">380.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_CRP">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Carnsore Point</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">52.18</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-6.37</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CRP</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">9.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_DEC">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Delta de l'Ebre</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">40.7439</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.7867</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DEC</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_EEC">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">El Estrecho</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">36.0586</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.664</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">EEC</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">20.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_ERS">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Ersa</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">42.9692</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">9.3801</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ERS</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">533.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_FKL">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Finokalia</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">35.3378</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">25.6694</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FKL</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">150.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_GIC">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Sierra de Gredos</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">40.3457</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-5.1755</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GIC</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1436.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_HEI">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Heidelberg</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.417</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.674</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HEI</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">116.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_HUN">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Hegyhatsal</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">46.95</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">16.65</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HUN</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">HU</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">248.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_IZO">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Izana, Tenerife, Canary Islands</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">28.309</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-16.499</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IZO</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">2373.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_KAS">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Kasprowy Wierch, High Tatra</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.2325</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">19.9818</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">KAS</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1989.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_LHW">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Laegern-Hochwacht</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.4822</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.3973</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">LHW</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CH</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">840.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_LMU">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">La Muela</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">41.5941</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-1.1003</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">LMU</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">571.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_MHD">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Mace Head</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.3261</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-9.9036</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">MHD</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">5.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_MLH">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Malin Head</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">55.355</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-7.333</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">MLH</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">22.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_OHP">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Observatoire de Haute Provence</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">43.931</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.712</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">OHP</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">650.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_PDM">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Pic du Midi</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">42.9372</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1411</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PDM</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FR</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">2877.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_RGL">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Ridge Hill</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">51.9976</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-2.54</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RGL</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GB</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">204.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_SSL">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Schauinsland, Baden-Wuerttemberg</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">47.92</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">7.92</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SSL</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1205.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_TAC">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Tacolneston</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">52.5177</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.1386</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">TAC</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GB</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">56.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_BIR">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Birkenes Observatory</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">58.3886</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">8.2519</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BIR</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">NO</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">219.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_CBW">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Cabauw</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">51.971</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.927</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CBW</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">NL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-1.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_PUI">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Puijo</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">62.9096</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">27.6549</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PUI</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FI</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">232.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_WAO">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Weybourne, Norfolk</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">52.9502</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.1219</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">WAO</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GB</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">20.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/SAILDRONE_SD1030">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SailDrone 1030</hasName>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SD1030</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">US</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/SAILDRONE_SD1053">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SailDrone 1053</hasName>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SD1053</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">US</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/ATMO_PRS">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Plateau Rosa Station</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">45.93</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">7.7</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">PRS</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IT</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">3480.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CZ-RAJ">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Rajec</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.4437236</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">16.6965125</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ-RAJ</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">649.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CZ-Stn">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Stitna</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.035975</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">17.9699</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ-Stn</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">562.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_DE-Akm">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Anklam</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.86617</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.68342</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE-Akm</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-1.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_DE-Hte">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Huetelmoor</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">54.210278</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">12.176111</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE-Hte</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_DE-Obe">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Oberbärenburg</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">50.78666</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.72129</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE-Obe</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">DE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">739.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_RU-Fy2">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Fyodorovskoye dry spruce stand</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.447603</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">32.901878</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RU-Fy2</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RU</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">276.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_RU-Fyo">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Fyodorovskoye</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">56.4615278</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">32.9220833</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RU-Fyo</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RU</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">274.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_CZ-KrP">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Kresin u Pacova</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">49.573257</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">15.078773</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ-KrP</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CZ</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">534.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-Agu">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Aguamarga</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">36.940046</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-2.033208</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-Agu</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">202.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-Cnd">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Conde</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">37.914998</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-3.227659</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-Cnd</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">366.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_ES-LJu">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Llano de los Juanes</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">36.926594</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-2.752115</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES-LJu</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ES</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1613.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_FI-Qvd">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Qvidja</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">60.295242</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">22.391607</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FI-Qvd</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">FI</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">10.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_IL-Yat">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Yatir</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">31.34504459</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">35.05198851</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IL-Yat</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IL</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">657.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_IT-Lav">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Lavarone</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">45.9562</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">11.28132</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IT-Lav</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IT</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1355.0</hasElevation>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/stations/FLUXNET_IE-Cra">
+	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/FluxnetStation"/>
+	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Clara</hasName>
+	<hasLatitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">53.3229785</hasLatitude>
+	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-7.641769</hasLongitude>
+	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE-Cra</hasStationId>
+	<countryCode xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">IE</countryCode>
+	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">56.0</hasElevation>
+</rdf:Description>
+
+</rdf:RDF>

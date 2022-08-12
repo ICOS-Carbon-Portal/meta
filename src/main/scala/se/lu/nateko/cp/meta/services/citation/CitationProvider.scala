@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.HandleNetClient
@@ -34,28 +35,38 @@ import java.net.URI
 import scala.util.Using
 import scala.concurrent.Future
 
-class CitationProviderFactory(citCache: CitationCache, conf: CpmetaConfig)(using system: ActorSystem, mat: Materializer){
 
-	def getProvider(sail: Sail): CitationProvider = {
-
-		val dois: List[Doi] = {
-			val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi
-			Using(sail.getConnection){_
-				.getStatements(null, hasDoi, null, false)
-				.asPlainScalaIterator
-				.map(_.getObject.stringValue)
-				.toList.distinct.collect{
-					case Doi(doi) => doi
-				}
-			}.get
+type CitationProviderFactory = Sail => CitationProvider
+object CitationProviderFactory{
+	def apply(citCache: CitationCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
+		sail => {
+			val dois: List[Doi] = {
+				val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi
+				Using(sail.getConnection){_
+					.getStatements(null, hasDoi, null, false)
+					.asPlainScalaIterator
+					.map(_.getObject.stringValue)
+					.toList.distinct.flatMap{
+						Doi.parse(_).toOption
+					}
+				}.get
+			}
+			val doiCiter = CitationClientImpl(dois, conf.citations, citCache)
+			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
 		}
-		val doiCiter = CitationClient(dois, conf.citations, citCache)
-		CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
-	}
-
 }
 
-class CitationProvider(val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig){
+// trait CitationProvider{
+// 	def doiCiter: CitationClient
+// 	def metaVocab: CpmetaVocab
+// 	def getCitation(res: Resource): Option[String]
+// 	def getReferences(res: Resource): Option[References]
+// 	def getLicence(res: Resource): Option[Licence]
+// }
+
+class CitationProvider(
+	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig
+){
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)

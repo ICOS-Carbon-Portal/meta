@@ -16,6 +16,7 @@ import { dcat } from './queries/dcat.js'
 import { sensorsDeployments } from './queries/sensorsDeployments';
 import { hoVsTc } from './queries/hoVsTcStationDiscrepancies';
 import { atcSpeciesAndHeights } from './queries/atcSpeciesAndHeights';
+import { dupL2s } from './queries/duplicateL2s';
 
 import { stations as sitesStations } from './queries/SITES/stations';
 import { locations as sitesLocations } from './queries/SITES/locations';
@@ -36,6 +37,7 @@ const icosQueries = [
 	{name:"Last 1000 data objects", query: lastDataObjects},
 	{name:"Search with sampling heights", query: bySamplingHeights},
 	{name:"Re-submitted files", query: resubmittedFiles},
+	{name: "Duplicate L2 atmo dobjs (by spec/station/height)", query: dupL2s},
 	{name:"Collections", query: existingCollections(host)},
 	{name:"Documents", query: existingDocuments(host)},
 	{name:"Data object counts per format", query: perFormatStats},

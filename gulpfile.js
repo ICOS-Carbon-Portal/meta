@@ -30,10 +30,6 @@ projects.forEach(function(project){
 				transform: [babel]
 			})
 			.bundle()
-			.on('error', function(err){
-				console.log(err);
-				this.emit('end');
-			})
 			.pipe(source(paths.bundleFile))
 			.pipe(gulp.dest(paths.target));
 

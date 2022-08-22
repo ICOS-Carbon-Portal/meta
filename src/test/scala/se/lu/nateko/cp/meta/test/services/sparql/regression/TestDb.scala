@@ -100,5 +100,6 @@ object TestDb{
 			s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
 		}.toMap +
 		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
-		("http://meta.icos-cp.eu/collections/" -> "collections.rdf")
+		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
+		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 }

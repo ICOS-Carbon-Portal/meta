@@ -403,7 +403,6 @@ object TestQueries {
     ORDER BY ?stationClass ?stationId 
   """
 
-  // name? 
   val ATCStationList = (station: String, tracer: String, dObj: String) => s"""
    	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>

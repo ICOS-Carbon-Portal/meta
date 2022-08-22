@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
 object TestQueries {
-  val dataTypeBasics = """
+	val dataTypeBasics = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 		select ?spec ?project (?spec as ?type) ?level ?dataset ?format ?theme ?temporalResolution
@@ -18,7 +18,7 @@ object TestQueries {
 		}
 	"""
 
-  val variables = """
+	val variables = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 		select distinct ?spec ?variable ?varTitle ?valType ?quantityKind
@@ -46,7 +46,7 @@ object TestQueries {
 		}
 	"""
 
-  val dataObjOriginStats = """
+	val dataObjOriginStats = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -77,7 +77,7 @@ object TestQueries {
 		}
 	"""
 
-  val detailedDataObjInfo = """
+	val detailedDataObjInfo = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -115,7 +115,7 @@ object TestQueries {
 		}
 	"""
 
-  val labels = """
+	val labels = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		select ?uri ?label ?comment ?stationId ?webpage
@@ -139,7 +139,7 @@ object TestQueries {
 		}
 	"""
 
-  val keywords = """
+	val keywords = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 		select ?spec ?keywords
@@ -155,7 +155,7 @@ object TestQueries {
 		}
 	"""
 
-  val provisionalStationMetadata = """
+	val provisionalStationMetadata = """
 	PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 	SELECT *
 	FROM <http://meta.icos-cp.eu/resources/stationentry/>
@@ -178,7 +178,7 @@ object TestQueries {
 	}
 	"""
 
-  val productionStationMetadata = """
+	val productionStationMetadata = """
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 	SELECT *
@@ -208,7 +208,7 @@ object TestQueries {
 	}
 	"""
 
-  val atmosphericCO2Level2 = """
+	val atmosphericCO2Level2 = """
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
@@ -228,7 +228,7 @@ object TestQueries {
 	}
 	"""
 
-  val objectSpec = (spec: String, station: String) => s"""
+	val objectSpec = (spec: String, station: String) => s"""
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select ?dobj ?station ?samplingHeight
@@ -246,8 +246,8 @@ object TestQueries {
 	}
 	order by ?station ?samplingHeight"""
 
-  val collections = """            
-  	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val collections = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix dcterms: <http://purl.org/dc/terms/>
 	select * where{
 	?collection a cpmeta:Collection .
@@ -259,31 +259,31 @@ object TestQueries {
 	order by ?title
 	"""
 
-  val collectionItems = (collId: String) => s"""    
+	val collectionItems = (collId: String) => s"""
 	select * where{ $collId <http://purl.org/dc/terms/hasPart> ?dobj}
 	"""
 
-  val stationData = (station: String, level: Int) => s"""
+	val stationData = (station: String, level: Int) => s"""
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select *
 	where {
-		VALUES ?station {$station}                                 
-		?dobj cpmeta:hasObjectSpec ?spec .	
+		VALUES ?station {$station}
+		?dobj cpmeta:hasObjectSpec ?spec .
 		FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
-		FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}				
+		FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 		?dobj cpmeta:wasAcquiredBy / prov:startedAtTime ?timeStart .
 		?dobj cpmeta:wasAcquiredBy / prov:endedAtTime ?timeEnd .
-		?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .                                                
-		?spec rdfs:label ?specLabel .                
-		OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingheight} .                                
+		?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+		?spec rdfs:label ?specLabel .
+		OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingheight} .
 		?spec cpmeta:hasDataLevel ?datalevel .
 		?dobj cpmeta:hasSizeInBytes ?bytes .
 		FILTER (?datalevel = $level)
 	}
 	"""
 
-  val stations = (id: String) => s"""
+	val stations = (id: String) => s"""
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	select *
 	from <http://meta.icos-cp.eu/resources/icos/> 
@@ -292,7 +292,7 @@ object TestQueries {
 	where {
 		BIND ( "$id"^^xsd:string as ?id)
 		?uri cpmeta:hasStationId ?id .   
-		OPTIONAL {?uri cpmeta:hasName ?name  } .                
+		OPTIONAL {?uri cpmeta:hasName ?name  } .
 		OPTIONAL {?uri cpmeta:countryCode ?country }.
 		OPTIONAL {?uri cpmeta:hasLatitude ?lat }.
 		OPTIONAL {?uri cpmeta:hasLongitude ?lon }.
@@ -300,7 +300,7 @@ object TestQueries {
 	}
 	"""
 
-  val dataObjStation = (dObj: String) => s"""
+	val dataObjStation = (dObj: String) => s"""
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select distinct ?dobj ?stationName ?stationId ?samplingHeight ?longitude ?latitude ?elevation ?theme
@@ -330,35 +330,35 @@ object TestQueries {
 			OPTIONAL{ ?specUri cpmeta:hasDataTheme [rdfs:label ?theme ;]}
 			OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
 	}
-  """
+	"""
 
-  val ATCStations = """
-        prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-        select *
-        from <http://meta.icos-cp.eu/resources/icos/>
-        where{
-        {
-        select ?station (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
-        where{
-          ?station a cpmeta:AS .
-          ?piMemb cpmeta:atOrganization ?station  .
-          ?piMemb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
-          filter not exists {?piMemb cpmeta:hasEndTime []}
-          ?pi cpmeta:hasMembership ?piMemb .
-          ?pi cpmeta:hasLastName ?piLname .
-        }
-        group by ?station
-        }
-        ?station cpmeta:hasName ?stationName ;
-           cpmeta:hasStationId ?stationId ;
-           cpmeta:countryCode ?Country ;
-           cpmeta:hasLatitude ?lat ;
-           cpmeta:hasLongitude ?lon .
-        }
-        order by ?Short_name
-  """
+	val ATCStations = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select *
+		from <http://meta.icos-cp.eu/resources/icos/>
+		where{
+		{
+		select ?station (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
+		where{
+			?station a cpmeta:AS .
+			?piMemb cpmeta:atOrganization ?station  .
+			?piMemb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+			filter not exists {?piMemb cpmeta:hasEndTime []}
+			?pi cpmeta:hasMembership ?piMemb .
+			?pi cpmeta:hasLastName ?piLname .
+		}
+		group by ?station
+		}
+		?station cpmeta:hasName ?stationName ;
+			cpmeta:hasStationId ?stationId ;
+			cpmeta:countryCode ?Country ;
+			cpmeta:hasLatitude ?lat ;
+			cpmeta:hasLongitude ?lon .
+		}
+		order by ?Short_name
+	"""
 
-  val ATCStationsLevel1Data = """
+	val ATCStationsLevel1Data = """
 	prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
@@ -388,23 +388,23 @@ object TestQueries {
 	order by ?variable ?stationName ?height
 	"""
 
-  val stationClasses = """
-    prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
-    select distinct ?stationId ?stationClass ?country ?longName
-    from <http://meta.icos-cp.eu/resources/stationentry/>
-    where{
-      ?s a st:AS .
-      ?s st:hasShortName ?stationId .
-      ?s st:hasStationClass ?stationClass .
-      ?s st:hasCountry ?country .
-      ?s st:hasLongName ?longName .
-      filter (?stationClass = "1" || ?stationClass = "2")
-    }
-    ORDER BY ?stationClass ?stationId 
-  """
+	val stationClasses = """
+	prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
+	select distinct ?stationId ?stationClass ?country ?longName
+	from <http://meta.icos-cp.eu/resources/stationentry/>
+	where{
+		?s a st:AS .
+		?s st:hasShortName ?stationId .
+		?s st:hasStationClass ?stationClass .
+		?s st:hasCountry ?country .
+		?s st:hasLongName ?longName .
+		filter (?stationClass = "1" || ?stationClass = "2")
+	}
+	ORDER BY ?stationClass ?stationId 
+	"""
 
-  val ATCStationList = (station: String, tracer: String, dObj: String) => s"""
-   	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val ATCStationList = (station: String, tracer: String, dObj: String) => s"""
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
 	FROM <http://meta.icos-cp.eu/resources/atmprodcsv/>
@@ -422,32 +422,32 @@ object TestQueries {
 		?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 		?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 		}
-  """
+	"""
 
-  val drought2018AtmoProductFileInfo = (stationLabel: String) => s"""
-        prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-        prefix prov: <http://www.w3.org/ns/prov#>
-        select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?samplingHeight
-        where {
-            VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject>
-            <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject>
-            <http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct>}
-            ?dobj cpmeta:hasObjectSpec ?spec .
-            VALUES ?station {<http://meta.icos-cp.eu/resources/stations/$stationLabel>}
-            ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
-            ?dobj cpmeta:hasSizeInBytes ?size .
-            ?dobj cpmeta:hasName ?fileName .
-            ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
-            ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
-            ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
-            FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-            OPTIONAL{?dobj cpmeta:wasAcquiredBy / cpmeta:hasSamplingHeight ?samplingHeight}
-        }
-        order by desc(?submTime)
-  """
+	val drought2018AtmoProductFileInfo = (stationLabel: String) => s"""
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?samplingHeight
+		where {
+			VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject>
+			<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject>
+			<http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct>}
+			?dobj cpmeta:hasObjectSpec ?spec .
+			VALUES ?station {<http://meta.icos-cp.eu/resources/stations/$stationLabel>}
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			?dobj cpmeta:hasSizeInBytes ?size .
+			?dobj cpmeta:hasName ?fileName .
+			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+			?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+			?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			OPTIONAL{?dobj cpmeta:wasAcquiredBy / cpmeta:hasSamplingHeight ?samplingHeight}
+		}
+		order by desc(?submTime)
+	"""
 
-  val drought2018AtmoProductStations= """
-    prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val drought2018AtmoProductStations= """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	SELECT (STR(?sName) AS ?Short_name) ?Country ?lat ?lon (STR(?lName) AS ?Long_name) ?height WHERE {
 	{
@@ -465,17 +465,17 @@ object TestQueries {
 		cpmeta:hasLatitude ?lat;
 		cpmeta:hasLongitude ?lon.
 	}
-  """
+	"""
 
-  val icosCitation = (dataObj: String) => s"""
+	val icosCitation = (dataObj: String) => s"""
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	select * where{
 	optional{$dataObj cpmeta:hasCitationString ?cit}
 	}
 	"""
 
-  val prodsPerDomain = (domain: String) => s"""
-   	prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+	val prodsPerDomain = (domain: String) => s"""
+	prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	select ?specLabel ?spec where{
 	?spec cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/$domain> .
@@ -494,10 +494,10 @@ object TestQueries {
 	?spec rdfs:label ?specLabel .
 	}
 	order by ?specLabel
-  """
+	"""
 
-  val prodAvailability = (dObjLabels: String) => s"""
-  	prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+	val prodAvailability = (dObjLabels: String) => s"""
+	prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
 	select ?dobj ?samplingHeight ?specLabel ?timeStart ?timeEnd ?stationId
@@ -519,5 +519,41 @@ object TestQueries {
 		?station cpmeta:hasStationId ?stationId .
 		?spec rdfs:label ?specLabel
 	}
-  """
+	"""
+
+	val ecosystemRawDataQueryForETC = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+		prefix esstation: <http://meta.icos-cp.eu/resources/stations/ES_>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+		select ?pid ?fileName
+		where {
+			{
+				SELECT ?spec WHERE {
+					VALUES (?ftype ?spec){
+						("DHP" cpres:digHemispherPics )
+						("EC" cpres:etcEddyFluxRawSeriesBin )
+						("EC" cpres:etcEddyFluxRawSeriesCsv )
+						("ST" cpres:etcStorageFluxRawSeriesBin )
+						("ST" cpres:etcStorageFluxRawSeriesCsv )
+						("BM" cpres:etcBioMeteoRawSeriesBin )
+						("BM" cpres:etcBioMeteoRawSeriesCsv )
+						("SAHEAT" cpres:etcSaheatFlagFile )
+						("CEP" cpres:ceptometerMeasurements )
+					}
+					FILTER((?ftype = "BM"))
+				}
+			}
+			?dobj cpmeta:hasObjectSpec ?spec .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith esstation:DE-HoH .
+			?dobj cpmeta:wasAcquiredBy/prov:startedAtTime ?startTime .
+			FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj }
+			BIND(substr(str(?dobj), strlen(str(?dobj)) - 23) AS ?pid)
+			?dobj cpmeta:hasName ?fileName .
+			?dobj cpmeta:hasSizeInBytes ?size .
+			FILTER((?startTime > "2022-03-01T12:00:00Z"^^xsd:dateTime))
+		}
+		order by ?startTime
+	""".stripMargin
 }

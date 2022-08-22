@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test
+package se.lu.nateko.cp.meta.test.services.sparql.regression
 
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
@@ -8,8 +8,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
-import se.lu.nateko.cp.meta.test.services.sparql.regression.TestQueries
 import se.lu.nateko.cp.meta.utils.rdf4j.createLiteral
 import org.scalatest
 import scala.concurrent.Future
@@ -311,4 +309,11 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME)
 			)
 		}
+
+	describeQ(TestQueries.ecosystemRawDataQueryForETC, "ETC raw data search", expectRows = 8, sampleIndex = 6){
+		f => Map(
+			"pid" -> f.createLiteral("bbigN9036ox4sfLT-KaOAXhY"),
+			"fileName" -> f.createLiteral("DE-HoH_BM_20220713_L15_F01.bin")
+		)
+	}
 }

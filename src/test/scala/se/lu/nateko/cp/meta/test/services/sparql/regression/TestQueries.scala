@@ -208,7 +208,6 @@ object TestQueries {
 	}
 	"""
 
-// ---------------------------------------------------- pylib queries:
   val atmosphericCO2Level2 = """
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix prov: <http://www.w3.org/ns/prov#>
@@ -247,7 +246,6 @@ object TestQueries {
 	}
 	order by ?station ?samplingHeight"""
 
-	// add filter to test?
   val collections = """            
   	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	prefix dcterms: <http://purl.org/dc/terms/>

@@ -126,7 +126,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		)
 	}
 
-	// Station queries tests
 	describeQ(TestQueries.provisionalStationMetadata, "Provisional station metadata", expectRows = 149, sampleIndex = 100, sortColumn = "Id") {f => 
 		Map("PI_names" -> f.createLiteral("Cremonese"), 
 			"Name" -> f.createLiteral("Torgnon"), 
@@ -159,7 +158,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		)
 	}
 
-	// Pylib queries tests
 	describeQ(TestQueries.atmosphericCO2Level2, "Atmospheric CO2 for level 2 data objects", expectRows = 89, sampleIndex = 40, sortColumn = "spec") {f =>
 		Map(
 			"timeEnd" -> f.createLiteral("2022-02-28T23:00:00Z", XSD.DATETIME),

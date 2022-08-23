@@ -419,8 +419,8 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 
 	describeQ(TestQueries.netcdfPreviewAppsOnlyQuery, "NetCDF Preview", 1, 0){
 		f => Map(
-		"objSpec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3"), 
-		"specLabel" -> f.createLiteral("Radon flux map")
+			"objSpec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3"), 
+			"specLabel" -> f.createLiteral("Radon flux map")
 		)
 	}
 
@@ -434,8 +434,62 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 
 	describeQ(TestQueries.ingestionUploadTaskColumnFormats, "IngestionUploadTask column formats", 16, 8, sortColumn = "colName"){
 		f => Map(
-		"colName" -> f.createLiteral("NEE_UNCLEANED"), 
-		"valFormat" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/float32")
+			"colName" -> f.createLiteral("NEE_UNCLEANED"), 
+			"valFormat" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/float32")
+		)
+	}
+
+	describeQ(TestQueries.sitesUploaderStations, "Sites uploader stations", 1, 0){
+		f => Map(
+			"station" -> f.createIRI("https://meta.fieldsites.se/resources/stations/Svartberget"), 
+			"name" -> f.createLiteral("Svartberget Research Station"), 
+			"id" -> f.createLiteral("SVB")
+		)
+	}
+
+	describeQ(TestQueries.svartbergetSites, "Svartberget site", 21, 10){
+		f => Map(
+			"site" -> f.createIRI("https://meta.fieldsites.se/resources/sites/nyangesbacken-forest"), 
+			"name" -> f.createLiteral("Nyängesbäcken - Coniferous forest")
+		)
+	}
+
+	describeQ(TestQueries.svartbergetForestSamplPoints, "Svartberget forest sample points", 4, 3){
+		f => Map(
+			"latitude" -> f.createLiteral("64.2322", XSD.DOUBLE), 
+			"name" -> f.createLiteral("Svartberget, Åheden AWS"), 
+			"point" -> f.createIRI("https://meta.fieldsites.se/resources/position_64.2322_19.7809"), 
+			"longitude" -> f.createLiteral("19.7809", XSD.DOUBLE)
+		)
+	}
+
+	describeQ(TestQueries.specAndDatasetKindInfo, "Spec and dataset kind info", 83, 40){
+		f => Map(
+			"name" -> f.createLiteral("ICOS ATC NRT CH4 growing time series"), 
+			"project" -> f.createIRI("http://meta.icos-cp.eu/resources/projects/icos"), 
+			"isSpatioTemp" -> f.createLiteral("false", XSD.BOOLEAN), 
+			"projKeywords" -> f.createLiteral("ICOS"), 
+			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject"), 
+			"theme" -> f.createIRI("http://meta.icos-cp.eu/resources/themes/atmosphere"), 
+			"dataLevel" -> f.createLiteral("1", XSD.INTEGER), 
+			"keywords" -> f.createLiteral("CH4, concentration"), 
+			"dataset" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4MoleFracTimeSer")
+		)
+	}
+
+	describeQ(TestQueries.l3spatialCoverages, "L3 spatial coverages", 5, 2, "label"){
+		f => Map(
+			"cov" -> f.createIRI("http://meta.icos-cp.eu/resources/latlonboxes/stiltEuropeLatLonBox"), 
+			"label" -> f.createLiteral("Europe (STILT)")
+		)
+	}
+
+	describeQ(TestQueries.datasetVarsInfo, "Dataset vars info", 6, 5, "label"){
+		f => Map(
+			"label" -> f.createLiteral("rtot"), 
+			"title" -> f.createLiteral("rtot"), 
+			"unit" -> f.createLiteral("µmol m-2 s-1"), 
+			"valueType" -> f.createLiteral("ecosystem respiration")
 		)
 	}
 }

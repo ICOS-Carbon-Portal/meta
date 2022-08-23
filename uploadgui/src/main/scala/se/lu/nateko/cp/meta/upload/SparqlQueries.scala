@@ -13,8 +13,10 @@ object SparqlQueries {
 		|PREFIX sitesmeta: <https://meta.fieldsites.se/ontologies/sites/>
 		|SELECT *
 		|FROM <https://meta.fieldsites.se/resources/sites/>
-		|WHERE { ?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
-		| $orgFilter }
+		|WHERE {
+		|	$orgFilter
+		|	?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|}
 		|order by ?name""".stripMargin
 
 	private def icosStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -24,13 +26,14 @@ object SparqlQueries {
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|FROM <http://meta.icos-cp.eu/resources/extrastations/>
 		|WHERE {
-		| ?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
-		| $orgFilter }
+		|	$orgFilter
+		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|}
 		|order by ?name""".stripMargin
 
 	def stations(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri): String = {
 		val orgClassFilter = orgClass.map(org => s"?station a/rdfs:subClassOf* <$org> .")
-		val producingOrgFilter: Option[String] = producingOrg.map(org => s"FILTER(?station = <$org>) .")
+		val producingOrgFilter: Option[String] = producingOrg.map(org => s"BIND(<$org> AS ?station) .")
 		val orgFilter = Iterable(orgClassFilter, producingOrgFilter).flatten.mkString("\n")
 		envri match {
 			case Envri.SITES => sitesStations(orgFilter)
@@ -55,7 +58,8 @@ object SparqlQueries {
 		|	<$site> cpmeta:hasSamplingPoint ?point .
 		|	?point rdfs:label ?name .
 		|	?point cpmeta:hasLatitude ?latitude .
-		|	?point cpmeta:hasLongitude ?longitude }
+		|	?point cpmeta:hasLongitude ?longitude .
+		|}
 		|order by ?name""".stripMargin
 
 	def toSamplingPoint(b: Binding) = SamplingPoint(new URI(b("point")), b("latitude").toDouble, b("longitude").toDouble, b("name"))

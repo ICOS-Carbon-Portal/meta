@@ -99,6 +99,7 @@ object TestDb{
 		).map{id =>
 			s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
 		}.toMap +
+		("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
 		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
 		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +

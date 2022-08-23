@@ -826,4 +826,84 @@ object TestQueries {
 			OPTIONAL{?column cpmeta:isOptionalColumn ?isOptional}
 		}
 	"""
+
+	//from uploadgui front-end app
+	val sitesUploaderStations = """
+		PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		PREFIX sitesmeta: <https://meta.fieldsites.se/ontologies/sites/>
+		SELECT *
+		FROM <https://meta.fieldsites.se/resources/sites/>
+		WHERE {
+			BIND(<https://meta.fieldsites.se/resources/stations/Svartberget> AS ?station) .
+			?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		}
+		order by ?name
+	"""
+
+	//from uploadgui front-end app
+	val svartbergetSites = """
+		PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		SELECT ?site ?name
+		WHERE {
+			<https://meta.fieldsites.se/resources/stations/Svartberget> cpmeta:operatesOn ?site .
+			?site rdfs:label ?name
+		}
+		order by ?name
+	"""
+
+	//from uploadgui front-end app
+	val svartbergetForestSamplPoints = """
+		PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		SELECT *
+		WHERE {
+			<https://meta.fieldsites.se/resources/sites/svartberget-forest> cpmeta:hasSamplingPoint ?point .
+			?point rdfs:label ?name .
+			?point cpmeta:hasLatitude ?latitude .
+			?point cpmeta:hasLongitude ?longitude
+		}
+		order by ?name
+	"""
+
+	//from uploadgui front-end app
+	val specAndDatasetKindInfo = """
+		PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		SELECT *
+		FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+		WHERE {
+			?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ;
+				cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
+			OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
+			OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
+			OPTIONAL{
+				?spec cpmeta:containsDataset ?dataset .
+				BIND(EXISTS{?dataset a cpmeta:DatasetSpec} as ?isSpatioTemp)
+			}
+		} order by ?name
+	"""
+
+	//from uploadgui front-end app
+	val l3spatialCoverages = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select *
+		from <http://meta.icos-cp.eu/resources/cpmeta/>
+		where{
+			{{?cov a cpmeta:SpatialCoverage } union {?cov a cpmeta:LatLonBox}}
+			?cov rdfs:label ?label
+		}
+	"""
+
+	//from uploadgui front-end app
+	val datasetVarsInfo = """
+		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?label ?title ?valueType ?unit ?optional ?regex
+		where{
+			<http://meta.icos-cp.eu/resources/cpmeta/biosphereModelingSpatialDataset> cpmeta:hasVariable ?var .
+			?var rdfs:label ?label; cpmeta:hasVariableTitle ?title ; cpmeta:hasValueType ?valueTypeRes .
+			?valueTypeRes rdfs:label ?valueType .
+			optional { ?var cpmeta:isOptionalVariable ?optional }
+			optional { ?var cpmeta:isRegexVariable ?regex }
+			optional { ?valueTypeRes cpmeta:hasUnit ?unit }
+		}
+	"""
 }

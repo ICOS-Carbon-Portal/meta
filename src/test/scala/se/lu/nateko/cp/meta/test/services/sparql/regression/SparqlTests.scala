@@ -408,4 +408,12 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			"nRows" -> f.createLiteral("48672", XSD.INTEGER)
 		)
 	}
+
+	describeQ(TestQueries.findable_L2_L3_specs, "Findable L1 & L2 data object specs", 42, 5, "spec"){
+		f => Map("spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject"))
+	}
+
+	describeQ(TestQueries.sameFilenameDataObjects("ICOS_ATC_L2_L2-2022.1_BIR_75.0_CTS_MTO.zip"), "By-filename search", 2, 0){
+		f => Map("dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/gzsZmFSwlOyPtBmCPzQXU9QY"))
+	}
 }

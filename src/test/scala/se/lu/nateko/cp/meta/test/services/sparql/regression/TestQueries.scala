@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
 object TestQueries {
+	//from portal front-end app from data project
 	val dataTypeBasics = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -18,6 +19,7 @@ object TestQueries {
 		}
 	"""
 
+	//from portal front-end app from data project
 	val variables = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -46,6 +48,7 @@ object TestQueries {
 		}
 	"""
 
+	//from portal front-end app from data project
 	val dataObjOriginStats = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -77,6 +80,7 @@ object TestQueries {
 		}
 	"""
 
+	//from portal front-end app from data project
 	val detailedDataObjInfo = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -115,6 +119,7 @@ object TestQueries {
 		}
 	"""
 
+	//from portal front-end app from data project
 	val labels = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -139,6 +144,7 @@ object TestQueries {
 		}
 	"""
 
+	//from portal front-end app from data project
 	val keywords = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -155,6 +161,8 @@ object TestQueries {
 		}
 	"""
 
+	//from js-projects/commonJs/main/station.ts in static project
+	//used by stations table and stations map on the icos website
 	val provisionalStationMetadata = """
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		SELECT *
@@ -178,6 +186,8 @@ object TestQueries {
 		}
 	"""
 
+	//from js-projects/commonJs/main/station.ts in static project
+	//used by stations table and stations map on the icos website
 	val productionStationMetadata = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
@@ -208,6 +218,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val atmosphericCO2Level2 = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -228,6 +239,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val objectSpec = (spec: String, station: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -247,6 +259,7 @@ object TestQueries {
 		order by ?station ?samplingHeight
 	"""
 
+	//from icoscp Python library
 	val collections = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix dcterms: <http://purl.org/dc/terms/>
@@ -260,10 +273,12 @@ object TestQueries {
 		order by ?title
 	"""
 
+	//from icoscp Python library
 	val collectionItems = (collId: String) => s"""
 		select * where{ $collId <http://purl.org/dc/terms/hasPart> ?dobj}
 	"""
 
+	//from icoscp Python library
 	val stationData = (station: String, level: Int) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -284,6 +299,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val stations = (id: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select *
@@ -301,6 +317,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val dataObjStation = (dObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -333,6 +350,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val ATCStations = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select *
@@ -359,6 +377,7 @@ object TestQueries {
 		order by ?Short_name
 	"""
 
+	//from icoscp Python library
 	val ATCStationsLevel1Data = """
 		prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -389,6 +408,7 @@ object TestQueries {
 		order by ?variable ?stationName ?height
 	"""
 
+	//from icoscp Python library
 	val stationClasses = """
 		prefix st: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		select distinct ?stationId ?stationClass ?country ?longName
@@ -404,6 +424,7 @@ object TestQueries {
 		ORDER BY ?stationClass ?stationId 
 	"""
 
+	//from icoscp Python library
 	val ATCStationList = (station: String, tracer: String, dObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -425,6 +446,7 @@ object TestQueries {
 			}
 	"""
 
+	//from icoscp Python library
 	val drought2018AtmoProductFileInfo = (stationLabel: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -447,6 +469,7 @@ object TestQueries {
 		order by desc(?submTime)
 	"""
 
+	//from icoscp Python library
 	val drought2018AtmoProductStations= """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -468,6 +491,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val icosCitation = (dataObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where{
@@ -475,6 +499,7 @@ object TestQueries {
 		}
 	"""
 
+	//from icoscp Python library
 	val prodsPerDomain = (domain: String) => s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -497,6 +522,7 @@ object TestQueries {
 		order by ?specLabel
 	"""
 
+	//from icoscp Python library
 	val prodAvailability = (dObjLabels: String) => s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -505,8 +531,7 @@ object TestQueries {
 		where {
 			{
 				select * where {
-					VALUES ?spec {$dObjLabels
-					}
+					VALUES ?spec {$dObjLabels}
 					?dobj cpmeta:hasObjectSpec ?spec .
 					?dobj cpmeta:wasAcquiredBy [
 						prov:startedAtTime ?timeStart ;
@@ -522,6 +547,7 @@ object TestQueries {
 		}
 	"""
 
+	//run by ETC to find newly uploaded raw data objects
 	val ecosystemRawDataQueryForETC = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
@@ -556,8 +582,10 @@ object TestQueries {
 			FILTER((?startTime > "2022-03-01T12:00:00Z"^^xsd:dateTime))
 		}
 		order by ?startTime
-	""".stripMargin
+	"""
 
+	//from icos-cp-backend/src/TableFormat.ts in npms project
+	//used from portal, dygraph-light and dashboard front-end apps in data project
 	val previewSchemaInfo = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		SELECT distinct ?objFormat ?goodFlags ?colName ?valueType ?valFormat ?unit ?qKind ?colTip ?isRegex ?flagColName
@@ -588,6 +616,7 @@ object TestQueries {
 		} order by ?colName
 	"""
 
+	//from portal app in data project, called for time-series preview
 	val listKnownDataObjects = (dObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -608,6 +637,7 @@ object TestQueries {
 		}
 	"""
 
+	//from dygraph-light front-end app in data project
 	val previewTableInfo = (dObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -623,6 +653,7 @@ object TestQueries {
 		}
 	"""
 
+	//from labeling app
 	val stationLabelingList = """
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		SELECT * FROM <http://meta.icos-cp.eu/ontologies/stationentry/>
@@ -647,6 +678,7 @@ object TestQueries {
 		}
 	"""
 
+	//from labeling app
 	val stationLabelingInfo = (station: String) => s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		SELECT * FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
@@ -654,6 +686,7 @@ object TestQueries {
 		WHERE { GRAPH ?g { $station ?p ?o. } }
 	"""
 
+	//from labeling app
 	val stationLabelingFiles = (station: String) => s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		PREFIX cpfls: <http://meta.icos-cp.eu/files/>
@@ -665,6 +698,7 @@ object TestQueries {
 		}
 	"""
 
+	//from Main Data Products Drupal page
 	val dataProdObjectSpec = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -683,6 +717,7 @@ object TestQueries {
 		order by ?station ?samplingHeight ?start
 	"""
 
+	//from dashboard front-end app in data project
 	val dashboardDobjList = """
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -705,6 +740,7 @@ object TestQueries {
 		limit 1
 	"""
 
+	//from dashboard front-end app in data project
 	val dashboardTableInfo = (dObj: String) => s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where {
@@ -715,5 +751,79 @@ object TestQueries {
 		?objSpec rdfs:label ?specLabel .
 		OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
 		}
+	"""
+
+	//from SchemaOrg
+	val findable_L2_L3_specs = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?spec
+		where{
+			VALUES ?level { 2 3 }
+			?spec cpmeta:hasDataLevel ?level .
+			FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+			FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+		}
+	"""
+
+	//from EtcUploadTransformer
+	def sameFilenameDataObjects(fn: String) = s"""
+		prefix prov: <http://www.w3.org/ns/prov#>
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select distinct ?dobj where{
+			?dobj cpmeta:hasName "${fn}" .
+			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+		}
+		order by desc(?submEnd)
+		limit 2
+	"""
+
+	//from netcdf front-end app in data project
+	val netcdfPreviewAppsOnlyQuery = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select * where{
+			<https://meta.icos-cp.eu/objects/OPun_V09Pcat5jomRRF-5o0H> cpmeta:hasObjectSpec ?objSpec .
+			?objSpec rdfs:label ?specLabel ;
+		}
+	"""
+
+	//from MetaClient in data project
+	//case-insensitive email match
+	val ecoStationsWhereEmailIsPi = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?stationId where{
+			?pi cpmeta:hasEmail ?email .
+			FILTER(regex(?email, "Matthias.Droesler@hswt.de", "i")) .
+			?pi cpmeta:hasMembership ?memb .
+			?memb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+			?memb cpmeta:atOrganization ?station .
+			?station a cpmeta:ES .
+			filter not exists {?memb cpmeta:hasEndTime []}
+			?station cpmeta:hasStationId ?stationId .
+		}
+	"""
+
+	//from MetaClient in data project
+	val licenceSetForDataObjectList = """
+		select distinct ?lic where{
+			values ?dobj {
+				<https://meta.icos-cp.eu/objects/dxTFsuvG9sI3M0nGCgYNg22X>
+				<https://meta.icos-cp.eu/objects/9v-ug2z3IcLVwDWpcG7ASKpW>
+				<https://meta.icos-cp.eu/objects/Nh46W1ylcXrZ8jm18uNc9e73>
+			}
+			?dobj <http://purl.org/dc/terms/license> ?lic
+		}
+	"""
+
+	//from IntestionUploadTask in data project
+	val ingestionUploadTaskColumnFormats = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	select ?colName ?valFormat ?isRegex ?isOptional where{
+		<http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> cpmeta:containsDataset ?dataSet .
+		?dataSet cpmeta:hasColumn ?column .
+		?column cpmeta:hasColumnTitle ?colName .
+		?column cpmeta:hasValueFormat ?valFormat .
+		OPTIONAL{?column cpmeta:isRegexColumn ?isRegex}
+		OPTIONAL{?column cpmeta:isOptionalColumn ?isOptional}
+	}
 	"""
 }

@@ -416,4 +416,26 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 	describeQ(TestQueries.sameFilenameDataObjects("ICOS_ATC_L2_L2-2022.1_BIR_75.0_CTS_MTO.zip"), "By-filename search", 2, 0){
 		f => Map("dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/gzsZmFSwlOyPtBmCPzQXU9QY"))
 	}
+
+	describeQ(TestQueries.netcdfPreviewAppsOnlyQuery, "NetCDF Preview", 1, 0){
+		f => Map(
+		"objSpec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3"), 
+		"specLabel" -> f.createLiteral("Radon flux map")
+		)
+	}
+
+	describeQ(TestQueries.ecoStationsWhereEmailIsPi, "Stations with matching PI email", 1, 0){
+		f => Map("stationId" -> f.createLiteral("DE-Msr"))
+	}
+
+	describeQ(TestQueries.licenceSetForDataObjectList, "Licenses for data object list", 1, 0){
+		f => Map("lic" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"))
+	}
+
+	describeQ(TestQueries.ingestionUploadTaskColumnFormats, "IngestionUploadTask column formats", 16, 8, sortColumn = "colName"){
+		f => Map(
+		"colName" -> f.createLiteral("NEE_UNCLEANED"), 
+		"valFormat" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/float32")
+		)
+	}
 }

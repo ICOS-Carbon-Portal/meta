@@ -240,7 +240,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val objectSpec = (spec: String, station: String) => s"""
+	def objectSpec(spec: String, station: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?station ?samplingHeight
@@ -274,12 +274,12 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val collectionItems = (collId: String) => s"""
+	def collectionItems(collId: String) = s"""
 		select * where{ $collId <http://purl.org/dc/terms/hasPart> ?dobj}
 	"""
 
 	//from icoscp Python library
-	val stationData = (station: String, level: Int) => s"""
+	def stationData(station: String, level: Int) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select *
@@ -300,7 +300,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val stations = (id: String) => s"""
+	def stations(id: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select *
 		from <http://meta.icos-cp.eu/resources/icos/> 
@@ -318,7 +318,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val dataObjStation = (dObj: String) => s"""
+	def dataObjStation(dObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select distinct ?dobj ?stationName ?stationId ?samplingHeight ?longitude ?latitude ?elevation ?theme
@@ -425,7 +425,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val ATCStationList = (station: String, tracer: String, dObj: String) => s"""
+	def ATCStationList(station: String, tracer: String, dObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
@@ -447,7 +447,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val drought2018AtmoProductFileInfo = (stationLabel: String) => s"""
+	def drought2018AtmoProductFileInfo(stationLabel: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?samplingHeight
@@ -492,7 +492,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val icosCitation = (dataObj: String) => s"""
+	def icosCitation(dataObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where{
 		optional{$dataObj cpmeta:hasCitationString ?cit}
@@ -500,7 +500,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val prodsPerDomain = (domain: String) => s"""
+	def prodsPerDomain(domain: String) = s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select ?specLabel ?spec where{
@@ -523,7 +523,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	val prodAvailability = (dObjLabels: String) => s"""
+	def prodAvailability(dObjLabels: String) = s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -617,7 +617,7 @@ object TestQueries {
 	"""
 
 	//from portal app in data project, called for time-series preview
-	val listKnownDataObjects = (dObj: String) => s"""
+	def listKnownDataObjects(dObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
@@ -638,7 +638,7 @@ object TestQueries {
 	"""
 
 	//from dygraph-light front-end app in data project
-	val previewTableInfo = (dObj: String) => s"""
+	def previewTableInfo(dObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select distinct ?dobj ?objSpec ?nRows ?fileName ?specLabel ?startedAtTime ?columnNames where {
@@ -679,7 +679,7 @@ object TestQueries {
 	"""
 
 	//from labeling app
-	val stationLabelingInfo = (station: String) => s"""
+	def stationLabelingInfo(station: String) = s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		SELECT * FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 		FROM NAMED <http://meta.icos-cp.eu/resources/stationentry/>
@@ -687,7 +687,7 @@ object TestQueries {
 	"""
 
 	//from labeling app
-	val stationLabelingFiles = (station: String) => s"""
+	def stationLabelingFiles(station: String) = s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		PREFIX cpfls: <http://meta.icos-cp.eu/files/>
 		SELECT DISTINCT ?file ?fileType ?fileName FROM <http://meta.icos-cp.eu/resources/stationlabeling/>
@@ -741,7 +741,7 @@ object TestQueries {
 	"""
 
 	//from dashboard front-end app in data project
-	val dashboardTableInfo = (dObj: String) => s"""
+	def dashboardTableInfo(dObj: String) = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where {
 		values ?dobj { $dObj }
@@ -814,16 +814,16 @@ object TestQueries {
 		}
 	"""
 
-	//from IntestionUploadTask in data project
+	//from IngestionUploadTask in data project
 	val ingestionUploadTaskColumnFormats = """
-	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-	select ?colName ?valFormat ?isRegex ?isOptional where{
-		<http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> cpmeta:containsDataset ?dataSet .
-		?dataSet cpmeta:hasColumn ?column .
-		?column cpmeta:hasColumnTitle ?colName .
-		?column cpmeta:hasValueFormat ?valFormat .
-		OPTIONAL{?column cpmeta:isRegexColumn ?isRegex}
-		OPTIONAL{?column cpmeta:isOptionalColumn ?isOptional}
-	}
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?colName ?valFormat ?isRegex ?isOptional where{
+			<http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> cpmeta:containsDataset ?dataSet .
+			?dataSet cpmeta:hasColumn ?column .
+			?column cpmeta:hasColumnTitle ?colName .
+			?column cpmeta:hasValueFormat ?valFormat .
+			OPTIONAL{?column cpmeta:isRegexColumn ?isRegex}
+			OPTIONAL{?column cpmeta:isOptionalColumn ?isOptional}
+		}
 	"""
 }

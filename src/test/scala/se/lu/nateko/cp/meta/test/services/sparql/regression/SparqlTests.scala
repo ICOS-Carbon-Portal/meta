@@ -316,4 +316,90 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			"fileName" -> f.createLiteral("DE-HoH_BM_20220713_L15_F01.bin")
 		)
 	}
+
+	describeQ(TestQueries.previewSchemaInfo, "Data object preview schema info", expectRows = 5, sampleIndex = 0) {f => 
+		Map(
+			"valueType" -> f.createLiteral("quality flag"), 
+			"valFormat" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/bmpChar"), 
+			"colName" -> f.createLiteral("Flag"), 
+			"objFormat" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/asciiAtcProductTimeSer"), 
+			"goodFlags" -> f.createLiteral("O;R;U"), 
+			"colTip" -> f.createLiteral("single-letter quality flag")
+		)
+	}
+
+	describeQ(TestQueries.listKnownDataObjects("<https://meta.icos-cp.eu/objects/u9dwttNxsKTrHdQrMCpB18Rb>"), "Known data objects", expectRows = 1, sampleIndex = 0, sortColumn = "dobj") {f => 
+		Map(
+			"hasNextVersion" -> f.createLiteral("false", XSD.BOOLEAN), 
+			"timeEnd" -> f.createLiteral("2022-02-28T23:00:00Z", XSD.DATETIME), 
+			"fileName" -> f.createLiteral("ICOS_ATC_L2_L2-2022.1_TRN_100.0_CTS_CH4.zip"), 
+			"timeStart" -> f.createLiteral("2016-08-11T00:00:00Z", XSD.DATETIME), 
+			"size" -> f.createLiteral("902803", XSD.LONG), 
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/u9dwttNxsKTrHdQrMCpB18Rb"), 
+			"submTime" -> f.createLiteral("2022-07-11T10:33:13.067086Z", XSD.DATETIME), 
+			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject")
+		)
+	}
+
+	describeQ(TestQueries.previewMetadata("<https://meta.icos-cp.eu/objects/u9dwttNxsKTrHdQrMCpB18Rb>"), "Preview columns", expectRows = 1, sampleIndex = 0, sortColumn = "dobj") {f => 
+		Map(
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/u9dwttNxsKTrHdQrMCpB18Rb"), 
+			"fileName" -> f.createLiteral("ICOS_ATC_L2_L2-2022.1_TRN_100.0_CTS_CH4.zip"), 
+			"objSpec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject"), 
+			"specLabel" -> f.createLiteral("ICOS ATC CH4 Release"), 
+			"startedAtTime" -> f.createLiteral("2016-08-11T00:00:00Z", XSD.DATETIME), 
+			"nRows" -> f.createLiteral("48672", XSD.INTEGER)
+		)
+	}
+	
+	describeQ(TestQueries.stationLabelingList, "Labeling status for stations", expectRows = 200, sampleIndex = 100, sortColumn = "owlClass") {f => 
+		Map("s" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/ES/FR-MON"), 
+		"provLongName" -> f.createLiteral("Estrees-Mons A28"), 
+		"provShortName" -> f.createLiteral("FR-EM2"), 
+		"owlClass" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/ES"), 
+		"hasApplicationStatus" -> f.createLiteral("STEP3APPROVED"), 
+		"pi" -> f.createIRI("http://meta.icos-cp.eu/resources/stationentry/Joel_Leonard"), 
+		"email" -> f.createLiteral("Joel.Leonard@inra.fr"), 
+		"hasAppStatusDate" -> f.createLiteral("2018-11-30T12:00:00Z", XSD.DATETIME)
+		)
+	}
+
+	describeQ(TestQueries.stationLabelingMetadata("<http://meta.icos-cp.eu/ontologies/stationentry/AS/ATM-PAL>"), "Station labeling metadata", expectRows = 39, sampleIndex = 20, sortColumn = "g") {f => 
+		Map(
+			"p" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/hasLon"), "g" -> f.createIRI("http://meta.icos-cp.eu/resources/stationlabeling/"), "o" -> f.createLiteral("24.1157", XSD.DOUBLE)
+		)
+	}
+
+	describeQ(TestQueries.stationLabelingFiles("<http://meta.icos-cp.eu/ontologies/stationentry/AS/ATM-PAL>"), "Uploaded files for specified station", expectRows = 3, sampleIndex = 1, sortColumn = "file") {f => 
+		Map(
+		"fileName" -> f.createLiteral("Pallas_Sammaltunturi_WindRose_2006-2015.png"), 
+		"file" -> f.createIRI("http://meta.icos-cp.eu/files/C5Rx4hcFYCZBDN4c0c4ANS4G"), 
+		"fileType" -> f.createLiteral("Prevailing wind directions (closest meteo station)")
+		)
+	}
+
+	describeQ(TestQueries.dataProdObjectSpec, "Data product specification", expectRows = 79, sampleIndex = 78) {f => 
+		Map(
+		"station" -> f.createLiteral("Zugspitze"), 
+		"samplingHeight" -> f.createLiteral("3.0", XSD.FLOAT), 
+		"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/wrbjAFaMd4vzkZqUeoquTOfE")
+		)
+	}
+
+	// describeQ(TestQueries.oceanDataProdObjectSpec, "Ocean data product specification", expectRows = 179, sampleIndex = 100) {f => 
+	// 	Map()
+	// }
+
+	// describeQ(TestQueries.dashboardDobjList, "Dashboard station metadata", expectRows = 179, sampleIndex = 100) {f => 
+	// 	Map()
+	// }
+
+	// describeQ(TestQueries.dashboardTableInfo, "Ocean data product specification", expectRows = 179, sampleIndex = 100) {f => 
+	// 	Map()
+	// }
+
+	// describeQ(TestQueries.dashboardSchemaInfo, "Ocean data product specification", expectRows = 179, sampleIndex = 100) {f => 
+	// 	Map()
+	// }
+
 }

@@ -244,7 +244,8 @@ object TestQueries {
 		?stationIri cpmeta:hasName ?station .		
 		FILTER(?station = "$station")
 	}
-	order by ?station ?samplingHeight"""
+	order by ?station ?samplingHeight
+	"""
 
 	val collections = """
 	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -556,4 +557,208 @@ object TestQueries {
 		}
 		order by ?startTime
 	""".stripMargin
+
+	val previewSchemaInfo = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		SELECT distinct ?objFormat ?goodFlags ?colName ?valueType ?valFormat ?unit ?qKind ?colTip ?isRegex ?flagColName
+		WHERE {
+			{
+				select ?objFormat (group_concat(?goodFlag; separator=";") as ?goodFlags) where{
+					<http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> cpmeta:hasFormat ?objFormat .
+					optional {?objFormat cpmeta:hasGoodFlagValue ?goodFlag}
+				}
+				group by ?objFormat
+			}
+			<http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> cpmeta:containsDataset ?dset .
+			?dset cpmeta:hasColumn ?column .
+			?column cpmeta:hasColumnTitle ?colName ;
+				cpmeta:hasValueFormat ?valFormat ;
+				cpmeta:hasValueType ?valType .
+			optional{?column cpmeta:isRegexColumn ?isRegex}
+			optional{
+				?flagCol cpmeta:isQualityFlagFor ?column ; cpmeta:hasColumnTitle ?flagColName .
+				filter exists { ?dset cpmeta:hasColumn ?flagCol }
+			}
+			?valType rdfs:label ?valueType .
+			optional{?valType rdfs:comment ?colTip }
+			optional{
+				?valType cpmeta:hasUnit ?unit .
+				?valType cpmeta:hasQuantityKind/rdfs:label ?qKind .
+			}
+		} order by ?colName
+	"""
+
+	val listKnownDataObjects = (dObj: String) => s"""
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
+		where {
+		VALUES ?dobj { $dObj }
+		?dobj cpmeta:hasObjectSpec ?spec .
+		?dobj cpmeta:hasSizeInBytes ?size .
+		?dobj cpmeta:hasName ?fileName .
+		?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+		?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+		?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+		BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+		OPTIONAL {
+			BIND ("true"^^xsd:boolean as ?hasVarInfo)
+			filter exists{?dobj cpmeta:hasActualVariable [] }
+		}
+		}
+	"""
+
+	val previewMetadata = (dObj: String) => s"""
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select distinct ?dobj ?objSpec ?nRows ?fileName ?specLabel ?startedAtTime ?columnNames where {
+			values ?dobj { $dObj }
+			?dobj cpmeta:hasObjectSpec ?objSpec ;
+			cpmeta:hasNumberOfRows ?nRows ;
+			cpmeta:hasName ?fileName .
+			?objSpec rdfs:label ?specLabel .
+			?dobj cpmeta:wasAcquiredBy ?acquisition .
+			?acquisition prov:startedAtTime ?startedAtTime
+			OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
+		}
+	"""
+
+	val stationLabelingList = """
+		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+		SELECT * FROM <http://meta.icos-cp.eu/ontologies/stationentry/>
+		FROM <http://meta.icos-cp.eu/resources/stationentry/>
+		FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
+		WHERE {
+		?owlClass rdfs:subClassOf cpst:Station.
+		?s rdf:type ?owlClass.
+		{
+			{ ?s cpst:hasPi ?pi. }
+			UNION
+			{ ?s cpst:hasDeputyPi ?pi. }
+		}
+		?pi cpst:hasEmail ?email.
+		?s cpst:hasShortName ?provShortName;
+			cpst:hasLongName ?provLongName.
+		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasShortName ?hasShortName. } }
+		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasLongName ?hasLongName. } }
+		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasApplicationStatus ?hasApplicationStatus. } }
+		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasAppStatusComment ?hasAppStatusComment. } }
+		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasAppStatusDate ?hasAppStatusDate. } }
+		}
+	"""
+
+	val stationLabelingMetadata = (station: String) => s"""
+		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+		SELECT * FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
+		FROM NAMED <http://meta.icos-cp.eu/resources/stationentry/>
+		WHERE { GRAPH ?g { $station ?p ?o. } }
+	"""
+
+	val stationLabelingFiles = (station: String) => s"""
+		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+		PREFIX cpfls: <http://meta.icos-cp.eu/files/>
+		SELECT DISTINCT ?file ?fileType ?fileName FROM <http://meta.icos-cp.eu/resources/stationlabeling/>
+		WHERE {
+		$station cpst:hasAssociatedFile ?file.
+		?file cpfls:hasType ?fileType;
+			cpfls:hasName ?fileName.
+		}
+	"""
+
+	val dataProdObjectSpec = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?station ?samplingHeight ?start ?end
+		where {
+			VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> }
+			?dobj cpmeta:hasObjectSpec ?spec .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith/cpmeta:hasName ?station .
+			OPTIONAL{?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingHeight} .
+			
+		}
+		order by ?station ?samplingHeight ?start
+	"""
+
+	val oceanDataProdObjectSpec = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?station ?samplingHeight ?start ?end
+		where {
+			VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> }
+			?dobj cpmeta:hasObjectSpec ?spec .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith/cpmeta:hasName ?station .
+			
+			?dobj cpmeta:wasAcquiredBy/prov:startedAtTime ?start .
+				 ?dobj cpmeta:wasAcquiredBy/prov:endedAtTime ?end .
+		}
+		order by ?station ?samplingHeight ?start
+	"""
+
+	val dashboardDobjList = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+
+		select ?station ?dobj ?dataEnd where{
+			?station cpmeta:hasStationId "SVB"^^xsd:string .
+			?column cpmeta:hasColumnTitle "co2"^^xsd:string ;
+				cpmeta:hasValueType/cpmeta:hasUnit ?unit .
+			?spec cpmeta:containsDataset/cpmeta:hasColumn ?column ;
+				cpmeta:hasDataLevel "1"^^xsd:integer ;
+				cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> .
+			?dobj cpmeta:hasObjectSpec ?spec .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			?dobj cpmeta:wasAcquiredBy/prov:endedAtTime ?dataEnd .
+			?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingHeight .
+			filter not exists {[] cpmeta:isNextVersionOf ?dobj}
+			filter (?samplingHeight = 150) .
+		}
+		order by desc(?dataEnd)
+		limit 1
+	"""
+
+	val dashboardTableInfo = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select * where {
+		values ?dobj { <https://meta.icos-cp.eu/objects/vbRnE7E1MwjkFl9EdzaDfZtf> }
+		?dobj cpmeta:hasObjectSpec ?objSpec ;
+		cpmeta:hasNumberOfRows ?nRows ;
+		cpmeta:hasName ?fileName .
+		?objSpec rdfs:label ?specLabel .
+		OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
+	}
+	"""
+
+	val dashboardSchemaInfo = """
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	SELECT distinct ?objFormat ?goodFlags ?colName ?valueType ?valFormat ?unit ?qKind ?colTip ?isRegex ?flagColName
+	WHERE {
+		{
+			select ?objFormat (group_concat(?goodFlag; separator=";") as ?goodFlags) where{
+				<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> cpmeta:hasFormat ?objFormat .
+				optional {?objFormat cpmeta:hasGoodFlagValue ?goodFlag}
+			}
+			group by ?objFormat
+		}
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> cpmeta:containsDataset ?dset .
+		?dset cpmeta:hasColumn ?column .
+		?column cpmeta:hasColumnTitle ?colName ;
+			cpmeta:hasValueFormat ?valFormat ;
+			cpmeta:hasValueType ?valType .
+		optional{?column cpmeta:isRegexColumn ?isRegex}
+		optional{
+			?flagCol cpmeta:isQualityFlagFor ?column ; cpmeta:hasColumnTitle ?flagColName .
+			filter exists { ?dset cpmeta:hasColumn ?flagCol }
+		}
+		?valType rdfs:label ?valueType .
+		optional{?valType rdfs:comment ?colTip }
+		optional{
+			?valType cpmeta:hasUnit ?unit .
+			?valType cpmeta:hasQuantityKind/rdfs:label ?qKind .
+		}
+	} order by ?colName
+	"""
 }

@@ -6,6 +6,7 @@ function getJson(url){
 		req.open('GET', url);
 		req.responseType = 'json';
 		req.setRequestHeader('Accept', 'application/json');
+		req.setRequestHeader('Cache-Control', 'no-cache');
 		req.onreadystatechange = function(){
 			try {
 				if (req.readyState === 4) {

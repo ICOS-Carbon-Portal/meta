@@ -30,7 +30,6 @@ object TestQueries {
 				?spec cpmeta:containsDataset ?datasetSpec .
 				FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
 				FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
-				FILTER EXISTS {[] cpmeta:hasObjectSpec ?spec}
 			}
 			{
 				{
@@ -158,6 +157,19 @@ object TestQueries {
 				{?spec cpmeta:hasKeywords ?keywords }
 			}
 			filter not exists {?proj cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+		}
+	"""
+
+	//from portal front-end app from data project
+	val stationPositions = """
+		PREFIX prov: <http://www.w3.org/ns/prov#>
+		PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		SELECT ?station ?lat ?lon
+		WHERE {
+			?station cpmeta:hasStationId [] .
+			filter not exists {?station a <https://meta.fieldsites.se/ontologies/sites/Station>}
+			?station cpmeta:hasLatitude ?lat ; cpmeta:hasLongitude ?lon .
 		}
 	"""
 

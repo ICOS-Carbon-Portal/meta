@@ -82,7 +82,7 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			)
 	}
 
-	describeQ(TestQueries.variables, "Variable metadata and relation to data types", expectRows = 362, sampleIndex = 10, sortColumn = "spec") {
+	describeQ(TestQueries.variables, "Variable metadata and relation to data types", expectRows = 457, sampleIndex = 10, sortColumn = "spec") {
 		f => Map(
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject"),
 				"variable" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/timeStampColumn"),
@@ -121,6 +121,14 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		f => Map(
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes"),
 				"keywords" -> f.createLiteral("ICOS")
+			)
+	}
+
+	describeQ(TestQueries.stationPositions, "Station positions", expectRows = 196, sampleIndex = 50, sortColumn = "station") {
+		f => Map(
+				"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/ATMO_HUN"),
+				"lat" -> f.createLiteral("46.95", XSD.DOUBLE),
+				"lon" -> f.createLiteral("16.65", XSD.DOUBLE)
 			)
 	}
 

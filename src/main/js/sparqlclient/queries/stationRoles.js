@@ -13,4 +13,4 @@ where{
 	OPTIONAL{?memb cpmeta:hasEndTime ?end}
 	OPTIONAL{?memb cpmeta:hasAttributionWeight ?weight}
 }
-order by ?stId desc(?weight) desc(?end) ?start ?roleName ?lname`;
+order by ?stId ?roleName ?lname`;

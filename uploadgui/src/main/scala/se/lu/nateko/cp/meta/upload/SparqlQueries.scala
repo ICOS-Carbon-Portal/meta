@@ -34,7 +34,7 @@ object SparqlQueries {
 	def stations(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri): String = {
 		val orgClassFilter = orgClass.map(org => s"?station a/rdfs:subClassOf* <$org> .")
 		val producingOrgFilter: Option[String] = producingOrg.map(org => s"BIND(<$org> AS ?station) .")
-		val orgFilter = Iterable(orgClassFilter, producingOrgFilter).flatten.mkString("\n")
+		val orgFilter = Iterable(producingOrgFilter, orgClassFilter).flatten.mkString("\n")
 		envri match {
 			case Envri.SITES => sitesStations(orgFilter)
 			case Envri.ICOS => icosStations(orgFilter)

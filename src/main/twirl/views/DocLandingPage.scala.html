@@ -44,6 +44,7 @@
 				@citations(doc.references)
 				@for(size <- doc.size){
 					@property("File size", formatBytes(size))
+					@property("File size (bytes)", size.toString)
 				}
 				@property("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", doc.hash.base64)

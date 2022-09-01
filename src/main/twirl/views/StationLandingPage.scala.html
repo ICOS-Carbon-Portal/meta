@@ -199,8 +199,8 @@
 
 @wigosId = @{
 	Option(station.specificInfo).collect{
-		case atc: AtcStationSpecifics => atc.wigosId
-	}
+		case atc: AtcStationSpecifics => atc
+	}.flatMap(_.wigosId)
 }
 
 @stationDocs = @{

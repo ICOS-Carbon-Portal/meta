@@ -94,7 +94,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		else if(server.resourceHasType(stat, metaVocab.atmoStationClass))
 			AtcStationSpecifics(
 				getBasicIcosSpecifics(stat, vocab.atc),
-				getSingleString(stat, metaVocab.hasWigosId)
+				getOptionalString(stat, metaVocab.hasWigosId)
 			)
 		else if(server.resourceHasType(stat, metaVocab.oceStationClass))
 			getBasicIcosSpecifics(stat, vocab.otc)

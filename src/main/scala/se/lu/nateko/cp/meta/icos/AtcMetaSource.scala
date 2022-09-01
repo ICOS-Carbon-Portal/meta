@@ -82,7 +82,7 @@ object AtcMetaSource{
 	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
 	val StorageDir = "atcmeta"
-	val stationsId = "stations"
+	val stationsId = "obspackStations"
 	val undefinedOrgId = "41"
 
 	val IdCol = "#Id"
@@ -133,11 +133,15 @@ object AtcMetaSource{
 		"france"          -> "FR",
 		"germany"         -> "DE",
 		"great britain"   -> "GB",
+		"greece"          -> "GR",
+		"greenland"       -> "GL",
+		"hungary"         -> "HU",
 		"united kingdom"  -> "GB",
 		"ireland"         -> "IE",
 		"italy"           -> "IT",
 		"norway"          -> "NO",
 		"poland"          -> "PL",
+		"russia"          -> "RU",
 		"spain"           -> "ES",
 		"sweden"          -> "SE",
 		"switzerland"     -> "CH",
@@ -173,7 +177,9 @@ object AtcMetaSource{
 
 	def parseLocalDate(ts: String): Validated[LocalDate] = Validated(LocalDate.parse(ts.take(10)))
 
-	def parseStationClass(s: String): Validated[IcosStationClass] = Validated(IcosStationClass.valueOf(s.trim))
+	def parseStationClass(s: String): Validated[IcosStationClass] =
+		if s == "0" then new Validated(None, Nil)
+		else Validated(IcosStationClass.valueOf(s))
 
 	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){
 		val demand = lookUpMandatory(stationsId) _
@@ -181,7 +187,7 @@ object AtcMetaSource{
 		for(
 			stIdStr <- demand(StationIdCol);
 			tcId <- demand(IdCol);
-			wigosId <- demand(WigosIdCol);
+			wigosId <- lookUp(WigosIdCol).optional;
 			lat <- demand(LatCol).map(_.toDouble);
 			lon <- demand(LonCol).map(_.toDouble);
 			alt <- demand(AltCol).map(_.toFloat);

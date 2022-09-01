@@ -68,7 +68,7 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 }
 
 case class AtcStationSpecifics(
-	wigosId: String,
+	wigosId: Option[String],
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
@@ -79,7 +79,7 @@ case class AtcStationSpecifics(
 ) extends IcosStationSpecifics
 
 object AtcStationSpecifics{
-	def apply(base: IcosStationSpecifics, wigosId: String): AtcStationSpecifics = AtcStationSpecifics(
+	def apply(base: IcosStationSpecifics, wigosId: Option[String]): AtcStationSpecifics = AtcStationSpecifics(
 		wigosId = wigosId,
 		theme = base.theme,
 		stationClass = base.stationClass,

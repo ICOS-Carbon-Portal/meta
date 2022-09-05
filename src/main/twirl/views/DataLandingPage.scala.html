@@ -17,6 +17,7 @@
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
 	breadcrumbs = Some(breadcrumbs(breadcrumbList)),
+	tabs = Some(tabs)
 ) {
 	<div class="row py-2 gy-4">
 		@if(dobj.nextVersion) {
@@ -337,4 +338,27 @@
 		case sites: SitesStationSpecifics => Some(sites.documentation)
 		case _ => None
 	}
+}
+
+@previewURL(id: String) = @{
+	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]}"""
+}
+
+@previewButton = {
+	@if(dobj.isPreviewable) {
+		<a class="nav-link" href="@previewURL(dobj.hash.id)">Preview</a>
+	} else {
+		<a class="nav-link disabled" title="No preview available">Preview</a>
+	}
+}
+
+@tabs = {
+	<ul class="nav nav-tabs">
+		<li class="nav-item">
+			<a class="nav-link active" aria-current="page">Metadata</a>
+		</li>
+		<li class="nav-item">
+			@previewButton
+		</li>
+	</ul>
 }

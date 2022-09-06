@@ -174,11 +174,6 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
-        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
-        <AbbreviatedIRI>cpmeta:Role</AbbreviatedIRI>
-        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
-    </AnnotationAssertion>
-    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
         <AbbreviatedIRI>cpmeta:Role</AbbreviatedIRI>
         <IRI>http://meta.icos-cp.eu/resources/roles/</IRI>

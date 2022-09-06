@@ -68,9 +68,9 @@ class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends Trig
 	}
 
 	override def readState: Validated[State] = for(
-			orgs <- readAllOrgs(getTableFile("instruments"), getTableFile(stationsId));
-			stations <- parseStations(getTableFile(stationsId), orgs);
-			instruments <- parseInstruments(getTableFile("instruments"), orgs);
+			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
+			stations <- parseStations(getTableFile(stationsTbl), orgs);
+			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
 			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
 		) yield
 			new TcState(stations, membs, instruments)
@@ -82,7 +82,8 @@ object AtcMetaSource{
 	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
 	val StorageDir = "atcmeta"
-	val stationsId = "obspackStations"
+	val stationsTbl = "combineStations"
+	val instrumentsTbl = "combineInstruments"
 	val undefinedOrgId = "41"
 
 	val IdCol = "#Id"
@@ -182,7 +183,7 @@ object AtcMetaSource{
 		else Validated(IcosStationClass.valueOf(s))
 
 	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){
-		val demand = lookUpMandatory(stationsId) _
+		val demand = lookUpMandatory(stationsTbl) _
 
 		for(
 			stIdStr <- demand(StationIdCol);

@@ -1,12 +1,14 @@
 @(header: String, headerExtra: Option[Html] = None, subTitle: Option[String] = None, tabs: Option[Html] = None)
 @style = @{s"d-sm-flex justify-content-between align-items-end ${tabs.fold("border-bottom")(_ => "")} mb-4 pb-2"}
 @if(subTitle) {
-<h1 class="col-md-8">@header</h1>
+<div class="row">
+	<h1 class="col-md-8">@header</h1>
+	<div class="col-auto ms-md-auto py-2">@headerExtra</div>
+</div>
 <div class="@style">
 	@for(sub <- subTitle){
 		<div class="fs-3 text-muted">@sub</div>
 	}
-	@headerExtra
 </div>
 } else {
 <div class="@style">

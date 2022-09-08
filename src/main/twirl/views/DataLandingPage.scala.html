@@ -19,7 +19,7 @@
 	breadcrumbs = Some(breadcrumbs(breadcrumbList)),
 	tabs = Some(tabs)
 ) {
-	<div class="row py-2 gy-4">
+	<div class="row py-3 gy-4">
 		@if(dobj.nextVersion) {
 			<div class="col-12">
 				<div class="alert alert-warning">
@@ -344,11 +344,11 @@
 	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]}"""
 }
 
-@previewButton = {
+@previewTab = {
 	@if(dobj.isPreviewable) {
 		<a class="nav-link" href="@previewURL(dobj.hash.id)">Preview</a>
 	} else {
-		<a class="nav-link disabled" title="No preview available">Preview</a>
+		<a class="nav-link disabled">No preview available</a>
 	}
 }
 
@@ -358,7 +358,7 @@
 			<a class="nav-link active" aria-current="page">Metadata</a>
 		</li>
 		<li class="nav-item">
-			@previewButton
+			@previewTab
 		</li>
 	</ul>
 }

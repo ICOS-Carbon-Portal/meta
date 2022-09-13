@@ -25,7 +25,7 @@ construct{
 	?ds dct:modified ?modified .
 	?ds dc:type <http://purl.org/dc/dcmitype/Dataset> .
 	?ds dct:description ?description .
-	?ds dct:creator ?stationUri .
+	?ds prov:wasAttributedTo ?station .
 	?ds dct:temporal [
 		a dct:PeriodOfTime ;
 		dcat:startDate ?timeStart ;
@@ -48,9 +48,9 @@ construct{
 	?dobj cpmeta:wasAcquiredBy ?acq .
 	?acq prov:startedAtTime ?timeStart ;
 		prov:endedAtTime ?timeEnd ;
-		prov:wasAssociatedWith ?stationUri .
+		prov:wasAssociatedWith ?station .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
-	?stationUri cpmeta:hasName ?station .
+	?station cpmeta:hasName ?stationName .
 	optional{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
 	bind ( if(coalesce(?prodTime < ?submStart, false), ?prodTime, ?submStart) as ?modified)
 	bind (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objects> as ?cat )
@@ -58,7 +58,7 @@ construct{
 	bind (iri(replace(str(?dobj), "https://meta", "https://data")) as ?dlUri)
 	?spec rdfs:label ?specLabel .
 	optional{?spec rdfs:comment ?specComment }
-	bind (concat(?specLabel, ", station ", ?station, ". ", coalesce(?specComment, "")) as ?description)
+	bind (concat(?specLabel, ", station ", ?stationName, ". ", coalesce(?specComment, "")) as ?description)
 	bind (iri(replace(str(?dobj), "/objects/", "/dcat/objects/")) as ?ds)
 }
 #offset 0 limit 500

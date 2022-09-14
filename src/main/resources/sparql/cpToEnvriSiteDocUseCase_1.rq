@@ -1,0 +1,55 @@
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix dc: <http://purl.org/dc/elements/1.1/>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dct: <http://purl.org/dc/terms/>
+prefix cpdcat: <http://meta.icos-cp.eu/resources/dcat/>
+prefix locn: <http://www.w3.org/ns/locn#>
+prefix vcard: <http://www.w3.org/2006/vcard/ns#>
+construct {
+	cpdcat:ICOS a <http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure> ;
+		rdfs:label "ICOS"^^xsd:string ;
+		dct:title "Integrated Carbon Observation System"^^xsd:string .
+
+	?station a <http://envri-eu/dcat#Site> ;
+		dct:isPartOf cpdcat:ICOS ;
+		dct:identifier ?stationId ;
+		dct:title ?stationName ;
+		dct:description ?comment ;
+		dct:subject <http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment> ;
+		dct:spatial [ a dct:Location ; locn:geometry ?geoJson ] ;
+		dcat:contactPoint [ a vcard:Individual; vcard:fn ?piFullName; vcard:hasEmail ?piEmail ] .
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	{
+		select ?station (sample(?piOpt) as ?pi) where{
+			values ?stationClass {cpmeta:AS cpmeta:ES cpmeta:OS}
+			?station a ?stationClass .
+			?station cpmeta:hasStationClass [] .
+			?memb cpmeta:atOrganization ?station ; cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+			filter not exists {?memb cpmeta:hasEndTime []}
+			?piOpt cpmeta:hasMembership ?memb .
+		}
+		group by ?station
+	}
+	?station cpmeta:hasName ?stationName ; cpmeta:hasStationId ?stationId .
+	?pi cpmeta:hasFirstName ?piFn ; cpmeta:hasLastName ?piLn .
+	bind(concat(?piFn, ' ', ?piLn) as ?piFullName)
+	optional{
+		?pi cpmeta:hasEmail ?piEmailStr .
+		bind(iri(concat("mailto:", ?piEmailStr)) as ?piEmail)
+	}
+	optional{ ?station rdfs:comment ?comment }
+	optional{
+		?station cpmeta:hasLatitude ?lat ; cpmeta:hasLongitude ?lon .
+		optional{ ?station cpmeta:hasElevation ?alt }
+		bind(coalesce(concat(',', str(?alt)), '') as ?altStr)
+		bind(concat('{"type": "Point", "coordinates": [', str(?lon), ',', str(?lat), ?altStr, ']}') as ?pointGeo)
+	}
+	optional{ ?station cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?complexGeo }
+	bind(coalesce(?complexGeo, ?pointGeo) as ?geoJson)
+}

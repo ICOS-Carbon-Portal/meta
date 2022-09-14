@@ -61,7 +61,9 @@ object Ingestion {
 //				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
 //			),
 			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeopleAndOrgs_2.txt"),
-			"dcatdemo" -> new LocalSparqlConstructExtractor("/sparql/cpToDcat.rq", "/sparql/cpToEnvriSiteDocUseCase.rq"),
+			"dcatdemo" -> new LocalSparqlConstructExtractor(
+				"/sparql/cpL2ToDcat.rq", "/sparql/cpToEnvriSiteDocUseCase_1.rq", "/sparql/cpToEnvriSiteDocUseCase_2.rq"
+			),
 			"emptySource" -> EmptyIngester
 		)
 	}

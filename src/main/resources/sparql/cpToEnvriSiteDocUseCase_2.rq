@@ -1,0 +1,36 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+construct{
+	?dcatVar a skos:Concept ;
+		skos:prefLabel ?valTypeLabel ;
+		skos:altLabel ?varTitle ;
+		rdfs:comment ?varComment ;
+		rdfs:comment ?valTypeComment ;
+		skos:exactMatch ?skosExactMatch ;
+		skos:closeMatch ?skosCloseMatch .
+	?station dcat:theme ?dcatVar .
+}
+where{
+	{
+		select distinct ?spec ?station where{
+			?spec cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> ;
+				cpmeta:hasDataLevel "2"^^xsd:integer .
+			?dobj cpmeta:hasObjectSpec ?spec ;
+				cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station
+		}
+	}
+	?spec cpmeta:containsDataset ?datasetSpec .
+	?datasetSpec cpmeta:hasColumn ?variable .
+	FILTER NOT EXISTS {?variable cpmeta:isQualityFlagFor [] }
+	?variable cpmeta:hasColumnTitle ?varTitle ; cpmeta:hasValueType ?valType .
+	?valType rdfs:label ?valTypeLabel .
+	optional{?variable rdfs:comment ?varComment}
+	optional{?valType rdfs:comment ?valTypeComment}
+	bind (iri(replace(str(?variable), "/cpmeta/", "/dcat/var/")) as ?dcatVar)
+	optional{?valType skos:exactMatch ?skosExactMatch }
+	optional{?valType skos:closeMatch ?skosCloseMatch }
+}

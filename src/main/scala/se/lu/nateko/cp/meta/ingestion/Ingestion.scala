@@ -16,6 +16,10 @@ import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.ingestion.Ingestion.Statements
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import org.eclipse.rdf4j.model.vocabulary.LOCN
+import org.eclipse.rdf4j.model.Literal
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false
@@ -25,8 +29,11 @@ trait Ingester extends StatementProvider{
 	def getStatements(valueFactory: ValueFactory): Ingestion.Statements
 }
 
-trait Extractor extends StatementProvider{
+trait  Extractor extends StatementProvider{ self =>
 	def getStatements(repo: Repository): Ingestion.Statements
+	def map(ff: Repository => (Statement => Statement))(using ExecutionContext) = new Extractor{
+		def getStatements(repo: Repository): Statements = self.getStatements(repo).map(_.mapC(ff(repo)))
+	}
 }
 
 object Ingestion {
@@ -61,9 +68,19 @@ object Ingestion {
 //				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
 //			),
 			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeopleAndOrgs_2.txt"),
+
 			"dcatdemo" -> new LocalSparqlConstructExtractor(
 				"/sparql/cpL2ToDcat.rq", "/sparql/cpToEnvriSiteDocUseCase_1.rq", "/sparql/cpToEnvriSiteDocUseCase_2.rq"
-			),
+			).map{repo =>
+				val vf = repo.getValueFactory
+				val geoSparqlLitType = vf.createIRI("http://www.opengis.net/ont/geosparql/geoJSONLiteral")
+				{
+					case st @ Rdf4jStatement(subj, pred, obj: Literal) if pred == LOCN.GEOMETRY_PROP =>
+						val typedLit = vf.createLiteral(obj.getLabel, geoSparqlLitType)
+						vf.createStatement(subj, pred, typedLit, st.getContext)
+					case other => other
+				}
+			},
 			"emptySource" -> EmptyIngester
 		)
 	}

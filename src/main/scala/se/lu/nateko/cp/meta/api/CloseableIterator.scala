@@ -23,6 +23,12 @@ trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 		}
 	}
 
+	def mapC[U](f: T => U) = new CloseableIterator[U]{
+		def hasNext: Boolean = self.hasNext
+		def next(): U = f(self.next())
+		def close(): Unit = self.close()
+	}
+
 }
 
 object CloseableIterator{

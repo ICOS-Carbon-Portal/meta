@@ -68,6 +68,7 @@ class AdminRouting(
 			val dryRun = dryRunOpt.fold(true)(identity)
 
 			val updatesStream = updates.collect{
+				//OBS Blank-node-subject statements will be dropped here
 				case s @ Rdf4jStatement(subj, pred, obj) if insert ^ server.hasStatement(subj, pred, obj) => RdfUpdate(s, insert)
 			}.to(LazyList)
 

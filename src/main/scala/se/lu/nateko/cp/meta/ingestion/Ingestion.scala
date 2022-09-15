@@ -74,12 +74,12 @@ object Ingestion {
 			).map{repo =>
 				val vf = repo.getValueFactory
 				val geoSparqlLitType = vf.createIRI("http://www.opengis.net/ont/geosparql/geoJSONLiteral")
-				{
-					case st @ Rdf4jStatement(subj, pred, obj: Literal) if pred == LOCN.GEOMETRY_PROP =>
-						val typedLit = vf.createLiteral(obj.getLabel, geoSparqlLitType)
-						vf.createStatement(subj, pred, typedLit, st.getContext)
-					case other => other
-				}
+				st =>
+					val pred = st.getPredicate
+					if pred == LOCN.GEOMETRY_PROP then
+						val typedLit = vf.createLiteral(st.getObject.stringValue, geoSparqlLitType)
+						vf.createStatement(st.getSubject, pred, typedLit, st.getContext)
+					else st
 			},
 			"emptySource" -> EmptyIngester
 		)

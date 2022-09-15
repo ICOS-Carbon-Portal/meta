@@ -89,12 +89,13 @@ object DroughtMeta2{
 	val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
 	val HeightRegex = """^\w{3}_(\d+\.?\d*)m_""".r.unanchored
 
-	def fluxFileYears(fe: FileEntry): (Int, Int) = {
+	def fluxFileYears(fe: FileEntry): (Int, Int) =
 		assert(fe.project != Atmo, s"Can parse years only from Fluxnet files")
 
-		val YearsRegex(yearFromStr, yearToStr) = fe.fileName
-		yearFromStr.toInt -> yearToStr.toInt
-	}
+		fe.fileName match
+			case YearsRegex(yearFromStr, yearToStr) => yearFromStr.toInt -> yearToStr.toInt
+			case _ => throw new Exception(s"Bad filename ${fe.fileName}")
+
 
 	def fluxTimeInterval(fe: FileEntry): TimeInterval = {
 		val (yearFrom, yearTo) = fluxFileYears(fe)

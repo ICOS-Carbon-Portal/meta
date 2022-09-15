@@ -215,16 +215,17 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	}
 
 	def flush(): Unit = if(!q.isEmpty) writeLocked{
-		if(q.isEmpty) return
-		val list = new ArrayList[RdfUpdate](UpdateQueueSize)
-		q.drainTo(list)
+		if(!q.isEmpty) {
+			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
+			q.drainTo(list)
 
-		list.forEach{
-			case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-				processUpdate(subj, pred, obj, isAssertion)
-			case _ => ()
+			list.forEach{
+				case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
+					processUpdate(subj, pred, obj, isAssertion)
+				case _ => ()
+			}
+			list.clear()
 		}
-		list.clear()
 	}
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {

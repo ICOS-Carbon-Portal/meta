@@ -19,9 +19,9 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 		}"""
 		sparql.select(query).map{qr =>
 			qr.results.bindings.map{b =>
-				val BoundUri(p) = b("p")
-				val BoundLiteral(fname, _) = b("fname")
-				val BoundLiteral(lname, _) = b("lname")
+				val BoundUri(p) = b("p") : @unchecked
+				val BoundLiteral(fname, _) = b("fname") : @unchecked
+				val BoundLiteral(lname, _) = b("lname") : @unchecked
 				p -> PersonalName(fname, lname)
 			}.toMap
 		}
@@ -34,8 +34,8 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 		}"""
 		sparql.select(query).map{qr =>
 			qr.results.bindings.map{b =>
-				val BoundUri(id) = b("id")
-				val BoundLiteral(name, _) = b("name")
+				val BoundUri(id) = b("id") : @unchecked
+				val BoundLiteral(name, _) = b("name") : @unchecked
 				id -> name
 			}.toMap
 		}
@@ -70,7 +70,7 @@ class SparqlHelper(endpoint: URI)(implicit system: ActorSystem){
 
 	private def getDobjList(query: String): Future[Seq[URI]] = sparql.select(query).map{qr =>
 		qr.results.bindings.map{b =>
-			val BoundUri(dobj) = b("dobj")
+			val BoundUri(dobj) = b("dobj") : @unchecked
 			dobj
 		}
 	}

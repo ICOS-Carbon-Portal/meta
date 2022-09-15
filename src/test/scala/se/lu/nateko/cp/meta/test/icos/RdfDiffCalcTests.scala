@@ -27,7 +27,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	import TcConf.AtcConf.{makeId => aId}
 
 	val jane = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
-	val CountryCode(se) = "SE"
+	val se = CountryCode.unapply("SE").get
 
 	val airCpStation = TcStation[A](
 		cpId = UriId("AIR1"),

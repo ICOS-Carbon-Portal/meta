@@ -18,6 +18,7 @@ import scala.concurrent.Future
 import akka.Done
 import scala.util.Failure
 import scala.util.Success
+import org.eclipse.rdf4j.model.Statement
 
 class AdminRouting(
 	sparqler: SparqlRunner,
@@ -55,22 +56,19 @@ class AdminRouting(
 			complete(StatusCodes.NotFound -> s"Instance server $server not found")
 		)(
 			instServ => entity(as[String]){query =>
-				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query)).map(RdfUpdate(_, insert))
-				applicationRoute(instServ.writeContextsView, updates)
+				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query))
+				applicationRoute(instServ.writeContextsView, updates, insert)
 			}
 		)
 	}
 
-	private def applicationRoute(server: InstanceServer, updates: Iterator[RdfUpdate]) =
+	private def applicationRoute(server: InstanceServer, updates: Iterator[Statement], insert: Boolean) =
 		parameter("dryRun".as[Boolean].?){dryRunOpt =>
 
 			val dryRun = dryRunOpt.fold(true)(identity)
 
-			val updatesStream = updates.filter{upd =>
-
-				val Rdf4jStatement(subj, pred, obj) = upd.statement
-
-				upd.isAssertion ^ server.hasStatement(subj, pred, obj)
+			val updatesStream = updates.collect{
+				case s @ Rdf4jStatement(subj, pred, obj) if insert ^ server.hasStatement(subj, pred, obj) => RdfUpdate(s, insert)
 			}.to(LazyList)
 
 			if(!dryRun) server.applyAll(updatesStream)

@@ -14,9 +14,9 @@ class FluxMeta(
 	val pi: URI, val ack: Option[String], val papers: Seq[String], val prevVers: Option[Sha256Sum]
 ){
 
-	val StationId(stationId) = fname.substring(4, 10)
+	val StationId(stationId) = fname.substring(4, 10) : @unchecked
 	private val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
-	private val YearsRegex(yearFromStr, yearToStr) = fname
+	private val YearsRegex(yearFromStr, yearToStr) = fname : @unchecked
 
 	def station: URI = {
 		val pref = if(isIcos) "ES_" else "FLUXNET_"

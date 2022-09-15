@@ -105,7 +105,9 @@ object SparqlRoute {
 				spCache.cacheKeyer.lift(ctxt).fold(bypass){key =>
 					val cacheStat = if(spCache.keys.contains(key)) "HIT" else "MISS"
 					respondWithHeader(RawHeader(X_Cache_Status, cacheStat)){
-						_ => spCache.apply(key, () => plainRoute(ctxt))
+						withPermissiveCorsHeader{//is applied on per-origin basis, so cannot cache these
+							_ => spCache.apply(key, () => plainRoute(ctxt))
+						}
 					}
 				}
 			}
@@ -228,6 +230,11 @@ class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat:
 					}
 					HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
 			}
-			Complete(response.withEntity(cachedEnt))
+			Complete(
+				response
+					.withEntity(cachedEnt)
+					//this header is specific for the web app that makes the query, so should not be cached
+					.mapHeaders(_.filterNot(_.name == `Access-Control-Allow-Origin`.name))
+			)
 	}
 }

@@ -14,7 +14,7 @@ construct {
 		rdfs:label "ICOS"^^xsd:string ;
 		dct:title "Integrated Carbon Observation System"^^xsd:string .
 
-	?station a <http://envri-eu/dcat#Site> ;
+	?station a <http://envri.eu/dcat#Site> ;
 		dct:isPartOf cpdcat:ICOS ;
 		dct:identifier ?stationId ;
 		dct:title ?stationName ;

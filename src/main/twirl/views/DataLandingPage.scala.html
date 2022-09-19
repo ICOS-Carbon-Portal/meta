@@ -151,6 +151,7 @@
 							<th>Value type</th>
 							<th>Unit</th>
 							@if(envri != Envri.SITES){<th>Quantity kind</th>} else {}
+							<th>Preview</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -160,6 +161,7 @@
 								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
 								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>} else {}
+								<td>@if(varInfo.valueType.quantityKind){<a href=@previewURL(dobj.hash.id, Some(varInfo.label))>Preview</a>} else {}</td>
 							</tr>
 						}
 					</tbody>
@@ -340,8 +342,8 @@
 	}
 }
 
-@previewURL(id: String) = @{
-	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]}"""
+@previewURL(id: String, variable: Option[String] = None) = @{
+	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]${variable.fold("")(v => s""","yAxis":"${v}"""")}}"""
 }
 
 @previewTab = {

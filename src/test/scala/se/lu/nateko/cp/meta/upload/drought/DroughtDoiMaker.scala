@@ -87,7 +87,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 				Subject("Biogeochemical cycles, processes, and modeling"),
 				Subject("Troposphere: composition and chemistry")
 			),
-			contributors = ((etcContrib +: piContribs) ++ etcPeople).distinct,
+			contributors = ???,//((etcContrib +: piContribs) ++ etcPeople).distinct,
 			dates = Seq(
 				Date(Instant.now.toString.take(10), DateType.Issued)
 			),
@@ -98,9 +98,9 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 		)
 	}
 
-	def contributorPi(piId: URI, stIds: Seq[URI]) = Contributor(
-		peeps(piId), Nil, stIds.map(stId => "Principal investigator at " + names(stId)), Some(ContributorType.DataCollector)
-	)
+	def contributorPi(piId: URI, stIds: Seq[URI]) = ???//Contributor(
+		//peeps(piId), Nil, stIds.map(stId => "Principal investigator at " + names(stId)), Some(ContributorType.DataCollector)
+	//)
 }
 
 object DroughtDoiMaker{
@@ -128,8 +128,8 @@ object DroughtDoiMaker{
 		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(typ))
 	}
 
-	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) =
-		Contributor(PersonalName(fname, lname), Nil, Seq(etc.name), Some(typ))
+	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) = ???
+		//Contributor(PersonalName(fname, lname), Nil, Seq(etc.name), Some(typ))
 
 	val etcPeople: Seq[Contributor] = Seq(
 		etcPerson("Eleonora", "Canfora", ContributorType.DataCurator),

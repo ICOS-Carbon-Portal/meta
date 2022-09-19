@@ -171,7 +171,7 @@ object DroughtDoiMaker2{
 	def creatorPerson(p: PersonEntry) = Creator(
 		name = PersonalName(p.firstName, p.lastName),
 		nameIdentifiers = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.Orcid)),
-		affiliation = Seq(p.affiliation.name)
+		affiliation = ???//Seq(p.affiliation.name)
 	)
 
 	def dataCollectorPerson(p: PersonEntry) = {
@@ -191,7 +191,7 @@ object DroughtDoiMaker2{
 	}
 
 	private def tcPerson(fname: String, lname: String, typ: ContributorType.Value, tc: GenericName) =
-		Contributor(PersonalName(fname, lname), Nil, Seq(tc.name), Some(typ))
+		Contributor(PersonalName(fname, lname), Nil, ???/*Seq(tc.name)*/, Some(typ))
 
 	private def atcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, atc)
 	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, etc)

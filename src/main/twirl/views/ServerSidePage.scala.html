@@ -12,13 +12,14 @@
 	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,
 	breadcrumbs: Option[Html] = None,
+	tabs: Option[Html] = None
 )(body: Html)(implicit envri: Envri, conf: EnvriConfig)
 @template{
 	@extraMetaTags
 	@LandingPageStyle()
 }{
 	@breadcrumbs
-	@pageHeader(header, headerExtra, subHeading)
+	@pageHeader(header, headerExtra, subHeading, tabs)
 	@body
 }
 

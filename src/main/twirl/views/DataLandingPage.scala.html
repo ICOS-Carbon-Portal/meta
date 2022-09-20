@@ -17,8 +17,9 @@
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
 	breadcrumbs = Some(breadcrumbs(breadcrumbList)),
+	tabs = Some(tabs)
 ) {
-	<div class="row py-2 gy-4">
+	<div class="row py-3 gy-4">
 		@if(dobj.nextVersion) {
 			<div class="col-12">
 				<div class="alert alert-warning">
@@ -150,6 +151,7 @@
 							<th>Value type</th>
 							<th>Unit</th>
 							@if(envri != Envri.SITES){<th>Quantity kind</th>} else {}
+							<th>Preview</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -159,6 +161,7 @@
 								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
 								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>} else {}
+								<td>@if(varInfo.valueType.quantityKind){<a href=@previewURL(dobj.hash.id, Some(varInfo.label))>Preview</a>} else {}</td>
 							</tr>
 						}
 					</tbody>
@@ -337,4 +340,27 @@
 		case sites: SitesStationSpecifics => Some(sites.documentation)
 		case _ => None
 	}
+}
+
+@previewURL(id: String, variable: Option[String] = None) = @{
+	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]${variable.fold("")(v => s""","yAxis":"${v}"""")}}"""
+}
+
+@previewTab = {
+	@if(dobj.isPreviewable) {
+		<a class="nav-link" href="@previewURL(dobj.hash.id)">Preview</a>
+	} else {
+		<a class="nav-link disabled">No preview available</a>
+	}
+}
+
+@tabs = {
+	<ul class="nav nav-tabs">
+		<li class="nav-item">
+			<a class="nav-link active" aria-current="page">Metadata</a>
+		</li>
+		<li class="nav-item">
+			@previewTab
+		</li>
+	</ul>
 }

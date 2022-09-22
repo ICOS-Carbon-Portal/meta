@@ -1,0 +1,23 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+construct{
+  ?obspack cpmeta:isNextVersionOf ?drought .
+}
+where {
+	BIND(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> as ?spec) .
+	?obspack cpmeta:hasObjectSpec ?spec ; cpmeta:wasAcquiredBy ?obspackAcq ; cpmeta:hasName ?obspackFileName .
+	filter(contains(?obspackFileName, "OBSPACK"))
+	?drought cpmeta:hasObjectSpec ?spec ; cpmeta:wasAcquiredBy ?droughtAcq ; cpmeta:hasName ?droughtFileName .
+	filter(contains(?droughtFileName, "Drought2018"))
+	?obspackAcq prov:wasAssociatedWith/cpmeta:hasStationId ?stationId ; cpmeta:hasSamplingHeight ?obspackHeight .
+	?droughtAcq prov:wasAssociatedWith/cpmeta:hasStationId ?stationId ; cpmeta:hasSamplingHeight ?droughtHeight .
+	filter(abs(?obspackHeight - ?droughtHeight) < 2)
+	?obspack cpmeta:hasSizeInBytes [] .
+	?drought cpmeta:hasSizeInBytes [] .
+	filter not exists {[] cpmeta:isNextVersionOf ?drought}
+	?obspackAcq prov:startedAtTime ?obspackStart ; prov:endedAtTime ?obspackEnd .
+	?droughtAcq prov:startedAtTime ?droughtStart ; prov:endedAtTime ?droughtEnd .
+	filter(?obspackStart <= ?droughtStart && ?obspackEnd >= ?droughtEnd)
+}
+
+	#BIND("SSL"^^xsd:string as ?stationId) .

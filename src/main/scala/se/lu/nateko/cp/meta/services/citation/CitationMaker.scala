@@ -135,7 +135,13 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
-		val isIcosProject = dobj.specification.project.self.uri.===(vocab.icosProject)
+		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
+		val isIcosLikeStationMeas = dobj.specificInfo.fold(
+			_ => false,
+			_.acquisition.station.specificInfo match
+				case _:IcosStationSpecifics => true
+				case _ => false
+		)
 
 		def titleOpt = dobj.specificInfo.fold(
 			spatioTemp => Some(spatioTemp.title),
@@ -150,7 +156,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		val authors: Seq[Person] = if(isIcosProject && dobj.specification.dataLevel < 3) attrProvider.getAuthors(dobj) else{
+		val authors: Seq[Person] = if(isIcosLikeStationMeas && dobj.specification.dataLevel < 3) attrProvider.getAuthors(dobj) else{
 			import AttributionProvider.personOrdering
 			dobj.production.toSeq.flatMap(prod =>
 				prod.creator +: prod.contributors.collect{case p: Person => p}.sorted

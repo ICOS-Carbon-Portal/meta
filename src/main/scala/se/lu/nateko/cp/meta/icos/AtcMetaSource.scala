@@ -71,7 +71,7 @@ class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends Trig
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
 			stations <- parseStations(getTableFile(stationsTbl), orgs);
 			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
-			membs <- parseMemberships(getTableFile("contacts"), getTableFile("roles"), stations)
+			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
 			new TcState(stations, membs, instruments)
 }
@@ -125,6 +125,8 @@ object AtcMetaSource{
 	val InstrVendorCol = "Manufacturer"
 	val InstrVendorIdCol = "ManufacturerId"
 	val InstrRelatedCol = "RelatedInstruments"
+
+	val InfinitePast = "1900-01-01 00:00:00"
 
 	private val countryMap = Map(
 		"belgium"         -> "BE",
@@ -291,7 +293,7 @@ object AtcMetaSource{
 
 	def lookUpDate(colName: String)(using Lookup): Validated[Option[Instant]] = {
 		lookUp(colName).optional.map{dsOpt =>
-			dsOpt.map{ds =>
+			dsOpt.collect{case ds if ds != InfinitePast =>
 				Instant.parse(ds.replace(' ', 'T') + "Z")
 			}
 		}

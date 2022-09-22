@@ -343,7 +343,7 @@
 }
 
 @previewURL(id: String, variable: Option[String] = None) = @{
-	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]${variable.fold("")(v => s""","yAxis":"${v}"""")}}"""
+	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]${variable.fold("")(v => s""","yAxis":"${urlEncode(v)}"""")}}"""
 }
 
 @previewTab = {

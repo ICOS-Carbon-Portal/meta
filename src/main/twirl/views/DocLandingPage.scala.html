@@ -6,7 +6,6 @@
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
-@import se.lu.nateko.cp.meta.utils.urlEncode
 
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, subHeading = Some("Document")){

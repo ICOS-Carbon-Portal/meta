@@ -28,9 +28,9 @@ class OrcidTests extends AnyFunSuite{
 	}
 
 	test("Equality works as expected"){
-		val Orcid(orc1) = "0000-0002-1825-0097"
-		val Orcid(orc2) = "0000-0002-1825-0097"
-		val Orcid(orc3) = "0000-0002-1694-233X"
+		val Orcid(orc1) = "0000-0002-1825-0097": @unchecked
+		val Orcid(orc2) = "0000-0002-1825-0097": @unchecked
+		val Orcid(orc3) = "0000-0002-1694-233X": @unchecked
 		assert(orc1.equals(orc2))
 		assert(!orc1.equals(orc3))
 		val badNull: Orcid = null

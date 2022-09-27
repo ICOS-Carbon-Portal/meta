@@ -106,7 +106,7 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
-			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
+			"jakarta.mail"           % "jakarta.mail-api"                   % "1.6.7",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.27",
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.6.2",

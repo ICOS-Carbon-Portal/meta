@@ -144,7 +144,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 			val labelingService = {
 				val conf = config.stationLabelingService
 				val onto = ontos(conf.ontoId)
-				new StationLabelingService(instanceServers, onto, fileService, conf)
+				new StationLabelingService(instanceServers, onto, fileService, conf, log)
 			}
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)

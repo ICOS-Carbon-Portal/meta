@@ -5,11 +5,9 @@ import javax.mail.internet.*
 import java.util.Date
 import java.util.Properties
 import se.lu.nateko.cp.meta.{ConfigLoader, EmailConfig}
-import org.slf4j.LoggerFactory
+import akka.event.LoggingAdapter
 
-class SendMail(config: EmailConfig) {
-
-	private val log = LoggerFactory.getLogger(getClass)
+class SendMail(config: EmailConfig, log: LoggingAdapter) {
 
 	def send(	to: Seq[String],
 				subject: String,
@@ -56,6 +54,6 @@ class SendMail(config: EmailConfig) {
 }
 
 object SendMail{
-	def default: SendMail = new SendMail(ConfigLoader.default.stationLabelingService.mailing)
-	def apply(config: EmailConfig) = new SendMail(config)
+	def default(log: LoggingAdapter): SendMail = new SendMail(ConfigLoader.default.stationLabelingService.mailing, log)
+	def apply(config: EmailConfig, log: LoggingAdapter) = new SendMail(config, log)
 }

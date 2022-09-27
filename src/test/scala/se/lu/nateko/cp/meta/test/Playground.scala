@@ -17,6 +17,8 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.core.data.Envri
 import scala.collection.concurrent.TrieMap
+import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.mail.SendMail
 
 object Playground {
 
@@ -100,6 +102,11 @@ object Playground {
 			val lookup = toByVarLookup(badms)
 			stIdOpt.map(_.id).getOrElse("") :: tableVars.map(v => lookup.get(v).getOrElse(""))
 		}
+	}
+
+	def mailSender = {
+		val conf = ConfigLoader.default.stationLabelingService.mailing
+		SendMail(conf.copy(mailSendingActive = true), system.log)
 	}
 
 //	def printEtcStationsTable(): Unit = etcMetaSrc.fetchFromEtc().map(etcStationTable).foreach{rows =>

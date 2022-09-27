@@ -12,13 +12,15 @@ import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import akka.event.LoggingAdapter
 
 
 class StationLabelingService(
 	instanceServers: Map[String, InstanceServer],
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
-	protected val config: LabelingServiceConfig
+	protected val config: LabelingServiceConfig,
+	protected val log: LoggingAdapter
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService {
 
 	protected val server: InstanceServer = instanceServers(config.instanceServerId)

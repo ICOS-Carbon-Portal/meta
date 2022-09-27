@@ -21,7 +21,7 @@ trait LifecycleService { self: StationLabelingService =>
 
 	import LifecycleService.*
 
-	private val mailer = SendMail(config.mailing)
+	private val mailer = SendMail(config.mailing, log)
 
 	def updateStatus(station: URI, newStatus: String, newStatusComment: Option[String], user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
 		val stationUri = factory.createIRI(station)

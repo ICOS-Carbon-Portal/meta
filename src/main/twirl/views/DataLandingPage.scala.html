@@ -78,6 +78,9 @@
 			@for(size <- dobj.size){
 				@property("File size", formatBytes(size))
 			}
+			@for(nRows <- dobj.specificInfo.toOption.flatMap(_.nRows)){
+				@property("Number of data rows", nRows.toString)
+			}
 			@resourceproperty("Data type", dobj.specification.self)
 			@property("Data level", dobj.specification.dataLevel.toString)
 
@@ -194,9 +197,6 @@
 
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Technical information</h2>
-				@for(size <- dobj.size){
-					@property("File size (bytes)", size.toString)
-				}
 				@resourceproperty("Format", dobj.specification.format)
 				@resourceproperty("Encoding", dobj.specification.encoding)
 				@property("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)

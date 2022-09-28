@@ -90,8 +90,9 @@ def slidingByKey[T >: Null, K](inner: Iterator[T])(key: T => K) = new Iterator[I
 
 def formatBytes(size: Long): String = {
 	val k: Double = 1024
-	val sizes = Seq("Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+	val sizes = Seq("bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
 	val i: Double = Math.floor(Math.log(size.toDouble) / Math.log(k))
+	val inBytes = if(i > 0) s" ($size bytes)" else ""
 
-	s"${Math.round(size / Math.pow(k, i))} ${sizes(i.toInt)}"
+	s"${Math.round(size / Math.pow(k, i))} ${sizes(i.toInt)}$inBytes"
 }

@@ -73,10 +73,11 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			case DataType.EC => config.eddyCovarObjSpecId
 			case DataType.ST => config.storageObjSpecId
 			case DataType.SAHEAT => config.saheatObjSpecId
+			case DataType.PHEN => config.phenocamObjSpecId
 		}
 
 		val binSuff = meta.dtype match {
-			case DataType.SAHEAT => ""
+			case DataType.SAHEAT | DataType.PHEN => ""
 			case _ => if(meta.isBinary) "Bin" else "Csv"
 		}
 
@@ -96,7 +97,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 		))
 
 	private def getFileMeta(meta: EtcUploadMetadata): Try[EtcFileMeta] = meta.dataType match {
-		case DataType.SAHEAT =>
+		case DataType.SAHEAT | DataType.PHEN =>
 			Success(EtcFileMeta(dtype = meta.dataType, isBinary = false))
 		case _ =>
 			etcMeta

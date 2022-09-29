@@ -74,6 +74,7 @@ case class EtcConfig(
 	storageObjSpecId: String,
 	bioMeteoObjSpecId: String,
 	saheatObjSpecId: String,
+	phenocamObjSpecId: String,
 	metaService: URI,
 	ingestFileMetaAtStart: Boolean
 )
@@ -187,7 +188,7 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[OntoConfig] = jsonFormat2(OntoConfig.apply)
 	given RootJsonFormat[DataSubmitterConfig] = jsonFormat6(DataSubmitterConfig.apply)
 	given RootJsonFormat[SubmittersConfig] = jsonFormat1(SubmittersConfig.apply)
-	given RootJsonFormat[EtcConfig] = jsonFormat6(EtcConfig.apply)
+	given RootJsonFormat[EtcConfig] = jsonFormat7(EtcConfig.apply)
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)

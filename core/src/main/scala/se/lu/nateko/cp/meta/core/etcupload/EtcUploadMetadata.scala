@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core.etcupload
 import java.time.LocalDateTime
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
-//TODO Move EtcFileMetaKey in here, use it for station/looger/dataType/fileId
+//TODO Move EtcFileMetaKey in here, use it for station/logger/dataType/fileId
 case class EtcUploadMetadata(
 	hashSum: Sha256Sum,
 	fileName: String,
@@ -16,4 +16,4 @@ case class EtcUploadMetadata(
 )
 
 enum DataType:
-	case EC, BM, ST, SAHEAT
+	case EC, BM, ST, SAHEAT, PHEN

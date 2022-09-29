@@ -406,7 +406,7 @@ object EtcMetaSource{
 			isBinary <- lookUp(Vars.fileFormat).collect{
 					case "ASCII" => false
 					case "Binary" => true
-				}.require("file format must be 'ASCRII' or 'Binary'");
+				}.require("file format must be 'ASCII' or 'Binary'");
 			fileType <- lookUp(Vars.fileType).map(DataType.valueOf)
 		) yield {
 			EtcFileMetaKey(station = stationId, loggerId = loggerId, fileId = fileId, dataType = fileType) ->

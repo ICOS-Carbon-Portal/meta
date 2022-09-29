@@ -22,9 +22,9 @@ trait EtcFileMetadataStore {
 object EtcFileMetadataStore {
 
 	def fallbackUtcOffset(station: StationId): Option[Int] = station.id.take(2) match {
-		case "BE" | "CH" | "CZ" | "DE" | "DK" | "ES" | "FR" | "IT" | "NL" | "SE" => Some(1)
+		case "BE" | "CH" | "CZ" | "DE" | "DK" | "ES" | "FR" | "HU" | "IT" | "NL" | "NO" | "PL" | "SE" => Some(1)
 		case "GB" | "PT" | "IE" => Some(0)
-		case "FI" | "IL" => Some(2)
+		case "FI" | "GR" | "IL" => Some(2)
 		case "RU" => Some(3)
 		case _ => None
 	}

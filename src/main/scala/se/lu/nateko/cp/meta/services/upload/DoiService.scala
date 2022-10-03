@@ -86,7 +86,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 				_ => Seq()
 			),
 			dates = Seq(
-				Date(java.time.Instant.now.toString.take(10), DateType.Issued)
+				Date(java.time.Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq(),
 			version = Some(Version(1, 0)),
@@ -123,7 +123,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			subjects = Seq(),
 			contributors = Seq(),
 			dates = Seq(
-				Date(java.time.Instant.now.toString.take(10), DateType.Issued)
+				Date(java.time.Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq(),
 			version = Some(Version(1, 0)),
@@ -142,7 +142,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 		case Person(_, firstName, lastName, _, orcid) =>
 			Creator(
 				name = PersonalName(firstName, lastName),
-				nameIdentifiers = orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+				nameIdentifiers = orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.ORCID)).toSeq,
 				affiliation = Nil
 			)
 	}

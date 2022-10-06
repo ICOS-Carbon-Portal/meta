@@ -112,8 +112,10 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 				case Right(_) => Seq()
 			},
 			geoLocations = dobj.acquisition.flatMap(acq => acq.coverage.fold(None)(cov => Some(toDoiGeoLocation(cov)))),
-			fundingReferences = dobj.acquisition.flatMap(acq => Some(CitationMaker.getFundingObjects(acq).map(fObj => toFundingReference(fObj)))
-		))
+			fundingReferences = Option(
+				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
+			).filterNot(_.isEmpty)
+		)
 	}
 
 	def makeDocObjectDoi(doc: DocObject)(implicit envri: Envri) = DoiMeta(

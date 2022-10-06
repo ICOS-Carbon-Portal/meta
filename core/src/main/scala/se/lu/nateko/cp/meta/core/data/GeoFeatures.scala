@@ -108,10 +108,13 @@ case class Circle(center: Position, radius: Float, label: Option[String]) extend
 
 	override def asBox = {
 		val metersPerDegree = 111111
-		val maxLat = center.lat + radius * (1/metersPerDegree)
-		val minLat = center.lat - radius * (1/metersPerDegree)
-		val maxLon = center.lon + radius * (1/(metersPerDegree*Math.cos(center.lat.toRadians)))
-		val minLon = center.lon - radius * (1/(metersPerDegree*Math.cos(center.lat.toRadians)))
+		val latRadius = radius / metersPerDegree
+		val factor = Math.cos(center.lat.toRadians)
+
+		val maxLat = center.lat + latRadius
+		val minLat = center.lat - latRadius
+		val maxLon = center.lon + latRadius / factor
+		val minLon = center.lon - latRadius / factor
 
 		LatLonBox(
 			Position(minLat, minLon, center.alt, None),

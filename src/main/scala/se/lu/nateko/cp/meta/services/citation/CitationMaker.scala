@@ -219,20 +219,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		handleProxy = if(dobj.doi.isDefined) coreConf.handleProxies.doi else coreConf.handleProxies.basic
 	) yield s"$handleProxy$pid"
 
-	private def getFundingAcknowledgements(dobj: DataObject): Seq[String] = dobj.specificInfo match{
-		case Right(l2) =>
-			val acq = l2.acquisition
-
-			CitationMaker.getFundingObjects(acq).map{funding =>
-				val grantTitle = List(funding.awardTitle, funding.awardNumber).flatten match{
-					case only :: Nil => s" $only"
-					case title :: number :: Nil => s" $title ($number)"
-					case _ => ""
-				}
-				s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
+	private def getFundingAcknowledgements(dobj: DataObject): Seq[String] = getFundingObjects(dobj).map{
+		funding =>
+			val grantTitle = List(funding.awardTitle, funding.awardNumber).flatten match{
+				case only :: Nil => s" $only"
+				case title :: number :: Nil => s" $title ($number)"
+				case _ => ""
 			}
-		case _ => Seq.empty
-	}
+			s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
+		}
 
 	private def getDocCitation(dobj: DocObject)(using envri: Envri): CitationInfo = {
 		val zoneId = ZoneId.of(defaultTimezoneId)
@@ -276,16 +271,18 @@ object CitationMaker{
 		)
 	)
 
-	def getFundingObjects(acq: DataAcquisition) = {
-		acq.station.funding.toSeq.flatten.filter{funding =>
-			funding.start.fold(true){
-				fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
-			} &&
-			funding.stop.fold(true){
-				fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
+	def getFundingObjects(dobj: DataObject): Seq[Funding] =  dobj.specificInfo match
+		case Right(l2) =>
+			val acq = l2.acquisition
+			acq.station.funding.toSeq.flatten.filter{funding =>
+				funding.start.fold(true){
+					fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
+				} &&
+				funding.stop.fold(true){
+					fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
+				}
 			}
-		}
-	}
+		case _ => Seq.empty
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
 		l3 => Some(getTimeFromInterval(l3.temporal.interval, zoneId)),

@@ -38,6 +38,7 @@ import java.net.URI
 import java.time.Year
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import java.time.Instant
 
 class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: ExecutionContext) {
 
@@ -74,41 +75,54 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 		doiMetaOpt.fold(Future.successful(Option.empty[Doi]))(m => saveDoi(m).map(Some(_)))
 	}
 
-	def makeDataObjectDoi(dobj: DataObject)(implicit envri: Envri): DoiMeta = {
+	def makeDataObjectDoi(dobj: DataObject)(using Envri): DoiMeta = {
+		val creators = dobj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
+		val plainContributors = dobj.specificInfo.fold(
+			l3 => l3.productionInfo.contributors.map(toDoiContributor),
+			_ => Seq()
+		)
+		val licence: Rights = dobj.references.licence.fold(ccby4)(lic => Rights(lic.name, Some(lic.url.toString)))
+		val pubYear = dobj.submission.stop.getOrElse(dobj.submission.start).toString.take(4).toInt
+
 		DoiMeta(
 			doi = client.doi(CoolDoi.makeRandom),
-			creators = dobj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator)),
+			creators = creators,
 			titles = dobj.references.title.map(t => Seq(Title(t, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(Year.now.getValue),
+			publicationYear = Some(pubYear),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Dataset))),
-			subjects = dobj.keywords.fold(Seq())(keywords => keywords.map(keyword => Subject(keyword))),
-			contributors = dobj.specificInfo.fold(
-				l3 => l3.productionInfo.contributors.map{
-					case p: Person => toDoiContributor(p)
-					case Organization(_, name, _, _) => Contributor(GenericName(name), Seq(), Seq(), None)
-				},
-				_ => Seq()
-			),
+			subjects = dobj.keywords.getOrElse(Nil).map(keyword => Subject(keyword)),
+			contributors = (creators.map(_.toContributor()) ++ plainContributors).distinct,
 			dates = Seq(
-				Some(Date(dobj.submission.start.toString.take(10), Some(DateType.Submitted))),
-				dobj.acquisition.flatMap(acq => acq.interval.map(i => Date(i.start.toString.take(10) + "/" + i.stop.toString.take(10), Some(DateType.Collected)))),				
-				dobj.submission.stop.map(s => Date(s.toString.take(10), Some(DateType.Issued))),
-				dobj.production.map(p => Date(p.dateTime.toString.take(10), Some(DateType.Created)))
-				).flatten,
+				Some(doiDate(dobj.submission.start, DateType.Submitted)),
+				tempCoverageDate(dobj),
+				dobj.submission.stop.map(s => doiDate(s, DateType.Issued)),
+				dobj.production.map(p => doiDate(p.dateTime, DateType.Created))
+			).flatten,
 			formats = Seq(),
 			version = Some(Version(1, 0)),
-			rightsList = Option(dobj.references.licence.fold(Seq(ccby4))(lic => Seq(Rights(lic.name, Some(lic.url.toString))))),
-			descriptions = dobj.specificInfo match {
-				case Left(l3) => l3.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
-				case Right(_) => Seq()
-			},
-			geoLocations = dobj.coverage.flatMap(cov => Some(DoiGeoLocationConverter.toDoiGeoLocation(cov))),
+			rightsList = Some(Seq(licence)),
+			descriptions =
+				dobj.specificInfo.left.toSeq.flatMap(_.description).map(d => Description(d, DescriptionType.Abstract, None)) ++
+				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
+			geoLocations = dobj.coverage.map(DoiGeoLocationConverter.toDoiGeoLocation),
 			fundingReferences = Option(
 				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
 		)
 	}
+
+	def takeDate(ts: Instant): String = ts.toString.take(10)
+	def doiDate(ts: Instant, dtype: DateType) = Date(takeDate(ts), Some(dtype))
+
+	def tempCoverageDate(dobj: DataObject): Option[Date] =
+		for
+			acq <- dobj.acquisition;
+			interval <- acq.interval
+		yield
+			val dateStr = takeDate(interval.start) + "/" + takeDate(interval.stop)
+			Date(dateStr, Some(DateType.Collected))
+
 
 	def makeDocObjectDoi(doc: DocObject)(implicit envri: Envri) = DoiMeta(
 		doi = client.doi(CoolDoi.makeRandom),
@@ -134,9 +148,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(),
 			contributors = Seq(),
-			dates = Seq(
-				Date(java.time.Instant.now.toString.take(10), Some(DateType.Issued))
-			),
+			dates = Seq(doiDate(Instant.now, DateType.Issued)),
 			formats = Seq(),
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
@@ -178,10 +190,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			)
 	}
 
-	def toDoiContributor(p: Person) = {
-		val creator = toDoiCreator(p)
-		Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, None)
-	}
+	def toDoiContributor(agent: Agent) = toDoiCreator(agent).toContributor()
 
 	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[StaticObject] = coll.members.flatMap{
 		case plain: PlainStaticObject => fetcher.fetchStaticObject(Uri(plain.res.toString))
@@ -189,3 +198,7 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 	}
 
 }
+
+extension (creator: Creator)
+	def toContributor(contrType: Option[ContributorType] = None) =
+		Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, contrType)

@@ -56,7 +56,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 				contributorPi(meta.pi, Seq(meta.station))
 			) ++ etcPeople,
 			dates = Seq(
-				Date(meta.creationDate.toString.take(10), DateType.Created)
+				Date(meta.creationDate.toString.take(10), Some(DateType.Created))
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(1, minorVersion)),
@@ -89,7 +89,7 @@ class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map
 			),
 			contributors = ???,//((etcContrib +: piContribs) ++ etcPeople).distinct,
 			dates = Seq(
-				Date(Instant.now.toString.take(10), DateType.Issued)
+				Date(Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq("Collection of FLUXNET product ZIP archives"),
 			version = Some(Version(1, 1)),
@@ -119,16 +119,16 @@ object DroughtDoiMaker{
 
 	def creatorStation(longName: String, id: StationId) = Creator(
 		name = GenericName(longName),
-		nameIdentifiers = Seq(NameIdentifier(id.id, NameIdentifierScheme.Fluxnet)),
+		nameIdentifiers = Seq(NameIdentifier(id.id, NameIdentifierScheme.FLUXNET)),
 		affiliation = Nil
 	)
 
-	def contributorStation(longName: String, id: StationId, typ: ContributorType.Value): Contributor = {
+	def contributorStation(longName: String, id: StationId, typ: ContributorType): Contributor = {
 		val cr = creatorStation(longName, id)
 		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(typ))
 	}
 
-	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) = ???
+	private def etcPerson(fname: String, lname: String, typ: ContributorType) = ???
 		//Contributor(PersonalName(fname, lname), Nil, Seq(etc.name), Some(typ))
 
 	val etcPeople: Seq[Contributor] = Seq(

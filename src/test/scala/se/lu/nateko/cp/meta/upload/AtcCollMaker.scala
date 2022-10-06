@@ -77,14 +77,14 @@ object AtcCollMaker{
 		case (name, cType) => Contributor(GenericName(name), Nil, Nil, Some(cType))
 	}
 
-	val icosRiCreator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.Ror)), Nil)
+	val icosRiCreator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.ROR)), Nil)
 
 	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, samples: Seq[DataObject]): DoiMeta = {
 		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.collect{ _ match {
 			case pers: Person =>
 				Creator(
 					name = PersonalName(pers.firstName, pers.lastName),
-					nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.Orcid)).toSeq,
+					nameIdentifiers = pers.orcid.map(orc => NameIdentifier(orc.shortId, NameIdentifierScheme.ORCID)).toSeq,
 					affiliation = Nil
 				)
 			}
@@ -102,7 +102,7 @@ object AtcCollMaker{
 			),
 			contributors = contributors,
 			dates = Seq(
-				Date(java.time.Instant.now.toString.take(10), DateType.Issued)
+				Date(java.time.Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq("Collection of ICOS ATC ASCII files"),
 			version = Some(Version(1, 0)),

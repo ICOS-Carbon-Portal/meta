@@ -222,14 +222,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getFundingAcknowledgements(dobj: DataObject): Seq[String] = dobj.specificInfo match{
 		case Right(l2) =>
 			val acq = l2.acquisition
-			acq.station.funding.toSeq.flatten.filter{funding =>
-				funding.start.fold(true){
-					fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
-				} &&
-				funding.stop.fold(true){
-					fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
-				}
-			}.map{funding =>
+
+			CitationMaker.getFundingObjects(acq).map{funding =>
 				val grantTitle = List(funding.awardTitle, funding.awardNumber).flatten match{
 					case only :: Nil => s" $only"
 					case title :: number :: Nil => s" $title ($number)"
@@ -281,6 +275,17 @@ object CitationMaker{
 			Some(CpVocab.CCBY4)
 		)
 	)
+
+	def getFundingObjects(acq: DataAcquisition) = {
+		acq.station.funding.toSeq.flatten.filter{funding =>
+			funding.start.fold(true){
+				fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
+			} &&
+			funding.stop.fold(true){
+				fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
+			}
+		}
+	}
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
 		l3 => Some(getTimeFromInterval(l3.temporal.interval, zoneId)),

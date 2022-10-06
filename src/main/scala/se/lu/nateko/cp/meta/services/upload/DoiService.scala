@@ -19,7 +19,6 @@ import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.core.data.Agent
-import se.lu.nateko.cp.meta.core.data.BoxConvertable
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.DocObject
@@ -27,12 +26,9 @@ import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.FunderIdType
 import se.lu.nateko.cp.meta.core.data.Funding
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -86,32 +82,28 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
 			publicationYear = Some(Year.now.getValue),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Dataset))),
-			subjects = Seq(),
+			subjects = dobj.keywords.fold(Seq())(keywords => keywords.map(keyword => Subject(keyword))),
 			contributors = dobj.specificInfo.fold(
 				l3 => l3.productionInfo.contributors.map{
-					case p:Person => toDoiContributor(p)
+					case p: Person => toDoiContributor(p)
 					case Organization(_, name, _, _) => Contributor(GenericName(name), Seq(), Seq(), None)
 				},
 				_ => Seq()
 			),
 			dates = Seq(
-				Some(Date(dobj.submission.start.toString.take(10), Some(DateType.Issued))),
-				dobj.references.temporalCoverageDisplay.map(cov =>
-					Date(cov.replace("–", "/"), Some(DateType.Collected))
-				),
-				dobj.submission.stop.map(s => Date(s.toString.take(10), Some(DateType.Submitted))),
-				dobj.specificInfo match {
-					case Left(s) => Some(Date(s.productionInfo.dateTime.toString.take(10), Some(DateType.Created)))
-					case Right(s) => s.productionInfo.map(prod => Date(prod.dateTime.toString.take(10), Some(DateType.Created)))
-				}).flatten,
+				Some(Date(dobj.submission.start.toString.take(10), Some(DateType.Submitted))),
+				dobj.acquisition.flatMap(acq => acq.interval.map(i => Date(i.start.toString.take(10) + "/" + i.stop.toString.take(10), Some(DateType.Collected)))),				
+				dobj.submission.stop.map(s => Date(s.toString.take(10), Some(DateType.Issued))),
+				dobj.production.map(p => Date(p.dateTime.toString.take(10), Some(DateType.Created)))
+				).flatten,
 			formats = Seq(),
 			version = Some(Version(1, 0)),
-			rightsList = Some(Seq(ccby4)),
+			rightsList = Option(dobj.references.licence.fold(Seq(ccby4))(lic => Seq(Rights(lic.name, Some(lic.url.toString))))),
 			descriptions = dobj.specificInfo match {
 				case Left(l3) => l3.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 				case Right(_) => Seq()
 			},
-			geoLocations = dobj.acquisition.flatMap(acq => acq.coverage.fold(None)(cov => Some(toDoiGeoLocation(cov)))),
+			geoLocations = dobj.coverage.flatMap(cov => Some(DoiGeoLocationConverter.toDoiGeoLocation(cov))),
 			fundingReferences = Option(
 				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
@@ -151,27 +143,6 @@ class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: Exec
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
 		)
 	}
-
-	def toDoiGeoLocationWithPoint(pos: Position): GeoLocation =
-		GeoLocation(Some(
-			GeoLocationPoint(Some(Longitude(pos.lon)), Some(Latitude(pos.lat)))
-		), None, pos.label)
-
-	def toDoiGeoLocationWithBox(box: LatLonBox): GeoLocation =
-		GeoLocation(None, Some(
-			GeoLocationBox(
-				Some(Longitude(box.min.lon)), Some(Longitude(box.max.lon)), 
-				Some(Latitude(box.min.lat)), Some(Latitude(box.max.lat))
-			)), box.label
-		)
-
-	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
-		geoCoverage match {
-			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
-			case b: LatLonBox => Seq(toDoiGeoLocationWithBox(b))
-			case shape: BoxConvertable => Seq(toDoiGeoLocationWithBox(shape.asBox))
-			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
-		}
 
 	def toFundingReference(funding: Funding) = {
 		val funderIdentifier = funding.funder.id.flatMap((s, idType) => {

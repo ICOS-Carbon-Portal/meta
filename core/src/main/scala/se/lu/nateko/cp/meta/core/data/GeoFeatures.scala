@@ -10,20 +10,6 @@ sealed trait GeoFeature{
 	def withLabel(label: String): GeoFeature = withOptLabel(Some(label))
 }
 
-sealed trait BoxConvertable(shape: Seq[Position] = Seq(), label: Option[String]){ 
-	def asBox = {
-		val latitudes = shape.map(_.lat)
-		val longitudes = shape.map(_.lon)
-
-		LatLonBox(
-			Position(latitudes.min, longitudes.min, None, None),
-			Position(latitudes.max, longitudes.max, None, None),
-			label,
-			None
-		)
-	}
-}
-
 case class FeatureCollection(features: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
 	def textSpecification = features.map(_.textSpecification).mkString("Geometries: ", "; ", "")
 
@@ -89,7 +75,7 @@ case class LatLonBox(min: Position, max: Position, label: Option[String], uri: O
 	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
-case class GeoTrack(points: Seq[Position], label: Option[String]) extends GeoFeature with BoxConvertable(points, label){
+case class GeoTrack(points: Seq[Position], label: Option[String]) extends GeoFeature{
 
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
@@ -97,32 +83,14 @@ case class GeoTrack(points: Seq[Position], label: Option[String]) extends GeoFea
 
 }
 
-case class Polygon(vertices: Seq[Position], label: Option[String]) extends GeoFeature with BoxConvertable(vertices, label){
+case class Polygon(vertices: Seq[Position], label: Option[String]) extends GeoFeature{
 
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
 	def withOptLabel(label: Option[String]): GeoFeature = copy(label = label)
 }
 
-case class Circle(center: Position, radius: Float, label: Option[String]) extends GeoFeature with BoxConvertable(label = label){
-
-	override def asBox = {
-		val metersPerDegree = 111111
-		val latRadius = radius / metersPerDegree
-		val factor = Math.cos(center.lat.toRadians)
-
-		val maxLat = center.lat + latRadius
-		val minLat = center.lat - latRadius
-		val maxLon = center.lon + latRadius / factor
-		val minLon = center.lon - latRadius / factor
-
-		LatLonBox(
-			Position(minLat, minLon, center.alt, None),
-			Position(maxLat, maxLon, center.alt, None),
-			label,
-			None
-		)
-	}
+case class Circle(center: Position, radius: Float, label: Option[String]) extends GeoFeature{
 
 	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
 

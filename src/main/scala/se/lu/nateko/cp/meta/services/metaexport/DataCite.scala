@@ -27,10 +27,18 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
 
 	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
+
 	def getPlainContributors(dobj: DataObject) = dobj.specificInfo.fold(
 			l3 => l3.productionInfo.contributors.map(toDoiContributor),
 			_ => Seq()
 		)
+
+	def getContributors(dobj: DataObject) = (getCreators(dobj).map(_.toContributor()) ++ getPlainContributors(dobj)).distinct
+
+	def getFormat(obj: StaticObject) = obj match {
+		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
+		case docObj: DocObject => docObj.fileName.split(".").lastOption
+	}
 
 	def makeDataObjectDoi(dobj: DataObject): DoiMeta = {
 		val licence: Rights = dobj.references.licence.fold(ccby4)(lic => Rights(lic.name, Some(lic.url.toString)))
@@ -44,14 +52,14 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			publicationYear = Some(pubYear),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Dataset))),
 			subjects = dobj.keywords.getOrElse(Nil).map(keyword => Subject(keyword)),
-			contributors = (getCreators(dobj).map(_.toContributor()) ++ getPlainContributors(dobj)).distinct,
+			contributors = getContributors(dobj),
 			dates = Seq(
 				Some(doiDate(dobj.submission.start, DateType.Submitted)),
 				tempCoverageDate(dobj),
 				dobj.submission.stop.map(s => doiDate(s, DateType.Issued)),
 				dobj.production.map(p => doiDate(p.dateTime, DateType.Created))
 			).flatten,
-			formats = Seq(dobj.specification.format.label.getOrElse(dobj.specification.format.uri.toString)),
+			formats = Seq(getFormat(dobj)).flatten,
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(licence)),
 			descriptions =
@@ -87,6 +95,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			Some(doiDate(doc.submission.start, DateType.Submitted)),
 			doc.submission.stop.map(s => doiDate(s, DateType.Issued))
 		).flatten,
+		formats = Seq(getFormat(doc)).flatten,
 		rightsList = Some(Seq(cc0)),
 	)
 
@@ -123,9 +132,9 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			publicationYear = Some(Year.now.getValue),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Collection))),
 			subjects = subjects,
-			contributors = (creators.map(_.toContributor()) ++ dataObjs.flatMap(getPlainContributors)).distinct,
+			contributors = dataObjs.flatMap(getContributors),
 			dates = Seq(doiDate(Instant.now, DateType.Issued)),
-			formats = dataObjs.map(d => d.specification.format.label.getOrElse(d.specification.format.uri.toString)).distinct,
+			formats = collObjects.flatMap(getFormat).distinct,
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,

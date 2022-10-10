@@ -19,7 +19,6 @@ import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 
 import java.time.Instant
 import java.time.Year
-import javax.xml.crypto.Data
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Seq[StaticObject]) {
@@ -27,31 +26,32 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
 	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
 
-	def makeDataObjectDoi(dobj: DataObject): DoiMeta = {
-		val creators = dobj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
-		val plainContributors = dobj.specificInfo.fold(
+	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
+	def getPlainContributors(dobj: DataObject) = dobj.specificInfo.fold(
 			l3 => l3.productionInfo.contributors.map(toDoiContributor),
 			_ => Seq()
 		)
+
+	def makeDataObjectDoi(dobj: DataObject): DoiMeta = {
 		val licence: Rights = dobj.references.licence.fold(ccby4)(lic => Rights(lic.name, Some(lic.url.toString)))
 		val pubYear = dobj.submission.stop.getOrElse(dobj.submission.start).toString.take(4).toInt
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
-			creators = creators,
+			creators = getCreators(dobj),
 			titles = dobj.references.title.map(t => Seq(Title(t, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
 			publicationYear = Some(pubYear),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Dataset))),
 			subjects = dobj.keywords.getOrElse(Nil).map(keyword => Subject(keyword)),
-			contributors = (creators.map(_.toContributor()) ++ plainContributors).distinct,
+			contributors = (getCreators(dobj).map(_.toContributor()) ++ getPlainContributors(dobj)).distinct,
 			dates = Seq(
 				Some(doiDate(dobj.submission.start, DateType.Submitted)),
 				tempCoverageDate(dobj),
 				dobj.submission.stop.map(s => doiDate(s, DateType.Issued)),
 				dobj.production.map(p => doiDate(p.dateTime, DateType.Created))
 			).flatten,
-			formats = Seq(),
+			formats = Seq(dobj.specification.format.label.getOrElse(dobj.specification.format.uri.toString)),
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(licence)),
 			descriptions =
@@ -82,7 +82,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		publisher = Some("ICOS ERIC -- Carbon Portal"),
 		publicationYear = Some(Year.now.getValue),
 		descriptions = doc.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
-		creators = doc.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator)),
+		creators = getCreators(doc),
 		dates = Seq(
 			Some(doiDate(doc.submission.start, DateType.Submitted)),
 			doc.submission.stop.map(s => doiDate(s, DateType.Issued))
@@ -97,9 +97,13 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.collect{ case dobj: DataObject => dobj}
 
 		val creators = collObjects
-			.flatMap(_.references.authors.getOrElse(Nil))
+			.flatMap(getCreators)
 			.distinct
-			.map(toDoiCreator)
+
+		val subjects = dataObjs
+			.flatMap(_.keywords.getOrElse(Nil))
+			.distinct
+			.map(keyword => Subject(keyword))
 
 		val funders = dataObjs
 			.flatMap(CitationMaker.getFundingObjects)
@@ -118,10 +122,10 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
 			publicationYear = Some(Year.now.getValue),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Collection))),
-			subjects = Seq(),
-			contributors = Seq(),
+			subjects = subjects,
+			contributors = (creators.map(_.toContributor()) ++ dataObjs.flatMap(getPlainContributors)).distinct,
 			dates = Seq(doiDate(Instant.now, DateType.Issued)),
-			formats = Seq(),
+			formats = dataObjs.map(d => d.specification.format.label.getOrElse(d.specification.format.uri.toString)).distinct,
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,

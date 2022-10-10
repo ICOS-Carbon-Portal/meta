@@ -19,11 +19,13 @@ import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 
 import java.time.Instant
 import java.time.Year
+import javax.xml.crypto.Data
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Seq[StaticObject]) {
 
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
+	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
 
 	def makeDataObjectDoi(dobj: DataObject): DoiMeta = {
 		val creators = dobj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
@@ -84,14 +86,31 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		dates = Seq(
 			Some(doiDate(doc.submission.start, DateType.Submitted)),
 			doc.submission.stop.map(s => doiDate(s, DateType.Issued))
-		).flatten
+		).flatten,
+		rightsList = Some(Seq(cc0)),
 	)
 
+	def getDataObjectProperties[T](collObjects: Seq[StaticObject], getProperties: DataObject => Iterable[T]): Seq[T] =
+		collObjects.flatMap(_ match {
+			case dobj: DataObject => getProperties(dobj)
+			case doc: DocObject => Nil
+		}).distinct
+
 	def makeCollectionDoi(coll: StaticCollection): DoiMeta = {
-		val creators = fetchCollObjectsRecursively(coll)
+		val collObjects = fetchCollObjectsRecursively(coll)
+
+		val creators = collObjects
 			.flatMap(_.references.authors.getOrElse(Nil))
 			.distinct
 			.map(toDoiCreator)
+		
+		val funders = getDataObjectProperties[FundingReference](collObjects, dobj =>
+			CitationMaker.getFundingObjects(dobj).map(toFundingReference)
+		)
+
+		val geoLocations = getDataObjectProperties[GeoLocation](collObjects, dobj =>
+			dobj.coverage.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
+		)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
@@ -106,7 +125,9 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			formats = Seq(),
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
-			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq
+			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
+			fundingReferences = Option(funders),
+			geoLocations = Option(geoLocations)
 		)
 	}
 

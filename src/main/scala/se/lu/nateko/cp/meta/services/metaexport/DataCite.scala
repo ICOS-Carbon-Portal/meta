@@ -90,27 +90,26 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		rightsList = Some(Seq(cc0)),
 	)
 
-	def getDataObjectProperties[T](collObjects: Seq[StaticObject], getProperties: DataObject => Iterable[T]): Seq[T] =
-		collObjects.flatMap(_ match {
-			case dobj: DataObject => getProperties(dobj)
-			case doc: DocObject => Nil
-		}).distinct
-
 	def makeCollectionDoi(coll: StaticCollection): DoiMeta = {
 		val collObjects = fetchCollObjectsRecursively(coll)
+
+		val dataObjs = collObjects
+			.collect{ case dobj: DataObject => dobj}
 
 		val creators = collObjects
 			.flatMap(_.references.authors.getOrElse(Nil))
 			.distinct
 			.map(toDoiCreator)
-		
-		val funders = getDataObjectProperties[FundingReference](collObjects, dobj =>
-			CitationMaker.getFundingObjects(dobj).map(toFundingReference)
-		)
 
-		val geoLocations = getDataObjectProperties[GeoLocation](collObjects, dobj =>
-			dobj.coverage.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
-		)
+		val funders = dataObjs
+			.flatMap(CitationMaker.getFundingObjects)
+			.distinct
+			.map(toFundingReference)
+
+		val geoLocations = dataObjs
+			.flatMap(_.coverage)
+			.distinct
+			.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
@@ -126,8 +125,8 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
-			fundingReferences = Option(funders),
-			geoLocations = Option(geoLocations)
+			fundingReferences = Option(funders).filterNot(_.isEmpty),
+			geoLocations = Option(geoLocations).filterNot(_.isEmpty)
 		)
 	}
 

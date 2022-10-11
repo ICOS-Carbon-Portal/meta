@@ -1,5 +1,27 @@
 package se.lu.nateko.cp.meta.api
 
+import akka.Done
+import akka.actor.ActorSystem
+import akka.http.scaladsl.ConnectionContext
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.HttpMethods
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.RequestEntity
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.Materializer
+import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import se.lu.nateko.cp.meta.HandleNetClientConfig
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.utils.akkahttp.*
+import se.lu.nateko.cp.meta.utils.async.*
+
 import java.io.FileInputStream
 import java.net.URL
 import java.nio.file.Files
@@ -13,35 +35,16 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
-
-import scala.concurrent.Future
-import com.typesafe.sslconfig.akka.AkkaSSLConfig
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.ConnectionContext
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.Materializer
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
-import se.lu.nateko.cp.meta.HandleNetClientConfig
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.utils.async.*
-import se.lu.nateko.cp.meta.utils.akkahttp.*
-import se.lu.nateko.cp.meta.core.data.Envri
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
-class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem, mat: Materializer){
+class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, mat: Materializer){
 	import HandleNetClient.*
 	import system.dispatcher
+
 	private val http = Http()
 	val pidFactory = new PidFactory(conf)
 	private lazy val httpsCtxt = {
@@ -77,23 +80,24 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		ConnectionContext.httpsClient(sslCtxt)
 	}
 
-	private val authHeaders = RawHeader("Authorization", "Handle clientCert=\"true\"") :: Nil
+	private val authHeader = RawHeader("Authorization", "Handle clientCert=\"true\"")
+
+	def hdlRequest(req: HttpRequest): Future[HttpResponse] =
+		val request = req.withHeaders(authHeader, req.headers*)
+		timeLimit(http.singleRequest(request, httpsCtxt), 6.seconds, system.scheduler)
 
 	def list(using Envri): Future[Seq[String]] = {
 		val uriStr = s"${conf.baseUrl}api/handles?prefix=${pidFactory.prefix}"
 
-		http.singleRequest(
-			HttpRequest(uri = Uri(uriStr), headers = authHeaders),
-			httpsCtxt
-		).flatMap(parseIfOk("listing PIDs"){
-			Unmarshal(_).to[HandleList].map(_.handles)
-		})
+		hdlRequest(HttpRequest(uri = Uri(uriStr)))
+			.flatMap(parseIfOk("listing PIDs"){
+				Unmarshal(_).to[HandleList].map(_.handles)
+			})
 	}
 
 	def get(suffix: String)(using Envri): Future[URL] = {
-		http.singleRequest(
-			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix)), headers = authHeaders),
-			httpsCtxt
+		hdlRequest(
+			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix))),
 		).flatMap(
 			parseIfOk(s"Getting PID for $suffix"){
 				Unmarshal(_).to[HandleValues].flatMap{hvs =>
@@ -123,21 +127,19 @@ class HandleNetClient(conf: HandleNetClientConfig)(implicit system: ActorSystem,
 		Marshal(payload).to[RequestEntity].flatMap{entity =>
 			val req = HttpRequest(
 				uri = Uri(pidFactory.pidUrlStr(suffix) + "?overwrite=true"),
-				headers = authHeaders,
 				method = HttpMethods.PUT,
 				entity = entity
 			)
-			http.singleRequest(req, httpsCtxt).flatMap(responseToDone(s"Creating PID for $suffix"))
+			hdlRequest(req).flatMap(responseToDone(s"Creating PID for $suffix"))
 		}
 	}
 
 	def delete(suffix: String)(using Envri): Future[Done] = if(conf.dryRun) ok else {
 		val req = HttpRequest(
 			uri = Uri(pidFactory.pidUrlStr(suffix)),
-			headers = authHeaders,
 			method = HttpMethods.DELETE
 		)
-		http.singleRequest(req, httpsCtxt).flatMap(responseToDone(s"Deleting sufix $suffix"))
+		hdlRequest(req).flatMap(responseToDone(s"Deleting sufix $suffix"))
 	}
 
 }

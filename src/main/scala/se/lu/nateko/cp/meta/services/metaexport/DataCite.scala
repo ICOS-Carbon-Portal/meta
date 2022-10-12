@@ -35,7 +35,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 
 	def getContributors(dobj: DataObject) = (getCreators(dobj).map(_.toContributor()) ++ getPlainContributors(dobj)).distinct
 
-	def getFormat(obj: StaticObject) = obj match {
+	def getFormat(obj: StaticObject): Option[String] = obj match {
 		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
 		case docObj: DocObject => docObj.fileName.split(".").lastOption
 	}
@@ -59,7 +59,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 				dobj.submission.stop.map(s => doiDate(s, DateType.Issued)),
 				dobj.production.map(p => doiDate(p.dateTime, DateType.Created))
 			).flatten,
-			formats = Seq(getFormat(dobj)).flatten,
+			formats = getFormat(dobj).toSeq,
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(licence)),
 			descriptions =
@@ -95,7 +95,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			Some(doiDate(doc.submission.start, DateType.Submitted)),
 			doc.submission.stop.map(s => doiDate(s, DateType.Issued))
 		).flatten,
-		formats = Seq(getFormat(doc)).flatten,
+		formats = getFormat(doc).toSeq,
 		rightsList = Some(Seq(cc0)),
 	)
 

@@ -61,7 +61,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 					etcContrib
 				) ++ etcPeople,
 			dates = Seq(
-				Date(meta.creationDate.toString, DateType.Created)
+				Date(meta.creationDate.toString, Some(DateType.Created))
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(majorVersion, 0)),
@@ -94,7 +94,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 					atcContrib
 				) ++ atcPeople,
 			dates = Seq(
-				Date(meta.creationDate.toString, DateType.Created)
+				Date(meta.creationDate.toString, Some(DateType.Created))
 			),
 			formats = Seq("ZIP archive with ASCII CSV files"),
 			version = Some(Version(1, 0)),
@@ -126,7 +126,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			contributors = ((etcContrib +: contribs) ++ etcPeople).distinct,
 			dates = Seq(
-				Date(Instant.now.toString.take(10), DateType.Issued)
+				Date(Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq("Collection of FLUXNET product ZIP archives"),
 			version = Some(Version(1, 0)),
@@ -154,7 +154,7 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 			),
 			contributors = ((atcContrib +: contribs) ++ atcPeople).distinct,
 			dates = Seq(
-				Date(Instant.now.toString.take(10), DateType.Issued)
+				Date(Instant.now.toString.take(10), Some(DateType.Issued))
 			),
 			formats = Seq("Collection of ICOS ATC ASCII files"),
 			version = Some(Version(1, 0)),
@@ -170,7 +170,7 @@ object DroughtDoiMaker2{
 
 	def creatorPerson(p: PersonEntry) = Creator(
 		name = PersonalName(p.firstName, p.lastName),
-		nameIdentifiers = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.Orcid)),
+		nameIdentifiers = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.ORCID)),
 		affiliation = ???//Seq(p.affiliation.name)
 	)
 
@@ -181,20 +181,20 @@ object DroughtDoiMaker2{
 
 	def creatorStation(longName: String, stationId: String) = Creator(
 		name = GenericName(longName),
-		nameIdentifiers = Seq(NameIdentifier(stationId, NameIdentifierScheme.Fluxnet)),
+		nameIdentifiers = Seq(NameIdentifier(stationId, NameIdentifierScheme.FLUXNET)),
 		affiliation = Nil
 	)
 
-	def contributorStation(longName: String, stationId: String, typ: ContributorType.Value): Contributor = {
+	def contributorStation(longName: String, stationId: String, typ: ContributorType): Contributor = {
 		val cr = creatorStation(longName, stationId)
 		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(typ))
 	}
 
-	private def tcPerson(fname: String, lname: String, typ: ContributorType.Value, tc: GenericName) =
+	private def tcPerson(fname: String, lname: String, typ: ContributorType, tc: GenericName) =
 		Contributor(PersonalName(fname, lname), Nil, ???/*Seq(tc.name)*/, Some(typ))
 
-	private def atcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, atc)
-	private def etcPerson(fname: String, lname: String, typ: ContributorType.Value) = tcPerson(fname, lname, typ, etc)
+	private def atcPerson(fname: String, lname: String, typ: ContributorType) = tcPerson(fname, lname, typ, atc)
+	private def etcPerson(fname: String, lname: String, typ: ContributorType) = tcPerson(fname, lname, typ, etc)
 
 	val atcPeople: Seq[Contributor] = Seq(
 		atcPerson("Lynn", "Hazan", ContributorType.Producer)

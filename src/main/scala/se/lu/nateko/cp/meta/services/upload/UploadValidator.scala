@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import java.net.URI
+import java.util.Date
 
 import scala.util.Failure
 import scala.util.Success
@@ -34,6 +35,9 @@ import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.core.data.DatasetClass
+import java.time.Instant
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.eclipse.rdf4j.model.IRI
 
 class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
@@ -55,7 +59,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateForFormat(meta, spec, submConf);
 		_ <- validatePrevVers(meta, getInstServer(spec));
 		_ <- validateLicence(meta, getInstServer(spec));
-		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf)
+		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf);
+		_ <- validateURI(meta, getInstServer(spec));
+		_ <- validateTemporalCoverage(meta)
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
@@ -175,6 +181,37 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				s"User is not authorized to upload on behalf of producer '$producer'"
 			)
 		}
+	}
+
+	private def validateURI(meta: DataObjectDto, getInstServ: => Try[InstanceServer]) = {
+		getInstServ.flatMap{inServer =>
+			val metaVocab = new CpmetaVocab(inServer.factory)
+
+			def isOrg(iri: IRI) = inServer.hasStatement(Some(iri), Some(metaVocab.hasName), None)
+			def isPerson(iri: IRI) = inServer.hasStatement(Some(iri), Some(RDF.TYPE), Some(metaVocab.personClass))
+
+			def validate(creator: URI) =
+				val creatorIRI = inServer.factory.createIRI(creator)
+				if(isOrg(creatorIRI) || isPerson(creatorIRI)) ok else userFail("Invalid creator URL")
+
+			meta.specificInfo.match {
+				case Left(spTempMeta) => validate(spTempMeta.production.creator)
+				case Right(stationMeta) => stationMeta.production.fold(ok)(prod => validate(prod.creator))
+			}
+		}
+	}
+
+	private def validateTemporalCoverage(meta: DataObjectDto): Try[NotUsed] = {
+		def validate(interval: TimeInterval) =
+			val now = Instant.now()
+			if (now.compareTo(interval.start) < 0 || now.compareTo(interval.stop) < 0) userFail("Future dates not allowed in interval")
+			else if (interval.start.compareTo(interval.stop) > 0) userFail("Start date must come before end date in interval")
+			else userFail("Placeholder")
+
+		meta.specificInfo.match {
+			case Left(spTempMeta) => Some(validate(spTempMeta.temporal.interval))
+			case Right(stationMeta) => Some(stationMeta.acquisitionInterval.fold(ok)(validate))
+		}.getOrElse(ok)
 	}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(implicit envri: Envri): Try[NotUsed] = {

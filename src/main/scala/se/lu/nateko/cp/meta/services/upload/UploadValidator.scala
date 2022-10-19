@@ -45,35 +45,35 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 	private val ok: Try[NotUsed] = Success(NotUsed)
 
-	def validateObject(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = meta match {
+	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[NotUsed] = meta match
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)
 		case doc: DocObjectDto => validateDoc(doc, uploader)
-	}
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
+
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
-		_ <- validatePrevVers(meta, getInstServer(spec));
-		_ <- validateLicence(meta, getInstServer(spec));
-		_ <- growingIsGrowing(meta, spec, getInstServer(spec), submConf);
-		_ <- validateURI(meta, getInstServer(spec));
-		_ <- validateTemporalCoverage(meta)
+		instServer <- servers.getInstServerForFormat(spec.format.uri.toRdf);
+		_ <- validatePrevVers(meta, instServer);
+		_ <- validateLicence(meta, instServer);
+		_ <- growingIsGrowing(meta, spec, instServer, submConf);
+		_ <- validateCreator(meta, instServer);
+		_ <- validateTemporalCoverage(meta, spec)
 	) yield NotUsed
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
-		_ <- validatePrevVers(meta, servers.getDocInstServer)
+		instServer <- servers.getDocInstServer;
+		_ <- validatePrevVers(meta, instServer)
 	) yield NotUsed
 
-	private def getInstServer(spec: DataObjectSpec)(implicit envri: Envri): Try[InstanceServer] =
-		servers.getInstServerForFormat(spec.format.uri.toRdf)
 
-	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(implicit envri: Envri): Try[NotUsed] = for(
+	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
 		submConf <- getSubmitterConfig(coll);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
@@ -81,20 +81,19 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
 	) yield NotUsed
 
-	def getSubmitterConfig(dto: UploadDto)(implicit envri: Envri): Try[DataSubmitterConfig] = {
-		ConfigLoader.submittersConfig.submitters(envri).get(dto.submitterId) match {
+	def getSubmitterConfig(dto: UploadDto)(using envri: Envri): Try[DataSubmitterConfig] =
+		ConfigLoader.submittersConfig.submitters(envri).get(dto.submitterId) match
 			case None => userFail(s"Unknown submitter: ${dto.submitterId}")
 			case Some(conf) => Success(conf)
-		}
-	}
 
-	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+
+	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): Try[NotUsed] =
 		objectKindSameIfNotNew(dto).flatMap(_ => dto match {
 			case dobj: DataObjectDto => submitterAndFormatAreSameIfObjectNotNew(dobj, submittingOrg)
 			case _: DocObjectDto => submitterIsSameIfObjNotNew(dto, submittingOrg)
 		})
 
-	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(implicit envri: Envri): Try[NotUsed] = dto match{
+	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(using Envri): Try[NotUsed] = dto match{
 		case _: DataObjectDto =>
 			if(servers.isExistingDocument(dto.hashSum))
 				userFail("Cannot accept data object upload as there is already a document object with id " + dto.hashSum.id)
@@ -105,7 +104,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			else Success(NotUsed)
 	}
 
-	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] = {
+	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(using Envri): Try[NotUsed] = {
 		val formatValidation: Try[NotUsed] = (
 			for(
 				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
@@ -119,7 +118,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		formatValidation.flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
 	}
 
-	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(implicit envri: Envri): Try[NotUsed] =
+	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): Try[NotUsed] =
 		servers.getObjSubmitter(dto).map{subm =>
 			if(subm === submittingOrg) ok else authFail(
 				s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
@@ -141,7 +140,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		else ok
 	}
 
-	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(implicit envri: Envri): Try[NotUsed] =
+	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(using Envri): Try[NotUsed] =
 		servers.getCollectionCreator(coll).map{creator =>
 			if(creator === submConf.submittingOrganization)
 				ok
@@ -150,7 +149,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}")
 		}.getOrElse(ok)
 
-	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(implicit envri: Envri): Try[NotUsed] = {
+	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(using Envri): Try[NotUsed] = {
 
 		if(!servers.collectionExists(hash) && coll.members.isEmpty)
 			userFail("Creating empty static collections is not allowed")
@@ -163,7 +162,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			}
 	}
 
-	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig)(implicit envri: Envri): Try[Unit] = Try{
+	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig)(using envri: Envri): Try[Unit] = Try{
 		val producer = meta.specificInfo.fold(
 			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
 			_.station
@@ -183,38 +182,36 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 	}
 
-	private def validateURI(meta: DataObjectDto, getInstServ: => Try[InstanceServer]) = {
-		getInstServ.flatMap{inServer =>
-			val metaVocab = new CpmetaVocab(inServer.factory)
+	private def validateCreator(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
 
-			def isOrg(iri: IRI) = inServer.hasStatement(Some(iri), Some(metaVocab.hasName), None)
-			def isPerson(iri: IRI) = inServer.hasStatement(Some(iri), Some(RDF.TYPE), Some(metaVocab.personClass))
+		def isOrg(iri: IRI) = instServ.hasStatement(Some(iri), Some(metaVocab.hasName), None)
+		def isPerson(iri: IRI) = instServ.hasStatement(Some(iri), Some(RDF.TYPE), Some(metaVocab.personClass))
 
-			def validate(creator: URI) =
-				val creatorIRI = inServer.factory.createIRI(creator)
-				if(isOrg(creatorIRI) || isPerson(creatorIRI)) ok else userFail("Invalid creator URL")
+		def validate(creator: URI) =
+			val creatorIRI = instServ.factory.createIRI(creator)
+			if(isOrg(creatorIRI) || isPerson(creatorIRI)) ok else userFail("Invalid creator URL")
 
-			meta.specificInfo.match {
-				case Left(spTempMeta) => validate(spTempMeta.production.creator)
-				case Right(stationMeta) => stationMeta.production.fold(ok)(prod => validate(prod.creator))
-			}
-		}
-	}
+		meta.specificInfo match
+			case Left(spTempMeta) => validate(spTempMeta.production.creator)
+			case Right(stationMeta) => stationMeta.production.fold(ok)(prod => validate(prod.creator))
 
-	private def validateTemporalCoverage(meta: DataObjectDto): Try[NotUsed] = {
-		def validate(interval: TimeInterval) =
+
+	private def validateTemporalCoverage(meta: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
+
+		def validate(interval: TimeInterval): Try[NotUsed] =
 			val now = Instant.now()
-			if (now.compareTo(interval.start) < 0 || now.compareTo(interval.stop) < 0) userFail("Future dates not allowed in interval")
-			else if (interval.start.compareTo(interval.stop) > 0) userFail("Start date must come before end date in interval")
-			else userFail("Placeholder")
+			if now.compareTo(interval.start) < 0 || now.compareTo(interval.stop) < 0 then
+				userFail("Temporal coverage cannot extend into the future")
+			else if interval.start.compareTo(interval.stop) > 0 then
+				userFail("Start date must come before end date in temporal coverage")
+			else ok
 
-		meta.specificInfo.match {
-			case Left(spTempMeta) => Some(validate(spTempMeta.temporal.interval))
-			case Right(stationMeta) => Some(stationMeta.acquisitionInterval.fold(ok)(validate))
-		}.getOrElse(ok)
-	}
+		if spec.dataLevel >= 3 then ok else meta.specificInfo match
+			case Left(spTempMeta) => validate(spTempMeta.temporal.interval)
+			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
-	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(implicit envri: Envri): Try[NotUsed] = {
+
+	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
@@ -227,7 +224,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 					for(vars <- spTempMeta.variables) spec.datasetSpec.fold[Unit]{
 						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
 					}{dsSpec =>
-						val valTypeLookup = servers.metaFetchers(envri).getValTypeLookup(dsSpec.self.uri.toRdf)
+						val valTypeLookup = servers.metaFetcher.get.getValTypeLookup(dsSpec.self.uri.toRdf)
 						vars.foreach{varName =>
 							if(valTypeLookup.lookup(varName).isEmpty) errors +=
 								s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
@@ -266,32 +263,29 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
-	private def validatePrevVers(dto: ObjectUploadDto, getInstServ: => Try[InstanceServer])(implicit envri: Envri): Try[NotUsed] = dto
+	private def validatePrevVers(dto: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] = dto
 		.isNextVersionOf
 		.flattenToSeq
 		.map{prevHash =>
 			if(prevHash == dto.hashSum)
 				userFail("Data/doc object cannot be a next version of itself")
 
-			else getInstServ.flatMap{ inServer =>
+			else
 				val prevDobj = vocab.getStaticObject(prevHash)
 				bothOk(
-					existsAndIsCompleted(prevDobj, inServer),
+					existsAndIsCompleted(prevDobj, instServ),
 					{
 						val except = vocab.getStaticObject(dto.hashSum)
-						hasNoOtherDeprecators(prevDobj, except, inServer, true)
+						hasNoOtherDeprecators(prevDobj, except, instServ, true)
 					}
 				)
-			}
 		}
 		.foldLeft(ok)(bothOk(_, _))
 
-	private def validateLicence(dto: DataObjectDto, getInstServ: => Try[InstanceServer]): Try[NotUsed] = {
+	private def validateLicence(dto: DataObjectDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
-			getInstServ.flatMap{serv =>
-				if(serv.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
-				else userFail(s"Unknown licence $licUri")
-			}
+			if(instServ.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
+			else userFail(s"Unknown licence $licUri")
 		}
 	}
 
@@ -325,9 +319,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	private def growingIsGrowing(
 		dto: ObjectUploadDto,
 		spec: DataObjectSpec,
-		server:  => Try[InstanceServer],
+		server:  InstanceServer,
 		subm: DataSubmitterConfig
-	)(implicit envri: Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
+	)(using Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
 			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
@@ -335,21 +329,19 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		) =>
 			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){
 				val prevDobj = vocab.getStaticObject(prevHash)
-				server.flatMap{instServer =>
-					val prevAcqStop = instServer.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
-						FetchingHelper(instServer).getOptionalInstant(acq, metaVocab.prov.endedAtTime)
-					}
-					if(prevAcqStop.exists(_ == acqStop)) userFail(
-						"The supposedly NRT growing data object you intend to upload " +
-						"has not grown in comparison with its older version.\n" +
-						s"Older object: $prevDobj , station: $stationUri, new (claimed) acquisition stop time: $acqStop"
-					) else ok
+				val prevAcqStop = server.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
+					FetchingHelper(server).getOptionalInstant(acq, metaVocab.prov.endedAtTime)
 				}
+				if(prevAcqStop.exists(_ == acqStop)) userFail(
+					"The supposedly NRT growing data object you intend to upload " +
+					"has not grown in comparison with its older version.\n" +
+					s"Older object: $prevDobj , station: $stationUri, new (claimed) acquisition stop time: $acqStop"
+				) else ok
 			} else ok
 		case _ => ok
 	} else ok
 
-	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(implicit envri: Envri): Try[NotUsed] =
+	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using envri: Envri): Try[NotUsed] =
 		prevVers.flattenToSeq.map{coll =>
 			if(servers.collectionExists(coll)) bothOk({
 				if(coll != newCollHash) ok

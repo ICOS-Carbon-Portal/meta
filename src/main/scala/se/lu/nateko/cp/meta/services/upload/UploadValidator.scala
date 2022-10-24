@@ -62,7 +62,10 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateLicence(meta, instServer);
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateCreator(meta, instServer);
-		_ <- validateTemporalCoverage(meta, spec)
+		_ <- validateTemporalCoverage(meta, spec);
+		_ <- noProductionProvenanceIfL0(meta,spec);
+		_ <- validateFileName(meta, instServer);
+		_ <- validateMoratorium(meta, spec, instServer)
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
@@ -80,6 +83,12 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- submitterAuthorizedByCollectionCreator(submConf, hash);
 		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
 	) yield NotUsed
+
+	def noProductionProvenanceIfL0(meta: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
+		if spec.dataLevel == 0 && meta.specificInfo.fold(
+			spTempMeta => true,
+			stationMeta => stationMeta.production.nonEmpty
+		) then userFail("Level 0 data object cannot contain production provenance") else ok
 
 	def getSubmitterConfig(dto: UploadDto)(using envri: Envri): Try[DataSubmitterConfig] =
 		ConfigLoader.submittersConfig.submitters(envri).get(dto.submitterId) match
@@ -210,6 +219,53 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			case Left(spTempMeta) => validate(spTempMeta.temporal.interval)
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
+
+	// TODO: refactor and move (copied from CollectionFetcher)
+	protected def getPreviousVersion(item: IRI, server: InstanceServer): Option[Either[URI, Seq[URI]]] =
+		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
+			case Nil => None
+			case single :: Nil => Some(Left(single))
+			case many => Some(Right(many))
+		}
+
+	// TODO: refactor and move (copied from CollectionFetcher)
+	protected def getPreviousVersions(item: IRI, server: InstanceServer): Seq[URI] = getPreviousVersion(item, server).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
+
+	private def validateFileName(meta: DataObjectDto, instServ: InstanceServer) = {
+		val iri = instServ.factory.createIRI("https://meta.icos-cp.eu/objects/" + meta.hashSum.id)
+		val allDuplicates = instServ.getStatements(None, Some(metaVocab.hasName), Some(instServ.factory.createLiteral(meta.fileName))).map(_.getSubject())
+		val prevVersions = getPreviousVersions(iri, instServ)
+
+		val relevantDuplicates = allDuplicates.toSeq.filter(d => !prevVersions.contains(d))
+
+		if(relevantDuplicates.nonEmpty) then
+			userFail(s"File name is already taken by object ${relevantDuplicates.head}. Please deprecate it first if you intend to update it.") 
+		else ok
+	}
+
+	private def validateMoratorium(meta: DataObjectDto, spec: DataObjectSpec, instServ: InstanceServer)(using Envri): Try[NotUsed] = {
+		meta.references.fold(ok)(ref =>
+			val iri = instServ.factory.createIRI("https://meta.icos-cp.eu/objects/" + meta.hashSum.id)
+			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
+
+			def validateMoratorium = ref.moratorium.fold(ok)(
+				m => if(Instant.now().compareTo(m) < 0) then ok else userFail("Moratorium date must be in the future")
+			)
+
+			if(uploadComplete) {
+				val submissionIri = vocab.getSubmission(meta.hashSum)
+				val submissionEndDate = instServ.getUriValues(submissionIri, metaVocab.submissionClass).map{
+					s => FetchingHelper(instServ).getOptionalInstant(s, metaVocab.hasEndDate)
+				}
+
+				val uploadedDobjUnderMoratorium = submissionEndDate.headOption.flatten.map(h => Instant.now().compareTo(h) < 0).getOrElse(false)
+				
+				if uploadedDobjUnderMoratorium then validateMoratorium else userFail("Moratorium only allowed if object has not already been uploaded")
+			} else {
+				validateMoratorium
+			}
+		)
+	}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri

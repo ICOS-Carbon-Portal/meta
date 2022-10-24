@@ -16,6 +16,8 @@ sealed trait UploadDto{
 sealed trait ObjectUploadDto extends UploadDto {
 	def hashSum: Sha256Sum
 	def fileName: String
+	def references: Option[ReferencesDto]
+	def duplicateFilenameAllowed = references.flatMap(_.duplicateFilenameAllowed).getOrElse(false)
 }
 
 case class DataObjectDto(
@@ -37,7 +39,8 @@ case class DocObjectDto(
 	description: Option[String],
 	authors: Seq[URI],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
-	preExistingDoi: Option[Doi]
+	preExistingDoi: Option[Doi],
+	references: Option[ReferencesDto]
 ) extends ObjectUploadDto
 
 
@@ -93,4 +96,9 @@ case class SubmitterProfile(
 	authorizedProjects: Option[Seq[URI]]
 )
 
-case class ReferencesDto(keywords: Option[Seq[String]], licence: Option[URI], moratorium: Option[Instant])
+case class ReferencesDto(
+	keywords: Option[Seq[String]],
+	licence: Option[URI],
+	moratorium: Option[Instant],
+	duplicateFilenameAllowed: Option[Boolean]
+)

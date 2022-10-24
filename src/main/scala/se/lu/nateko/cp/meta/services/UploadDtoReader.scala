@@ -87,7 +87,8 @@ object UploadDtoReader{
 				ReferencesDto(
 					keywords = dobj.references.keywords,
 					licence = dobj.references.licence.map(_.url),
-					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0)
+					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
+					duplicateFilenameAllowed = None
 				)
 			)
 		)
@@ -106,7 +107,8 @@ object UploadDtoReader{
 			})),
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
-			}
+			},
+			references = None
 		)
 	}
 

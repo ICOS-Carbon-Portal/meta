@@ -131,7 +131,8 @@ class Form(
 		references = Some(ReferencesDto(
 			keywords = Option(keywords.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty),
 			licence = licence,
-			moratorium = moratorium
+			moratorium = moratorium,
+			duplicateFilenameAllowed = None
 		))
 	)
 
@@ -193,7 +194,8 @@ class Form(
 		description = description,
 		authors = authors.map(_.uri),
 		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
+		preExistingDoi = doi,
+		references = None
 	)
 
 	private def handleDto(): Unit = {

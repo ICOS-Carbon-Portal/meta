@@ -39,9 +39,10 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
 
+
 class UploadValidator(servers: DataObjectInstanceServers){
 	import servers.{ metaVocab, vocab }
-	given ValueFactory = metaVocab.factory
+	given vf: ValueFactory = metaVocab.factory
 
 	private val ok: Try[NotUsed] = Success(NotUsed)
 
@@ -72,7 +73,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		instServer <- servers.getDocInstServer;
-		_ <- validatePrevVers(meta, instServer)
+		_ <- validatePrevVers(meta, instServer);
+		_ <- validateFileName(meta, instServer)
 	) yield NotUsed
 
 
@@ -220,32 +222,24 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	// TODO: refactor and move (copied from CollectionFetcher)
-	protected def getPreviousVersion(item: IRI, server: InstanceServer): Option[Either[URI, Seq[URI]]] =
-		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
-			case Nil => None
-			case single :: Nil => Some(Left(single))
-			case many => Some(Right(many))
-		}
+	private def validateFileName(meta: ObjectUploadDto, instServ: InstanceServer)(using Envri) =
+		val iri = vocab.getStaticObject(meta.hashSum)
 
-	// TODO: refactor and move (copied from CollectionFetcher)
-	protected def getPreviousVersions(item: IRI, server: InstanceServer): Seq[URI] = getPreviousVersion(item, server).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
+		val allDuplicates = instServ
+			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
+			.collect{case Rdf4jStatement(subj, _, _) => subj}
+			.toIndexedSeq
 
-	private def validateFileName(meta: DataObjectDto, instServ: InstanceServer) = {
-		val iri = instServ.factory.createIRI("https://meta.icos-cp.eu/objects/" + meta.hashSum.id)
-		val allDuplicates = instServ.getStatements(None, Some(metaVocab.hasName), Some(instServ.factory.createLiteral(meta.fileName))).map(_.getSubject())
-		val prevVersions = getPreviousVersions(iri, instServ)
+		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else
+			val deprecated = meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)
+			if allDuplicates.exists(deprecated.contains) then ok
+			else userFail(s"File name is already taken by other object(s) (${allDuplicates.mkString(", ")})." +
+				" Please deprecate older version(s) or set 'duplicateFilenameAllowed' flag in 'references' to 'true'")
 
-		val relevantDuplicates = allDuplicates.toSeq.filter(d => !prevVersions.contains(d))
-
-		if(relevantDuplicates.nonEmpty) then
-			userFail(s"File name is already taken by object ${relevantDuplicates.head}. Please deprecate it first if you intend to update it.") 
-		else ok
-	}
 
 	private def validateMoratorium(meta: DataObjectDto, spec: DataObjectSpec, instServ: InstanceServer)(using Envri): Try[NotUsed] = {
 		meta.references.fold(ok)(ref =>
-			val iri = instServ.factory.createIRI("https://meta.icos-cp.eu/objects/" + meta.hashSum.id)
+			val iri = vocab.getStaticObject(meta.hashSum)
 			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 
 			def validateMoratorium = ref.moratorium.fold(ok)(

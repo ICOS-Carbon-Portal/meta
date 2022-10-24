@@ -76,7 +76,8 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 	"references": {
 		"keywords": ["CO2", "meteo"],
 		"licence": "https://creativecommons.org/publicdomain/zero/1.0/",
-		"moratorium": "2018-03-01T00:00:00Z"
+		"moratorium": "2018-03-01T00:00:00Z",
+		"duplicateFilenameAllowed": false
 	}
 }
 ```
@@ -150,6 +151,7 @@ Clarifications:
 		+ https://creativecommons.org/publicdomain/zero/1.0/ (CC0 1.0 Public Domain)
 		+ (the up-to-date list of supported licences can be obtained using [SPARQL client](https://meta.icos-cp.eu/sparqlclient/) and query `select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>}`)
 	- `moratorium` (optional) is an ISO 8601 timestamp with the desired publication time in the future (instead of the moment of data upload). The data object will be prevented from being downloaded until the moratorium expires.
+	- `duplicateFilenameAllowed` (optional) boolean flag enabling uploading of duplicate-filename data objects without deprecating the existing object(s) with the same filename.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 

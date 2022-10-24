@@ -103,9 +103,9 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[DataProductionDto] = jsonFormat7(DataProductionDto.apply)
 	given RootJsonFormat[StationTimeSeriesDto] = jsonFormat8(StationTimeSeriesDto.apply)
 	given RootJsonFormat[SpatioTemporalDto] = jsonFormat9(SpatioTemporalDto.apply)
-	given RootJsonFormat[ReferencesDto] = jsonFormat3(ReferencesDto.apply)
+	given RootJsonFormat[ReferencesDto] = jsonFormat4(ReferencesDto.apply)
 	given RootJsonFormat[DataObjectDto] = jsonFormat8(DataObjectDto.apply)
-	given RootJsonFormat[DocObjectDto] = jsonFormat8(DocObjectDto.apply)
+	given RootJsonFormat[DocObjectDto] = jsonFormat9(DocObjectDto.apply)
 
 	given RootJsonFormat[ObjectUploadDto] with{
 		override def write(umd: ObjectUploadDto) = umd match{

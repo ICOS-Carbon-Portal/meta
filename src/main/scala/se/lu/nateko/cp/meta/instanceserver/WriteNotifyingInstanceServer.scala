@@ -13,11 +13,12 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	def setSubscriber(sub: () => Unit): Unit = cb = sub
 	def unsetSubscriber(): Unit = cb = () => ()
 
-	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = {
-		val res = inner.applyAll(updates)
-		if(!updates.isEmpty) cb()
-		res
-	}
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
+		inner.applyAll(updates){
+			if(!updates.isEmpty) cb()
+			cotransact
+		}
+
 
 	def factory = inner.factory
 	def filterNotContainedStatements(stats: IterableOnce[Statement]) = inner.filterNotContainedStatements(stats)

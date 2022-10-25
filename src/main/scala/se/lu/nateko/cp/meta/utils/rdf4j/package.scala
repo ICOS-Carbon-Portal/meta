@@ -65,8 +65,13 @@ extension (repo: Repository){
 	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
 		Using(repo.getConnection){conn =>
 			isoLevel.fold(conn.begin)(conn.begin)
-			action(conn)
-			conn.commit()
+			try
+				action(conn)
+				conn.commit()
+			catch
+				case err: Throwable =>
+					conn.rollback()
+					throw err
 		}
 
 	def access[T](accessor: RepositoryConnection => CloseableIteration[T, _]): CloseableIterator[T] = access(accessor, () => ())

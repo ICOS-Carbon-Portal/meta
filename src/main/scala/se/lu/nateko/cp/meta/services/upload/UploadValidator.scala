@@ -222,7 +222,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	private def validateFileName(meta: ObjectUploadDto, instServ: InstanceServer)(using Envri) =
+	private def validateFileName(meta: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
 		val iri = vocab.getStaticObject(meta.hashSum)
 
 		val allDuplicates = instServ
@@ -237,29 +237,25 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				" Please deprecate older version(s) or set 'duplicateFilenameAllowed' flag in 'references' to 'true'")
 
 
-	private def validateMoratorium(meta: DataObjectDto, spec: DataObjectSpec, instServ: InstanceServer)(using Envri): Try[NotUsed] = {
+	private def validateMoratorium(meta: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
 		meta.references.fold(ok)(ref =>
 			val iri = vocab.getStaticObject(meta.hashSum)
 			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 
 			def validateMoratorium = ref.moratorium.fold(ok)(
-				m => if(Instant.now().compareTo(m) < 0) then ok else userFail("Moratorium date must be in the future")
+				m => if(m.compareTo(Instant.now()) > 0) then ok else userFail("Moratorium date must be in the future")
 			)
 
-			if(uploadComplete) {
+			if(!uploadComplete) then validateMoratorium else
 				val submissionIri = vocab.getSubmission(meta.hashSum)
 				val submissionEndDate = instServ.getUriValues(submissionIri, metaVocab.submissionClass).map{
 					s => FetchingHelper(instServ).getOptionalInstant(s, metaVocab.hasEndDate)
 				}
 
-				val uploadedDobjUnderMoratorium = submissionEndDate.headOption.flatten.map(h => Instant.now().compareTo(h) < 0).getOrElse(false)
-				
+				val uploadedDobjUnderMoratorium = submissionEndDate.headOption.flatten.map(_.compareTo(Instant.now()) > 0).getOrElse(false)
+
 				if uploadedDobjUnderMoratorium then validateMoratorium else userFail("Moratorium only allowed if object has not already been uploaded")
-			} else {
-				validateMoratorium
-			}
 		)
-	}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri

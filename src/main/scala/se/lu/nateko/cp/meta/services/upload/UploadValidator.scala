@@ -66,7 +66,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateTemporalCoverage(meta, spec);
 		_ <- noProductionProvenanceIfL0(meta,spec);
 		_ <- validateFileName(meta, instServer);
-		_ <- validateMoratorium(meta, spec, instServer)
+		_ <- validateMoratorium(meta, instServer)
 	) yield NotUsed
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
@@ -248,13 +248,12 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 			if(!uploadComplete) then validateMoratorium else
 				val submissionIri = vocab.getSubmission(meta.hashSum)
-				val submissionEndDate = instServ.getUriValues(submissionIri, metaVocab.submissionClass).map{
-					s => FetchingHelper(instServ).getOptionalInstant(s, metaVocab.hasEndDate)
-				}
+				val submissionEndDate = FetchingHelper(instServ).getSingleInstant(submissionIri, metaVocab.prov.endedAtTime)
 
-				val uploadedDobjUnderMoratorium = submissionEndDate.headOption.flatten.map(_.compareTo(Instant.now()) > 0).getOrElse(false)
+				val uploadedDobjUnderMoratorium = submissionEndDate.compareTo(Instant.now()) > 0
 
-				if uploadedDobjUnderMoratorium then validateMoratorium else userFail("Moratorium only allowed if object has not already been uploaded")
+				if uploadedDobjUnderMoratorium then validateMoratorium
+				else userFail("Moratorium only allowed if object has not already been published")
 		)
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {

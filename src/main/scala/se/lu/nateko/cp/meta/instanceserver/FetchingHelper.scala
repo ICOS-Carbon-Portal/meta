@@ -58,7 +58,7 @@ trait FetchingHelper {
 	def getOptionalInstant(subj: IRI, pred: IRI): Option[Instant] =
 		server.getLiteralValues(subj, pred, XSD.DATETIME, InstanceServer.AtMostOne).headOption.map(parseInstant)
 
-	protected def getSingleInstant(subj: IRI, pred: IRI): Instant =
+	def getSingleInstant(subj: IRI, pred: IRI): Instant =
 		server.getLiteralValues(subj, pred, XSD.DATETIME, InstanceServer.ExactlyOne).map(parseInstant).head
 
 	protected def getOptionalLocalDate(subj: IRI, pred: IRI): Option[LocalDate] =

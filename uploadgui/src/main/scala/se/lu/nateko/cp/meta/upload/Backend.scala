@@ -26,20 +26,17 @@ object Backend {
 	import SparqlQueries.*
 
 	private def whoAmI: Future[Option[String]] =
-		fetch("/whoami", new RequestInit{credentials = RequestCredentials.include})
-		.recoverWith(recovery("fetch user information"))
+		fetchOk("fetch user information", "/whoami", new RequestInit{credentials = RequestCredentials.include})
 		.flatMap(parseTo[JsObject](_))
 		.map(_.value("email") match {
 			case JsString(email) => Some(email)
 			case _ => None
 		})
 
-	private def envri: Future[Envri] = fetch("/upload/envri")
-		.recoverWith(recovery("fetch envri"))
+	private def envri: Future[Envri] = fetchOk("fetch envri", "/upload/envri")
 		.flatMap(parseTo[Envri])
 
-	private def authHost: Future[EnvriConfig] = fetch("/upload/envriconfig")
-		.recoverWith(recovery("fetch envri config"))
+	private def authHost: Future[EnvriConfig] = fetchOk("fetch envri config", "/upload/envriconfig")
 		.flatMap(parseTo[EnvriConfig])
 
 	def fetchConfig: Future[InitAppInfo] = whoAmI.zip(envri).zip(authHost).map {
@@ -47,8 +44,11 @@ object Backend {
 	}
 
 	def submitterIds: Future[IndexedSeq[SubmitterProfile]] =
-		fetch("/upload/submitterids", new RequestInit{credentials = RequestCredentials.include})
-			.recoverWith(recovery("fetch the list of available submitter ids"))
+		fetchOk(
+			"fetch the list of available submitter ids",
+			"/upload/submitterids",
+			new RequestInit{credentials = RequestCredentials.include}
+		)
 			.flatMap(parseTo[IndexedSeq[SubmitterProfile]])
 			.flatMap{ s =>
 				if(s.isEmpty)
@@ -108,24 +108,18 @@ object Backend {
 			}
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
-			fetch(url, new RequestInit{
+			fetchOk("validating data object", url, new RequestInit{
 				body = file
 				method = HttpMethod.PUT
-			})
-			.toFuture
-			.flatMap(resp => resp.status match {
-				case 200 => Future.successful(())
-				case _ => resp.text().toFuture.flatMap(msg => Future.failed(new Exception(msg)))
-			})
+			}).map(_ => ())
 		} else Future.successful(())
 	}
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] =
-		fetch("/sparql", new RequestInit{
+		fetchOk("execute a SPARQL query", "/sparql", new RequestInit{
 			body = query
 			method = HttpMethod.POST
 		})
-		.recoverWith(recovery("execute a SPARQL query"))
 		.flatMap(parseTo[JsObject])
 		.map(jsobj =>
 			(jsobj \ "results" \ "bindings")
@@ -136,47 +130,43 @@ object Backend {
 
 	def submitMetadata[T : Writes](dto: T): Future[URI] = {
 		val json = Json.toJson(dto)
-		fetch("/upload", new RequestInit{
+		fetchOk("upload metadata", "/upload", new RequestInit{
 			method = HttpMethod.POST
 			body = Json.prettyPrint(json)
 			headers = Dictionary("Content-Type" -> "application/json")
 			credentials = RequestCredentials.include
 		})
-		.recoverWith(recovery("upload metadata"))
 		.flatMap(_.text().toFuture)
 		.map(new URI(_))
 	}
 
 	def uploadFile(file: File, dataURL: URI): Future[String] =
-		fetch(dataURL.toString, new RequestInit{
+		fetchOk("upload file", dataURL.toString, new RequestInit{
 			method = HttpMethod.PUT
 			body = file
 			headers = Dictionary("Content-Type" -> "application/octet-stream")
 			credentials = RequestCredentials.include
 		})
-		.recoverWith(recovery("upload file"))
 		.flatMap(_.text())
 
-	def getMetadata(uri: URI): Future[UploadDto] = fetch(s"/dtodownload?uri=$uri")
-		.recoverWith(recovery("fetch existing object"))
-		.flatMap(parseTo[UploadDto])
+	def getMetadata(uri: URI): Future[UploadDto] =
+		fetchOk("fetch existing object", s"/dtodownload?uri=$uri")
+			.flatMap(parseTo[UploadDto])
 
 	def createDraftDoi(uri: URI): Future[Doi] =
-		fetch("/dois/createDraft", new RequestInit{
+		fetchOk("create draft DOI", "/dois/createDraft", new RequestInit{
 			method = HttpMethod.POST
 			body = Json.prettyPrint(Json.toJson(uri))
 			headers = Dictionary("Content-Type" -> "application/json")
 			credentials = RequestCredentials.include
 		})
-		.recoverWith(recovery("create draft DOI"))
 		.flatMap(parseTo[Doi])
 
 	def getKeywordList(using envri: Envri): Future[IndexedSeq[String]] =
 		if (envri == Envri.SITES) Future.successful(IndexedSeq.empty)
 		else
-			fetch("/uploadgui/gcmdkeywords.json")
-			.recoverWith(recovery("fetch keyword list"))
-			.flatMap(parseTo[IndexedSeq[String]])
+			fetchOk("fetch keyword list", "/uploadgui/gcmdkeywords.json")
+				.flatMap(parseTo[IndexedSeq[String]])
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{
@@ -187,9 +177,13 @@ object Backend {
 	private def parseTo[T : Reads](resp: Response): Future[T] =
 		resp.text().map(Json.parse(_).as[T])
 
-	private def recovery(hint: String): PartialFunction[Throwable, Future[Response]] = {
-		case err =>
-			val msg = s"Error when trying to $hint: ${err.getMessage}"
-			Future.failed(new Exception(msg))
-	}
+	private def fetchOk(errorHint: String, uri: String, reqInit: RequestInit = null): Future[Response] =
+		fetch(uri, reqInit).flatMap(resp =>
+			if resp.status >= 200 && resp.status < 300
+			then Future.successful(resp)
+			else resp.text().flatMap{errTxt =>
+				val msg = s"Error when trying to $errorHint: $errTxt"
+				Future.failed(new Exception(msg))
+			}
+		)
 }

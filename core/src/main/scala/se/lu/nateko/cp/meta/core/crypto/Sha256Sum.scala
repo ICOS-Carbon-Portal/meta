@@ -7,7 +7,7 @@ import scala.util.{Try, Success, Failure}
 import scala.util.control.NoStackTrace
 
 
-class Sha256Sum(private val bytes: Array[Byte]) extends java.io.Serializable{
+class Sha256Sum(private val bytes: Array[Byte]) extends java.io.Serializable derives CanEqual{
 	import Sha256Sum.*
 	assert(byteLengthCorrect(bytes), byteLengthMessage)
 

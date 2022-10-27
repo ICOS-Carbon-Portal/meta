@@ -70,8 +70,10 @@ object Backend {
 		sparqlSelect(samplingpoints(site)).map((_.map(toSamplingPoint)))
 
 	def getL3SpatialCoverages(using Envri): Future[IndexedSeq[SpatialCoverage]] =
-		if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
-		else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
+		envri.flatMap{ envri =>
+			if(envri == Envri.SITES) Future.successful(IndexedSeq.empty)
+			else sparqlSelect(l3spatialCoverages).map(_.map(toSpatialCoverage))
+		}
 
 	private def disambiguateNames(list: IndexedSeq[NamedUri]): IndexedSeq[NamedUri] =
 		list.groupBy(_.name).valuesIterator.flatMap( g =>

@@ -38,6 +38,11 @@ import se.lu.nateko.cp.meta.core.data.DatasetClass
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
+import scala.language.strictEquality
+
+given CanEqual[URI, URI] = CanEqual.derived
+given CanEqual[IRI, IRI] = CanEqual.derived
+given CanEqual[Instant, Instant] = CanEqual.derived
 
 
 class UploadValidator(servers: DataObjectInstanceServers){
@@ -228,7 +233,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val allDuplicates = instServ
 			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
 			.collect{case Rdf4jStatement(subj, _, _) => subj}
-			.filter(subj => !subj.equals(iri))
+			.filter(_ != iri)
 			.toIndexedSeq
 
 		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else

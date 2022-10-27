@@ -15,7 +15,7 @@ case class EnvriConfig(
 		host == dataItemPrefix.getHost || host == metaItemPrefix.getHost
 }
 
-enum Envri:
+enum Envri derives CanEqual:
 	case ICOS, SITES
 
 type EnvriConfigs = Map[Envri, EnvriConfig]

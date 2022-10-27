@@ -38,7 +38,7 @@ case class DataObjectSpec(
 	def isSpatiotemporal: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.SpatioTemporal)
 }
 
-enum DatasetClass:
+enum DatasetClass derives CanEqual:
 	case StationTimeSeries, SpatioTemporal
 
 case class DatasetSpec(

@@ -35,8 +35,10 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value.withErrorContext("Previous version")
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
 	def metadataUri: Try[URI] = metadataUriInput.value
+	def duplicateFilenameAllowed: Try[Option[Boolean]] = Success(Some(duplicateFilenameAllowedInput.checked))
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
+
 
 	private val modeControl = new ModeRadio("new-update-radio", onModeSelected)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
@@ -45,6 +47,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val fileNameElement = new HtmlElements("#filename-element")
 	private val fileInput = new FileInput("fileinput", notifyUpdate)
 	private val fileNameInput = new TextInput("filename", notifyUpdate, "file name")
+	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile", v => notifyUpdate())
 	private val previousVersionInput = new HashOptOneOrManyInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")

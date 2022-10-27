@@ -228,6 +228,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val allDuplicates = instServ
 			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
 			.collect{case Rdf4jStatement(subj, _, _) => subj}
+			.filter(subj => !subj.equals(iri))
 			.toIndexedSeq
 
 		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else

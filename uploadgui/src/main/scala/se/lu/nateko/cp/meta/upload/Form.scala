@@ -119,7 +119,8 @@ class Form(
 		keywords <- dataPanel.keywords;
 		licence <- dataPanel.licence;
 		moratorium <- dataPanel.moratorium;
-		specInfo <- specificInfo
+		specInfo <- specificInfo;
+		duplicateFilenameAllowed <- aboutPanel.duplicateFilenameAllowed
 	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -132,7 +133,7 @@ class Form(
 			keywords = Option(keywords.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty),
 			licence = licence,
 			moratorium = moratorium,
-			duplicateFilenameAllowed = None
+			duplicateFilenameAllowed = duplicateFilenameAllowed
 		))
 	)
 

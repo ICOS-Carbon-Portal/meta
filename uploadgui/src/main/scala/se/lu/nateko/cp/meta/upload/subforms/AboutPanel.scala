@@ -86,6 +86,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				metadataUrlElement.hide()
 				typeControl.enable()
 				typeControl.reset()
+				setPreviousVersionEditability(mode)
 			case Update =>
 				fileElement.hide()
 				fileNameElement.show()
@@ -93,6 +94,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				typeControl.reset()
 				typeControl.disable()
 				metadataUriInput.focus()
+				setPreviousVersionEditability(mode)
 			case NewVersion =>
 				fileNameElement.hide()
 				metadataUrlElement.show()
@@ -122,6 +124,12 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				fileNameElement.show()
 			}
 	}
+
+	private def setPreviousVersionEditability(mode: Mode): Unit =
+		mode match {
+			case NewVersion => previousVersionInput.disable()
+			case _ => previousVersionInput.enable()
+		}
 
 	private def onSubmitterSelected(): Unit = submitterIdSelect.value.foreach{subm =>
 		bus.publish(GotStationsList(IndexedSeq.empty))
@@ -177,6 +185,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 					existingDoiInput.value = dto.preExistingDoi
 			}.foreach{dto =>
 				typeControl.value.foreach(setFileAndFilenameVisibility)
+				modeControl.value.foreach(setPreviousVersionEditability)
 				bus.publish(GotUploadDto(dto))
 			}
 		}

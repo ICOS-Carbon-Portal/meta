@@ -1,0 +1,21 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.core.data.References
+@import se.lu.nateko.cp.meta.core.data.Person
+@import se.lu.nateko.cp.meta.core.data.Organization
+@import java.net.URI
+
+@(refs: References)
+@refs.authors match {
+	case None => {
+		<span></span>
+	}
+	case Some(agents) => {
+		@if(agents.nonEmpty) {
+			@htmlProperty{Authors}{
+				@for(a <- agents){
+					<span> @agentLink(a) @if(a != agents.last){,} </span>
+				}
+			}
+		}
+	}
+}

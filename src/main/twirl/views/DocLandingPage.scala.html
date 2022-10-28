@@ -27,6 +27,7 @@
 				@for(description <- doc.description){
 					@property("Description", description)
 				}
+				@authors(doc.references)
 				@if(doc.references.title.isDefined) {
 					@property("File name", doc.fileName)
 				} else {}

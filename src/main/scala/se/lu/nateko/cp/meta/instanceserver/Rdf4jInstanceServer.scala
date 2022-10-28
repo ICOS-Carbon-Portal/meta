@@ -41,11 +41,12 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 				readContexts*)
 		)
 
-	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = repo.transact(conn => 
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = repo.transact(conn =>
 		updates.foreach(update => {
 			if(update.isAssertion) conn.add(update.statement, writeContexts*)
 			else conn.remove(update.statement, writeContexts*)
 		})
+		cotransact
 	)
 
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] = {

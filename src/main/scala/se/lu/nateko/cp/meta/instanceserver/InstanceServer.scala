@@ -21,15 +21,15 @@ trait InstanceServer extends AutoCloseable{
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement]
-	def applyAll(updates: Seq[RdfUpdate]): Try[Unit]
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit]
 	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer
 	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
 
 	final override def close(): Unit = shutDown()
 	def shutDown(): Unit = {}
 
-	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))
-	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))
+	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))()
+	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))()
 
 	final def getInstances(classUri: IRI): IndexedSeq[IRI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))
@@ -67,7 +67,7 @@ trait InstanceServer extends AutoCloseable{
 		val toRemove = from.diff(to)
 		val toAdd = to.diff(from)
 
-		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))
+		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))()
 	}
 
 	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[IRI] = {

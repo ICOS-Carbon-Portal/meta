@@ -134,12 +134,12 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			)
 			Seq(retraction, assertion)
 		}
-		updates.flatMap(instServer.applyAll)
+		updates.flatMap(instServer.applyAll(_)())
 	}
 
 	def applyUpdates(updates: Seq[UpdateDto]): Try[Unit] = {
 		val rdfUpdates = Try(updates.map(updateDtoToRdfUpdate))
-		rdfUpdates.flatMap(instServer.applyAll)
+		rdfUpdates.flatMap(instServer.applyAll(_)())
 	}
 	
 	private def hasStatement(statement: Statement): Boolean = instServer.hasStatement(

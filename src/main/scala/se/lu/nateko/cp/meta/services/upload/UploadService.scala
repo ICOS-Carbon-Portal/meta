@@ -84,7 +84,7 @@ class UploadService(
 			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg);
 			oldStatements = server.getStatements(collIri);
 			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
-			_ <- server.applyAll(updates)
+			_ <- server.applyAll(updates)()
 		) yield new AccessUri(collIri.toJava)
 
 		Future.fromTry(resTry)
@@ -110,7 +110,7 @@ class UploadService(
 			newStatements = statementProd.getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
-			_ <- Future.fromTry(server.applyAll(updates))
+			_ <- Future.fromTry(server.applyAll(updates)())
 		) yield
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 

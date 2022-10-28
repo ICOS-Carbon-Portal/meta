@@ -22,9 +22,10 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] =
 		inner.filterNotContainedStatements(statements)
 
-	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] =
-		inner.applyAll(updates).map{_ =>
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
+		inner.applyAll(updates){
 			log.appendAll(updates)
+			cotransact
 		}
 
 	override def shutDown(): Unit = {

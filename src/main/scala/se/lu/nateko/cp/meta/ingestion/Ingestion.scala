@@ -99,12 +99,12 @@ object Ingestion {
 			use.acquire(newStatements)
 			if(provider.isAppendOnly){
 				val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
-				target.applyAll(toAdd)
+				target.applyAll(toAdd)()
 			} else {
 				val newRepo = Loading.fromStatements(newStatements)
 				val source = use(new Rdf4jInstanceServer(newRepo))
 				val updates = computeDiff(target.writeContextsView, source).toIndexedSeq
-				target.applyAll(updates)
+				target.applyAll(updates)()
 			}
 		}
 	}

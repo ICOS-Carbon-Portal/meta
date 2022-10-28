@@ -59,7 +59,7 @@ object MetaFlow {
 			val diffV = diffCalc.calcDiff(state)
 			if(diffV.errors.isEmpty) {
 				diffV.foreach{updates =>
-					icosServer.applyAll(updates).fold(
+					icosServer.applyAll(updates)().fold(
 						err => system.log.error(err, s"Problem applying $tip station-metadata diff"),
 						_ => system.log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
 					)

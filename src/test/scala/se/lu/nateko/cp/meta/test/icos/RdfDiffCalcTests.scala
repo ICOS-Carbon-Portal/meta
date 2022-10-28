@@ -71,7 +71,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 			assert(initUpdates.size >= 13) //the number may change if metadata model changes
 		}
 
-		state.tcServer.applyAll(initUpdates)
+		state.tcServer.applyAll(initUpdates)()
 
 		And("reading current TC state back produces expected value")
 
@@ -112,13 +112,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		Given("starting with a single station with single PI and no own CP statements")
 
 		val state = init(Nil, _ => Nil)
-		state.tcServer.applyAll(state.calc.calcDiff(atcInitSnap(jane)).result.get)
+		state.tcServer.applyAll(state.calc.calcDiff(atcInitSnap(jane)).result.get)()
 
 		When("a new snapshot comes where the PI has changed")
 
 		val john = TcPerson[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
 		val piUpdates = state.calc.calcDiff(atcInitSnap(john)).result.get.toIndexedSeq
-		state.tcServer.applyAll(piUpdates)
+		state.tcServer.applyAll(piUpdates)()
 
 		it("Then previous PI's membership stays and the new ones' is created and started"){
 			assert(piUpdates.size >= 10)
@@ -141,7 +141,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		val state = init(Nil, _ => Nil)
 		val initSnap = atcInitSnap(jane)
 
-		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)
+		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)()
 
 		When("CP creates a new person metadata and associates it with the exising TC person metadata")
 
@@ -151,7 +151,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
 
 			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq //no change in the TC picture
-			state.tcServer.applyAll(updates)
+			state.tcServer.applyAll(updates)()
 
 			val personStats = state.maker.getStatements(jane)
 			val deleted = updates.filter(!_.isAssertion).map(_.statement).toSet
@@ -173,7 +173,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
 		val state = init(Nil, _ => Nil)
-		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)
+		state.tcServer.applyAll(state.calc.calcDiff(initSnap).result.get)()
 
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
 
@@ -183,7 +183,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){
 			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq //no change in the TC picture
-			state.tcServer.applyAll(updates)
+			state.tcServer.applyAll(updates)()
 			val tcUri = state.maker.getIri(uni)
 			val cpUri = state.maker.getIri(cpUni)
 			assert(updates.filter(_.statement.getSubject == tcUri).forall(_.isAssertion == false))

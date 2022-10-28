@@ -9,7 +9,7 @@ class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceSer
 
 	private val parts = first :: others.toList
 
-	def applyAll(updates: Seq[RdfUpdate]): Try[Unit] = Success(())
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = Try(cotransact)
 
 	def factory: ValueFactory = first.factory
 

@@ -30,7 +30,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 			stopTimeUpdates = getUploadStopTimeUpdates(server, hash);
 			byteSizeUpdates = getBytesSizeUpdates(server, hash, info.bytes);
 			report <- specific.finalize(hash);
-			_ <- Future.fromTry(server.applyAll(specificUpdates ++ stopTimeUpdates ++ byteSizeUpdates))
+			_ <- Future.fromTry(server.applyAll(specificUpdates ++ stopTimeUpdates ++ byteSizeUpdates)())
 		) yield report
 	}
 

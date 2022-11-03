@@ -259,7 +259,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				val uploadedDobjUnderMoratorium = submissionEndDate.compareTo(Instant.now()) > 0
 
 				if uploadedDobjUnderMoratorium then validateMoratorium
-				else userFail("Moratorium only allowed if object has not already been published")
+				else ref.moratorium.fold(ok)(_ => userFail("Moratorium only allowed if object has not already been published"))
 		)
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {

@@ -85,7 +85,8 @@ lazy val meta = (project in file("."))
 		scalacOptions ++= commonScalacOptions,
 
 		excludeDependencies ++= Seq(
-			ExclusionRule("com.github.jsonld-java", "jsonld-java")
+			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
+			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
 		),
 
 		libraryDependencies ++= Seq(
@@ -94,12 +95,12 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
-			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
-			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
-			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
-			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
-			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
-			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion exclude("jakarta.activation", "jakarta.activation-api"),
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
 			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),

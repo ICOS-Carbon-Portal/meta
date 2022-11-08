@@ -40,6 +40,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
 import scala.language.strictEquality
 import se.lu.nateko.cp.meta.DataProductionDto
+import scala.collection.mutable.Buffer
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -200,19 +201,24 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	}
 
 	private def validateActors(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+		import scala.language.implicitConversions
+		given Conversion[URI, IRI] = instServ.factory.createIRI(_)
 
 		def isOrg(iri: IRI) = instServ.hasStatement(Some(iri), Some(metaVocab.hasName), None)
-		def isPerson(iri: IRI) = instServ.hasStatement(Some(iri), Some(RDF.TYPE), Some(metaVocab.personClass))
+		def isPerson(iri: IRI) = instServ.resourceHasType(iri, metaVocab.personClass)
+		def isActor(iri: IRI) = isOrg(iri) || isPerson(iri)
 
-		def isValid(uri: URI, org: Boolean = false) =
-			val iri = instServ.factory.createIRI(uri)
-			if(org) isOrg(iri) else isOrg(iri) || isPerson(iri)
+		def validate(prod: DataProductionDto): Try[NotUsed] =
+			val errors = Buffer.empty[String]
+			if !isActor(prod.creator) then errors += s"Invalid creator URL ${prod.creator}"
 
-		def validate(prod: DataProductionDto) = for(
-			_ <- if(isValid(prod.creator)) ok else userFail(s"Invalid creator URL ${prod.creator}");
-			_ <- prod.contributors.find(contributor => !isValid(contributor)).fold(ok)(invalidUri => userFail(s"Invalid contributor URL $invalidUri"));
-			_ <- prod.hostOrganization.fold(ok)(org => if(isValid(org, true)) then ok else userFail(s"Invalid host organization URL $org"))
-		) yield NotUsed
+			for(contributor <- prod.contributors if !isActor(contributor))
+				errors += s"Invalid contributor URL $contributor"
+
+			for (org <- prod.hostOrganization if !isOrg(org))
+				errors += s"Invalid host organization URL $org"
+
+			if errors.isEmpty then ok else userFail(errors.mkString("\n"))
 
 		meta.specificInfo match
 			case Left(spTempMeta) => validate(spTempMeta.production)
@@ -240,7 +246,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val allDuplicates = instServ
 			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
 			.collect{case Rdf4jStatement(subj, _, _) => subj}
-			.filter(otherIRI => otherIRI != iri && !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(otherIRI)))
+			.filter(_ != iri) //can re-upload metadata for existing object
+			.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
 			.toIndexedSeq
 
 		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else
@@ -251,7 +258,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 
 	private def validateMoratorium(meta: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
-		meta.references.flatMap(_.moratorium).fold[Try[NotUsed]](Success(NotUsed)) {moratorium =>
+		meta.references.flatMap(_.moratorium).fold(ok) {moratorium =>
 			val iri = vocab.getStaticObject(meta.hashSum)
 			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 

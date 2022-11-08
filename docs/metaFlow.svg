@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="556.7041mm"
    height="307.94537mm"
    viewBox="0 0 1972.5736 1091.145"
    id="svg4294"
    version="1.1"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="metaFlow.svg">
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="metaFlow.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs4296">
     <inkscape:perspective
@@ -242,25 +242,26 @@
      pagecolor="#ffffff"
      bordercolor="#666666"
      borderopacity="1.0"
-     inkscape:pageopacity="1"
+     inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="1017.0917"
-     inkscape:cy="624.70765"
+     inkscape:cx="1016.4286"
+     inkscape:cy="624.28571"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:snap-to-guides="false"
      inkscape:snap-grids="false"
-     inkscape:window-width="1848"
-     inkscape:window-height="1009"
-     inkscape:window-x="72"
-     inkscape:window-y="34"
+     inkscape:window-width="1920"
+     inkscape:window-height="1163"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      fit-margin-top="5"
      fit-margin-right="5"
      fit-margin-bottom="5"
-     fit-margin-left="5" />
+     fit-margin-left="5"
+     inkscape:pagecheckerboard="0" />
   <metadata
      id="metadata4299">
     <rdf:RDF>
@@ -269,7 +270,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -325,7 +325,7 @@
          x="-90.847832"
          y="1460.4637"
          style="font-size:40px;line-height:1.25">ETC<tspan
-   style="font-size:64.99999762%;baseline-shift:super"
+   style="font-size:65%;baseline-shift:super"
    id="tspan16616">1)</tspan></tspan></text>
     <g
        id="g5005"
@@ -422,7 +422,7 @@
          x="266.24374"
          y="1771.8752"
          style="font-size:22.5px;line-height:1.25">entry app<tspan
-   style="font-size:64.99999762%;baseline-shift:super"
+   style="font-size:65%;baseline-shift:super"
    id="tspan16658">2)</tspan></tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend)"
@@ -672,7 +672,7 @@
          x="549.59601"
          y="1886.9647"
          style="font-size:22.5px;line-height:1.25">entry app<tspan
-   style="font-size:64.99999762%;baseline-shift:super"
+   style="font-size:65%;baseline-shift:super"
    id="tspan16656">3)</tspan></tspan></text>
     <g
        id="g12404"
@@ -747,7 +747,7 @@
          y="1802.3817"
          id="tspan12902"
          style="font-size:40px;line-height:1.25">metadata<tspan
-   style="font-size:64.99999762%;baseline-shift:super"
+   style="font-size:65%;baseline-shift:super"
    id="tspan16684">4,5)</tspan></tspan></text>
     <text
        xml:space="preserve"

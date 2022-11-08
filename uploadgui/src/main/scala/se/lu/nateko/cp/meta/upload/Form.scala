@@ -120,7 +120,7 @@ class Form(
 		licence <- dataPanel.licence;
 		moratorium <- dataPanel.moratorium;
 		specInfo <- specificInfo;
-		duplicateFilenameAllowed <- aboutPanel.duplicateFilenameAllowed
+		duplicateFilenameAllowed <- Try(aboutPanel.duplicateFilenameAllowed)
 	) yield DataObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,

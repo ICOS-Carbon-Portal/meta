@@ -39,6 +39,8 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.IRI
 import scala.language.strictEquality
+import se.lu.nateko.cp.meta.DataProductionDto
+import scala.collection.mutable.Buffer
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -67,7 +69,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validatePrevVers(meta, instServer);
 		_ <- validateLicence(meta, instServer);
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
-		_ <- validateCreator(meta, instServer);
+		_ <- validateActors(meta, instServer);
 		_ <- validateTemporalCoverage(meta, spec);
 		_ <- noProductionProvenanceIfL0(meta,spec);
 		_ <- validateFileName(meta, instServer);
@@ -198,18 +200,29 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 	}
 
-	private def validateCreator(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+	private def validateActors(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+		import scala.language.implicitConversions
+		given Conversion[URI, IRI] = instServ.factory.createIRI(_)
 
 		def isOrg(iri: IRI) = instServ.hasStatement(Some(iri), Some(metaVocab.hasName), None)
-		def isPerson(iri: IRI) = instServ.hasStatement(Some(iri), Some(RDF.TYPE), Some(metaVocab.personClass))
+		def isPerson(iri: IRI) = instServ.resourceHasType(iri, metaVocab.personClass)
+		def isActor(iri: IRI) = isOrg(iri) || isPerson(iri)
 
-		def validate(creator: URI) =
-			val creatorIRI = instServ.factory.createIRI(creator)
-			if(isOrg(creatorIRI) || isPerson(creatorIRI)) ok else userFail("Invalid creator URL")
+		def validate(prod: DataProductionDto): Try[NotUsed] =
+			val errors = Buffer.empty[String]
+			if !isActor(prod.creator) then errors += s"Invalid creator URL ${prod.creator}"
+
+			for(contributor <- prod.contributors if !isActor(contributor))
+				errors += s"Invalid contributor URL $contributor"
+
+			for (org <- prod.hostOrganization if !isOrg(org))
+				errors += s"Invalid host organization URL $org"
+
+			if errors.isEmpty then ok else userFail(errors.mkString("\n"))
 
 		meta.specificInfo match
-			case Left(spTempMeta) => validate(spTempMeta.production.creator)
-			case Right(stationMeta) => stationMeta.production.fold(ok)(prod => validate(prod.creator))
+			case Left(spTempMeta) => validate(spTempMeta.production)
+			case Right(stationMeta) => stationMeta.production.fold(ok)(validate)
 
 
 	private def validateTemporalCoverage(meta: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
@@ -233,7 +246,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		val allDuplicates = instServ
 			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
 			.collect{case Rdf4jStatement(subj, _, _) => subj}
-			.filter(_ != iri)
+			.filter(_ != iri) //can re-upload metadata for existing object
+			.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
 			.toIndexedSeq
 
 		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else
@@ -244,13 +258,11 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 
 	private def validateMoratorium(meta: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
-		meta.references.fold(ok)(ref =>
+		meta.references.flatMap(_.moratorium).fold(ok) {moratorium =>
 			val iri = vocab.getStaticObject(meta.hashSum)
 			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 
-			def validateMoratorium = ref.moratorium.fold(ok)(
-				m => if(m.compareTo(Instant.now()) > 0) then ok else userFail("Moratorium date must be in the future")
-			)
+			def validateMoratorium = if(moratorium.compareTo(Instant.now()) > 0) then ok else userFail("Moratorium date must be in the future")
 
 			if(!uploadComplete) then validateMoratorium else
 				val submissionIri = vocab.getSubmission(meta.hashSum)
@@ -259,8 +271,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				val uploadedDobjUnderMoratorium = submissionEndDate.compareTo(Instant.now()) > 0
 
 				if uploadedDobjUnderMoratorium then validateMoratorium
-				else ref.moratorium.fold(ok)(_ => userFail("Moratorium only allowed if object has not already been published"))
-		)
+				else userFail("Moratorium only allowed if object has not already been published")
+	}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri

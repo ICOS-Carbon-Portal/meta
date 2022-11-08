@@ -45,7 +45,7 @@ trait InstanceServer extends AutoCloseable{
 			.toIndexedSeq
 
 	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
-		hasStatement(Some(subject), Some(predicate), Some(obj))
+		hasStatement(Option(subject), Option(predicate), Option(obj))
 
 	final def resourceHasType(res: IRI, tpe: IRI): Boolean = hasStatement(res, RDF.TYPE, tpe)
 

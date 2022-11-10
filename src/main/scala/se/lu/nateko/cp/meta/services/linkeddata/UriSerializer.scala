@@ -50,6 +50,10 @@ object UriSerializer{
 				case Slash(Segment(`segment`, Slash(Segment(Hash(hash), Empty)))) => Some(hash)
 				case _ => None
 			}
+			def unapply(uri: JavaUri): Option[Sha256Sum] =
+				val path = uri.getRawPath.stripPrefix("/")
+				if !path.startsWith(segment) then None
+				else Hash.unapply(path.stripPrefix(segment).stripPrefix("/"))
 		}
 	}
 

@@ -88,7 +88,8 @@ object UploadDtoReader{
 					keywords = dobj.references.keywords,
 					licence = dobj.references.licence.map(_.url),
 					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
-					duplicateFilenameAllowed = None
+					duplicateFilenameAllowed = None,
+					autodeprecateSameFilenameObjects = None
 				)
 			)
 		)

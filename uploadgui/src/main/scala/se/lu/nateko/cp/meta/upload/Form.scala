@@ -132,7 +132,8 @@ class Form(
 			keywords = Option(keywords.map(_.trim).filter(!_.isEmpty)).filter(!_.isEmpty),
 			licence = licence,
 			moratorium = moratorium,
-			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed
+			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
+			autodeprecateSameFilenameObjects = None
 		))
 	)
 

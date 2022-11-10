@@ -48,14 +48,14 @@ class UploadService(
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = new StatementsProducer(vocab, metaVocab)
 
-	def registerUpload(meta: ObjectUploadDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
-		val submitterOrgUriTry = for(
-			_ <- validator.validateObject(meta, uploader);
+	def registerUpload(meta0: ObjectUploadDto, uploader: UserId)(using Envri): Future[AccessUri] = {
+		val metaAndSubmitterTry = for(
+			meta <- validator.validateObject(meta0, uploader);
 			submitterConf <- validator.getSubmitterConfig(meta)
-		) yield submitterConf.submittingOrganization
+		) yield meta -> submitterConf.submittingOrganization
 
 		for(
-			submitterOrg <- Future.fromTry(submitterOrgUriTry);
+			(meta, submitterOrg) <- Future.fromTry(metaAndSubmitterTry);
 			accessUri <- meta match {
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)

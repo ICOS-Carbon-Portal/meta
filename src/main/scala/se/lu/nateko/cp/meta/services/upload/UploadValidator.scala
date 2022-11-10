@@ -37,6 +37,7 @@ import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.core.data.DatasetClass
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import org.eclipse.rdf4j.model.IRI
 import scala.language.strictEquality
 import se.lu.nateko.cp.meta.DataProductionDto
@@ -53,12 +54,16 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 	private val ok: Try[NotUsed] = Success(NotUsed)
 
-	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[NotUsed] = meta match
+	type Validated[Dto <: ObjectUploadDto] <: Try[ObjectUploadDto] = Dto match
+		case DataObjectDto => Try[DataObjectDto]
+		case DocObjectDto => Try[DocObjectDto]
+
+	def validateObject[Dto <: ObjectUploadDto](meta: Dto, uploader: UserId)(using Envri): Validated[Dto] = meta match
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)
 		case doc: DocObjectDto => validateDoc(doc, uploader)
 
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
@@ -71,18 +76,18 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateActors(meta, instServer);
 		_ <- validateTemporalCoverage(meta, spec);
-		_ <- noProductionProvenanceIfL0(meta,spec);
-		_ <- validateFileName(meta, instServer);
-		_ <- validateMoratorium(meta, instServer)
-	) yield NotUsed
+		_ <- noProductionProvenanceIfL0(meta, spec);
+		amended <- validateFileName(meta, instServer);
+		_ <- validateMoratorium(amended, instServer)
+	) yield amended
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[NotUsed] = for(
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
-		_ <- validateFileName(meta, instServer)
-	) yield NotUsed
+		amended <- validateFileName(meta, instServer)
+	) yield amended
 
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
@@ -240,22 +245,45 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	private def validateFileName(meta: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
-		val iri = vocab.getStaticObject(meta.hashSum)
+	private def validateFileName[Dto <: ObjectUploadDto](dto: Dto, instServ: InstanceServer)(using Envri): Validated[Dto] =
+		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then passValidation(dto)
+		else
+			val allDuplicates = instServ
+				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
+				.collect{case Rdf4jStatement(subj, _, _) => subj}
+				.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
+				.map(_.toJava)
+				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
+				.toIndexedSeq
 
-		val allDuplicates = instServ
-			.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(meta.fileName)))
-			.collect{case Rdf4jStatement(subj, _, _) => subj}
-			.filter(_ != iri) //can re-upload metadata for existing object
-			.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
-			.toIndexedSeq
+			if allDuplicates.isEmpty then passValidation(dto)
+			else
+				val deprecated = dto.isNextVersionOf.flattenToSeq
+				if allDuplicates.exists(deprecated.contains) then passValidation(dto)
 
-		if allDuplicates.isEmpty || meta.duplicateFilenameAllowed then ok else
-			val deprecated = meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)
-			if allDuplicates.exists(deprecated.contains) then ok
-			else userFail(s"File name is already taken by other object(s) (${allDuplicates.mkString(", ")})." +
-				" Please deprecate older version(s) or set 'duplicateFilenameAllowed' flag in 'references' to 'true'")
+				else if dto.autodeprecateSameFilenameObjects then
+					withDeprecations(dto, deprecated ++ allDuplicates)
 
+				else failValidation(
+					userFail(
+						s"File name is already taken by other object(s) (${allDuplicates.mkString(", ")})." +
+						" Please deprecate older version(s) or set either 'duplicateFilenameAllowed' or " +
+						"'autodeprecateSameFilenameObjects' flag in 'references' to 'true'"
+					)
+				)
+	end validateFileName
+
+	private def withDeprecations[Dto <: ObjectUploadDto](dto: Dto, deprecated: Seq[Sha256Sum]): Validated[Dto] =
+		val nextVers: OptionalOneOrSeq[Sha256Sum] = Some(Right(deprecated))
+		dto match
+			case dobj: DataObjectDto => Success(dobj.copy(isNextVersionOf = nextVers))
+			case doc: DocObjectDto => Success(doc.copy(isNextVersionOf = nextVers))
+
+	private def passValidation[Dto <: ObjectUploadDto](dto: Dto): Validated[Dto] = dto match
+		case dobj: DataObjectDto => Success(dobj)
+		case doc: DocObjectDto => Success(doc)
+
+	private def failValidation[Dto <: ObjectUploadDto](err: Failure[Nothing]) = err.asInstanceOf[Validated[Dto]]
 
 	private def validateMoratorium(meta: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
 		meta.references.flatMap(_.moratorium).fold(ok) {moratorium =>

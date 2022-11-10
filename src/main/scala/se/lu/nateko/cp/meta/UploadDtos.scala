@@ -18,6 +18,7 @@ sealed trait ObjectUploadDto extends UploadDto {
 	def fileName: String
 	def references: Option[ReferencesDto]
 	def duplicateFilenameAllowed = references.flatMap(_.duplicateFilenameAllowed).getOrElse(false)
+	def autodeprecateSameFilenameObjects = references.flatMap(_.autodeprecateSameFilenameObjects).getOrElse(false)
 }
 
 case class DataObjectDto(
@@ -100,5 +101,6 @@ case class ReferencesDto(
 	keywords: Option[Seq[String]],
 	licence: Option[URI],
 	moratorium: Option[Instant],
-	duplicateFilenameAllowed: Option[Boolean]
+	duplicateFilenameAllowed: Option[Boolean],
+	autodeprecateSameFilenameObjects: Option[Boolean]
 )

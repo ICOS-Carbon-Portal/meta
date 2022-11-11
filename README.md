@@ -151,7 +151,8 @@ Clarifications:
 		+ https://creativecommons.org/publicdomain/zero/1.0/ (CC0 1.0 Public Domain)
 		+ (the up-to-date list of supported licences can be obtained using [SPARQL client](https://meta.icos-cp.eu/sparqlclient/) and query `select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>}`)
 	- `moratorium` (optional) is an ISO 8601 timestamp with the desired publication time in the future (instead of the moment of data upload). The data object will be prevented from being downloaded until the moratorium expires.
-	- `duplicateFilenameAllowed` (optional) boolean flag enabling uploading of duplicate-filename data objects without deprecating the existing object(s) with the same filename.
+	- `duplicateFilenameAllowed` (optional) boolean flag signalling upload of (potentially) duplicate-filename data/doc object without deprecating the existing object(s) with the same filename.
+	- `autodeprecateSameFilenameObjects` (optional) boolean flag requesting that all the existing non-deprecated data/doc objects with the same filename, as the one being uploaded, will be automatically deprecated by this upload.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 

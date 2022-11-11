@@ -54,11 +54,11 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 	private val ok: Try[NotUsed] = Success(NotUsed)
 
-	type Validated[Dto <: ObjectUploadDto] <: Try[ObjectUploadDto] = Dto match
+	private type Validated[Dto <: ObjectUploadDto] <: Try[ObjectUploadDto] = Dto match
 		case DataObjectDto => Try[DataObjectDto]
 		case DocObjectDto => Try[DocObjectDto]
 
-	def validateObject[Dto <: ObjectUploadDto](meta: Dto, uploader: UserId)(using Envri): Validated[Dto] = meta match
+	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[ObjectUploadDto] = meta match
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)
 		case doc: DocObjectDto => validateDoc(doc, uploader)
 
@@ -290,9 +290,11 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			val iri = vocab.getStaticObject(meta.hashSum)
 			val uploadComplete = instServ.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 
-			def validateMoratorium = if(moratorium.compareTo(Instant.now()) > 0) then ok else userFail("Moratorium date must be in the future")
+			def validateMoratorium =
+				if moratorium.compareTo(Instant.now()) > 0 then ok
+				else userFail("Moratorium date must be in the future")
 
-			if(!uploadComplete) then validateMoratorium else
+			if !uploadComplete then validateMoratorium else
 				val submissionIri = vocab.getSubmission(meta.hashSum)
 				val submissionEndDate = FetchingHelper(instServ).getSingleInstant(submissionIri, metaVocab.prov.endedAtTime)
 
@@ -300,7 +302,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 				if uploadedDobjUnderMoratorium then validateMoratorium
 				else userFail("Moratorium only allowed if object has not already been published")
-	}
+		}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri

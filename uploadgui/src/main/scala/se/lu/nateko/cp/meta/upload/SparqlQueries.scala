@@ -68,7 +68,7 @@ object SparqlQueries {
 		|SELECT *
 		|FROM <${from}>
 		|WHERE {
-		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ;
+		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ; cpmeta:hasFormat ?format ;
 		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
 		|	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
 		|	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
@@ -98,6 +98,7 @@ object SparqlQueries {
 			) else None,
 			new URI(b("theme")),
 			new URI(b("project")),
+			new URI(b("format")),
 			keywords("keywords").concat(keywords("projKeywords")).distinct
 		)
 	}

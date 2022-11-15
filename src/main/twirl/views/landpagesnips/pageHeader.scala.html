@@ -1,5 +1,5 @@
 @(header: String, headerExtra: Option[Html] = None, subTitle: Option[String] = None, tabs: Option[Html] = None)
-@style = @{s"d-sm-flex justify-content-between align-items-end ${tabs.fold("border-bottom")(_ => "")} mb-4 pb-2"}
+@style = @{s"d-sm-flex justify-content-between align-items-start ${tabs.fold("border-bottom")(_ => "")} mb-4 pb-2 gap-3"}
 @if(subTitle) {
 <div class="row">
 	<h1 class="col-md-8">@header</h1>

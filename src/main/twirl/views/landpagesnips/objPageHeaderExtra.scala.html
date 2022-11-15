@@ -3,7 +3,7 @@
 @import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
-<div class="d-flex gap-1">
+<div class="d-flex gap-1 flex-shrink-0">
 	@dobj.accessUrl.map{link =>
 		<button id="meta-add-to-cart-button" class="btn btn-primary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
 		<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>

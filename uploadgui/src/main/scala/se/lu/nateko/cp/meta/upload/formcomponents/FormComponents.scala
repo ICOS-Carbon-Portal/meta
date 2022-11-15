@@ -145,6 +145,21 @@ class HtmlElements(selector: String) {
 		}
 		enabled = false
 	}
+
+	def enable(): Unit = {
+		dom.document.querySelectorAll(selector).foreach {
+			case section: dom.HTMLElement =>
+				section.style.color = "black"
+		}
+		enabled = true
+	}
+	def disable(): Unit = {
+		dom.document.querySelectorAll(selector).foreach {
+			case section: dom.HTMLElement =>
+				section.style.color = "gray"
+		}
+		enabled = false
+	}
 }
 
 class TagCloud(elemId: String) {

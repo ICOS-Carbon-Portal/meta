@@ -36,6 +36,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
 	def metadataUri: Try[URI] = metadataUriInput.value
 	def duplicateFilenameAllowed: Option[Boolean] = Some(duplicateFilenameAllowedInput.checked)
+	def autodeprecateSameFilenameObjects: Option[Boolean] = Some(autoDeprecateInput.checked)
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 
@@ -47,8 +48,10 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val fileNameElement = new HtmlElements("#filename-element")
 	private val fileInput = new FileInput("fileinput", notifyUpdate)
 	private val fileNameInput = new TextInput("filename", notifyUpdate, "file name")
-	private val duplicateFilenameAllowedElement = new HtmlElements("#duplicatefile-element")
+	private val fileOptionsElement = new HtmlElements("#fileoptions-element")
+	private val duplicateFilenameAllowedElement = new HtmlElements("#duplicatefile-checkbox-elem")
 	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile-checkbox", _ => notifyUpdate())
+	private val autoDeprecateInput = new Checkbox("autodeprecate-checkbox", c => {onAutoDeprecateSelected(c); notifyUpdate()})
 	private val previousVersionInput = new HashOptOneOrManyInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")
@@ -68,7 +71,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 		getMetadataButton.disable("Missing landing page URL")
 		fileNameElement.hide()
 		fileElement.hide()
-		duplicateFilenameAllowedElement.hide()
+		fileOptionsElement.hide()
 		metadataUrlElement.hide()
 		clearFields()
 	}
@@ -88,7 +91,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				metadataUrlElement.hide()
 				typeControl.enable()
 				typeControl.reset()
-				duplicateFilenameAllowedElement.hide()
+				fileOptionsElement.hide()
 				setPreviousVersionEditability(mode)
 			case Update =>
 				fileElement.hide()
@@ -97,14 +100,14 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				typeControl.reset()
 				typeControl.disable()
 				metadataUriInput.focus()
-				duplicateFilenameAllowedElement.show()
+				fileOptionsElement.show()
 				setPreviousVersionEditability(mode)
 			case NewVersion =>
 				fileNameElement.hide()
 				metadataUrlElement.show()
 				typeControl.reset()
 				typeControl.disable()
-				duplicateFilenameAllowedElement.hide()
+				fileOptionsElement.hide()
 				metadataUriInput.focus()
 			}
 		bus.publish(ModeChanged)
@@ -116,13 +119,23 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 		bus.publish(ItemTypeSelected(itemType))
 	}
 
+	private def onAutoDeprecateSelected(checked: Boolean): Unit = {
+		if checked then
+			duplicateFilenameAllowedInput.uncheck()
+			duplicateFilenameAllowedInput.disable()
+			duplicateFilenameAllowedElement.disable()
+		else
+			duplicateFilenameAllowedInput.enable()
+			duplicateFilenameAllowedElement.enable()
+	}
+
 	private def setFileAndFilenameVisibility(itemType: ItemType): Unit = itemType match {
 		case Collection =>
 			fileElement.hide()
 			fileNameElement.hide()
-			duplicateFilenameAllowedElement.hide()
+			fileOptionsElement.hide()
 		case _ =>
-			duplicateFilenameAllowedElement.show()
+			fileOptionsElement.show()
 			if(isNewItemOrVersion) {
 				fileElement.show()
 				fileNameElement.hide()

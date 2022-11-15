@@ -98,6 +98,7 @@ object CpVocab{
 	val VarInfoPrefix = "varinfo_"
 	val RolesPrefix = "roles/"
 	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
+	val LabeledStationStatus = "STEP3APPROVED"
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)

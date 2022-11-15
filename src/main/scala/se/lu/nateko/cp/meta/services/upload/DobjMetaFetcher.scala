@@ -116,18 +116,19 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 	private def getLabelingDateAndDiscontinuation(stat: IRI): (Option[LocalDate], Boolean) = {
 		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
+		val vf = server.factory
 
 		val ctxts = Seq(
 			"http://meta.icos-cp.eu/resources/stationentry/",
 			"http://meta.icos-cp.eu/resources/stationlabeling/"
-		).map(server.factory.createIRI)
+		).map(vf.createIRI)
 
 		val fetcher = FetchingHelper(server.withContexts(ctxts, Nil))
 
 		val Seq(prodStLink, appStatus, statusDate, stationId) = Seq(
 				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate", "hasShortName"
 			)
-			.map(server.factory.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
+			.map(vf.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
 
 		val provStOpt: Option[IRI] = fetcher.server
 			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
@@ -137,11 +138,14 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			}
 			.headOption
 
-		val labelingDate = provStOpt.flatMap{labeledSt =>
-			fetcher
+		val labelingDate = provStOpt
+			.filter{ provSt => fetcher
+				.server.hasStatement(provSt, appStatus, vf.createLiteral(CpVocab.LabeledStationStatus))
+			}
+			.flatMap{labeledSt => fetcher
 				.getOptionalInstant(labeledSt, statusDate)
 				.map(_.atZone(ZoneId.of("UTC")).toLocalDate)
-		}
+			}
 
 		val discontinued: Boolean = provStOpt.fold(true){provSt =>
 			!fetcher.server.hasStatement(Some(provSt), Some(stationId), None)

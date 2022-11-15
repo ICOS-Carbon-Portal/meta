@@ -168,7 +168,7 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 											<div className={"cp-lnk card-header bg-" + cardStyle} style={panelHeaderStyle} onClick={() => chooseStationAction(station)}>
 												<span className={icon} style={{ marginTop: 3 }} />
 												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>{station.hasLongName}</span>
-												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>(Last status update: {getLastAppUpdate(station.hasAppStatusDate)})</span>
+												<span style={{ marginLeft: 10, alignSelf: 'flex-start' }}>(Last status change: {formatStatusDate(station.hasAppStatusDate)})</span>
 												<span className="text-muted" style={appStatusCommentStyle}>{appStatusCommentTxt}</span>
 												<label className={applicationStatusCSS}>
 													<span style={{ fontWeight: 600, fontSize: 12, position: 'relative', top: 2 }}>{statusLabel(applicationStatus)}</span>
@@ -197,9 +197,6 @@ export default function(StationAuthStore, themeToStation, chooseStationAction){
 	});
 }
 
-const getLastAppUpdate = (hasAppStatusDate) => {
-	return hasAppStatusDate
-		? hasAppStatusDate.toLocaleString('se-SE')
-		: 'unknown';
-};
-
+function formatStatusDate(date){
+	return date ? date.toLocaleString('se-SE') : 'unknown';
+}

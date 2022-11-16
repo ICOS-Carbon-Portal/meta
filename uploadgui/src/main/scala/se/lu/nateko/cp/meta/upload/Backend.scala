@@ -101,7 +101,10 @@ object Backend {
 
 		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
 
-		if(spec.isStationTimeSer || firstVarName.isDefined){
+		//TODO Find a good place for the ZIP obj format URI constant
+		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
+
+		if(spec.isStationTimeSer || firstVarName.isDefined || isZip){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>
@@ -111,7 +114,7 @@ object Backend {
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
 			fetchOk("validating data object", url, new RequestInit{
-				body = file
+				body = if isZip then file.slice(0, 100) else file
 				method = HttpMethod.PUT
 			}).map(_ => ())
 		} else Future.successful(())

@@ -14,7 +14,7 @@ object DsSpec{
 	val StationTimeSer: DsClass = "StationTimeSeries"
 }
 
-case class ObjSpec(uri: URI, name: String, dataLevel: Int, dataset: Option[DsSpec], theme: URI, project: URI, keywords: Seq[String]){
+case class ObjSpec(uri: URI, name: String, dataLevel: Int, dataset: Option[DsSpec], theme: URI, project: URI, format: URI, keywords: Seq[String]){
 	def isStationTimeSer: Boolean = dataset.exists(_.dsClass == DsSpec.StationTimeSer)
 	def isSpatiotemporal: Boolean = dataset.exists(_.dsClass == DsSpec.SpatioTemp)
 }

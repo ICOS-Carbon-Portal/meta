@@ -65,21 +65,6 @@
 	#alert-placeholder {
 		white-space: pre-line;
 	}
-	#fileoptions-element {
-		width: 100%;
-		padding-bottom: 1em;
-	}
-	#duplicatefile-checkbox-elem {
-		width: 50%;
-		float: left;
-		white-space: nowrap;
-		margin-right: 5px;
-	}
-	#autodeprecate-checkbox-elem {
-		width: 45%;
-		float: right;
-		white-space: nowrap;
-	}
 	@@media (min-width: 480px) {
 		#header-buttons > button {
 			width: auto;
@@ -182,11 +167,17 @@
 								<label class="form-label" for="filename">File name</label>
 								<input id="filename" class="form-control filename" type="text">
 							</div>
-							<div class="mb-3" id="fileoptions-element">
-								<div id="duplicatefile-checkbox-elem"><input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox"> Allow duplicate filename</input>
-								<i title="Allows uploading, even if a non-deprecated object with the same file name already exists. (For data objects, the limitation applies only within the same object format.)" class="fa fa-question-circle"></i></div>
-								<div id="autodeprecate-checkbox-elem"><input class="form-check-input" id="autodeprecate-checkbox" role="checkbox" type="checkbox"> Auto deprecate</input>
-								<i title="Deprecate same-filename objects. (Only concerns non-deprecated ones. For data objects, only those that have the same format are considered.)" class="fa fa-question-circle"></i></div>
+							<div id="fileoptions-element">
+								<div class="d-flex flex-wrap mb-3" style="gap: 0 1rem">
+									<div id="duplicatefile-checkbox-elem">
+										<input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox"> Allow duplicate filename</input>
+										<i title="Allows uploading, even if a non-deprecated object with the same file name already exists. (For data objects, the limitation applies only within the same object format.)" class="fa fa-question-circle"></i>
+									</div>
+									<div id="autodeprecate-checkbox-elem">
+										<input class="form-check-input" id="autodeprecate-checkbox" role="checkbox" type="checkbox"> Auto deprecate</input>
+										<i title="Deprecate same-filename objects. (Only concerns non-deprecated ones. For data objects, only those that have the same format are considered.)" class="fa fa-question-circle"></i>
+									</div>
+								</div>
 							</div>
 							<div class="mb-3">
 								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>

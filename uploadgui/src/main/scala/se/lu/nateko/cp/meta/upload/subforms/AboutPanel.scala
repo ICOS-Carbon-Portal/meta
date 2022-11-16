@@ -21,7 +21,6 @@ import UploadApp.whenDone
 import Utils.*
 import java.net.URI
 import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio.*
-import scala.scalajs.js
 
 
 class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envri: Envri) extends PanelSubform("about-section"){
@@ -63,9 +62,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 
 	submitterIdSelect.setOptions(subms)
 	resetForm()
-
-	val tooltipTriggerList = dom.document.querySelectorAll("[data-bs-toggle='tooltip']")
-	val tooltipList = tooltipTriggerList.map(tooltipTriggerEl => js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(tooltipTriggerEl))
+	initializeBootstrapTooltip()
 
 	def resetForm(): Unit = {
 		modeControl.reset()

@@ -6,6 +6,9 @@ import scala.util.Success
 import scala.util.Try
 import org.scalajs.dom.{document, html}
 import org.scalajs.dom.ext.*
+import scala.scalajs.js
+import org.scalajs.dom
+import org.scalajs.dom.Element
 
 object Utils {
 
@@ -27,6 +30,12 @@ object Utils {
 	def deepClone[T <: html.Element](elem: T): T = elem.cloneNode(true).asInstanceOf[T]
 
 	def fail(msg: String) = Failure(new Exception(msg))
+
+	def initializeBootstrapPopover(elem: Element) = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(elem)
+
+	def initializeBootstrapTooltip() =
+		val tooltipTriggerList = dom.document.querySelectorAll("[data-bs-toggle='tooltip']")
+		tooltipTriggerList.map(tooltipTriggerEl => initializeBootstrapPopover(tooltipTriggerEl))
 
 	extension [T](inner: Try[T])
 		def withErrorContext(ctxt: String): Try[T] = inner.recoverWith{

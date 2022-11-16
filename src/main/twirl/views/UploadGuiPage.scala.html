@@ -167,7 +167,18 @@
 								<label class="form-label" for="filename">File name</label>
 								<input id="filename" class="form-control filename" type="text">
 							</div>
-							<div class="mb-3" id="duplicatefile-element"><input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox"> Allow duplicate filename</div>
+							<div id="fileoptions-element">
+								<div class="d-flex flex-wrap mb-3" style="gap: 0 1rem">
+									<div id="duplicatefile-checkbox-elem">
+										<input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox"> Allow duplicate filename</input>
+										@helpButton("Allows uploading, even if a non-deprecated object with the same file name already exists (For data objects, the limitation applies only within the same object format)")
+									</div>
+									<div id="autodeprecate-checkbox-elem">
+										<input class="form-check-input" id="autodeprecate-checkbox" role="checkbox" type="checkbox"> Auto deprecate</input>
+										@helpButton("Deprecate same-filename objects (Only concerns non-deprecated ones. For data objects, only those that have the same format are considered)")
+									</div>
+								</div>
+							</div>
 							<div class="mb-3">
 								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>
 								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
@@ -530,4 +541,8 @@
 			</span>
 		</div>
 	</div>
+}
+
+@helpButton(helpText: String) = {
+	<i data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="@helpText" class="fa fa-question-circle"></i>
 }

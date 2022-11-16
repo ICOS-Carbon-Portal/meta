@@ -7,7 +7,6 @@ import scala.util.{ Success, Try, Failure }
 import org.scalajs.dom
 import org.scalajs.dom.html
 import org.scalajs.dom.ext.*
-import scala.scalajs.js
 
 import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -108,20 +107,20 @@ class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[
 
 class Button(elemId: String, onClick: () => Unit){
 	private val button = getElementById[html.Button](elemId).get
-	private var popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
+	private var popover = initializeBootstrapPopover(button.parentElement)
 
-	def enable(): Unit = {
+	def enable(): Unit =
 		button.disabled = false
 		popover.disable()
-	}
 
-	def disable(errMessage: String): Unit = {
+	def disable(errMessage: String): Unit =
 		button.disabled = true
 		button.parentElement.setAttribute("data-bs-content", errMessage)
+		if errMessage.nonEmpty then
+			popover.dispose()
+			popover = initializeBootstrapPopover(button.parentElement)
+		else popover.disable()
 
-		if (errMessage.nonEmpty)
-			popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(button.parentElement)
-	}
 
 	button.onclick = _ => onClick()
 }
@@ -142,6 +141,21 @@ class HtmlElements(selector: String) {
 		dom.document.querySelectorAll(selector).foreach {
 			case section: dom.HTMLElement =>
 				section.style.display = "none"
+		}
+		enabled = false
+	}
+
+	def enable(): Unit = {
+		dom.document.querySelectorAll(selector).foreach {
+			case section: dom.HTMLElement =>
+				section.style.color = "black"
+		}
+		enabled = true
+	}
+	def disable(): Unit = {
+		dom.document.querySelectorAll(selector).foreach {
+			case section: dom.HTMLElement =>
+				section.style.color = "gray"
 		}
 		enabled = false
 	}

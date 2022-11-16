@@ -133,7 +133,7 @@ class Form(
 			licence = licence,
 			moratorium = moratorium,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = None
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
 		))
 	)
 

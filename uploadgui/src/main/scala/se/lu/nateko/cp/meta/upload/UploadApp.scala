@@ -50,6 +50,7 @@ object UploadApp {
 			loginBlock.hide()
 			formBlock.show()
 			headerButtons.show()
+			initAllBootstrapPopovers()
 		}
 	}
 

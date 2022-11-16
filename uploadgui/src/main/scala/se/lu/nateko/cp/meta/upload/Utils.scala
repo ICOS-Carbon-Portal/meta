@@ -31,11 +31,13 @@ object Utils {
 
 	def fail(msg: String) = Failure(new Exception(msg))
 
-	def initializeBootstrapPopover(elem: Element) = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(elem)
+	def initializeBootstrapPopover(elem: Element): Popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(elem).asInstanceOf[Popover]
 
-	def initializeBootstrapTooltip() =
-		val tooltipTriggerList = dom.document.querySelectorAll("[data-bs-toggle='tooltip']")
-		tooltipTriggerList.map(tooltipTriggerEl => initializeBootstrapPopover(tooltipTriggerEl))
+	def initAllBootstrapPopovers(): Unit =
+		val tooltipTriggerList = dom.document.querySelectorAll("[data-bs-toggle='popover']")
+		tooltipTriggerList.foreach{elem =>
+			org.scalajs.dom.console.log(initializeBootstrapPopover(elem))
+		}
 
 	extension [T](inner: Try[T])
 		def withErrorContext(ctxt: String): Try[T] = inner.recoverWith{
@@ -44,4 +46,14 @@ object Utils {
 
 	extension [T](inner: Option[T])
 		def withMissingError(msg: String): Try[T] = inner.fold[Try[T]]{Failure(new Exception(msg))}(Success(_))
+
+	@js.native
+	trait Popover extends js.Object:
+		def disable(): Unit = js.native
+		def enable(): Unit = js.native
+		def hide(): Unit = js.native
+		def show(): Unit = js.native
+		def update(): Unit = js.native
+		def dispose(): Unit = js.native
+
 }

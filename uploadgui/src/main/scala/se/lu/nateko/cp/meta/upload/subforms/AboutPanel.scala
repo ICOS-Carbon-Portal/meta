@@ -62,7 +62,6 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 
 	submitterIdSelect.setOptions(subms)
 	resetForm()
-	initializeBootstrapTooltip()
 
 	def resetForm(): Unit = {
 		modeControl.reset()

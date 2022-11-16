@@ -109,18 +109,18 @@ class Button(elemId: String, onClick: () => Unit){
 	private val button = getElementById[html.Button](elemId).get
 	private var popover = initializeBootstrapPopover(button.parentElement)
 
-	def enable(): Unit = {
+	def enable(): Unit =
 		button.disabled = false
 		popover.disable()
-	}
 
-	def disable(errMessage: String): Unit = {
+	def disable(errMessage: String): Unit =
 		button.disabled = true
 		button.parentElement.setAttribute("data-bs-content", errMessage)
-
-		if (errMessage.nonEmpty)
+		if errMessage.nonEmpty then
+			popover.dispose()
 			popover = initializeBootstrapPopover(button.parentElement)
-	}
+		else popover.disable()
+
 
 	button.onclick = _ => onClick()
 }

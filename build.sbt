@@ -137,7 +137,8 @@ lazy val meta = (project in file("."))
 
 		assembly / assembledMappings += {
 			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
-			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName))
+			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
+			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName, mapJsFile -> mapJsFile.getName))
 		},
 
 		Compile / resources ++= {

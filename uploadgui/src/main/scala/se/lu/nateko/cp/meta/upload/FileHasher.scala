@@ -8,7 +8,7 @@ import scala.scalajs.js.typedarray.Int8Array
 
 import org.scalajs.dom.HashAlgorithm
 import org.scalajs.dom.crypto
-import org.scalajs.dom.raw.File
+import org.scalajs.dom.File
 import org.scalajs.dom.FileReader
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

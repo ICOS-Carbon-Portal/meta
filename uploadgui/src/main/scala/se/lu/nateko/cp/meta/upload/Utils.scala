@@ -33,11 +33,9 @@ object Utils {
 
 	def initializeBootstrapPopover(elem: Element): Popover = js.Dynamic.newInstance(js.Dynamic.global.bootstrap.Popover)(elem).asInstanceOf[Popover]
 
-	def initAllBootstrapPopovers(): Unit =
-		val tooltipTriggerList = dom.document.querySelectorAll("[data-bs-toggle='popover']")
-		tooltipTriggerList.foreach{elem =>
-			org.scalajs.dom.console.log(initializeBootstrapPopover(elem))
-		}
+	def initAllBootstrapPopovers(): Unit = dom.document
+		.querySelectorAll("[data-bs-toggle='popover']")
+		.foreach(initializeBootstrapPopover)
 
 	extension [T](inner: Try[T])
 		def withErrorContext(ctxt: String): Try[T] = inner.recoverWith{

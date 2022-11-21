@@ -90,7 +90,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
+	given RootJsonFormat[LinkBox] = jsonFormat4(LinkBox.apply)
+	given RootJsonFormat[WebpageElements] = jsonFormat2(WebpageElements.apply)
+	given RootJsonFormat[Organization] = jsonFormat5(Organization.apply)
 	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)

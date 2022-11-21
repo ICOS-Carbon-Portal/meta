@@ -163,7 +163,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def toDoiCreator(p: Agent) = p match {
-		case Organization(_, name, _, _) =>
+		case Organization(_, name, _, _, _) =>
 			Creator(
 				name = GenericName(name),
 				nameIdentifiers = Nil,

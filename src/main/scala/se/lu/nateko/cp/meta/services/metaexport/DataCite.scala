@@ -21,7 +21,8 @@ import java.time.Instant
 import java.time.Year
 
 
-class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Seq[StaticObject]) {
+class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Seq[StaticObject]):
+	import DataCite.{*, given}
 
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
 	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
@@ -108,10 +109,12 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		val creators = collObjects
 			.flatMap(getCreators)
 			.distinct
+			.sortBy(_.name)
 
 		val subjects = dataObjs
 			.flatMap(_.keywords.getOrElse(Nil))
 			.distinct
+			.sorted
 			.map(keyword => Subject(keyword))
 
 		val funders = dataObjs
@@ -132,7 +135,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			publicationYear = Some(Year.now.getValue),
 			types = Some(ResourceType(None, Some(ResourceTypeGeneral.Collection))),
 			subjects = subjects,
-			contributors = dataObjs.flatMap(getContributors),
+			contributors = dataObjs.flatMap(getContributors).distinct.sortBy(_.name),
 			dates = Seq(doiDate(Instant.now, DateType.Issued)),
 			formats = collObjects.flatMap(getFormat).distinct,
 			version = Some(Version(1, 0)),
@@ -179,8 +182,24 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 
 	def toDoiContributor(agent: Agent) = toDoiCreator(agent).toContributor()
 
-}
+end DataCite
 
-extension (creator: Creator)
-	def toContributor(contrType: Option[ContributorType] = None) =
-		Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, contrType)
+object DataCite:
+
+	extension (creator: Creator)
+		def toContributor(contrType: Option[ContributorType] = None) =
+			Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, contrType)
+
+	given nameOrdering: Ordering[Name] = Ordering
+		.by[Name, Boolean]{
+			case _: PersonalName => false //people first
+			case _: GenericName => true   //then orgs
+		}
+		.orElseBy{
+			case PersonalName(_, familyName) => familyName
+			case GenericName(name) => name
+		}
+		.orElseBy{
+			case PersonalName(givenName, _) => givenName
+			case _ => ""
+		}

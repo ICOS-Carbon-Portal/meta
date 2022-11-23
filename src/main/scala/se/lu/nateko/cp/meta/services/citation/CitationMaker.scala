@@ -173,8 +173,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			year <- yearOpt;
 			projName <- projName
 		) yield {
-			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}., "}.mkString
-			s"${authorsStr}$projName, $year. $title, $pidUrl"
+			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}."}.mkString(", ")
+			s"${authorsStr} ($year). $title, $projName, $pidUrl"
 		}
 
 		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)

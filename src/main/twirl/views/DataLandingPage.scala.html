@@ -12,7 +12,7 @@
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(
 	pageTitle,
-	pageHeading,
+	Some(pageHeading),
 	headerExtra = headerExtra,
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,

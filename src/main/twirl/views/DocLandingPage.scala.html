@@ -8,7 +8,7 @@
 @import landpagesnips._
 
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, subHeading = Some("Document")){
+@ServerSidePage(doc.fileName, Some(pageHeading), headerExtra = headerExtra, subHeading = Some("Document")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(doc.nextVersion) {

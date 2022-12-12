@@ -3660,6 +3660,9 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/netcdfTimeSeries">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <hasGoodFlagValue>O</hasGoodFlagValue>
+        <hasGoodFlagValue>R</hasGoodFlagValue>
+        <hasGoodFlagValue>U</hasGoodFlagValue>
         <rdfs:label>NetCDF (time series)</rdfs:label>
     </owl:NamedIndividual>
     

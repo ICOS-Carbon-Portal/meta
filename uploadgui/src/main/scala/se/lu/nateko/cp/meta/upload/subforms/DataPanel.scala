@@ -74,7 +74,12 @@ class DataPanel(
 
 	private def onSpecSelected(): Unit = {
 		objSpecSelect.value.foreach{ objSpec =>
-			if(objSpec.isStationTimeSer) nRowsInput.enable() else nRowsInput.disable()
+			val objFormat = objSpec.format.toString.split("/").last
+			val isNotAtcTimeSeries = objFormat != "asciiAtcProductTimeSer" // TODO: Find a better place for these constants
+			val isNotWdcgg = objFormat != "asciiWdcggTimeSer"
+			val isNotNetCDF = objFormat != "netcdfTimeSeries"
+
+			if(objSpec.isStationTimeSer && isNotAtcTimeSeries && isNotWdcgg && isNotNetCDF) nRowsInput.enable() else nRowsInput.disable()
 			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)
 			bus.publish(ObjSpecSelected(objSpec))

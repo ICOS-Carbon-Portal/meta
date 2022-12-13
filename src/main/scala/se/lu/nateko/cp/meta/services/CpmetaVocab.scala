@@ -164,6 +164,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val atcFormat = getRelativeRaw("asciiAtcTimeSer")
 	val atcProductFormat = getRelativeRaw("asciiAtcProductTimeSer")
 //	val socatFormat = getRelativeRaw("asciiOtcSocatTimeSer")
+	val netCDFTimeSeriesFormat = getRelativeRaw("netcdfTimeSeries")
 
 	object prov extends CustomVocab {
 		val factory = top.factory

@@ -333,7 +333,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 					if(
 						(spec.datasetSpec.isDefined) && stationMeta.nRows.isEmpty &&
-						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat)
+						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat) && !hasFormat(metaVocab.netCDFTimeSeriesFormat)
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
 					if(subm.submittingOrganization === vocab.atc){

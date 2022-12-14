@@ -11,9 +11,9 @@
 @(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), None, CpMenu.default){
 	@for(cover <- station.org.webpageDetails.flatMap(_.coverImage)) {
-	<div class="row cover-image position-relative" style="background-image: url(@{cover}); height: 558px; background-size: cover; margin-top: -2rem;">
+	<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
 		<div class="col">
-				<h1 class="text-light position-absolute top-50 start-50 translate-middle text-center">
+				<h1 class="text-light text-center" style="margin-top: 8vw;">
 					ICOS STATION<br><strong style="font-size: 5rem;">@{stationShortName(station)}</strong>
 				</h1>
 		</div>
@@ -40,21 +40,8 @@
 		}
 	</div>
 	}
-	@for(linkBoxes <- station.org.webpageDetails.flatMap(_.linkBoxes)) {
-		<div class="container">
-			<div class="row my-5">
-			@for(linkBox <- linkBoxes){
-				<div class="col-md-4 position-relative">
-					<a href="@linkBox.target">
-						<div class="link-box-image">
-							<img src=@linkBox.coverImage class="img-fluid w-100" style="height: 230px; object-fit: cover; border-bottom: 5px solid var(--icos-magenta);">
-							<div class="link-box-title position-absolute bottom-0 text-white m-3 fs-4 fw-bold">@linkBox.name</div>
-						</div>
-					</a>
-				</div>
-			}
-			</div>
-		</div>
+	@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes.map(_.take(3)))) {
+		@linkBoxes(boxes)
 	}
 	@if(station.fullCoverage.isEmpty) {} else {
 		@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
@@ -63,6 +50,9 @@
 				<a href="@maplink">Open map</a>
 			</div>
 		}
+	}
+	@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes.map(_.slice(3, 6)))) {
+		@linkBoxes(boxes)
 	}
 	<div class="row form-group mt-3">
 		<div class="col-sm-8">

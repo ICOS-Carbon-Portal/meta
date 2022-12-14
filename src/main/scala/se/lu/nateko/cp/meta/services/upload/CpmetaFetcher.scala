@@ -69,7 +69,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	def getWebpageElems(elems: IRI) = WebpageElements(
 		coverImage = getOptionalUriLiteral(elems, metaVocab.hasCoverImage),
 		linkBoxes = Option(
-			server.getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox)
+			server.getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox).sortBy(_.orderWeight)
 		).filterNot(_.isEmpty)
 	)
 

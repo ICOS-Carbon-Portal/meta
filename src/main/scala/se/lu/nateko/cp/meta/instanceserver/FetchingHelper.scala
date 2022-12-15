@@ -40,8 +40,9 @@ trait FetchingHelper {
 	protected def getOptionalInt(subj: IRI, pred: IRI): Option[Int] =
 		server.getIntValues(subj, pred, InstanceServer.AtMostOne).headOption
 
+	//TODO Go back to at most one in this method, or rework the whole cardinality validation approach
 	protected def getOptionalLong(subj: IRI, pred: IRI): Option[Long] =
-		server.getLongValues(subj, pred, InstanceServer.AtMostOne).headOption
+		server.getLongValues(subj, pred, InstanceServer.Default).headOption
 
 	protected def getOptionalDouble(subj: IRI, pred: IRI): Option[Double] =
 		server.getDoubleValues(subj, pred, InstanceServer.AtMostOne).headOption

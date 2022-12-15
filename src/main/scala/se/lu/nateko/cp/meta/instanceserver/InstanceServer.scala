@@ -94,8 +94,11 @@ trait InstanceServer extends AutoCloseable{
 	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Int] =
 		getLiteralValues(subj, pred, XSD.INTEGER, exp).map(_.toInt)
 
+	//TODO Go back to .map(_.toLong) parsing or rework all the cardinality validation approach
+	//The fix is to work around a broken long value in the RDF (file size of https://meta.icos-cp.eu/objects/I_HZ0N-B0SOWu_hUiD_MMdlG)
+	//(rdflog is ok)
 	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Long] =
-		getLiteralValues(subj, pred, XSD.LONG, exp).map(_.toLong)
+		getLiteralValues(subj, pred, XSD.LONG, exp).flatMap(_.toLongOption)
 
 	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Double] =
 		getLiteralValues(subj, pred, XSD.DOUBLE, exp).map(_.toDouble)

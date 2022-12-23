@@ -78,7 +78,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateTemporalCoverage(meta, spec);
 		_ <- noProductionProvenanceIfL0(meta, spec);
 		amended <- validateFileName(meta, instServer);
-		_ <- validateMoratorium(amended, instServer)
+		_ <- validateMoratorium(amended, instServer);
+		_ <- validateDescription(meta)
 	) yield amended
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
@@ -86,7 +87,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
-		amended <- validateFileName(meta, instServer)
+		amended <- validateFileName(meta, instServer);
+		_ <- validateDescription(meta)
 	) yield amended
 
 
@@ -302,6 +304,14 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 				if uploadedDobjUnderMoratorium then validateMoratorium
 				else userFail("Moratorium only allowed if object has not already been published")
+		}
+
+	private def validateDescription(obj: ObjectUploadDto): Try[NotUsed] =
+		def validate(descr: Option[String]) = descr.fold(ok)(doc => if (doc.length < 5000) then ok else userFail("Description is too long, maximum 5000 characters"))
+
+		obj match {
+			case dobj: DataObjectDto => dobj.specificInfo.fold(sp => validate(sp.description), _ => ok)
+			case doc: DocObjectDto => validate(doc.description)
 		}
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {

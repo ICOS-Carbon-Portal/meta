@@ -161,7 +161,7 @@ object SchemaOrg{
 			"@id"                   -> landingPage,
 			"name"                  -> asOptJsString(dobj.references.title),
 			"alternateName"         -> JsString(dobj.fileName),
-			"description"           -> description,
+			"description"           -> JsString(description.toString.take(5000)),
 			"url"                   -> landingPage,
 			"identifier"            -> identifier,
 			"inLanguage"            -> JsArray(

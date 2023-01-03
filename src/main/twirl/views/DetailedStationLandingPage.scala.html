@@ -25,7 +25,7 @@
 			@descr
 		</div>
 	</div>
-	<div class="row justify-content-center bg-primary bg-opacity-10 py-5 text-primary">
+	<div class="row justify-content-start justify-content-md-center bg-primary bg-opacity-10 py-5 text-primary">
 		@for(cc <- icosSpecifics.flatMap(_.countryCode)){
 			@quickfact(cc.displayCountry, "fa-map-marker-alt")
 		}
@@ -37,6 +37,9 @@
 		}
 		@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
 			@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
+		}
+		@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
+			@quickfact(climateZone, "fa-image", Some("Climate zone"))
 		}
 	</div>
 	}
@@ -51,9 +54,11 @@
 			</div>
 		}
 	}
+	<div class="container-xl">
 	<div class="row form-group mt-3">
 		<div class="col-sm-8">
 			<div class="row gy-2">
+			<h2 class="fs-3 mt-5">Detailed information</h2>
 			@for(icos <- icosSpecifics){
 				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
 					@property("Discontinued", "(former ICOS station)")
@@ -128,6 +133,10 @@
 					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
 			}
+			@for((picture, i) <- station.pictures.zipWithIndex) {
+				@if(i > 0) {,} else {}
+				@htmlProperty{Pictures}{<a href=@picture>Picture #@{i + 1}</a>}
+			}
 			</div>
 			@for(fundings <- station.funding){
 				<h2 class="fs-3 mt-5">Acknowledgements</h2>
@@ -157,6 +166,7 @@
 				</table>
 			}
 			@staff(stExt)
+		</div>
 		</div>
 	</div>
 }
@@ -235,7 +245,7 @@
 }
 
 @quickfact(value: String, icon: String, descr: Option[String] = None) = {
-	<div class="col-3 col-md-2 p-3">
+	<div class="col-4 col-md-2 p-3">
 		<i class="fas @icon display-1"></i>
 		<div class="fs-3 fw-semibold">@value</div>
 		@for(descr <- descr){

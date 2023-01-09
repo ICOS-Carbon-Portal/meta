@@ -79,7 +79,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- noProductionProvenanceIfL0(meta, spec);
 		amended <- validateFileName(meta, instServer);
 		_ <- validateMoratorium(amended, instServer);
-		_ <- validateDescription(meta)
+		_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
 	) yield amended
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
@@ -88,13 +88,14 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
 		amended <- validateFileName(meta, instServer);
-		_ <- validateDescription(meta)
+		_ <- validateDescription(meta.description)
 	) yield amended
 
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
 		submConf <- getSubmitterConfig(coll);
+		_ <- validateDescription(coll.description);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- submitterAuthorizedByCollectionCreator(submConf, hash);
 		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
@@ -306,13 +307,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				else userFail("Moratorium only allowed if object has not already been published")
 		}
 
-	private def validateDescription(obj: ObjectUploadDto): Try[NotUsed] =
-		def validate(descr: Option[String]) = descr.fold(ok)(doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters"))
-
-		obj match {
-			case dobj: DataObjectDto => dobj.specificInfo.fold(sp => validate(sp.description), _ => ok)
-			case doc: DocObjectDto => validate(doc.description)
-		}
+	private def validateDescription(descr: Option[String]): Try[NotUsed] = descr.fold(ok)(
+		doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters")
+	)
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
 		def hasFormat(format: IRI): Boolean = format === spec.format.uri

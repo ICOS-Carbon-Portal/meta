@@ -55,7 +55,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 
 	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
-	private val descriptionInput = new TextOptInput("l3descr", notifyUpdate)
+	private val descriptionInput = new DescriptionInput("l3descr", notifyUpdate)
 	private val timeStartInput = new InstantInput("l3startinput", notifyUpdate)
 	private val timeStopInput = new InstantInput("l3stopinput", notifyUpdate)
 	private val timeIntevalInput = new TimeIntevalInput(timeStartInput, timeStopInput)

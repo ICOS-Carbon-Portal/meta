@@ -103,6 +103,9 @@ class DoiOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[D
 	case Success(doi) => Success(Some(doi))
 	case Failure(err) => if (s.isEmpty) Success(None) else Failure(err)
 }, _.toString())
+class DescriptionInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => {
+	if s.length > 5000 then fail("Description too long") else Try(Some(s))
+}, _.toString())
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
 class Button(elemId: String, onClick: () => Unit){

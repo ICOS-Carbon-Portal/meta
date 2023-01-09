@@ -307,7 +307,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 
 	private def validateDescription(obj: ObjectUploadDto): Try[NotUsed] =
-		def validate(descr: Option[String]) = descr.fold(ok)(doc => if (doc.length < 5000) then ok else userFail("Description is too long, maximum 5000 characters"))
+		def validate(descr: Option[String]) = descr.fold(ok)(doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters"))
 
 		obj match {
 			case dobj: DataObjectDto => dobj.specificInfo.fold(sp => validate(sp.description), _ => ok)

@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
+import akka.Done
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.StatusCodes
@@ -7,21 +8,26 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.utils.rdf4j.transact
+
 import scala.concurrent.Future
-import akka.Done
 import scala.util.Failure
 import scala.util.Success
-import org.eclipse.rdf4j.model.Statement
+
 
 class AdminRouting(
-	sparqler: SparqlRunner,
+	repo: Repository,
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
 	makeMetaReadonly: String => Future[String],
@@ -29,6 +35,7 @@ class AdminRouting(
 ) {
 	import AuthenticationRouting.optEnsureLocalRequest
 	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _
+	private val sparqler = new Rdf4jSparqlRunner(repo)
 
 	private val readonlyModeRoute = (post & withoutRequestTimeout){
 		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
@@ -45,11 +52,21 @@ class AdminRouting(
 		} ~
 		permitAdmins{
 			pathPrefix("insert")(operationRoute(true)) ~
-			pathPrefix("delete")(operationRoute(false))
+			pathPrefix("delete")(operationRoute(false)) ~
+			//low level, only to be used when the 'delete' functionality is not working:
+			path("dropRdf4jTripleObjects")(dropTripleObjectsRoute)
 		} ~
 		complete(StatusCodes.Forbidden -> "Only SPARQL admins are allowed here")
 	}
 
+	private val dropTripleObjectsRoute: Route = parameters("subject", "predicate"){(subjS, predS) =>
+		val f = repo.getValueFactory
+		val subj = f.createIRI(subjS)
+		val pred = f.createIRI(predS)
+		repo.transact(_.remove(subj, pred, null)) match
+			case Success(_) => complete(StatusCodes.OK)
+			case Failure(exc) => complete(StatusCodes.InternalServerError -> exc.getMessage)
+	}
 
 	private def operationRoute(insert: Boolean) = path(Segment){server =>
 		servers.get(server).fold[Route](

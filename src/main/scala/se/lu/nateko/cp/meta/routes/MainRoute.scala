@@ -59,7 +59,7 @@ object MainRoute {
 		val dtoDlRoute = DtoDownloadRoute(db.uriSerializer)
 		val sitemapRoute = SitemapRoute(sparqler)
 
-		val adminRoute = new AdminRouting(sparqler, db.instanceServers, authRouting, db.store.makeReadonly, config.sparql).route
+		val adminRoute = new AdminRouting(db.repo, db.instanceServers, authRouting, db.store.makeReadonly, config.sparql).route
 
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~

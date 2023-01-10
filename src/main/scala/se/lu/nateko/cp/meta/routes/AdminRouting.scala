@@ -54,16 +54,18 @@ class AdminRouting(
 			pathPrefix("insert")(operationRoute(true)) ~
 			pathPrefix("delete")(operationRoute(false)) ~
 			//low level, only to be used when the 'delete' functionality is not working:
-			path("dropRdf4jTripleObjects")(dropTripleObjectsRoute)
+			path("dropRdf4jTripleObjects")(dropTripleObjectsRoute) ~
+			complete(StatusCodes.BadRequest -> "Unrecognized or invalid admin request")
 		} ~
 		complete(StatusCodes.Forbidden -> "Only SPARQL admins are allowed here")
 	}
 
-	private val dropTripleObjectsRoute: Route = parameters("subject", "predicate"){(subjS, predS) =>
+	private val dropTripleObjectsRoute: Route = parameters("subject", "predicate", "context".?){(subjS, predS, ctxtOS) =>
 		val f = repo.getValueFactory
 		val subj = f.createIRI(subjS)
 		val pred = f.createIRI(predS)
-		repo.transact(_.remove(subj, pred, null)) match
+		val ctxts = ctxtOS.map(f.createIRI).toSeq
+		repo.transact(_.remove(subj, pred, null, ctxts*)) match
 			case Success(_) => complete(StatusCodes.OK)
 			case Failure(exc) => complete(StatusCodes.InternalServerError -> exc.getMessage)
 	}

@@ -127,6 +127,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 					commentInput.value = production.comment
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
+					docInput.value = production.documentation
 					productionSwitch.check()
 					super.show()
 				}

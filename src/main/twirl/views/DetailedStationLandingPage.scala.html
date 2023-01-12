@@ -10,21 +10,24 @@
 
 @(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), None, CpMenu.default){
-	@for(cover <- station.org.webpageDetails.flatMap(_.coverImage)) {
-	<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
-		<div class="col">
-				<h1 class="text-light text-center" style="margin-top: 8vw;">
-					ICOS STATION<br><strong style="font-size: 5rem;">@{stationShortName(station)}</strong>
-				</h1>
+	@for(details <- station.org.webpageDetails) {
+		@for(cover <- details.coverImage) {
+		<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
+			<div class="col">
+					<h1 class="text-light text-center" style="margin-top: 8vw;">
+						ICOS STATION<br><strong style="font-size: 5rem;">@{stationShortName(station)}</strong>
+					</h1>
+			</div>
 		</div>
-	</div>
+		}
+		@for(descr <- details.self.comments.headOption){
+		<div class="row">
+			<div class="col-lg-8 mx-auto text-center lead my-5 py-5 fw-normal">
+				@descr
+			</div>
+		</div>
+		}
 	}
-	@for(descr <- station.org.self.comments){
-	<div class="row">
-		<div class="col-lg-8 mx-auto text-center lead my-5 py-5 fw-normal">
-			@descr
-		</div>
-	</div>
 	<div class="row justify-content-start justify-content-md-center bg-primary bg-opacity-10 py-5 text-primary">
 		@for(cc <- icosSpecifics.flatMap(_.countryCode)){
 			@quickfact(cc.displayCountry, "fa-map-marker-alt")
@@ -42,7 +45,6 @@
 			@quickfact(climateZone, "fa-image", Some("Climate zone"))
 		}
 	</div>
-	}
 	@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes)) {
 		@linkBoxes(boxes)
 	}

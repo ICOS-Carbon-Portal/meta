@@ -43,20 +43,22 @@ class CpNativeStore(
 
 	setBaseSail(nativeSail)
 
-	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[String] = {
-		nativeSail.makeReadonly(errorMessage)
-		val indexDump = cpIndex.fold(ok){idx =>
-			idx.flush()
-			IndexHandler.store(idx)
-		}
-		val citationsDump = CitationClient.saveCache(getCitationClient)
-		Future.sequence(Seq(indexDump, citationsDump)).map(_ =>
-			"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
-		).andThen{
-			case Success(msg) => log.info(msg)
-			case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
-		}
-	}
+	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[String] =
+		if nativeSail.isReadonly then
+			Future.successful("Triple store already in read-only mode")
+		else
+			nativeSail.makeReadonly(errorMessage)
+			val indexDump = cpIndex.fold(ok){idx =>
+				idx.flush()
+				IndexHandler.store(idx)
+			}
+			val citationsDump = CitationClient.saveCache(getCitationClient)
+			Future.sequence(Seq(indexDump, citationsDump)).map(_ =>
+				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
+			).andThen{
+				case Success(msg) => log.info(msg)
+				case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
+			}
 
 	def getCitationClient: CitationClient = nativeSail.enricher.citer.doiCiter
 

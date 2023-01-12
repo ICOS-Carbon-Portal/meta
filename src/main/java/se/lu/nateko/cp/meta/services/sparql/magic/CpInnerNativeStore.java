@@ -31,6 +31,10 @@ class CpInnerNativeStore extends NativeStore{
 		readonlyErrMessage = errMessage;
 	}
 
+	public synchronized boolean isReadonly(){
+		return readonlyErrMessage != null;
+	}
+
 	public synchronized SailConnection getCpConnection(){
 		useCpConnection = true;
 		try{

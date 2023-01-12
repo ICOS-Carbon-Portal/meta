@@ -12,7 +12,7 @@ sealed trait Agent{
 }
 
 case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
-case class WebpageElements(coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
+case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
 case class Organization(
 	self: UriResource,
 	name: String,

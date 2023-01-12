@@ -29,12 +29,12 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 
 	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 
-	def getPlainContributors(dobj: DataObject) = dobj.specificInfo.fold(
-			l3 => l3.productionInfo.contributors.map(toDoiContributor),
-			_ => Seq()
-		)
-
-	def getContributors(dobj: DataObject) = (getCreators(dobj).map(_.toContributor()) ++ getPlainContributors(dobj)).distinct
+	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.specificInfo.fold(
+		l3 => l3.productionInfo.contributors
+			.map(agent => toDoiCreator(agent).toContributor(ContributorType.Producer))
+			.distinct,
+		_ => Seq.empty
+	)
 
 	def getFormat(obj: StaticObject): Option[String] = obj match {
 		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
@@ -180,15 +180,13 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			)
 	}
 
-	def toDoiContributor(agent: Agent) = toDoiCreator(agent).toContributor()
-
 end DataCite
 
 object DataCite:
 
 	extension (creator: Creator)
-		def toContributor(contrType: Option[ContributorType] = None) =
-			Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, contrType)
+		def toContributor(contrType: ContributorType) =
+			Contributor(creator.name, creator.nameIdentifiers, creator.affiliation, Some(contrType))
 
 	given nameOrdering: Ordering[Name] = Ordering
 		.by[Name, Boolean]{

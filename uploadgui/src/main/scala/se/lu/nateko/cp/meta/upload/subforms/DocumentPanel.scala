@@ -14,7 +14,7 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 	def authors = documentAuthors.values
 
 	private val documentTitle = new TextOptInput("document-title", notifyUpdate)
-	private val documentDescription = new TextOptInput("document-description", notifyUpdate)
+	private val documentDescription = new DescriptionInput("document-description", notifyUpdate)
 	private val agentList = new DataList[NamedUri]("agent-list", _.name)
 	private val documentAuthors = new DataListForm("document-authors", agentList, notifyUpdate)
 	private val agentAgg = new AgentAggregator

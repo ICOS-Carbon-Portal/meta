@@ -12,7 +12,7 @@ class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection
 	def members = collectionMembers.value.withErrorContext("Collection members (list of object urls)")
 
 	private val collectionTitle = new TextInput("collectiontitle", notifyUpdate, "collection title")
-	private val collectionDescription = new TextOptInput("collectiondescription", notifyUpdate)
+	private val collectionDescription = new DescriptionInput("collectiondescription", notifyUpdate)
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
 
 	def resetForm(): Unit = {

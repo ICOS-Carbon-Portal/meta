@@ -260,15 +260,16 @@
 ****************************@
 }
 
+@shouldSplitTitle = @{!(envri != Envri.SITES && dobj.specification.dataLevel > 2) && splitTitle.size > 1}
 @splitTitle = @{dobj.references.title.map(_.split(",")).getOrElse(Array(""))}
 @pageHeading = @{
-	if(splitTitle.size > 1)
+	if(shouldSplitTitle)
 		dobj.references.title.map(_.split(",").dropRight(1).mkString(",")).getOrElse(pageTitle)
 	else
 		dobj.references.title.getOrElse(pageTitle)
 }
 @pageSubHeading = @{
-	if(splitTitle.size > 1) dobj.references.title.map(_.split(",").last) else None
+	if(shouldSplitTitle) dobj.references.title.map(_.split(",").last) else None
 }
 
 @pageTitle = @{

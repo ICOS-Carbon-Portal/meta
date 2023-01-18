@@ -188,11 +188,10 @@
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Submission</h2>
 				@agentproperty("Submitted by", dobj.submission.submitter)
-				@if(!uploadComplete) {
-					@property(s"Submission started (${conf.defaultTimezoneId})", dobj.submission.start.getDateTimeStr)
-				} else {
+				@if(uploadComplete) {
 					@property(s"Publication time (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
 				}
+				@property(s"Submission started (${conf.defaultTimezoneId})", dobj.submission.start.getDateTimeStr)
 			</div>
 
 			<div class="row gy-2">

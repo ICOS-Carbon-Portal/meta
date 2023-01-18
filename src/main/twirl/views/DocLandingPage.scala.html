@@ -54,11 +54,13 @@
 				}
 
 				<h2 class="fs-3 mt-5">Submission</h2>
-					@htmlProperty{Submitted by}{
-						@agentLink(doc.submission.submitter)
-					}
-					@property(s"Submission started (${conf.defaultTimezoneId})", doc.submission.start.getDateTimeStr)
-					@property(s"Submission ended (${conf.defaultTimezoneId})", doc.submission.stop.getDateTimeStr)
+				@htmlProperty{Submitted by}{
+					@agentLink(doc.submission.submitter)
+				}
+				@if(uploadComplete) {
+					@property(s"Publication time (${conf.defaultTimezoneId})", doc.submission.stop.getDateTimeStr)
+				}
+				@property(s"Submission started (${conf.defaultTimezoneId})", doc.submission.start.getDateTimeStr)
 
 				<h2 class="fs-3 mt-5">Statistics</h2>
 				@htmlProperty{Downloads}{
@@ -96,4 +98,4 @@
 	else None
 }
 
-@uploadComplete = @{doc.submission.stop.isDefined}
+@uploadComplete = @{doc.size.isDefined}

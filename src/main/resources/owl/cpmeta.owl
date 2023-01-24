@@ -2,6 +2,7 @@
 <rdf:RDF xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xml:base="http://meta.icos-cp.eu/ontologies/cpmeta/"
      xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:cc="http://creativecommons.org/ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:ssn="http://www.w3.org/ns/ssn/"
@@ -11,13 +12,27 @@
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:skos="http://www.w3.org/2004/02/skos/core#"
      xmlns:sosa="http://www.w3.org/ns/sosa/"
+     xmlns:vann="http://purl.org/vocab/vann/"
      xmlns:cporg="http://meta.icos-cp.eu/resources/organizations/"
      xmlns:geosp="http://www.opengis.net/ont/geosparql#"
      xmlns:sites="https://meta.fieldsites.se/ontologies/sites/"
      xmlns:schema="http://schema.org/"
      xmlns:dcterms="http://purl.org/dc/terms/"
      xmlns:sitesorg="https://meta.fieldsites.se/resources/organizations/">
-    <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/"/>
+    <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/">
+        <cc:license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/"/>
+        <dc:creator rdf:resource="http://meta.icos-cp.eu/resources/people/Oleg%20Mirzov"/>
+        <dc:description xml:lang="en">OWL vocabulary describing metadata of two environmental research infrastructures: ICOS and SITES</dc:description>
+        <dc:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2015-05-18</dc:issued>
+        <dc:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2023-01-24</dc:modified>
+        <dc:publisher rdf:resource="http://meta.icos-cp.eu/resources/organizations/CP"/>
+        <dc:rights>Copyright © 2023 ICOS ERIC</dc:rights>
+        <dc:title xml:lang="en">Ontology of Integrated Carbon Observation System (ICOS)</dc:title>
+        <vann:preferredNamespacePrefix>cpmeta</vann:preferredNamespacePrefix>
+        <vann:preferredNamespaceUri>http://meta.icos-cp.eu/ontologies/cpmeta/</vann:preferredNamespaceUri>
+        <rdf:type rdf:resource="http://purl.org/vocommons/voaf#Vocabulary"/>
+        <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.0</owl:versionInfo>
+    </owl:Ontology>
     
 
 
@@ -29,6 +44,78 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
+    
+
+
+    <!-- http://creativecommons.org/ns#license -->
+
+    <owl:AnnotationProperty rdf:about="http://creativecommons.org/ns#license"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/contributor -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/contributor"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/creator -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/creator"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/description -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/description"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/issued -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/issued"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/modified -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/modified"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/publisher -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/publisher"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/rights -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/rights"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/title -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/title"/>
+    
+
+
+    <!-- http://purl.org/vocab/vann/preferredNamespacePrefix -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/vocab/vann/preferredNamespacePrefix"/>
+    
+
+
+    <!-- http://purl.org/vocab/vann/preferredNamespaceUri -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/vocab/vann/preferredNamespaceUri"/>
+    
+
+
+    <!-- http://www.w3.org/1999/02/22-rdf-syntax-ns#type -->
+
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/1999/02/22-rdf-syntax-ns#type"/>
     
 
 

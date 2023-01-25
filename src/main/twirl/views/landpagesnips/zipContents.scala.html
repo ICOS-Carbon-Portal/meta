@@ -1,76 +1,77 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.utils.*
+@import java.time.Instant
 
 @(dobj: DataObject)(implicit conf: EnvriConfig)
-@zipContentsCollapsible(dobj.fileName, dobj)
-
-@zipContentsCollapsible(value: String, dobj: DataObject)(implicit conf: EnvriConfig) = {
-	@htmlProperty(Html("Zip contents")){
-		<details>
-			<summary class="d-inline-block">
-				<span id="content-link" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">View contents</span>
-			</summary>
-			<div id="card" class="card bg-light">
-				<div class="card-body">
-					<pre id="pre-text" class="user-select-all w-100 m-0">
-						<table id="zipcontents">
-								<tr>
-									<th>File</th>
-									<th>Size</th>
-									<th></th>
-								</tr>
-							<tbody id="tablebody">
-								<tr id="first-row">
-									<td>No contents</td>
-									<td></td>
-									<td></td>
-								</tr>
-							</tbody>
-						</table>
-					</pre>
-				</div>
+<details>
+	<summary class="d-inline-block">
+		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">View contents</span>
+	</summary>
+	<div>
+		<div class="card bg-light t-0">
+			<div class="card-body t-0">
+				<pre id="zipcontentscard" class="user-select-all m-0"><table id="zipcontents" class="table table-borderless table-sm">
+						<tr>
+							<th>File</th>
+							<th>Size</th>
+							<th></th>
+						</tr>
+						<tbody id="zipcontentstablebody">
+							<tr>
+								<td>Loading...</td>
+								<td></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table></pre>
 			</div>
-			<script type="text/javascript">
-				const expander = document.getElementById("content-link")
-				const content = document.getElementById("pre-text")
+		</div>
+	</div>
+	<script type="text/javascript">
+		function zipContentsPresenter() {
+			const expander = document.getElementById("zipcontentsexpander")
 
-				const formatBytes = (bytes, decimals = 2) => {
-					if (isNaN(bytes)) return "";
-					if (bytes === 0) return '0 Bytes';
+			const formatBytes = (bytes, decimals = 2) => {
+				if (isNaN(bytes)) return ""
+				if (bytes === 0) return '0 Bytes'
 
-					const k = 1024,
-						sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-						i = Math.floor(Math.log(bytes) / Math.log(k));
-					return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
-				};
+				const k = 1024,
+					sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+					i = Math.floor(Math.log(bytes) / Math.log(k))
+				return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
+			}
 
-				// const getTableRow = (name, size, path) => {
-				// 	const node = document.getElementById("tablebody").lastChild
-				// 	const clone = node.cloneNode(true)
-				// }
+			const getTableRow = (name, size, path) => {
+				return '<tr><td>' + name + '</td><td>' + size + '</td><td><a href=' + path + '>' + "Download" + '</a></td></tr>'
+			}
 
-				const getTableRow = (name, size, path) => '<tr><td>' + name + '</td><td>' + size + '</td><td><a href=' + path + '>' + "Download" + '</a></td></tr>'
+			let firstRender = true
 
-				expander.addEventListener("click", async _ => {
-					try {
-						expander.innerHTML = expander.innerHTML == "Hide contents" ? "View contents" : "Hide contents"
+			expander.addEventListener("click", async _ => {
+				try {
+					expander.innerHTML = expander.innerHTML == "Hide contents" ? "View contents" : "Hide contents"
+					
+					if (!firstRender) return
 
-						const dataHost = "@conf.dataHost"
-						const hash = "@dobj.hash"
+					firstRender = false
 
-						fetch(`https://${dataHost}/zip/${hash}/listContents`, {
-							method: 'get'
-						}).then(response => response.json()).then(data => {
-							document.getElementById("tablebody").innerHTML = data.map(obj => {
-								const fullPath = `https://${dataHost}${obj.path}`
-								return getTableRow(obj.name, formatBytes(obj.size), fullPath)
-							}).join("")
-						})
-					} catch (err) {
-						console.error(`Error: ${err}`);
-					}
-				})
-			</script>
-		</details>
-	}
-}
+					const dataHost = "@conf.dataHost"
+					const hash = "@dobj.hash"
+
+					const resp = await fetch(`https://${dataHost}/zip/${hash}/listContents`, { method: 'get' })
+					const json = await resp.json()
+
+					document.getElementById("zipcontentstablebody").innerHTML = json.map(file => {
+							const fullPath = `https://${dataHost}${file.path}`
+							return getTableRow(file.name, formatBytes(file.size), fullPath)
+						}).join("")
+				} catch (err) {
+					document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
+					console.error({zipContentsListingError: err})
+				}
+			})
+		}
+
+		zipContentsPresenter()
+	</script>
+</details>

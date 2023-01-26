@@ -1,0 +1,74 @@
+@import se.lu.nateko.cp.meta.core.data._
+@import se.lu.nateko.cp.meta.utils.*
+@import java.time.Instant
+
+@(dobj: DataObject)(implicit conf: EnvriConfig)
+<details>
+	<summary class="d-inline-block">
+		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">@viewMessage</span>
+	</summary>
+	<div class="card bg-light m-0">
+		<div class="card-body m-0">
+			<pre id="zipcontentscard" class="user-select-all m-0" style="white-space: normal;">
+				<table class="table table-borderless table-sm">
+					<thead>
+						<tr>
+							<th>File</th>
+							<th>Size</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="zipcontentstablebody">
+						<tr><td>Loading...</td></tr>
+					</tbody>
+				</table>
+			</pre>
+		</div>
+	</div>
+	<script type="text/javascript">
+		(function(){
+			const expander = document.getElementById("zipcontentsexpander")
+			const dataHost = "@conf.dataHost"
+			const hash = "@dobj.hash.id"
+			let firstRender = true
+
+			function formatBytes(bytes, decimals = 2){
+				if (isNaN(bytes)) return ""
+				if (bytes === 0) return '0 Bytes'
+
+				const k = 1024,
+					sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+					i = Math.floor(Math.log(bytes) / Math.log(k))
+				return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
+			}
+
+			expander.addEventListener("click", _ => {
+				expander.innerHTML = expander.innerHTML == "@hideMessage" ? "@viewMessage" : "@hideMessage"
+
+				if (!firstRender) return
+				firstRender = false
+
+				fetch(`https://${dataHost}/zip/${hash}/listContents`)
+					.then(resp => resp.json())
+					.then(
+						json => {
+							const tableBodyHtml = json.map(file => `<tr>
+								<td>${file.name}</td>
+								<td>${formatBytes(file.size)}</td>
+								<td><a href='https://${dataHost}${file.path}'>Download</a></td>
+								</tr>`
+							).join("\n")
+							document.getElementById("zipcontentstablebody").innerHTML = tableBodyHtml
+						},
+						err => {
+							document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
+							console.error(["ZIP contents fetching/listing error", err])
+						}
+					)
+			})
+		})()
+	</script>
+</details>
+
+@viewMessage = @{"View contents"}
+@hideMessage = @{"Hide contents"}

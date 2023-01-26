@@ -75,6 +75,9 @@
 				@htmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
 			} else {}
 			@property("File name", dobj.fileName)
+			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium) {
+				@htmlProperty{Zip contents}{@zipContents(dobj)}
+			} else {}
 			@for(size <- dobj.size){
 				@property("File size", formatBytes(size))
 			}

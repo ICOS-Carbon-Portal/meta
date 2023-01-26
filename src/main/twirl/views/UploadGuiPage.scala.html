@@ -71,7 +71,7 @@
 		}
 	}
 	@if(envri == Envri.SITES) {
-		#new-doi-button,
+		.new-doi-button,
 		.keywords-block,
 		.licence-block,
 		.sampling-height-block,
@@ -524,6 +524,20 @@
 			<div id="javascript-error-block" class="javascript-error-block">Please enable javascript to use this page.</div>
 		</noscript>
 	</div>
+	<div class="modal fade" id="upload-help-modal" tabindex="-1" aria-labelledby="upload-help-modal-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="upload-help-modal-title">Help</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div id="upload-help-modal-body" class="modal-body">
+					<p>The following video is a walkthrough of this upload interface. More information about the metadata properties and scripted uploads is avalaible on <a href="https://github.com/ICOS-Carbon-Portal/meta/blob/master/README.md#upload-instructions-manual" target="_blank">Github</a>.</p>
+					<iframe src="https://www.youtube.com/embed/8TpbRZPaTuU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+				</div>
+			</div>
+		</div>
+	</div>
 	<script src="@jspath"></script>
 }
 
@@ -542,10 +556,13 @@
 @header = {
 	<div id="header-buttons-container">
 		<div id="header-buttons" class="d-flex justify-content-end my-2 gap-3 flex-wrap">
-			<span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Upload first">
+			<span data-bs-toggle="modal" data-bs-target="#upload-help-modal" class="btn btn-link">
+				<i class="fas fa-info-circle"></i>
+			</span>
+			<span class="new-doi-button" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Upload required to create a draft DOI">
 				<button id="new-doi-button" type="button" class="btn btn-outline-primary" disabled>Create a new draft DOI</button>
 			</span>
-			<span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover">
+			<span tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover">
 				<button id="submitbutton" type="button" class="btn btn-primary btn-submit" disabled>Upload</button>
 			</span>
 		</div>

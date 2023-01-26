@@ -58,7 +58,7 @@
 					const dataHost = "@conf.dataHost"
 					const hash = "@dobj.hash"
 
-					const resp = await fetch(`https://${dataHost}/zip/${hash}/listContents`, { method: 'get' })
+					const resp = await fetch(`https://${dataHost}/zip/${encodeURIComponent(hash)}/listContents`, { method: 'get' })
 					const json = await resp.json()
 
 					document.getElementById("zipcontentstablebody").innerHTML = json.map(file => {

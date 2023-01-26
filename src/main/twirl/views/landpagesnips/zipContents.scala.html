@@ -5,33 +5,34 @@
 @(dobj: DataObject)(implicit conf: EnvriConfig)
 <details>
 	<summary class="d-inline-block">
-		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">View contents</span>
+		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">@viewMessage</span>
 	</summary>
-	<div>
-		<div class="card bg-light t-0">
-			<div class="card-body t-0">
-				<pre id="zipcontentscard" class="user-select-all m-0"><table id="zipcontents" class="table table-borderless table-sm">
+	<div class="card bg-light m-0">
+		<div class="card-body m-0">
+			<pre id="zipcontentscard" class="user-select-all m-0" style="white-space: normal;">
+				<table class="table table-borderless table-sm">
+					<thead>
 						<tr>
 							<th>File</th>
 							<th>Size</th>
 							<th></th>
 						</tr>
-						<tbody id="zipcontentstablebody">
-							<tr>
-								<td>Loading...</td>
-								<td></td>
-								<td></td>
-							</tr>
-						</tbody>
-					</table></pre>
-			</div>
+					</thead>
+					<tbody id="zipcontentstablebody">
+						<tr><td>Loading...</td></tr>
+					</tbody>
+				</table>
+			</pre>
 		</div>
 	</div>
 	<script type="text/javascript">
-		function zipContentsPresenter() {
+		(function(){
 			const expander = document.getElementById("zipcontentsexpander")
+			const dataHost = "@conf.dataHost"
+			const hash = "@dobj.hash.id"
+			let firstRender = true
 
-			const formatBytes = (bytes, decimals = 2) => {
+			function formatBytes(bytes, decimals = 2){
 				if (isNaN(bytes)) return ""
 				if (bytes === 0) return '0 Bytes'
 
@@ -41,37 +42,33 @@
 				return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
 			}
 
-			const getTableRow = (name, size, path) => {
-				return '<tr><td>' + name + '</td><td>' + size + '</td><td><a href=' + path + '>' + "Download" + '</a></td></tr>'
-			}
+			expander.addEventListener("click", _ => {
+				expander.innerHTML = expander.innerHTML == "@hideMessage" ? "@viewMessage" : "@hideMessage"
 
-			let firstRender = true
+				if (!firstRender) return
+				firstRender = false
 
-			expander.addEventListener("click", async _ => {
-				try {
-					expander.innerHTML = expander.innerHTML == "Hide contents" ? "View contents" : "Hide contents"
-					
-					if (!firstRender) return
-
-					firstRender = false
-
-					const dataHost = "@conf.dataHost"
-					const hash = "@dobj.hash"
-
-					const resp = await fetch(`https://${dataHost}/zip/${encodeURIComponent(hash)}/listContents`, { method: 'get' })
-					const json = await resp.json()
-
-					document.getElementById("zipcontentstablebody").innerHTML = json.map(file => {
-							const fullPath = `https://${dataHost}${file.path}`
-							return getTableRow(file.name, formatBytes(file.size), fullPath)
-						}).join("")
-				} catch (err) {
-					document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
-					console.error({zipContentsListingError: err})
-				}
+				fetch(`https://${dataHost}/zip/${hash}/listContents`)
+					.then(resp => resp.json())
+					.then(
+						json => {
+							const tableBodyHtml = json.map(file => `<tr>
+								<td>${file.name}</td>
+								<td>${formatBytes(file.size)}</td>
+								<td><a href='https://${dataHost}${file.path}'>Download</a></td>
+								</tr>`
+							).join("\n")
+							document.getElementById("zipcontentstablebody").innerHTML = tableBodyHtml
+						},
+						err => {
+							document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
+							console.error(["ZIP contents fetching/listing error", err])
+						}
+					)
 			})
-		}
-
-		zipContentsPresenter()
+		})()
 	</script>
 </details>
+
+@viewMessage = @{"View contents"}
+@hideMessage = @{"Hide contents"}

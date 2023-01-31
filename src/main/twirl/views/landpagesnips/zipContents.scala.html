@@ -8,8 +8,8 @@
 		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">@viewMessage</span>
 	</summary>
 	<div class="card bg-light m-0">
-		<div class="card-body m-0">
-			<pre id="zipcontentscard" class="user-select-all m-0" style="white-space: normal;">
+		<div class="card-body m-0" style="max-height: 30rem; overflow-y: scroll;">
+			<pre id="zipcontentscard" class="m-0" style="white-space: normal;">
 				<table class="table table-borderless table-sm">
 					<thead>
 						<tr>
@@ -52,12 +52,18 @@
 					.then(resp => resp.json())
 					.then(
 						json => {
-							const tableBodyHtml = json.map(file => `<tr>
-								<td>${file.name}</td>
-								<td>${formatBytes(file.size)}</td>
-								<td><a href='https://${dataHost}${file.path}'>Download</a></td>
-								</tr>`
-							).join("\n")
+							const tableBodyHtml = json.map(file => {
+								let splitName = file.name.split('/')
+								let shortenedPath = ""
+								for (i = 0; i < splitName.length - 1; i++) {
+									shortenedPath = `<i class="fas fa-folder-open" title="${splitName[i]}"></i><span class="mx-2">/</span>`
+								}
+								return (`<tr>
+									<td title=${file.name}>${shortenedPath + splitName.pop()}</td>
+									<td class="text-nowrap text-end">${formatBytes(file.size)}</td>
+									<td class="text-nowrap ps-3"><a href='https://${dataHost}${file.path}'>Download</a></td>
+								</tr>`)
+							}).join("\n")
 							document.getElementById("zipcontentstablebody").innerHTML = tableBodyHtml
 						},
 						err => {

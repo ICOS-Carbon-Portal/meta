@@ -39,7 +39,13 @@ construct{
 		dcat:downloadURL ?dlUri
 	].
 } where {
-	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product>}
+	{
+		select ?spec (group_concat(?specComm; separator=". ") as ?specComment) where{
+			VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product>}
+			optional{?spec rdfs:comment ?specComm }
+		}
+		group by ?spec
+	}
 	?dobj cpmeta:hasObjectSpec ?spec .
 	?dobj cpmeta:hasSizeInBytes ?size .
 	?dobj cpmeta:hasName ?fileName .
@@ -57,7 +63,6 @@ construct{
 	bind (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objectsDistr> as ?catDistr )
 	bind (iri(replace(str(?dobj), "https://meta", "https://data")) as ?dlUri)
 	?spec rdfs:label ?specLabel .
-	optional{?spec rdfs:comment ?specComment }
 	bind (concat(?specLabel, ", station ", ?stationName, ". ", coalesce(?specComment, "")) as ?description)
 	bind (iri(replace(str(?dobj), "/objects/", "/dcat/objects/")) as ?ds)
 }

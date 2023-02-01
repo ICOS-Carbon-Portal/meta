@@ -22,7 +22,6 @@ select * where{
 	?ds dct:issued ?submEnd .
 	?ds dct:modified ?modified .
 	?ds dct:description ?description .
-	?ds dct:creator ?creator .
 	?ds dct:temporal ?dsTempCov .
 	?dsTempCov a dct:PeriodOfTime ;
 		dcat:startDate ?timeStart ;

@@ -350,7 +350,7 @@
 }
 
 @previewTab = {
-	@if(dobj.isPreviewable) {
+	@if(dobj.hasSupportingPreviewApp) {
 		<a class="nav-link" href="@previewURL(dobj.hash.id)">Preview</a>
 	} else {
 		<a class="nav-link disabled">No preview available</a>

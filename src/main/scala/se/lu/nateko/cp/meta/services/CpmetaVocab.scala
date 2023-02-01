@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services
 
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
+import java.net.URI
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
@@ -214,4 +215,10 @@ object CpmetaVocab{
 	val DctermsPrefix = "http://purl.org/dc/terms/"
 	//val SosaPrefix = "http://www.w3.org/ns/sosa/"
 	val SsnPrefix = "http://www.w3.org/ns/ssn/"
+
+	val icosMultiImageZipSuff = "multiImageZip"
+	val sitesMultiImageZipSuff = "image"
+
+	def icosMultiImageZipUri = new URI(MetaPrefix + icosMultiImageZipSuff)
+	def sitesMultiImageZipUri = new URI(SitesPrefix + sitesMultiImageZipSuff)
 }

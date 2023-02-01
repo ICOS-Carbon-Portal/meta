@@ -1,16 +1,17 @@
 package se.lu.nateko.cp.meta.views
 
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import spray.json.*
+
+import java.net.URI
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import spray.json.*
-import java.net.URI
 
-
-object LandingPageHelpers{
+object LandingPageHelpers:
 
 	def printToJson(dataObj: DataObject): String = dataObj.toJson.prettyPrint
 
@@ -34,6 +35,11 @@ object LandingPageHelpers{
 			}
 		}
 	}
+
+	extension (dobj: DataObject)
+		def hasSupportingPreviewApp: Boolean = dobj.isPreviewable ||
+			dobj.specification.format.uri == CpmetaVocab.icosMultiImageZipUri ||
+			dobj.specification.format.uri == CpmetaVocab.sitesMultiImageZipUri
 
 	def agentString(a: Agent): String = a match {
 		case person: Person =>
@@ -78,4 +84,4 @@ object LandingPageHelpers{
 			uriStr
 	}
 
-}
+end LandingPageHelpers

@@ -23,11 +23,15 @@
 				@htmlProperty{Creator}{
 					@agentLink(coll.creator)
 				}
-				@for(doi <- coll.references.doi){
-					@htmlProperty{Contributors}{
-						@for(contributor <- doi.contributors){
-							@{contributor.name}
+				@htmlProperty{Contributors}{
+					@if(coll.references.doi){
+						@for(doi <- coll.references.doi){
+							@for(contributor <- doi.contributors){
+								@{contributor.name}
+							}
 						}
+					} else {
+						Fetching... try [refreshing the page] again in a few seconds
 					}
 				}
 				@if(coll.previousVersion) {

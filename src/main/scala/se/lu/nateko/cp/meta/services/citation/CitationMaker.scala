@@ -128,9 +128,9 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
 
-	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): DoiMeta = eagerRes match{
-		case None => DoiMeta(Doi("", "")) // replace
-		case Some(Success(doiMeta)) => doiMeta
+	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): Option[DoiMeta] = eagerRes match{
+		case None => None
+		case Some(Success(doiMeta)) => Some(doiMeta)
 		case Some(Failure(err)) => throw err//"Error fetching DOI citation: " + err.getMessage
 	}
 
@@ -139,19 +139,17 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
 		)
 
-	def extractDoiMeta(using Envri): PartialFunction[String, DoiMeta] =
-		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
-			doi => presentDoiMetaCitation(doiCiter.getDoiEager(doi))
-		)
-
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }
 
-	// private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
-	// 	item.doi.collect{ case s: String => Doi.parse(s).toOption.andThen(doi => doiCiter.getDoiEager(doi)) }
-
 	private def getDoiMeta(item: CitableItem)(using Envri): Option[DoiMeta] =
-		item.doi.collect{ extractDoiMeta }
+		item.doi match {
+			case Some(s) => Doi.parse(s).toOption match {
+				case Some(doi) => presentDoiMetaCitation(doiCiter.getDoiEager(doi))
+				case None => None
+			}
+			case None => None
+		}
 
 	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {
 		val zoneId = ZoneId.of(defaultTimezoneId)

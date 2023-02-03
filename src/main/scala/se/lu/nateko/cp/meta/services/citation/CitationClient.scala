@@ -62,13 +62,15 @@ trait CitationClient extends PlainDoiCiter{
 
 class CitationClientImpl (
 	knownDois: List[Doi], cpMetaConfig: CpmetaConfig, initCitCache: CitationClient.CitationCache, initDoiCache: CitationClient.DoiCache
-)(using system: ActorSystem, mat: Materializer, envri: Envri) extends CitationClient{
+)(using system: ActorSystem, mat: Materializer) extends CitationClient{
 	import CitationStyle.*
 	import CitationClient.Key
 
 	private val config = cpMetaConfig.citations
 
-	val doiClient = new DoiServiceClient(cpMetaConfig).getClient
+	val doiClientFactory = new DoiServiceClient(cpMetaConfig)
+	
+	def doiClient(using Envri) = doiClientFactory.getClient
 
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache

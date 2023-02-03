@@ -7,7 +7,7 @@ import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
 import se.lu.nateko.cp.doi.core.DoiClientConfig
 import scala.concurrent.ExecutionContext
 
-class DoiServiceClient(conf: CpmetaConfig)(using ctxt: ExecutionContext) {
+class DoiServiceClient(conf: CpmetaConfig)(using ExecutionContext) {
   	def getClient(using envri: Envri): DoiClient = {
 		val doiConf = conf.doi(envri)
 		val http = new PlainJavaDoiHttp(doiConf.symbol, doiConf.password)

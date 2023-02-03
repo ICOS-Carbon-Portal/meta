@@ -13,8 +13,6 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.icos.EtcMetaSource.given_Envri
 
 object Main extends App with CpmetaJsonProtocol{
 
@@ -23,7 +21,7 @@ object Main extends App with CpmetaJsonProtocol{
 	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
-	val metaFactory = new MetaDbFactory()
+	val metaFactory = new MetaDbFactory
 
 	val optIndexDataFut: Future[Option[IndexData]] =
 		import config.{rdfStorage => conf}

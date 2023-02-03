@@ -99,7 +99,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationClient.CitationCache, metaCache: CitationClient.DoiCache, config0: CpmetaConfig)(using Envri): Future[MetaDb] = {
+	def apply(citCache: CitationClient.CitationCache, metaCache: CitationClient.DoiCache, config0: CpmetaConfig): Future[MetaDb] = {
 
 		validateConfig(config0)
 

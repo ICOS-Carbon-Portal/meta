@@ -30,10 +30,12 @@ object UploadWorkbench{
 		//Some(Uri("http://127.0.0.1:9010"))
 	)
 
+	val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = CitationClientImpl(Nil, new CitationConfig("apa", false, 10), TrieMap.empty)
+	val citer = CitationClientImpl(Nil, metaConf, TrieMap.empty, TrieMap.empty)
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)

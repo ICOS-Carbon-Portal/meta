@@ -40,7 +40,7 @@ import se.lu.nateko.cp.meta.services.upload.DoiService
 
 type CitationProviderFactory = Sail => CitationProvider
 object CitationProviderFactory{
-	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer, Envri): CitationProviderFactory =
+	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
 		sail => {
 			val dois: List[Doi] = {
 				val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi

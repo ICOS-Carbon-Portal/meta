@@ -60,7 +60,7 @@ class CollectionFetcher(
 		else None
 	}
 
-	private def getExistingStaticColl(coll: IRI): StaticCollection = {
+	private def getExistingStaticColl(coll: IRI)(using Envri): StaticCollection = {
 		val dct = metaVocab.dcterms
 
 		val members = server.getUriValues(coll, memberProp).map{item =>

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
+import se.lu.nateko.cp.doi.DoiMeta
 
 case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
@@ -181,6 +182,7 @@ case class References(
 	citationString: Option[String],
 	citationBibTex: Option[String],
 	citationRis: Option[String],
+	doi: Option[DoiMeta],
 	keywords: Option[Seq[String]],
 	authors: Option[Seq[Agent]],
 	title: Option[String],
@@ -189,5 +191,5 @@ case class References(
 	licence: Option[Licence]
 )
 object References{
-	def empty = References(None, None, None, None, None, None, None, None, None)
+	def empty = References(None, None, None, None, None, None, None, None, None, None)
 }

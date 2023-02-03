@@ -33,7 +33,7 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using ActorSystem, ExecutionContext): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using ActorSystem, ExecutionContext, Envri): Route = {
 
 		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs

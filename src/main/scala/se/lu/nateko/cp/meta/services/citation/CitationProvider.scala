@@ -30,15 +30,17 @@ import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import CitationClient.CitationCache
+import CitationClient.DoiCache
 
 import java.net.URI
 import scala.util.Using
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.services.upload.DoiService
 
 
 type CitationProviderFactory = Sail => CitationProvider
 object CitationProviderFactory{
-	def apply(citCache: CitationCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
+	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer, Envri): CitationProviderFactory =
 		sail => {
 			val dois: List[Doi] = {
 				val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi
@@ -51,7 +53,7 @@ object CitationProviderFactory{
 					}
 				}.get
 			}
-			val doiCiter = CitationClientImpl(dois, conf.citations, citCache)
+			val doiCiter = CitationClientImpl(dois, conf, citCache, doiCache)
 			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
 		}
 }

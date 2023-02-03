@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -69,7 +69,7 @@ object UriSerializer{
 class Rdf4jUriSerializer(
 	repo: Repository,
 	servers: DataObjectInstanceServers,
-	doiCiter: CitationClient,
+	doiCiter: PlainDoiCiter,
 	config: CpmetaConfig
 )(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
 

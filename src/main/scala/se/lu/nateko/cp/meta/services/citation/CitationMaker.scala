@@ -29,6 +29,7 @@ import scala.util.Success
 import scala.util.Try
 
 import CitationStyle.*
+import se.lu.nateko.cp.doi.DoiMeta
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -50,11 +51,13 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val metaVocab = new CpmetaVocab(server.factory)
 	val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getItemCitationInfo(item: CitableItem) = References.empty.copy(
-		citationString = getDoiCitation(item, CitationStyle.HTML),
-		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
-		citationRis    = getDoiCitation(item, CitationStyle.ris)
-	)
+	def getItemCitationInfo(item: CitableItem)(using Envri) =
+		References.empty.copy(
+			citationString = getDoiCitation(item, CitationStyle.HTML),
+			citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
+			citationRis    = getDoiCitation(item, CitationStyle.ris),
+			doi = getDoiMeta(item)
+		)
 
 	def getCitationInfo(sobj: StaticObject)(using envri: Envri): References = sobj match{
 
@@ -70,6 +73,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(data, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
 				citationRis = getDoiCitation(data, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				doi = None,
 				authors = citInfo.authors,
 				title = citInfo.title,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
@@ -124,13 +128,30 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
 
+	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): DoiMeta = eagerRes match{
+		case None => DoiMeta(Doi("", "")) // replace
+		case Some(Success(doiMeta)) => doiMeta
+		case Some(Failure(err)) => throw err//"Error fetching DOI citation: " + err.getMessage
+	}
+
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
 			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
 		)
 
+	def extractDoiMeta(using Envri): PartialFunction[String, DoiMeta] =
+		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
+			doi => presentDoiMetaCitation(doiCiter.getDoiEager(doi))
+		)
+
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }
+
+	// private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
+	// 	item.doi.collect{ case s: String => Doi.parse(s).toOption.andThen(doi => doiCiter.getDoiEager(doi)) }
+
+	private def getDoiMeta(item: CitableItem)(using Envri): Option[DoiMeta] =
+		item.doi.collect{ extractDoiMeta }
 
 	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {
 		val zoneId = ZoneId.of(defaultTimezoneId)

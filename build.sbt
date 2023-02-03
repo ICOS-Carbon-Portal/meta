@@ -14,10 +14,11 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.5",
+		version := "0.7.6",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.0",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(
@@ -112,7 +113,6 @@ lazy val meta = (project in file("."))
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.6.5",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.7.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.0",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,

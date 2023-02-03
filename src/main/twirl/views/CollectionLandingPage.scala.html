@@ -23,6 +23,13 @@
 				@htmlProperty{Creator}{
 					@agentLink(coll.creator)
 				}
+				@for(doi <- coll.references.doi){
+					@htmlProperty{Contributors}{
+						@for(contributor <- doi.contributors){
+							@{contributor.name}
+						}
+					}
+				}
 				@if(coll.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
 				} else {}

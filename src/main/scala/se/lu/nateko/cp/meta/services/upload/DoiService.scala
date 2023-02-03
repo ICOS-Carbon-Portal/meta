@@ -33,14 +33,9 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
 import se.lu.nateko.cp.meta.services.metaexport
 
-class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(implicit ctxt: ExecutionContext) {
+class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(using ctxt: ExecutionContext, envri: Envri) {
 
-	private def client(implicit envri: Envri): DoiClient = {
-		val doiConf = conf.doi(envri)
-		val http = new PlainJavaDoiHttp(doiConf.symbol, doiConf.password)
-		val clientConf = new DoiClientConfig(doiConf.symbol, doiConf.password, doiConf.restEndpoint.toURL(), doiConf.prefix)
-		new DoiClient(clientConf, http)
-	}
+	val client = new DoiServiceClient(conf).getClient
 
 	private def saveDoi(meta: DoiMeta)(implicit envri: Envri): Future[Doi] =
 		client.putMetadata(meta).map(_ => meta.doi)

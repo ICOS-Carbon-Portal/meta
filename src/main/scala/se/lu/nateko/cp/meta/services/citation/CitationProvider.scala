@@ -53,18 +53,11 @@ object CitationProviderFactory{
 					}
 				}.get
 			}
-			val doiCiter = CitationClientImpl(dois, conf, citCache, doiCache)
+			val doiCiter = CitationClientImpl(dois, conf.citations, citCache, doiCache)
 			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
 		}
 }
 
-// trait CitationProvider{
-// 	def doiCiter: CitationClient
-// 	def metaVocab: CpmetaVocab
-// 	def getCitation(res: Resource): Option[String]
-// 	def getReferences(res: Resource): Option[References]
-// 	def getLicence(res: Resource): Option[Licence]
-// }
 
 class CitationProvider(
 	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig

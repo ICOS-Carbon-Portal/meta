@@ -35,7 +35,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = CitationClientImpl(Nil, metaConf, TrieMap.empty, TrieMap.empty)
+	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)

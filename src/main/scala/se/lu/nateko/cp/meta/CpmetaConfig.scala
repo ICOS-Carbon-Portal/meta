@@ -1,15 +1,17 @@
 package se.lu.nateko.cp.meta
 
-import java.net.URI
-import com.typesafe.config.ConfigRenderOptions
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-import spray.json.*
-import se.lu.nateko.cp.meta.persistence.postgres.DbServer
-import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+import se.lu.nateko.cp.doi.core.DoiClientConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
+import se.lu.nateko.cp.meta.persistence.postgres.DbServer
+import spray.json.*
+
+import java.net.URI
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -136,20 +138,13 @@ case class RdfStorageConfig(
 	recreateCpIndexAtStartup: Boolean
 )
 
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
+case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: Map[Envri, DoiClientConfig])
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
 }
 
 case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
-
-case class DoiClientConfig(
-	symbol: String,
-	password: String,
-	restEndpoint: URI,
-	prefix: String
-)
 
 case class CpmetaConfig(
 	port: Int,
@@ -165,8 +160,7 @@ case class CpmetaConfig(
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig,
 	citations: CitationConfig,
-	statsClient: StatsClientConfig,
-	doi: Map[Envri, DoiClientConfig]
+	statsClient: StatsClientConfig
 )
 
 object ConfigLoader extends CpmetaJsonProtocol{
@@ -196,12 +190,12 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat3(CitationConfig.apply)
+	given RootJsonFormat[DoiClientConfig] = jsonFormat4(DoiClientConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
-	given RootJsonFormat[DoiClientConfig] = jsonFormat4(DoiClientConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
 	val appConfig: Config = {
 		val confFile = new java.io.File("application.conf").getAbsoluteFile

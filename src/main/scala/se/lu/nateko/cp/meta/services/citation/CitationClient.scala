@@ -13,11 +13,12 @@ import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.CitationConfig
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.services.upload.DoiServiceClient
+import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
 import se.lu.nateko.cp.meta.utils.async.errorLite
 import se.lu.nateko.cp.meta.utils.async.timeLimit
 import spray.json.RootJsonFormat
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
+import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -32,69 +33,57 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import ExecutionContext.Implicits.global
+import CitationClient.*
+import scala.util.control.NoStackTrace
+
 
 enum CitationStyle:
 	case HTML, bibtex, ris, TEXT
 
 trait PlainDoiCiter:
-	import CitationStyle.*
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]]
 
 trait CitationClient extends PlainDoiCiter:
-	protected def citCache: CitationClient.CitationCache = TrieMap.empty
-	protected def doiCache: CitationClient.DoiCache = TrieMap.empty
+	protected def citCache: CitationCache = TrieMap.empty
+	protected def doiCache: DoiCache = TrieMap.empty
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String]
 	def getDoiMeta(doi: Doi)(using Envri): Future[DoiMeta]
+
 	//not waiting for HTTP; only returns string if the result previously citCached
 	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
-
-	def dropCache(doi: Doi): Unit = CitationStyle.values.foreach(style => citCache.remove(doi -> style))
-
 	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]] = getDoiMeta(doi).value
 
+	def dropCache(doi: Doi): Unit =
+		CitationStyle.values.foreach(style => citCache.remove(doi -> style))
+		doiCache.remove(doi)
+
+
 class CitationClientImpl (
-	knownDois: List[Doi], cpMetaConfig: CpmetaConfig, initCitCache: CitationClient.CitationCache, initDoiCache: CitationClient.DoiCache
+	knownDois: List[Doi], config: CitationConfig, initCitCache: CitationCache, initDoiCache: DoiCache
 )(using system: ActorSystem, mat: Materializer) extends CitationClient:
-	import CitationStyle.*
-	import CitationClient.Key
-
-	private val config = cpMetaConfig.citations
-
-	val doiClientFactory = new DoiServiceClient(cpMetaConfig)
-	
-	def doiClient(using Envri) = doiClientFactory.getClient
+	import system.{dispatcher, scheduler, log}
 
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache
 
-	private val http = Http()
-	import system.{dispatcher, scheduler, log}
-	import CitationStyle.*
-
-	def getDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] =
-		timeLimit(fetchIfNeeded[Doi, DoiMeta](doi, doiCache, fetchDoiMeta), config.timeoutSec.seconds, scheduler).recoverWith{
-			case _: TimeoutException => Future.failed(
-				new Exception("Doi meta formatting service timed out")
-			)
-		}
-
-	def fetchDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] = doiClient.getMetadata(doi).flatMap{resp =>
-		resp match {
-			case None => Future.failed(new Error)
-			case Some(value) => Future.successful(value)
-		}
-	}
-
 	if(config.eagerWarmUp) scheduler.scheduleOnce(35.seconds)(warmUpCache())
+
+	private val http = Http()
+	private val doiClientFactory = DoiClientFactory(config.doi)
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] =
 		val key = doi -> citationStyle
-		timeLimit(fetchIfNeeded[Key, String](key, citCache, fetchCitation), config.timeoutSec.seconds, scheduler).recoverWith{
+		withTimeout(fetchIfNeeded(key, citCache, fetchCitation), "Citation formatting")
+
+	def getDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] =
+		withTimeout(fetchIfNeeded(doi, doiCache, fetchDoiMeta), "DOI metadata")
+
+	private def withTimeout[T](fut: Future[T], serviceName: String): Future[T] =
+		timeLimit(fut, config.timeoutSec.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
-				new Exception("Citation formatting service timed out")
+				new Exception(serviceName + " service timed out") with NoStackTrace
 			)
 		}
 
@@ -111,6 +100,7 @@ class CitationClientImpl (
 				case Some(Failure(_)) =>
 					//if this citation is a completed failure at the moment
 					recache()
+					fut
 				case _ => fut
 			}
 		}
@@ -121,11 +111,13 @@ class CitationClientImpl (
 			case Nil => Future.successful(Done)
 			case head :: tail =>
 				Future.sequence(
-					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded[Key, String](head -> citStyle, citCache, fetchCitation)}
-				).flatMap(_ => warmUp(tail))
+					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded(head -> citStyle, citCache, fetchCitation)}
+					//TODO Investigate usage of Validated here to collect all encountered errors, not just one
+				).transformWith(res => warmUp(tail).transform(inner => res.flatMap(_ => inner)))
 		}
 
 		warmUp(knownDois).failed.foreach{_ =>
+			//TODO Log the cache warmup errors
 			scheduler.scheduleOnce(1.hours)(warmUpCache())
 		}
 
@@ -162,6 +154,12 @@ class CitationClientImpl (
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
+	private def fetchDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] =
+		doiClientFactory.getClient.getMetadata(doi).flatMap{
+			case None => Future.failed(new Exception(s"No metadata found for DOI $doi") with NoStackTrace)
+			case Some(value) => Future.successful(value)
+		}
+
 end CitationClientImpl
 
 object CitationClient:
@@ -171,60 +169,47 @@ object CitationClient:
 	type CitationCache = TrieMap[Key, Future[String]]
 	type DoiCache = TrieMap[Doi, Future[DoiMeta]]
 
-	opaque type CacheDump = JsValue
-
 	val citCacheDumpFile = Paths.get("./citationsCacheDump.json")
 	val doiCacheDumpFile = Paths.get("./doiMetaCacheDump.json")
 
-	def dumpDoiCache(client: CitationClient): CacheDump =
-		val arrays = client.doiCache.iterator.flatMap{
-			case ((doi), fut) =>
-				fut.value.flatMap(_.toOption).map{doiMeta =>
-					val strs = Vector(JsString(doi.toString), doiMeta.toJson)
-					JsArray(strs)
-				}
-		}.toVector
-		JsArray(arrays)
+	def readCitCache(log: LoggingAdapter): Future[CitationCache] =
+		readCache(log, citCacheDumpFile){cells =>
+			val toParse = cells.collect{case JsString(s) => s}
+			assert(toParse.length == 3, "Citation dump had an entry with a wrong number of values")
+			val doi = Doi.parse(toParse(0)).get
+			val style = CitationStyle.valueOf(toParse(1))
+			val cit = toParse(2)
+			doi -> style -> cit
+		}
 
-	def dumpCitCache(client: CitationClient): CacheDump =
-		val arrays = client.citCache.iterator.flatMap{
-			case ((doi, style), fut) =>
-				fut.value.flatMap(_.toOption).map{cit =>
-					val strs = Vector(doi.toString, style.toString, cit)
-					JsArray(strs.map(JsString.apply))
-				}
-		}.toVector
-		JsArray(arrays)
+	def readDoiCache(log: LoggingAdapter): Future[DoiCache] =
+		readCache(log, doiCacheDumpFile){cells =>
+			assert(cells.length == 2, "Doi dump had an entry with a wrong number of values")
+			val doi = cells(0).convertTo[Doi]
+			val doiMeta = cells(1).convertTo[DoiMeta]
+			doi -> doiMeta
+		}
 
-	def reconstructDoiCache(cells: Vector[JsValue]): (Doi, Future[DoiMeta]) =
-		assert(cells.length == 2, "Doi dump had an entry with a wrong number of values")
-		val toParse = cells.collect{case JsString(s) => s}
-		val doi = Doi.parse(toParse(0)).get
-		val fut = Future.successful(cells(1).toString.parseJson.convertTo[DoiMeta])
-		doi -> fut
+	def writeCitCache(client: CitationClient): Future[Done] =
+		writeCache(client.citCache, citCacheDumpFile){case ((doi, style), cit) =>
+			JsArray(doi.toJson, JsString(style.toString), JsString(cit))
+		}
 
-	def reconstructCitCache(cells: Vector[JsValue]): (Key, Future[String]) =
-		val toParse = cells.collect{case JsString(s) => s}
-		assert(toParse.length == 3, "Citation dump had an entry with a wrong number of values")
-		val doi = Doi.parse(toParse(0)).get
-		val style = CitationStyle.valueOf(toParse(1))
-		val fut = Future.successful(toParse(2))
-		doi -> style -> fut
+	def writeDoiCache(client: CitationClient): Future[Done] =
+		writeCache(client.doiCache, doiCacheDumpFile)(
+			(doi, doiMeta) => JsArray(doi.toJson, doiMeta.toJson)
+		)
 
-	def saveCache(client: CitationClient): Future[Done] = Future{
-		import StandardOpenOption.*
-		Files.writeString(citCacheDumpFile, dumpCitCache(client).prettyPrint, WRITE, CREATE, TRUNCATE_EXISTING)
-		Files.writeString(doiCacheDumpFile, dumpDoiCache(client).prettyPrint, WRITE, CREATE, TRUNCATE_EXISTING)
-		Done
-	}
-
-	private def readCache[K, V](log: LoggingAdapter, file: Path, parser: Vector[JsValue] => (K, V)): Future[TrieMap[K, V]] =
+	private def readCache[K, V](
+		log: LoggingAdapter, file: Path
+	)(parser: Vector[JsValue] => (K, V)): Future[TrieMap[K, Future[V]]] =
 		Future{
 			val dump = Files.readString(file).parseJson
 			val tuples = dump match
 				case JsArray(arrs) => arrs.collect{
 					case JsArray(cells) =>
-						parser(cells)
+						val (k, v) = parser(cells)
+						k -> Future.successful(v)
 				}
 				case _ => throw Exception("Citation/DOI dump was not a JSON array")
 			TrieMap.apply(tuples*)
@@ -234,10 +219,17 @@ object CitationClient:
 				TrieMap.empty
 		}
 
-	def readDoiCache(log: LoggingAdapter): Future[DoiCache] =
-		readCache(log, doiCacheDumpFile, reconstructDoiCache)
-
-	def readCitCache(log: LoggingAdapter): Future[CitationCache] =
-		readCache(log, citCacheDumpFile, reconstructCitCache)
+	private def writeCache[K, V](
+		cache: TrieMap[K, Future[V]], toFile: Path
+	)(serializer: (K, V) => JsArray): Future[Done] = Future{
+		val arrays = cache.iterator.flatMap{
+			case (key, fut) =>
+				fut.value.flatMap(_.toOption).map(serializer(key, _))
+		}.toVector
+		val js = JsArray(arrays).prettyPrint
+		import StandardOpenOption.*
+		Files.writeString(toFile, js, WRITE, CREATE, TRUNCATE_EXISTING)
+		Done
+	}
 
 end CitationClient

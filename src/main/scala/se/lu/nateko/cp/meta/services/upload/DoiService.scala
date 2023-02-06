@@ -14,7 +14,6 @@ import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.core.DoiClient
 import se.lu.nateko.cp.doi.core.DoiClientConfig
 import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
-import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.DocObject
@@ -31,15 +30,14 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
-import se.lu.nateko.cp.meta.services.metaexport
 
-class DoiService(conf: CpmetaConfig, fetcher: UriSerializer)(using ctxt: ExecutionContext) {
+class DoiService(doiConfs: Map[Envri, DoiClientConfig], fetcher: UriSerializer)(using ExecutionContext) {
 
-	private val doiClientFactory = new DoiServiceClient(conf)
+	private val doiClientFactory = DoiClientFactory(doiConfs)
 
-	def client(using Envri) = doiClientFactory.getClient
+	private def client(using Envri) = doiClientFactory.getClient
 
-	private def saveDoi(meta: DoiMeta)(implicit envri: Envri): Future[Doi] =
+	private def saveDoi(meta: DoiMeta)(using Envri): Future[Doi] =
 		client.putMetadata(meta).map(_ => meta.doi)
 
 	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[StaticObject] = coll.members.flatMap{

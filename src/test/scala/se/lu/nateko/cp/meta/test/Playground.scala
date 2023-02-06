@@ -33,7 +33,7 @@ object Playground {
 	)
 
 	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))
-	val citer = CitationClientImpl(Nil, metaConf, TrieMap.empty, TrieMap.empty)
+	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
 
 	def stop() = system.terminate()
 

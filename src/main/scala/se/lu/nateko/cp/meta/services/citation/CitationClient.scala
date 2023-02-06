@@ -1,51 +1,48 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import java.util.concurrent.TimeoutException
+import akka.Done
+import akka.actor.ActorSystem
+import akka.event.LoggingAdapter
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.settings.ConnectionPoolSettings
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.Materializer
+import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.doi.DoiMeta
+import se.lu.nateko.cp.meta.CitationConfig
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.services.upload.DoiServiceClient
+import se.lu.nateko.cp.meta.utils.async.errorLite
+import se.lu.nateko.cp.meta.utils.async.timeLimit
+import spray.json.RootJsonFormat
+import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.concurrent.TimeoutException
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import scala.concurrent._
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.Materializer
-import se.lu.nateko.cp.meta.utils.async.{timeLimit, errorLite}
-import se.lu.nateko.cp.meta.CitationConfig
-import java.nio.file.Paths
-import java.nio.file.Files
-import java.nio.file.StandardOpenOption
-import akka.event.LoggingAdapter
-import akka.http.scaladsl.settings.ConnectionPoolSettings
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.core.data.Envri
-import scala.concurrent._
 import ExecutionContext.Implicits.global
-import se.lu.nateko.cp.doi.core.DoiClient
-import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
-import se.lu.nateko.cp.doi.core.DoiClientConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
-import spray.json.RootJsonFormat
-import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
-import java.nio.file.Path
-import se.lu.nateko.cp.meta.services.upload.DoiServiceClient
 
 enum CitationStyle:
 	case HTML, bibtex, ris, TEXT
 
-trait PlainDoiCiter{
+trait PlainDoiCiter:
 	import CitationStyle.*
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]]
-}
 
-trait CitationClient extends PlainDoiCiter{
+trait CitationClient extends PlainDoiCiter:
 	protected def citCache: CitationClient.CitationCache = TrieMap.empty
 	protected def doiCache: CitationClient.DoiCache = TrieMap.empty
 
@@ -58,11 +55,9 @@ trait CitationClient extends PlainDoiCiter{
 
 	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]] = getDoiMeta(doi).value
 
-}
-
 class CitationClientImpl (
 	knownDois: List[Doi], cpMetaConfig: CpmetaConfig, initCitCache: CitationClient.CitationCache, initDoiCache: CitationClient.DoiCache
-)(using system: ActorSystem, mat: Materializer) extends CitationClient{
+)(using system: ActorSystem, mat: Materializer) extends CitationClient:
 	import CitationStyle.*
 	import CitationClient.Key
 
@@ -95,16 +90,15 @@ class CitationClientImpl (
 
 	if(config.eagerWarmUp) scheduler.scheduleOnce(35.seconds)(warmUpCache())
 
-	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] = {
+	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] =
 		val key = doi -> citationStyle
 		timeLimit(fetchIfNeeded[Key, String](key, citCache, fetchCitation), config.timeoutSec.seconds, scheduler).recoverWith{
 			case _: TimeoutException => Future.failed(
 				new Exception("Citation formatting service timed out")
 			)
 		}
-	}
 
-	private def fetchIfNeeded[K, V](key: K, cache: TrieMap[K, Future[V]], fetchValue: K => Future[V]): Future[V] = {
+	private def fetchIfNeeded[K, V](key: K, cache: TrieMap[K, Future[V]], fetchValue: K => Future[V]): Future[V] =
 
 		def recache(): Future[V] = {
 			val res = fetchValue(key)
@@ -120,9 +114,8 @@ class CitationClientImpl (
 				case _ => fut
 			}
 		}
-	}
 
-	private def warmUpCache(): Unit = {
+	private def warmUpCache(): Unit =
 
 		def warmUp(dois: List[Doi]): Future[Done] = dois match {
 			case Nil => Future.successful(Done)
@@ -135,7 +128,6 @@ class CitationClientImpl (
 		warmUp(knownDois).failed.foreach{_ =>
 			scheduler.scheduleOnce(1.hours)(warmUpCache())
 		}
-	}
 
 	private def fetchCitation(key: Key): Future[String] =
 		val (doi, style) = key
@@ -170,21 +162,21 @@ class CitationClientImpl (
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
-}
+end CitationClientImpl
 
-object CitationClient{
+object CitationClient:
 	import spray.json.*
 	import scala.concurrent.ExecutionContext.Implicits.global
 	type Key = (Doi, CitationStyle)
 	type CitationCache = TrieMap[Key, Future[String]]
 	type DoiCache = TrieMap[Doi, Future[DoiMeta]]
 
-	opaque type Dump = JsValue
+	opaque type CacheDump = JsValue
 
 	val citCacheDumpFile = Paths.get("./citationsCacheDump.json")
 	val doiCacheDumpFile = Paths.get("./doiMetaCacheDump.json")
 
-	def dumpDoiCache(client: CitationClient): Dump = {
+	def dumpDoiCache(client: CitationClient): CacheDump =
 		val arrays = client.doiCache.iterator.flatMap{
 			case ((doi), fut) =>
 				fut.value.flatMap(_.toOption).map{doiMeta =>
@@ -193,9 +185,8 @@ object CitationClient{
 				}
 		}.toVector
 		JsArray(arrays)
-	}
 
-	def dumpCitCache(client: CitationClient): Dump = {
+	def dumpCitCache(client: CitationClient): CacheDump =
 		val arrays = client.citCache.iterator.flatMap{
 			case ((doi, style), fut) =>
 				fut.value.flatMap(_.toOption).map{cit =>
@@ -204,7 +195,6 @@ object CitationClient{
 				}
 		}.toVector
 		JsArray(arrays)
-	}
 
 	def reconstructDoiCache(cells: Vector[JsValue]): (Doi, Future[DoiMeta]) =
 		assert(cells.length == 2, "Doi dump had an entry with a wrong number of values")
@@ -249,4 +239,5 @@ object CitationClient{
 
 	def readCitCache(log: LoggingAdapter): Future[CitationCache] =
 		readCache(log, citCacheDumpFile, reconstructCitCache)
-}
+
+end CitationClient

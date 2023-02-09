@@ -1,0 +1,23 @@
+@import se.lu.nateko.cp.doi.DoiMeta
+
+@(doiMetaOpt: Option[DoiMeta])
+@for(doiMeta <- doiMetaOpt){
+	@if(doiMeta.descriptions.length > 0){
+		@property("Description (DOI)", doiMeta.descriptions.map(_.description).mkString("\n"))
+	}
+	@if(doiMeta.creators.length > 0){
+		@property("Data creators", doiMeta.creators.map(_.name.toString).mkString(", "))
+	}
+	@if(doiMeta.contributors.length > 0){
+		@property("Contributors", doiMeta.contributors.map(_.name.toString).mkString(", "))
+	}
+	@for(pubYear <- doiMeta.publicationYear){ 
+		@property("Publication Year", pubYear.toString) 
+	} 
+	@for(publisher <-doiMeta.publisher){ 
+		@property("Publisher", publisher)
+	} 
+	@if(doiMeta.subjects.length> 0){
+		@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
+	}
+}

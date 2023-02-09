@@ -29,9 +29,6 @@
 					@for(description <- coll.description){
 						@property("Description", description)
 					}
-					@htmlProperty{Collection creator}{
-						@agentLink(coll.creator)
-					}
 				}
 				@if(coll.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}

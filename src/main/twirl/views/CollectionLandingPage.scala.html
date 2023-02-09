@@ -18,17 +18,13 @@
 			} else {}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@htmlProperty{Collection creator}{
-					@agentLink(coll.creator)
-				}
 				@if(coll.references.doi){
 					@for(doi <- coll.references.doi){
 						@if(doi.descriptions.length > 0){
 							@property("Description (DOI)", doi.descriptions.map(_.description).mkString("\n"))
-						} else {
-							@for(description <- coll.description){
-								@property("Description", description)
-							}
+						}
+						@htmlProperty{Collection creator}{
+							@agentLink(coll.creator)
 						}
 						@if(doi.creators.length > 0){
 							@property("Data creators", doi.creators.map(_.name.toString).mkString(", "))
@@ -45,6 +41,13 @@
 						@if(doi.subjects.length > 0){
 							@property("Subjects", doi.subjects.map(_.subject).mkString(", "))
 						}
+					}
+				} else {
+					@for(description <- coll.description){
+						@property("Description", description)
+					}
+					@htmlProperty{Collection creator}{
+						@agentLink(coll.creator)
 					}
 				}
 				@if(coll.previousVersion) {

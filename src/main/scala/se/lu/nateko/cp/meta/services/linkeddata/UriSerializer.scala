@@ -79,7 +79,7 @@ class Rdf4jUriSerializer(
 
 	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, repo, config.core)
+	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
 	val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 	val pcm = new PageContentMarshalling(config.core.handleProxies, stats)
 

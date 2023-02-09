@@ -36,6 +36,7 @@ import java.net.URI
 import scala.util.Using
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.services.upload.DoiService
+import akka.event.LoggingAdapter
 
 
 type CitationProviderFactory = Sail => CitationProvider
@@ -54,19 +55,19 @@ object CitationProviderFactory{
 				}.get
 			}
 			val doiCiter = CitationClientImpl(dois, conf.citations, citCache, doiCache)
-			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
+			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService, summon[ActorSystem].log)
 		}
 }
 
 
 class CitationProvider(
-	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig
+	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig, log: LoggingAdapter
 ){
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
-	private val citer = new CitationMaker(doiCiter, repo, coreConf)
+	private val citer = new CitationMaker(doiCiter, repo, coreConf, log)
 
 	private val (objFetcher, collFetcher) = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)

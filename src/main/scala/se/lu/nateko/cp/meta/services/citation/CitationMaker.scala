@@ -30,6 +30,16 @@ import scala.util.Try
 
 import CitationStyle.*
 import se.lu.nateko.cp.doi.DoiMeta
+import akka.event.LoggingAdapter
+import se.lu.nateko.cp.doi.meta.Title
+import se.lu.nateko.cp.doi.meta.Description
+import se.lu.nateko.cp.doi.meta.DescriptionType
+import se.lu.nateko.cp.doi.meta.Creator
+import se.lu.nateko.cp.doi.meta.Name
+import se.lu.nateko.cp.doi.meta.GenericName
+import se.lu.nateko.cp.doi.meta.NameIdentifier
+import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
+import se.lu.nateko.cp.doi.meta.Contributor
 
 class CitationInfo(
 	val pidUrl: Option[String],
@@ -40,7 +50,7 @@ class CitationInfo(
 	val citText: Option[String],
 )
 
-class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig) extends FetchingHelper {
+class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper {
 	import CitationMaker.*
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
@@ -130,9 +140,15 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 
 	//TODO Remove or refactor (can be replaced with .map(_.get))
 	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): Option[DoiMeta] = eagerRes match{
-		case None => None //should be "Fetching..." info
+		case None => 
+			val title = "Fetching metadata... try [refreshing the page] again in a few seconds"
+			val doiMetaPlaceholder = DoiMeta(Doi("", ""), titles = Some(Seq(Title(title, None, None))))
+
+			Some(doiMetaPlaceholder)
 		case Some(Success(doiMeta)) => Some(doiMeta)
-		case Some(Failure(err)) => throw err//"Error fetching DOI citation: " + err.getMessage
+		case Some(Failure(err)) =>
+			log.error(err, "Error fetching DOI citation")
+			None
 	}
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =

@@ -3,10 +3,11 @@
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.doi.meta.Title
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, coll.title, CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, coll.references.doi.map(_.titles.getOrElse(Seq())(0)).getOrElse(Title(coll.title, None, None)).title.toString, CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(coll.nextVersion) {
@@ -17,21 +18,33 @@
 			} else {}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@for(description <- coll.description){
-					@property("Description", description)
-				}
-				@htmlProperty{Creator}{
+				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)
 				}
-				@htmlProperty{Contributors}{
-					@if(coll.references.doi){
-						@for(doi <- coll.references.doi){
-							@for(contributor <- doi.contributors){
-								@{contributor.name}
+				@if(coll.references.doi){
+					@for(doi <- coll.references.doi){
+						@if(doi.descriptions.length > 0){
+							@property("Description (DOI)", doi.descriptions.map(_.description).mkString("\n"))
+						} else {
+							@for(description <- coll.description){
+								@property("Description", description)
 							}
 						}
-					} else {
-						Fetching... try [refreshing the page] again in a few seconds
+						@if(doi.creators.length > 0){
+							@property("Data creators", doi.creators.map(_.name.toString).mkString(", "))
+						}
+						@if(doi.contributors.length > 0){
+							@property("Contributors", doi.contributors.map(_.name.toString).mkString(", "))
+						}
+						@for(pubYear <- doi.publicationYear){
+							@property("Publication Year", pubYear.toString)
+						}
+						@for(publisher <- doi.publisher){
+							@property("Publisher", publisher)
+						}
+						@if(doi.subjects.length > 0){
+							@property("Subjects", doi.subjects.map(_.subject).mkString(", "))
+						}
 					}
 				}
 				@if(coll.previousVersion) {

@@ -109,7 +109,7 @@ class CitationClientImpl (
 	private def warmUpCache(): Unit =
 		val MaxErrors = 5
 		def warmupOne(doi: Doi): Future[Validated[Done]] =
-			log.info(s"Warming up citation cache for DOI $doi")
+			log.debug(s"Warming up citation cache for DOI $doi")
 
 			val allFuts = CitationStyle.values.map{ citStyle =>
 				fetchIfNeeded(doi -> citStyle, citCache, fetchCitation).transform{
@@ -136,8 +136,9 @@ class CitationClientImpl (
 					v.errors.mkString("\n"))
 				scheduler.scheduleOnce(1.hours)(warmUpCache())
 			case Success(v) =>
-					log.info(s"DOI citation cache warmup success but encountered the following errors ${v.errors.mkString(", ")}")
-			case Failure(exception) => //this has to be success, so doing nothing
+				log.info(s"DOI citation cache warmup success")
+			case Failure(exception) =>
+				log.error("Cache warmup problem", exception)
 		}
 
 	private def fetchCitation(key: Key): Future[String] =

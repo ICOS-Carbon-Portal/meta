@@ -33,8 +33,10 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import CitationClient.*
+import CitationClient.{*, given}
 import scala.util.control.NoStackTrace
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.Mergeable
 
 
 enum CitationStyle:
@@ -96,29 +98,46 @@ class CitationClientImpl (
 		}
 
 		cache.get(key).fold(recache()){fut =>
-			fut.value match{
+			fut.value match
 				case Some(Failure(_)) =>
 					//if this citation is a completed failure at the moment
 					recache()
 					fut
 				case _ => fut
-			}
 		}
 
 	private def warmUpCache(): Unit =
+		val MaxErrors = 5
+		def warmupOne(doi: Doi): Future[Validated[Done]] =
+			log.info(s"Warming up citation cache for DOI $doi")
 
-		def warmUp(dois: List[Doi]): Future[Done] = dois match {
-			case Nil => Future.successful(Done)
-			case head :: tail =>
-				Future.sequence(
-					CitationStyle.values.toSeq.map{citStyle => fetchIfNeeded(head -> citStyle, citCache, fetchCitation)}
-					//TODO Investigate usage of Validated here to collect all encountered errors, not just one
-				).transformWith(res => warmUp(tail).transform(inner => res.flatMap(_ => inner)))
-		}
+			val allFuts = CitationStyle.values.map{ citStyle =>
+				fetchIfNeeded(doi -> citStyle, citCache, fetchCitation).transform{
+					case Success(_) => Success(Validated.ok(Done))
+					case Failure(err) => Success(Validated.error(err.getMessage))
+				}
+			}
+			Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
 
-		warmUp(knownDois).failed.foreach{_ =>
-			//TODO Log the cache warmup errors
-			scheduler.scheduleOnce(1.hours)(warmUpCache())
+		def warmUp(dois: List[Doi], soFar: Validated[Done]): Future[Validated[Done]] =
+			if soFar.errors.length > MaxErrors then
+				val msg = s"Got more than $MaxErrors errors while warming up DOI citation cache, cancelling for now"
+				Future.successful(soFar.withExtraError(msg))
+			else dois match
+				case Nil => Future.successful(soFar)
+				case head :: tail =>
+					warmupOne(head).flatMap{ first =>
+						warmUp(tail, Validated.merge(soFar, first))
+					}
+
+		warmUp(knownDois, Validated.ok(Done)).onComplete{
+			case Success(v) if v.errors.nonEmpty =>
+				log.warning("DOI citation cache warmup encountered the following errors (will retry later):\n" +
+					v.errors.mkString("\n"))
+				scheduler.scheduleOnce(1.hours)(warmUpCache())
+			case Success(v) =>
+					log.info(s"DOI citation cache warmup success but encountered the following errors ${v.errors.mkString(", ")}")
+			case Failure(exception) => //this has to be success, so doing nothing
 		}
 
 	private def fetchCitation(key: Key): Future[String] =
@@ -231,5 +250,8 @@ object CitationClient:
 		Files.writeString(toFile, js, WRITE, CREATE, TRUNCATE_EXISTING)
 		Done
 	}
+
+	given Mergeable[Done] with
+		def merge(d1: Done, d2: Done) = Done
 
 end CitationClient

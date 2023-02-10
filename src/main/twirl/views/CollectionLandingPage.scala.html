@@ -7,7 +7,7 @@
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, coll.references.doi.map(_.titles.getOrElse(Seq())(0)).getOrElse(Title(coll.title, None, None)).title.toString, CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, Some(coll.references.doi.map(_.titles.getOrElse(Seq())(0)).getOrElse(Title(coll.title, None, None)).title.toString), CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(coll.nextVersion) {

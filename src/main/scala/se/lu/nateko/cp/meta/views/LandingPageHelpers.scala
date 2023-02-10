@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import spray.json.*
 import java.net.URI
-
+import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
 
 object LandingPageHelpers{
 
@@ -78,4 +78,14 @@ object LandingPageHelpers{
 			uriStr
 	}
 
+	def getORCIDLink(person: DoiMetaPerson): Option[String] = {
+		val orcidIdentifier = person.nameIdentifiers.find(_.scheme.nameIdentifierScheme == "ORCID")
+		val nameIdentifier = orcidIdentifier.map(_.nameIdentifier)
+		val schemeURI = orcidIdentifier.map(_.scheme.schemeUri).flatten
+
+		List(schemeURI, nameIdentifier).flatten match {
+			case Nil => None
+			case xs => Some(xs.mkString(""))
+		}
+	}
 }

@@ -138,7 +138,6 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
 
-	//TODO Remove or refactor (can be replaced with .map(_.get))
 	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): Option[DoiMeta] = eagerRes match{
 		case None => 
 			val title = "Fetching metadata... try [refreshing the page] again in a few seconds"

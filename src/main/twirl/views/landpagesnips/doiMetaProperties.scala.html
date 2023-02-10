@@ -1,4 +1,6 @@
 @import se.lu.nateko.cp.doi.DoiMeta
+@import se.lu.nateko.cp.doi.meta.Person
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getORCIDLink
 
 @(doiMetaOpt: Option[DoiMeta])
 @for(doiMeta <- doiMetaOpt){
@@ -6,10 +8,10 @@
 		@property("Description (DOI)", doiMeta.descriptions.map(_.description).mkString("\n"))
 	}
 	@if(doiMeta.creators.length > 0){
-		@property("Data creators", doiMeta.creators.map(_.name.toString).mkString(", "))
+		@personproperty("Data creators", doiMeta.creators.toIndexedSeq)
 	}
 	@if(doiMeta.contributors.length > 0){
-		@property("Contributors", doiMeta.contributors.map(_.name.toString).mkString(", "))
+		@personproperty("Contributors", doiMeta.contributors.toIndexedSeq)
 	}
 	@for(pubYear <- doiMeta.publicationYear){ 
 		@property("Publication Year", pubYear.toString) 
@@ -19,5 +21,19 @@
 	} 
 	@if(doiMeta.subjects.length> 0){
 		@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
+	}
+}
+
+@personproperty(label: String, persons: Seq[Person]) = {
+	@htmlProperty{@label}{
+		@for(person <- persons){
+			@if(getORCIDLink(person)){
+				<a href=@{getORCIDLink(person)}>
+					<span>@{person.name}</span>
+				</a>
+			} else {
+				<span>@{person.name}</span>
+			}
+		}
 	}
 }

@@ -78,14 +78,8 @@ object LandingPageHelpers{
 			uriStr
 	}
 
-	def getORCIDLink(person: DoiMetaPerson): Option[String] = {
-		val orcidIdentifier = person.nameIdentifiers.find(_.scheme.nameIdentifierScheme == "ORCID")
-		val nameIdentifier = orcidIdentifier.map(_.nameIdentifier)
-		val schemeURI = orcidIdentifier.map(_.scheme.schemeUri).flatten
-
-		List(schemeURI, nameIdentifier).flatten match {
-			case Nil => None
-			case xs => Some(xs.mkString(""))
-		}
-	}
+	def getDoiPersonUrl(person: DoiMetaPerson): Option[String] = person
+		.nameIdentifiers.flatMap{ni =>
+			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
+		}.headOption
 }

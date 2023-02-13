@@ -14,6 +14,7 @@ import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.core.DoiClient
 import se.lu.nateko.cp.doi.core.DoiClientConfig
 import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
+import se.lu.nateko.cp.meta.DoiConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.DocObject
@@ -31,9 +32,9 @@ import scala.concurrent.Future
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
 
-class DoiService(doiConfs: Map[Envri, DoiClientConfig], fetcher: UriSerializer)(using ExecutionContext) {
+class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 
-	private val doiClientFactory = DoiClientFactory(doiConfs)
+	private val doiClientFactory = DoiClientFactory(doiConf)
 
 	private def client(using Envri) = doiClientFactory.getClient
 

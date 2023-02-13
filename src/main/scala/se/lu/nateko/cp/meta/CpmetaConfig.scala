@@ -4,7 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
-import se.lu.nateko.cp.doi.core.DoiClientConfig
+import se.lu.nateko.cp.doi.core.DoiEndpointConfig
+import se.lu.nateko.cp.doi.core.DoiMemberConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
@@ -12,6 +13,7 @@ import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import spray.json.*
 
 import java.net.URI
+import java.net.URL
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -138,7 +140,8 @@ case class RdfStorageConfig(
 	recreateCpIndexAtStartup: Boolean
 )
 
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: Map[Envri, DoiClientConfig])
+case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
+case class DoiConfig(restEndpoint: URL, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -190,7 +193,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
-	given RootJsonFormat[DoiClientConfig] = jsonFormat4(DoiClientConfig.apply)
+	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
+	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)

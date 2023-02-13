@@ -50,10 +50,10 @@ class TestDb {
 	val repo: Future[Repository] = {
 		object CitationClientDummy extends CitationClient{
 			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-			override def getDoiMeta(doi: Doi)(using Envri) = Future.successful(DoiMeta(Doi("dummy", "doi")))
+			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
 		val citerFactory: CitationProviderFactory =
-			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService)
+			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService, log)
 
 		val rdfConf = RdfStorageConfig(
 			path = dir.toString,

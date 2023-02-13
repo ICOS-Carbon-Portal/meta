@@ -18,7 +18,7 @@ lazy val metaCore = (project in file("core"))
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.0",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(

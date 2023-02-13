@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import spray.json.RootJsonFormat
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
@@ -10,15 +12,15 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.CitationConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
-import se.lu.nateko.cp.meta.utils.async.errorLite
-import se.lu.nateko.cp.meta.utils.async.timeLimit
-import spray.json.RootJsonFormat
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
+import se.lu.nateko.cp.meta.CitationConfig
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
+import se.lu.nateko.cp.meta.utils.Mergeable
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.async.errorLite
+import se.lu.nateko.cp.meta.utils.async.timeLimit
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -32,11 +34,9 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import scala.util.control.NoStackTrace
 
 import CitationClient.{*, given}
-import scala.util.control.NoStackTrace
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.Mergeable
 
 
 enum CitationStyle:
@@ -44,18 +44,18 @@ enum CitationStyle:
 
 trait PlainDoiCiter:
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
-	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]]
+	def getDoiEager(doi: Doi): Option[Try[DoiMeta]]
 
 trait CitationClient extends PlainDoiCiter:
 	protected def citCache: CitationCache = TrieMap.empty
 	protected def doiCache: DoiCache = TrieMap.empty
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String]
-	def getDoiMeta(doi: Doi)(using Envri): Future[DoiMeta]
+	def getDoiMeta(doi: Doi): Future[DoiMeta]
 
 	//not waiting for HTTP; only returns string if the result previously citCached
 	def getCitationEager(doi: Doi, citationStyle: CitationStyle): Option[Try[String]] = getCitation(doi, citationStyle).value
-	def getDoiEager(doi: Doi)(using Envri): Option[Try[DoiMeta]] = getDoiMeta(doi).value
+	def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = getDoiMeta(doi).value
 
 	def dropCache(doi: Doi): Unit =
 		CitationStyle.values.foreach(style => citCache.remove(doi -> style))
@@ -71,8 +71,8 @@ class CitationClientImpl (
 	override protected val doiCache = initDoiCache
 
 	if(config.eagerWarmUp)
-		scheduler.scheduleOnce(35.seconds)(warmUpCache(warmupOneCitation))
-		// scheduler.scheduleOnce(5.seconds)(warmUpCache(warmupOneDoiMeta)) // envri?
+		scheduler.scheduleOnce(35.seconds)(warmUpCache(warmupOneCitation, "citation"))
+		scheduler.scheduleOnce(15.seconds)(warmUpCache(warmupOneDoiMeta, "metadata"))
 
 	private val http = Http()
 	private val doiClientFactory = DoiClientFactory(config.doi)
@@ -81,7 +81,7 @@ class CitationClientImpl (
 		val key = doi -> citationStyle
 		withTimeout(fetchIfNeeded(key, citCache, fetchCitation), "Citation formatting")
 
-	def getDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] =
+	def getDoiMeta(doi: Doi): Future[DoiMeta] =
 		withTimeout(fetchIfNeeded(doi, doiCache, fetchDoiMeta), "DOI metadata")
 
 	private def withTimeout[T](fut: Future[T], serviceName: String): Future[T] =
@@ -119,7 +119,7 @@ class CitationClientImpl (
 		}
 		Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
 
-	def warmupOneDoiMeta(doi: Doi)(using Envri): Future[Validated[Done]] =
+	def warmupOneDoiMeta(doi: Doi): Future[Validated[Done]] =
 		log.debug(s"Warming up doi meta cache for DOI $doi")
 
 		fetchIfNeeded(doi, doiCache, fetchDoiMeta).transform{
@@ -127,11 +127,11 @@ class CitationClientImpl (
 			case Failure(err) => Success(Validated.error(err.getMessage))
 		}
 
-	private def warmUpCache(warmupOne: Doi => Future[Validated[Done]]): Unit =
+	private def warmUpCache(warmupOne: Doi => Future[Validated[Done]], cacheType: String): Unit =
 		val MaxErrors = 5
 		def warmUp(dois: List[Doi], soFar: Validated[Done]): Future[Validated[Done]] =
 			if soFar.errors.length > MaxErrors then
-				val msg = s"Got more than $MaxErrors errors while warming up DOI citation cache, cancelling for now"
+				val msg = s"Got more than $MaxErrors errors while warming up DOI $cacheType cache, cancelling for now"
 				Future.successful(soFar.withExtraError(msg))
 			else dois match
 				case Nil => Future.successful(soFar)
@@ -142,13 +142,13 @@ class CitationClientImpl (
 
 		warmUp(knownDois, Validated.ok(Done)).onComplete{
 			case Success(v) if v.errors.nonEmpty =>
-				log.warning("DOI citation cache warmup encountered the following errors (will retry later):\n" +
+				log.warning(s"DOI $cacheType cache warmup encountered the following errors (will retry later):\n" +
 					v.errors.mkString("\n"))
-				scheduler.scheduleOnce(1.hours)(warmUpCache(warmupOne))
+				scheduler.scheduleOnce(1.hours)(warmUpCache(warmupOne, cacheType))
 			case Success(v) =>
-				log.info(s"DOI citation cache warmup success")
+				log.info(s"DOI $cacheType cache warmup success")
 			case Failure(exception) =>
-				log.error("Cache warmup problem", exception)
+				log.error(s"DOI $cacheType cache warmup problem", exception)
 		}
 
 	private def fetchCitation(key: Key): Future[String] =
@@ -184,8 +184,8 @@ class CitationClientImpl (
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
-	private def fetchDoiMeta(doi: Doi)(using Envri): Future[DoiMeta] =
-		doiClientFactory.getClient.getMetadata(doi).flatMap{
+	private def fetchDoiMeta(doi: Doi): Future[DoiMeta] =
+		doiClientFactory.client.getMetadata(doi).flatMap{
 			case None => Future.failed(new Exception(s"No metadata found for DOI $doi") with NoStackTrace)
 			case Some(value) => Future.successful(value)
 		}

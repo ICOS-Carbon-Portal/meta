@@ -83,7 +83,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(data, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
 				citationRis = getDoiCitation(data, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
-				doi = None,
+				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
@@ -100,6 +100,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationString = getDoiCitation(doc, CitationStyle.HTML).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(doc, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
 				citationRis = getDoiCitation(doc, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				doi = getDoiMeta(doc),
 				authors = citInfo.authors,
 				title = citInfo.title
 			)

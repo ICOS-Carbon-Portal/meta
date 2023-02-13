@@ -61,7 +61,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val metaVocab = new CpmetaVocab(server.factory)
 	val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getItemCitationInfo(item: CitableItem)(using Envri) =
+	def getItemCitationInfo(item: CitableItem) =
 		References.empty.copy(
 			citationString = getDoiCitation(item, CitationStyle.HTML),
 			citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
@@ -78,7 +78,6 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			val theLicence = getLicence(data.hash)
 			val structuredCitations = new StructuredCitations(data, citInfo, keywords, theLicence)
 
-			// citationString in APA format: https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html
 			References(
 				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
 				citationBibTex = getDoiCitation(data, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
@@ -155,7 +154,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
 		item.doi.collect{ extractDoiCitation(style) }
 
-	private def getDoiMeta(item: CitableItem)(using Envri): Option[DoiMeta] =
+	private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
 		for
 			doiStr <- item.doi;
 			doi <- Doi.parse(doiStr).toOption;

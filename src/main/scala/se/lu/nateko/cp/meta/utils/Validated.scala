@@ -95,6 +95,3 @@ object Validated{
 		val res = (l.result ++ r.result).reduceOption(m.merge)
 		new Validated(res, l.errors ++ r.errors)
 }
-
-trait Mergeable[T]:
-	def merge(l: T, r: T): T

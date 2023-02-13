@@ -36,7 +36,7 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
-import CitationClient.{*, given}
+import CitationClient.*
 
 
 enum CitationStyle:
@@ -261,8 +261,5 @@ object CitationClient:
 		Files.writeString(toFile, js, WRITE, CREATE, TRUNCATE_EXISTING)
 		Done
 	}
-
-	given Mergeable[Done] with
-		def merge(d1: Done, d2: Done) = Done
 
 end CitationClient

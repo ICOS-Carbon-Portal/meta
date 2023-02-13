@@ -70,7 +70,9 @@ class CitationClientImpl (
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache
 
-	if(config.eagerWarmUp) scheduler.scheduleOnce(35.seconds)(warmUpCache())
+	if(config.eagerWarmUp)
+		scheduler.scheduleOnce(35.seconds)(warmUpCache(warmupOneCitation))
+		// scheduler.scheduleOnce(5.seconds)(warmUpCache(warmupOneDoiMeta)) // envri?
 
 	private val http = Http()
 	private val doiClientFactory = DoiClientFactory(config.doi)
@@ -106,19 +108,27 @@ class CitationClientImpl (
 				case _ => fut
 		}
 
-	private def warmUpCache(): Unit =
-		val MaxErrors = 5
-		def warmupOne(doi: Doi): Future[Validated[Done]] =
-			log.debug(s"Warming up citation cache for DOI $doi")
+	def warmupOneCitation(doi: Doi): Future[Validated[Done]] =
+		log.debug(s"Warming up citation cache for DOI $doi")
 
-			val allFuts = CitationStyle.values.map{ citStyle =>
-				fetchIfNeeded(doi -> citStyle, citCache, fetchCitation).transform{
-					case Success(_) => Success(Validated.ok(Done))
-					case Failure(err) => Success(Validated.error(err.getMessage))
-				}
+		val allFuts = CitationStyle.values.map{ citStyle =>
+			fetchIfNeeded(doi -> citStyle, citCache, fetchCitation).transform{
+				case Success(_) => Success(Validated.ok(Done))
+				case Failure(err) => Success(Validated.error(err.getMessage))
 			}
-			Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
+		}
+		Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
 
+	def warmupOneDoiMeta(doi: Doi)(using Envri): Future[Validated[Done]] =
+		log.debug(s"Warming up doi meta cache for DOI $doi")
+
+		fetchIfNeeded(doi, doiCache, fetchDoiMeta).transform{
+			case Success(_) => Success(Validated.ok(Done))
+			case Failure(err) => Success(Validated.error(err.getMessage))
+		}
+
+	private def warmUpCache(warmupOne: Doi => Future[Validated[Done]]): Unit =
+		val MaxErrors = 5
 		def warmUp(dois: List[Doi], soFar: Validated[Done]): Future[Validated[Done]] =
 			if soFar.errors.length > MaxErrors then
 				val msg = s"Got more than $MaxErrors errors while warming up DOI citation cache, cancelling for now"
@@ -134,7 +144,7 @@ class CitationClientImpl (
 			case Success(v) if v.errors.nonEmpty =>
 				log.warning("DOI citation cache warmup encountered the following errors (will retry later):\n" +
 					v.errors.mkString("\n"))
-				scheduler.scheduleOnce(1.hours)(warmUpCache())
+				scheduler.scheduleOnce(1.hours)(warmUpCache(warmupOne))
 			case Success(v) =>
 				log.info(s"DOI citation cache warmup success")
 			case Failure(exception) =>

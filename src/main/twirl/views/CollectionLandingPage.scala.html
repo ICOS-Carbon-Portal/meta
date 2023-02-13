@@ -2,12 +2,13 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiTitle
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.doi.meta.Title
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, Some(coll.references.doi.map(_.titles.getOrElse(Seq())(0)).getOrElse(Title(coll.title, None, None)).title.toString), CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(coll.nextVersion) {
@@ -16,6 +17,21 @@
 					@nextVersionLink(coll.nextVersion)
 				</div>
 			} else {}
+			@if(coll.references.doi){
+				@for(doi <- coll.references.doi){
+					@if(!doi.titles) {
+						<div class="alert alert-warning">
+							Fetching additional metadata... try to <a href=@{coll.res}>[refresh the page]</a> again in a few seconds
+						</div>
+					} else {}
+				}
+			} else {
+				@if(coll.doi){
+					<div class="alert alert-danger">
+						Something went wrong when fetching metadata from DataCite
+					</div>
+				} else {}
+			}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
 				@htmlProperty{Collection creator}{

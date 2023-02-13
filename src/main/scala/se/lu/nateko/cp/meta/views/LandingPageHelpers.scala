@@ -82,4 +82,8 @@ object LandingPageHelpers{
 		.nameIdentifiers.flatMap{ni =>
 			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
 		}.headOption
+
+	def getDoiTitle(refs: References): Option[String] =
+		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
+
 }

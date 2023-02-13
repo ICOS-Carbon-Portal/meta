@@ -139,11 +139,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	}
 
 	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): Option[DoiMeta] = eagerRes match{
-		case None => 
-			val title = "Fetching metadata... try [refreshing the page] again in a few seconds"
-			val doiMetaPlaceholder = DoiMeta(Doi("", ""), titles = Some(Seq(Title(title, None, None))))
-
-			Some(doiMetaPlaceholder)
+		case None => Some(DoiMeta(Doi("", "")))
 		case Some(Success(doiMeta)) => Some(doiMeta)
 		case Some(Failure(err)) =>
 			log.error(err, "Error fetching DOI citation")

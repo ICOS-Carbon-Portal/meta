@@ -27,7 +27,7 @@
 @personList(persons: Iterable[Person]) = {
 	@for((person, i) <- persons.zipWithIndex){
 		@optionalLink(getDoiPersonUrl(person)){
-			<span>@{person.name.toString + (if i < persons.size - 1 then "," else "")}</span>
+			<span>@{person.name.toString + (if i < (persons.size - 1) then "," else "")}</span>
 		}
 	}
 }

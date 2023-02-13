@@ -16,39 +16,35 @@
 					A newer version is available:
 					@nextVersionLink(coll.nextVersion)
 				</div>
-			} else {}
-			@if(coll.references.doi){
-				@for(doi <- coll.references.doi){
-					@if(!doi.titles) {
-						<div class="alert alert-warning">
-							Fetching additional metadata... try to refresh the page again in a few seconds
-						</div>
-					} else {}
-				}
-			} else {
-				@if(coll.doi){
+			}
+			@coll.references.doi.fold{
+				@if(coll.doi.isDefined){
 					<div class="alert alert-danger">
 						Something went wrong when fetching metadata from DataCite
 					</div>
-				} else {}
+				}
+			}{doiMeta =>
+				@if(doiMeta.titles.isEmpty) {
+					<div class="alert alert-warning">
+						Fetching additional metadata... try to refresh the page again in a few seconds
+					</div>
+				}
 			}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@htmlProperty{Collection creator}{
-					@agentLink(coll.creator)
-				}
-				@if(coll.references.doi){
-					@for(doi <- coll.references.doi){
-						@doiMetaProperties(coll.references.doi)
-					}
-				} else {
+				@coll.references.doi.fold{
 					@for(description <- coll.description){
 						@property("Description", description)
 					}
+				}{doiMeta =>
+					@doiMetaProperties(doiMeta)
+				}
+				@htmlProperty{Collection creator}{
+					@agentLink(coll.creator)
 				}
 				@if(coll.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
-				} else {}
+				}
 				@citations(coll.references)
 
 				<h2 class="fs-3 mt-5">Content</h2>

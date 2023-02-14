@@ -5,10 +5,11 @@ import java.time.Instant
 import spray.json.*
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.{LocalDateTime, LocalDate}
+import java.net.URL
 
 trait CommonJsonSupport {
 
-	given RootJsonFormat[URI] with{
+	given uriFormat: RootJsonFormat[URI] with{
 		def write(uri: URI): JsValue = JsString(uri.toString)
 
 		def read(value: JsValue): URI = value match{
@@ -19,6 +20,11 @@ trait CommonJsonSupport {
 				}
 			case _ => deserializationError("URI string expected")
 		}
+	}
+
+	given JsonFormat[URL] with{
+		def write(uri: URL): JsValue = JsString(uri.toString)
+		def read(value: JsValue): URL = uriFormat.read(value).toURL()
 	}
 
 	given RootJsonFormat[LocalDateTime] with{

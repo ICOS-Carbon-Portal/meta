@@ -42,7 +42,7 @@ import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadS
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
@@ -99,11 +99,11 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationClient.CitationCache, config0: CpmetaConfig): Future[MetaDb] = {
+	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] = {
 
 		validateConfig(config0)
 
-		val citerFactory = CitationProviderFactory(citCache, config0)
+		val citerFactory = CitationProviderFactory(citCache, metaCache, config0)
 		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
 		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, citerFactory, log)
 

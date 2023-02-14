@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.icos.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
 object Main extends App with CpmetaJsonProtocol{
 
@@ -43,8 +43,8 @@ object Main extends App with CpmetaJsonProtocol{
 		}
 
 	val startup = for(
-		citCache <- CitationClient.readCache(log);
-		db <- metaFactory(citCache, config);
+		(citCache, doiCache) <- readCitCache(log).zip(readDoiCache(log));
+		db <- metaFactory(citCache, doiCache, config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		idxOpt <- optIndexDataFut;
 		_ = db.store.initSparqlMagicIndex(idxOpt);

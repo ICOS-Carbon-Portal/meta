@@ -52,8 +52,10 @@ class CpNativeStore(
 				idx.flush()
 				IndexHandler.store(idx)
 			}
-			val citationsDump = CitationClient.saveCache(getCitationClient)
-			Future.sequence(Seq(indexDump, citationsDump)).map(_ =>
+			val citClient = getCitationClient
+			val citationsDump = CitationClient.writeCitCache(citClient)
+			val doiMetaDump = CitationClient.writeDoiCache(citClient)
+			Future.sequence(Seq(indexDump, citationsDump, doiMetaDump)).map(_ =>
 				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
 			).andThen{
 				case Success(msg) => log.info(msg)

@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsonWriter
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -69,7 +69,7 @@ object UriSerializer{
 class Rdf4jUriSerializer(
 	repo: Repository,
 	servers: DataObjectInstanceServers,
-	doiCiter: CitationClient,
+	doiCiter: PlainDoiCiter,
 	config: CpmetaConfig
 )(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
 
@@ -79,7 +79,7 @@ class Rdf4jUriSerializer(
 
 	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, repo, config.core)
+	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
 	val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 	val pcm = new PageContentMarshalling(config.core.handleProxies, stats)
 

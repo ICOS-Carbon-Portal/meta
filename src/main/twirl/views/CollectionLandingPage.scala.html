@@ -2,11 +2,13 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiTitle
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.doi.meta.Title
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, coll.title, CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(coll.nextVersion) {
@@ -14,18 +16,35 @@
 					A newer version is available:
 					@nextVersionLink(coll.nextVersion)
 				</div>
-			} else {}
+			}
+			@coll.references.doi.fold{
+				@if(coll.doi.isDefined){
+					<div class="alert alert-danger">
+						Something went wrong when fetching metadata from DataCite
+					</div>
+				}
+			}{doiMeta =>
+				@if(doiMeta.titles.isEmpty) {
+					<div class="alert alert-warning">
+						Fetching additional metadata... try to refresh the page again in a few seconds
+					</div>
+				}
+			}
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@for(description <- coll.description){
-					@property("Description", description)
+				@coll.references.doi.fold{
+					@for(description <- coll.description){
+						@property("Description", description)
+					}
+				}{doiMeta =>
+					@doiMetaProperties(doiMeta)
 				}
-				@htmlProperty{Creator}{
+				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)
 				}
 				@if(coll.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
-				} else {}
+				}
 				@citations(coll.references)
 
 				<h2 class="fs-3 mt-5">Content</h2>

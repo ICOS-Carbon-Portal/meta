@@ -31,6 +31,8 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import se.lu.nateko.cp.doi.DoiMeta
+import se.lu.nateko.cp.meta.core.data.Envri
 
 class TestDb {
 
@@ -48,9 +50,10 @@ class TestDb {
 	val repo: Future[Repository] = {
 		object CitationClientDummy extends CitationClient{
 			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
+			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
 		val citerFactory: CitationProviderFactory =
-			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService)
+			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService, log)
 
 		val rdfConf = RdfStorageConfig(
 			path = dir.toString,

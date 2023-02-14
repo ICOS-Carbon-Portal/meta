@@ -9,7 +9,7 @@ import java.net.URI
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
+import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
 
 object LandingPageHelpers:
 
@@ -83,5 +83,13 @@ object LandingPageHelpers:
 		else
 			uriStr
 	}
+
+	def getDoiPersonUrl(person: DoiMetaPerson): Option[String] = person
+		.nameIdentifiers.flatMap{ni =>
+			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
+		}.headOption
+
+	def getDoiTitle(refs: References): Option[String] =
+		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
 
 end LandingPageHelpers

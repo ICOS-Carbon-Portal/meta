@@ -14,10 +14,11 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.5",
+		version := "0.7.6",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(

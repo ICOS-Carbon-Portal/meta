@@ -34,6 +34,8 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 
 	def filter(p: T => Boolean) = tryTransform(new Validated(result.filter(p), errors))
 
+	def withExtraError(msg: String) = new Validated(result, errors :+ msg)
+
 	@inline final def withFilter(p: T => Boolean): WithFilter = new WithFilter(p)
 
 	final class WithFilter(p: T => Boolean) {
@@ -88,4 +90,8 @@ object Validated{
 	){
 		_.map(res => new Validated[T](Some(res), v.errors))
 	}
+
+	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
+		val res = (l.result ++ r.result).reduceOption(m.merge)
+		new Validated(res, l.errors ++ r.errors)
 }

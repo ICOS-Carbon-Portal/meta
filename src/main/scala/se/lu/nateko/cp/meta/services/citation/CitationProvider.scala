@@ -30,15 +30,18 @@ import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import CitationClient.CitationCache
+import CitationClient.DoiCache
 
 import java.net.URI
 import scala.util.Using
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.services.upload.DoiService
+import akka.event.LoggingAdapter
 
 
 type CitationProviderFactory = Sail => CitationProvider
 object CitationProviderFactory{
-	def apply(citCache: CitationCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
+	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
 		sail => {
 			val dois: List[Doi] = {
 				val hasDoi = new CpmetaVocab(sail.getValueFactory).hasDoi
@@ -51,27 +54,20 @@ object CitationProviderFactory{
 					}
 				}.get
 			}
-			val doiCiter = CitationClientImpl(dois, conf.citations, citCache)
-			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService)
+			val doiCiter = CitationClientImpl(dois, conf.citations, citCache, doiCache)
+			CitationProvider(doiCiter, sail, conf.core, conf.dataUploadService, summon[ActorSystem].log)
 		}
 }
 
-// trait CitationProvider{
-// 	def doiCiter: CitationClient
-// 	def metaVocab: CpmetaVocab
-// 	def getCitation(res: Resource): Option[String]
-// 	def getReferences(res: Resource): Option[References]
-// 	def getLicence(res: Resource): Option[Licence]
-// }
 
 class CitationProvider(
-	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig
+	val doiCiter: CitationClient, sail: Sail, coreConf: MetaCoreConfig, uploadConf: UploadServiceConfig, log: LoggingAdapter
 ){
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
-	private val citer = new CitationMaker(doiCiter, repo, coreConf)
+	private val citer = new CitationMaker(doiCiter, repo, coreConf, log)
 
 	private val (objFetcher, collFetcher) = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)

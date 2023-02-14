@@ -5,6 +5,7 @@ import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import se.lu.nateko.cp.meta.core.toTypedJson
 import spray.json.*
 import DefaultJsonProtocol.*
+import se.lu.nateko.cp.doi.DoiMeta
 
 object JsonSupport extends CommonJsonSupport{
 
@@ -157,7 +158,8 @@ object JsonSupport extends CommonJsonSupport{
 
 	given RootJsonFormat[UploadCompletionInfo] = jsonFormat2(UploadCompletionInfo.apply)
 	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
-	given RootJsonFormat[References] = jsonFormat9(References.apply)
+	import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
+	given RootJsonFormat[References] = jsonFormat10(References.apply)
 	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
 
 	given RootJsonFormat[DataObject] with {

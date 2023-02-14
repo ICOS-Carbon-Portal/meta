@@ -17,19 +17,7 @@
 					@nextVersionLink(coll.nextVersion)
 				</div>
 			}
-			@coll.references.doi.fold{
-				@if(coll.doi.isDefined){
-					<div class="alert alert-danger">
-						Something went wrong when fetching metadata from DataCite
-					</div>
-				}
-			}{doiMeta =>
-				@if(doiMeta.titles.isEmpty) {
-					<div class="alert alert-warning">
-						Fetching additional metadata... try to refresh the page again in a few seconds
-					</div>
-				}
-			}
+			@doiMetaAlerts(coll.doi, coll.references.doi)
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
 				@coll.references.doi.fold{

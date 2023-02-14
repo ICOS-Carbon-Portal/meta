@@ -49,6 +49,20 @@ object SchemaOrg{
 			.toIndexedSeq
 	}
 
+	def docJson(doc: DocObject)(using conf: EnvriConfig, envri: Envri): JsObject = {
+		val landingPage = JsString(staticObjLandingPage(doc.hash).toString)
+
+		val licenses = doc.references.doi.flatMap(_.rightsList.map(_.flatMap(_.rightsUri)))
+			.fold(JsNull)(rights => JsArray(rights.map(uri => JsString(uri)).toVector))
+
+		JsObject(
+			"@context"              -> JsString("https://schema.org"),
+			"@type"                 -> JsString("Dataset"),
+			"@id"                   -> landingPage,
+			"license"				-> licenses
+		)
+	}
+
 	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject = {
 
 		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)

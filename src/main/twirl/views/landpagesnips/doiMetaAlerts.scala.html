@@ -1,0 +1,17 @@
+@import se.lu.nateko.cp.doi.Doi
+@import se.lu.nateko.cp.doi.DoiMeta
+
+@(doiOpt: Option[String], doiMetaOpt: Option[DoiMeta])
+@doiMetaOpt.fold{
+	@if(doiOpt.isDefined){
+		<div class="alert alert-danger">
+			Something went wrong when fetching metadata from DataCite
+		</div>
+	}
+}{doiMeta =>
+	@if(doiMeta.titles.isEmpty) {
+		<div class="alert alert-warning">
+			Fetching additional metadata... try to refresh the page again in a few seconds
+		</div>
+	}
+}

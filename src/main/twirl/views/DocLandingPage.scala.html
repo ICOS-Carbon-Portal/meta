@@ -4,11 +4,13 @@
 @import se.lu.nateko.cp.meta.utils._
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers._
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
+@import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import landpagesnips._
+@import spray.json.*
 
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, subHeading = Some("Document")){
+@ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, extraMetaTags = Some(schemaOrg), subHeading = Some("Document")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(doc.nextVersion) {
@@ -23,15 +25,20 @@
 					<div>Metadata uploaded. Document not uploaded. No PID assigned.</div>
 				</div>
 			}
+			@doiMetaAlerts(doc.doi, doc.references.doi)
 			<div class="row gy-2">
-				@for(description <- doc.description){
-					@property("Description", description)
-				}
 				@authors(doc.references)
 				@if(doc.references.title.isDefined) {
 					@property("File name", doc.fileName)
 				} else {}
 				@doiProperty(doc.doi, handleProxies.doi)
+				@doc.references.doi.fold{
+					@for(description <- doc.description){
+						@property("Description", description)
+					} 
+				}{ doiMeta =>
+					@doiMetaProperties(doiMeta)
+				}
 				@if(uploadComplete) {
 					@pidProperty(doc.pid, handleProxies.basic)
 				} else {}
@@ -96,6 +103,12 @@
 	if(uploadComplete)
 		doc.accessUrl.map(url => accessUrl(url))
 	else None
+}
+
+@schemaOrg = {
+	<script type="application/ld+json">
+		@Html(SchemaOrg.docJson(doc).prettyPrint)
+	</script>
 }
 
 @uploadComplete = @{doc.size.isDefined}

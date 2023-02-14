@@ -1,5 +1,6 @@
 @import se.lu.nateko.cp.doi.DoiMeta
 @import se.lu.nateko.cp.doi.meta.Person
+@import se.lu.nateko.cp.doi.meta.Rights
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
 
 @(doiMeta: DoiMeta)
@@ -21,7 +22,19 @@
 @if(doiMeta.subjects.length> 0){
 	@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
 }
+@for(rights <- doiMeta.rightsList){
+	@if(rights.length > 0){
+		@htmlProperty{Licenses}(rightsList(rights))
+	}
+}
 
+@rightsList(licenses: Iterable[Rights]) = {
+	@for((lic, i) <- licenses.zipWithIndex){
+		@optionalLink(lic.rightsUri){
+			<span>@{lic.rights.toString + (if i < (licenses.size - 1) then "," else "")}</span>
+		}
+	}
+}
 
 @personList(persons: Iterable[Person]) = {
 	@for((person, i) <- persons.zipWithIndex){

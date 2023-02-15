@@ -11,6 +11,9 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.doi.meta.Person
+import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
+import se.lu.nateko.cp.doi.meta.Affiliation
 
 
 object SchemaOrg{
@@ -49,7 +52,55 @@ object SchemaOrg{
 			.toIndexedSeq
 	}
 
-	def docJson(doc: DocObject)(using conf: EnvriConfig): JsObject =
+	def publisherLogo(using envri: Envri): JsValue = envri match {
+		case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
+		case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
+	}
+
+	def publisher(using envri: Envri, conf: EnvriConfig) = JsObject(
+				"@type" -> JsString("Organization"),
+				"@id"   -> JsString(conf.dataHost),
+				"name"  -> JsString(s"$envri data portal"),
+				"url"   -> JsString(s"https://${conf.dataHost}"),
+				"logo"  -> publisherLogo
+			)
+
+	def affiliation(affiliation: Affiliation) = JsObject(
+			"@type" -> JsString("Organization"),
+			"@id"   -> JsString(affiliation.name),
+			"name"  -> JsString(affiliation.name)
+		)
+
+	def isPartOf(obj: StaticObject) = JsArray(obj.parentCollections.map(coll =>
+		JsString(coll.uri.toString)).toVector
+	)
+
+	def identifier(obj: StaticObject, handleProxies: HandleProxiesConfig): JsValue = {
+		val ids: Vector[JsString] = Vector(
+			obj.doi -> handleProxies.doi,
+			obj.pid -> handleProxies.basic
+		).collect{
+			case (Some(id), proxy) => JsString(proxy.toString + id)
+		}
+		ids match{
+			case Vector() => JsNull
+			case Vector(single) => single
+			case _ => JsArray(ids)
+		}
+	}
+
+	def distribution(obj: StaticObject)(using conf: EnvriConfig) = obj.accessUrl.fold[JsValue](JsNull){_ =>
+		val contType = implicitly[ContentTypeResolver].apply(obj.fileName)
+		val accessUrl = s"https://${conf.dataHost}/licence_accept?ids=%5B%22${obj.hash.base64Url}%22%5D"
+		JsObject(
+			"contentUrl"     -> JsString(accessUrl),
+			"encodingFormat" -> JsString(contType.mediaType.toString),
+			"sha256" -> JsString(obj.hash.hex),
+			"contentSize" -> obj.size.fold[JsValue](JsNull){size => JsString(s"$size B")}
+		)
+	}
+
+	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
 		val landingPage = JsString(staticObjLandingPage(doc.hash).toString)
 
 		val doiLicenses = for
@@ -63,11 +114,53 @@ object SchemaOrg{
 			then doc.references.licence.fold(JsNull){lic => JsString(lic.baseLicence.toString)}
 			else JsArray(doiLicenses*)
 
+		val acquireLicensePage = doc.references.licence.fold(JsNull)(
+				lic => JsString(lic.url.toString)
+			)
+
+		val published: JsValue = asOptJsString(doc.submission.stop.map(_.toString))
+
+		val id = JsString(doc.doi.fold(doc.pid.fold(staticObjLandingPage(doc.hash).toString)(_.toString))(_.toString))
+
+		// TODO refactor
+		val description = doc.references.doi match
+			case None => doc.description.fold(JsNull)(descr => JsString(descr))
+			case Some(doiMeta) => JsString(doiMeta.descriptions.mkString("\n"))
+
+		val creator = doc.references.doi match
+			case None => doc.references.authors.fold(JsNull)(authors => JsArray(authors.map(agentToSchemaOrg).toVector))
+			case Some(doiMeta) => JsArray(doiMeta.creators.map(personToSchemaOrg).toVector)
+
+		val contributor = doc.references.doi.fold(JsNull)(dm => JsArray(dm.contributors.map(personToSchemaOrg).toVector))
+
+		val keywords = doc.references.doi match
+			case None => JsArray.empty
+			case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
+
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
 			"@type"                 -> JsString("DigitalDocument"),
-			"@id"                   -> landingPage,
-			"license"               -> licenceJs
+			"@id"                   -> id,
+			"license"               -> licenceJs,
+			"url"					-> landingPage,
+			"inLanguage"            -> JsArray(
+				JsObject(
+					"@type" -> JsString("Language"),
+					"name"  -> JsString("English")
+				)
+			),
+			"datePublished"         -> published,
+			"description"           -> description,
+			"abstract"              -> description,
+			"publisher"             -> publisher,
+			"creator"               -> creator,
+			"contributor"           -> contributor,
+			"isPartOf"              -> isPartOf(doc),
+			"name"                  -> asOptJsString(doc.references.title),
+			"identifier"            -> identifier(doc, handleProxies),
+			"alternateName"         -> JsString(doc.fileName),
+			"distribution"          -> distribution(doc),
+			"provider"              -> agentToSchemaOrg(doc.submission.submitter),
 		)
 	end docJson
 
@@ -82,20 +175,6 @@ object SchemaOrg{
 			val citation = dobj.references.citationString
 			val allDescrs = (l3Descr ++ specComments ++ prodComment ++ citation).map(_.trim).filter(_.length > 0)
 			if(allDescrs.isEmpty) JsNull else JsString(allDescrs.mkString("\n"))
-		}
-
-		val identifier: JsValue = {
-			val ids: Vector[JsString] = Vector(
-				dobj.doi -> handleProxies.doi,
-				dobj.pid -> handleProxies.basic
-			).collect{
-				case (Some(id), proxy) => JsString(proxy.toString + id)
-			}
-			ids match{
-				case Vector() => JsNull
-				case Vector(single) => single
-				case _ => JsArray(ids)
-			}
 		}
 
 		val published: JsValue = asOptJsString(dobj.submission.stop.map(_.toString))
@@ -120,17 +199,6 @@ object SchemaOrg{
 
 		val spatialCoverage = dobj.coverage.fold[JsValue](JsNull)(f => geoFeatureToSchemaOrgPlace(f, country))
 
-		val distribution = dobj.accessUrl.fold[JsValue](JsNull){_ =>
-			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
-			val accessUrl = s"https://${conf.dataHost}/licence_accept?ids=%5B%22${dobj.hash.base64Url}%22%5D"
-			JsObject(
-				"contentUrl"     -> JsString(accessUrl),
-				"encodingFormat" -> JsString(contType.mediaType.toString),
-				"sha256" -> JsString(dobj.hash.hex),
-				"contentSize" -> dobj.size.fold[JsValue](JsNull){size => JsString(s"$size B")}
-			)
-		}
-
 		val temporalCoverage: JsValue = dobj.specificInfo.fold(
 			l3 => timeIntToSchemaOrg(l3.temporal.interval),
 			_.acquisition.interval.map(timeIntToSchemaOrg).getOrElse(JsNull)
@@ -147,11 +215,6 @@ object SchemaOrg{
 				case Seq() => dobj.production.map(p => agentToSchemaOrg(p.creator)).getOrElse(stationCreator)
 				case authors => JsArray(authors.map(agentToSchemaOrg).toVector)
 			}
-		}
-
-		val publisherLogo: JsValue = envri match {
-			case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
-			case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
 		}
 
 		val producer = dobj.production.map(p => agentToSchemaOrg(p.host.getOrElse(p.creator))).getOrElse(JsNull)
@@ -173,10 +236,6 @@ object SchemaOrg{
 					}).toVector)
 		)
 
-		val isPartOf = JsArray(dobj.parentCollections.map(coll =>
-			JsString(coll.uri.toString)).toVector
-		)
-
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
 			"@type"                 -> JsString("Dataset"),
@@ -185,7 +244,7 @@ object SchemaOrg{
 			"alternateName"         -> JsString(dobj.fileName),
 			"description"           -> JsString(description.toString.take(5000)),
 			"url"                   -> landingPage,
-			"identifier"            -> identifier,
+			"identifier"            -> identifier(dobj, handleProxies),
 			"inLanguage"            -> JsArray(
 				JsObject(
 					"@type" -> JsString("Language"),
@@ -206,21 +265,15 @@ object SchemaOrg{
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,
 			"spatialCoverage"       -> spatialCoverage,
-			"distribution"          -> distribution,
+			"distribution"          -> distribution(dobj),
 			"temporalCoverage"      -> temporalCoverage,
-			"publisher"             -> JsObject(
-				"@type" -> JsString("Organization"),
-				"@id"   -> JsString(conf.dataHost),
-				"name"  -> JsString(s"$envri data portal"),
-				"url"   -> JsString(s"https://${conf.dataHost}"),
-				"logo"  -> publisherLogo
-			),
+			"publisher"             -> publisher,
 			"producer"              -> producer,
 			"provider"              -> agentToSchemaOrg(dobj.submission.submitter),
 			"creator"               -> creator,
 			"contributor"           -> contributor,
 			"variableMeasured"      -> variableMeasured,
-			"isPartOf"              -> isPartOf
+			"isPartOf"              -> isPartOf(dobj)
 		)
 	end json
 
@@ -275,6 +328,13 @@ object SchemaOrg{
 		) ++ parent.map{ parent =>
 			"parentOrganization" -> JsString(parent.name)
 		}
+	)
+
+	def personToSchemaOrg(person: Person): JsObject = JsObject(
+		"@type"      -> JsString("Person"),
+		"@id"        -> getDoiPersonUrl(person).fold(JsNull)(url => JsString(url)),
+		"name"       -> JsString(person.name.toString),
+		"affiliation"-> JsArray(person.affiliation.map(aff => affiliation(aff)).toVector)
 	)
 
 	def agentToSchemaOrg(agent: Agent): JsObject = agent match {

@@ -104,7 +104,7 @@
 
 @schemaOrg = {
 	<script type="application/ld+json">
-		@Html(SchemaOrg.docJson(doc).prettyPrint)
+		@Html(SchemaOrg.docJson(doc, handleProxies).prettyPrint)
 	</script>
 }
 

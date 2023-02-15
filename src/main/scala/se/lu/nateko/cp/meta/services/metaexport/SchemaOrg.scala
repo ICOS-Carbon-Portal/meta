@@ -52,14 +52,17 @@ object SchemaOrg{
 	def docJson(doc: DocObject)(using conf: EnvriConfig, envri: Envri): JsObject = {
 		val landingPage = JsString(staticObjLandingPage(doc.hash).toString)
 
-		val licenses = doc.references.doi.flatMap(_.rightsList.map(_.flatMap(_.rightsUri)))
-			.fold(JsNull)(rights => JsArray(rights.map(uri => JsString(uri)).toVector))
+		val licenses = for
+			doi <- doc.references.doi
+			rightsList <- doi.rightsList
+		yield
+			rightsList.map(r => r.rightsUri.fold(JsNull)(s => JsString(s)))
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
-			"@type"                 -> JsString("Dataset"),
+			"@type"                 -> JsString("DigitalDocument"),
 			"@id"                   -> landingPage,
-			"license"				-> licenses
+			"license"				-> licenses.fold(JsNull)(ls => JsArray(ls.toVector))
 		)
 	}
 

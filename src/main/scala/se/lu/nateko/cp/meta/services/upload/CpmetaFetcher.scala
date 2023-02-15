@@ -123,7 +123,7 @@ trait CpmetaFetcher extends FetchingHelper{
 			}
 	}
 
-	protected def getPreviousVersion(item: IRI): Option[Either[URI, Seq[URI]]] =
+	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
 			case Nil => None
 			case single :: Nil => Some(Left(single))

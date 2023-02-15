@@ -49,24 +49,29 @@ object SchemaOrg{
 			.toIndexedSeq
 	}
 
-	def docJson(doc: DocObject)(using conf: EnvriConfig, envri: Envri): JsObject = {
+	def docJson(doc: DocObject)(using conf: EnvriConfig): JsObject =
 		val landingPage = JsString(staticObjLandingPage(doc.hash).toString)
 
-		val licenses = for
-			doi <- doc.references.doi
-			rightsList <- doi.rightsList
-		yield
-			rightsList.map(r => r.rightsUri.fold(JsNull)(s => JsString(s)))
+		val doiLicenses = for
+			doi        <- doc.references.doi.toSeq
+			rightsList <- doi.rightsList.toSeq
+			rights     <- rightsList
+			uri        <- rights.rightsUri
+		yield JsString(uri)
+
+		val licenceJs = if doiLicenses.isEmpty
+			then doc.references.licence.fold(JsNull){lic => JsString(lic.baseLicence.toString)}
+			else JsArray(doiLicenses*)
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
 			"@type"                 -> JsString("DigitalDocument"),
 			"@id"                   -> landingPage,
-			"license"				-> licenses.fold(JsNull)(ls => JsArray(ls.toVector))
+			"license"               -> licenceJs
 		)
-	}
+	end docJson
 
-	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject = {
+	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject =
 
 		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)
 
@@ -217,7 +222,7 @@ object SchemaOrg{
 			"variableMeasured"      -> variableMeasured,
 			"isPartOf"              -> isPartOf
 		)
-	}
+	end json
 
 	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{
 

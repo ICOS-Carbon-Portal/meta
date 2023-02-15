@@ -18,8 +18,8 @@
 					A newer version is available:
 					@nextVersionLink(doc.nextVersion)
 				</div>
-			} else {}
-			@if(uploadComplete) {} else {
+			}
+			@if(!uploadComplete) {
 				<div class="alert alert-warning">
 					<h4 class="alert-heading">Incomplete upload</h4>
 					<div>Metadata uploaded. Document not uploaded. No PID assigned.</div>
@@ -27,26 +27,27 @@
 			}
 			@doiMetaAlerts(doc.doi, doc.references.doi)
 			<div class="row gy-2">
-				@authors(doc.references)
-				@if(doc.references.title.isDefined) {
-					@property("File name", doc.fileName)
-				} else {}
+				@property("File name", doc.fileName)
 				@doiProperty(doc.doi, handleProxies.doi)
+				@if(uploadComplete) {
+					@pidProperty(doc.pid, handleProxies.basic)
+				}
+				@if(doc.previousVersion) {
+					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
+				}
+				@for(coll <- doc.parentCollections){
+					@htmlProperty{Part of}{@resourceLink(coll)}
+				}
 				@doc.references.doi.fold{
 					@for(description <- doc.description){
 						@property("Description", description)
-					} 
+					}
+					@authors(doc.references)
+					@for(licence <- doc.references.licence){
+						@licenceProperty(licence)
+					}
 				}{ doiMeta =>
 					@doiMetaProperties(doiMeta)
-				}
-				@if(uploadComplete) {
-					@pidProperty(doc.pid, handleProxies.basic)
-				} else {}
-				@if(doc.previousVersion) {
-					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
-				} else {}
-				@for(coll <- doc.parentCollections){
-					@htmlProperty{Part of}{@resourceLink(coll)}
 				}
 				@citations(doc.references)
 				@for(size <- doc.size){
@@ -55,10 +56,6 @@
 				}
 				@property("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", doc.hash.base64)
-
-				@for(licence <- doc.references.licence){
-					@licenceProperty(licence)
-				}
 
 				<h2 class="fs-3 mt-5">Submission</h2>
 				@htmlProperty{Submitted by}{

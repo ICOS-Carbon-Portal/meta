@@ -31,6 +31,9 @@
 				@if(doc.references.title.isDefined) {
 					@property("File name", doc.fileName)
 				} else {}
+				@if(doc.fileName.toLowerCase.endsWith(".zip") && uploadComplete) {
+					@htmlProperty{Zip contents}{@zipContents(doc)}
+				} else {}
 				@doiProperty(doc.doi, handleProxies.doi)
 				@if(uploadComplete) {
 					@pidProperty(doc.pid, handleProxies.basic)

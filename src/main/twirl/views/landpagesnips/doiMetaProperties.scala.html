@@ -24,22 +24,18 @@
 }
 @for(rights <- doiMeta.rightsList){
 	@if(rights.length > 0){
-		@htmlProperty{Licenses}(rightsList(rights))
-	}
-}
-
-@rightsList(licenses: Iterable[Rights]) = {
-	@for((lic, i) <- licenses.zipWithIndex){
-		@optionalLink(lic.rightsUri){
-			<span>@{lic.rights.toString + (if i < (licenses.size - 1) then "," else "")}</span>
-		}
+		@htmlProperty{Licenses}(optLinkList(rights, (lic: Rights) => lic.rightsUri, (lic: Rights) => lic.rights))
 	}
 }
 
 @personList(persons: Iterable[Person]) = {
-	@for((person, i) <- persons.zipWithIndex){
-		@optionalLink(getDoiPersonUrl(person)){
-			<span>@{person.name.toString + (if i < (persons.size - 1) then "," else "")}</span>
+	@optLinkList(persons, (p: Person) => getDoiPersonUrl(p), (p: Person) => p.name.toString)
+}
+
+@optLinkList[T](list: Iterable[T], getUrl: T => Option[String], getLabel: T => String) = {
+	@for((elem, i) <- list.zipWithIndex){
+		@optionalLink(getUrl(elem)){
+			<span>@{getLabel(elem) + (if i < (list.size - 1) then "," else "" )}</span>
 		}
 	}
 }

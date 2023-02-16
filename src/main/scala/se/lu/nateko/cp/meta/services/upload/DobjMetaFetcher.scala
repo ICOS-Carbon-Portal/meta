@@ -28,6 +28,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		project = getProject(getSingleUri(spec, metaVocab.hasAssociatedProject)),
 		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
+		specificMetadataType = getDatasetClass(getSingleUri(spec, metaVocab.hasSpecificMetadataType)),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
 		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getDatasetSpec),
@@ -37,14 +38,12 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 	private def getDatasetSpec(ds: IRI) = DatasetSpec(
 		self = getLabeledResource(ds),
-		dsClass = getDatasetClass(ds),
 		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
 
 	private def getDatasetClass(ds: IRI): DatasetClass = {
-		val types = server.getTypes(ds).toSet
-		if(types.contains(metaVocab.tabularDatasetSpecClass)) DatasetClass.StationTimeSeries
-		else if(types.contains(metaVocab.datasetSpecClass)) DatasetClass.SpatioTemporal
+		if (ds === metaVocab.StationTimeSeries) DatasetClass.StationTimeSeries
+		else if (ds === metaVocab.SpatioTemporal) DatasetClass.SpatioTemporal
 		else throw new MetadataException(s"Dataset specification $ds did not have any of the expected classes")
 	}
 

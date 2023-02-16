@@ -41,6 +41,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val positionClass = getRelativeRaw("Position")
 	val variableInfoClass = getRelativeRaw("VariableInfo")
 
+	val StationTimeSeries = getRelativeRaw("StationTimeSeries")
+	val SpatioTemporal = getRelativeRaw("SpatioTemporal")
+
 	val hasElevation = getRelativeRaw("hasElevation")
 	val hasLatitude = getRelativeRaw("hasLatitude")
 	val hasNorthernBound = getRelativeRaw("hasNorthernBound")
@@ -88,6 +91,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasFormat = getRelativeRaw("hasFormat")
 	val hasEncoding = getRelativeRaw("hasEncoding")
 	val hasFormatSpecificMeta = getRelativeRaw("hasFormatSpecificMetadata")
+	val hasSpecificMetadataType = getRelativeRaw("hasSpecificMetadataType")
 	val hasNumberOfRows = getRelativeRaw("hasNumberOfRows")
 	val hasActualColumnNames = getRelativeRaw("hasActualColumnNames")
 	val hasActualVariable = getRelativeRaw("hasActualVariable")

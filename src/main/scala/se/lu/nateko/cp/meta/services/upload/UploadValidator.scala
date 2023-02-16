@@ -318,9 +318,6 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 		meta.specificInfo match{
 			case Left(spTempMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.SpatioTemporal))
-					errors += "Wrong class of dataset for this object spec (must be spatiotemporal)"
-				else
 					for(vars <- spTempMeta.variables) spec.datasetSpec.fold[Unit]{
 						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
 					}{dsSpec =>
@@ -332,9 +329,6 @@ class UploadValidator(servers: DataObjectInstanceServers){
 					}
 
 			case Right(stationMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.StationTimeSeries)) {
-					errors += "Wrong class of dataset for this object spec (must be station-specific time series)"
-				}else{
 					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'acquisitionInterval' with start and stop timestamps."
 
@@ -354,7 +348,6 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 					if (envri == Envri.SITES && stationMeta.site.isEmpty)
 						errors += "Must provide 'location/ecosystem'"
-				}
 		}
 
 		if(errors.isEmpty) ok else userFail(errors.mkString("\n"))

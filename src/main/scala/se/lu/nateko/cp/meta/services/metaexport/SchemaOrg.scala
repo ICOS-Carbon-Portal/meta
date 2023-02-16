@@ -100,9 +100,37 @@ object SchemaOrg{
 		)
 	}
 
-	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
-		val landingPage = JsString(staticObjLandingPage(doc.hash).toString)
+	def commonJson(obj: StaticObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
+		val landingPage = JsString(staticObjLandingPage(obj.hash).toString)
 
+		val published: JsValue = asOptJsString(obj.submission.stop.map(_.toString))
+
+		JsObject(
+			"@context"              -> JsString("https://schema.org"),
+			"url"					-> landingPage,
+			"alternateName"         -> JsString(obj.fileName),
+			"datePublished"         -> published,
+			"publisher"             -> publisher,
+			"inLanguage"            -> JsArray(
+				JsObject(
+					"@type" -> JsString("Language"),
+					"name"  -> JsString("English")
+				)
+			),
+			"acquireLicensePage"    -> obj.references.licence.fold(JsNull)(
+				lic => JsString(lic.url.toString)
+			),
+			"isPartOf"              -> isPartOf(obj),
+			"name"                  -> asOptJsString(obj.references.title),
+			"identifier"            -> identifier(obj, handleProxies),
+			"distribution"          -> distribution(obj),
+			"provider"              -> agentToSchemaOrg(obj.submission.submitter),
+		)
+
+	def merge(obj1: JsObject, obj2: JsObject): JsObject =
+		JsObject(obj1.fields ++ obj2.fields)
+
+	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
 		val doiLicenses = for
 			doi        <- doc.references.doi.toSeq
 			rightsList <- doi.rightsList.toSeq
@@ -114,15 +142,8 @@ object SchemaOrg{
 			then doc.references.licence.fold(JsNull){lic => JsString(lic.baseLicence.toString)}
 			else JsArray(doiLicenses*)
 
-		val acquireLicensePage = doc.references.licence.fold(JsNull)(
-				lic => JsString(lic.url.toString)
-			)
-
-		val published: JsValue = asOptJsString(doc.submission.stop.map(_.toString))
-
 		val id = JsString(doc.doi.fold(doc.pid.fold(staticObjLandingPage(doc.hash).toString)(_.toString))(_.toString))
 
-		// TODO refactor
 		val description = doc.references.doi match
 			case None => doc.description.fold(JsNull)(descr => JsString(descr))
 			case Some(doiMeta) => JsString(doiMeta.descriptions.mkString("\n"))
@@ -137,35 +158,18 @@ object SchemaOrg{
 			case None => JsArray.empty
 			case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
 
-		JsObject(
-			"@context"              -> JsString("https://schema.org"),
+		merge(commonJson(doc, handleProxies), JsObject(
 			"@type"                 -> JsString("DigitalDocument"),
 			"@id"                   -> id,
 			"license"               -> licenceJs,
-			"url"					-> landingPage,
-			"inLanguage"            -> JsArray(
-				JsObject(
-					"@type" -> JsString("Language"),
-					"name"  -> JsString("English")
-				)
-			),
-			"datePublished"         -> published,
 			"description"           -> description,
 			"abstract"              -> description,
-			"publisher"             -> publisher,
 			"creator"               -> creator,
-			"contributor"           -> contributor,
-			"isPartOf"              -> isPartOf(doc),
-			"name"                  -> asOptJsString(doc.references.title),
-			"identifier"            -> identifier(doc, handleProxies),
-			"alternateName"         -> JsString(doc.fileName),
-			"distribution"          -> distribution(doc),
-			"provider"              -> agentToSchemaOrg(doc.submission.submitter),
-		)
+			"contributor"           -> contributor
+		))
 	end docJson
 
 	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject =
-
 		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)
 
 		val description: JsValue = {
@@ -176,8 +180,6 @@ object SchemaOrg{
 			val allDescrs = (l3Descr ++ specComments ++ prodComment ++ citation).map(_.trim).filter(_.length > 0)
 			if(allDescrs.isEmpty) JsNull else JsString(allDescrs.mkString("\n"))
 		}
-
-		val published: JsValue = asOptJsString(dobj.submission.stop.map(_.toString))
 
 		val modified = JsString(
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
@@ -236,21 +238,10 @@ object SchemaOrg{
 					}).toVector)
 		)
 
-		JsObject(
-			"@context"              -> JsString("https://schema.org"),
+		merge(commonJson(dobj, handleProxies), JsObject(
 			"@type"                 -> JsString("Dataset"),
 			"@id"                   -> landingPage,
-			"name"                  -> asOptJsString(dobj.references.title),
-			"alternateName"         -> JsString(dobj.fileName),
 			"description"           -> JsString(description.toString.take(5000)),
-			"url"                   -> landingPage,
-			"identifier"            -> identifier(dobj, handleProxies),
-			"inLanguage"            -> JsArray(
-				JsObject(
-					"@type" -> JsString("Language"),
-					"name"  -> JsString("English")
-				)
-			),
 			"includedInDataCatalog" -> JsObject(
 				"@type" -> JsString("DataCatalog"),
 				"name"  -> JsString(conf.dataHost)
@@ -258,23 +249,15 @@ object SchemaOrg{
 			"license"               -> dobj.references.licence.flatMap(_.baseLicence).fold(JsNull)(
 				lic => JsString(lic.toString)
 			),
-			"acquireLicensePage"    -> dobj.references.licence.fold(JsNull)(
-				lic => JsString(lic.url.toString)
-			),
-			"datePublished"         -> published,
 			"dateModified"          -> modified,
 			"keywords"              -> keywords,
 			"spatialCoverage"       -> spatialCoverage,
-			"distribution"          -> distribution(dobj),
 			"temporalCoverage"      -> temporalCoverage,
-			"publisher"             -> publisher,
 			"producer"              -> producer,
-			"provider"              -> agentToSchemaOrg(dobj.submission.submitter),
 			"creator"               -> creator,
 			"contributor"           -> contributor,
 			"variableMeasured"      -> variableMeasured,
-			"isPartOf"              -> isPartOf(dobj)
-		)
+		))
 	end json
 
 	def geoFeatureToSchemaOrg(cov: GeoFeature): JsValue = cov match{

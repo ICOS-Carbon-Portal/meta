@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.doi.meta.Person
 import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
 import se.lu.nateko.cp.doi.meta.Affiliation
+import se.lu.nateko.cp.doi.meta.Description
 
 
 object SchemaOrg:
@@ -80,6 +81,26 @@ object SchemaOrg:
 
 	def merge(obj1: JsObject, obj2: JsObject): JsObject = JsObject(obj1.fields ++ obj2.fields)
 
+	def collJson(coll: StaticCollection, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig) =
+		JsObject(
+			"@type"                 -> JsString("Collection"),
+			"description"           -> description(coll.references, coll.description),
+			"abstract"              -> description(coll.references, coll.description),
+			"creator"               -> creator(coll.references),
+			"contributor"           -> contributor(coll.references)
+		)
+		// alternatename
+		// datepublished
+		// inlanguage
+		// acquirelicensepage
+		// ispartof
+		// name
+		// identifier
+		// provider
+		// temporal coverage ? 
+		// spatial coverage ?
+
+
 	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
 		val doiLicenses = for
 			doi        <- doc.references.doi.toSeq
@@ -94,28 +115,14 @@ object SchemaOrg:
 
 		val id = JsString(doc.doi.fold(doc.pid.fold(staticObjLandingPage(doc.hash).toString)(_.toString))(_.toString))
 
-		val description = doc.references.doi match
-			case None => doc.description.fold(JsNull)(descr => JsString(descr))
-			case Some(doiMeta) => JsString(doiMeta.descriptions.map(_.description).mkString("\n"))
-
-		val creator = doc.references.doi match
-			case None => doc.references.authors.fold(JsNull)(authors => JsArray(authors.map(agentToSchemaOrg).toVector))
-			case Some(doiMeta) => JsArray(doiMeta.creators.map(personToSchemaOrg).toVector)
-
-		val contributor = doc.references.doi.fold(JsNull)(dm => JsArray(dm.contributors.map(personToSchemaOrg).toVector))
-
-		val keywords = doc.references.doi match
-			case None => JsNull
-			case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
-
 		merge(commonJson(doc, handleProxies), JsObject(
 			"@type"                 -> JsString("DigitalDocument"),
 			"@id"                   -> id,
 			"license"               -> licenceJs,
-			"description"           -> description,
-			"abstract"              -> description,
-			"creator"               -> creator,
-			"contributor"           -> contributor
+			"description"           -> description(doc.references, doc.description),
+			"abstract"              -> description(doc.references, doc.description),
+			"creator"               -> creator(doc.references),
+			"contributor"           -> contributor(doc.references)
 		))
 	end docJson
 
@@ -216,6 +223,21 @@ object SchemaOrg:
 			"variableMeasured"      -> variableMeasured,
 		))
 	end json
+
+	def description(references: References, fallbackDescription: Option[String]) = references.doi match
+		case None => fallbackDescription.fold(JsNull)(descr => JsString(descr))
+		case Some(doiMeta) => JsString(doiMeta.descriptions.map(_.description).mkString("\n"))
+
+	def creator(references: References) = references.doi match
+		case None => references.authors.fold(JsNull)(authors => JsArray(authors.map(agentToSchemaOrg).toVector))
+		case Some(doiMeta) => JsArray(doiMeta.creators.map(personToSchemaOrg).toVector)
+
+	def contributor(references: References) = references.doi.fold(JsNull)(dm => JsArray(dm.contributors.map(personToSchemaOrg).toVector))
+
+	def keywords(references: References) = references.doi match
+		case None => JsNull
+		case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
+
 
 	def publisherLogo(using envri: Envri): JsValue = envri match
 		case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")

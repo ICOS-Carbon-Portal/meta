@@ -5,10 +5,11 @@
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiTitle
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.doi.meta.Title
+@import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import landpagesnips._
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
 			@if(coll.nextVersion) {
@@ -71,6 +72,12 @@
 
 @headerExtra = {
 	<a class="btn btn-secondary" href="@accessUrl">Download</a>
+}
+
+@schemaOrg = {
+	<script type="application/ld+json">
+		@Html(SchemaOrg.collJson(coll, handleProxies).prettyPrint)
+	</script>
 }
 
 @staticDataItemLink(item: StaticDataItem) = {

@@ -94,6 +94,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case doc: DocObject =>
 			val citInfo = getDocCitation(doc)
 			val structuredCitations = new StructuredCitations(doc, citInfo, None, None)
+			val theLicence = getLicence(doc.hash)
 
 			References.empty.copy(
 				citationString = getDoiCitation(doc, CitationStyle.HTML).orElse(citInfo.citText),
@@ -101,7 +102,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				citationRis = getDoiCitation(doc, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(doc),
 				authors = citInfo.authors,
-				title = citInfo.title
+				title = citInfo.title,
+				licence = theLicence
 			)
 	}
 

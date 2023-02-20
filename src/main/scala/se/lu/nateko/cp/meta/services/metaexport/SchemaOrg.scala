@@ -19,6 +19,51 @@ import se.lu.nateko.cp.doi.meta.Description
 
 object SchemaOrg:
 
+	def runSparqlQuery(sparqler: SparqlRunner, query: String, value: String) = sparqler
+		.evaluateTupleQuery(SparqlQuery(query))
+		.map(_.getValue(value))
+		.collect{case iri: IRI => iri.toJava}
+		.toIndexedSeq
+
+	def collObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
+
+		val host = configs(envri).metaHost
+
+		val collsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|prefix dcterms: <http://purl.org/dc/terms/>
+		|select * where{
+		|	?coll a cpmeta:Collection .
+		|	OPTIONAL{?coll cpmeta:hasDoi ?doi}
+		|	?coll dcterms:title ?title .
+		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
+		|	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
+		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
+  		|	FILTER(STRSTARTS(str(?coll), "https://meta.icos-cp.eu/"))
+		|}
+		|order by ?title""".stripMargin
+		// using "${host}" will only work in prod?
+
+		runSparqlQuery(sparqler, collsQuery, "coll")
+
+	def docObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
+
+		val host = configs(envri).metaHost
+
+		val docsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select * where{
+		|	?doc a cpmeta:DocumentObject .
+		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?doc}
+		|	?doc cpmeta:hasName ?fileName .
+		|	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
+		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
+		|	FILTER(STRSTARTS(str(?doc), "https://meta.icos-cp.eu/"))
+		|}""".stripMargin
+		// using "${host}" will only work in prod?
+
+		runSparqlQuery(sparqler, docsQuery, "doc")
+
+	end docObjs
+
 	def dataObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
 
 		val metaItemPrefix = configs(envri).metaItemPrefix
@@ -46,11 +91,7 @@ object SchemaOrg:
 		|}
 		|order by desc(?submTime)""".stripMargin
 
-		sparqler
-			.evaluateTupleQuery(SparqlQuery(query))
-			.map(_.getValue("dobj"))
-			.collect{case iri: IRI => iri.toJava}
-			.toIndexedSeq
+		runSparqlQuery(sparqler, query, "dobj")
 	end dataObjs
 
 	def commonJson(obj: StaticObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =

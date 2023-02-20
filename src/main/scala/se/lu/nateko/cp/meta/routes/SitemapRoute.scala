@@ -17,7 +17,7 @@ object SitemapRoute {
 			complete(
 				HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
-					views.xml.Sitemap(SchemaOrg.dataObjs(sparqler)).body
+					views.xml.Sitemap(SchemaOrg.dataObjs(sparqler) ++ SchemaOrg.collObjs(sparqler) ++ SchemaOrg.docObjs(sparqler)).body
 				)
 			)
 		}

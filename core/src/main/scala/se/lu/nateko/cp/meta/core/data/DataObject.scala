@@ -135,6 +135,7 @@ case class DataObject(
 	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: Option[URI],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
@@ -172,6 +173,7 @@ case class DocObject(
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: Option[URI],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject

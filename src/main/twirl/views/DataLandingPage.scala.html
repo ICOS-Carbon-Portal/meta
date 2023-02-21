@@ -22,12 +22,12 @@
 	<div class="row py-3 gy-4">
 		@if(dobj.nextVersion) {
 			<div class="col-12">
-				<div class="alert alert-warning">
-					A newer version is available:
-					@nextVersionLink(dobj.nextVersion)
+				<div class="alert alert-warning flex flex-col space-y-4">
+					<b>Newer versions are available:</b>
+					@newerVersionLinks(dobj.nextVersion, dobj.latestVersion)
 				</div>
 			</div>
-		} else {}
+		}
 		@if(uploadComplete) {} else {
 			<div class="col-12">
 				<div class="alert alert-warning">

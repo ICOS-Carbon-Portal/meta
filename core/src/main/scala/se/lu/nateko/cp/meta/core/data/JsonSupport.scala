@@ -160,10 +160,10 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
 	import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 	given RootJsonFormat[References] = jsonFormat10(References.apply)
-	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
+	given RootJsonFormat[DocObject] = jsonFormat13(DocObject.apply)
 
 	given RootJsonFormat[DataObject] with {
-		private given defFormat: RootJsonFormat[DataObject] = jsonFormat13(DataObject.apply)
+		private given defFormat: RootJsonFormat[DataObject] = jsonFormat14(DataObject.apply)
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
@@ -191,7 +191,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[StaticCollection] = jsonFormat9(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] = jsonFormat10(StaticCollection.apply)
 
 	given RootJsonFormat[StaticDataItem] with{
 

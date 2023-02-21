@@ -78,6 +78,7 @@ class CollectionFetcher(
 			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
 			nextVersion = getNextVersion(coll),
+			latestVersion = getLatestVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi),
 			references = References.empty

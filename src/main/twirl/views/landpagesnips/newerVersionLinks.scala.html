@@ -1,0 +1,23 @@
+@import java.net.URI
+
+@(nextVers: Option[URI], latestVers: Option[URI])
+@(nextVers, latestVers) match{
+	case (Some(nextUri), Some(latestUri)) => {
+
+		<ul style="display: flex; flex-direction: column; gap: 1px;">
+		@if(nextUri != latestUri){
+				<li>Next version: @versionLink(nextUri)</li>
+				<li>Latest version: @versionLink(latestUri) </li>
+		} else {
+				<li>Latest version: @versionLink(latestUri)</li>
+			}
+		</ul>
+	}
+	case _ => {
+		not available
+	}
+}
+
+@versionLink(uri: URI) = {
+	<a class="alert-link" href=@{uri.getRawPath}>@{uri.toString.split("/").last}</a>
+}

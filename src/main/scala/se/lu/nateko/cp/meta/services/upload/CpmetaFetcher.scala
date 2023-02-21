@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.util.Try
+import org.eclipse.rdf4j.model.ValueFactory
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -122,6 +123,17 @@ trait CpmetaFetcher extends FetchingHelper{
 				case Rdf4jStatement(next, _, _) => next.toJava
 			}
 	}
+
+	protected def getLatestVersion(item: IRI, init: IRI): Option[URI] =
+		val next = getNextVersion(item)
+		val vf = server.factory
+
+		if(next == None)
+			if (item == init) None
+			else Some(item.toJava)
+		else getLatestVersion(vf.createIRI(next.get.toString), item)
+
+	protected def getLatestVersion(item: IRI): Option[URI] = getLatestVersion(item, item)
 
 	protected def getPreviousVersion(item: IRI): Option[Either[URI, Seq[URI]]] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {

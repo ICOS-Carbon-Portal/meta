@@ -126,17 +126,20 @@ object SchemaOrg:
 			"description"           -> description(coll.references, coll.description),
 			"abstract"              -> description(coll.references, coll.description),
 			"creator"               -> creator(coll.references),
-			"contributor"           -> contributor(coll.references)
+			"contributor"           -> contributor(coll.references),
+			"inLanguage"            -> JsArray(
+				JsObject(
+					"@type" -> JsString("Language"),
+					"name"  -> JsString("English")
+				)
+			),
+			"publisher"             -> publisher,
+			"name"                  -> asOptJsString(coll.references.title),
+			"identifier"            -> coll.doi.fold(JsNull)(doiSuffix => JsString(handleProxies.basic.toString + doiSuffix)),
+			"acquireLicensePage"    -> coll.references.licence.fold(JsNull)(
+				lic => JsString(lic.url.toString)
+			), 
 		)
-		// datepublished
-		// inlanguage
-		// acquirelicensepage
-		// ispartof
-		// name
-		// identifier
-		// provider
-		// temporal coverage ? 
-		// spatial coverage ?
 
 
 	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =

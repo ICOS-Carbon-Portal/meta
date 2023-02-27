@@ -92,7 +92,8 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
-	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
+	given RootJsonFormat[InstrumentDeployment] = jsonFormat4(InstrumentDeployment.apply)
+	given RootJsonFormat[Instrument] = jsonFormat9(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)

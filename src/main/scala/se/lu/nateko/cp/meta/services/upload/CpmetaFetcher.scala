@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.util.Try
+// import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -183,6 +184,27 @@ trait CpmetaFetcher extends FetchingHelper{
 		UriResource(instr.toJava, Some(label), Nil)
 	}
 
+	// copied from cpvocab
+	private def getInstrDeployment(iri: IRI): InstrumentDeployment = {
+		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
+
+		val pos = for(
+			lat <- getOptionalDouble(iri, metaVocab.hasLatitude);
+			lon <- getOptionalDouble(iri, metaVocab.hasLongitude);
+			alt = getOptionalFloat(iri, metaVocab.hasSamplingHeight)
+		) yield Position(lat, lon, alt, None)
+
+		InstrumentDeployment(
+			pos = pos,
+			variable = getOptionalString(iri, metaVocab.hasVariableName),
+			start = getOptionalInstant(iri, metaVocab.hasStartTime),
+			stop = getOptionalInstant(iri, metaVocab.hasEndTime)
+		)
+	}
+
+	protected def getInstrumentDeployments(instr: IRI) =
+		server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrDeployment)
+
 	def getInstrument(instr: IRI): Option[Instrument] = {
 		if(server.resourceHasType(instr, metaVocab.instrumentClass)) Some(
 			Instrument(
@@ -195,7 +217,8 @@ trait CpmetaFetcher extends FetchingHelper{
 				parts = server.getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite),
 				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
 					case iri: IRI => getInstrumentLite(iri)
-				}.toList.headOption
+				}.toList.headOption,
+				deployments = getInstrumentDeployments(instr)
 			)
 		) else None
 	}

@@ -26,6 +26,34 @@
 				@for(parent <- instr.partOf) {
 					@htmlProperty{Is part of}(resourceLink(parent))
 				}
+		
+				<h2 class="fs-3 mt-5">Deployments</h2>
+				<div class="col-md-12">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Latitude</th>
+							<th>Longitude</th>
+							<th>Altitude</th>
+							<th>Variable</th>
+							<th>Start</th>
+							<th>Stop</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for(depl <- instr.deployments){
+							<tr>
+								<td>@(depl.pos.map(_.lat.toString))</td>
+								<td>@(depl.pos.map(_.lon.toString))</td>
+								<td>@(depl.pos.map(_.alt.getOrElse("").toString))</td>
+								<td>@(depl.variable.getOrElse(""))</td>
+								<td>@(depl.start.map(_.toString))</td>
+								<td>@(depl.stop.map(_.toString))</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				</div>
 			</div>
 		</div>
 	</div>

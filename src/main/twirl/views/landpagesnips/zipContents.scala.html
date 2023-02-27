@@ -2,7 +2,7 @@
 @import se.lu.nateko.cp.meta.utils.*
 @import java.time.Instant
 
-@(dobj: DataObject)(implicit conf: EnvriConfig)
+@(dobj: StaticObject)(implicit conf: EnvriConfig)
 <details>
 	<summary class="d-inline-block">
 		<span id="zipcontentsexpander" class="btn-link" style="cursor:pointer; color: var(--bs-link-color);">@viewMessage</span>
@@ -42,6 +42,11 @@
 				return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
 			}
 
+			function parseJson(resp){
+				if(resp.status == 200) return resp.json()
+				return resp.text().then(errMsg => Promise.reject(new Error(errMsg)))
+			}
+
 			expander.addEventListener("click", _ => {
 				expander.innerHTML = expander.innerHTML == "@hideMessage" ? "@viewMessage" : "@hideMessage"
 
@@ -49,7 +54,7 @@
 				firstRender = false
 
 				fetch(`https://${dataHost}/zip/${hash}/listContents`)
-					.then(resp => resp.json())
+					.then(parseJson)
 					.then(
 						json => {
 							const tableBodyHtml = json.map(file => {
@@ -61,14 +66,14 @@
 								return (`<tr>
 									<td title=${file.name}>${shortenedPath + splitName.pop()}</td>
 									<td class="text-nowrap text-end">${formatBytes(file.size)}</td>
-									<td class="text-nowrap ps-3 user-select-none"><a href='https://${dataHost}${file.path}'>Download</a></td>
+									<td class="text-nowrap ps-3 user-select-none text-end"><a href='https://${dataHost}${file.path}'>Download</a></td>
 								</tr>`)
 							}).join("\n")
 							document.getElementById("zipcontentstablebody").innerHTML = tableBodyHtml
 						},
 						err => {
 							document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
-							console.error(["ZIP contents fetching/listing error", err])
+							console.error("ZIP contents fetching/listing error", err)
 						}
 					)
 			})

@@ -27,7 +27,7 @@ object SchemaOrg:
 
 	def collObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
 
-		val host = configs(envri).metaHost
+		val dataItemPrefix = configs(envri).dataItemPrefix
 
 		val collsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix dcterms: <http://purl.org/dc/terms/>
@@ -38,16 +38,15 @@ object SchemaOrg:
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 		|	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
 		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-  		|	FILTER(STRSTARTS(str(?coll), "https://meta.icos-cp.eu/"))
+  		|	FILTER(STRSTARTS(str(?coll), "$dataItemPrefix"))
 		|}
 		|order by ?title""".stripMargin
-		// using "${host}" will only work in prod?
 
 		runSparqlQuery(sparqler, collsQuery, "coll")
 
 	def docObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
 
-		val host = configs(envri).metaHost
+		val dataItemPrefix = configs(envri).dataItemPrefix
 
 		val docsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select * where{
@@ -56,9 +55,8 @@ object SchemaOrg:
 		|	?doc cpmeta:hasName ?fileName .
 		|	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
 		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-		|	FILTER(STRSTARTS(str(?doc), "https://meta.icos-cp.eu/"))
+		|	FILTER(STRSTARTS(str(?doc), "$dataItemPrefix"))
 		|}""".stripMargin
-		// using "${host}" will only work in prod?
 
 		runSparqlQuery(sparqler, docsQuery, "doc")
 
@@ -130,7 +128,6 @@ object SchemaOrg:
 			"creator"               -> creator(coll.references),
 			"contributor"           -> contributor(coll.references)
 		)
-		// alternatename
 		// datepublished
 		// inlanguage
 		// acquirelicensepage

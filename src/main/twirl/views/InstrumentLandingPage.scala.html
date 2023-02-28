@@ -1,7 +1,9 @@
 @import se.lu.nateko.cp.meta.core.data.Instrument
 @import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.core.data.Agent
 @import se.lu.nateko.cp.viewscore.CpMenu
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.*
 @import landpagesnips._
 
 @(instr: Instrument)(implicit envri: Envri, conf: EnvriConfig)
@@ -32,23 +34,25 @@
 				<table class="table">
 					<thead>
 						<tr>
+							<th>Variable</th>
+							<th>Station</th>
 							<th>Latitude</th>
 							<th>Longitude</th>
 							<th>Altitude</th>
-							<th>Variable</th>
-							<th>Start</th>
-							<th>Stop</th>
+							<th>@{s"Start time (${conf.defaultTimezoneId})"}</th>
+							<th>@{s"Stop time (${conf.defaultTimezoneId})"}</th>
 						</tr>
 					</thead>
 					<tbody>
 						@for(depl <- instr.deployments){
 							<tr>
-								<td>@(depl.pos.map(_.lat.toString))</td>
-								<td>@(depl.pos.map(_.lon.toString))</td>
-								<td>@(depl.pos.map(_.alt.getOrElse("").toString))</td>
 								<td>@(depl.variable.getOrElse(""))</td>
-								<td>@(depl.start.map(_.toString))</td>
-								<td>@(depl.stop.map(_.toString))</td>
+								<td>@agentLink(depl.station)</td>
+								<td>@(depl.pos.map(_.lat))</td>
+								<td>@(depl.pos.map(_.lon))</td>
+								<td>@(depl.pos.map(_.alt.getOrElse("").toString)) m</td>
+								<td>@(depl.start.map(_.getDateTimeStr))</td>
+								<td>@(depl.stop.map(_.getDateTimeStr))</td>
 							</tr>
 						}
 					</tbody>

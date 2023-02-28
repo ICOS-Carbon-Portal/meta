@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
+import se.lu.nateko.cp.meta.api.UriId
 
 import scala.util.Try
 // import se.lu.nateko.cp.meta.services.CpVocab
@@ -195,6 +196,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		) yield Position(lat, lon, alt, None)
 
 		InstrumentDeployment(
+			station = Organization(
+				self = UriResource(stationIri.toJava, label = None, comments = Seq()),
+				name = stationIri.toJava.toString.split("/").last,
+				email = None,
+				website = Some(stationIri.toJava)),
 			pos = pos,
 			variable = getOptionalString(iri, metaVocab.hasVariableName),
 			start = getOptionalInstant(iri, metaVocab.hasStartTime),

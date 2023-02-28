@@ -1,12 +1,9 @@
 package se.lu.nateko.cp.meta.core.data
-// import se.lu.nateko.cp.meta.api.UriId
 import java.time.Instant
-// import se.lu.nateko.cp.meta.icos.InstrumentDeployment
+import java.net.URI
 
 case class InstrumentDeployment(
-	// cpId: IRI,
-	// stationTcId: TcId[T],
-	// stationUriId: UriId,
+	station: Organization,
 	pos: Option[Position],
 	variable: Option[String],
 	start: Option[Instant],

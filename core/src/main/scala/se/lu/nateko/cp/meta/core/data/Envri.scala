@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
 
+//TODO Add logotype URL
 case class EnvriConfig(
 	authHost: String,
 	dataHost: String,

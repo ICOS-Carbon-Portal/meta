@@ -15,56 +15,45 @@ import se.lu.nateko.cp.doi.meta.Person
 import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
 import se.lu.nateko.cp.doi.meta.Affiliation
 import se.lu.nateko.cp.doi.meta.Description
+import se.lu.nateko.cp.doi.meta.DescriptionType
 
 
 object SchemaOrg:
 
-	def runSparqlQuery(sparqler: SparqlRunner, query: String, value: String) = sparqler
+	def sparqlUriSeq(sparqler: SparqlRunner, query: String, varName: String): Seq[URI] = sparqler
 		.evaluateTupleQuery(SparqlQuery(query))
-		.map(_.getValue(value))
+		.map(_.getValue(varName))
 		.collect{case iri: IRI => iri.toJava}
 		.toIndexedSeq
 
-	def collObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
-
-		val dataItemPrefix = configs(envri).dataItemPrefix
+	def collObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
 
 		val collsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix dcterms: <http://purl.org/dc/terms/>
-		|select * where{
+		|select ?coll where{
 		|	?coll a cpmeta:Collection .
-		|	OPTIONAL{?coll cpmeta:hasDoi ?doi}
-		|	?coll dcterms:title ?title .
+		|	?coll cpmeta:hasDoi ?doi .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
-		|	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
-		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-  		|	FILTER(STRSTARTS(str(?coll), "$dataItemPrefix"))
+		|	FILTER(STRSTARTS(str(?coll), "${envriConf.dataItemPrefix}"))
 		|}
 		|order by ?title""".stripMargin
 
-		runSparqlQuery(sparqler, collsQuery, "coll")
+		sparqlUriSeq(sparqler, collsQuery, "coll")
 
-	def docObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
-
-		val dataItemPrefix = configs(envri).dataItemPrefix
+	def docObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
 
 		val docsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|select * where{
+		|select ?doc where{
 		|	?doc a cpmeta:DocumentObject .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?doc}
-		|	?doc cpmeta:hasName ?fileName .
-		|	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
-		|	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-		|	FILTER(STRSTARTS(str(?doc), "$dataItemPrefix"))
+		|	FILTER(STRSTARTS(str(?doc), "${envriConf.dataItemPrefix}"))
 		|}""".stripMargin
 
-		runSparqlQuery(sparqler, docsQuery, "doc")
+		sparqlUriSeq(sparqler, docsQuery, "doc")
 
 	end docObjs
 
-	def dataObjs(sparqler: SparqlRunner)(using configs: EnvriConfigs, envri: Envri): Seq[URI] =
-
-		val metaItemPrefix = configs(envri).metaItemPrefix
+	def dataObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
 
 		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?spec
@@ -72,7 +61,7 @@ object SchemaOrg:
 		|	VALUES ?level { 2 3 }
 		|	?spec cpmeta:hasDataLevel ?level .
 		|	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
-		|	FILTER(STRSTARTS(str(?spec), "$metaItemPrefix"))
+		|	FILTER(STRSTARTS(str(?spec), "${envriConf.metaItemPrefix}"))
 		|}""".stripMargin
 
 		val specs: Iterator[String] = sparqler.evaluateTupleQuery(SparqlQuery(specsQuery)).flatMap(b =>
@@ -89,16 +78,17 @@ object SchemaOrg:
 		|}
 		|order by desc(?submTime)""".stripMargin
 
-		runSparqlQuery(sparqler, query, "dobj")
+		sparqlUriSeq(sparqler, query, "dobj")
 	end dataObjs
 
-	def commonJson(obj: StaticObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
+	def objCommonJson(obj: StaticObject, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig): JsObject =
 		val landingPage = JsString(staticObjLandingPage(obj.hash).toString)
 
 		val published: JsValue = asOptJsString(obj.submission.stop.map(_.toString))
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
+			"@id"                   -> landingPage,
 			"url"                   -> landingPage,
 			"alternateName"         -> JsString(obj.fileName),
 			"datePublished"         -> published,
@@ -118,13 +108,12 @@ object SchemaOrg:
 			"provider"              -> agentToSchemaOrg(obj.submission.submitter),
 		)
 
-	def merge(obj1: JsObject, obj2: JsObject): JsObject = JsObject(obj1.fields ++ obj2.fields)
+	def merge(objs: JsObject*): JsObject = JsObject(objs.flatMap(_.fields)*)
 
-	def collJson(coll: StaticCollection, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig) =
+	def collJson(coll: StaticCollection, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig) = merge(
+		description(coll.references, coll.description),
 		JsObject(
 			"@type"                 -> JsString("Collection"),
-			"description"           -> description(coll.references, coll.description),
-			"abstract"              -> description(coll.references, coll.description),
 			"creator"               -> creator(coll.references),
 			"contributor"           -> contributor(coll.references),
 			"inLanguage"            -> JsArray(
@@ -138,11 +127,12 @@ object SchemaOrg:
 			"identifier"            -> coll.doi.fold(JsNull)(doiSuffix => JsString(handleProxies.basic.toString + doiSuffix)),
 			"acquireLicensePage"    -> coll.references.licence.fold(JsNull)(
 				lic => JsString(lic.url.toString)
-			), 
+			)
 		)
+	)
 
 
-	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using envri: Envri, conf: EnvriConfig): JsObject =
+	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig): JsObject =
 		val doiLicenses = for
 			doi        <- doc.references.doi.toSeq
 			rightsList <- doi.rightsList.toSeq
@@ -154,21 +144,19 @@ object SchemaOrg:
 			then doc.references.licence.fold(JsNull){lic => JsString(lic.baseLicence.toString)}
 			else JsArray(doiLicenses*)
 
-		val id = JsString(doc.doi.fold(doc.pid.fold(staticObjLandingPage(doc.hash).toString)(_.toString))(_.toString))
-
-		merge(commonJson(doc, handleProxies), JsObject(
-			"@type"                 -> JsString("DigitalDocument"),
-			"@id"                   -> id,
-			"license"               -> licenceJs,
-			"description"           -> description(doc.references, doc.description),
-			"abstract"              -> description(doc.references, doc.description),
-			"creator"               -> creator(doc.references),
-			"contributor"           -> contributor(doc.references)
-		))
+		merge(
+			objCommonJson(doc, handleProxies),
+			description(doc.references, doc.description),
+			JsObject(
+				"@type"                 -> JsString("DigitalDocument"),
+				"license"               -> licenceJs,
+				"creator"               -> creator(doc.references),
+				"contributor"           -> contributor(doc.references)
+			)
+		)
 	end docJson
 
 	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject =
-		val landingPage = JsString(staticObjLandingPage(dobj.hash).toString)
 
 		val description: JsValue =
 			val l3Descr = dobj.specificInfo.left.toSeq.flatMap(_.description)
@@ -188,7 +176,7 @@ object SchemaOrg:
 
 		val country: Option[CountryCode] = envri match
 			case Envri.SITES => CountryCode.unapply("SE")
-			case _ => dobj.specificInfo.toOption.flatMap(
+			case Envri.ICOS => dobj.specificInfo.toOption.flatMap(
 				_.acquisition.station.specificInfo match
 					case iss: IcosStationSpecifics => iss.countryCode
 					case _ => None
@@ -208,7 +196,7 @@ object SchemaOrg:
 
 		val creator = envri match
 			case Envri.SITES => stationCreator
-			case _ => dobj.references.authors.toSeq.flatten match
+			case Envri.ICOS => dobj.references.authors.toSeq.flatten match
 				case Seq() => dobj.production.map(p => agentToSchemaOrg(p.creator)).getOrElse(stationCreator)
 				case authors => JsArray(authors.map(agentToSchemaOrg).toVector)
 
@@ -242,9 +230,8 @@ object SchemaOrg:
 					).toVector)
 			)
 
-		merge(commonJson(dobj, handleProxies), JsObject(
+		merge(objCommonJson(dobj, handleProxies), JsObject(
 			"@type"                 -> JsString("Dataset"),
-			"@id"                   -> landingPage,
 			"description"           -> JsString(description.toString.take(5000)),
 			"includedInDataCatalog" -> JsObject(
 				"@type" -> JsString("DataCatalog"),
@@ -265,9 +252,13 @@ object SchemaOrg:
 		))
 	end json
 
-	def description(references: References, fallbackDescription: Option[String]) = references.doi match
-		case None => fallbackDescription.fold(JsNull)(descr => JsString(descr))
-		case Some(doiMeta) => JsString(doiMeta.descriptions.map(_.description).mkString("\n"))
+	def description(references: References, fallbackDescription: Option[String]): JsObject =
+		val doiDescrs = references.doi.toSeq.flatMap(_.descriptions)
+		val (abstracts, otherDescrs) = doiDescrs.partition(_.descriptionType == DescriptionType.Abstract)
+		val jsFields =
+			abstracts.map(d => "abstract" -> JsString(d.description)) ++
+			(otherDescrs.map(_.description) ++ fallbackDescription).take(1).map(d => "description" -> JsString(d))
+		JsObject(jsFields*)
 
 	def creator(references: References) = references.doi match
 		case None => references.authors.fold(JsNull)(authors => JsArray(authors.map(agentToSchemaOrg).toVector))
@@ -279,7 +270,7 @@ object SchemaOrg:
 		case None => JsNull
 		case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
 
-
+	//TODO Move to EnvriConfig
 	def publisherLogo(using envri: Envri): JsValue = envri match
 		case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
 		case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")

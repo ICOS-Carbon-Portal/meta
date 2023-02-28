@@ -13,12 +13,7 @@
 @ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, extraMetaTags = Some(schemaOrg), subHeading = Some("Document")){
 	<div class="row py-2 gy-4">
 		<div class="col-md-8">
-			@if(doc.nextVersion) {
-				<div class="alert alert-warning">
-					A newer version is available:
-					@nextVersionLink(doc.nextVersion)
-				</div>
-			}
+			@nextVersionAlert(doc.nextVersion)
 			@if(!uploadComplete) {
 				<div class="alert alert-warning">
 					<h4 class="alert-heading">Incomplete upload</h4>
@@ -61,7 +56,6 @@
 				@citations(doc.references)
 				@for(size <- doc.size){
 					@property("File size", formatBytes(size))
-					@property("File size (bytes)", size.toString)
 				}
 				@property("SHA-256 hashsum (hex)", doc.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", doc.hash.base64)

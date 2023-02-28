@@ -1,0 +1,9 @@
+@import java.net.URI
+
+@(nextVersOpt: Option[URI])
+@for(nextVers <- nextVersOpt){
+	<div class="alert alert-warning">
+		A newer version is available:
+		<a class="alert-link" href=@{nextVers.getRawPath}>View next version</a>
+	</div>
+}

@@ -22,8 +22,8 @@
 	<div class="row py-3 gy-4">
 		@if(dobj.nextVersion) {
 			<div class="col-12">
-				<div class="alert alert-warning flex flex-col space-y-4">
-					<b>Newer versions are available:</b>
+				<div class="alert alert-warning">
+					<h4 class="alert-heading">Newer versions are available</h4>
 					@newerVersionLinks(dobj.nextVersion, dobj.latestVersion)
 				</div>
 			</div>

@@ -71,7 +71,7 @@
 
 @schemaOrg = {
 	<script type="application/ld+json">
-		@Html(SchemaOrg.collJson(coll, handleProxies).prettyPrint)
+		@Html(SchemaOrg(handleProxies).collJson(coll).prettyPrint)
 	</script>
 }
 

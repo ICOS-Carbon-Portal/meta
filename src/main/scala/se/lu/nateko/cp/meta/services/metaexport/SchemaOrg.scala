@@ -10,13 +10,13 @@ import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
+import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.doi.meta.Person
 import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
 import se.lu.nateko.cp.doi.meta.Affiliation
 import se.lu.nateko.cp.doi.meta.Description
 import se.lu.nateko.cp.doi.meta.DescriptionType
-
 
 object SchemaOrg:
 
@@ -26,7 +26,7 @@ object SchemaOrg:
 		.collect{case iri: IRI => iri.toJava}
 		.toIndexedSeq
 
-	def collObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
+	def collObjs(sparqler: SparqlRunner)(using envriConf: EnvriConfig): Seq[URI] =
 
 		val collsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix dcterms: <http://purl.org/dc/terms/>
@@ -40,7 +40,7 @@ object SchemaOrg:
 
 		sparqlUriSeq(sparqler, collsQuery, "coll")
 
-	def docObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
+	def docObjs(sparqler: SparqlRunner)(using envriConf: EnvriConfig): Seq[URI] =
 
 		val docsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?doc where{
@@ -53,7 +53,7 @@ object SchemaOrg:
 
 	end docObjs
 
-	def dataObjs(sparqler: SparqlRunner)(using EnvriConfigs, Envri): Seq[URI] =
+	def dataObjs(sparqler: SparqlRunner)(using envriConf: EnvriConfig): Seq[URI] =
 
 		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?spec
@@ -80,83 +80,24 @@ object SchemaOrg:
 
 		sparqlUriSeq(sparqler, query, "dobj")
 	end dataObjs
+end SchemaOrg
 
-	def objCommonJson(obj: StaticObject, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig): JsObject =
-		val landingPage = JsString(staticObjLandingPage(obj.hash).toString)
 
-		val published: JsValue = asOptJsString(obj.submission.stop.map(_.toString))
+class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriConf: EnvriConfig):
 
-		JsObject(
-			"@context"              -> JsString("https://schema.org"),
-			"@id"                   -> landingPage,
-			"url"                   -> landingPage,
-			"alternateName"         -> JsString(obj.fileName),
-			"datePublished"         -> published,
-			"publisher"             -> publisher,
-			"inLanguage"            -> JsArray(
-				JsObject(
-					"@type" -> JsString("Language"),
-					"name"  -> JsString("English")
-				)
-			),
-			"acquireLicensePage"    -> obj.references.licence.fold(JsNull)(
-				lic => JsString(lic.url.toString)
-			),
-			"isPartOf"              -> isPartOf(obj),
-			"name"                  -> asOptJsString(obj.references.title),
-			"identifier"            -> identifier(obj, handleProxies),
-			"provider"              -> agentToSchemaOrg(obj.submission.submitter),
-		)
-
-	def merge(objs: JsObject*): JsObject = JsObject(objs.flatMap(_.fields)*)
-
-	def collJson(coll: StaticCollection, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig) = merge(
-		description(coll.references, coll.description),
-		JsObject(
-			"@type"                 -> JsString("Collection"),
-			"creator"               -> creator(coll.references),
-			"contributor"           -> contributor(coll.references),
-			"inLanguage"            -> JsArray(
-				JsObject(
-					"@type" -> JsString("Language"),
-					"name"  -> JsString("English")
-				)
-			),
-			"publisher"             -> publisher,
-			"name"                  -> asOptJsString(coll.references.title),
-			"identifier"            -> coll.doi.fold(JsNull)(doiSuffix => JsString(handleProxies.basic.toString + doiSuffix)),
-			"acquireLicensePage"    -> coll.references.licence.fold(JsNull)(
-				lic => JsString(lic.url.toString)
-			)
-		)
+	def collJson(coll: StaticCollection): JsObject = merge(
+		commonJson(coll),
+		docCollJson(coll),
+		JsObject("@type" -> JsString("Collection"))
 	)
 
+	def docJson(doc: DocObject): JsObject = merge(
+		docCollJson(doc),
+		objCommonJson(doc),
+		JsObject("@type" -> JsString("DigitalDocument"))
+	)
 
-	def docJson(doc: DocObject, handleProxies: HandleProxiesConfig)(using Envri, EnvriConfig): JsObject =
-		val doiLicenses = for
-			doi        <- doc.references.doi.toSeq
-			rightsList <- doi.rightsList.toSeq
-			rights     <- rightsList
-			uri        <- rights.rightsUri
-		yield JsString(uri)
-
-		val licenceJs = if doiLicenses.isEmpty
-			then doc.references.licence.fold(JsNull){lic => JsString(lic.baseLicence.toString)}
-			else JsArray(doiLicenses*)
-
-		merge(
-			objCommonJson(doc, handleProxies),
-			description(doc.references, doc.description),
-			JsObject(
-				"@type"                 -> JsString("DigitalDocument"),
-				"license"               -> licenceJs,
-				"creator"               -> creator(doc.references),
-				"contributor"           -> contributor(doc.references)
-			)
-		)
-	end docJson
-
-	def json(dobj: DataObject, handleProxies: HandleProxiesConfig)(using conf: EnvriConfig, envri: Envri): JsObject =
+	def dataJson(dobj: DataObject): JsObject =
 
 		val description: JsValue =
 			val l3Descr = dobj.specificInfo.left.toSeq.flatMap(_.description)
@@ -164,7 +105,11 @@ object SchemaOrg:
 			val prodComment = dobj.production.flatMap(_.comment)
 			val citation = dobj.references.citationString
 			val allDescrs = (l3Descr ++ specComments ++ prodComment ++ citation).map(_.trim).filter(_.length > 0)
-			if(allDescrs.isEmpty) JsNull else JsString(allDescrs.mkString("\n"))
+			if allDescrs.isEmpty then JsNull else
+				val allDescrStr = allDescrs.mkString("\n")
+				val descrStr = if allDescrStr.size < 5000 then allDescrStr else
+					allDescrStr.take(5000) + "..."
+				JsString(descrStr)
 
 		val modified = JsString(
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
@@ -208,7 +153,7 @@ object SchemaOrg:
 
 		val distribution= dobj.accessUrl.fold[JsValue](JsNull){_ =>
 			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
-			val accessUrl = s"https://${conf.dataHost}/licence_accept?ids=%5B%22${dobj.hash.base64Url}%22%5D"
+			val accessUrl = s"https://${envriConf.dataHost}/licence_accept?ids=%5B%22${dobj.hash.base64Url}%22%5D"
 			JsObject(
 				"contentUrl"     -> JsString(accessUrl),
 				"encodingFormat" -> JsString(contType.mediaType.toString),
@@ -230,15 +175,12 @@ object SchemaOrg:
 					).toVector)
 			)
 
-		merge(objCommonJson(dobj, handleProxies), JsObject(
+		objCommonJson(dobj) ++ JsObject(
 			"@type"                 -> JsString("Dataset"),
-			"description"           -> JsString(description.toString.take(5000)),
+			"description"           -> description,
 			"includedInDataCatalog" -> JsObject(
 				"@type" -> JsString("DataCatalog"),
-				"name"  -> JsString(conf.dataHost)
-			),
-			"license"               -> dobj.references.licence.flatMap(_.baseLicence).fold(JsNull)(
-				lic => JsString(lic.toString)
+				"name"  -> JsString(envriConf.dataHost)
 			),
 			"distribution"          -> distribution,
 			"dateModified"          -> modified,
@@ -249,16 +191,77 @@ object SchemaOrg:
 			"creator"               -> creator,
 			"contributor"           -> contributor,
 			"variableMeasured"      -> variableMeasured,
-		))
-	end json
+		)
+	end dataJson
 
-	def description(references: References, fallbackDescription: Option[String]): JsObject =
-		val doiDescrs = references.doi.toSeq.flatMap(_.descriptions)
-		val (abstracts, otherDescrs) = doiDescrs.partition(_.descriptionType == DescriptionType.Abstract)
-		val jsFields =
-			abstracts.map(d => "abstract" -> JsString(d.description)) ++
-			(otherDescrs.map(_.description) ++ fallbackDescription).take(1).map(d => "description" -> JsString(d))
-		JsObject(jsFields*)
+	private def commonJson(item: CitableItem) =
+		import item.references
+		val licenceJs = references.licence
+			.map(lic => JsString(lic.baseLicence.toString))
+			.getOrElse{
+				val doiLicenses = for
+					doi        <- references.doi.toSeq
+					rightsList <- doi.rightsList.toSeq
+					rights     <- rightsList
+					uri        <- rights.rightsUri
+				yield JsString(uri)
+
+				doiLicenses.toList match
+					case Nil => JsNull
+					case theOnly :: Nil => theOnly
+					case many => JsArray(many*)
+			}
+		JsObject(
+			"@context"              -> JsString("https://schema.org"),
+			"inLanguage"            -> JsArray(
+				JsObject(
+					"@type" -> JsString("Language"),
+					"name"  -> JsString("English")
+				)
+			),
+			"acquireLicensePage"    -> item.references.licence.fold(JsNull)(
+				lic => JsString(lic.url.toString)
+			),
+			"publisher"             -> publisher,
+			"identifier"            -> identifier(item),
+			"name"                  -> asOptJsString(item.references.title),
+			"license"               -> licenceJs,
+		)
+	end commonJson
+
+	private def docCollJson(item: StaticCollection | DocObject): JsObject =
+		import item.references
+
+		val fallbackDescription = item match
+			case coll: StaticCollection => coll.description
+			case doc: DocObject => doc.description
+
+		val description: JsObject =
+			val doiDescrs = references.doi.toSeq.flatMap(_.descriptions)
+			val (abstracts, otherDescrs) = doiDescrs.partition(_.descriptionType == DescriptionType.Abstract)
+			val jsFields =
+				abstracts.map(d => "abstract" -> JsString(d.description)) ++
+				(otherDescrs.map(_.description) ++ fallbackDescription).take(1).map(d => "description" -> JsString(d))
+			JsObject(jsFields*)
+
+		JsObject(
+			"creator"               -> creator(references),
+			"contributor"           -> contributor(references)
+		) ++ description
+
+
+	private def objCommonJson(obj: StaticObject): JsObject =
+		val landingPage = JsString(staticObjLandingPage(obj.hash).toString)
+
+		JsObject(
+			"@id"                   -> landingPage,
+			"url"                   -> landingPage,
+			"alternateName"         -> JsString(obj.fileName),
+			"datePublished"         -> asOptJsString(obj.submission.stop.map(_.toString)),
+			"isPartOf"              -> isPartOf(obj),
+			"provider"              -> agentToSchemaOrg(obj.submission.submitter),
+		) ++ commonJson(obj)
+
 
 	def creator(references: References) = references.doi match
 		case None => references.authors.fold(JsNull)(authors => JsArray(authors.map(agentToSchemaOrg).toVector))
@@ -271,32 +274,35 @@ object SchemaOrg:
 		case Some(dm) => JsArray(dm.subjects.map(s => JsString(s.toString)).toVector)
 
 	//TODO Move to EnvriConfig
-	def publisherLogo(using envri: Envri): JsValue = envri match
+	def publisherLogo: JsValue = envri match
 		case Envri.SITES => JsString("https://static.icos-cp.eu/images/sites-logo.png")
 		case Envri.ICOS => JsString("https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png")
 
-	def publisher(using envri: Envri, conf: EnvriConfig) = JsObject(
-				"@type" -> JsString("Organization"),
-				"@id"   -> JsString(conf.dataHost),
-				"name"  -> JsString(s"$envri data portal"),
-				"url"   -> JsString(s"https://${conf.dataHost}"),
-				"logo"  -> publisherLogo
-			)
+	def publisher = JsObject(
+		"@type" -> JsString("Organization"),
+		"@id"   -> JsString(envriConf.dataHost),
+		"name"  -> JsString(s"$envri data portal"),
+		"url"   -> JsString(s"https://${envriConf.dataHost}"),
+		"logo"  -> publisherLogo
+	)
 
 	def affiliation(affiliation: Affiliation) = JsObject(
-			"@type" -> JsString("Organization"),
-			"@id"   -> JsString(affiliation.name),
-			"name"  -> JsString(affiliation.name)
-		)
+		"@type" -> JsString("Organization"),
+		"name"  -> JsString(affiliation.name)
+	)
 
 	def isPartOf(obj: StaticObject) = JsArray(obj.parentCollections.map(coll =>
 		JsString(coll.uri.toString)).toVector
 	)
 
-	def identifier(obj: StaticObject, handleProxies: HandleProxiesConfig): JsValue =
+	def identifier(item: CitableItem): JsValue =
+		val pid: Option[String] = item match
+			case obj: StaticObject => obj.pid
+			case _: StaticCollection => None
+
 		val ids: Vector[JsString] = Vector(
-			obj.doi -> handleProxies.doi,
-			obj.pid -> handleProxies.basic
+			item.doi -> handleProxies.doi,
+			pid -> handleProxies.basic
 		).collect{
 			case (Some(id), proxy) => JsString(proxy.toString + id)
 		}

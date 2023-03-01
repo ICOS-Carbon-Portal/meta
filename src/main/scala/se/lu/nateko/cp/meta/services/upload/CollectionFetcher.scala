@@ -82,6 +82,7 @@ class CollectionFetcher(
 			doi = getOptionalString(coll, metaVocab.hasDoi),
 			references = References.empty
 		)
+		//TODO Consider adding collection-specific logic for licence information
 		init.copy(references = citer.getItemCitationInfo(init))
 	}
 

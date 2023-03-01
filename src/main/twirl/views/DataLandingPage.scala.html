@@ -300,7 +300,7 @@
 
 @schemaOrg = {
 	<script type="application/ld+json">
-		@Html(SchemaOrg.json(dobj, handleProxies).prettyPrint)
+		@Html(SchemaOrg(handleProxies).dataJson(dobj).prettyPrint)
 	</script>
 }
 

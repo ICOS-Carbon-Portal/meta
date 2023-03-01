@@ -34,11 +34,12 @@
 				<table class="table">
 					<thead>
 						<tr>
-							<th>Variable</th>
+							<th>Variable name</th>
+							<th>Value type</th>
 							<th>Station</th>
 							<th>Latitude</th>
 							<th>Longitude</th>
-							<th>Altitude</th>
+							<th>Sampling height</th>
 							<th>@{s"Start time (${conf.defaultTimezoneId})"}</th>
 							<th>@{s"Stop time (${conf.defaultTimezoneId})"}</th>
 						</tr>
@@ -46,7 +47,16 @@
 					<tbody>
 						@for(depl <- instr.deployments){
 							<tr>
-								<td>@(depl.variable.getOrElse(""))</td>
+								<td>@(depl.variableName.getOrElse(""))</td>
+								<td>
+									@for(forProperty <- depl.forProperty) {
+										@if(forProperty.comments.length > 0){
+											<a href=@forProperty.uri>@{forProperty.comments(0)}</a>
+										} else {
+											@resourceLink(forProperty)
+										}
+									}
+								</td>
 								<td>@agentLink(depl.station)</td>
 								<td>@(depl.pos.map(_.lat))</td>
 								<td>@(depl.pos.map(_.lon))</td>

@@ -169,7 +169,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				case single :: Nil => Some(Left(single))
 				case many => Some(Right(many))
 			},
-			samplingPoint = getOptionalUri(acqUri, metaVocab.hasSamplingPoint).map(getPosition),
+			samplingPoint = getOptionalUri(acqUri, metaVocab.hasSamplingPoint).flatMap(getPosition),
 			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)

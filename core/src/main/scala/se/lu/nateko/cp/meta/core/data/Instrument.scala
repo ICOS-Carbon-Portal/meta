@@ -5,7 +5,8 @@ import java.net.URI
 case class InstrumentDeployment(
 	station: Organization,
 	pos: Option[Position],
-	variable: Option[String],
+	variableName: Option[String],
+	forProperty: Option[UriResource],
 	start: Option[Instant],
 	stop: Option[Instant]
 )

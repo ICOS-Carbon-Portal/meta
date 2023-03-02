@@ -50,7 +50,7 @@ class CitationInfo(
 	val citText: Option[String],
 )
 
-class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper {
+class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper:
 	import CitationMaker.*
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
@@ -258,30 +258,29 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
 		}
 
-	private def getDocCitation(dobj: DocObject)(using envri: Envri): CitationInfo = {
+	private def getDocCitation(doc: DocObject)(using envri: Envri): CitationInfo =
+		import doc.{references => refs}
 		val zoneId = ZoneId.of(defaultTimezoneId)
-		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
-		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
+		val yearOpt = doc.submission.stop.map(getYear(zoneId))
+		val authorString = refs.authors.fold("")(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."
 			case o: Organization => o.name
 		}.mkString("", ", ", " "))
 
-		val pidUrlOpt = getPidUrl(dobj)
-		val citString = for(
-			year <- yearOpt;
-			title <- dobj.references.title;
+		val pidUrlOpt = getPidUrl(doc)
+		val citString = for
+			year <- yearOpt
+			title <- refs.title
 			pidUrl <- pidUrlOpt
-		) yield {
-			if(envri == Envri.SITES)
+		yield envri match
+			case Envri.SITES =>
 				s"${authorString}($year). $title. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
-			else
+			case Envri.ICOS =>
 				s"${authorString}ICOS RI, $year. $title, $pidUrl"
-		}
 
-		new CitationInfo(pidUrlOpt, dobj.references.authors, dobj.references.title, yearOpt, None, citString)
+		CitationInfo(pidUrlOpt, refs.authors, refs.title, yearOpt, None, citString)
 
-	}
-}
+end CitationMaker
 
 object CitationMaker{
 

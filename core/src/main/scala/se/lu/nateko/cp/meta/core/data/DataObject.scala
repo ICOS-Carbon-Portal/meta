@@ -153,7 +153,7 @@ case class DataObject(
 	def keywords: Option[Seq[String]] =
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)
 			.filter(_.nonEmpty)
-			.map(_.toSeq.sorted)
+			.map(_.toSeq.distinct.sorted)
 
 	def isPreviewable: Boolean = specificInfo.fold(
 		spatioTemporal => spatioTemporal.variables.nonEmpty,

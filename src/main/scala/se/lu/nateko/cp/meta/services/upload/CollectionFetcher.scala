@@ -40,12 +40,12 @@ class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends 
 		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
 	}
 
-	def getCreatorIfCollExists(hash: Sha256Sum)(implicit envri: Envri): Option[IRI] = {
+	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Option[IRI] = {
 		val collUri = vocab.getCollection(hash)
 		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
 	}
 
-	def collectionExists(coll: Sha256Sum)(implicit envri: Envri): Boolean = collectionExists(vocab.getCollection(coll))
+	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))
 }
 
 class CollectionFetcher(
@@ -54,13 +54,13 @@ class CollectionFetcher(
 	citer: CitationMaker
 ) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
 
-	def fetchStatic(hash: Sha256Sum)(implicit envri: Envri): Option[StaticCollection] = {
+	def fetchStatic(hash: Sha256Sum)(using Envri): Option[StaticCollection] = {
 		val collUri = citer.vocab.getCollection(hash)
-		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri))
+		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri, Some(hash)))
 		else None
 	}
 
-	private def getExistingStaticColl(coll: IRI)(using Envri): StaticCollection = {
+	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): StaticCollection = {
 		val dct = metaVocab.dcterms
 
 		val members = server.getUriValues(coll, memberProp).map{item =>
@@ -73,6 +73,7 @@ class CollectionFetcher(
 
 		val init = StaticCollection(
 			res = coll.toJava,
+			hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
 			members = members,
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
 			title = getTitle(coll),
@@ -82,8 +83,10 @@ class CollectionFetcher(
 			doi = getOptionalString(coll, metaVocab.hasDoi),
 			references = References.empty
 		)
+		val citerRefs = citer.getItemCitationInfo(init)
 		//TODO Consider adding collection-specific logic for licence information
-		init.copy(references = citer.getItemCitationInfo(init))
+		val updatedRefs = citerRefs.copy(title = Some(init.title))
+		init.copy(references = updatedRefs)
 	}
 
 }

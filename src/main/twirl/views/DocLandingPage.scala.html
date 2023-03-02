@@ -22,22 +22,18 @@
 			}
 			@doiMetaAlerts(doc.doi, doc.references.doi)
 			<div class="row gy-2">
-				@for(description <- doc.description){
-					@property("Description", description)
-				}
-				@authors(doc.references)
-				@if(doc.references.title.isDefined) {
-					@property("File name", doc.fileName)
-				} else {}
-				@if(doc.fileName.toLowerCase.endsWith(".zip") && uploadComplete) {
-					@htmlProperty{Zip contents}{@zipContents(doc)}
-				} else {}
 				@doiProperty(doc.doi, handleProxies.doi)
 				@if(uploadComplete) {
 					@pidProperty(doc.pid, handleProxies.basic)
 				}
+				@if(doc.references.title.isDefined) {
+					@property("File name", doc.fileName)
+				}
 				@if(doc.previousVersion) {
 					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
+				}
+				@if(doc.fileName.toLowerCase.endsWith(".zip") && uploadComplete) {
+					@htmlProperty{Zip contents}{@zipContents(doc)}
 				}
 				@for(coll <- doc.parentCollections){
 					@htmlProperty{Part of}{@resourceLink(coll)}

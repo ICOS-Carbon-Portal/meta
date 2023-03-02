@@ -106,17 +106,17 @@ class CitationProvider(
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
-		hash <- extractHash(maybeDobj);
-		envri <- inferObjectEnvri(maybeDobj);
-		obj <- objFetcher.fetch(hash)(using envri)
-	) yield obj
+	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for
+		hash <- extractHash(maybeDobj)
+		given Envri <- inferObjectEnvri(maybeDobj)
+		obj <- objFetcher.fetch(hash)
+	yield obj
 
-	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for(
-		hash <- extractHash(maybeColl);
-		envri <- inferCollEnvri(maybeColl);
-		coll <- collFetcher.fetchStatic(hash)(envri)
-	) yield coll
+	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for
+		hash <- extractHash(maybeColl)
+		given Envri <- inferCollEnvri(maybeColl)
+		coll <- collFetcher.fetchStatic(hash)
+	yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))

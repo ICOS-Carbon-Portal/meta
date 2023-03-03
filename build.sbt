@@ -28,6 +28,7 @@ lazy val metaCore = (project in file("core"))
 			"Sha256Sum" -> "string",
 			"Orcid" -> "string",
 			"JsValue" -> "object",
+			"DoiMeta" -> "object",
 			"CountryCode" -> "string"
 		),
 		cpTsGenSources := {

@@ -28,6 +28,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		project = getProject(getSingleUri(spec, metaVocab.hasAssociatedProject)),
 		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
 		format = getLabeledResource(spec, metaVocab.hasFormat),
+		specificDatasetType = getDatasetType(getSingleUri(spec, metaVocab.hasSpecificDatasetType)),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),
 		datasetSpec = getOptionalUri(spec, metaVocab.containsDataset).map(getDatasetSpec),
@@ -37,16 +38,14 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 	private def getDatasetSpec(ds: IRI) = DatasetSpec(
 		self = getLabeledResource(ds),
-		dsClass = getDatasetClass(ds),
 		resolution = getOptionalString(ds, metaVocab.hasTemporalResolution)
 	)
 
-	private def getDatasetClass(ds: IRI): DatasetClass = {
-		val types = server.getTypes(ds).toSet
-		if(types.contains(metaVocab.tabularDatasetSpecClass)) DatasetClass.StationTimeSeries
-		else if(types.contains(metaVocab.datasetSpecClass)) DatasetClass.SpatioTemporal
-		else throw new MetadataException(s"Dataset specification $ds did not have any of the expected classes")
-	}
+	private def getDatasetType(iri: IRI): DatasetType =
+		if (iri === metaVocab.stationTimeSeriesDs) DatasetType.StationTimeSeries
+		else if (iri === metaVocab.spatioTemporalDs) DatasetType.SpatioTemporal
+		else throw new MetadataException(s"URL $iri does not correspond to any of the expected dataset type instances")
+
 
 	private def getDocumentationObjs(item: IRI): Seq[PlainStaticObject] =
 		server.getUriValues(item, metaVocab.hasDocumentationObject).map(plainObjFetcher.getPlainStaticObject)

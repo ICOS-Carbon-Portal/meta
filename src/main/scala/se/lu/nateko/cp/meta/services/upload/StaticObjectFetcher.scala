@@ -49,10 +49,10 @@ class StaticObjectFetcher(
 		val valTypeLookup = getOptionalUri(specIri, metaVocab.containsDataset)
 			.fold(VarMetaLookup(Nil))(getValTypeLookup)
 
-		val levelSpecificInfo = spec.specificMetadataType match
-			case DatasetClass.SpatioTemporal =>
+		val levelSpecificInfo = spec.specificDatasetType match
+			case DatasetType.SpatioTemporal =>
 				Left(getSpatioTempMeta(dobj, valTypeLookup, production))
-			case DatasetClass.StationTimeSeries =>
+			case DatasetType.StationTimeSeries =>
 				Right(getStationTimeSerMeta(dobj, valTypeLookup, production))
 
 		val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)

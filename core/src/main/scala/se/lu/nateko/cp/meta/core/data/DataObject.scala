@@ -31,16 +31,13 @@ case class DataObjectSpec(
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
-	specificMetadataType: DatasetClass,
+	specificDatasetType: DatasetType,
 	datasetSpec: Option[DatasetSpec],
 	documentation: Seq[PlainStaticObject],
 	keywords: Option[Seq[String]]
-){
-	def isStationTimeSer: Boolean = specificMetadataType == DatasetClass.StationTimeSeries
-	def isSpatiotemporal: Boolean = specificMetadataType == DatasetClass.SpatioTemporal
-}
+)
 
-enum DatasetClass derives CanEqual:
+enum DatasetType derives CanEqual:
 	case StationTimeSeries, SpatioTemporal
 
 case class DatasetSpec(

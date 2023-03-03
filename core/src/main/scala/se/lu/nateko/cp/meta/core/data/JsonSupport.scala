@@ -13,7 +13,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
 	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
-	given JsonFormat[DatasetClass] = enumFormat(DatasetClass.valueOf, DatasetClass.values)
+	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 

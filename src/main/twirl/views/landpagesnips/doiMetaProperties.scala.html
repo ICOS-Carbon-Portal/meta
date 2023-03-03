@@ -8,13 +8,13 @@
 	@property(s"Description (${descr.descriptionType})", descr.description)
 }
 @if(doiMeta.creators.length > 0){
-	@htmlProperty{Data creators}(personList(doiMeta.creators))
+	@htmlProperty{Creators}(personList(doiMeta.creators))
 }
 @if(doiMeta.contributors.length > 0){
 	@htmlProperty{Contributors}(personList(doiMeta.contributors))
 }
 @for(pubYear <- doiMeta.publicationYear){
-	@property("Publication Year", pubYear.toString)
+	@property("Publication year", pubYear.toString)
 }
 @for(publisher <-doiMeta.publisher){
 	@property("Publisher", publisher)

@@ -43,13 +43,13 @@ extension (label: String)(using factory: ValueFactory){
 extension (uri: IRI){
 	def toJava: JavaUri = JavaUri.create(uri.stringValue)
 	def ===(other: IRI): Boolean = uri == other
-	def ===(other: JavaUri): Boolean = toJava == other
+	def ===(other: JavaUri): Boolean = toJava === other
 }
 
 extension (uri: JavaUri){
 	def toRdf(using factory: ValueFactory): IRI = factory.createIRI(uri)
-	def ===(other: IRI): Boolean = other.toJava == uri
-	def ===(other: JavaUri): Boolean = uri == other
+	def ===(other: IRI): Boolean = ===(other.toJava)
+	def ===(other: JavaUri): Boolean = uri.toString == other.toString
 }
 
 extension [T](res: CloseableIteration[T, _]){

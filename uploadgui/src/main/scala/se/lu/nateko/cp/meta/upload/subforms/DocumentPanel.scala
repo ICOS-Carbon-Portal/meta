@@ -17,7 +17,7 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 	def title = documentTitle.value
 	def description = documentDescription.value
 	def authors = documentAuthors.values
-	def licence: Try[Option[URI]] = licenceUrl.value.withErrorContext("Data licence URL")
+	def licence: Try[Option[URI]] = licenceUrl.value.withErrorContext("Document licence URL")
 
 	private val documentTitle = new TextOptInput("document-title", notifyUpdate)
 	private val documentDescription = new DescriptionInput("document-description", notifyUpdate)

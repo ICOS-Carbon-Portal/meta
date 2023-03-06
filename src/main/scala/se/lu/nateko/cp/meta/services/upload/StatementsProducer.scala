@@ -65,12 +65,12 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
 	}
 
-	private def getDobjStatements(meta: DataObjectDto)(using envri: Envri): Seq[Statement] = {
+	private def getDobjStatements(meta: DataObjectDto)(using Envri): Seq[Statement] =
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
-		val licUri: Option[URI] = meta.references.flatMap(_.licence).filter{uri =>
-			!CitationMaker.defaultLicences.get(envri).map(_.url).contains(uri)
+		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
+			_ === CitationMaker.defaultLicence.url
 		}
 
 		val specificStatements = meta.specificInfo.fold(
@@ -98,7 +98,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
 		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 		moratoriumStatements
-	}
+	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms

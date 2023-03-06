@@ -270,15 +270,7 @@
 								<label class="form-label" for="nrows">Number of rows <em class="text-muted">- required for some data types</em></label>
 								<input id="nrows" type="text" class="form-control" min="0" disabled>
 							</div>
-							<div class="mb-3 licence-block">
-								<label class="form-label" for="licence">Licence @optional</label>
-								<select class="form-select" id="licenceselect">
-									<option value="">(inherit default)</option>
-									@for((licUrl, licName) <- licences){
-										<option value=@licUrl>@licName</option>
-									}
-								</select>
-							</div>
+							@licenceBlock("licenceselect")
 							<div class="mb-3">
 								<label class="form-label" for="moratoriuminput">Moratorium @optional</label>
 								<input id="moratoriuminput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
@@ -510,15 +502,7 @@
 									</div>
 								</div>
 							</div>
-							<div class="mb-3 licence-block">
-								<label class="form-label" for="licence">Licence @optional</label>
-								<select class="form-select" id="doclicenceselect">
-									<option value="">(inherit default)</option>
-									@for((licUrl, licName) <- licences){
-										<option value=@licUrl>@licName</option>
-									}
-								</select>
-							</div>
+							@licenceBlock("doclicenceselect")
 						</div>
 					</div>
 				</section>
@@ -580,4 +564,16 @@
 
 @helpButton(helpText: String) = {
 	<i data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="@helpText" class="fa fa-question-circle"></i>
+}
+
+@licenceBlock(selectId: String) = {
+	<div class="mb-3 licence-block">
+		<label class="form-label" for=@selectId>Licence @optional</label>
+		<select class="form-select" id=@selectId>
+			<option value="">(inherit default)</option>
+			@for((licUrl, licName) <- licences){
+				<option value=@licUrl>@licName</option>
+			}
+		</select>
+	</div>
 }

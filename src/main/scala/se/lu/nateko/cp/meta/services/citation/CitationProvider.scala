@@ -83,12 +83,11 @@ class CitationProvider(
 
 	def getReferences(res: Resource): Option[References] = getCitableItem(res).map(_.references)
 
-	def getLicence(res: Resource): Option[Licence] = for(
-		iri <- toIRI(res);
-		hash <- extractHash(iri);
-		envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri));
-		lic <- citer.getLicence(hash)(envri)
-	) yield lic
+	def getLicence(res: Resource): Option[Licence] = for
+		iri <- toIRI(res)
+		hash <- extractHash(iri)
+		given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+	yield citer.getLicence(hash)
 
 	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>
 		server.getStringValues(iri, metaVocab.hasDoi).headOption

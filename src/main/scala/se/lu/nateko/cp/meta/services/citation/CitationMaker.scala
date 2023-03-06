@@ -41,7 +41,7 @@ import se.lu.nateko.cp.doi.meta.NameIdentifier
 import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
 import se.lu.nateko.cp.doi.meta.Contributor
 
-class CitationInfo(
+private class CitationInfo(
 	val pidUrl: Option[String],
 	val authors: Option[Seq[Agent]],
 	val title: Option[String],
@@ -50,7 +50,7 @@ class CitationInfo(
 	val citText: Option[String],
 )
 
-class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper {
+class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper:
 	import CitationMaker.*
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
@@ -61,53 +61,47 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val metaVocab = new CpmetaVocab(server.factory)
 	val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getItemCitationInfo(item: CitableItem) =
-		References.empty.copy(
-			citationString = getDoiCitation(item, CitationStyle.HTML),
-			citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
-			citationRis    = getDoiCitation(item, CitationStyle.ris),
-			doi = getDoiMeta(item)
+	def getItemCitationInfo(item: CitableItem) = item.references.copy(
+		citationString = getDoiCitation(item, CitationStyle.HTML),
+		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
+		citationRis    = getDoiCitation(item, CitationStyle.ris),
+		doi = getDoiMeta(item)
+	)
+
+	def getCitationInfo(sobj: StaticObject)(using envri: Envri): References =
+		val citInfo = sobj match
+			case doc:  DocObject  => getDocCitation(doc)
+			case dobj: DataObject => envri match
+				case Envri.SITES => getSitesCitation(dobj)
+				case Envri.ICOS  => getIcosCitation(dobj)
+
+		val dobj = vocab.getStaticObject(sobj.hash)
+		val keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
+		val theLicence = getLicence(sobj.hash)
+		val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
+
+		val coreRefs = sobj.references.copy(
+			citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
+			citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
+			citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+			doi = getDoiMeta(sobj),
+			authors = citInfo.authors,
+			title = citInfo.title,
+			licence = Some(theLicence),
+			keywords = keywords
 		)
 
-	def getCitationInfo(sobj: StaticObject)(using envri: Envri): References = sobj match{
-
-		case data: DataObject =>
-			val citInfo = if (envri == Envri.SITES) getSitesCitation(data) else getIcosCitation(data)
-			val dobj = vocab.getStaticObject(data.hash)
-			val keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-			val theLicence = getLicence(data.hash)
-			val structuredCitations = new StructuredCitations(data, citInfo, keywords, theLicence)
-
-			References(
-				citationString = getDoiCitation(data, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(data, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(data, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
-				doi = getDoiMeta(sobj),
-				authors = citInfo.authors,
-				title = citInfo.title,
+		sobj match
+			case data: DataObject => coreRefs.copy(
 				temporalCoverageDisplay = citInfo.tempCovDisplay,
-				keywords = keywords,
 				acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
-				licence = theLicence
 			)
+			case _: DocObject => coreRefs
 
-		case doc: DocObject =>
-			val citInfo = getDocCitation(doc)
-			val structuredCitations = new StructuredCitations(doc, citInfo, None, None)
-			val theLicence = getLicence(doc.hash)
+	end getCitationInfo
 
-			References.empty.copy(
-				citationString = getDoiCitation(doc, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(doc, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(doc, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
-				doi = getDoiMeta(doc),
-				authors = citInfo.authors,
-				title = citInfo.title,
-				licence = theLicence
-			)
-	}
 
-	def getLicence(dobj: Sha256Sum)(implicit envri: Envri): Option[Licence] = {
+	def getLicence(dobj: Sha256Sum)(using Envri): Licence =
 		val uri = vocab.getStaticObject(dobj)
 
 		def getOptLic(licUri: IRI): Option[Licence] = for(
@@ -131,8 +125,8 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					lic <- getImpliedLic(proj)
 				) yield lic
 			}
-			.orElse(defaultLicences.get(envri)) //defaults
-	}
+			.getOrElse(defaultLicence)
+	end getLicence
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
 		case None => "Fetching... try [refreshing the page] again in a few seconds"
@@ -260,10 +254,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
 		}
 
-	private def getDocCitation(dobj: DocObject)(using envri: Envri): CitationInfo = {
+	private def getDocCitation(dobj: DocObject)(using envri: Envri): CitationInfo =
+		import dobj.{references => refs}
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
-		val authorString = dobj.references.authors.fold("")(_.distinct.collect{
+		val authorString = refs.authors.fold("")(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."
 			case o: Organization => o.name
 		}.mkString("", ", ", " "))
@@ -271,36 +266,34 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		val pidUrlOpt = getPidUrl(dobj)
 		val citString = for(
 			year <- yearOpt;
-			title <- dobj.references.title;
+			title <- refs.title;
 			pidUrl <- pidUrlOpt
-		) yield {
-			if(envri == Envri.SITES)
+		) yield envri match
+			case Envri.SITES =>
 				s"${authorString}($year). $title. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
-			else
+			case Envri.ICOS =>
 				s"${authorString}ICOS RI, $year. $title, $pidUrl"
-		}
 
-		new CitationInfo(pidUrlOpt, dobj.references.authors, dobj.references.title, yearOpt, None, citString)
+		CitationInfo(pidUrlOpt, refs.authors, refs.title, yearOpt, None, citString)
 
-	}
-}
+end CitationMaker
 
-object CitationMaker{
+object CitationMaker:
 
-	val defaultLicences: Map[Envri, Licence] = Map(
-		Envri.ICOS -> Licence(
+	def defaultLicence(using envri: Envri): Licence = envri match
+		case Envri.ICOS => Licence(
 			new URI(CpmetaVocab.MetaPrefix + "icosLicence"),
 			"ICOS CCBY4 Data Licence",
 			new URI("https://data.icos-cp.eu/licence"),
 			Some(CpVocab.CCBY4)
-		),
-		Envri.SITES -> Licence(
+		)
+		case Envri.SITES => Licence(
 			new URI(CpmetaVocab.SitesPrefix + "sitesLicence"),
 			"SITES CCBY4 Data Licence",
 			new URI("https://data.fieldsites.se/licence"),
 			Some(CpVocab.CCBY4)
 		)
-	)
+
 
 	def getFundingObjects(dobj: DataObject): Seq[Funding] =  dobj.specificInfo match
 		case Right(l2) =>
@@ -355,4 +348,4 @@ object CitationMaker{
 
 	private def isMidnight(dateTime: ZonedDateTime): Boolean = dateTime.format(DateTimeFormatter.ISO_LOCAL_TIME) == "00:00:00"
 
-}
+end CitationMaker

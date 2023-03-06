@@ -40,9 +40,8 @@ object StaticRoute {
 		def uploadGuiRoute(pathPref: String, devVersion: Boolean): Route = (get & pathPrefix(pathPref)){
 			extractEnvri{envri =>
 				pathSingleSlash {
-					val toExclude: Set[URI] = CitationMaker.defaultLicences.collect{
-						case(defEnvri, lic) if(defEnvri != envri) => lic.url
-					}.toSet
+					val toExclude: Set[URI] = Envri.values.filter(_ != envri)
+						.map(e => CitationMaker.defaultLicence(using e).url).toSet
 
 					val licences = getLicences(sparql).filterNot{case (licUri, _) =>
 						//exclude other ENVRIES' default licences from the list

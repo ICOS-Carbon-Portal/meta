@@ -6,7 +6,7 @@ class StructuredCitations(
 	obj: StaticObject,
 	citInfo: CitationInfo,
 	keywords: Option[IndexedSeq[String]],
-	theLicence: Option[Licence]
+	theLicence: Licence
 ){
 
 	private type TagOpt = (String, Option[String])
@@ -48,7 +48,7 @@ class StructuredCitations(
 			"keywords" -> kwords,
 			"url" -> citInfo.pidUrl,
 			"publisher" -> Some(obj.submission.submitter.name),
-			"copyright" -> theLicence.map(_.url.toString),
+			"copyright" -> Some(theLicence.url.toString),
 			"doi" -> obj.doi,
 			"pid" -> obj.pid,
 		)

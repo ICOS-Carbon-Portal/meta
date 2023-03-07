@@ -158,6 +158,10 @@
 							<th>Unit</th>
 							@if(envri != Envri.SITES){<th>Quantity kind</th>} else {}
 							<th>Preview</th>
+							@if(!variables.filter(_.instrumentDeployment.isDefined).isEmpty){
+								<th>Position</th>
+								<th>Instrument</th>
+							}
 						</tr>
 					</thead>
 					<tbody>
@@ -168,6 +172,12 @@
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
 								@if(envri != Envri.SITES){<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>} else {}
 								<td>@if(varInfo.valueType.quantityKind){<a href=@previewURL(dobj.hash.id, Some(varInfo.label))>Preview</a>} else {}</td>
+								@if(!variables.filter(_.instrumentDeployment.isDefined).isEmpty){
+									<td>@(varInfo.instrumentDeployment.fold("")(d => d.pos.fold("")(p => 
+										s"Latitude: ${p.lat}, Longitude: ${p.lon}, Altitude: ${p.alt.getOrElse("")} m"
+									)))</td>
+									<td>@(varInfo.instrumentDeployment.fold("")(d => resourceLink(d.instrument)))</td>
+								}
 							</tr>
 						}
 					</tbody>

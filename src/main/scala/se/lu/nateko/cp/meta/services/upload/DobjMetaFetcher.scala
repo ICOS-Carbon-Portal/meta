@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.services.MetadataException
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 trait DobjMetaFetcher extends CpmetaFetcher{
 
@@ -155,23 +156,41 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 	}
 
 	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): StationTimeSeriesMeta = {
+		val vf = server.factory
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
+		val instrumentRefs = server.getUriValues(acqUri, metaVocab.wasPerformedWith)
+
+		val instrument = instrumentRefs.map(getInstrumentLite).toList match{
+				case Nil => None
+				case single :: Nil => Some(Left(single))
+				case many => Some(Right(many))
+			}
+
+		val stationUri = getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)
 
 		val acq = DataAcquisition(
-			station = getStation(getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)),
+			station = getStation(stationUri),
 			site = getOptionalUri(acqUri, metaVocab.wasPerformedAt).map(getSite),
 			interval = for(
 				start <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime);
 				stop <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
 			) yield TimeInterval(start, stop),
-			instrument = server.getUriValues(acqUri, metaVocab.wasPerformedWith).map(getInstrumentLite).toList match{
-				case Nil => None
-				case single :: Nil => Some(Left(single))
-				case many => Some(Right(many))
-			},
+			instrument = instrument,
 			samplingPoint = getOptionalUri(acqUri, metaVocab.hasSamplingPoint).flatMap(getPosition),
 			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
+
+		val deployments = server.getStatements(None, Some(metaVocab.atOrganization), Some(stationUri)).collect{
+			case Rdf4jStatement(subj, _, _) if server.hasStatement(subj, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+				val instr = server.getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(subj)).collect{
+					case Rdf4jStatement(instr, _, _) => instr
+				}.toList match
+					case Nil => throw new Exception(s"No instruments for deployment $subj")
+					case one :: Nil => one
+					case many => throw new Exception(s"Too many instruments for deployment $subj")
+				getInstrDeployment(subj, instr)
+		}.toIndexedSeq
+
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
 
 		val coverage = getOptionalUri(dobj, metaVocab.hasSpatialCoverage).map(getCoverage)
@@ -183,7 +202,23 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				Some(vtLookup.plainMandatory)
 			}.filter(_.nonEmpty)
 
-		StationTimeSeriesMeta(acq, prod, nRows, coverage, columns)
+		val columnsWithDeployments = columns.map{c =>
+			c.map{vm =>
+				val dep = deployments.find{dep => 
+					val hasLabel = dep.variableName.fold(false)(_ == vm.label)
+					val hasModel = dep.forProperty.fold(false)(_.uri === vm.model.uri)
+					val startsBeforeDataCollectionEnd = dep.start.fold(true)(start => acq.interval.fold(true)(ti => start.isBefore(ti.stop)))
+					val endsAfterDataCollectionStart = dep.stop.fold(true)(stop => acq.interval.fold(true)(ti => stop.isAfter(ti.start)))
+					val intervalOverlapsTemporalCoverage = startsBeforeDataCollectionEnd && endsAfterDataCollectionStart
+
+					hasLabel && hasModel && intervalOverlapsTemporalCoverage
+				}
+
+				vm.copy(instrumentDeployment = dep)
+			}
+		}
+
+		StationTimeSeriesMeta(acq, prod, nRows, coverage, columnsWithDeployments)
 	}
 
 	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): SpatioTemporalMeta = {

@@ -3,6 +3,7 @@ import java.time.Instant
 import java.net.URI
 
 case class InstrumentDeployment(
+	instrument: UriResource,
 	station: Organization,
 	pos: Option[Position],
 	variableName: Option[String],

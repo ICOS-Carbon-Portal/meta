@@ -176,11 +176,13 @@ trait CpmetaFetcher extends FetchingHelper{
 	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
 		server.getUriValues(ds, varProp).map{dv =>
 			DatasetVariable(
+				model = UriResource(dv.toJava, None, Nil),
 				title = getSingleString(dv, titleProp),
 				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
 				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
 				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
-				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
+				isOptional = getOptionalBool(dv, optProp).getOrElse(false),
+				instrumentDeployment = None
 			)
 		}
 
@@ -195,10 +197,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		UriResource(instr.toJava, Some(label), Nil)
 	}
 
-	private def getInstrDeployment(iri: IRI): InstrumentDeployment =
+	def getInstrDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =
 		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
 
 		InstrumentDeployment(
+			instrument = getInstrumentLite(instrument),
 			station = getOrganization(stationIri),
 			pos = getInstrumentPosition(iri),
 			variableName = getOptionalString(iri, metaVocab.hasVariableName),
@@ -221,7 +224,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
 					case iri: IRI => getInstrumentLite(iri)
 				}.toList.headOption,
-				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrDeployment)
+				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrDeployment(_, instr))
 			)
 		) else None
 

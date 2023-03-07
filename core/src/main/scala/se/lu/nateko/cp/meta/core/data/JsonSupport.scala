@@ -92,7 +92,7 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
-	given RootJsonFormat[InstrumentDeployment] = jsonFormat6(InstrumentDeployment.apply)
+	given RootJsonFormat[InstrumentDeployment] = jsonFormat7(InstrumentDeployment.apply)
 	given RootJsonFormat[Instrument] = jsonFormat9(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
@@ -126,7 +126,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
 	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given RootJsonFormat[VarMeta] = jsonFormat4(VarMeta.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat6(VarMeta.apply)
 	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
 	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 

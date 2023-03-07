@@ -1,28 +1,36 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.{UploadDto, DocObjectDto}
+import se.lu.nateko.cp.meta.DocObjectDto
+import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.upload.*
+
+import java.net.URI
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.util.Try
 
 import formcomponents.*
+import Utils.*
+
 
 class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".document-section"){
 	def title = documentTitle.value
 	def description = documentDescription.value
 	def authors = documentAuthors.values
+	def licence: Try[Option[URI]] = licenceUrl.value.withErrorContext("Document licence URL")
 
 	private val documentTitle = new TextOptInput("document-title", notifyUpdate)
 	private val documentDescription = new DescriptionInput("document-description", notifyUpdate)
 	private val agentList = new DataList[NamedUri]("agent-list", _.name)
 	private val documentAuthors = new DataListForm("document-authors", agentList, notifyUpdate)
 	private val agentAgg = new AgentAggregator
+	private val licenceUrl = new UriOptInput("doclicenceselect", notifyUpdate)
 
 	def resetForm(): Unit = {
 		documentTitle.reset()
 		documentDescription.reset()
 		documentAuthors.setValues(Seq())
+		licenceUrl.value = None
 	}
 
 	override def show(): Unit = {
@@ -52,6 +60,7 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 				documentTitle.value = dto.title
 				documentAuthors.setValues(dto.authors.flatMap(agentUri => agentList.values.find(_.uri == agentUri)))
 				documentDescription.value = dto.description
+				licenceUrl.value = dto.references.flatMap(_.licence)
 				notifyUpdate()
 				super.show()
 			}

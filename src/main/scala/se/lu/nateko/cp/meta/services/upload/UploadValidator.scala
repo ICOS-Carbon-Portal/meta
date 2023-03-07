@@ -84,6 +84,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
 		amended <- validateFileName(meta, instServer);
+		_ <- validateLicence(meta, instServer);
 		_ <- validateDescription(meta.description)
 	) yield amended
 
@@ -377,7 +378,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 		.foldLeft(ok)(bothOk(_, _))
 
-	private def validateLicence(dto: DataObjectDto, instServ: InstanceServer): Try[NotUsed] = {
+	private def validateLicence(dto: ObjectUploadDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
 			if(instServ.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
 			else userFail(s"Unknown licence $licUri")

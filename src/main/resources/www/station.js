@@ -7,7 +7,7 @@ if (queryParams.coverage || queryParams.station || queryParams.dobj) {
 	});
 }
 
-function initMap(locations, station) {
+function initMap(locations) {
 	var mapDiv = document.getElementById("map");
 	if (!mapDiv) return;
 
@@ -37,19 +37,13 @@ function initMap(locations, station) {
 							fillOpacity: 0.4
 						}).addTo(map);
 						return null;
-					} else if (feature.properties && feature.properties.kind) {
-						L.circle(latlng, {
-							radius: 1,
-							color: "rgb(255,0,0)",
-							weight: 1,
-							fillOpacity: 0.4
-						}).addTo(map);
-						return null;
+					} else if (feature.properties && feature.properties.pinkind) {
+						return L.marker(latlng);
 					} else {
 						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);  
 					}
 				},
-				onEachFeature(feature, layer) {
+				onEachFeature: function(feature, layer) {
 					if (isSites && label) {
 						layercontrol.addOverlay(layer, label);
 						!!description
@@ -99,10 +93,8 @@ function hasFeatureLabels(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.some(hasFeatureLabels);
-      break;
 		case 'Feature': 
 			return geoJson.properties && !!(geoJson.properties.label);
-      break;
 		default:
 			return false;
 	}

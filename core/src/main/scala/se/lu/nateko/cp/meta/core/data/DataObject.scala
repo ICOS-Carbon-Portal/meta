@@ -171,19 +171,24 @@ case class DataObject(
 		yield
 			pos -> dep.variableName
 		
-		val deploymentCov: Seq[Pin] = varsAndPosits.groupMapReduce(
-			(pos,_) => Position(pos.lat, pos.lon, None, None)
-		)(_._2.getOrElse("").trim)(
-			(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1\n$s2"
-		).map{
-			(pos, varNames) => Pin(pos.copy(label = Option(varNames).filterNot(_.isEmpty)), PinKind.Sensor)
-		}.toSeq
+		val deploymentCov = varsAndPosits
+			.groupMapReduce(
+				(pos,_) => Position(pos.lat, pos.lon, None, None)
+			)(
+				(_, varNameOpt) => varNameOpt.getOrElse("").trim
+			)(
+				(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1 / $s2"
+			).map{
+				(pos, varNames) =>
+					val label = Option(varNames).filterNot(_.isEmpty)
+					Pin(pos.copy(label = label), PinKind.Sensor)
+			}
 
-		val cov = acqCov.toSeq ++ deploymentCov
-
-		if cov.length > 1 then Some(FeatureCollection(cov, None)) 
-		else if cov.length == 1 then Some(cov(0))
-		else None
+		(acqCov.toSeq ++ deploymentCov) match
+			case Seq() => None
+			case Seq(single) => Some(single)
+			case many => Some(FeatureCollection(many, None).flatten)
+	end coverage
 
 	def keywords: Option[Seq[String]] =
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)

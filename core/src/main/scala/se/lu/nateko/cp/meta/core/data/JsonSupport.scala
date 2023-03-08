@@ -22,6 +22,8 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
 	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
 	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
+	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -39,6 +41,7 @@ object JsonSupport extends CommonJsonSupport{
 			case gpoly: Polygon => gpoly.toJson
 			case geocol: FeatureCollection => geocol.toJson
 			case c: Circle => c.toJson
+			case p: Pin => p.toJson
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
@@ -55,6 +58,8 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[FeatureCollection]
 				else if(fields.contains("radius"))
 					value.convertTo[Circle]
+				else if(fields.contains("kind"))
+					value.convertTo[Pin]
 				else
 					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>
@@ -92,7 +97,8 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
-	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
+	given RootJsonFormat[InstrumentDeployment] = jsonFormat7(InstrumentDeployment.apply)
+	given RootJsonFormat[Instrument] = jsonFormat9(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
@@ -125,7 +131,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
 	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given RootJsonFormat[VarMeta] = jsonFormat4(VarMeta.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat6(VarMeta.apply)
 	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
 	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 

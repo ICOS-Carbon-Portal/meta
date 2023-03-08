@@ -2,7 +2,7 @@ var queryParams = processQuery(window.location.search);
 var isSites = window.location.host.endsWith("fieldsites.se");
 
 if (queryParams.coverage || queryParams.station || queryParams.dobj) {
-	getGeoJson(queryParams).then(function(geoJsonArray){
+	getGeoJson(queryParams).then(function (geoJsonArray) {
 		initMap(geoJsonArray);
 	});
 }
@@ -20,10 +20,10 @@ function initMap(locations) {
 	var baseMaps = getBaseMaps(18);
 	map.addLayer(baseMaps.Topographic);
 	const icon = getIcon(queryParams.icon);
-  var overlays = [];
-  var layercontrol = L.control.layers(baseMaps, overlays).addTo(map);
+	var overlays = [];
+	var layercontrol = L.control.layers(baseMaps, overlays).addTo(map);
 
-	const featureGroups = locations.map(function({label, description, geoJson}){
+	const featureGroups = locations.map(function ({ label, description, geoJson }) {
 		const fg = new L.FeatureGroup();
 
 		fg.addLayer(
@@ -37,16 +37,18 @@ function initMap(locations) {
 							fillOpacity: 0.4
 						}).addTo(map);
 						return null;
+					} else if (feature.properties && feature.properties.pinkind) {
+						return L.marker(latlng);
 					} else {
 						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);  
 					}
 				},
-				onEachFeature(feature, layer) {
+				onEachFeature: function(feature, layer) {
 					if (isSites && label) {
 						layercontrol.addOverlay(layer, label);
-            !!description
-              ? layer.bindPopup(label + ": " + description)
-              : layer.bindPopup(label);
+						!!description
+							? layer.bindPopup(label + ": " + description)
+							: layer.bindPopup(label);
 					} else if (feature.properties && feature.properties.label) {
 						layercontrol.addOverlay(layer, feature.properties.label);
 						layer.bindPopup(feature.properties.label);
@@ -91,10 +93,8 @@ function hasFeatureLabels(geoJson){
 	switch(geoJson.type){
 		case 'FeatureCollection': 
 			return geoJson.features.some(hasFeatureLabels);
-      break;
 		case 'Feature': 
 			return geoJson.properties && !!(geoJson.properties.label);
-      break;
 		default:
 			return false;
 	}

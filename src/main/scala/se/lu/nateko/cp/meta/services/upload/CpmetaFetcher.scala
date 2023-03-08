@@ -11,20 +11,32 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
+import se.lu.nateko.cp.meta.api.UriId
 
 import scala.util.Try
+// import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 
 	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)
 
-	protected def getPosition(point: IRI) = Position(
-		lat = getSingleDouble(point, metaVocab.hasLatitude),
-		lon = getSingleDouble(point, metaVocab.hasLongitude),
-		Option.empty,
-		label = getOptionalString(point, RDFS.LABEL)
-	)
+	protected def getPosition(iri: IRI): Option[Position] =
+		getLatLon(iri).map{_.copy(
+			alt = getOptionalFloat(iri, metaVocab.hasElevation),
+			label = getOptionalString(iri, RDFS.LABEL)
+		)}
+	
+	protected def getInstrumentPosition(deploymentIri: IRI): Option[Position] = 
+		getLatLon(deploymentIri).map{_.copy(
+			alt = getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
+		)}
+
+	private def getLatLon(iri: IRI): Option[Position] =
+		for
+			lat <- getOptionalDouble(iri, metaVocab.hasLatitude)
+			lon <- getOptionalDouble(iri, metaVocab.hasLongitude)
+		yield Position(lat, lon, None, None)
 
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
@@ -164,6 +176,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
 		server.getUriValues(ds, varProp).map{dv =>
 			DatasetVariable(
+				self = getLabeledResource(dv),
 				title = getSingleString(dv, titleProp),
 				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
 				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
@@ -174,17 +187,31 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getInstrumentLite(instr: IRI): UriResource = {
 		val label = getOptionalString(instr, metaVocab.hasName).orElse{
-			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
-		}.orElse{
 			getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
+		}.orElse{
+			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
 		}.getOrElse{
 			instr.getLocalName
 		}
 		UriResource(instr.toJava, Some(label), Nil)
 	}
 
-	def getInstrument(instr: IRI): Option[Instrument] = {
-		if(server.resourceHasType(instr, metaVocab.instrumentClass)) Some(
+	def getInstrumentDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =
+		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
+
+		InstrumentDeployment(
+			instrument = getInstrumentLite(instrument),
+			station = getOrganization(stationIri),
+			pos = getInstrumentPosition(iri),
+			variableName = getOptionalString(iri, metaVocab.hasVariableName),
+			forProperty = getOptionalUri(iri, metaVocab.ssn.forProperty).map(getLabeledResource),
+			start = getOptionalInstant(iri, metaVocab.hasStartTime),
+			stop = getOptionalInstant(iri, metaVocab.hasEndTime)
+		)
+
+
+	def getInstrument(instr: IRI): Option[Instrument] =
+		if server.resourceHasType(instr, metaVocab.instrumentClass) then Some(
 			Instrument(
 				self = getInstrumentLite(instr),
 				model = getSingleString(instr, metaVocab.hasModel),
@@ -195,9 +222,9 @@ trait CpmetaFetcher extends FetchingHelper{
 				parts = server.getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite),
 				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
 					case iri: IRI => getInstrumentLite(iri)
-				}.toList.headOption
+				}.toList.headOption,
+				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr))
 			)
 		) else None
-	}
 
 }

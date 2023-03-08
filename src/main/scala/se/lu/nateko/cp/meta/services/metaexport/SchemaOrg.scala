@@ -356,6 +356,9 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 
+		case Pin(position, kind) => fromGeoFeature(position)
+
+
 	private def fromOrganization(org: Organization, parent: Option[Organization]) = JsObject(
 		Map(
 			"@type"  -> JsString("Organization"),

@@ -85,7 +85,15 @@ case class StationTimeSeriesMeta(
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-case class VarMeta(label: String, valueType: ValueType, valueFormat: Option[URI], minMax: Option[(Double, Double)])
+case class VarMeta(
+	model: UriResource,
+	label: String,
+	valueType: ValueType,
+	valueFormat: Option[URI],
+	minMax: Option[(Double, Double)],
+	instrumentDeployment: Option[InstrumentDeployment]
+)
+
 case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
@@ -142,10 +150,41 @@ case class DataObject(
 		l2 => l2.productionInfo
 	)
 
-	def coverage: Option[GeoFeature] = specificInfo.fold(
-		l3 => Some(l3.spatial),
-		l2 => l2.coverage.orElse(l2.acquisition.coverage)
-	)
+	def coverage: Option[GeoFeature] =
+		val acqCov = specificInfo.fold(
+			l3 => Some(l3.spatial),
+			l2 => l2.coverage.orElse(l2.acquisition.coverage)
+		)
+
+		val varsAndPosits = for
+			cols <- specificInfo.fold(
+				l3 => l3.variables,
+				l2 => l2.columns
+			).toSeq
+			col <- cols
+			dep <- col.instrumentDeployment
+			pos <- dep.pos
+		yield
+			pos -> dep.variableName
+		
+		val deploymentCov = varsAndPosits
+			.groupMapReduce(
+				(pos,_) => Position(pos.lat, pos.lon, None, None)
+			)(
+				(_, varNameOpt) => varNameOpt.getOrElse("").trim
+			)(
+				(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1 / $s2"
+			).map{
+				(pos, varNames) =>
+					val label = Option(varNames).filterNot(_.isEmpty)
+					Pin(pos.copy(label = label), PinKind.Sensor)
+			}
+
+		(acqCov.toSeq ++ deploymentCov) match
+			case Seq() => None
+			case Seq(single) => Some(single)
+			case many => Some(FeatureCollection(many, None).flatten)
+	end coverage
 
 	def keywords: Option[Seq[String]] =
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)

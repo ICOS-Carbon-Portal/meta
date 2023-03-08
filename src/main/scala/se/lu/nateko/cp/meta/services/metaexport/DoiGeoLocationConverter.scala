@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.core.data.GeoTrack
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Circle
 import se.lu.nateko.cp.doi.meta.*
+import se.lu.nateko.cp.meta.core.data.Pin
 
 object DoiGeoLocationConverter {
 
@@ -60,6 +61,7 @@ object DoiGeoLocationConverter {
 	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
 		geoCoverage match {
 			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
+			case Pin(position, _) => Seq(toDoiGeoLocationWithPoint(position))
 			case b: LatLonBox => Seq(toDoiGeoLocationWithBox(b))
 			case c: Circle => Seq(toDoiGeoLocationWithBox(toLatLonBox(c)))
 			case GeoTrack(points, label) => Seq(toDoiGeoLocationWithBox(toLatLonBox(points, label)))

@@ -30,7 +30,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
-import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.services.CpmetaVocab

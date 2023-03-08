@@ -196,7 +196,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		UriResource(instr.toJava, Some(label), Nil)
 	}
 
-	def getInstrDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =
+	def getInstrumentDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =
 		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
 
 		InstrumentDeployment(
@@ -223,7 +223,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
 					case iri: IRI => getInstrumentLite(iri)
 				}.toList.headOption,
-				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrDeployment(_, instr))
+				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr))
 			)
 		) else None
 

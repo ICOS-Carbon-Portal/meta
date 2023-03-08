@@ -4,6 +4,7 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
 import se.lu.nateko.cp.doi.DoiMeta
+import scala.collection.immutable
 
 case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
@@ -153,10 +154,36 @@ case class DataObject(
 		l2 => l2.productionInfo
 	)
 
-	def coverage: Option[GeoFeature] = specificInfo.fold(
-		l3 => Some(l3.spatial),
-		l2 => l2.coverage.orElse(l2.acquisition.coverage)
-	)
+	def coverage: Option[GeoFeature] =
+		val acqCov = specificInfo.fold(
+			l3 => Some(l3.spatial),
+			l2 => l2.coverage.orElse(l2.acquisition.coverage)
+		)
+
+		val varsAndPosits = for
+			cols <- specificInfo.fold(
+				l3 => l3.variables,
+				l2 => l2.columns
+			).toSeq
+			col <- cols
+			dep <- col.instrumentDeployment
+			pos <- dep.pos
+		yield
+			pos -> dep.variableName
+		
+		val deploymentCov: Seq[Pin] = varsAndPosits.groupMapReduce(
+			(pos,_) => Position(pos.lat, pos.lon, None, None)
+		)(_._2.getOrElse("").trim)(
+			(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1\n$s2"
+		).map{
+			(pos, varNames) => Pin(pos.copy(label = Option(varNames).filterNot(_.isEmpty)), PinKind.Sensor)
+		}.toSeq
+
+		val cov = acqCov.toSeq ++ deploymentCov
+
+		if cov.length > 1 then Some(FeatureCollection(cov, None)) 
+		else if cov.length == 1 then Some(cov(0))
+		else None
 
 	def keywords: Option[Seq[String]] =
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)

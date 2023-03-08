@@ -56,6 +56,16 @@ object GeoJson {
 			)
 		))
 
+		case Pin(pos, kind) => Left(JsObject(
+			"type"        -> JsString("Feature"),
+			"geometry"    -> fromFeature(pos),
+			"properties" -> JsObject(
+					Map("kind" -> JsString(kind.toString)) ++ f.label.map(
+						lbl => "label" -> JsString(lbl)
+					)
+				)
+			))
+
 		case FeatureCollection(features, _) =>
 			val geomsOrFeats = features.map(toGeometryOrFeatureWithLabels).toVector
 

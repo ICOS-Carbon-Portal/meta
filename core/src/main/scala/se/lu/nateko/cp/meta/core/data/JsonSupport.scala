@@ -22,6 +22,8 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
 	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
 	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
+	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -39,6 +41,7 @@ object JsonSupport extends CommonJsonSupport{
 			case gpoly: Polygon => gpoly.toJson
 			case geocol: FeatureCollection => geocol.toJson
 			case c: Circle => c.toJson
+			case p: Pin => p.toJson
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
@@ -55,6 +58,8 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[FeatureCollection]
 				else if(fields.contains("radius"))
 					value.convertTo[Circle]
+				else if(fields.contains("kind"))
+					value.convertTo[Pin]
 				else
 					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>

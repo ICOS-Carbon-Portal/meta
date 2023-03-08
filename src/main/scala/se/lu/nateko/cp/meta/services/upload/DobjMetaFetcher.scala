@@ -188,7 +188,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 					case Nil => throw new Exception(s"No instruments for deployment $subj")
 					case one :: Nil => one
 					case many => throw new Exception(s"Too many instruments for deployment $subj")
-				getInstrDeployment(subj, instr)
+				getInstrumentDeployment(subj, instr)
 		}.toIndexedSeq
 
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
@@ -205,8 +205,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		val columnsWithDeployments: Option[Seq[VarMeta]] = columns.map{
 			_.map{vm =>
 				val dep: Option[InstrumentDeployment] = deployments.find{dep =>
-					dep.variableName.fold(false)(_ == vm.label) &&                //variable name matches
-					dep.forProperty.fold(false)(_.uri === vm.model.uri) &&        //variable metadata URI matches
+					dep.variableName.contains(vm.label) &&                //variable name matches
+					dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
 					acq.interval.fold(false){ti =>
 						dep.start.fold(true)(start => start.isBefore(ti.stop)) && //starts before data collection end
 						dep.stop.fold(true)(stop => stop.isAfter(ti.start))       //ends after data collection start

@@ -96,3 +96,11 @@ case class Circle(center: Position, radius: Float, label: Option[String]) extend
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
 }
+
+enum PinKind:
+	case Sensor, Other
+
+case class Pin(position: Position, kind: PinKind) extends GeoFeature:
+	def label = position.label
+	def textSpecification: String = position.textSpecification
+	def withOptLabel(label: Option[String]): GeoFeature = copy(position = position.copy(label = label))

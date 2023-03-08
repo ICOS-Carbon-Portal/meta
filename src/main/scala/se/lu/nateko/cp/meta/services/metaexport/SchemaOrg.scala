@@ -241,6 +241,8 @@ object SchemaOrg{
 			"@type"     -> JsString("GeoShape"),
 			"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
+
+		case Pin(position, kind) => geoFeatureToSchemaOrg(position)
 	}
 
 	def orgToSchemaOrg(org: Organization, parent: Option[Organization]) = JsObject(

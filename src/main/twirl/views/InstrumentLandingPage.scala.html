@@ -28,46 +28,51 @@
 				@for(parent <- instr.partOf) {
 					@htmlProperty{Is part of}(resourceLink(parent))
 				}
-		
-				<h2 class="fs-3 mt-5">Deployments</h2>
-				<div class="col-md-12">
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Variable name</th>
-							<th>Value type</th>
-							<th>Station</th>
-							<th>Latitude</th>
-							<th>Longitude</th>
-							<th>Sampling height</th>
-							<th>@{s"Start time (${conf.defaultTimezoneId})"}</th>
-							<th>@{s"Stop time (${conf.defaultTimezoneId})"}</th>
-						</tr>
-					</thead>
-					<tbody>
-						@for(depl <- instr.deployments){
-							<tr>
-								<td>@(depl.variableName.getOrElse(""))</td>
-								<td>
-									@for(forProperty <- depl.forProperty) {
-										@if(forProperty.comments.length > 0){
-											<a href=@forProperty.uri>@{forProperty.comments(0)}</a>
-										} else {
-											@resourceLink(forProperty)
+				@if(!instr.deployments.isEmpty){
+					<h2 class="fs-3 mt-5">Deployments</h2>
+					<div class="col-md-12">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Variable name</th>
+									<th>Variable metadata</th>
+									<th>Station</th>
+									<th>Latitude</th>
+									<th>Longitude</th>
+									<th>Sampling height</th>
+									<th>@{s"Start time (${conf.defaultTimezoneId})"}</th>
+									<th>@{s"Stop time (${conf.defaultTimezoneId})"}</th>
+								</tr>
+							</thead>
+							<tbody>
+								@for(depl <- instr.deployments){
+									<tr>
+										<td>@(depl.variableName.getOrElse(""))</td>
+										<td>
+											@for(varMeta <- depl.forProperty) {
+												@resourceLink(varMeta)
+											}
+										</td>
+										<td>@agentLink(depl.station)</td>
+										@depl.pos.fold{
+											<td></td><td></td><td></td>
+										}{pos =>
+											<td>@(pos.lat6)</td>
+											<td>@(pos.lon6)</td>
+											<td>
+												@for(alt <- pos.alt){
+													@(s"$alt m")
+												}
+											</td>
 										}
-									}
-								</td>
-								<td>@agentLink(depl.station)</td>
-								<td>@(depl.pos.map(_.lat))</td>
-								<td>@(depl.pos.map(_.lon))</td>
-								<td>@(depl.pos.map(_.alt.getOrElse("").toString)) m</td>
-								<td>@(depl.start.map(_.getDateTimeStr))</td>
-								<td>@(depl.stop.map(_.getDateTimeStr))</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-				</div>
+										<td>@(depl.start.map(_.getDateTimeStr))</td>
+										<td>@(depl.stop.map(_.getDateTimeStr))</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
 			</div>
 		</div>
 	</div>

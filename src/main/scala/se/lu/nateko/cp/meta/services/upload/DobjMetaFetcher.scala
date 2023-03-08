@@ -202,16 +202,15 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				Some(vtLookup.plainMandatory)
 			}.filter(_.nonEmpty)
 
-		val columnsWithDeployments = columns.map{c =>
-			c.map{vm =>
-				val dep = deployments.find{dep => 
-					val hasLabel = dep.variableName.fold(false)(_ == vm.label)
-					val hasModel = dep.forProperty.fold(false)(_.uri === vm.model.uri)
-					val startsBeforeDataCollectionEnd = dep.start.fold(true)(start => acq.interval.fold(true)(ti => start.isBefore(ti.stop)))
-					val endsAfterDataCollectionStart = dep.stop.fold(true)(stop => acq.interval.fold(true)(ti => stop.isAfter(ti.start)))
-					val intervalOverlapsTemporalCoverage = startsBeforeDataCollectionEnd && endsAfterDataCollectionStart
-
-					hasLabel && hasModel && intervalOverlapsTemporalCoverage
+		val columnsWithDeployments: Option[Seq[VarMeta]] = columns.map{
+			_.map{vm =>
+				val dep: Option[InstrumentDeployment] = deployments.find{dep =>
+					dep.variableName.fold(false)(_ == vm.label) &&                //variable name matches
+					dep.forProperty.fold(false)(_.uri === vm.model.uri) &&        //variable metadata URI matches
+					acq.interval.fold(false){ti =>
+						dep.start.fold(true)(start => start.isBefore(ti.stop)) && //starts before data collection end
+						dep.stop.fold(true)(stop => stop.isAfter(ti.start))       //ends after data collection start
+					}
 				}
 
 				vm.copy(instrumentDeployment = dep)

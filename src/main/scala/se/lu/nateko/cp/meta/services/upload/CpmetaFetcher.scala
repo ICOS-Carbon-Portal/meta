@@ -176,21 +176,20 @@ trait CpmetaFetcher extends FetchingHelper{
 	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
 		server.getUriValues(ds, varProp).map{dv =>
 			DatasetVariable(
-				model = UriResource(dv.toJava, None, Nil),
+				self = getLabeledResource(dv),
 				title = getSingleString(dv, titleProp),
 				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
 				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
 				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
-				isOptional = getOptionalBool(dv, optProp).getOrElse(false),
-				instrumentDeployment = None
+				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
 			)
 		}
 
 	protected def getInstrumentLite(instr: IRI): UriResource = {
 		val label = getOptionalString(instr, metaVocab.hasName).orElse{
-			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
-		}.orElse{
 			getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
+		}.orElse{
+			getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
 		}.getOrElse{
 			instr.getLocalName
 		}

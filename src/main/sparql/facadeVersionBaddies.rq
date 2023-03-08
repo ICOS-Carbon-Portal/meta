@@ -1,0 +1,32 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select distinct ?fileName ?latestDobj ?latestSubmTime ?spec ?oldSize ?size ?latestSize ?lossFraction
+#select distinct ?fileName ?newerDobj ?newerSubmTime ?spec
+#select distinct ?newerDobj
+where {
+	{
+        select * where{
+            VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily>}
+            ?oldObj cpmeta:hasObjectSpec ?spec .
+            ?oldObj cpmeta:hasSizeInBytes ?oldSize .
+            ?oldObj cpmeta:hasName ?fileName .
+            #?oldObj cpmeta:wasSubmittedBy/prov:endedAtTime ?oldSubmTime .
+            FILTER EXISTS {[] cpmeta:isNextVersionOf ?oldObj}
+        }
+    }
+#    ?intermed cpmeta:isNextVersionOf ?oldObj .
+	?newerDobj cpmeta:isNextVersionOf ?oldObj .
+#	?newerDobj cpmeta:wasSubmittedBy/prov:endedAtTime ?newerSubmTime .
+#	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?newerDobj}
+	#filter(?newerSubmTime > "2022-10-12T12:00:00Z"^^xsd:dateTime && ?newerSubmTime < "2023-03-07T15:00:00Z"^^xsd:dateTime)
+    ?newerDobj cpmeta:hasSizeInBytes ?size .
+    filter(?oldSize > ?size)
+	bind((?oldSize - ?size) / ?oldSize as ?lossFraction)
+    ?latestDobj cpmeta:isNextVersionOf+ ?oldObj .
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?latestDobj}
+    ?latestDobj cpmeta:hasSizeInBytes ?latestSize .
+    #filter(?latestSize < ?oldSize)
+    ?latestDobj cpmeta:wasSubmittedBy/prov:endedAtTime ?latestSubmTime .
+}
+order by ?fileName

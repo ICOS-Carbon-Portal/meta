@@ -20,7 +20,9 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
-		@nextVersionAlert(dobj.nextVersion)
+		<div class="col-12">
+			@nextVersionAlert(dobj.nextVersion)
+		</div>
 		@if(!uploadComplete) {
 			<div class="col-12">
 				<div class="alert alert-warning">
@@ -176,7 +178,7 @@
 								}
 								<td>
 									@if(varInfo.valueType.quantityKind.isDefined){
-										<a href=@previewURL(dobj.hash.id, Some(varInfo.label))>Preview</a>
+										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
 								@for(depl <- varInfo.instrumentDeployment){
@@ -362,13 +364,9 @@
 	}
 }
 
-@previewURL(id: String, variable: Option[String] = None) = @{
-	s"""https://${conf.dataHost}/portal/#{"route":"preview","preview":["$id"]${variable.fold("")(v => s""","yAxis":"${urlEncode(v)}"""")}}"""
-}
-
 @previewTab = {
 	@if(dobj.hasSupportingPreviewApp) {
-		<a class="nav-link" href="@previewURL(dobj.hash.id)">Preview</a>
+		<a class="nav-link" href="@getPreviewURL(dobj.hash)">Preview</a>
 	} else {
 		<a class="nav-link disabled">No preview available</a>
 	}

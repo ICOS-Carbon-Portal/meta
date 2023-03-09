@@ -12,8 +12,10 @@
 @(doc: DocObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(doc.fileName, pageHeading, headerExtra = headerExtra, extraMetaTags = Some(schemaOrg), subHeading = Some("Document")){
 	<div class="row py-2 gy-4">
-		<div class="col-md-8">
+		<div class="col-12">
 			@nextVersionAlert(doc.nextVersion)
+		</div>
+		<div class="col-md-8">
 			@if(!uploadComplete) {
 				<div class="alert alert-warning">
 					<h4 class="alert-heading">Incomplete upload</h4>

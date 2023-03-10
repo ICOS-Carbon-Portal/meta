@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
 import spray.json.*
+import se.lu.nateko.cp.meta.utils.*
 
 import java.net.URI
 
@@ -105,12 +106,14 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 				"name"  -> JsString(name)
 			)
 		}
+		val isBasedOn = optJs(coll.previousVersion)(fromPreviousVersion)
 		merge(
 			commonJson(coll),
 			docCollJson(coll),
 			JsObject(
-				"@type"   -> JsString("Collection"),
-				"hasPart" -> hasPart
+				"@type"     -> JsString("Collection"),
+				"hasPart"   -> hasPart,
+				"isBasedOn" -> isBasedOn
 			)
 		)
 
@@ -293,12 +296,20 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 	private def objCommonJson(obj: StaticObject): JsObject =
 		val partOf = asOptArray(obj.parentCollections)(coll => JsString(coll.uri.toString))
+		val basedOn = asOptArray(obj.previousVersion.flattenToSeq)(fromPreviousVersion)
 		JsObject(
 			"alternateName"         -> JsString(obj.fileName),
 			"datePublished"         -> asOptJsString(obj.submission.stop.map(_.toString)),
 			"isPartOf"              -> partOf,
 			"provider"              -> fromAgent(obj.submission.submitter),
+			"isBasedOn"             -> basedOn,
 		) ++ commonJson(obj)
+
+	private def fromPreviousVersion(url: URI) = JsObject(
+		"@type" -> JsString("CreativeWork"),
+		"name"  -> JsString("Previous version"),
+		"url"   -> JsString(url.toString)
+	)
 
 	private def truncateDescription(descr: String): String =
 		if descr.size <= 5000 then descr else descr.take(4997) + "..."

@@ -22,9 +22,11 @@
 @if(doiMeta.subjects.length> 0){
 	@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
 }
-@for(rights <- doiMeta.rightsList){
-	@if(rights.length > 0){
-		@htmlProperty{Licenses}(optLinkList(rights, (lic: Rights) => lic.rightsUri, (lic: Rights) => lic.rights))
+@for(rights <- doiMeta.rightsList; rightsSize = rights.length){
+	@if(rightsSize > 0){
+		@htmlProperty{
+			@{if rightsSize == 1 then "Licence" else "Licences"}
+		}(optLinkList(rights, (lic: Rights) => lic.rightsUri, (lic: Rights) => lic.rights))
 	}
 }
 

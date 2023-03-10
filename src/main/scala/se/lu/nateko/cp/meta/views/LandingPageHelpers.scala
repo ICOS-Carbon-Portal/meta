@@ -96,7 +96,7 @@ object LandingPageHelpers:
 
 	def getPreviewURL(hash: Sha256Sum, variable: Option[String] = None)(using conf: EnvriConfig) = {
 		val yAxis = variable.fold("")(v => s""","yAxis":"${v}"""")
-		val params = urlEncode(s"""{"route":"preview","preview":["$hash.id"]${yAxis}}""")
+		val params = urlEncode(s"""{"route":"preview","preview":["${hash.id}"]${yAxis}}""")
 
 		s"""https://${conf.dataHost}/portal/#${params}"""
 	}

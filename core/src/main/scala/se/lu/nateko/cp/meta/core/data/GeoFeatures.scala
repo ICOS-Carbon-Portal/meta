@@ -11,6 +11,8 @@ sealed trait GeoFeature{
 	def withLabel(label: String): Self = withOptLabel(Some(label))
 }
 
+type LatLon = (Double, Double)
+
 case class FeatureCollection(features: Seq[GeoFeature], label: Option[String]) extends GeoFeature {
 	type Self = FeatureCollection
 	def textSpecification = features.map(_.textSpecification).mkString("Geometries: ", "; ", "")
@@ -28,6 +30,7 @@ case class FeatureCollection(features: Seq[GeoFeature], label: Option[String]) e
 
 case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String]) extends GeoFeature{
 	type Self = Position
+	def latlon: LatLon = lat -> lon
 
 	def textSpecification = s"Lat: $lat6, Lon: $lon6" + alt.fold("")(alt => s", Alt: $alt m")
 
@@ -37,7 +40,7 @@ case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[
 	def withOptLabel(label: Option[String]) = copy(label = label)
 }
 
-object PositionUtil{
+object PositionUtil:
 	private val numForm = new DecimalFormat("###.######")
 	def format6(d: Double): String = numForm.format(d).replace(',', '.')
 	def average(ps: Iterable[Position]): Option[Position] = {
@@ -61,7 +64,26 @@ object PositionUtil{
 			label = None
 		))
 	}
-}
+
+	def distanceInMeters(p1: LatLon, p2: LatLon): Float =
+		val x = (p2._2 - p1._2) * Math.cos(Math.toRadians(p1._1 + p2._1) / 2)
+		val y = (p2._1 - p1._1)
+		val R = 6371000
+		val degreeLength = Math.PI * R / 180
+
+		(Math.sqrt(x * x + y * y) * degreeLength).toFloat
+
+	def posClusterLookup(pos: Iterable[Position], toleranceMeters: Float): Map[LatLon, LatLon] =
+		pos.foldLeft(Map.empty){(lookup, p) =>
+			val latLon = p.latlon
+			if lookup.contains(latLon) then lookup else
+				val neighbour = lookup.valuesIterator
+					.minByOption(distanceInMeters(latLon, _))
+					.filter(distanceInMeters(_,latLon) < toleranceMeters)
+				lookup + (latLon -> neighbour.getOrElse(latLon))
+		}
+
+end PositionUtil
 
 case class LatLonBox(min: Position, max: Position, label: Option[String], uri: Option[URI]) extends GeoFeature{
 	type Self = LatLonBox

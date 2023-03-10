@@ -166,12 +166,17 @@ case class DataObject(
 			pos <- dep.pos
 		yield
 			pos -> dep.variableName
-		
+
+		val clusterLookup = PositionUtil.posClusterLookup(varsAndPosits.map(_._1), 1)
+
 		val deploymentCov = varsAndPosits
 			.groupMapReduce(
-				(pos,_) => Position(pos.lat, pos.lon, None, None)
+				(pos,varname) =>
+					val (lat, lon) = clusterLookup.getOrElse(pos.latlon, pos.latlon)
+					Position(lat, lon, None, None)
 			)(
-				(_, varNameOpt) => varNameOpt.getOrElse("").trim
+				(_, varNameOpt) => 
+					varNameOpt.getOrElse("").trim
 			)(
 				(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1 / $s2"
 			).map{

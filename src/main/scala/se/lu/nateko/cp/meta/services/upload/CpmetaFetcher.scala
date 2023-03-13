@@ -117,23 +117,18 @@ trait CpmetaFetcher extends FetchingHelper{
 			).get.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
 	}
 
-	protected def getNextVersion(item: IRI): Option[URI] = {
+	protected def getNextVersion(item: IRI): Option[IRI] = {
 		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 			.toIndexedSeq.headOption.collect{
-				case Rdf4jStatement(next, _, _) => next.toJava
+				case Rdf4jStatement(next, _, _) => next
 			}
 	}
 
-	protected def getLatestVersion(item: IRI, init: IRI): Option[URI] =
-		val next = getNextVersion(item)
-		val vf = server.factory
-
-		if next.isEmpty then
-			if item == init then None
-			else Some(item.toJava)
-		else getLatestVersion(vf.createIRI(next.get.toString), item)
-
-	protected def getLatestVersion(item: IRI): Option[URI] = getLatestVersion(item, item)
+	protected def getLatestVersion(item: IRI): URI =
+		def latest(item: IRI): IRI = getNextVersion(item) match
+			case None => item
+			case Some(next) => latest(next)
+		latest(item).toJava
 
 	protected def getPreviousVersion(item: IRI): Option[Either[URI, Seq[URI]]] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {

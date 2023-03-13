@@ -13,8 +13,7 @@
 		<div class="col-md-8">
 			@if(coll.nextVersion) {
 				<div class="alert alert-warning">
-					A newer version is available:
-					@nextVersionLink(coll.nextVersion)
+					@newerVersionLinks(coll, "Collection")
 				</div>
 			}
 			@coll.references.doi.fold{

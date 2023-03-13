@@ -13,8 +13,7 @@
 		<div class="col-md-8">
 			@if(doc.nextVersion) {
 				<div class="alert alert-warning">
-					A newer version is available:
-					@nextVersionLink(doc.nextVersion)
+					@newerVersionLinks(doc, "Document")
 				</div>
 			} else {}
 			@if(uploadComplete) {} else {

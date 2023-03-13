@@ -23,8 +23,7 @@
 		@if(dobj.nextVersion) {
 			<div class="col-12">
 				<div class="alert alert-warning">
-					<h4 class="alert-heading">Newer versions are available</h4>
-						@newerVersionLinks(dobj.nextVersion, dobj.latestVersion)
+					@newerVersionLinks(dobj, "Object")
 				</div>
 			</div>
 		}

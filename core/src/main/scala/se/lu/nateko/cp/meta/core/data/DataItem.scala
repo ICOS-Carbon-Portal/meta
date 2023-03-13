@@ -29,7 +29,7 @@ final case class StaticCollection(
 	description: Option[String],
 	previousVersion: Option[URI],
 	nextVersion: Option[URI],
-	latestVersion: Option[URI],
+	latestVersion: URI,
 	doi: Option[String],
 	references: References
 ) extends DataItemCollection with StaticDataItem with CitableItem{
@@ -39,4 +39,6 @@ final case class StaticCollection(
 trait CitableItem{
 	def doi: Option[String]
 	def references: References
+	def nextVersion: Option[URI]
+	def latestVersion: URI
 }

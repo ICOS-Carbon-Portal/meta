@@ -128,8 +128,8 @@ trait CpmetaFetcher extends FetchingHelper{
 		val next = getNextVersion(item)
 		val vf = server.factory
 
-		if(next == None)
-			if (item == init) None
+		if next.isEmpty then
+			if item == init then None
 			else Some(item.toJava)
 		else getLatestVersion(vf.createIRI(next.get.toString), item)
 

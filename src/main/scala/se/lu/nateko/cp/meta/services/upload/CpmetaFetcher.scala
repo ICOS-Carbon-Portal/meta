@@ -132,7 +132,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getNextVersion(item: IRI): Option[IRI] = {
 		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 			.toIndexedSeq.headOption.collect{
-				case Rdf4jStatement(next, _, _) => next
+				case Rdf4jStatement(next, _, _) if server.hasStatement(Some(next), Some(metaVocab.hasSizeInBytes), None) => next
 			}
 	}
 

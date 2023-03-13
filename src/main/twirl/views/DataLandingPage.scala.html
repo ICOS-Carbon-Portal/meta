@@ -20,13 +20,7 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
-		@if(dobj.nextVersion) {
-			<div class="col-12">
-				<div class="alert alert-warning">
-					@newerVersionLinks(dobj, "Object")
-				</div>
-			</div>
-		}
+		@newerVersionsAlert(dobj, "Object")
 		@if(!uploadComplete) {
 			<div class="col-12">
 				<div class="alert alert-warning">

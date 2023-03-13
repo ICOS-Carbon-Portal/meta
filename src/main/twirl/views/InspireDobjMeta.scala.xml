@@ -232,6 +232,9 @@
 				<gml:pos>@{p.lat6} @{p.lon6}@{p.alt.fold("")(alt => s" $alt")}</gml:pos>
 			}
 		}
+		case p: Pin => {
+			@gmlObject(p.position)
+		}
 		case b: LatLonBox => {
 			@gmlObject(b.asPolygon)
 		}

@@ -72,6 +72,7 @@
 	<containsDataset xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/cpmeta/atcCo2MoleFracTimeSer"/>
 	<hasDataTheme xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/themes/atmosphere"/>
 	<hasAssociatedProject xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/projects/icos"/>
+	<hasSpecificDatasetType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
 	<hasKeywords xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CO2, concentration</hasKeywords>
 </rdf:Description>
 

@@ -83,15 +83,7 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = Some(
-				ReferencesDto(
-					keywords = dobj.references.keywords,
-					licence = dobj.references.licence.map(_.url),
-					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
-					duplicateFilenameAllowed = None,
-					autodeprecateSameFilenameObjects = None
-				)
-			)
+			references = refsToDto(dobj)
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",
@@ -109,9 +101,19 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = None
+			references = refsToDto(dobj)
 		)
 	}
+
+	private def refsToDto(obj: StaticObject): Option[ReferencesDto] = Some(
+		ReferencesDto(
+			keywords = obj.references.keywords,
+			licence = obj.references.licence.map(_.url),
+			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
+			duplicateFilenameAllowed = None,
+			autodeprecateSameFilenameObjects = None
+		)
+	)
 
 	def collToDto(coll: StaticCollection) = StaticCollectionDto(
 		submitterId = "",

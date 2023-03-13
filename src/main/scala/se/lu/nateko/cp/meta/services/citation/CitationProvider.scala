@@ -83,12 +83,11 @@ class CitationProvider(
 
 	def getReferences(res: Resource): Option[References] = getCitableItem(res).map(_.references)
 
-	def getLicence(res: Resource): Option[Licence] = for(
-		iri <- toIRI(res);
-		hash <- extractHash(iri);
-		envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri));
-		lic <- citer.getLicence(hash)(envri)
-	) yield lic
+	def getLicence(res: Resource): Option[Licence] = for
+		iri <- toIRI(res)
+		hash <- extractHash(iri)
+		given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+	yield citer.getLicence(hash)
 
 	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>
 		server.getStringValues(iri, metaVocab.hasDoi).headOption
@@ -106,17 +105,17 @@ class CitationProvider(
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for(
-		hash <- extractHash(maybeDobj);
-		envri <- inferObjectEnvri(maybeDobj);
-		obj <- objFetcher.fetch(hash)(using envri)
-	) yield obj
+	private def getStaticObject(maybeDobj: IRI): Option[StaticObject] = for
+		hash <- extractHash(maybeDobj)
+		given Envri <- inferObjectEnvri(maybeDobj)
+		obj <- objFetcher.fetch(hash)
+	yield obj
 
-	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for(
-		hash <- extractHash(maybeColl);
-		envri <- inferCollEnvri(maybeColl);
-		coll <- collFetcher.fetchStatic(hash)(envri)
-	) yield coll
+	private def getStaticColl(maybeColl: IRI): Option[StaticCollection] = for
+		hash <- extractHash(maybeColl)
+		given Envri <- inferCollEnvri(maybeColl)
+		coll <- collFetcher.fetchStatic(hash)
+	yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))

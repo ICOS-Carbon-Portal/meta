@@ -10,6 +10,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.utils.urlEncode
 
 object LandingPageHelpers:
 
@@ -91,5 +93,12 @@ object LandingPageHelpers:
 
 	def getDoiTitle(refs: References): Option[String] =
 		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
+
+	def getPreviewURL(hash: Sha256Sum, variable: Option[String] = None)(using conf: EnvriConfig) = {
+		val yAxis = variable.fold("")(v => s""","yAxis":"${v}"""")
+		val params = urlEncode(s"""{"route":"preview","preview":["${hash.id}"]${yAxis}}""")
+
+		s"""https://${conf.dataHost}/portal/#${params}"""
+	}
 
 end LandingPageHelpers

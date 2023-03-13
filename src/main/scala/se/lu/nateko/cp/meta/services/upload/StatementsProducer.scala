@@ -52,7 +52,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
 			}
 		}
-
+		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
+			_ === CitationMaker.defaultLicence.url
+		}
 		specificStatements ++ Seq(
 			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
 			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XSD.BASE64BINARY)),
@@ -61,17 +63,15 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
+			makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
 	}
 
-	private def getDobjStatements(meta: DataObjectDto)(using envri: Envri): Seq[Statement] = {
+	private def getDobjStatements(meta: DataObjectDto)(using Envri): Seq[Statement] =
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
-		val licUri: Option[URI] = meta.references.flatMap(_.licence).filter{uri =>
-			!CitationMaker.defaultLicences.get(envri).map(_.url).contains(uri)
-		}
 
 		val specificStatements = meta.specificInfo.fold(
 			elProd => getSpatioTemporalStatements(hashSum, elProd),
@@ -96,9 +96,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 		moratoriumStatements
-	}
+	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms

@@ -1,47 +1,43 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-import java.util.Date
-
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.ValueFactory
-
 import akka.NotUsed
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.*
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
-import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.meta.core.data.DatasetClass
-import java.time.Instant
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import org.eclipse.rdf4j.model.IRI
-import scala.language.strictEquality
-import se.lu.nateko.cp.meta.DataProductionDto
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.net.URI
+import java.time.Instant
+import java.util.Date
 import scala.collection.mutable.Buffer
+import scala.language.strictEquality
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -88,6 +84,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
 		amended <- validateFileName(meta, instServer);
+		_ <- validateLicence(meta, instServer);
 		_ <- validateDescription(meta.description)
 	) yield amended
 
@@ -318,8 +315,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 		meta.specificInfo match{
 			case Left(spTempMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.SpatioTemporal))
-					errors += "Wrong class of dataset for this object spec (must be spatiotemporal)"
+				if spec.specificDatasetType != DatasetType.SpatioTemporal
+				then errors += "Wrong type of dataset for this object spec (must be spatiotemporal)"
 				else
 					for(vars <- spTempMeta.variables) spec.datasetSpec.fold[Unit]{
 						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
@@ -332,9 +329,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 					}
 
 			case Right(stationMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.StationTimeSeries)) {
-					errors += "Wrong class of dataset for this object spec (must be station-specific time series)"
-				}else{
+				if spec.specificDatasetType != DatasetType.StationTimeSeries
+				then errors += "Wrong type of dataset for this object spec (must be station-specific time series)"
+				else
 					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'acquisitionInterval' with start and stop timestamps."
 
@@ -354,7 +351,6 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 					if (envri == Envri.SITES && stationMeta.site.isEmpty)
 						errors += "Must provide 'location/ecosystem'"
-				}
 		}
 
 		if(errors.isEmpty) ok else userFail(errors.mkString("\n"))
@@ -382,7 +378,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 		.foldLeft(ok)(bothOk(_, _))
 
-	private def validateLicence(dto: DataObjectDto, instServ: InstanceServer): Try[NotUsed] = {
+	private def validateLicence(dto: ObjectUploadDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
 			if(instServ.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
 			else userFail(s"Unknown licence $licUri")

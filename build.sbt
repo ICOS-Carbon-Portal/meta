@@ -14,7 +14,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.6",
+		version := "0.7.7",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
@@ -28,13 +28,14 @@ lazy val metaCore = (project in file("core"))
 			"Sha256Sum" -> "string",
 			"Orcid" -> "string",
 			"JsValue" -> "object",
+			"DoiMeta" -> "object",
 			"CountryCode" -> "string"
 		),
 		cpTsGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
 			Seq(
 				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
-				dir / "Station.scala", dir / "package.scala"
+				dir / "Station.scala", dir / "Instrument.scala", dir / "package.scala"
 			)
 		},
 		publishTo := {

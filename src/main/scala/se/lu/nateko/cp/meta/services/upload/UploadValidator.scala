@@ -251,7 +251,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			val allDuplicates = instServ
 				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
 				.collect{case Rdf4jStatement(subj, _, _) => subj}
-				.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
+				.filter(dupIri => !isDeprecated(dupIri, instServ))
 				.map(_.toJava)
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
@@ -411,6 +411,12 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			userFail(s"Item $item already has new version $depr; upload your object/collection as new version of the latter instead.")
 		}
 	}
+
+	private def isDeprecated(item: IRI, server: InstanceServer): Boolean = server
+		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+		.collect{case Rdf4jStatement(subj, _, _) if existsAndIsCompleted(subj, server).isSuccess => true}
+		.toIndexedSeq
+		.nonEmpty
 
 	private def growingIsGrowing(
 		dto: ObjectUploadDto,

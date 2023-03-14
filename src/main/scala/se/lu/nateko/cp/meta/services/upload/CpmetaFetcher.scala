@@ -142,7 +142,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		if itemTypes.contains(metaVocab.collectionClass) then true
 		else if Seq(metaVocab.docObjectClass, metaVocab.dataObjectClass).exists(itemTypes.contains)
 		then server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
-		else false
+		else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
 
 	protected def getLatestVersion(item: IRI): URI =
 		@tailrec

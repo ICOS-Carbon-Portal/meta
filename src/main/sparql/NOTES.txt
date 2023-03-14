@@ -1,4 +1,12 @@
-Bad prov chain for FR-Bil_EC_20220221_L03_F01.zip
+Pending re-uploads by the facade:
+BE-Lon_EC_201706152030_L01_F01.csv
+DE-HoH_EC_201903121200_L99_F01.zip
+FI-Sii_EC_201811050030_L09_F02.zip
+IT-MBo_EC_202107191530_L01_F01.zip
+IT-Ren_EC_201906150830_L01_F01.zip
+
+Bad prov chain for FR-Bil_EC_20220221_L03_F01.zip, latest half-hourly files are spread over the chain. The latest file does not have
+all-latest half-hourly content
 		<https://meta.icos-cp.eu/objects/LWg7_qwYkP-yWfWDs_ioT6ql>
 		<https://meta.icos-cp.eu/objects/gyR1oUDtC8MnctN9QNQRo6jI>
 		<https://meta.icos-cp.eu/objects/yEhK-zSB1xrt6_68hvTnRNpU>

@@ -26,7 +26,9 @@ where {
     ?latestDobj cpmeta:isNextVersionOf+ ?oldObj .
     FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?latestDobj}
     ?latestDobj cpmeta:hasSizeInBytes ?latestSize .
-    #filter(?latestSize < ?oldSize)
-    ?latestDobj cpmeta:wasSubmittedBy/prov:endedAtTime ?latestSubmTime .
+	bind (?latestSize / ?oldSize as ?latestSizeFraction)
+	filter(?latestSizeFraction < 0.029)
+	?latestDobj cpmeta:wasSubmittedBy/prov:endedAtTime ?latestSubmTime .
+	filter(?latestDobj != <https://meta.icos-cp.eu/objects/4me7sH9G5QU7m9z5RA54sEMd>)
 }
 order by ?fileName

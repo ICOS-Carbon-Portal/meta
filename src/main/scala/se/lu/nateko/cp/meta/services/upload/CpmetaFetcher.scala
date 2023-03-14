@@ -1,21 +1,22 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.TcMetaSource
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.flattenToSeq
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
-import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.net.URI
+import scala.annotation.tailrec
 import scala.util.Try
-import org.eclipse.rdf4j.model.ValueFactory
-// import se.lu.nateko.cp.meta.services.CpVocab
+
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -129,27 +130,35 @@ trait CpmetaFetcher extends FetchingHelper{
 			).get.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
 	}
 
-	protected def getNextVersion(item: IRI): Option[IRI] = {
-		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.toIndexedSeq.headOption.collect{
-				case Rdf4jStatement(next, _, _) if server.hasStatement(Some(next), Some(metaVocab.hasSizeInBytes), None) => next
-			}
-	}
+	protected def getNextVersion(item: IRI): Option[IRI] = server
+		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+		.toIndexedSeq
+		.collectFirst{
+			case Rdf4jStatement(next, _, _) if isComplete(next) => next
+		}
+
+	protected def isComplete(item: IRI): Boolean =
+		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
+		if itemTypes.contains(metaVocab.collectionClass) then true
+		else if Seq(metaVocab.docObjectClass, metaVocab.dataObjectClass).exists(itemTypes.contains)
+		then server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
+		else false
 
 	protected def getLatestVersion(item: IRI): URI =
+		@tailrec
 		def latest(item: IRI): IRI = getNextVersion(item) match
 			case None => item
 			case Some(next) => latest(next)
 		latest(item).toJava
 
-	protected def getPreviousVersion(item: IRI): Option[Either[URI, Seq[URI]]] =
+	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
 			case Nil => None
 			case single :: Nil => Some(Left(single))
 			case many => Some(Right(many))
 		}
 
-	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).fold[Seq[URI]](Nil)(_.fold(Seq(_), identity))
+	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).flattenToSeq
 
 	def getValTypeLookup(datasetSpec: IRI) = VarMetaLookup(
 		getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec)

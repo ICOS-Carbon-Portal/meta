@@ -22,9 +22,9 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			stop.map(Instant.parse)
 		)
 
-	val p1 = Position(0, 0, Some(-1.5f), None)
-	val p2 = Position(10, 20, Some(-1.5f), None)
-	val p3 = Position(50, 50, Some(-0.5f), None)
+	val p1 = Position(0, 0, Some(-1.5f), None, None)
+	val p2 = Position(10, 20, Some(-1.5f), None, None)
+	val p3 = Position(50, 50, Some(-0.5f), None, None)
 
 	describe("mergeInstrDeployments"){
 		val input = Seq(

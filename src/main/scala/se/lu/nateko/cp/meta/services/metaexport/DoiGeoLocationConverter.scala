@@ -19,8 +19,8 @@ object DoiGeoLocationConverter {
 		val longitudes = shape.map(_.lon)
 
 		LatLonBox(
-			Position(latitudes.min, longitudes.min, None, None),
-			Position(latitudes.max, longitudes.max, None, None),
+			Position(latitudes.min, longitudes.min, None, None, None),
+			Position(latitudes.max, longitudes.max, None, None, None),
 			label,
 			None
 		)
@@ -38,8 +38,8 @@ object DoiGeoLocationConverter {
 		val maxLon = center.lon + latRadius / factor
 
 		LatLonBox(
-			Position(minLat, minLon, center.alt, None),
-			Position(maxLat, maxLon, center.alt, None),
+			Position(minLat, minLon, center.alt, None, None),
+			Position(maxLat, maxLon, center.alt, None, None),
 			circle.label, 
 			None
 		)
@@ -61,11 +61,11 @@ object DoiGeoLocationConverter {
 	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
 		geoCoverage match {
 			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
-			case Pin(position, _) => Seq(toDoiGeoLocationWithPoint(position))
+			case Pin(position, _, _) => Seq(toDoiGeoLocationWithPoint(position))
 			case b: LatLonBox => Seq(toDoiGeoLocationWithBox(b))
 			case c: Circle => Seq(toDoiGeoLocationWithBox(toLatLonBox(c)))
-			case GeoTrack(points, label) => Seq(toDoiGeoLocationWithBox(toLatLonBox(points, label)))
-			case Polygon(vertices, label) => Seq(toDoiGeoLocationWithBox(toLatLonBox(vertices, label)))
+			case GeoTrack(points, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(points, label)))
+			case Polygon(vertices, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(vertices, label)))
 			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
 		}
 

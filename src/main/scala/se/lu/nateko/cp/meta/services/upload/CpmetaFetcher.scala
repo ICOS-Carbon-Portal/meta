@@ -36,19 +36,21 @@ trait CpmetaFetcher extends FetchingHelper{
 		for
 			lat <- getOptionalDouble(iri, metaVocab.hasLatitude)
 			lon <- getOptionalDouble(iri, metaVocab.hasLongitude)
-		yield Position(lat, lon, None, None)
+		yield Position(lat, lon, None, None, None)
 
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
 		min = Position(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasWesternBound),
 			Option.empty,
+			None,
 			None
 		),
 		max = Position(
 			lat = getSingleDouble(cov, metaVocab.hasNorthernBound),
 			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
 			Option.empty,
+			None,
 			None
 		),
 		label = getOptionalString(cov, RDFS.LABEL),
@@ -109,7 +111,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
 		altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
 		stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
-	) yield Position(posLat, posLon, altOpt, stLabel)
+	) yield Position(posLat, posLon, altOpt, stLabel, None) // ?
 
 	protected def getSite(site: IRI) = Site(
 		self = getLabeledResource(site),

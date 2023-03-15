@@ -33,9 +33,9 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 				latOpt <- latitudeInput.value.withErrorContext("Sampling point latitude");
 				lonOpt <- longitudeInput.value.withErrorContext("Sampling point longitude")
 			) yield
-				for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, None)
+				for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, None, None)
 
-		case Some(point) => Success(Some(Position(point.latitude, point.longitude, None, None)))
+		case Some(point) => Success(Some(Position(point.latitude, point.longitude, None, None, None)))
 		case _ => Success(None)
 	}
 

@@ -29,6 +29,8 @@ import java.time.Instant
 import scala.util.Success
 
 import UriSerializer.Hash
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.FeatureCollection
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*
@@ -144,8 +146,8 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(box: LatLonBox) = box.uri.fold[Either[LatLonBox, URI]](Left(box)){
-		case CpVocab.SpatialCoverage(_) => Left(box)
+	private def readCoverage(gf: GeoFeature) = gf.uri.fold[Either[GeoFeature, URI]](Left(gf)){
+		case CpVocab.SpatialCoverage(_) => Left(gf)
 		case uri => Right(uri)
 	}
 }

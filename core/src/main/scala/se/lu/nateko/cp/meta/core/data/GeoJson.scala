@@ -27,7 +27,7 @@ object GeoJson {
 	//Left means Feature or FeatureCollection was necessary (Circle, or coll with Circle, or coll with label inside)
 	private def toGeometryOrFeature(f: GeoFeature): Either[JsObject, JsObject] = f match{
 
-		case GeoTrack(points, _) => Right(JsObject(
+		case GeoTrack(points, _, _) => Right(JsObject(
 			"type"        -> JsString("LineString"),
 			"coordinates" -> JsArray(points.map(coordinates).toVector)
 		))
@@ -39,14 +39,14 @@ object GeoJson {
 
 		case box: LatLonBox => toGeometryOrFeature(box.asPolygon)
 
-		case Polygon(vertices, _) => Right(JsObject(
+		case Polygon(vertices, _, _) => Right(JsObject(
 			"type"        -> JsString("Polygon"),
 			"coordinates" -> JsArray(
 				JsArray((vertices ++ vertices.headOption).map(coordinates).toVector)
 			)
 		))
 
-		case Circle(center, radius, labelOpt) => Left(JsObject(
+		case Circle(center, radius, labelOpt, _) => Left(JsObject(
 			"type"       -> JsString("Feature"),
 			"geometry"   -> fromFeature(center),
 			"properties" -> JsObject(
@@ -56,7 +56,7 @@ object GeoJson {
 			)
 		))
 
-		case Pin(pos, kind) => Left(JsObject(
+		case Pin(pos, kind, _) => Left(JsObject(
 			"type"        -> JsString("Feature"),
 			"geometry"    -> fromFeature(pos),
 			"properties" -> JsObject(
@@ -66,7 +66,7 @@ object GeoJson {
 			)
 		))
 
-		case FeatureCollection(features, _) =>
+		case FeatureCollection(features, _, _) =>
 			val geomsOrFeats = features.map(toGeometryOrFeatureWithLabels).toVector
 
 			val geomsOnly = geomsOrFeats.flatMap(_.toOption)
@@ -114,6 +114,7 @@ object GeoJson {
 					case other =>
 						throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 				},
+				None,
 				None
 			)
 			case other =>
@@ -124,13 +125,13 @@ object GeoJson {
 
 			case "Point" => coords.flatMap(parsePosition)
 
-			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None))
+			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None, None))
 
 			case "Polygon" => coords.map{
 				case JsArray(Vector(pntArr)) => {
 					val points = parsePointsArray(pntArr).get
 					if(points.size < 2) throw new FormatException(s"Expected polygon, got ${points.size} points: ${pntArr.compactPrint}")
-					else Polygon(points.dropRight(1), None)
+					else Polygon(points.dropRight(1), None, None)
 				}
 				case other =>
 					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
@@ -153,7 +154,7 @@ object GeoJson {
 						val radius = prop.fields.get("radius").collect{case JsNumber(value) => value.floatValue}.getOrElse{
 							throw new FormatException("Expected numeric 'radius' propert in " + json.prettyPrint)
 						}
-						Circle(p, radius, lblOpt)
+						Circle(p, radius, lblOpt, None) // ?
 					case _ =>
 						geo.withOptLabel(lblOpt)
 				}
@@ -173,9 +174,9 @@ object GeoJson {
 
 	private def parsePosition(geoJson: JsValue): Try[Position] = geoJson match {
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat))) =>
-			Success(Position(lat.doubleValue, lon.doubleValue, None, None))
+			Success(Position(lat.doubleValue, lon.doubleValue, None, None, None))
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat), JsNumber(elev))) =>
-			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), None))
+			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), None, None))
 		case _ =>
 			fail(s"Not a valid JSON for GeoJSON for a position: ${geoJson.compactPrint}")
 	}

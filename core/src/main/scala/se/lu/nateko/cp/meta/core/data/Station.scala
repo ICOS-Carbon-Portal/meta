@@ -19,7 +19,7 @@ case class Station(
 	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
 		case Nil => None
 		case single :: Nil => Some(single)
-		case multiple => Some(FeatureCollection(multiple, Some(org.name)).flatten)
+		case multiple => Some(FeatureCollection(multiple, Some(org.name), None).flatten) // ?
 	}
 }
 

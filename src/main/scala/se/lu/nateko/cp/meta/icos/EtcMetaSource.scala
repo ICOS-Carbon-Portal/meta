@@ -293,7 +293,7 @@ object EtcMetaSource{
 			lonOpt <- getNumber(Vars.lon).optional;
 			alt <- getNumber(Vars.elev).optional
 		) yield for(lat <- latOpt; lon <- lonOpt)
-			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
+			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None, None)
 
 	def getPerson(using Lookup): Validated[EtcPerson] =
 		for(
@@ -571,7 +571,7 @@ object EtcMetaSource{
 			val dlat = Math.toDegrees(north / Rearth)
 			val Rlat = Rearth * Math.cos(Math.toRadians(statPos.lat))
 			val dlon = Math.toDegrees(east / Rlat)
-			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None)
+			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None, None)
 		}
 		val start = startLocal.map(_.toInstant(ZoneOffset.ofHours(tz)))
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)

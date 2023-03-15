@@ -70,7 +70,7 @@ case class StationTimeSeriesDto(
 case class SpatioTemporalDto(
 	title: String,
 	description: Option[String],
-	spatial: Either[LatLonBox, URI],
+	spatial: Either[GeoFeature, URI],
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
 	forStation: Option[URI],

@@ -57,7 +57,7 @@ case class DataAcquisition(
 
 	def coverage: Option[GeoFeature] = samplingPoint
 		.map(sp => siteFeature
-			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None).flatten)
+			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None, None).flatten)
 		)
 		.orElse(siteFeature)
 		.orElse(station.fullCoverage)
@@ -97,7 +97,7 @@ case class VarMeta(
 case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
-	spatial: LatLonBox,
+	spatial: GeoFeature,
 	temporal: TemporalCoverage,
 	station: Option[Station],
 	samplingHeight: Option[Float],
@@ -173,7 +173,7 @@ case class DataObject(
 			.groupMapReduce(
 				(pos,varname) =>
 					val (lat, lon) = clusterLookup.getOrElse(pos.latlon, pos.latlon)
-					Position(lat, lon, None, None)
+					Position(lat, lon, None, None, None)
 			)(
 				(_, varNameOpt) => 
 					varNameOpt.getOrElse("").trim
@@ -182,13 +182,13 @@ case class DataObject(
 			).map{
 				(pos, varNames) =>
 					val label = Option(varNames).filterNot(_.isEmpty)
-					Pin(pos.copy(label = label), PinKind.Sensor)
+					Pin(pos.copy(label = label), PinKind.Sensor, None)
 			}
 
 		(acqCov.toSeq ++ deploymentCov) match
 			case Seq() => None
 			case Seq(single) => Some(single)
-			case many => Some(FeatureCollection(many, None).flatten)
+			case many => Some(FeatureCollection(many, None, None).flatten)
 	end coverage
 
 	def keywords: Option[Seq[String]] =

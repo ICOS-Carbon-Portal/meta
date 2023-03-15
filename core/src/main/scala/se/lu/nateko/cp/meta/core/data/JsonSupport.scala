@@ -17,13 +17,13 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
-	given RootJsonFormat[Position] = jsonFormat4(Position.apply)
+	given RootJsonFormat[Position] = jsonFormat5(Position.apply)
 	given RootJsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
-	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
-	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
-	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[GeoTrack] = jsonFormat3(GeoTrack.apply)
+	given RootJsonFormat[Polygon] = jsonFormat3(Polygon.apply)
+	given RootJsonFormat[Circle] = jsonFormat4(Circle.apply)
 	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
-	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
+	given RootJsonFormat[Pin] = jsonFormat3(Pin.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -81,7 +81,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	given JsonFormat[FeatureCollection] = {
 		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(vanillaGeoFeatureFormat)
-		jsonFormat2(FeatureCollection.apply)
+		jsonFormat3(FeatureCollection.apply)
 	}
 
 	given JsonFormat[Orcid] with{

@@ -7,14 +7,31 @@ import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
+import scala.reflect.ClassTag
 
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.doi.*
 
 object JsonSupport {
 
-	given OFormat[Position] = Json.format[Position]
+	given pos: OFormat[Position] = Json.format[Position]
 	given OFormat[LatLonBox] = Json.format[LatLonBox]
+
+	given Reads[Seq[Position]] = Reads.seq(pos)
+	given Writes[Seq[Position]] = Writes.seq(pos)
+
+	given OFormat[GeoTrack] = Json.format[GeoTrack]
+	given OFormat[Polygon] = Json.format[Polygon]
+	given OFormat[Circle] = Json.format[Circle]
+
+	given Format[PinKind] = new Format[PinKind] {
+		def reads(json: JsValue) = JsSuccess(PinKind.valueOf(json.as[String]))
+		def writes(myEnum: PinKind) = JsString(myEnum.toString)
+	}
+
+	given OFormat[Pin] = Json.format[Pin]
+	given OFormat[GeoFeature] = Json.format[GeoFeature]
+	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
 
 	given Format[Instant] with{
 		def writes(i: Instant) = JsString(i.toString)

@@ -329,11 +329,11 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 	private def fromGeoFeature(cov: GeoFeature): JsValue = cov match
 
-		case FeatureCollection(feats, _) => JsArray(
+		case FeatureCollection(feats, _, _) => JsArray(
 			feats.map(fromGeoFeature).toVector
 		)
 
-		case Position(lat, lon, altOpt, _) => JsObject(
+		case Position(lat, lon, altOpt, _, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoCoordinates"),
 				"latitude"  -> JsNumber(lat),
@@ -343,7 +343,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			}
 		)
 
-		case Circle(center, radius, _) => JsObject(
+		case Circle(center, radius, _, _) => JsObject(
 			"@type"       -> JsString("GeoCircle"),
 			"geoMidpoint" -> fromGeoFeature(center),
 			"geoRadius"   -> JsNumber(radius)
@@ -357,17 +357,17 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			}
 		)
 
-		case GeoTrack(points, _) => JsObject(
+		case GeoTrack(points, _, _) => JsObject(
 			"@type"     -> JsString("GeoShape"),
 			"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 
-		case Polygon(vertices, _) => JsObject(
+		case Polygon(vertices, _, _) => JsObject(
 			"@type"     -> JsString("GeoShape"),
 			"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 
-		case Pin(position, kind) => fromGeoFeature(position)
+		case Pin(position, kind, _) => fromGeoFeature(position)
 
 
 	private def fromOrganization(org: Organization, parent: Option[Organization]) = JsObject(
@@ -417,7 +417,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 	)
 
 	private def fromGeoFeature(feature: GeoFeature, country: Option[CountryCode] = None): JsValue = feature match
-		case FeatureCollection(geoms, _) =>
+		case FeatureCollection(geoms, _, _) =>
 			JsArray(geoms.map(geo => fromGeoFeature(geo, country)).toVector)
 		case _ =>
 			JsObject(

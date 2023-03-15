@@ -231,7 +231,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		SpatioTemporalMeta(
 			title = getSingleString(dobj, metaVocab.dcterms.title),
 			description = getOptionalString(dobj, metaVocab.dcterms.description),
-			spatial = getLatLonBox(cov),
+			spatial = getCoverage(cov),
 			temporal = getTemporalCoverage(dobj),
 			station = stationOpt.map(getStation),
 			samplingHeight = acqOpt.flatMap(getOptionalFloat(_, metaVocab.hasSamplingHeight)),

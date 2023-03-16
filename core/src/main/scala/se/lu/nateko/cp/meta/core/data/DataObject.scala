@@ -119,6 +119,7 @@ sealed trait StaticObject extends CitableItem{
 	def submission: DataSubmission
 	def previousVersion: OptionalOneOrSeq[URI]
 	def nextVersion: Option[URI]
+	def latestVersion: URI
 	def parentCollections: Seq[UriResource]
 	def references: References
 
@@ -140,6 +141,7 @@ case class DataObject(
 	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: URI,
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
@@ -213,6 +215,7 @@ case class DocObject(
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: URI,
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject

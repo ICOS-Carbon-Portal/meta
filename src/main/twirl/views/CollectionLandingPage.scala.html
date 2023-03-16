@@ -11,11 +11,9 @@
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
-		<div class="col-12">
-			@nextVersionAlert(coll.nextVersion)
-		</div>
+		@newerVersionsAlert(coll, "Collection")
+		@doiMetaAlerts(coll.doi, coll.references.doi)
 		<div class="col-md-8">
-			@doiMetaAlerts(coll.doi, coll.references.doi)
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
 				@coll.references.doi.fold{

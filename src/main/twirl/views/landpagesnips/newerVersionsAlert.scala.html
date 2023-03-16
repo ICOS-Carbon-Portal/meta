@@ -1,0 +1,18 @@
+@import java.net.URI
+@import se.lu.nateko.cp.meta.core.data.CitableItem
+
+@(item: CitableItem, itemType: String)
+@for(nextUri <- item.nextVersion) {
+	@alertWarning(s"$itemType is deprecated"){
+		<ul>
+			@if(nextUri != item.latestVersion){
+				<li>@versionLink(nextUri, "Next version")</li>
+			}
+			<li>@versionLink(item.latestVersion, "Latest version")</li>
+		</ul>
+	}
+}
+
+@versionLink(uri: URI, label: String) = {
+	<a class="alert-link" href=@{uri.getRawPath}>@label</a>
+}

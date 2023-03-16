@@ -1,0 +1,8 @@
+@import se.lu.nateko.cp.meta.core.data.StaticObject
+@import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDateTimeStr
+
+@(dobj: StaticObject)(implicit envriConf: EnvriConfig)
+@alertWarning("Upload incomplete", dobj.size.isEmpty){
+	<div>Metadata uploaded on @dobj.submission.start.getDateTimeStr. Data not uploaded. No PID assigned.</div>
+}

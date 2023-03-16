@@ -5,7 +5,7 @@
 
 @(
 	title: String,
-	header: String,
+	header: Option[String],
 	menu: Seq[CpMenuItem] = CpMenu.default,
 	headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
@@ -19,7 +19,9 @@
 	@LandingPageStyle()
 }{
 	@breadcrumbs
-	@pageHeader(header, headerExtra, subHeading, tabs)
+	@for(header <- header){
+		@pageHeader(header, headerExtra, subHeading, tabs)
+	}
 	@body
 }
 

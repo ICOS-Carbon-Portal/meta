@@ -9,10 +9,58 @@
 @import landpagesnips.*
 
 @(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(stationShortName(station), Some(station.org.name), CpMenu.default){
-	<div class="row form-group">
+@ServerSidePage(stationShortName(station), None, CpMenu.default){
+	@for(details <- station.org.webpageDetails) {
+		@for(cover <- details.coverImage) {
+		<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
+			<div class="col">
+					<h1 class="text-light text-center" style="margin-top: 8vw;">
+						@envri STATION<br><strong style="font-size: 5rem;">@{stationShortName(station)}</strong>
+					</h1>
+			</div>
+		</div>
+		}
+		@for(descr <- details.self.comments.headOption){
+		<div class="row">
+			<div class="col-lg-8 mx-auto text-center lead my-5 py-5 fw-normal">
+				@descr
+			</div>
+		</div>
+		}
+	}
+	<div class="row justify-content-start justify-content-md-center bg-primary bg-opacity-10 py-5 text-primary">
+		@for(cc <- icosSpecifics.flatMap(_.countryCode)){
+			@quickfact(cc.displayCountry, "fa-map-marker-alt")
+		}
+		@for(alt <- station.location.flatMap(_.alt)){
+			@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Altitude"})
+		}
+		@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
+			@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
+		}
+		@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
+			@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
+		}
+		@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
+			@quickfact(climateZone, "fa-image", Some("Climate zone"))
+		}
+	</div>
+	@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes)) {
+		@linkBoxes(boxes)
+	}
+	@if(station.fullCoverage.isEmpty) {} else {
+		@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
+			<div class="row my-5">
+				<iframe src="@maplink" style="margin-top: 10px;"></iframe>
+				<a href="@maplink">Open map</a>
+			</div>
+		}
+	}
+	<div class="container-xl">
+	<div class="row form-group mt-3">
 		<div class="col-sm-8">
 			<div class="row gy-2">
+			<h2 class="fs-3 mt-5">Detailed information</h2>
 			@for(icos <- icosSpecifics){
 				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
 					@property("Discontinued", "(former ICOS station)")
@@ -71,6 +119,12 @@
 					}
 				}
 			}
+			@for(pos <- station.location){
+				@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
+				@for(alt <- pos.alt){
+					@property("Elevation", s"${alt.toInt} m")
+				}
+			}
 			@for(sites <- sitesSpecifics){
 				@for(operationalPeriod <- sites.operationalPeriod) {
 					@property("Operational period", operationalPeriod)
@@ -83,6 +137,10 @@
 				@htmlProperty{Organization}{
 					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
 				}
+			}
+			@for((picture, i) <- station.pictures.zipWithIndex) {
+				@if(i > 0) {,} else {}
+				@htmlProperty{Pictures}{<a href=@picture>Picture #@{i + 1}</a>}
 			}
 			</div>
 			@for(fundings <- station.funding){
@@ -113,46 +171,7 @@
 				</table>
 			}
 			@staff(stExt)
-			@if(station.fullCoverage.isEmpty) {} else {
-				<h2 class="fs-3 mt-5">Location</h2>
-				<div class="row gy-2">
-				@for(pos <- station.location){
-					@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
-					@for(alt <- pos.alt){
-						@property("Elevation", s"${alt.toInt} m")
-					}
-				}
-				</div>
-				@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
-					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
-					<a href="@maplink">Open map</a>
-				}
-			}
-			@if(station.pictures.isEmpty) {} else {
-				<h2 class="fs-3 mt-5">Pictures</h2>
-				@for(picture <- station.pictures) {
-					<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">
-				}
-			}
 		</div>
-		<div class="col-sm-4 text-center">
-			<div>
-				<a class="btn btn-lg btn-primary my-3" href="@portalLink">
-					Browse data from @stationShortName(station)
-				</a>
-			</div>
-			@for(email <- station.org.email) {
-				<div class="btn btn-link">
-					<span class="fas fa-envelope"></span>
-					<a href="mailto:@email">@{email}</a>
-				</div>
-			}
-			@for(website <- station.org.website) {
-				<div class="btn btn-link">
-					<span class="fas fa-external-link-alt"></span>
-					<a href="@website">Read more about @stationShortName(station)</a>
-				</div>
-			}
 		</div>
 	</div>
 }
@@ -228,4 +247,14 @@
 			<span></span>
 		}
 	}
+}
+
+@quickfact(value: String, icon: String, descr: Option[String] = None) = {
+	<div class="col-4 col-md-2 p-3">
+		<i class="fas @icon display-1"></i>
+		<div class="fs-3 fw-semibold">@value</div>
+		@for(descr <- descr){
+			<div>@descr</div>
+		}
+	</div>
 }

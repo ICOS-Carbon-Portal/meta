@@ -3,7 +3,7 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 @(devVersion: Boolean, licences: Seq[(URI, String)])(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Upload", "Upload", headerExtra = Some(header), bootstrapJavascript = true){
+@ServerSidePage("Upload", Some("Upload"), headerExtra = Some(header), bootstrapJavascript = true){
 	<style>
 	#main {
 		max-width: 1280px;

@@ -194,7 +194,12 @@ class Rdf4jUriSerializer(
 		case UriPath("resources", "stations", stId) => oneOf(
 			customHtml[OrganizationExtra[Station]](
 				() => fetchStation(uri),
-				st => views.html.StationLandingPage(st, citer.vocab),
+				st => {
+					if (st.org.org.webpageDetails.isDefined)
+						views.html.DetailedStationLandingPage(st, citer.vocab)
+					else
+						views.html.StationLandingPage(st, citer.vocab)
+				},
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
 				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.getMessage}")
 			),

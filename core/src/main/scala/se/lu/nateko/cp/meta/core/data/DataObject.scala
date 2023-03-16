@@ -11,11 +11,15 @@ sealed trait Agent{
 	def self: UriResource
 	def email: Option[String]
 }
+
+case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
+case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
 case class Organization(
 	self: UriResource,
 	name: String,
 	email: Option[String],
-	website: Option[URI]
+	website: Option[URI],
+	webpageDetails: Option[WebpageElements]
 ) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
 

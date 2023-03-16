@@ -119,7 +119,8 @@ class OtcMetaSource(
 							),
 							name = name,
 							email = None,
-							website = websiteSt.orElse(websitePlat).map(_.toJava)
+							website = websiteSt.orElse(websitePlat).map(_.toJava),
+							webpageDetails = None
 						),
 						id = stIdStr,
 						location = posOpt,
@@ -152,7 +153,8 @@ class OtcMetaSource(
 				self = UriResource(EtcMetaSource.dummyUri, Option(b.getValue("label")).map(_.stringValue), Nil),
 				name = b.getValue("name").stringValue,
 				email = None,
-				website = None
+				website = None,
+				webpageDetails = None
 			)
 		)}.map(_.toMap)
 	}

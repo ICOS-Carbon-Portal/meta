@@ -7,7 +7,7 @@
 @import landpagesnips._
 
 @(instr: Instrument)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(title, title, CpMenu.default, subHeading = Some("Instrument")){
+@ServerSidePage(title, Some(title), CpMenu.default, subHeading = Some("Instrument")){
 	<div class="row gy-2">
 		<div class="col-md-8">
 			<div class="row gy-2">

@@ -1,20 +1,19 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.TcMetaSource
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
-import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.net.URI
 import scala.util.Try
-// import se.lu.nateko.cp.meta.services.CpVocab
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -117,7 +116,10 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getCoverage(covUri: IRI): GeoFeature =
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
-		if covClass === metaVocab.latLonBoxClass then getLatLonBox(covUri)
+		if covClass === metaVocab.latLonBoxClass then
+			getLatLonBox(covUri)
+		else if covClass === metaVocab.positionClass then
+			getPosition(covUri).getOrElse(throw MetadataException(s"Could not read Position from URI $covUri"))
 		else GeoJson
 			.toFeature(getSingleString(covUri, metaVocab.asGeoJSON), Some(covUri.toJava))
 			.get

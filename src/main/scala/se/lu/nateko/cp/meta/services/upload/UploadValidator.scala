@@ -247,23 +247,30 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 
 	private def validateSpatialCoverage(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+		def coverageExists(covUri: URI, serv: InstanceServer): Boolean =
+			val cov = covUri.toRdf
+			serv.hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
+			serv.resourceHasType(cov, metaVocab.latLonBoxClass) ||
+			serv.resourceHasType(cov, metaVocab.positionClass)
+
 		meta.specificInfo match
 			case Left(spTemp) => spTemp.spatial match
 				case Left(geoFeature) => geoFeature.uri match
 					case None => ok
-					case Some(covUri) => userFail(
-						"Spatial coverage was supplied with URI for metadata upload. This is not supported. " +
-						"Use either only URI to reuse existing spatial coverage, or supply a 'URI-less' spatial coverage " +
-						"to create a new one."
-					)
+					case Some(covUri) =>
+						if coverageExists(covUri, instServ.writeContextsView) then ok
+						else userFail(
+							"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
+							"instance appears to exist with this URL in the target RDF graph of this data object. " +
+							"If you intend to first-time upload a custom spatial coverage for this object, do not use a URL. " +
+							"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
+						)
 				case Right(covUri) =>
-					if
-						instServ.hasStatement(Some(covUri.toRdf), Some(metaVocab.asGeoJSON), None) ||
-						instServ.resourceHasType(covUri.toRdf, metaVocab.latLonBoxClass)
+					val customCoverageExists = coverageExists(covUri, instServ.writeContextsView)
+					if coverageExists(covUri, instServ) && !customCoverageExists
 					then ok
-					else userFail(s"No spatial coverage with URI $covUri")
+					else userFail(s"No 'stock' spatial coverage with URI $covUri")
 			case Right(_) => ok
-
 
 	private def validateFileName[Dto <: ObjectUploadDto](dto: Dto, instServ: InstanceServer)(using Envri): Validated[Dto] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then passValidation(dto)

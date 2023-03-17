@@ -182,7 +182,7 @@ case class DataObject(
 			).map{
 				(pos, varNames) =>
 					val label = Option(varNames).filterNot(_.isEmpty)
-					Pin(pos.copy(label = label), PinKind.Sensor, None)
+					Pin(pos.withOptLabel(label), PinKind.Sensor)
 			}
 
 		(acqCov.toSeq ++ deploymentCov) match

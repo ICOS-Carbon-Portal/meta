@@ -5,6 +5,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NoStackTrace
+import java.net.URI
 
 object GeoJson {
 
@@ -56,7 +57,7 @@ object GeoJson {
 			)
 		))
 
-		case Pin(pos, kind, _) => Left(JsObject(
+		case Pin(pos, kind) => Left(JsObject(
 			"type"        -> JsString("Feature"),
 			"geometry"    -> fromFeature(pos),
 			"properties" -> JsObject(
@@ -96,10 +97,10 @@ object GeoJson {
 		"properties" -> labelOpt.fold[JsValue](JsNull)(lbl => JsObject("label" -> JsString(lbl)))
 	)
 
-	def toFeature(geoJs: String): Try[GeoFeature] =
-		Try(geoJs.parseJson.asJsObject).flatMap(toFeature)
+	def toFeature(geoJs: String, uri: Option[URI]): Try[GeoFeature] =
+		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_, uri))
 
-	def toFeature(json: JsObject): Try[GeoFeature] = {
+	def toFeature(json: JsObject, uri: Option[URI]): Try[GeoFeature] = {
 
 		def field(name: String): Try[JsValue] = json.fields.get(name).fold[Try[JsValue]](
 				fail(s"'$name' not found in ${json.compactPrint}")
@@ -110,12 +111,12 @@ object GeoJson {
 		def featuresColl(fieldName: String): Try[FeatureCollection] = field(fieldName).collect{
 			case JsArray(elements) => FeatureCollection(
 				elements.map{
-					case o: JsObject => toFeature(o).get
+					case o: JsObject => toFeature(o, None).get
 					case other =>
 						throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 				},
 				None,
-				None
+				uri
 			)
 			case other =>
 				throw new FormatException(s"Expected '$fieldName' to be a JsArray, got ${other.compactPrint}")
@@ -123,15 +124,15 @@ object GeoJson {
 
 		field("type").collect{ case JsString(geoType) => geoType }.flatMap{
 
-			case "Point" => coords.flatMap(parsePosition)
+			case "Point" => coords.flatMap(parsePosition).map(_.copy(uri = uri))
 
-			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None, None))
+			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None, uri))
 
 			case "Polygon" => coords.map{
 				case JsArray(Vector(pntArr)) => {
 					val points = parsePointsArray(pntArr).get
 					if(points.size < 2) throw new FormatException(s"Expected polygon, got ${points.size} points: ${pntArr.compactPrint}")
-					else Polygon(points.dropRight(1), None, None)
+					else Polygon(points.dropRight(1), None, uri)
 				}
 				case other =>
 					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
@@ -142,7 +143,7 @@ object GeoJson {
 
 			case "Feature" => for(
 				geoJs <- field("geometry");
-				geo   <- toFeature(geoJs.asJsObject);
+				geo   <- toFeature(geoJs.asJsObject, None);
 				props <- field("properties")
 			) yield {
 				val lblOpt = props match{
@@ -152,9 +153,19 @@ object GeoJson {
 				(geo, props) match{
 					case (p: Position, prop: JsObject) if prop.fields.contains("radius") =>
 						val radius = prop.fields.get("radius").collect{case JsNumber(value) => value.floatValue}.getOrElse{
-							throw new FormatException("Expected numeric 'radius' propert in " + json.prettyPrint)
+							throw new FormatException("Expected numeric 'radius' property in " + prop.prettyPrint)
 						}
-						Circle(p, radius, lblOpt, None) // ?
+						Circle(p, radius, lblOpt, uri)
+					case (p: Position, prop: JsObject) if prop.fields.contains("pinkind") =>
+						val pinkind = prop.fields.get("pinkind")
+							.collect{
+								case JsString(value) =>
+									try PinKind.valueOf(value)
+									catch case _ => throw FormatException(s"Bad Pin kind: $value")
+							}.getOrElse{
+								throw FormatException("Expected 'pinkind' property in " + prop.prettyPrint)
+							}
+						Pin(p.copy(uri = uri), pinkind)
 					case _ =>
 						geo.withOptLabel(lblOpt)
 				}

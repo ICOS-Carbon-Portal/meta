@@ -24,14 +24,25 @@ object JsonSupport {
 	given OFormat[Polygon] = Json.format[Polygon]
 	given OFormat[Circle] = Json.format[Circle]
 
-	given Format[PinKind] = new Format[PinKind] {
+	given Format[PinKind] with
 		def reads(json: JsValue) = JsSuccess(PinKind.valueOf(json.as[String]))
 		def writes(myEnum: PinKind) = JsString(myEnum.toString)
-	}
 
 	given OFormat[Pin] = Json.format[Pin]
-	given OFormat[GeoFeature] = Json.format[GeoFeature]
 	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
+	given OFormat[GeoFeature] with
+		def writes(gf: GeoFeature) = gf match
+			case coll: FeatureCollection => Json.toJsObject(coll)
+			case pos: Position => Json.toJsObject(pos)
+			case box: LatLonBox => Json.toJsObject(box)
+			case track: GeoTrack => Json.toJsObject(track)
+			case polygon: Polygon => Json.toJsObject(polygon)
+			case circle: Circle => Json.toJsObject(circle)
+			case pin: Pin => Json.toJsObject(pin)
+
+		def reads(js: JsValue) = throw NotImplementedError(
+			"Deserializing GeoFeature in UploadGUI was not expected to be needed"
+		)
 
 	given Format[Instant] with{
 		def writes(i: Instant) = JsString(i.toString)

@@ -72,6 +72,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateActors(meta, instServer);
 		_ <- validateTemporalCoverage(meta, spec);
+		_ <- validateSpatialCoverage(meta, instServer);
 		_ <- noProductionProvenanceIfL0(meta, spec);
 		amended <- validateFileName(meta, instServer);
 		_ <- validateMoratorium(amended, instServer);
@@ -243,6 +244,25 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		if spec.dataLevel >= 3 then ok else meta.specificInfo match
 			case Left(spTempMeta) => validate(spTempMeta.temporal.interval)
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
+
+
+	private def validateSpatialCoverage(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+		meta.specificInfo match
+			case Left(spTemp) => spTemp.spatial match
+				case Left(geoFeature) => geoFeature.uri match
+					case None => ok
+					case Some(covUri) => userFail(
+						"Spatial coverage was supplied with URI for metadata upload. This is not supported. " +
+						"Use either only URI to reuse existing spatial coverage, or supply a 'URI-less' spatial coverage " +
+						"to create a new one."
+					)
+				case Right(covUri) =>
+					if
+						instServ.hasStatement(Some(covUri.toRdf), Some(metaVocab.asGeoJSON), None) ||
+						instServ.resourceHasType(covUri.toRdf, metaVocab.latLonBoxClass)
+					then ok
+					else userFail(s"No spatial coverage with URI $covUri")
+			case Right(_) => ok
 
 
 	private def validateFileName[Dto <: ObjectUploadDto](dto: Dto, instServ: InstanceServer)(using Envri): Validated[Dto] =

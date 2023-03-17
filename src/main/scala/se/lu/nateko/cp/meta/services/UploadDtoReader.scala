@@ -12,15 +12,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DataProduction
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
-import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
 
@@ -29,8 +21,6 @@ import java.time.Instant
 import scala.util.Success
 
 import UriSerializer.Hash
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*
@@ -146,8 +136,7 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(gf: GeoFeature) = gf.uri.fold[Either[GeoFeature, URI]](Left(gf)){
-		case CpVocab.SpatialCoverage(_) => Left(gf)
-		case uri => Right(uri)
-	}
+	private def readCoverage(gf: GeoFeature): Either[GeoFeature, URI] = gf.uri match
+		case None      => Left(gf)
+		case Some(uri) => Right(uri)
 }

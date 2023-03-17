@@ -108,10 +108,6 @@ object CpVocab{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, SubmPrefix)
 	}
 
-	object SpatialCoverage{
-		def unapply(uri: URI): Option[Sha256Sum] = asPrefWithHashSuff(uri.getPath.split('/').last, SpatCovPrefix)
-	}
-
 	object DataObject{
 		def unapply(iri: IRI): Option[(Sha256Sum, String)] = asPrefWithHash(iri, "")
 			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))

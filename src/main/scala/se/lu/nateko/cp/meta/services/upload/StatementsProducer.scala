@@ -137,7 +137,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	}
 
 	private def getPositionStatements(aquisitionUri: IRI, point: Position)(using Envri): Seq[Statement] = {
-		val samplUri = vocab.getPosition(point)
+		val samplUri = point.uri.fold(vocab.getPosition(point))(_.toRdf)
 
 		Seq(
 			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
@@ -185,7 +185,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
-		meta.samplingPoint.map(getPositionStatements(aquisitionUri, _)).getOrElse(Seq.empty)++
+		meta.samplingPoint.toSeq.flatMap(getPositionStatements(aquisitionUri, _)) ++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
@@ -212,20 +212,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] = {
-		spatial match{
-			case Left(feature) =>
-				getGeoFeatureStatements(hash, feature)
-			case Right(existing) =>
-				// TODO Add a validation that 'existing' actually exists
-				/* TODO Protect 'existing' coverage object in the metadata update scenario
-				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
-				 *  by this object any more; it may be needed by others)
-				 */
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
+		spatial match
+			case Left(feature) => getGeoFeatureStatements(hash, feature)
+			case Right(covUri) =>
 				val objectUri = vocab.getStaticObject(hash)
-				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing.toRdf))
-		}
-	}
+				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri.toRdf))
+
 
 	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {
 		val vUri = vocab.getVarInfo(hash, varName)

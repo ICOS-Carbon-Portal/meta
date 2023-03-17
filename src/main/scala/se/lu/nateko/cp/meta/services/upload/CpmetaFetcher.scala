@@ -24,7 +24,8 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getPosition(iri: IRI): Option[Position] =
 		getLatLon(iri).map{_.copy(
 			alt = getOptionalFloat(iri, metaVocab.hasElevation),
-			label = getOptionalString(iri, RDFS.LABEL)
+			label = getOptionalString(iri, RDFS.LABEL),
+			uri = Some(iri.toJava)
 		)}
 	
 	protected def getInstrumentPosition(deploymentIri: IRI): Option[Position] = 
@@ -36,22 +37,16 @@ trait CpmetaFetcher extends FetchingHelper{
 		for
 			lat <- getOptionalDouble(iri, metaVocab.hasLatitude)
 			lon <- getOptionalDouble(iri, metaVocab.hasLongitude)
-		yield Position(lat, lon, None, None, None)
+		yield Position.ofLatLon(lat, lon)
 
 	protected def getLatLonBox(cov: IRI) = LatLonBox(
-		min = Position(
+		min = Position.ofLatLon(
 			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasWesternBound),
-			Option.empty,
-			None,
-			None
+			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
 		),
-		max = Position(
+		max = Position.ofLatLon(
 			lat = getSingleDouble(cov, metaVocab.hasNorthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasEasternBound),
-			Option.empty,
-			None,
-			None
+			lon = getSingleDouble(cov, metaVocab.hasEasternBound)
 		),
 		label = getOptionalString(cov, RDFS.LABEL),
 		uri = Some(cov.toJava)
@@ -119,16 +114,15 @@ trait CpmetaFetcher extends FetchingHelper{
 		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
 	)
 
-	protected def getCoverage(covUri: IRI): GeoFeature = {
+	protected def getCoverage(covUri: IRI): GeoFeature =
 		val covClass = getSingleUri(covUri, RDF.TYPE)
 
-		if(covClass === metaVocab.latLonBoxClass)
-			getLatLonBox(covUri)
-		else
-			GeoJson.toFeature(
-				getSingleString(covUri, metaVocab.asGeoJSON)
-			).get.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
-	}
+		if covClass === metaVocab.latLonBoxClass then getLatLonBox(covUri)
+		else GeoJson
+			.toFeature(getSingleString(covUri, metaVocab.asGeoJSON), Some(covUri.toJava))
+			.get
+			.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
+
 
 	protected def getNextVersion(item: IRI): Option[URI] = {
 		server.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))

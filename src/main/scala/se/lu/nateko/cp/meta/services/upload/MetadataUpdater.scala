@@ -98,9 +98,10 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|	} UNION
 				|	{
 				|		<$objUri> ?p0 ?s .
-				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
+				|		FILTER(?p0 not in (<${metaVocab.isNextVersionOf}>, <${metaVocab.hasObjectSpec}>, rdf:type, <${metaVocab.dcterms.license}>))
 				|		?s ?p ?o
 				|	}
+				|	filter(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		}

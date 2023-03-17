@@ -37,6 +37,9 @@ case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
 
+object Position:
+	def ofLatLon(lat: Double, lon: Double) = Position(lat, lon, None, None, None)
+
 object PositionUtil:
 	private val numForm = new DecimalFormat("###.######")
 	def format6(d: Double): String = numForm.format(d).replace(',', '.')
@@ -88,8 +91,8 @@ case class LatLonBox(min: Position, max: Position, label: Option[String], uri: O
 
 	def asPolygon = Polygon(
 		Seq(
-			min, Position(lon = min.lon, lat = max.lat, alt = None, label = None, uri = None),
-			max, Position(lon = max.lon, lat = min.lat, alt = None, label = None, uri = None),
+			min, Position.ofLatLon(max.lat, min.lon),
+			max, Position.ofLatLon(min.lat, max.lon),
 		),
 		label,
 		uri
@@ -123,8 +126,8 @@ case class Circle(center: Position, radius: Float, label: Option[String], uri: O
 enum PinKind:
 	case Sensor, Other
 
-case class Pin(position: Position, kind: PinKind, uri: Option[URI]) extends GeoFeature:
+case class Pin(position: Position, kind: PinKind) extends GeoFeature:
 	type Self = Pin
-	export position.label
+	export position.{label, uri}
 	def textSpecification: String = s"Pin ($kind): ${position.textSpecification}"
 	def withOptLabel(label: Option[String]) = copy(position = position.withOptLabel(label))

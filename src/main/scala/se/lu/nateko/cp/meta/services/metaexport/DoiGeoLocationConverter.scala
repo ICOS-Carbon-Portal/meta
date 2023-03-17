@@ -61,7 +61,7 @@ object DoiGeoLocationConverter {
 	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
 		geoCoverage match {
 			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
-			case Pin(position, _, _) => Seq(toDoiGeoLocationWithPoint(position))
+			case Pin(position, _) => Seq(toDoiGeoLocationWithPoint(position))
 			case b: LatLonBox => Seq(toDoiGeoLocationWithBox(b))
 			case c: Circle => Seq(toDoiGeoLocationWithBox(toLatLonBox(c)))
 			case GeoTrack(points, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(points, label)))

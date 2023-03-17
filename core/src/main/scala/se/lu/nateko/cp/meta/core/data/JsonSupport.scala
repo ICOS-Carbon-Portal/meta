@@ -23,7 +23,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Polygon] = jsonFormat3(Polygon.apply)
 	given RootJsonFormat[Circle] = jsonFormat4(Circle.apply)
 	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
-	given RootJsonFormat[Pin] = jsonFormat3(Pin.apply)
+	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)

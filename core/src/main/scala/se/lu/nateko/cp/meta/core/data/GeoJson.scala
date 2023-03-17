@@ -185,7 +185,7 @@ object GeoJson {
 
 	private def parsePosition(geoJson: JsValue): Try[Position] = geoJson match {
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat))) =>
-			Success(Position(lat.doubleValue, lon.doubleValue, None, None, None))
+			Success(Position.ofLatLon(lat.doubleValue, lon.doubleValue))
 		case JsArray(Vector(JsNumber(lon), JsNumber(lat), JsNumber(elev))) =>
 			Success(Position(lat.doubleValue, lon.doubleValue, Some(elev.floatValue), None, None))
 		case _ =>

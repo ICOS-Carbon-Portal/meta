@@ -173,7 +173,7 @@ case class DataObject(
 			.groupMapReduce(
 				(pos,varname) =>
 					val (lat, lon) = clusterLookup.getOrElse(pos.latlon, pos.latlon)
-					Position(lat, lon, None, None, None)
+					Position.ofLatLon(lat, lon)
 			)(
 				(_, varNameOpt) => 
 					varNameOpt.getOrElse("").trim

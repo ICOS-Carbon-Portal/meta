@@ -19,8 +19,8 @@ object DoiGeoLocationConverter {
 		val longitudes = shape.map(_.lon)
 
 		LatLonBox(
-			Position(latitudes.min, longitudes.min, None, None, None),
-			Position(latitudes.max, longitudes.max, None, None, None),
+			Position.ofLatLon(latitudes.min, longitudes.min),
+			Position.ofLatLon(latitudes.max, longitudes.max),
 			label,
 			None
 		)

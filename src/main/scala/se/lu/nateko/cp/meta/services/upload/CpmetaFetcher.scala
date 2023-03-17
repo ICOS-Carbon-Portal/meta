@@ -106,7 +106,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
 		altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
 		stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
-	) yield Position(posLat, posLon, altOpt, stLabel, None) // ?
+	) yield Position(posLat, posLon, altOpt, stLabel, None)
 
 	protected def getSite(site: IRI) = Site(
 		self = getLabeledResource(site),

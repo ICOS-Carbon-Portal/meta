@@ -62,7 +62,7 @@ object KmlGeoJsonWorkbench {
 					pm.geometry.toSeq.collect{
 						case poly: Polygon => processPolygon(poly)
 						case p: Point => p.coordinates.collect{
-							case Coordinate(Some(lon), Some(lat), _) => Position(lat, lon, None, None, None)
+							case Coordinate(Some(lon), Some(lat), _) => Position.ofLatLon(lat, lon)
 						}
 					}.flatten.map(_.withOptLabel(lbl))
 			}.flatten.toList
@@ -121,7 +121,7 @@ object KmlGeoJsonWorkbench {
 		val maxDeviation = deviations.max / averDist
 
 		if(maxDeviation < 0.03)
-			Some(Circle(Position(centerLat, centerLon, None, None, None), (averDist * 6371000).toFloat, None, None))
+			Some(Circle(Position.ofLatLon(centerLat, centerLon), (averDist * 6371000).toFloat, None, None))
 		else
 			None
 	}

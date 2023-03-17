@@ -14,24 +14,24 @@ class GeoJsonTests extends AnyFunSuite{
 
 	roundTripTest("Polygon"){
 		Polygon(Seq(
-			Position(0, 0, None, None, None), 
-			Position(13.45, 0, None, None, None), 
-			Position(13.45, 70.57438, None, None, None), 
-			Position(0, 70.57438, None, None, None)
+			Position.ofLatLon(0, 0),
+			Position.ofLatLon(13.45, 0),
+			Position.ofLatLon(13.45, 70.57438),
+			Position.ofLatLon(0, 70.57438)
 		), None, None)
 	}
 
 	roundTripTest("Geotrack"){
 		GeoTrack(Seq(
-			Position(-3.456, 0, None, None, None), 
-			Position(13.45, 0, None, None, None), 
-			Position(13.45, 70.57438, None, None, None), 
-			Position(0, 70.57438, None, None, None)
+			Position.ofLatLon(-3.456, 0),
+			Position.ofLatLon(13.45, 0),
+			Position.ofLatLon(13.45, 70.57438),
+			Position.ofLatLon(0, 70.57438)
 		), None, None)
 	}
 
 	roundTripTest("Circle"){
-		Circle(Position(24.12345, -179.99999, None, None, None), 25.04f, Some("blabla"), None)
+		Circle(Position.ofLatLon(24.12345, -179.99999), 25.04f, Some("blabla"), None)
 	}
 
 	roundTripTest("FeatureCollection (with inner labels)"){

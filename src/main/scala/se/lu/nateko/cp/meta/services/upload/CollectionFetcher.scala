@@ -78,7 +78,8 @@ class CollectionFetcher(
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
 			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
-			nextVersion = getNextVersion(coll),
+			nextVersion = getNextVersion(coll).map(_.toJava),
+			latestVersion = getLatestVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi),
 			references = References.empty

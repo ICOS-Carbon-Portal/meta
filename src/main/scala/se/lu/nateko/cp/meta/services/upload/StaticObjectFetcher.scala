@@ -68,7 +68,8 @@ class StaticObjectFetcher(
 			submission = submission,
 			specification = spec,
 			specificInfo = levelSpecificInfo,
-			nextVersion = getNextVersion(dobj),
+			nextVersion = getNextVersion(dobj).map(_.toJava),
+			latestVersion = getLatestVersion(dobj),
 			previousVersion = getPreviousVersion(dobj),
 			parentCollections = collFetcher.getParentCollections(dobj),
 			references = References.empty
@@ -88,7 +89,8 @@ class StaticObjectFetcher(
 			doi = getOptionalString(doc, metaVocab.hasDoi),
 			description = getOptionalString(doc, metaVocab.dcterms.description),
 			submission = submission,
-			nextVersion = getNextVersion(doc),
+			nextVersion = getNextVersion(doc).map(_.toJava),
+			latestVersion = getLatestVersion(doc),
 			previousVersion = getPreviousVersion(doc),
 			parentCollections = collFetcher.getParentCollections(doc),
 			references = References.empty.copy(

@@ -54,3 +54,4 @@ src/main/resources/gcmdkeywords.json
 /atcmeta/
 /sparqlMagicIndex.bin
 /citationsCacheDump.json
+/doiMetaCacheDump.json

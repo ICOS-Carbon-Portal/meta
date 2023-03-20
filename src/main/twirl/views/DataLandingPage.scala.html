@@ -20,24 +20,10 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
-		<div class="col-12">
-			@nextVersionAlert(dobj.nextVersion)
-		</div>
-		@if(!uploadComplete) {
-			<div class="col-12">
-				<div class="alert alert-warning">
-					<h4 class="alert-heading">Upload incomplete</h4>
-					<div>Metadata uploaded on @dobj.submission.start.getDateTimeStr. Data not uploaded. No PID assigned.</div>
-				</div>
-			</div>
-		}
-		@if(underMoratorium){
-			<div class="col-12">
-				<div class="alert alert-warning">
-					<h4 class="alert-heading">Under moratorium</h4>
-					@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
-				</div>
-			</div>
+		@newerVersionsAlert(dobj, "Object")
+		@incompleteUploadAlert(dobj)
+		@alertWarning("Under moratorium", underMoratorium){
+			@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
 		}
 		<div class="col-md-8">
 			<div class="row gy-2">

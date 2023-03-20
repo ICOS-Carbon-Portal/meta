@@ -219,9 +219,14 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		StationTimeSeriesMeta(acq, prod, nRows, coverage, columnsWithDeployments)
 	}
 
-	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): SpatioTemporalMeta = {
+	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): SpatioTemporalMeta =
 
-		val cov = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+		val coverage: GeoFeature =
+			val covIri = getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+			val cov0 = getCoverage(covIri)
+			val isCustomCoverage: Boolean = server.writeContextsView.hasStatement(Some(covIri), Some(RDF.TYPE), None)
+			if isCustomCoverage then cov0.withOptUri(None) else cov0
+
 		assert(prodOpt.isDefined, "Production info must be provided for a spatial data object")
 		val prod = prodOpt.get
 
@@ -231,7 +236,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		SpatioTemporalMeta(
 			title = getSingleString(dobj, metaVocab.dcterms.title),
 			description = getOptionalString(dobj, metaVocab.dcterms.description),
-			spatial = getCoverage(cov),
+			spatial = coverage,
 			temporal = getTemporalCoverage(dobj),
 			station = stationOpt.map(getStation),
 			samplingHeight = acqOpt.flatMap(getOptionalFloat(_, metaVocab.hasSamplingHeight)),
@@ -240,7 +245,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 				server.getUriValues(dobj, metaVocab.hasActualVariable).flatMap(getL3VarInfo(_, vtLookup))
 			).filter(_.nonEmpty)
 		)
-	}
+
 
 	protected def getDataProduction(obj: IRI, prod: IRI) = DataProduction(
 		creator = getAgent(getSingleUri(prod, metaVocab.wasPerformedBy)),

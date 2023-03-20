@@ -247,28 +247,32 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 
 	private def validateSpatialCoverage(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
-		def coverageExists(covUri: URI, serv: InstanceServer): Boolean =
+		def coverageExistsIn(covUri: URI, serv: InstanceServer): Boolean =
 			val cov = covUri.toRdf
 			serv.hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
 			serv.resourceHasType(cov, metaVocab.latLonBoxClass) ||
 			serv.resourceHasType(cov, metaVocab.positionClass)
+		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ.writeContextsView)
+		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ) && !customCoverageExists(covUri)
 
 		meta.specificInfo match
 			case Left(spTemp) => spTemp.spatial match
 				case Left(geoFeature) => geoFeature.uri match
 					case None => ok
 					case Some(covUri) =>
-						if coverageExists(covUri, instServ.writeContextsView) then ok
+						if customCoverageExists(covUri) then ok
 						else userFail(
 							"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
 							"instance appears to exist with this URL in the target RDF graph of this data object. " +
-							"If you intend to first-time upload a custom spatial coverage for this object, do not use a URL. " +
+							"If you intend to upload a custom spatial coverage for this object, do not use a URL. " +
 							"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
 						)
 				case Right(covUri) =>
-					val customCoverageExists = coverageExists(covUri, instServ.writeContextsView)
-					if coverageExists(covUri, instServ) && !customCoverageExists
-					then ok
+					if stockCoverageExists(covUri) then ok
+					else if customCoverageExists(covUri) then userFail(
+						s"There exists a custom spatial coverage with URI $covUri. Please use full GeoFeature object without URI " +
+						"inside the metadata upload package, rather than just the URI reference."
+					)
 					else userFail(s"No 'stock' spatial coverage with URI $covUri")
 			case Right(_) => ok
 

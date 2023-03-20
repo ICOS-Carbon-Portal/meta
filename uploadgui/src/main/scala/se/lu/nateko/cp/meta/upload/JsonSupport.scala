@@ -14,35 +14,17 @@ import se.lu.nateko.cp.doi.*
 
 object JsonSupport {
 
-	given pos: OFormat[Position] = Json.format[Position]
+	given OFormat[Position] = Json.format[Position]
 	given OFormat[LatLonBox] = Json.format[LatLonBox]
 
-	given Reads[Seq[Position]] = Reads.seq(pos)
-	given Writes[Seq[Position]] = Writes.seq(pos)
-
-	given OFormat[GeoTrack] = Json.format[GeoTrack]
-	given OFormat[Polygon] = Json.format[Polygon]
-	given OFormat[Circle] = Json.format[Circle]
-
-	given Format[PinKind] with
-		def reads(json: JsValue) = JsSuccess(PinKind.valueOf(json.as[String]))
-		def writes(myEnum: PinKind) = JsString(myEnum.toString)
-
-	given OFormat[Pin] = Json.format[Pin]
-	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
 	given OFormat[GeoFeature] with
-		def writes(gf: GeoFeature) = gf match
-			case coll: FeatureCollection => Json.toJsObject(coll)
-			case pos: Position => Json.toJsObject(pos)
-			case box: LatLonBox => Json.toJsObject(box)
-			case track: GeoTrack => Json.toJsObject(track)
-			case polygon: Polygon => Json.toJsObject(polygon)
-			case circle: Circle => Json.toJsObject(circle)
-			case pin: Pin => Json.toJsObject(pin)
+		private val notImplError = "Only LatLonBoxes are supported as custom GeoFeatures in UploadGUI at this time"
 
-		def reads(js: JsValue) = throw NotImplementedError(
-			"Deserializing GeoFeature in UploadGUI was not expected to be needed"
-		)
+		def writes(gf: GeoFeature) = gf match
+			case box: LatLonBox => Json.toJsObject(box)
+			case _ => throw NotImplementedError(notImplError)
+
+		def reads(js: JsValue) = js.validate[LatLonBox].orElse(JsError(notImplError))
 
 	given Format[Instant] with{
 		def writes(i: Instant) = JsString(i.toString)

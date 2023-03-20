@@ -97,10 +97,10 @@ object GeoJson {
 		"properties" -> labelOpt.fold[JsValue](JsNull)(lbl => JsObject("label" -> JsString(lbl)))
 	)
 
-	def toFeature(geoJs: String, uri: Option[URI]): Try[GeoFeature] =
-		Try(geoJs.parseJson.asJsObject).flatMap(toFeature(_, uri))
+	def toFeature(geoJs: String): Try[GeoFeature] =
+		Try(geoJs.parseJson.asJsObject).flatMap(toFeature)
 
-	def toFeature(json: JsObject, uri: Option[URI]): Try[GeoFeature] = {
+	def toFeature(json: JsObject): Try[GeoFeature] = {
 
 		def field(name: String): Try[JsValue] = json.fields.get(name).fold[Try[JsValue]](
 				fail(s"'$name' not found in ${json.compactPrint}")
@@ -111,12 +111,12 @@ object GeoJson {
 		def featuresColl(fieldName: String): Try[FeatureCollection] = field(fieldName).collect{
 			case JsArray(elements) => FeatureCollection(
 				elements.map{
-					case o: JsObject => toFeature(o, None).get
+					case o: JsObject => toFeature(o).get
 					case other =>
 						throw new FormatException(s"Expected JsObject, got ${other.compactPrint}")
 				},
 				None,
-				uri
+				None
 			)
 			case other =>
 				throw new FormatException(s"Expected '$fieldName' to be a JsArray, got ${other.compactPrint}")
@@ -124,15 +124,15 @@ object GeoJson {
 
 		field("type").collect{ case JsString(geoType) => geoType }.flatMap{
 
-			case "Point" => coords.flatMap(parsePosition).map(_.copy(uri = uri))
+			case "Point" => coords.flatMap(parsePosition)
 
-			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None, uri))
+			case "LineString" => coords.flatMap(parsePointsArray).map(GeoTrack(_, None, None))
 
 			case "Polygon" => coords.map{
 				case JsArray(Vector(pntArr)) => {
 					val points = parsePointsArray(pntArr).get
 					if(points.size < 2) throw new FormatException(s"Expected polygon, got ${points.size} points: ${pntArr.compactPrint}")
-					else Polygon(points.dropRight(1), None, uri)
+					else Polygon(points.dropRight(1), None, None)
 				}
 				case other =>
 					throw new FormatException(s"Expected polygon coordinates to be a single-element JsArray, got ${other.compactPrint}")
@@ -143,7 +143,7 @@ object GeoJson {
 
 			case "Feature" => for(
 				geoJs <- field("geometry");
-				geo   <- toFeature(geoJs.asJsObject, None);
+				geo   <- toFeature(geoJs.asJsObject);
 				props <- field("properties")
 			) yield {
 				val lblOpt = props match{
@@ -155,7 +155,7 @@ object GeoJson {
 						val radius = prop.fields.get("radius").collect{case JsNumber(value) => value.floatValue}.getOrElse{
 							throw new FormatException("Expected numeric 'radius' property in " + prop.prettyPrint)
 						}
-						Circle(p, radius, lblOpt, uri)
+						Circle(p, radius, lblOpt, None)
 					case (p: Position, prop: JsObject) if prop.fields.contains("pinkind") =>
 						val pinkind = prop.fields.get("pinkind")
 							.collect{
@@ -165,7 +165,7 @@ object GeoJson {
 							}.getOrElse{
 								throw FormatException("Expected 'pinkind' property in " + prop.prettyPrint)
 							}
-						Pin(p.copy(uri = uri), pinkind)
+						Pin(p, pinkind)
 					case _ =>
 						geo.withOptLabel(lblOpt)
 				}

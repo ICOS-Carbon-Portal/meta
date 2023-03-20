@@ -121,9 +121,10 @@ trait CpmetaFetcher extends FetchingHelper{
 		else if covClass === metaVocab.positionClass then
 			getPosition(covUri).getOrElse(throw MetadataException(s"Could not read Position from URI $covUri"))
 		else GeoJson
-			.toFeature(getSingleString(covUri, metaVocab.asGeoJSON), Some(covUri.toJava))
+			.toFeature(getSingleString(covUri, metaVocab.asGeoJSON))
 			.get
 			.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
+			.withUri(covUri.toJava)
 
 
 	protected def getNextVersion(item: IRI): Option[URI] = {

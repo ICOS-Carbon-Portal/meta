@@ -5,11 +5,13 @@ import java.net.URI
 
 sealed trait GeoFeature{
 	protected type Self >: this.type <: GeoFeature
-	val uri: Option[URI]
+	def uri: Option[URI]
 	def label: Option[String]
 	def withOptLabel(label: Option[String]): Self
+	def withOptUri(uri: Option[URI]): Self
 	def textSpecification: String
 	def withLabel(label: String): Self = withOptLabel(Some(label))
+	def withUri(uri: URI): Self = withOptUri(Some(uri))
 }
 
 type LatLon = (Double, Double)
@@ -25,6 +27,7 @@ case class FeatureCollection(features: Seq[GeoFeature], label: Option[String], u
 		copy(features = features.flatMap(flattenFeature))
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Position
@@ -36,6 +39,7 @@ case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[
 	def lon6 = PositionUtil.format6(lon)
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 object Position:
 	def ofLatLon(lat: Double, lon: Double) = Position(lat, lon, None, None, None)
@@ -101,6 +105,7 @@ case class LatLonBox(min: Position, max: Position, label: Option[String], uri: O
 	def textSpecification = s"S: ${min.lat6}, W: ${min.lon6}, N: ${max.lat6}, E: ${max.lon6}"
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 case class GeoTrack(points: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = GeoTrack
@@ -108,6 +113,7 @@ case class GeoTrack(points: Seq[Position], label: Option[String], uri: Option[UR
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 case class Polygon(vertices: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Polygon
@@ -115,6 +121,7 @@ case class Polygon(vertices: Seq[Position], label: Option[String], uri: Option[U
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 case class Circle(center: Position, radius: Float, label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Circle
@@ -122,6 +129,7 @@ case class Circle(center: Position, radius: Float, label: Option[String], uri: O
 	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
 
 	def withOptLabel(label: Option[String]) = copy(label = label)
+	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
 enum PinKind:
 	case Sensor, Other
@@ -131,3 +139,4 @@ case class Pin(position: Position, kind: PinKind) extends GeoFeature:
 	export position.{label, uri}
 	def textSpecification: String = s"Pin ($kind): ${position.textSpecification}"
 	def withOptLabel(label: Option[String]) = copy(position = position.withOptLabel(label))
+	def withOptUri(uri: Option[URI]) = copy(position = position.withOptUri(uri))

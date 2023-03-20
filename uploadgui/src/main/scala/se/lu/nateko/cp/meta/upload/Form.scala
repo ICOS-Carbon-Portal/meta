@@ -138,7 +138,7 @@ class Form(
 	)
 
 	def specificInfo: Try[Either[SpatioTemporalDto, StationTimeSeriesDto]] = dataPanel.objSpec.flatMap{spec =>
-		if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel == 3))
+		if(spec.isSpatiotemporal)
 			spatTempPanel.meta(prodPanel.dataProductionDto).map(Left.apply)
 		else for(
 			station <- statTsPanel.station;

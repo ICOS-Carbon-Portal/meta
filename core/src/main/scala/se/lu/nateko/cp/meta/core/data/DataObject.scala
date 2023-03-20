@@ -37,8 +37,6 @@ case class DataObjectSpec(
 	keywords: Option[Seq[String]]
 )
 
-enum DatasetType derives CanEqual:
-	case StationTimeSeries, SpatioTemporal
 
 case class DatasetSpec(
 	self: UriResource,

@@ -4,6 +4,7 @@ import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.DatasetType
 
 object SparqlQueries {
 
@@ -69,12 +70,12 @@ object SparqlQueries {
 		|FROM <${from}>
 		|WHERE {
 		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ; cpmeta:hasFormat ?format ;
-		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
+		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project ;
+		|		cpmeta:hasSpecificDatasetType ?dsType .
 		|	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
 		|	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
 		|	OPTIONAL{
 		|		?spec cpmeta:containsDataset ?dataset .
-		|		BIND(EXISTS{?dataset a cpmeta:DatasetSpec} as ?isSpatioTemp)
 		|	}
 		|} order by ?name""".stripMargin
 
@@ -85,17 +86,18 @@ object SparqlQueries {
 
 	def toObjSpec(b: Binding) = {
 		def keywords(varname: String) = b.get(varname).map(_.split(",").toSeq).getOrElse(Seq.empty)
+		val dsTypeUri: String = b("dsType")
+		val dsType =
+			if dsTypeUri.endsWith("spatioTemporalDataset")
+			then DatasetType.SpatioTemporal
+			else DatasetType.StationTimeSeries
 
 		ObjSpec(
 			new URI(b("spec")),
 			b("name"),
 			b("dataLevel").toInt,
-			if(b.contains("dataset")) Some(
-				DsSpec(
-					uri = new URI(b("dataset")),
-					dsClass = (if(b("isSpatioTemp").toBoolean) DsSpec.SpatioTemp else DsSpec.StationTimeSer)
-				)
-			) else None,
+			if b.contains("dataset") then Some(new URI(b("dataset"))) else None,
+			dsType,
 			new URI(b("theme")),
 			new URI(b("project")),
 			new URI(b("format")),

@@ -64,7 +64,7 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 	bus.subscribe{
 		case LevelSelected(_) => hide()
 		case ObjSpecSelected(objSpec) =>
-			if(objSpec.isStationTimeSer || (objSpec.dataset.isEmpty && objSpec.dataLevel <= 2)) show() else hide()
+			if(objSpec.isStationTimeSer) show() else hide()
 			if(objSpec.dataset.isDefined) {
 				acqStartInput.disable()
 				acqStopInput.disable()

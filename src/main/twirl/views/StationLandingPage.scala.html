@@ -181,9 +181,7 @@
 				</table>
 			}
 			@staff(stExt)
-			@if(station.org.webpageDetails.isDefined) {
-				</div>
-			} else {
+			@if(station.org.webpageDetails.isEmpty) {
 				@if(station.fullCoverage.isEmpty) {} else {
 					<h2 class="fs-3 mt-5">Location</h2>
 					<div class="row gy-2">
@@ -227,6 +225,9 @@
 			}
 		</div>
 	</div>
+	@if(station.org.webpageDetails.isDefined) {
+		</div>
+	}
 }
 
 @station = @{stExt.org}

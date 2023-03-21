@@ -505,17 +505,15 @@ object CpIndex{
 			}
 	}
 
-	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =
-		dataLevel.intValue < 3 && !CpVocab.isIngosArchive(spec)
-
 	private def getStationRequirementsPerSpec(sail: Sail, vocab: CpmetaVocab): AnyRefMap[IRI, Boolean] = {
 		val map = new AnyRefMap[IRI, Boolean]
 		Using(sail.getConnection)(_
-			.getStatements(null, vocab.hasDataLevel, null, false)
+			.getStatements(null, vocab.hasSpecificDatasetType, null, false)
 			.asPlainScalaIterator
 			.foreach{
-				case Rdf4jStatement(subj, _, obj: Literal) =>
-					map.update(subj, objSpecRequiresStation(subj, obj))
+				case Rdf4jStatement(subj, _, obj: IRI) =>
+					val objSpecRequiresStation = vocab.stationTimeSeriesDs === obj
+					map.update(subj, objSpecRequiresStation)
 				case _ =>
 			}
 		)

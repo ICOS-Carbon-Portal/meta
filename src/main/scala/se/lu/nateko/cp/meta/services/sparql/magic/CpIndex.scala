@@ -88,9 +88,9 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		log.info(s"Amount of objects in stats is $objsInStats")
 		log.info(s"Following fieldsites data object keys are present in the index:")
 		stats.foreach{
-			case (key, count) =>
+			case (key, bm) =>
 				if key.spec.toString.contains("fieldsites") then
-					log.info(s"Count $count for key $key")
+					log.info(s"Count ${bm.getCardinality} for key $key")
 		}
 
 	if stats.nonEmpty then
@@ -445,20 +445,30 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 		)
 
-	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
-		stats.get(key).foreach(_.remove(obj.idx))
-		initOk.remove(obj.idx)
-	}
+	private def removeStat(obj: ObjEntry): Unit =
+		if obj.hash == debugHash then log.info("Will try to remove stat for the debug object...")
+		for(key <- keyForDobj(obj)){
+			stats.get(key).foreach(_.remove(obj.idx))
+			initOk.remove(obj.idx)
+			if obj.hash == debugHash then
+				log.info(s"Removed object ${debugHash} with idx ${obj.idx} from stats with key $key")
+		}
 
-	private def addStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
-		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
-		initOk.add(obj.idx)
-	}
+	private def addStat(obj: ObjEntry): Unit =
+		if obj.hash == debugHash then log.info("Will try to add stat for the debug object...")
+		for(key <- keyForDobj(obj)){
+			stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
+			initOk.add(obj.idx)
+			if obj.hash == debugHash then
+				log.info(s"Added object ${debugHash} with idx ${obj.idx} to stats with key $key")
+		}
 
 }
 
 object CpIndex{
 	val UpdateQueueSize = 1 << 13
+
+	val debugHash = Sha256Sum.fromBase64Url("DPzDEyYLG1g7d1FxCIBKl50G").get
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 

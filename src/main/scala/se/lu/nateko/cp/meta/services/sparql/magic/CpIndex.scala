@@ -80,9 +80,16 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
-		log.info(s"Following data object specs are present in the index with non-empty dobj counts:")
-		stats.keysIterator.map(_.spec).distinct.foreach(spec => log.info(spec.toString))
+		reportDebugInfo()
 	}
+	private def reportDebugInfo(): Unit =
+		log.info(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
+		log.info(s"Following fieldsites data object keys are present in the index:")
+		stats.keysIterator.filter(_.spec.toString.contains("fieldsites")).foreach(key => log.info(key.toString))
+
+	if stats.nonEmpty then
+		log.info("CpIndex got initialized index data to use")
+		reportDebugInfo()
 
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
@@ -197,6 +204,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
+		log.info(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
 		filterOpt match
 			case None => log.info("Fetching statEntries with no filter")
@@ -205,7 +213,8 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		stats.flatMap{
 			case (key, bm) =>
 				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
-				log.info(s"Count was $count for key $key")
+				if key.spec.toString.contains("fieldsites") then
+					log.info(s"Count was $count for key $key")
 				if(count > 0) Some(StatEntry(key, count))
 				else None
 		}

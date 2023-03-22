@@ -65,14 +65,23 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
 		this(sail, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
+		var statementCount = 0
 		Using(sail.getConnection)(_
 			.getStatements(null, null, null, false)
 			.asPlainScalaIterator
-			.foreach(s => put(RdfUpdate(s, true)))
+			.foreach{s =>
+				put(RdfUpdate(s, true))
+				statementCount += 1
+				if statementCount % 1000000 == 0 then
+					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
+			}
 		)
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
+		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
+		log.info(s"Following data object specs are present in the index:")
+		stats.keysIterator.map(_.spec).toSeq.distinct.foreach(spec => log.info(spec.toString))
 	}
 
 	given factory: ValueFactory = sail.getValueFactory

@@ -83,14 +83,14 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		reportDebugInfo()
 	}
 	private def reportDebugInfo(): Unit =
-		log.info(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
+		log.debug(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
 		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
-		log.info(s"Amount of objects in stats is $objsInStats")
-		log.info(s"Following fieldsites data object keys are present in the index:")
+		log.debug(s"Amount of objects in stats is $objsInStats")
+		log.debug(s"Following fieldsites data object keys are present in the index:")
 		stats.foreach{
 			case (key, bm) =>
 				if key.spec.toString.contains("fieldsites") then
-					log.info(s"Count ${bm.getCardinality} for key $key")
+					log.debug(s"Count ${bm.getCardinality} for key $key")
 		}
 
 	if stats.nonEmpty then
@@ -210,17 +210,17 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
-		log.info(s"Fetching statEntries with Filter $filter")
+		log.debug(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
 		filterOpt match
-			case None => log.info("Fetching statEntries with no filter")
-			case Some(bm) => log.info(s"Fetching stat entries with filter permitting ${bm.getCardinality} objects")
+			case None => log.debug("Fetching statEntries with no filter")
+			case Some(bm) => log.debug(s"Fetching stat entries with filter permitting ${bm.getCardinality} objects")
 
 		stats.flatMap{
 			case (key, bm) =>
 				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
 				if key.spec.toString.contains("fieldsites") then
-					log.info(s"Count was $count for key $key")
+					log.debug(s"Count was $count for key $key")
 				if(count > 0) Some(StatEntry(key, count))
 				else None
 		}
@@ -446,21 +446,21 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		)
 
 	private def removeStat(obj: ObjEntry): Unit =
-		if obj.hash == debugHash then log.info("Will try to remove stat for the debug object...")
+		if obj.hash == debugHash then log.debug("Will try to remove stat for the debug object...")
 		for(key <- keyForDobj(obj)){
 			stats.get(key).foreach(_.remove(obj.idx))
 			initOk.remove(obj.idx)
 			if obj.hash == debugHash then
-				log.info(s"Removed object ${debugHash} with idx ${obj.idx} from stats with key $key")
+				log.debug(s"Removed object ${debugHash} with idx ${obj.idx} from stats with key $key")
 		}
 
 	private def addStat(obj: ObjEntry): Unit =
-		if obj.hash == debugHash then log.info("Will try to add stat for the debug object...")
+		if obj.hash == debugHash then log.debug("Will try to add stat for the debug object...")
 		for(key <- keyForDobj(obj)){
 			stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
 			initOk.add(obj.idx)
 			if obj.hash == debugHash then
-				log.info(s"Added object ${debugHash} with idx ${obj.idx} to stats with key $key")
+				log.debug(s"Added object ${debugHash} with idx ${obj.idx} to stats with key $key")
 		}
 
 }

@@ -84,11 +84,17 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	}
 	private def reportDebugInfo(): Unit =
 		log.info(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
+		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
+		log.info(s"Amount of objects in stats is $objsInStats")
 		log.info(s"Following fieldsites data object keys are present in the index:")
-		stats.keysIterator.filter(_.spec.toString.contains("fieldsites")).foreach(key => log.info(key.toString))
+		stats.foreach{
+			case (key, count) =>
+				if key.spec.toString.contains("fieldsites") then
+					log.info(s"Count $count for key $key")
+		}
 
 	if stats.nonEmpty then
-		log.info("CpIndex got initialized index data to use")
+		log.info("CpIndex got initialized with non-empty index data to use")
 		reportDebugInfo()
 
 	given factory: ValueFactory = sail.getValueFactory

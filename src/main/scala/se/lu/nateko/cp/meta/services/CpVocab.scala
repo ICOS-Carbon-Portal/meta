@@ -134,8 +134,6 @@ object CpVocab{
 		}
 	}
 
-	def isIngosArchive(objSpec: IRI): Boolean = objSpec.getLocalName == "ingosArchive"
-
 	def etcStationUriId(station: EtcStationId) = TcConf.stationId[ETC.type](UriId.escaped(station.id))
 	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = TcConf.EtcConf.makeId(s"${station}_$id")
 	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))

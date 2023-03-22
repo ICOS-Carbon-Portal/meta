@@ -80,16 +80,16 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
-		log.info(s"Following data object specs are present in the index:")
-		stats.keysIterator.map(_.spec).toSeq.distinct.foreach(spec => log.info(spec.toString))
+		log.info(s"Following data object specs are present in the index with non-empty dobj counts:")
+		stats.iterator.collect{
+			case (key, bm) if !bm.isEmpty => key.spec
+		}.distinct.foreach(spec => log.info(spec.toString))
 	}
 
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
-	//Mass-import of the specification info
-	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -276,7 +276,6 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 				case spec: IRI =>
 					modForDobj(subj){oe =>
 						updateCategSet(categMap(Spec), spec, oe.idx)
-						if(!specRequiresStation.getOrElse(spec, true)) updateCategSet(categMap(Station), None, oe.idx)
 						if(isAssertion) {
 							if(oe.spec != null) removeStat(oe)
 							oe.spec = spec
@@ -423,12 +422,11 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		case _ =>
 	}
 
-	private def keyForDobj(obj: ObjEntry): Option[StatKey] = if(
-		obj.spec == null || obj.submitter == null ||
-		(obj.station == null && specRequiresStation.getOrElse(obj.spec, true))
-	) None else Some(
-		StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
-	)
+	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
+		if obj.spec == null || obj.submitter == null then None
+		else Some(
+			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
+		)
 
 	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
 		stats.get(key).foreach(_.remove(obj.idx))
@@ -512,21 +510,6 @@ object CpIndex{
 			}catch{
 				case _: Throwable => //ignoring wrong floats
 			}
-	}
-
-	private def getStationRequirementsPerSpec(sail: Sail, vocab: CpmetaVocab): AnyRefMap[IRI, Boolean] = {
-		val map = new AnyRefMap[IRI, Boolean]
-		Using(sail.getConnection)(_
-			.getStatements(null, vocab.hasSpecificDatasetType, null, false)
-			.asPlainScalaIterator
-			.foreach{
-				case Rdf4jStatement(subj, _, obj: IRI) =>
-					val objSpecRequiresStation = vocab.stationTimeSeriesDs === obj
-					map.update(subj, objSpecRequiresStation)
-				case _ =>
-			}
-		)
-		map
 	}
 
 }

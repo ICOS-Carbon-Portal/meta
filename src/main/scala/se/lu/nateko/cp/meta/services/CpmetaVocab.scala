@@ -70,6 +70,12 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val awardURI = getRelativeRaw("awardURI")
 	val impliesDefaultLicence = getRelativeRaw("impliesDefaultLicence")
 
+	val hasWebpageElements = getRelativeRaw("hasWebpageElements")
+	val hasCoverImage = getRelativeRaw("hasCoverImage")
+	val hasLinkbox = getRelativeRaw("hasLinkbox")
+	val hasWebpageLink = getRelativeRaw("hasWebpageLink")
+	val hasOrderWeight = getRelativeRaw("hasOrderWeight")
+
 	val hasSha256sum = getRelativeRaw("hasSha256sum")
 	val hasDoi = getRelativeRaw("hasDoi")
 	val isNextVersionOf = getRelativeRaw("isNextVersionOf")

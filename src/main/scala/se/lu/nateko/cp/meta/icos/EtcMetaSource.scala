@@ -319,7 +319,7 @@ object EtcMetaSource{
 			name <- lookUp(Vars.companyName).require("company must have a name");
 			cpId = UriId(s"etcorg_$tcId");
 			orgUri = vocab.getOrganization(cpId).toJava;
-			core = Organization(UriResource(orgUri, None, Nil), name, None, None)
+			core = Organization(UriResource(orgUri, None, Nil), name, None, None, None)
 		) yield tcId -> TcGenericOrg(cpId, Some(makeId(tcId.toString)), core)
 
 	private def getSensorModel(using Lookup): Validated[(String, SensorModel)] =
@@ -345,7 +345,8 @@ object EtcMetaSource{
 					self = UriResource(vocab.getOrganization(cpId).toJava, None, Nil),
 					name = funderName,
 					email = None,
-					website = None
+					website = None,
+					webpageDetails = None
 				)
 				funderName -> TcFunder[ETC.type](
 					cpId = cpId,
@@ -462,7 +463,8 @@ object EtcMetaSource{
 					self = UriResource(dummyUri, Some(id), descr.toSeq),
 					name = name,
 					email = None,
-					website = None
+					website = None,
+					webpageDetails = None
 				),
 				id = id,
 				location = pos,

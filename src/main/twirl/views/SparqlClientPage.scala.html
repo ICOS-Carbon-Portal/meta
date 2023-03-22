@@ -3,7 +3,7 @@
 @import landpagesnips._
 
 @(query: Option[String] = None)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(pageTitle, pageTitle, extraMetaTags = Some(extraMetaTags), subHeading = pageSubtitle){
+@ServerSidePage(pageTitle, Some(pageTitle), extraMetaTags = Some(extraMetaTags), subHeading = pageSubtitle){
 	<div class="row">
 		<div class="col-lg-7">
 			<div id="yasqe"></div>

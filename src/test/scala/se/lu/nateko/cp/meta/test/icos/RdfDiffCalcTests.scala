@@ -37,7 +37,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 				self = UriResource(new URI("http://test.icos.eu/resources/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
 				name = "Airplane 1",
 				email = None,
-				website = None
+				website = None,
+				webpageDetails = None
 			),
 			id = "AIR1",
 			location = None,
@@ -168,7 +169,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		Given("starting with a single org with a single researcher and no own CP statements")
 
-		val uniOrg = Organization(UriResource(null, Some("uni"), Nil), "Just Some Uni", None, None)
+		val uniOrg = Organization(UriResource(null, Some("uni"), Nil), "Just Some Uni", None, None, None)
 		val uni = TcGenericOrg(UriId("uni"), Some(aId("uni0")), uniOrg)
 		val janeAtUni = Membership[A](UriId(""), new AssumedRole[A](Researcher, jane, uni, None, None), None, None)
 		val initSnap = new TcState[A](Nil, Seq(janeAtUni), Nil)
@@ -177,7 +178,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
 		When("CP creates a new org metadata and associates it with the exising TC org metadata")
 
-		val cpUniOrg = Organization(UriResource(null, Some("uni proper"), Nil), "Properly named Uni", None, None)
+		val cpUniOrg = Organization(UriResource(null, Some("uni proper"), Nil), "Properly named Uni", None, None, None)
 		val cpUni = TcGenericOrg(UriId("cpuni"), Some(aId("uni0")), cpUniOrg)
 		state.cpServer.addAll(state.maker.getStatements(cpUni))
 

@@ -1,19 +1,30 @@
 package se.lu.nateko.cp.meta.services
 
-import java.net.URI
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
-
-import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
+import se.lu.nateko.cp.meta.api.CustomVocab
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{objectPrefix, collectionPrefix, objectPathPrefix}
-import se.lu.nateko.cp.meta.core.data.{staticObjLandingPage, staticObjAccessUrl, staticCollLandingPage}
-import se.lu.nateko.cp.meta.core.data.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.IcosStationSpecifics
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.collectionPrefix
+import se.lu.nateko.cp.meta.core.data.objectPathPrefix
+import se.lu.nateko.cp.meta.core.data.objectPrefix
+import se.lu.nateko.cp.meta.core.data.staticCollLandingPage
+import se.lu.nateko.cp.meta.core.data.staticObjAccessUrl
+import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
-import se.lu.nateko.cp.meta.icos.{TC, TcId, ETC, TcConf, Role}
+import se.lu.nateko.cp.meta.icos.ETC
+import se.lu.nateko.cp.meta.icos.Role
+import se.lu.nateko.cp.meta.icos.TC
+import se.lu.nateko.cp.meta.icos.TcConf
+import se.lu.nateko.cp.meta.icos.TcId
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+
+import java.net.URI
 
 class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab.*
@@ -61,6 +72,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 	val Seq(icosProject, atmoTheme, ecoTheme, oceanTheme) = Seq(
 		"projects/icos", "themes/atmosphere", "themes/ecosystem", "themes/ocean"
 	).map(getRelativeRaw(_)(using icosBup))
+
+	def hasOceanTheme(icosSpec: IcosStationSpecifics): Boolean = icosSpec.theme.exists(_.self.uri === oceanTheme)
 
 	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(using icosBup)
 

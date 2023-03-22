@@ -207,7 +207,8 @@ object AtcMetaSource{
 					self = UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
 					name = name,
 					email = None,
-					website = None
+					website = None,
+					webpageDetails = None
 				),
 				id = stIdStr,
 				location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
@@ -333,7 +334,8 @@ object AtcMetaSource{
 					self = UriResource(uri = dummyUri, label = labelOpt, comments = Nil),
 					name = nameFinal,
 					email = None,
-					website = websiteOpt
+					website = websiteOpt,
+					webpageDetails = None
 				)
 
 				id -> TcGenericOrg[A](cpId, Some(id), org)

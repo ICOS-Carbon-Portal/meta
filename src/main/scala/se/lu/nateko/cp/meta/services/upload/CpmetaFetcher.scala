@@ -74,7 +74,23 @@ trait CpmetaFetcher extends FetchingHelper{
 		self = getLabeledResource(org),
 		name = getSingleString(org, metaVocab.hasName),
 		email = getOptionalString(org, metaVocab.hasEmail),
-		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava)
+		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava),
+		webpageDetails = getOptionalUri(org, metaVocab.hasWebpageElements).map(getWebpageElems)
+	)
+
+	def getWebpageElems(elems: IRI) = WebpageElements(
+		self = getLabeledResource(elems),
+		coverImage = getOptionalUriLiteral(elems, metaVocab.hasCoverImage),
+		linkBoxes = Option(
+			server.getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox).sortBy(_.orderWeight)
+		).filterNot(_.isEmpty)
+	)
+
+	def getLinkBox(lbox: IRI) = LinkBox(
+		name = getSingleString(lbox, metaVocab.hasName),
+		coverImage = getSingleUriLiteral(lbox, metaVocab.hasCoverImage),
+		target = getSingleUriLiteral(lbox, metaVocab.hasWebpageLink),
+		orderWeight = getOptionalInt(lbox, metaVocab.hasOrderWeight)
 	)
 
 	def getPerson(pers: IRI) = Person(

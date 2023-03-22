@@ -1,0 +1,17 @@
+@import se.lu.nateko.cp.meta.core.data.LinkBox
+
+@(linkBoxes:  Seq[LinkBox])
+<div class="container-xl">
+	<div class="row my-5">
+	@for(linkBox <- linkBoxes){
+		<div class="col-md-4 position-relative mb-4">
+			<a href="@linkBox.target">
+				<div class="link-box-image">
+					<img src=@linkBox.coverImage class="img-fluid w-100" style="height: 230px; object-fit: cover; border-bottom: 5px solid var(--icos-magenta);">
+					<div class="link-box-title position-absolute bottom-0 text-white m-3 fs-4 fw-bold">@linkBox.name</div>
+				</div>
+			</a>
+		</div>
+	}
+	</div>
+</div>

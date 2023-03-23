@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
@@ -30,7 +31,6 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.util.Using
 
 import CpIndex.*
 
@@ -66,7 +66,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		this(sail, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
 		var statementCount = 0
-		Using(sail.getConnection)(_
+		sail.accessEagerly(_
 			.getStatements(null, null, null, false)
 			.asPlainScalaIterator
 			.foreach{s =>
@@ -381,19 +381,42 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			}
 
 			case `isNextVersionOf` =>
-				modForDobj(obj)(oe => {
+				modForDobj(obj){oe =>
 					val deprecated = boolBitmap(DeprecationFlag)
-					if(isAssertion) deprecated.add(oe.idx)
-					else if(
+					if isAssertion then
+						if !deprecated.contains(oe.idx) then //this was to prevent needless repo access
+							val subjIsDobj = modForDobj(subj){ deprecator =>
+								deprecator.isNextVersion = true
+								//only fully-uploaded deprecators can actually deprecate:
+								if deprecator.size > -1 then deprecated.add(oe.idx)
+							}
+							if !subjIsDobj then subj.toJava match
+								//collections are always fully uploaded
+								case Hash.Collection(_) => deprecated.add(oe.idx)
+								case _ =>
+					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!Using(sail.getConnection)(_.hasStatement(null, pred, obj, false)).getOrElse(false)
-					) deprecated.remove(oe.idx)
-				})
+						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+					then deprecated.remove(oe.idx)
+				}
 
 			case `hasSizeInBytes` => ifLong(obj){size =>
 				modForDobj(subj){oe =>
-					if(isAssertion) oe.size = size
-					else if(oe.size == size) oe.size = -1
+					inline def isRetraction = oe.size == size && !isAssertion
+					if isAssertion then oe.size = size
+					else if isRetraction then oe.size = -1
+
+					if oe.isNextVersion then
+						val deprecated = boolMap(DeprecationFlag)
+						matchStatements(subj, pred, null)
+							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
+							.foreach{oldIri =>
+								modForDobj(oldIri){old =>
+									if isAssertion then deprecated.add(old.idx)
+									else if isRetraction then deprecated.remove(old.idx)
+								}
+							}
+
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}
 			}
@@ -430,13 +453,14 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		}
 	}
 
-	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{
+	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Boolean = dobj match{
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if(entry.prefix == "") entry.prefix = prefix.intern()
 			mod(entry)
+			true
 
-		case _ =>
+		case _ => false
 	}
 
 	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
@@ -445,30 +469,24 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 		)
 
-	private def removeStat(obj: ObjEntry): Unit =
-		if obj.hash == debugHash then log.debug("Will try to remove stat for the debug object...")
-		for(key <- keyForDobj(obj)){
-			stats.get(key).foreach(_.remove(obj.idx))
-			initOk.remove(obj.idx)
-			if obj.hash == debugHash then
-				log.debug(s"Removed object ${debugHash} with idx ${obj.idx} from stats with key $key")
-		}
+	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
+		stats.get(key).foreach(_.remove(obj.idx))
+		initOk.remove(obj.idx)
+	}
 
-	private def addStat(obj: ObjEntry): Unit =
-		if obj.hash == debugHash then log.debug("Will try to add stat for the debug object...")
-		for(key <- keyForDobj(obj)){
-			stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
-			initOk.add(obj.idx)
-			if obj.hash == debugHash then
-				log.debug(s"Added object ${debugHash} with idx ${obj.idx} to stats with key $key")
-		}
+	private def addStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
+		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
+		initOk.add(obj.idx)
+	}
+
+	private def matchStatements(subj: IRI, pred: IRI, obj: Value): IndexedSeq[Statement] =
+		sail.accessEagerly(_.getStatements(subj, pred, obj, false).asPlainScalaIterator.toIndexedSeq)
+
 
 }
 
 object CpIndex{
 	val UpdateQueueSize = 1 << 13
-
-	val debugHash = Sha256Sum.fromBase64Url("DPzDEyYLG1g7d1FxCIBKl50G").get
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
@@ -496,6 +514,7 @@ object CpIndex{
 		var dataEnd: Long = Long.MinValue
 		var submissionStart: Long = Long.MinValue
 		var submissionEnd: Long = Long.MinValue
+		var isNextVersion: Boolean = false
 
 		private def dateTimeFromLong(dt: Long): Option[Instant] =
 			if(dt == Long.MinValue) None

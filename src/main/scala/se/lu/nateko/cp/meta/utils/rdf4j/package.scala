@@ -59,7 +59,7 @@ extension [T](res: CloseableIteration[T, _]){
 	}
 }
 
-extension (repo: Repository){
+extension (repo: Repository)
 
 	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
 	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
@@ -95,16 +95,18 @@ extension (repo: Repository){
 		}
 	}
 
-	def accessEagerly[T](accessor: RepositoryConnection => T): T = {
-		val conn = repo.getConnection
-		try{
-			accessor(conn)
-		}
-		finally{
-			conn.close()
-		}
-	}
-}
+	def accessEagerly[T](accessor: RepositoryConnection => T): T =
+		val conn = repo.getConnection()
+		try accessor(conn) finally conn.close()
+
+end extension
+
+
+extension (sail: Sail)
+	def accessEagerly[T](accessor: SailConnection => T): T =
+		val conn = sail.getConnection()
+		try accessor(conn) finally conn.close()
+
 
 def asString(lit: Literal): Option[String] = if(lit.getDatatype === XSD.STRING) Some(lit.stringValue) else None
 

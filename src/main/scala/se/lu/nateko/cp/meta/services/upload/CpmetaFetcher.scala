@@ -163,10 +163,12 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getLatestVersion(item: IRI): URI =
 		@tailrec
-		def latest(item: IRI): IRI = getNextVersion(item) match
+		def latest(item: IRI, seen: Set[IRI]): IRI = getNextVersion(item) match
 			case None => item
-			case Some(next) => latest(next)
-		latest(item).toJava
+			case Some(next) =>
+				if seen.contains(next) then item
+				else latest(next, seen + next)
+		latest(item, Set.empty).toJava
 
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {

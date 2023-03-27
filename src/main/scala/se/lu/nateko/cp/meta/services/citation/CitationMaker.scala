@@ -181,12 +181,17 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		val authors: Seq[Person] = if(isIcosLikeStationMeas && dobj.specification.dataLevel < 3) attrProvider.getAuthors(dobj) else{
-			import AttributionProvider.personOrdering
-			dobj.production.toSeq.flatMap(prod =>
-				prod.creator +: prod.contributors.collect{case p: Person => p}.sorted
-			).collect{case p: Person => p}.distinct
-		}
+		val authors: Seq[Agent] =
+			import AttributionProvider.agentOrdering
+			def productionAgents = dobj.production.toSeq.flatMap(prod =>
+				prod.creator +: prod.contributors.sorted
+			)
+			val all =
+				if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
+					if isIcosProject then attrProvider.getAuthors(dobj)
+					else (attrProvider.getAuthors(dobj) ++ productionAgents).sorted
+				else productionAgents
+			all.distinct
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val projName = if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
@@ -198,7 +203,10 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			year <- yearOpt;
 			projName <- projName
 		) yield {
-			val authorsStr = authors.map{p => s"${p.lastName}, ${p.firstName.head}."}.mkString(", ")
+			val authorsStr = authors.map{
+				case p: Person => s"${p.lastName}, ${p.firstName.head}."
+				case o: Organization => o.name
+			}.mkString(", ")
 			s"${authorsStr} ($year). $title, $projName, $pidUrl"
 		}
 

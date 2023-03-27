@@ -16,6 +16,10 @@ import se.lu.nateko.cp.meta.utils.*
 import java.net.URI
 
 import doi.DescriptionType.{Abstract => DoiAbstract}
+import java.time.LocalDate
+import java.time.ZoneOffset
+import se.lu.nateko.cp.doi.meta.PersonalName
+import se.lu.nateko.cp.doi.meta.GenericName
 
 object SchemaOrg:
 
@@ -299,7 +303,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		val basedOn = asOptArray(obj.previousVersion.flattenToSeq)(fromPreviousVersion)
 		JsObject(
 			"alternateName"         -> JsString(obj.fileName),
-			"datePublished"         -> asOptJsString(obj.submission.stop.map(_.toString)),
+			"datePublished"         -> asOptJsString(obj.submission.stop.map(LocalDate.ofInstant(_, ZoneOffset.UTC).toString)),
 			"isPartOf"              -> partOf,
 			"provider"              -> fromAgent(obj.submission.submitter),
 			"isBasedOn"             -> basedOn,
@@ -370,20 +374,30 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		case Pin(position, kind) => fromGeoFeature(position)
 
 
-	private def fromOrganization(org: Organization, parent: Option[Organization]) = JsObject(
-		Map(
-			"@type"  -> JsString("Organization"),
-			"@id"    -> JsString(org.self.uri.toString),
-			"sameAs" -> JsString(org.self.uri.toString),
-			"name"   -> JsString(org.name),
-			"email"  -> asOptJsString(org.email),
-		) ++ parent.map{ parent =>
-			"parentOrganization" -> JsString(parent.name)
-		}
-	)
+	private def fromOrganization(org: Organization, parent: Option[Organization]) =
+		val sameAs: JsObject =
+			if org.name != "Carbon Portal" then
+				JsObject("sameAs" -> JsString(org.self.uri.toString))
+			else JsObject.empty
 
-	private def fromDoiPerson(person: doi.Person): JsObject = JsObject(
-		"@type"      -> JsString("Person"),
+		JsObject(
+			Map(
+				"@type"  -> JsString("Organization"),
+				"@id"    -> JsString(org.self.uri.toString),
+				"name"   -> JsString(org.name),
+				"email"  -> asOptJsString(org.email),
+			) ++ parent.map{ parent =>
+				"parentOrganization" -> JsString(parent.name)
+			}
+		) ++ sameAs
+
+	private def fromDoiPerson(person: doi.Person): JsObject =
+		val nameType = person.name match
+			case PersonalName(_, _) => JsString("Person")
+			case GenericName(_) => JsString("Organization")
+
+		JsObject(
+		"@type"      -> nameType,
 		"@id"        -> asOptJsString(getDoiPersonUrl(person)),
 		"name"       -> JsString(person.name.toString),
 		"affiliation"-> asOptArray(person.affiliation)(fromDoiAff)

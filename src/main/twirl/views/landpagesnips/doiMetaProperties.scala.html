@@ -1,7 +1,7 @@
 @import se.lu.nateko.cp.doi.DoiMeta
 @import se.lu.nateko.cp.doi.meta.Person
 @import se.lu.nateko.cp.doi.meta.Rights
-@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
 
 @(doiMeta: DoiMeta)
 @for(descr <- doiMeta.descriptions){
@@ -31,7 +31,7 @@
 }
 
 @personList(persons: Iterable[Person]) = {
-	@optLinkList(persons, (p: Person) => getDoiPersonUrl(p), (p: Person) => p.name.toString)
+	@optLinkList(persons, (p: Person) => doiAgentUri(p), (p: Person) => p.name.toString)
 }
 
 @optLinkList[T](list: Iterable[T], getUrl: T => Option[String], getLabel: T => String) = {

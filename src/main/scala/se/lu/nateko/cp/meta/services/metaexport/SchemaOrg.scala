@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
+import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
 import spray.json.*
 import se.lu.nateko.cp.meta.utils.*
 
@@ -284,13 +284,13 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			asOptArray(words.toVector.distinct.sorted)(JsString.apply)
 
 		val creator = refs.doi
-			.map(doiMeta => asOptArray(doiMeta.creators)(fromDoiPerson))
+			.map(doiMeta => asOptArray(doiMeta.creators)(fromDoiAgent))
 			.filter(_ != JsNull)
 			.getOrElse(
 				asOptArray(refs.authors)(fromAgent)
 			)
 
-		val contributor = asOptArray(refs.doi.map(_.contributors))(fromDoiPerson)
+		val contributor = asOptArray(refs.doi.map(_.contributors))(fromDoiAgent)
 
 		description ++ JsObject(
 			"keywords"              -> keywords,
@@ -374,34 +374,28 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		case Pin(position, kind) => fromGeoFeature(position)
 
 
-	private def fromOrganization(org: Organization, parent: Option[Organization]) =
-		val sameAs: JsObject =
-			if org.name != "Carbon Portal" then
-				JsObject("sameAs" -> JsString(org.self.uri.toString))
-			else JsObject.empty
-
-		JsObject(
-			Map(
-				"@type"  -> JsString("Organization"),
-				"@id"    -> JsString(org.self.uri.toString),
-				"name"   -> JsString(org.name),
-				"email"  -> asOptJsString(org.email),
-			) ++ parent.map{ parent =>
-				"parentOrganization" -> JsString(parent.name)
-			}
-		) ++ sameAs
-
-	private def fromDoiPerson(person: doi.Person): JsObject =
-		val nameType = person.name match
-			case PersonalName(_, _) => JsString("Person")
-			case GenericName(_) => JsString("Organization")
-
-		JsObject(
-		"@type"      -> nameType,
-		"@id"        -> asOptJsString(getDoiPersonUrl(person)),
-		"name"       -> JsString(person.name.toString),
-		"affiliation"-> asOptArray(person.affiliation)(fromDoiAff)
+	private def fromOrganization(org: Organization, parent: Option[Organization]) = JsObject(
+		Map(
+			"@type"  -> JsString("Organization"),
+			"@id"    -> JsString(org.self.uri.toString),
+			"name"   -> JsString(org.name),
+			"email"  -> asOptJsString(org.email),
+		) ++ parent.map{ parent =>
+			"parentOrganization" -> JsString(parent.name)
+		}
 	)
+
+	private def fromDoiAgent(agent: doi.Person): JsObject =
+		val agentType = agent.name match
+			case _: PersonalName => JsString("Person")
+			case _: GenericName  => JsString("Organization")
+
+		JsObject(
+			"@type"      -> agentType,
+			"@id"        -> asOptJsString(doiAgentUri(agent)),
+			"name"       -> JsString(agent.name.toString),
+			"affiliation"-> asOptArray(agent.affiliation)(fromDoiAff)
+		)
 
 	private def fromDoiAff(affiliation: doi.Affiliation) = JsObject(
 		"@type" -> JsString("Organization"),

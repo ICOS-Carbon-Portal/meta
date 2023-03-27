@@ -86,7 +86,7 @@ object LandingPageHelpers:
 			uriStr
 	}
 
-	def getDoiPersonUrl(person: DoiMetaPerson): Option[String] = person
+	def doiAgentUri(agent: DoiMetaPerson): Option[String] = agent
 		.nameIdentifiers.flatMap{ni =>
 			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
 		}.headOption

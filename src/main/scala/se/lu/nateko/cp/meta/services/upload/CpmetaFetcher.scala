@@ -221,11 +221,14 @@ trait CpmetaFetcher extends FetchingHelper{
 		}
 
 	protected def getInstrumentLite(instr: IRI): UriResource = {
-		val model = getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
-		val serialNumber = getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
+		inline def model = getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
+		inline def serialNumber = getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
 
 		val label = getOptionalString(instr, metaVocab.hasName).orElse{
-			model.flatMap(m => serialNumber.flatMap(s => Some(m + " (" + s + ")")))
+			(model, serialNumber) match
+				case (None, nbr) => nbr
+				case (m, None) => m
+				case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
 		}.getOrElse{
 			instr.getLocalName
 		}

@@ -1,47 +1,43 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-import java.util.Date
-
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.ValueFactory
-
 import akka.NotUsed
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DataProductionDto
 import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.*
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
-import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.meta.core.data.DatasetClass
-import java.time.Instant
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import org.eclipse.rdf4j.model.IRI
-import scala.language.strictEquality
-import se.lu.nateko.cp.meta.DataProductionDto
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.net.URI
+import java.time.Instant
+import java.util.Date
 import scala.collection.mutable.Buffer
+import scala.language.strictEquality
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -76,6 +72,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateActors(meta, instServer);
 		_ <- validateTemporalCoverage(meta, spec);
+		_ <- validateSpatialCoverage(meta, instServer);
 		_ <- noProductionProvenanceIfL0(meta, spec);
 		amended <- validateFileName(meta, instServer);
 		_ <- validateMoratorium(amended, instServer);
@@ -88,6 +85,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		instServer <- servers.getDocInstServer;
 		_ <- validatePrevVers(meta, instServer);
 		amended <- validateFileName(meta, instServer);
+		_ <- validateLicence(meta, instServer);
 		_ <- validateDescription(meta.description)
 	) yield amended
 
@@ -248,13 +246,43 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
+	private def validateSpatialCoverage(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
+		def coverageExistsIn(covUri: URI, serv: InstanceServer): Boolean =
+			val cov = covUri.toRdf
+			serv.hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
+			serv.resourceHasType(cov, metaVocab.latLonBoxClass) ||
+			serv.resourceHasType(cov, metaVocab.positionClass)
+		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ.writeContextsView)
+		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ) && !customCoverageExists(covUri)
+
+		meta.specificInfo match
+			case Left(spTemp) => spTemp.spatial match
+				case Left(geoFeature) => geoFeature.uri match
+					case None => ok
+					case Some(covUri) =>
+						if customCoverageExists(covUri) then ok
+						else userFail(
+							"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
+							"instance appears to exist with this URL in the target RDF graph of this data object. " +
+							"If you intend to upload a custom spatial coverage for this object, do not use a URL. " +
+							"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
+						)
+				case Right(covUri) =>
+					if stockCoverageExists(covUri) then ok
+					else if customCoverageExists(covUri) then userFail(
+						s"There exists a custom spatial coverage with URI $covUri. Please use full GeoFeature object without URI " +
+						"inside the metadata upload package, rather than just the URI reference."
+					)
+					else userFail(s"No 'stock' spatial coverage with URI $covUri")
+			case Right(_) => ok
+
 	private def validateFileName[Dto <: ObjectUploadDto](dto: Dto, instServ: InstanceServer)(using Envri): Validated[Dto] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then passValidation(dto)
 		else
 			val allDuplicates = instServ
 				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
 				.collect{case Rdf4jStatement(subj, _, _) => subj}
-				.filter(dupIri => !instServ.hasStatement(None, Some(metaVocab.isNextVersionOf), Some(dupIri)))
+				.filter(dupIri => !isDeprecated(dupIri, instServ))
 				.map(_.toJava)
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
@@ -318,8 +346,8 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 		meta.specificInfo match{
 			case Left(spTempMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.SpatioTemporal))
-					errors += "Wrong class of dataset for this object spec (must be spatiotemporal)"
+				if spec.specificDatasetType != DatasetType.SpatioTemporal
+				then errors += "Wrong type of dataset for this object spec (must be spatiotemporal)"
 				else
 					for(vars <- spTempMeta.variables) spec.datasetSpec.fold[Unit]{
 						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
@@ -332,9 +360,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 					}
 
 			case Right(stationMeta) =>
-				if(spec.datasetSpec.exists(_.dsClass != DatasetClass.StationTimeSeries)) {
-					errors += "Wrong class of dataset for this object spec (must be station-specific time series)"
-				}else{
+				if spec.specificDatasetType != DatasetType.StationTimeSeries
+				then errors += "Wrong type of dataset for this object spec (must be station-specific time series)"
+				else
 					if(spec.datasetSpec.isEmpty && stationMeta.acquisitionInterval.isEmpty)
 						errors += "Must provide 'acquisitionInterval' with start and stop timestamps."
 
@@ -354,7 +382,6 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 					if (envri == Envri.SITES && stationMeta.site.isEmpty)
 						errors += "Must provide 'location/ecosystem'"
-				}
 		}
 
 		if(errors.isEmpty) ok else userFail(errors.mkString("\n"))
@@ -382,7 +409,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		}
 		.foldLeft(ok)(bothOk(_, _))
 
-	private def validateLicence(dto: DataObjectDto, instServ: InstanceServer): Try[NotUsed] = {
+	private def validateLicence(dto: ObjectUploadDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
 			if(instServ.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
 			else userFail(s"Unknown licence $licUri")
@@ -415,6 +442,12 @@ class UploadValidator(servers: DataObjectInstanceServers){
 			userFail(s"Item $item already has new version $depr; upload your object/collection as new version of the latter instead.")
 		}
 	}
+
+	private def isDeprecated(item: IRI, server: InstanceServer): Boolean = server
+		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+		.collect{case Rdf4jStatement(subj, _, _) if existsAndIsCompleted(subj, server).isSuccess => true}
+		.toIndexedSeq
+		.nonEmpty
 
 	private def growingIsGrowing(
 		dto: ObjectUploadDto,

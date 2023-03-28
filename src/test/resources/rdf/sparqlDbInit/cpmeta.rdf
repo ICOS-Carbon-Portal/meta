@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF
+	xmlns:cpmeta="http://meta.icos-cp.eu/ontologies/cpmeta/"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 	xmlns:rdf4j="http://rdf4j.org/schema/rdf4j#"
@@ -72,6 +73,7 @@
 	<containsDataset xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/cpmeta/atcCo2MoleFracTimeSer"/>
 	<hasDataTheme xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/themes/atmosphere"/>
 	<hasAssociatedProject xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/projects/icos"/>
+	<hasSpecificDatasetType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
 	<hasKeywords xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CO2, concentration</hasKeywords>
 </rdf:Description>
 
@@ -7924,5 +7926,350 @@
 	<atOrganization xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/organizations/WUR"/>
 	<hasRole xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/roles/Researcher"/>
 </rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ingosArchive">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ingosInversionResult">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/modelDataArchive">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/globalCarbonBudget">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/nationalCarbonEmissions">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/sunInducedFluorescence">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/globalMethaneBudget">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/oceanPco2CarbonFluxMaps">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/nonStandardSpatialNetcdf">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/inversionModelingTimeseries">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/inversionModelingSpatial">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/biosphereModelingSpatial">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/lagrangianTransportModelResult">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/anthropogenicEmissionModelResults">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/biosphericModelResults">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/fireEmissionModelResults">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/spatioTemporalDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcMeteoNrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcSaheatFlagFile">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/wdcggDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcMeteoL0DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcLosGatosL0DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesBin">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtGrowingDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcAnstoL0DataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxnet">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily">
+	<cpmeta:hasSpecificDatasetType rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/stationTimeSeriesDataset"/>
+</rdf:Description>
+
 
 </rdf:RDF>

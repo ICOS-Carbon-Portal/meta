@@ -75,6 +75,11 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:LinkBox</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Membership</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
@@ -167,6 +172,11 @@
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:Station</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">false</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
+        <AbbreviatedIRI>cpmeta:WebpageElements</AbbreviatedIRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
 </Ontology>
 

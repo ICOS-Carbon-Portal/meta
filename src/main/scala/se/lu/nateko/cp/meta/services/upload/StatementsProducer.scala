@@ -52,7 +52,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
 			}
 		}
-
+		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
+			_ === CitationMaker.defaultLicence.url
+		}
 		specificStatements ++ Seq(
 			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),
 			makeSt(objectUri, metaVocab.hasSha256sum, vocab.lit(hashSum.base64, XSD.BASE64BINARY)),
@@ -61,17 +63,15 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.startedAtTime, vocab.lit(Instant.now)),
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
+			makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
 	}
 
-	private def getDobjStatements(meta: DataObjectDto)(using envri: Envri): Seq[Statement] = {
+	private def getDobjStatements(meta: DataObjectDto)(using Envri): Seq[Statement] =
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
-		val licUri: Option[URI] = meta.references.flatMap(_.licence).filter{uri =>
-			!CitationMaker.defaultLicences.get(envri).map(_.url).contains(uri)
-		}
 
 		val specificStatements = meta.specificInfo.fold(
 			elProd => getSpatioTemporalStatements(hashSum, elProd),
@@ -96,9 +96,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 		moratoriumStatements
-	}
+	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms
@@ -115,40 +114,44 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			}
 	}
 
-	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] = {
+	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] =
 		val objectUri = vocab.getStaticObject(hash)
-		val covUri = vocab.getSpatialCoverage(hash)
+		inline def defaultCovUri = spatial.uri.fold(vocab.getSpatialCoverage(hash))(_.toRdf)
 
-		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
-		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
-		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
-		(spatial match{
+		val (covUri, specificStatements) = spatial match
+			case p: Position => getPositionStatements(p)
 			case LatLonBox(min, max, _, _) =>
-				Seq(
+				val covUri = defaultCovUri
+				covUri -> Seq(
 					makeSt(covUri, RDF.TYPE, metaVocab.latLonBoxClass),
 					makeSt(covUri, metaVocab.hasNorthernBound, vocab.lit(max.lat)),
 					makeSt(covUri, metaVocab.hasSouthernBound, vocab.lit(min.lat)),
 					makeSt(covUri, metaVocab.hasWesternBound, vocab.lit(min.lon)),
 					makeSt(covUri, metaVocab.hasEasternBound, vocab.lit(max.lon))
 				)
-
 			case _ =>
-				Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
-		})
-	}
+				val covUri = defaultCovUri
+				covUri -> Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
 
-	private def getPositionStatements(aquisitionUri: IRI, point: Position)(using Envri): Seq[Statement] = {
-		val samplUri = vocab.getPosition(point)
+		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
+		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
+		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
+		specificStatements
 
-		Seq(
-			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
-			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XSD.DOUBLE)),
-			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XSD.DOUBLE)),
-			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
+
+	private def getPositionStatements(point: Position)(using Envri): (IRI, Seq[Statement]) =
+		val posUri = point.uri.fold(vocab.getPosition(point))(_.toRdf)
+
+		val statements = Seq(
+			makeSt(posUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XSD.DOUBLE)),
+			makeSt(posUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XSD.DOUBLE)),
+			makeSt(posUri, RDF.TYPE, metaVocab.positionClass)
 		) ++
-		makeSt(samplUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++
-		makeSt(samplUri, RDFS.LABEL, point.label.map(vocab.lit))
-	}
+		makeSt(posUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++
+		makeSt(posUri, RDFS.LABEL, point.label.map(vocab.lit))
+
+		posUri -> statements
+
 
 	private def getSpatioTemporalStatements(hash: Sha256Sum, meta: SpatioTemporalDto)(using Envri): Seq[Statement] = {
 		val objUri = vocab.getStaticObject(hash)
@@ -186,7 +189,11 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
-		meta.samplingPoint.map(getPositionStatements(aquisitionUri, _)).getOrElse(Seq.empty)++
+		meta.samplingPoint.toSeq.flatMap{pos =>
+			val (samplUri, posStatements) = getPositionStatements(pos)
+			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri) +:
+			posStatements
+		} ++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
@@ -213,20 +220,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] = {
-		spatial match{
-			case Left(feature) =>
-				getGeoFeatureStatements(hash, feature)
-			case Right(existing) =>
-				// TODO Add a validation that 'existing' actually exists
-				/* TODO Protect 'existing' coverage object in the metadata update scenario
-				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
-				 *  by this object any more; it may be needed by others)
-				 */
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
+		spatial match
+			case Left(feature) => getGeoFeatureStatements(hash, feature)
+			case Right(covUri) =>
 				val objectUri = vocab.getStaticObject(hash)
-				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing.toRdf))
-		}
-	}
+				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri.toRdf))
+
 
 	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {
 		val vUri = vocab.getVarInfo(hash, varName)

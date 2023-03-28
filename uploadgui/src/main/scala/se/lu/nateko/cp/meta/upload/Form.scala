@@ -138,7 +138,7 @@ class Form(
 	)
 
 	def specificInfo: Try[Either[SpatioTemporalDto, StationTimeSeriesDto]] = dataPanel.objSpec.flatMap{spec =>
-		if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel == 3))
+		if(spec.isSpatiotemporal)
 			spatTempPanel.meta(prodPanel.dataProductionDto).map(Left.apply)
 		else for(
 			station <- statTsPanel.station;
@@ -186,7 +186,8 @@ class Form(
 		description <- docPanel.description;
 		authors <- docPanel.authors;
 		previousVersion <- aboutPanel.previousVersion;
-		doi <- aboutPanel.existingDoi
+		doi <- aboutPanel.existingDoi;
+		licence <- docPanel.licence
 	) yield DocObjectDto(
 		hashSum = hash,
 		submitterId = submitter.id,
@@ -196,7 +197,13 @@ class Form(
 		authors = authors.map(_.uri),
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
-		references = None
+		references = Some(ReferencesDto(
+			keywords = None,
+			licence = licence,
+			moratorium = None,
+			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+		))
 	)
 
 	private def handleDto(): Unit = {

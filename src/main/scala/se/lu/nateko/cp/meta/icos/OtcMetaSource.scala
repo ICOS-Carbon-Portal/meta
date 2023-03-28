@@ -97,7 +97,7 @@ class OtcMetaSource(
 				}.optional;
 				stIdStr <- qresValueReq(b, "id").map(_.stringValue);
 				name <- qresValueReq(b, "name").map(_.stringValue);
-				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, Some(s"$name position"));
+				posOpt = for(lat <- latOpt; lon <- lonOpt) yield Position(lat, lon, None, Some(s"$name position"), None);
 				coverOpt <- (new Validated(geoJsonOpt, Nil)).flatMap{geoJson =>
 					Validated.fromTry(GeoJson.toFeature(geoJson)).map(_.withLabel(s"$name geo-coverage"))
 				}.optional;
@@ -119,7 +119,8 @@ class OtcMetaSource(
 							),
 							name = name,
 							email = None,
-							website = websiteSt.orElse(websitePlat).map(_.toJava)
+							website = websiteSt.orElse(websitePlat).map(_.toJava),
+							webpageDetails = None
 						),
 						id = stIdStr,
 						location = posOpt,
@@ -152,7 +153,8 @@ class OtcMetaSource(
 				self = UriResource(EtcMetaSource.dummyUri, Option(b.getValue("label")).map(_.stringValue), Nil),
 				name = b.getValue("name").stringValue,
 				email = None,
-				website = None
+				website = None,
+				webpageDetails = None
 			)
 		)}.map(_.toMap)
 	}

@@ -80,6 +80,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(subj == subm && isProvStartTime) Fixed
 		else if(subj == subm && isProvTime) Sticky
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
+		else if(pred === metaVocab.dcterms.license) Sticky
 		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain
 	}
@@ -101,6 +102,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
 				|	}
+				|	filter(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		}

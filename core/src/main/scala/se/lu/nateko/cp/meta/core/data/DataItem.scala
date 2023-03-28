@@ -6,7 +6,9 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 sealed trait DataItem
 
-sealed trait StaticDataItem extends DataItem
+sealed trait StaticDataItem extends DataItem:
+	def res: URI
+	def hash: Sha256Sum
 
 final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem{
 	def asUriResource = UriResource(res, Some(name), Nil)
@@ -23,12 +25,14 @@ sealed trait DataItemCollection extends DataItem {
 
 final case class StaticCollection(
 	res: URI,
+	hash: Sha256Sum,
 	members: Seq[StaticDataItem],
 	creator: Organization,
 	title: String,
 	description: Option[String],
 	previousVersion: Option[URI],
 	nextVersion: Option[URI],
+	latestVersion: URI,
 	doi: Option[String],
 	references: References
 ) extends DataItemCollection with StaticDataItem with CitableItem{
@@ -36,6 +40,9 @@ final case class StaticCollection(
 }
 
 trait CitableItem{
+	def hash: Sha256Sum
 	def doi: Option[String]
 	def references: References
+	def nextVersion: Option[URI]
+	def latestVersion: URI
 }

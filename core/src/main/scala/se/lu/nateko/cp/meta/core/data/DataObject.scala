@@ -11,11 +11,15 @@ sealed trait Agent{
 	def self: UriResource
 	def email: Option[String]
 }
+
+case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
+case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
 case class Organization(
 	self: UriResource,
 	name: String,
 	email: Option[String],
-	website: Option[URI]
+	website: Option[URI],
+	webpageDetails: Option[WebpageElements]
 ) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
 
@@ -31,20 +35,15 @@ case class DataObjectSpec(
 	format: UriResource,
 	encoding: UriResource,
 	dataLevel: Int,
+	specificDatasetType: DatasetType,
 	datasetSpec: Option[DatasetSpec],
 	documentation: Seq[PlainStaticObject],
 	keywords: Option[Seq[String]]
-){
-	def isStationTimeSer: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.StationTimeSeries)
-	def isSpatiotemporal: Boolean = datasetSpec.exists(_.dsClass == DatasetClass.SpatioTemporal)
-}
+)
 
-enum DatasetClass derives CanEqual:
-	case StationTimeSeries, SpatioTemporal
 
 case class DatasetSpec(
 	self: UriResource,
-	dsClass: DatasetClass,
 	resolution: Option[String]
 )
 
@@ -60,7 +59,7 @@ case class DataAcquisition(
 
 	def coverage: Option[GeoFeature] = samplingPoint
 		.map(sp => siteFeature
-			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None).flatten)
+			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None, None).flatten)
 		)
 		.orElse(siteFeature)
 		.orElse(station.fullCoverage)
@@ -88,11 +87,19 @@ case class StationTimeSeriesMeta(
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-case class VarMeta(label: String, valueType: ValueType, valueFormat: Option[URI], minMax: Option[(Double, Double)])
+case class VarMeta(
+	model: UriResource,
+	label: String,
+	valueType: ValueType,
+	valueFormat: Option[URI],
+	minMax: Option[(Double, Double)],
+	instrumentDeployment: Option[InstrumentDeployment]
+)
+
 case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
-	spatial: LatLonBox,
+	spatial: GeoFeature,
 	temporal: TemporalCoverage,
 	station: Option[Station],
 	samplingHeight: Option[Float],
@@ -114,6 +121,7 @@ sealed trait StaticObject extends CitableItem{
 	def submission: DataSubmission
 	def previousVersion: OptionalOneOrSeq[URI]
 	def nextVersion: Option[URI]
+	def latestVersion: URI
 	def parentCollections: Seq[UriResource]
 	def references: References
 
@@ -135,6 +143,7 @@ case class DataObject(
 	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: URI,
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
@@ -145,15 +154,51 @@ case class DataObject(
 		l2 => l2.productionInfo
 	)
 
-	def coverage: Option[GeoFeature] = specificInfo.fold(
-		l3 => Some(l3.spatial),
-		l2 => l2.coverage.orElse(l2.acquisition.coverage)
-	)
+	def coverage: Option[GeoFeature] =
+		val acqCov = specificInfo.fold(
+			l3 => Some(l3.spatial),
+			l2 => l2.coverage.orElse(l2.acquisition.coverage)
+		)
+
+		val varsAndPosits = for
+			cols <- specificInfo.fold(
+				l3 => l3.variables,
+				l2 => l2.columns
+			).toSeq
+			col <- cols
+			dep <- col.instrumentDeployment
+			pos <- dep.pos
+		yield
+			pos -> dep.variableName
+
+		val clusterLookup = PositionUtil.posClusterLookup(varsAndPosits.map(_._1), 1)
+
+		val deploymentCov = varsAndPosits
+			.groupMapReduce(
+				(pos,varname) =>
+					val (lat, lon) = clusterLookup.getOrElse(pos.latlon, pos.latlon)
+					Position.ofLatLon(lat, lon)
+			)(
+				(_, varNameOpt) => 
+					varNameOpt.getOrElse("").trim
+			)(
+				(s1, s2) => if s1 == "" then s2 else if s2 == "" then s1 else s"$s1 / $s2"
+			).map{
+				(pos, varNames) =>
+					val label = Option(varNames).filterNot(_.isEmpty)
+					Pin(pos.withOptLabel(label), PinKind.Sensor)
+			}
+
+		(acqCov.toSeq ++ deploymentCov) match
+			case Seq() => None
+			case Seq(single) => Some(single)
+			case many => Some(FeatureCollection(many, None, None).flatten)
+	end coverage
 
 	def keywords: Option[Seq[String]] =
 		Option((references.keywords ++ specification.keywords ++ specification.project.keywords).flatten)
 			.filter(_.nonEmpty)
-			.map(_.toSeq.sorted)
+			.map(_.toSeq.distinct.sorted)
 
 	def isPreviewable: Boolean = specificInfo.fold(
 		spatioTemporal => spatioTemporal.variables.nonEmpty,
@@ -172,6 +217,7 @@ case class DocObject(
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
 	nextVersion: Option[URI],
+	latestVersion: URI,
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject

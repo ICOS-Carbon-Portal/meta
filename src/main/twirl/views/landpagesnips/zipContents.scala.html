@@ -25,7 +25,7 @@
 			</pre>
 		</div>
 	</div>
-	<script type="text/javascript">
+	<script>
 		(function(){
 			const expander = document.getElementById("zipcontentsexpander")
 			const dataHost = "@conf.dataHost"
@@ -42,6 +42,11 @@
 				return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
 			}
 
+			function parseJson(resp){
+				if(resp.status == 200) return resp.json()
+				return resp.text().then(errMsg => Promise.reject(new Error(errMsg)))
+			}
+
 			expander.addEventListener("click", _ => {
 				expander.innerHTML = expander.innerHTML == "@hideMessage" ? "@viewMessage" : "@hideMessage"
 
@@ -49,7 +54,7 @@
 				firstRender = false
 
 				fetch(`https://${dataHost}/zip/${hash}/listContents`)
-					.then(resp => resp.json())
+					.then(parseJson)
 					.then(
 						json => {
 							const tableBodyHtml = json.map(file => {
@@ -68,7 +73,7 @@
 						},
 						err => {
 							document.getElementById("zipcontentscard").innerHTML = `Error: ${err.message}`
-							console.error(["ZIP contents fetching/listing error", err])
+							console.error("ZIP contents fetching/listing error", err)
 						}
 					)
 			})

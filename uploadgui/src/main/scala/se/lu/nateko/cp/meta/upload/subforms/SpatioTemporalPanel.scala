@@ -47,7 +47,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 					maxLat <- maxLatInput.value;
 					maxLon <- maxLonInput.value;
 					label <- spatCovLabel.value
-				) yield Left(LatLonBox(Position(minLat, minLon, None, None), Position(maxLat, maxLon, None, None), label, None))
+				) yield Left(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
 			} else Success(Right(spCov.uri))
 		}
 
@@ -90,7 +90,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case GotUploadDto(upDto) => handleDto(upDto)
 		case LevelSelected(_) => hide()
 		case ObjSpecSelected(spec) =>
-			if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel >= 3)) show() else hide()
+			if(spec.isSpatiotemporal) show() else hide()
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
 	}
 
@@ -118,10 +118,10 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				varInfoForm.setValues(spatTemp.variables)
 				spatTemp.spatial match{
 					case Left(box) =>
-						minLatInput.value = box.min.lat
-						minLonInput.value = box.min.lon
-						maxLatInput.value = box.max.lat
-						maxLonInput.value = box.max.lon
+						// minLatInput.value = box.min.lat
+						// minLonInput.value = box.min.lon
+						// maxLatInput.value = box.max.lat
+						// maxLonInput.value = box.max.lon
 						spatCovLabel.value = box.label
 						spatialCovSelect.value = customSpatCov
 						spatCoverElements.show()

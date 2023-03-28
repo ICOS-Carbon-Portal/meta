@@ -11,6 +11,7 @@ import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data.Agent
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.core.data.Orcid
@@ -137,6 +138,16 @@ object AttributionProvider{
 	given personOrdering: Ordering[Person] = Ordering
 		.by[Person, String](_.lastName.toUpperCase)
 		.orElseBy(_.firstName)
+
+	given organizationOrdering: Ordering[Organization] = Ordering
+		.by[Organization, String](_.name)
+
+	given agentOrdering: Ordering[Agent] with
+		def compare(a1: Agent, a2: Agent): Int = (a1, a2) match
+			case (p1: Person,       p2: Person)       => personOrdering.compare(p1, p2)
+			case (o1: Organization, o2: Organization) => organizationOrdering.compare(o1, o2)
+			case ( _: Person,        _: Organization) => -1
+			case ( _: Organization,  _: Person)       => 1
 
 	given membershipOrdering: Ordering[Membership] = Ordering
 		.by((m: Membership) => m.role.weight)

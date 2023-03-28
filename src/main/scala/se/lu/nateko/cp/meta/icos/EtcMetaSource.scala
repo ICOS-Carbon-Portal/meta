@@ -30,7 +30,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
 import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
 import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
-import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -293,7 +293,7 @@ object EtcMetaSource{
 			lonOpt <- getNumber(Vars.lon).optional;
 			alt <- getNumber(Vars.elev).optional
 		) yield for(lat <- latOpt; lon <- lonOpt)
-			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None)
+			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None, None)
 
 	def getPerson(using Lookup): Validated[EtcPerson] =
 		for(
@@ -319,7 +319,7 @@ object EtcMetaSource{
 			name <- lookUp(Vars.companyName).require("company must have a name");
 			cpId = UriId(s"etcorg_$tcId");
 			orgUri = vocab.getOrganization(cpId).toJava;
-			core = Organization(UriResource(orgUri, None, Nil), name, None, None)
+			core = Organization(UriResource(orgUri, None, Nil), name, None, None, None)
 		) yield tcId -> TcGenericOrg(cpId, Some(makeId(tcId.toString)), core)
 
 	private def getSensorModel(using Lookup): Validated[(String, SensorModel)] =
@@ -345,7 +345,8 @@ object EtcMetaSource{
 					self = UriResource(vocab.getOrganization(cpId).toJava, None, Nil),
 					name = funderName,
 					email = None,
-					website = None
+					website = None,
+					webpageDetails = None
 				)
 				funderName -> TcFunder[ETC.type](
 					cpId = cpId,
@@ -462,7 +463,8 @@ object EtcMetaSource{
 					self = UriResource(dummyUri, Some(id), descr.toSeq),
 					name = name,
 					email = None,
-					website = None
+					website = None,
+					webpageDetails = None
 				),
 				id = id,
 				location = pos,
@@ -571,7 +573,7 @@ object EtcMetaSource{
 			val dlat = Math.toDegrees(north / Rearth)
 			val Rlat = Rearth * Math.cos(Math.toRadians(statPos.lat))
 			val dlon = Math.toDegrees(east / Rlat)
-			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None)
+			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None, None)
 		}
 		val start = startLocal.map(_.toInstant(ZoneOffset.ofHours(tz)))
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)

@@ -4,7 +4,7 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 @(pageTitle: String)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Metadata Editor", pageTitle, bootstrapJavascript = true){
+@ServerSidePage("Metadata Editor", Some(pageTitle), bootstrapJavascript = true){
 	<script src="https://static.icos-cp.eu/constant/react/0.13.3/react.min.js"></script>
 	<script src="https://static.icos-cp.eu/constant/reflux/0.2.7/reflux.min.js"></script>
 	<!--[if IE]>
@@ -12,7 +12,7 @@
 	<![endif]-->
 	<script src="https://static.icos-cp.eu/constant/underscore.js/1.8.3/underscore-min.js"></script>
 
-	<style type="text/css">
+	<style>
 		#main{
 			padding-top: 10px;
 		}

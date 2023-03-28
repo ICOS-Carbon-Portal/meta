@@ -115,15 +115,9 @@ private class IcosMetaInstancesFetcher(
 	private def getInstrDeployment[T <: TC : TcConf](iri: IRI): InstrumentDeployment[T] = {
 		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
 
-		val pos = for(
-			lat <- getOptionalDouble(iri, metaVocab.hasLatitude);
-			lon <- getOptionalDouble(iri, metaVocab.hasLongitude);
-			alt = getOptionalFloat(iri, metaVocab.hasSamplingHeight)
-		) yield Position(lat, lon, alt, None)
-
 		InstrumentDeployment(
 			cpId = UriId(iri),
-			pos = pos,
+			pos = getInstrumentPosition(iri),
 			stationTcId = getTcId[T](stationIri).getOrElse(throw new MetadataException(s"Station $stationIri had no TC id associated with it")),
 			stationUriId = UriId(stationIri),
 			variable = getOptionalString(iri, metaVocab.hasVariableName),

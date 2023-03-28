@@ -12,15 +12,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DataProduction
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
-import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
 
@@ -83,15 +75,7 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = Some(
-				ReferencesDto(
-					keywords = dobj.references.keywords,
-					licence = dobj.references.licence.map(_.url),
-					moratorium = dobj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
-					duplicateFilenameAllowed = None,
-					autodeprecateSameFilenameObjects = None
-				)
-			)
+			references = refsToDto(dobj)
 		)
 		case dobj: DocObject => DocObjectDto(
 			submitterId = "",
@@ -109,9 +93,19 @@ object UploadDtoReader{
 			preExistingDoi = dobj.doi.map(Doi.parse).collect{
 				case Success(doi) => doi
 			},
-			references = None
+			references = refsToDto(dobj)
 		)
 	}
+
+	private def refsToDto(obj: StaticObject): Option[ReferencesDto] = Some(
+		ReferencesDto(
+			keywords = obj.references.keywords,
+			licence = obj.references.licence.map(_.url),
+			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
+			duplicateFilenameAllowed = None,
+			autodeprecateSameFilenameObjects = None
+		)
+	)
 
 	def collToDto(coll: StaticCollection) = StaticCollectionDto(
 		submitterId = "",
@@ -142,8 +136,7 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(box: LatLonBox) = box.uri.fold[Either[LatLonBox, URI]](Left(box)){
-		case CpVocab.SpatialCoverage(_) => Left(box)
-		case uri => Right(uri)
-	}
+	private def readCoverage(gf: GeoFeature): Either[GeoFeature, URI] = gf.uri match
+		case None      => Left(gf)
+		case Some(uri) => Right(uri)
 }

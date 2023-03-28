@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
@@ -30,7 +31,6 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.util.Using
 
 import CpIndex.*
 
@@ -65,22 +65,42 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
 		this(sail, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
-		Using(sail.getConnection)(_
+		var statementCount = 0
+		sail.accessEagerly(_
 			.getStatements(null, null, null, false)
 			.asPlainScalaIterator
-			.foreach(s => put(RdfUpdate(s, true)))
+			.foreach{s =>
+				put(RdfUpdate(s, true))
+				statementCount += 1
+				if statementCount % 1000000 == 0 then
+					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
+			}
 		)
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
+		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
+		reportDebugInfo()
 	}
+	private def reportDebugInfo(): Unit =
+		log.debug(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
+		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
+		log.debug(s"Amount of objects in stats is $objsInStats")
+		log.debug(s"Following fieldsites data object keys are present in the index:")
+		stats.foreach{
+			case (key, bm) =>
+				if key.spec.toString.contains("fieldsites") then
+					log.debug(s"Count ${bm.getCardinality} for key $key")
+		}
+
+	if stats.nonEmpty then
+		log.info("CpIndex got initialized with non-empty index data to use")
+		reportDebugInfo()
 
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
 	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
-	//Mass-import of the specification info
-	private val specRequiresStation: AnyRefMap[IRI, Boolean] = getStationRequirementsPerSpec(sail, vocab)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -190,11 +210,17 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
+		log.debug(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
+		filterOpt match
+			case None => log.debug("Fetching statEntries with no filter")
+			case Some(bm) => log.debug(s"Fetching stat entries with filter permitting ${bm.getCardinality} objects")
 
 		stats.flatMap{
 			case (key, bm) =>
 				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
+				if key.spec.toString.contains("fieldsites") then
+					log.debug(s"Count was $count for key $key")
 				if(count > 0) Some(StatEntry(key, count))
 				else None
 		}
@@ -267,7 +293,6 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 				case spec: IRI =>
 					modForDobj(subj){oe =>
 						updateCategSet(categMap(Spec), spec, oe.idx)
-						if(!specRequiresStation.getOrElse(spec, true)) updateCategSet(categMap(Station), None, oe.idx)
 						if(isAssertion) {
 							if(oe.spec != null) removeStat(oe)
 							oe.spec = spec
@@ -356,19 +381,42 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			}
 
 			case `isNextVersionOf` =>
-				modForDobj(obj)(oe => {
+				modForDobj(obj){oe =>
 					val deprecated = boolBitmap(DeprecationFlag)
-					if(isAssertion) deprecated.add(oe.idx)
-					else if(
+					if isAssertion then
+						if !deprecated.contains(oe.idx) then //this was to prevent needless repo access
+							val subjIsDobj = modForDobj(subj){ deprecator =>
+								deprecator.isNextVersion = true
+								//only fully-uploaded deprecators can actually deprecate:
+								if deprecator.size > -1 then deprecated.add(oe.idx)
+							}
+							if !subjIsDobj then subj.toJava match
+								//collections are always fully uploaded
+								case Hash.Collection(_) => deprecated.add(oe.idx)
+								case _ =>
+					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!Using(sail.getConnection)(_.hasStatement(null, pred, obj, false)).getOrElse(false)
-					) deprecated.remove(oe.idx)
-				})
+						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+					then deprecated.remove(oe.idx)
+				}
 
 			case `hasSizeInBytes` => ifLong(obj){size =>
 				modForDobj(subj){oe =>
-					if(isAssertion) oe.size = size
-					else if(oe.size == size) oe.size = -1
+					inline def isRetraction = oe.size == size && !isAssertion
+					if isAssertion then oe.size = size
+					else if isRetraction then oe.size = -1
+
+					if oe.isNextVersion then
+						val deprecated = boolMap(DeprecationFlag)
+						matchStatements(subj, pred, null)
+							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
+							.foreach{oldIri =>
+								modForDobj(oldIri){old =>
+									if isAssertion then deprecated.add(old.idx)
+									else if isRetraction then deprecated.remove(old.idx)
+								}
+							}
+
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}
 			}
@@ -405,21 +453,21 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		}
 	}
 
-	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Unit = dobj match{
+	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Boolean = dobj match{
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if(entry.prefix == "") entry.prefix = prefix.intern()
 			mod(entry)
+			true
 
-		case _ =>
+		case _ => false
 	}
 
-	private def keyForDobj(obj: ObjEntry): Option[StatKey] = if(
-		obj.spec == null || obj.submitter == null ||
-		(obj.station == null && specRequiresStation.getOrElse(obj.spec, true))
-	) None else Some(
-		StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
-	)
+	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
+		if obj.spec == null || obj.submitter == null then None
+		else Some(
+			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
+		)
 
 	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
 		stats.get(key).foreach(_.remove(obj.idx))
@@ -430,6 +478,10 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
 		initOk.add(obj.idx)
 	}
+
+	private def matchStatements(subj: IRI, pred: IRI, obj: Value): IndexedSeq[Statement] =
+		sail.accessEagerly(_.getStatements(subj, pred, obj, false).asPlainScalaIterator.toIndexedSeq)
+
 
 }
 
@@ -462,6 +514,7 @@ object CpIndex{
 		var dataEnd: Long = Long.MinValue
 		var submissionStart: Long = Long.MinValue
 		var submissionEnd: Long = Long.MinValue
+		var isNextVersion: Boolean = false
 
 		private def dateTimeFromLong(dt: Long): Option[Instant] =
 			if(dt == Long.MinValue) None
@@ -503,23 +556,6 @@ object CpIndex{
 			}catch{
 				case _: Throwable => //ignoring wrong floats
 			}
-	}
-
-	private def objSpecRequiresStation(spec: IRI, dataLevel: Literal): Boolean =
-		dataLevel.intValue < 3 && !CpVocab.isIngosArchive(spec)
-
-	private def getStationRequirementsPerSpec(sail: Sail, vocab: CpmetaVocab): AnyRefMap[IRI, Boolean] = {
-		val map = new AnyRefMap[IRI, Boolean]
-		Using(sail.getConnection)(_
-			.getStatements(null, vocab.hasDataLevel, null, false)
-			.asPlainScalaIterator
-			.foreach{
-				case Rdf4jStatement(subj, _, obj: Literal) =>
-					map.update(subj, objSpecRequiresStation(subj, obj))
-				case _ =>
-			}
-		)
-		map
 	}
 
 }

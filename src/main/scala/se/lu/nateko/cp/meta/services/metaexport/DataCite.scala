@@ -29,12 +29,11 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 
 	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 
-	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.specificInfo.fold(
-		l3 => l3.productionInfo.contributors
+	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.production.toSeq.flatMap{
+		_.contributors
 			.map(agent => toDoiCreator(agent).toContributor(ContributorType.Producer))
-			.distinct,
-		_ => Seq.empty
-	)
+			.distinct
+	}
 
 	def getFormat(obj: StaticObject): Option[String] = obj match {
 		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
@@ -166,7 +165,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def toDoiCreator(p: Agent) = p match {
-		case Organization(_, name, _, _) =>
+		case Organization(_, name, _, _, _) =>
 			Creator(
 				name = GenericName(name),
 				nameIdentifiers = Nil,

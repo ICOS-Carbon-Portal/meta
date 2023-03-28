@@ -19,6 +19,9 @@ def staticCollAccessUrl(landingPage: URI)(using envri: EnvriConfig) = new URI(
 	s"https://${envri.dataHost}${landingPage.getPath}"
 )
 
+def envriConf(using configs: EnvriConfigs, envri: Envri): EnvriConfig =
+	configs.getOrElse(envri, throw new Exception(s"No config found for ENVRI $envri"))
+
 def objectPrefix(using envri: EnvriConfig): String = s"${envri.dataItemPrefix}$objectPathPrefix"
 def collectionPrefix(using envri: EnvriConfig): String = s"${envri.dataItemPrefix}$collectionPathPrefix"
 
@@ -26,3 +29,6 @@ val objectPathPrefix = "objects/"
 val collectionPathPrefix = "collections/"
 
 type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
+
+enum DatasetType derives CanEqual:
+	case StationTimeSeries, SpatioTemporal

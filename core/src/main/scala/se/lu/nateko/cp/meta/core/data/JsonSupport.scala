@@ -13,15 +13,17 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
 	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
-	given JsonFormat[DatasetClass] = enumFormat(DatasetClass.valueOf, DatasetClass.values)
-	given RootJsonFormat[DatasetSpec] = jsonFormat3(DatasetSpec.apply)
-	given RootJsonFormat[DataObjectSpec] = jsonFormat9(DataObjectSpec.apply)
+	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
+	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
+	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
-	given RootJsonFormat[Position] = jsonFormat4(Position.apply)
+	given RootJsonFormat[Position] = jsonFormat5(Position.apply)
 	given RootJsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
-	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
-	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
-	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[GeoTrack] = jsonFormat3(GeoTrack.apply)
+	given RootJsonFormat[Polygon] = jsonFormat3(Polygon.apply)
+	given RootJsonFormat[Circle] = jsonFormat4(Circle.apply)
+	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
+	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -39,6 +41,7 @@ object JsonSupport extends CommonJsonSupport{
 			case gpoly: Polygon => gpoly.toJson
 			case geocol: FeatureCollection => geocol.toJson
 			case c: Circle => c.toJson
+			case p: Pin => p.toJson
 		}
 
 		def read(value: JsValue): GeoFeature = value match {
@@ -55,6 +58,8 @@ object JsonSupport extends CommonJsonSupport{
 					value.convertTo[FeatureCollection]
 				else if(fields.contains("radius"))
 					value.convertTo[Circle]
+				else if(fields.contains("pinkind"))
+					value.convertTo[Pin]
 				else
 					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>
@@ -76,7 +81,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	given JsonFormat[FeatureCollection] = {
 		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(vanillaGeoFeatureFormat)
-		jsonFormat2(FeatureCollection.apply)
+		jsonFormat3(FeatureCollection.apply)
 	}
 
 	given JsonFormat[Orcid] with{
@@ -91,8 +96,11 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
-	given RootJsonFormat[Instrument] = jsonFormat8(Instrument.apply)
+	given RootJsonFormat[LinkBox] = jsonFormat4(LinkBox.apply)
+	given RootJsonFormat[WebpageElements] = jsonFormat3(WebpageElements.apply)
+	given RootJsonFormat[Organization] = jsonFormat5(Organization.apply)
+	given RootJsonFormat[InstrumentDeployment] = jsonFormat7(InstrumentDeployment.apply)
+	given RootJsonFormat[Instrument] = jsonFormat9(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
 	given RootJsonFormat[Site] = jsonFormat3(Site.apply)
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
@@ -125,7 +133,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
 	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given RootJsonFormat[VarMeta] = jsonFormat4(VarMeta.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat6(VarMeta.apply)
 	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
 	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 
@@ -160,10 +168,10 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
 	import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 	given RootJsonFormat[References] = jsonFormat10(References.apply)
-	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
+	given RootJsonFormat[DocObject] = jsonFormat13(DocObject.apply)
 
 	given RootJsonFormat[DataObject] with {
-		private given defFormat: RootJsonFormat[DataObject] = jsonFormat13(DataObject.apply)
+		private given defFormat: RootJsonFormat[DataObject] = jsonFormat14(DataObject.apply)
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
@@ -191,7 +199,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[StaticCollection] = jsonFormat9(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] = jsonFormat11(StaticCollection.apply)
 
 	given RootJsonFormat[StaticDataItem] with{
 

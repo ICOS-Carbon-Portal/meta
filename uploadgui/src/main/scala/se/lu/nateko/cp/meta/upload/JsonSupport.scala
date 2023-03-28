@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
+import scala.reflect.ClassTag
 
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.doi.*
@@ -15,6 +16,15 @@ object JsonSupport {
 
 	given OFormat[Position] = Json.format[Position]
 	given OFormat[LatLonBox] = Json.format[LatLonBox]
+
+	given OFormat[GeoFeature] with
+		private val notImplError = "Only LatLonBoxes are supported as custom GeoFeatures in UploadGUI at this time"
+
+		def writes(gf: GeoFeature) = gf match
+			case box: LatLonBox => Json.toJsObject(box)
+			case _ => throw NotImplementedError(notImplError)
+
+		def reads(js: JsValue) = js.validate[LatLonBox].orElse(JsError(notImplError))
 
 	given Format[Instant] with{
 		def writes(i: Instant) = JsString(i.toString)

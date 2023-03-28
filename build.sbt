@@ -14,7 +14,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.6",
+		version := "0.7.8",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
@@ -28,13 +28,14 @@ lazy val metaCore = (project in file("core"))
 			"Sha256Sum" -> "string",
 			"Orcid" -> "string",
 			"JsValue" -> "object",
+			"DoiMeta" -> "object",
 			"CountryCode" -> "string"
 		),
 		cpTsGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
 			Seq(
 				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
-				dir / "Station.scala", dir / "package.scala"
+				dir / "Station.scala", dir / "Instrument.scala", dir / "package.scala"
 			)
 		},
 		publishTo := {
@@ -111,7 +112,7 @@ lazy val meta = (project in file("."))
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.27",
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.6.5",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.6.7",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.8.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.0",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,

@@ -226,6 +226,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		val label = getOptionalString(instr, metaVocab.hasName).orElse{
 			(model, serialNumber) match
+				case (None, None) => None
 				case (None, nbr) => nbr
 				case (m, None) => m
 				case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")

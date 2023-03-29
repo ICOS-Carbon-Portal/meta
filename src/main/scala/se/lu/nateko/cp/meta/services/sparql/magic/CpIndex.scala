@@ -387,6 +387,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 						if !deprecated.contains(oe.idx) then //this was to prevent needless repo access
 							val subjIsDobj = modForDobj(subj){ deprecator =>
 								deprecator.isNextVersion = true
+								log.info(s"Marked object ${deprecator.hash.id} as a deprecator")
 								//only fully-uploaded deprecators can actually deprecate:
 								if deprecator.size > -1 then deprecated.add(oe.idx)
 							}
@@ -407,13 +408,21 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 					else if isRetraction then oe.size = -1
 
 					if oe.isNextVersion then
-						val deprecated = boolMap(DeprecationFlag)
-						matchStatements(subj, pred, null)
+						log.info(s"Object ${oe.hash} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+						val deprecated = boolBitmap(DeprecationFlag)
+						val olds = matchStatements(subj, pred, null)
 							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
+						if olds.isEmpty then
+							log.warning(s"Object ${oe.hash} is marked as a deprecator but has no associated old versions")
+						olds
 							.foreach{oldIri =>
 								modForDobj(oldIri){old =>
-									if isAssertion then deprecated.add(old.idx)
-									else if isRetraction then deprecated.remove(old.idx)
+									if isAssertion then
+										deprecated.add(old.idx)
+										log.info(s"Marked ${old.hash.id} as deprecated")
+									else if isRetraction then
+										deprecated.remove(old.idx)
+										log.info(s"Marked ${old.hash.id} as non-deprecated")
 								}
 							}
 

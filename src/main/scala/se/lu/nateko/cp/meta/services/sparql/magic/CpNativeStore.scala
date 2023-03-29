@@ -69,7 +69,9 @@ class CpNativeStore(
 			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
 		)
 		log.info("Initializing triple store...")
-		nativeSail.setForceSync(!isFreshInit)
+		val forceSync = !isFreshInit
+		log.info(s"Setting force-sync to '$forceSync'")
+		nativeSail.setForceSync(forceSync)
 		nativeSail.init()
 		log.info("Triple store initialized")
 		nativeSail.enricher = StatementsEnricher(citationFactory(nativeSail))

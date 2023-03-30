@@ -37,6 +37,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	def metadataUri: Try[URI] = metadataUriInput.value
 	def duplicateFilenameAllowed: Option[Boolean] = Some(duplicateFilenameAllowedInput.checked)
 	def autodeprecateSameFilenameObjects: Option[Boolean] = Some(autoDeprecateInput.checked)
+	def nextVersionIsPartial: Option[Boolean] = Some(multiNextVersionInput.checked)
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 
@@ -52,6 +53,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val duplicateFilenameAllowedElement = new HtmlElements("#duplicatefile-checkbox-elem")
 	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile-checkbox", _ => notifyUpdate())
 	private val autoDeprecateInput = new Checkbox("autodeprecate-checkbox", c => {onAutoDeprecateSelected(c); notifyUpdate()})
+	private val multiNextVersionInput = new Checkbox("multinextvers-checkbox", c => {notifyUpdate()}) // TODO do sth before update
 	private val previousVersionInput = new HashOptOneOrManyInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")

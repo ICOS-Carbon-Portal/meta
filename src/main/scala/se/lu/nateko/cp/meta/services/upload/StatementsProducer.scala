@@ -72,6 +72,25 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
+		val dct = metaVocab.dcterms
+
+		val partialNextVersionStatements = 
+			if meta.nextVersionIsPartial then
+				meta.isNextVersionOf match
+					case Some(Left(v)) =>
+						val collIri = vocab.getNextVersionColl(v)
+
+						val statements: Seq[Statement] = Seq(
+								makeSt(collIri, RDF.TYPE, metaVocab.collectionClass),
+								makeSt(collIri, dct.title, vocab.lit(s"Next version collection for obj: ${meta.hashSum.id}")),
+								) ++
+								makeSt(collIri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
+								makeSt(collIri, dct.hasPart, Seq(objectUri))
+						statements
+					case _ => Seq.empty
+			else Seq.empty
+
+		// println(partialNextVersionStatements)
 
 		val specificStatements = meta.specificInfo.fold(
 			elProd => getSpatioTemporalStatements(hashSum, elProd),
@@ -96,7 +115,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		moratoriumStatements
+		moratoriumStatements ++ partialNextVersionStatements
 	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {

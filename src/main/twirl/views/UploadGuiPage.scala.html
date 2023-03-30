@@ -183,6 +183,10 @@
 								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>
 								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
 							</div>
+							<div id="multinextvers-checkbox-elem">
+								<input class="form-check-input" id="multinextvers-checkbox" role="checkbox" type="checkbox">Allow multiple objects to deprecate</input>
+								@helpButton("Allow multiple objects to deprecate single object")
+							</div>
 							<div class="mb-3">
 								<label class="form-label" for="existingdoi">Pre-existing DOI @optional</label>
 								<input type="text" id="existingdoi" class="form-control" placeholder="DOI">

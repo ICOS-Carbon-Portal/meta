@@ -103,7 +103,8 @@ object UploadDtoReader{
 			licence = obj.references.licence.map(_.url),
 			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
 			duplicateFilenameAllowed = None,
-			autodeprecateSameFilenameObjects = None
+			autodeprecateSameFilenameObjects = None,
+			nextVersionIsPartial = None
 		)
 	)
 
@@ -118,6 +119,7 @@ object UploadDtoReader{
 		isNextVersionOf = coll.previousVersion.flatMap{uri =>
 			Uri.Path(uri.getPath) match {
 				case Hash.Collection(hash) => Some(Left(hash))
+				case Hash.Object(hash) => Some(Left(hash))
 				case _ => None
 			}
 		},

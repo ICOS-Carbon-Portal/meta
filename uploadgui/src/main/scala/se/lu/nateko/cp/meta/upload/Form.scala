@@ -133,7 +133,8 @@ class Form(
 			licence = licence,
 			moratorium = moratorium,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			nextVersionIsPartial = aboutPanel.nextVersionIsPartial
 		))
 	)
 
@@ -202,7 +203,8 @@ class Form(
 			licence = licence,
 			moratorium = None,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			nextVersionIsPartial = aboutPanel.nextVersionIsPartial
 		))
 	)
 

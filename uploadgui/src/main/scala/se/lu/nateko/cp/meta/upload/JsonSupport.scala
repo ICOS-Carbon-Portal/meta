@@ -51,7 +51,7 @@ object JsonSupport {
 	}
 
 	given OFormat[DataProductionDto] = Json.format[DataProductionDto]
-	given OFormat[ReferencesDto] = Json.format[ReferencesDto]
+	given OFormat[ReferencesDto] = Json.format[ReferencesDto] 
 	given OFormat[SpatioTemporalDto] = Json.format[SpatioTemporalDto]
 	given OFormat[StationTimeSeriesDto] = Json.format[StationTimeSeriesDto]
 

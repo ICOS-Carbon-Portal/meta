@@ -384,12 +384,14 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 				modForDobj(obj){oe =>
 					val deprecated = boolBitmap(DeprecationFlag)
 					if isAssertion then
-						if !deprecated.contains(oe.idx) then //this was to prevent needless repo access
+						if !deprecated.contains(oe.idx) then //to prevent needless work
 							val subjIsDobj = modForDobj(subj){ deprecator =>
 								deprecator.isNextVersion = true
-								log.info(s"Marked object ${deprecator.hash.id} as a deprecator")
 								//only fully-uploaded deprecators can actually deprecate:
-								if deprecator.size > -1 then deprecated.add(oe.idx)
+								if deprecator.size > -1 then
+									deprecated.add(oe.idx)
+									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
+								else log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
 							}
 							if !subjIsDobj then subj.toJava match
 								//collections are always fully uploaded
@@ -408,23 +410,23 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 					else if isRetraction then oe.size = -1
 
 					if oe.isNextVersion then
-						log.info(s"Object ${oe.hash} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+						log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
 						val deprecated = boolBitmap(DeprecationFlag)
-						val olds = matchStatements(subj, pred, null)
+						val olds = matchStatements(subj, isNextVersionOf, null)
 							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
 						if olds.isEmpty then
-							log.warning(s"Object ${oe.hash} is marked as a deprecator but has no associated old versions")
-						olds
-							.foreach{oldIri =>
-								modForDobj(oldIri){old =>
-									if isAssertion then
-										deprecated.add(old.idx)
-										log.info(s"Marked ${old.hash.id} as deprecated")
-									else if isRetraction then
-										deprecated.remove(old.idx)
-										log.info(s"Marked ${old.hash.id} as non-deprecated")
-								}
+							log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+
+						olds.foreach{oldIri =>
+							modForDobj(oldIri){old =>
+								if isAssertion then
+									deprecated.add(old.idx)
+									log.debug(s"Marked ${old.hash.id} as deprecated")
+								else if isRetraction then
+									deprecated.remove(old.idx)
+									log.debug(s"Marked ${old.hash.id} as non-deprecated")
 							}
+						}
 
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}

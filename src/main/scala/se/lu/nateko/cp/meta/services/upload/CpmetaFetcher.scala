@@ -152,13 +152,17 @@ trait CpmetaFetcher extends FetchingHelper{
 			case single :: Nil => Some(Left(single.toJava))
 			case many => Some(Right(many.map(_.toJava)))
 
-	// both collection and contents are returned for objects
 	protected def getNextVersions(item: IRI): Seq[IRI] = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 		.toIndexedSeq
 		.collect{
-			case Rdf4jStatement(next, _, _) if isComplete(next) => next
-		}
+			case Rdf4jStatement(next, _, _) if isPlainCollection(next) => server.getUriValues(item, metaVocab.dcterms.hasPart)
+			case Rdf4jStatement(next, _, _) if isComplete(next) => Seq(next)
+		}.flatten
+	
+	protected def isPlainCollection(item: IRI): Boolean =
+		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
+		itemTypes.contains(metaVocab.plainCollectionClass)
 
 	protected def isComplete(item: IRI): Boolean =
 		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet

@@ -59,9 +59,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		case doc: DocObjectDto => validateDoc(doc, uploader)
 
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = 
-		println("----------------- validating data object ------------------")
-		for(
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
@@ -81,10 +79,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
 	) yield amended
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = 
-		// println("----------------- validating document object ------------------")
-		
-		for(
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		instServer <- servers.getDocInstServer;
@@ -95,9 +90,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	) yield amended
 
 
-	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = 
-		// println("----------------- validating collection object ------------------")
-		for(
+	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
 		_ <- collMemberListOk(coll, hash);
 		submConf <- getSubmitterConfig(coll);
 		_ <- validateDescription(coll.description);

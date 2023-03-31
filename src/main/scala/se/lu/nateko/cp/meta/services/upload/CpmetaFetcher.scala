@@ -156,7 +156,9 @@ trait CpmetaFetcher extends FetchingHelper{
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 		.toIndexedSeq
 		.collect{
-			case Rdf4jStatement(next, _, _) if isPlainCollection(next) => server.getUriValues(item, metaVocab.dcterms.hasPart)
+			case Rdf4jStatement(next, _, _) if isPlainCollection(next) =>
+				val parts = server.getUriValues(item, metaVocab.dcterms.hasPart)
+				parts.filter(isComplete)
 			case Rdf4jStatement(next, _, _) if isComplete(next) => Seq(next)
 		}.flatten
 	

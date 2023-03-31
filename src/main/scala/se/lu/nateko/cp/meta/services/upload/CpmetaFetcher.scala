@@ -149,7 +149,7 @@ trait CpmetaFetcher extends FetchingHelper{
 	protected def getNextVersionAsUri(item: IRI): OptionalOneOrSeq[URI] = 
 		getNextVersions(item) match
 			case Nil => None
-			case single :: Nil => Some(Left(single.toJava))
+			case Seq(single) => Some(Left(single.toJava))
 			case many => Some(Right(many.map(_.toJava)))
 
 	protected def getNextVersions(item: IRI): Seq[IRI] = server
@@ -157,7 +157,7 @@ trait CpmetaFetcher extends FetchingHelper{
 		.toIndexedSeq
 		.collect{
 			case Rdf4jStatement(next, _, _) if isPlainCollection(next) =>
-				val parts = server.getUriValues(item, metaVocab.dcterms.hasPart)
+				val parts = server.getUriValues(next, metaVocab.dcterms.hasPart)
 				parts.filter(isComplete)
 			case Rdf4jStatement(next, _, _) if isComplete(next) => Seq(next)
 		}.flatten
@@ -195,11 +195,23 @@ trait CpmetaFetcher extends FetchingHelper{
 			case many => Right(many)
 
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
-		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
+		def getPrevVers(list: List[URI]): OptionalOneOrSeq[URI] = list match
 			case Nil => None
 			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
-		}
+
+		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
+		val plainParentCollections = server.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).map(_.getSubject).collect{
+			case iri: IRI if isPlainCollection(iri) => iri
+		}.toList
+
+		if plainParentCollections.nonEmpty then
+			val prevVersions = plainParentCollections.map{uri =>
+				server.getUriValues(uri, metaVocab.isNextVersionOf).map(_.toJava).toList
+			}.flatten
+			getPrevVers(prevVersions)
+		else
+			getPrevVers(server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList)
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).flattenToSeq
 

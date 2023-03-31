@@ -29,6 +29,7 @@ val objectPathPrefix = "objects/"
 val collectionPathPrefix = "collections/"
 
 type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
+type OneOrSeq[T] = Either[T, Seq[T]]
 
 enum DatasetType derives CanEqual:
 	case StationTimeSeries, SpatioTemporal

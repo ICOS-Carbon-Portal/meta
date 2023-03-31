@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.meta.core.data.OneOrSeq
 
 
 class FormElement(elemId: String) {
@@ -74,7 +75,7 @@ class HashOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[
 )
 
 class HashOptOneOrManyInput(elemId: String, cb: () => Unit)
-	extends GenericOptionalInput[Either[Sha256Sum, Seq[Sha256Sum]]](elemId, cb)(
+	extends GenericOptionalInput[OneOrSeq[Sha256Sum]](elemId, cb)(
 		s =>
 			if(s.isEmpty) Success(None)
 			else if(s.contains("\n")) Try(Some(Right(s.split("\n").map(line => Sha256Sum.fromString(line).get).toIndexedSeq)))

@@ -178,7 +178,6 @@ trait CpmetaFetcher extends FetchingHelper{
 		// @tailrec // rewrite to make tail recursive? 
 		def latest(item: IRI): Seq[IRI] = 
 			val nextVersions = getNextVersions(item).flatMap{next =>
-				println(s"new version of item: $next and seen: $seen")
 				if seen.contains(next) then Seq(item)
 				else 
 					seen = seen + next
@@ -189,16 +188,16 @@ trait CpmetaFetcher extends FetchingHelper{
 
 		latest(item).map(_.toJava)
 
-	protected def getLatestVersion(item: IRI): Either[URI, Seq[URI]] =
+	protected def getLatestVersion(item: IRI): OneOrSeq[URI] =
 		getLatestVersions(item) match
-			case Nil => Right(Seq.empty) // this case should not happen?
-			case single :: Nil => Left(single)
+			case Nil => Right(Seq.empty)
+			case Seq(single) => Left(single)
 			case many => Right(many)
 
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
 			case Nil => None
-			case single :: Nil => Some(Left(single))
+			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
 		}
 

@@ -5,14 +5,24 @@
 @for(nextUri <- item.nextVersion) {
 	@alertWarning(s"$itemType is deprecated"){
 		<ul>
-			@if(nextUri != item.latestVersion){
-				<li>@versionLink(nextUri, "Next version")</li>
-			}
+			<li>@versionLink(nextUri, "Next version")</li>
 			<li>@versionLink(item.latestVersion, "Latest version")</li>
 		</ul>
 	}
 }
 
-@versionLink(uri: URI, label: String) = {
+
+@singleVersionLink(uri: URI, label: String) = {
 	<a class="alert-link" href=@{uri.getRawPath}>@label</a>
+}
+
+@multipleVersionLinks(uris: Seq[URI], label: String) = {
+	@uris.map{uri => @singleVersionLink(uri, label) }
+}
+
+@versionLink(versions: Either[URI, Seq[URI]], label: String) = {
+	@versions match {
+		case Left(uri) => { @singleVersionLink(uri, label) }
+		case Right(uris) => { @multipleVersionLinks(uris, label) }
+	}
 }

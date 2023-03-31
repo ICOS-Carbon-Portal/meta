@@ -120,8 +120,8 @@ sealed trait StaticObject extends CitableItem{
 	def size: Option[Long]
 	def submission: DataSubmission
 	def previousVersion: OptionalOneOrSeq[URI]
-	def nextVersion: Option[URI]
-	def latestVersion: URI
+	def nextVersion: OptionalOneOrSeq[URI]
+	def latestVersion: Either[URI, Seq[URI]]
 	def parentCollections: Seq[UriResource]
 	def references: References
 
@@ -142,8 +142,8 @@ case class DataObject(
 	specification: DataObjectSpec,
 	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
-	nextVersion: Option[URI],
-	latestVersion: URI,
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: Either[URI, Seq[URI]],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
@@ -216,8 +216,8 @@ case class DocObject(
 	description: Option[String],
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
-	nextVersion: Option[URI],
-	latestVersion: URI,
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: Either[URI, Seq[URI]],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject

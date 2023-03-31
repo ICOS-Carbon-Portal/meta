@@ -146,10 +146,17 @@ trait CpmetaFetcher extends FetchingHelper{
 			.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
 			.withUri(covUri.toJava)
 
-	protected def getNextVersion(item: IRI): Option[IRI] = server
+	protected def getNextVersionAsUri(item: IRI): OptionalOneOrSeq[URI] = 
+		getNextVersions(item) match
+			case Nil => None
+			case single :: Nil => Some(Left(single.toJava))
+			case many => Some(Right(many.map(_.toJava)))
+
+	// both collection and contents are returned for objects
+	protected def getNextVersions(item: IRI): Seq[IRI] = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 		.toIndexedSeq
-		.collectFirst{
+		.collect{
 			case Rdf4jStatement(next, _, _) if isComplete(next) => next
 		}
 
@@ -160,14 +167,27 @@ trait CpmetaFetcher extends FetchingHelper{
 		then server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
 		else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
 
-	protected def getLatestVersion(item: IRI): URI =
-		@tailrec
-		def latest(item: IRI, seen: Set[IRI]): IRI = getNextVersion(item) match
-			case None => item
-			case Some(next) =>
-				if seen.contains(next) then item
-				else latest(next, seen + next)
-		latest(item, Set.empty).toJava
+	protected def getLatestVersions(item: IRI): Seq[URI] =
+		var seen: Set[IRI] = Set()
+		// @tailrec // rewrite to make tail recursive? 
+		def latest(item: IRI): Seq[IRI] = 
+			val nextVersions = getNextVersions(item).flatMap{next =>
+				println(s"new version of item: $next and seen: $seen")
+				if seen.contains(next) then Seq(item)
+				else 
+					seen = seen + next
+					latest(next)
+			}
+
+			if nextVersions.isEmpty then Seq(item) else nextVersions
+
+		latest(item).map(_.toJava)
+
+	protected def getLatestVersion(item: IRI): Either[URI, Seq[URI]] =
+		getLatestVersions(item) match
+			case Nil => Right(Seq.empty) // this case should not happen?
+			case single :: Nil => Left(single)
+			case many => Right(many)
 
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
 		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {

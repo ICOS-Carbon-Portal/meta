@@ -31,8 +31,8 @@ final case class StaticCollection(
 	title: String,
 	description: Option[String],
 	previousVersion: Option[URI],
-	nextVersion: Option[URI],
-	latestVersion: URI,
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: Either[URI, Seq[URI]],
 	doi: Option[String],
 	references: References
 ) extends DataItemCollection with StaticDataItem with CitableItem{
@@ -43,6 +43,6 @@ trait CitableItem{
 	def hash: Sha256Sum
 	def doi: Option[String]
 	def references: References
-	def nextVersion: Option[URI]
-	def latestVersion: URI
+	def nextVersion: OptionalOneOrSeq[URI]
+	def latestVersion: Either[URI, Seq[URI]]
 }

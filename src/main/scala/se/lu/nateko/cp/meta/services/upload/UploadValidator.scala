@@ -59,7 +59,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		case doc: DocObjectDto => validateDoc(doc, uploader)
 
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = for(
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = 
+		println("----------------- validating data object ------------------")
+		for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
@@ -67,7 +69,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
 		instServer <- servers.getInstServerForFormat(spec.format.uri.toRdf);
-		_ <- validatePrevVers(meta, instServer);
+		_ <- validateDataObjPrevVers(meta, instServer);
 		_ <- validateLicence(meta, instServer);
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateActors(meta, instServer);
@@ -79,7 +81,10 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
 	) yield amended
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = 
+		// println("----------------- validating document object ------------------")
+		
+		for(
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		instServer <- servers.getDocInstServer;
@@ -90,7 +95,9 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	) yield amended
 
 
-	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
+	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = 
+		// println("----------------- validating collection object ------------------")
+		for(
 		_ <- collMemberListOk(coll, hash);
 		submConf <- getSubmitterConfig(coll);
 		_ <- validateDescription(coll.description);
@@ -408,6 +415,16 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				)
 		}
 		.foldLeft(ok)(bothOk(_, _))
+	
+	private def validatePrevVersPartial(dto: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
+		val prevVersions = dto
+			.isNextVersionOf
+			.flattenToSeq
+
+		if prevVersions.length > 1 then userFail("Cannot deprecate multiple objects with partial upload") else ok
+
+	private def validateDataObjPrevVers(dto: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
+		if dto.nextVersionIsPartial then validatePrevVersPartial(dto, instServ) else validatePrevVers(dto, instServ)
 
 	private def validateLicence(dto: ObjectUploadDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>

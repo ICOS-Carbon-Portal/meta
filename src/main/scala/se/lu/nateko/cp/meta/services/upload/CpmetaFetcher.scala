@@ -16,8 +16,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.util.Try
-import scala.annotation.tailrec
-
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -175,7 +173,7 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	protected def getLatestVersions(item: IRI): Seq[URI] =
 		var seen: Set[IRI] = Set()
-		// @tailrec // rewrite to make tail recursive? 
+
 		def latest(item: IRI): Seq[IRI] = 
 			val nextVersions = getNextVersions(item).flatMap{next =>
 				if seen.contains(next) then Seq(item)
@@ -200,15 +198,18 @@ trait CpmetaFetcher extends FetchingHelper{
 			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
 
-		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-		val plainParentCollections = server.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).map(_.getSubject).collect{
-			case iri: IRI if isPlainCollection(iri) => iri
-		}.toList
+		val plainParentCollections = server
+			.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item))
+			.map(_.getSubject)
+			.collect{
+				case iri: IRI if isPlainCollection(iri) => iri
+			}.toList
 
 		if plainParentCollections.nonEmpty then
 			val prevVersions = plainParentCollections.map{uri =>
 				server.getUriValues(uri, metaVocab.isNextVersionOf).map(_.toJava).toList
 			}.flatten
+
 			getPrevVers(prevVersions)
 		else
 			getPrevVers(server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList)

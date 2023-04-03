@@ -13,6 +13,10 @@ extension [T](inner: Option[T])
 	def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 		.getOrElse(Failure(error))
 
+extension[T](inner: Set[T])
+	def containsEither(elems: T*): Boolean =
+		elems.exists(inner.contains)
+
 def transformEither[L0, R0, L, R](left: L0 => L, right: R0 => R)(either: Either[L0, R0]): Either[L, R] =
 	either.fold[Either[L, R]](l => Left(left(l)), r => Right(right(r)))
 

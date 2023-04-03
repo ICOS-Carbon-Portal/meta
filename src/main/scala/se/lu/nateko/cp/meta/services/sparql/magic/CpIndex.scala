@@ -391,9 +391,14 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 								if deprecator.size > -1 then deprecated.add(oe.idx)
 							}
 							if !subjIsDobj then subj.toJava match
-								//collections are always fully uploaded
-								case Hash.Collection(_) => deprecated.add(oe.idx)
-								case _ =>
+								case Hash.Collection(_) =>
+									//proper collections are always fully uploaded
+									deprecated.add(oe.idx)
+								case _ => subj match
+									case CpVocab.NextVersColl(_) =>
+										//TODO Check that the next-version collection has some fully-uploaded members
+										deprecated.add(oe.idx)
+									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
 						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))

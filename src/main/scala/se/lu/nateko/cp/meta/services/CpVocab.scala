@@ -138,6 +138,9 @@ object CpVocab{
 		}
 	}
 
+	object NextVersColl:
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, NextVersionCollPrefix)
+
 	object VarInfo{
 
 		def unapply(iri: IRI): Option[(Sha256Sum, String)] = {

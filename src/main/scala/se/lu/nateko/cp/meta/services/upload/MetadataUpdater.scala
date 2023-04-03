@@ -42,8 +42,9 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
 		}
-		statDiff.filter{//keep only non-existing ones
-			case RdfUpdate(Rdf4jStatement(s, p, o), true) => !server.hasStatement(s, p, o)
+		statDiff.filter{//keep only the effectful ones
+			case RdfUpdate(Rdf4jStatement(s, p, o), isAssertion) =>
+				isAssertion != server.hasStatement(s, p, o)
 			case _ => true
 		}
 	}
@@ -60,7 +61,7 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 	}
 }
 
-class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
+class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
@@ -85,10 +86,10 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else Plain
 	}
 
-	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext, envri: Envri): Future[Seq[Statement]] = {
+	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(using ExecutionContext, Envri): Future[Seq[Statement]] =
 		val objUri = vocab.getStaticObject(hash)
-		if(!server.hasStatement(Some(objUri), None, None)) Future.successful(Nil)
-		else {
+		if !server.hasStatement(Some(objUri), None, None) then Future.successful(Nil)
+		else
 			val fromClauses = server.writeContexts.map(graph => s"FROM <$graph>").mkString("\n")
 			val query = SparqlQuery(s"""construct{?s ?p ?o}
 				|$fromClauses
@@ -101,14 +102,31 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		<$objUri> ?p0 ?s .
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
+				|	} UNION {
+				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
+				|			a <${metaVocab.plainCollectionClass}> ;
+				|			<${metaVocab.isNextVersionOf}> [] .
+				|		{
+				|			{
+				|				VALUES (?p ?o) {(<${metaVocab.dcterms.hasPart}> <$objUri>)}
+				|			} UNION {
+				|				?s <${metaVocab.dcterms.hasPart}> <$objUri> 
+				|				FILTER NOT EXISTS{
+				|					?s <${metaVocab.dcterms.hasPart}> ?anotherObj .
+				|					FILTER(?anotherObj != <$objUri>)
+				|				}
+				|				?s ?p ?o .
+				|				FILTER(?p != <${metaVocab.dcterms.hasPart}>)
+				|			}
+				|		}
 				|	}
-				|	filter(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
+				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
-		}
-	}
+		end if
+	end getCurrentStatements
 
-}
+end ObjMetadataUpdater
 
 object MetadataUpdater{
 

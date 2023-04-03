@@ -49,11 +49,12 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 					case Some(Left(v)) =>
 						val collIri = vocab.getNextVersionColl(v)
 
-						val statements: Seq[Statement] = Seq(makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass)) ++
-								makeSt(collIri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
-								makeSt(collIri, dct.hasPart, Seq(objectUri))
-						statements
-					case _ => Seq.empty
+						Iterable(
+							makeSt(collIri, metaVocab.isNextVersionOf, vocab.getStaticObject(v)),
+							makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass),
+							makeSt(collIri, dct.hasPart, objectUri)
+						)
+					case _ => Iterable.empty
 			else
 				makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject))
 

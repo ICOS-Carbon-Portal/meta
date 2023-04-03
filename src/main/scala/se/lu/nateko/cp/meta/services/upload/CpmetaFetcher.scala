@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.flattenToSeq
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.containsEither
 
 import java.net.URI
 import scala.util.Try
@@ -150,69 +151,62 @@ trait CpmetaFetcher extends FetchingHelper{
 			case Seq(single) => Some(Left(single.toJava))
 			case many => Some(Right(many.map(_.toJava)))
 
-	protected def getNextVersions(item: IRI): Seq[IRI] = server
+	private def getNextVersions(item: IRI): Seq[IRI] = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+		.flatMap{
+			case Rdf4jStatement(next, _, _) =>
+				if isPlainCollection(next)
+				then server.getUriValues(next, metaVocab.dcterms.hasPart)
+				else Seq(next)
+			case _ => Nil //should not happen in practice, but just in case, for completeness
+		}
+		.filter(isComplete)
+		.distinct
 		.toIndexedSeq
-		.collect{
-			case Rdf4jStatement(next, _, _) if isPlainCollection(next) =>
-				val parts = server.getUriValues(next, metaVocab.dcterms.hasPart)
-				parts.filter(isComplete)
-			case Rdf4jStatement(next, _, _) if isComplete(next) => Seq(next)
-		}.flatten.distinct
-	
 	protected def isPlainCollection(item: IRI): Boolean =
-		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-		itemTypes.contains(metaVocab.plainCollectionClass)
+		server.resourceHasType(item, metaVocab.plainCollectionClass)
+
 
 	protected def isComplete(item: IRI): Boolean =
+		import metaVocab.*
+
 		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-		if itemTypes.contains(metaVocab.collectionClass) then true
-		else if Seq(metaVocab.docObjectClass, metaVocab.dataObjectClass).exists(itemTypes.contains)
-		then server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
-		else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
+		val isCollection = itemTypes.containsEither(collectionClass, plainCollectionClass)
+		isCollection || (
+			if itemTypes.containsEither(docObjectClass, dataObjectClass)
+			then server.hasStatement(Some(item), Some(hasSizeInBytes), None)
+			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
+		)
 
-	protected def getLatestVersions(item: IRI): Seq[URI] =
-		var seen: Set[IRI] = Set()
-
-		def latest(item: IRI): Seq[IRI] = 
-			val nextVersions = getNextVersions(item).flatMap{next =>
-				if seen.contains(next) then Seq(item)
-				else 
-					seen = seen + next
-					latest(next)
-			}
-
-			if nextVersions.isEmpty then Seq(item) else nextVersions
-
-		latest(item).map(_.toJava)
 
 	protected def getLatestVersion(item: IRI): OneOrSeq[URI] =
-		getLatestVersions(item) match
-			case Nil => Right(Seq.empty)
+
+		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
+			val nextVersions = getNextVersions(item).flatMap{next =>
+				if seen.contains(next)
+				then Nil
+				else latest(next, seen + next)
+			}
+			if nextVersions.isEmpty then Seq(item) else nextVersions
+
+		latest(item, Set.empty).map(_.toJava) match
 			case Seq(single) => Left(single)
 			case many => Right(many)
 
+
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
-		def getPrevVers(list: List[URI]): OptionalOneOrSeq[URI] = list match
+		val allPrevVersions: Seq[IRI] =
+			server.getUriValues(item, metaVocab.isNextVersionOf) ++
+			server.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap{
+				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
+					server.getUriValues(coll, metaVocab.isNextVersionOf)
+				case _ => Nil
+			}
+		allPrevVersions.map(_.toJava) match
 			case Nil => None
 			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
 
-		val plainParentCollections = server
-			.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item))
-			.map(_.getSubject)
-			.collect{
-				case iri: IRI if isPlainCollection(iri) => iri
-			}.toList
-
-		if plainParentCollections.nonEmpty then
-			val prevVersions = plainParentCollections.map{uri =>
-				server.getUriValues(uri, metaVocab.isNextVersionOf).map(_.toJava).toList
-			}.flatten
-
-			getPrevVers(prevVersions)
-		else
-			getPrevVers(server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList)
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).flattenToSeq
 

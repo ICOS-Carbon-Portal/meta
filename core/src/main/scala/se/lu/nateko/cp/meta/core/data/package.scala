@@ -28,8 +28,8 @@ def collectionPrefix(using envri: EnvriConfig): String = s"${envri.dataItemPrefi
 val objectPathPrefix = "objects/"
 val collectionPathPrefix = "collections/"
 
-type OptionalOneOrSeq[T] = Option[Either[T, Seq[T]]]
 type OneOrSeq[T] = Either[T, Seq[T]]
+type OptionalOneOrSeq[T] = Option[OneOrSeq[T]]
 
 enum DatasetType derives CanEqual:
 	case StationTimeSeries, SpatioTemporal

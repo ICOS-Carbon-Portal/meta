@@ -5,12 +5,13 @@
 @for(nextUri <- item.nextVersion) {
 	@alertWarning(s"$itemType is deprecated"){
 		<ul>
-			<li>Next version(s): @versionLink(nextUri)</li>
+			@if(nextUri != item.latestVersion){
+				<li>Next version(s): @versionLink(nextUri)</li>
+			}
 			<li>Latest version(s): @versionLink(item.latestVersion)</li>
 		</ul>
 	}
 }
-
 
 @singleVersionLink(uri: URI) = {
 	<a class="alert-link" href=@{uri.getRawPath}>@{uri.toString.split("/").last}</a>

@@ -158,7 +158,7 @@ trait CpmetaFetcher extends FetchingHelper{
 				val parts = server.getUriValues(next, metaVocab.dcterms.hasPart)
 				parts.filter(isComplete)
 			case Rdf4jStatement(next, _, _) if isComplete(next) => Seq(next)
-		}.flatten
+		}.flatten.distinct
 	
 	protected def isPlainCollection(item: IRI): Boolean =
 		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet

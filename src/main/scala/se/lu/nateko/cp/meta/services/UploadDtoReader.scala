@@ -119,7 +119,6 @@ object UploadDtoReader{
 		isNextVersionOf = coll.previousVersion.flatMap{uri =>
 			Uri.Path(uri.getPath) match {
 				case Hash.Collection(hash) => Some(Left(hash))
-				case Hash.Object(hash) => Some(Left(hash))
 				case _ => None
 			}
 		},

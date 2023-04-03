@@ -67,7 +67,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
 		instServer <- servers.getInstServerForFormat(spec.format.uri.toRdf);
-		_ <- validateDataObjPrevVers(meta, instServer);
+		_ <- validatePrevVers(meta, instServer);
 		_ <- validateLicence(meta, instServer);
 		_ <- growingIsGrowing(meta, spec, instServer, submConf);
 		_ <- validateActors(meta, instServer);
@@ -390,34 +390,29 @@ class UploadValidator(servers: DataObjectInstanceServers){
 	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
-	private def validatePrevVers(dto: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] = dto
+	private def validatePrevVers(dto: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
+		val prevVersions = dto
 		.isNextVersionOf
 		.flattenToSeq
-		.map{prevHash =>
-			if(prevHash == dto.hashSum)
-				userFail("Data/doc object cannot be a next version of itself")
 
-			else
-				val prevDobj = vocab.getStaticObject(prevHash)
-				bothOk(
-					existsAndIsCompleted(prevDobj, instServ),
-					{
-						val except = vocab.getStaticObject(dto.hashSum)
-						hasNoOtherDeprecators(prevDobj, except, instServ, true)
-					}
-				)
-		}
-		.foldLeft(ok)(bothOk(_, _))
-	
-	private def validatePrevVersPartial(dto: ObjectUploadDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
-		val prevVersions = dto
-			.isNextVersionOf
-			.flattenToSeq
+		if dto.nextVersionIsPartial && prevVersions.length > 1
+			then userFail("Cannot deprecate multiple objects with partial upload")
+		else
+			prevVersions.map{prevHash =>
+				if prevHash == dto.hashSum then
+					userFail("Data/doc object cannot be a next version of itself")
 
-		if prevVersions.length > 1 then userFail("Cannot deprecate multiple objects with partial upload") else ok
-
-	private def validateDataObjPrevVers(dto: DataObjectDto, instServ: InstanceServer)(using Envri): Try[NotUsed] =
-		if dto.nextVersionIsPartial then validatePrevVersPartial(dto, instServ) else validatePrevVers(dto, instServ)
+				else
+					val prevDobj = vocab.getStaticObject(prevHash)
+					bothOk(
+						existsAndIsCompleted(prevDobj, instServ),
+						{
+							val except = vocab.getStaticObject(dto.hashSum)
+							hasNoOtherDeprecators(prevDobj, except, instServ, true, dto.nextVersionIsPartial)
+						}
+					)
+			}
+			.foldLeft(ok)(bothOk(_, _))
 
 	private def validateLicence(dto: ObjectUploadDto, instServ: InstanceServer): Try[NotUsed] = {
 		dto.references.flatMap(_.licence).fold[Try[NotUsed]](Success(NotUsed)){licUri =>
@@ -435,7 +430,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 
 	private def bothOk(try1: Try[NotUsed], try2: => Try[NotUsed]): Try[NotUsed] = try1.flatMap(_ => try2)
 
-	private def hasNoOtherDeprecators(item: IRI, except: IRI, inServer: InstanceServer, amongCompleted: Boolean): Try[NotUsed] = {
+	private def hasNoOtherDeprecators(item: IRI, except: IRI, inServer: InstanceServer, amongCompleted: Boolean, partialUpload: Boolean): Try[NotUsed] =
 
 		val deprs = inServer
 			.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
@@ -444,14 +439,16 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				case iri: IRI if iri != except => iri
 			}.toIndexedSeq
 
-		val filteredDeprs = if(amongCompleted)
-				deprs.filter(depr => existsAndIsCompleted(depr, inServer).isSuccess)
-			else deprs
+		val filteredDeprs = deprs.filter{depr =>
+			val completed = if amongCompleted then existsAndIsCompleted(depr, inServer).isSuccess else true
+			val plainCollection = if partialUpload then inServer.hasStatement(depr, RDF.TYPE, metaVocab.plainCollectionClass) else true
+
+			completed && !plainCollection
+		}
 
 		filteredDeprs.headOption.fold(ok){depr =>
 			userFail(s"Item $item already has new version $depr; upload your object/collection as new version of the latter instead.")
 		}
-	}
 
 	private def isDeprecated(item: IRI, server: InstanceServer): Boolean = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
@@ -493,7 +490,7 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				val inServer = servers.collectionServers(envri)
 				val prevColl = vocab.getCollection(coll)
 				val exceptColl = vocab.getCollection(newCollHash)
-				hasNoOtherDeprecators(prevColl, exceptColl, inServer, false)
+				hasNoOtherDeprecators(prevColl, exceptColl, inServer, false, false)
 			}) else
 				userFail(s"Previous-version collection was not found: $coll")
 		}

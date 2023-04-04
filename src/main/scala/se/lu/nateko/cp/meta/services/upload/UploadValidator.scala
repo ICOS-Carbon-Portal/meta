@@ -439,16 +439,18 @@ class UploadValidator(servers: DataObjectInstanceServers){
 				case iri: IRI if iri != except => iri
 			}.toIndexedSeq
 
-		val filteredDeprs = deprs.filter{depr =>
-			val completed = if amongCompleted then existsAndIsCompleted(depr, inServer).isSuccess else true
-			val plainCollection = if partialUpload then inServer.hasStatement(depr, RDF.TYPE, metaVocab.plainCollectionClass) else true
+		val filteredDeprs = if(amongCompleted)
+			deprs.filter(depr => existsAndIsCompleted(depr, inServer).isSuccess)
+		else deprs
 
-			completed && !plainCollection
-		}
+		val collectionDeprs = deprs.filter(depr => !partialUpload && inServer.hasStatement(depr, RDF.TYPE, metaVocab.plainCollectionClass))
 
-		filteredDeprs.headOption.fold(ok){depr =>
+		bothOk(filteredDeprs.headOption.fold(ok){depr =>
 			userFail(s"Item $item already has new version $depr; upload your object/collection as new version of the latter instead.")
-		}
+		},
+		collectionDeprs.headOption.fold(ok){depr =>
+			userFail(s"Item $item already has new versions in $depr; to add your object as part of the new version, make sure that 'Partial upload' flag is set.")
+		})
 
 	private def isDeprecated(item: IRI, server: InstanceServer): Boolean = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))

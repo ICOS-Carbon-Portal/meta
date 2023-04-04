@@ -65,6 +65,10 @@
 	#alert-placeholder {
 		white-space: pre-line;
 	}
+	.separator {
+		border-bottom: 1px solid #eee;
+		margin-bottom: 1rem;
+	}
 	@@media (min-width: 480px) {
 		#header-buttons > button {
 			width: auto;
@@ -179,6 +183,7 @@
 									</div>
 								</div>
 							</div>
+							<div class="separator"></div>
 							<div class="mb-2">
 								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>
 								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
@@ -191,6 +196,7 @@
 									</div>
 								</div>
 							</div>
+							<div class="separator"></div>
 							<div class="mb-3">
 								<label class="form-label" for="existingdoi">Pre-existing DOI @optional</label>
 								<input type="text" id="existingdoi" class="form-control" placeholder="DOI">

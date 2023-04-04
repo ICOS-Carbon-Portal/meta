@@ -161,20 +161,18 @@ trait CpmetaFetcher extends FetchingHelper{
 			case _ => Nil //should not happen in practice, but just in case, for completeness
 		}
 		.filter(isComplete)
-		.distinct
 		.toIndexedSeq
-	protected def isPlainCollection(item: IRI): Boolean =
+
+	private def isPlainCollection(item: IRI): Boolean =
 		server.resourceHasType(item, metaVocab.plainCollectionClass)
 
-
-	protected def isComplete(item: IRI): Boolean =
+	private def isComplete(objOrProperColl: IRI): Boolean =
 		import metaVocab.*
+		val itemTypes = server.getUriValues(objOrProperColl, RDF.TYPE).toSet
 
-		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-		val isCollection = itemTypes.containsEither(collectionClass, plainCollectionClass)
-		isCollection || (
+		itemTypes.contains(collectionClass) || (
 			if itemTypes.containsEither(docObjectClass, dataObjectClass)
-			then server.hasStatement(Some(item), Some(hasSizeInBytes), None)
+			then server.hasStatement(Some(objOrProperColl), Some(hasSizeInBytes), None)
 			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
 		)
 

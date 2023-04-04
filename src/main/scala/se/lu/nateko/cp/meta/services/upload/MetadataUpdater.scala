@@ -96,9 +96,9 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|where{
 				|	{
 				|		BIND(<$objUri> AS ?s)
-				|		?s ?p ?o
-				|	} UNION
-				|	{
+				|		?s ?p ?o .
+				|		FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
+				|	} UNION {
 				|		<$objUri> ?p0 ?s .
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
@@ -106,21 +106,9 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
 				|			a <${metaVocab.plainCollectionClass}> ;
 				|			<${metaVocab.isNextVersionOf}> [] .
-				|		{
-				|			{
-				|				VALUES (?p ?o) {(<${metaVocab.dcterms.hasPart}> <$objUri>)}
-				|			} UNION {
-				|				?s <${metaVocab.dcterms.hasPart}> <$objUri> 
-				|				FILTER NOT EXISTS{
-				|					?s <${metaVocab.dcterms.hasPart}> ?anotherObj .
-				|					FILTER(?anotherObj != <$objUri>)
-				|				}
-				|				?s ?p ?o .
-				|				FILTER(?p != <${metaVocab.dcterms.hasPart}>)
-				|			}
-				|		}
+				|		?s ?p ?o .
+				|		FILTER(?p != <${metaVocab.dcterms.hasPart}> || ?o = <$objUri>)
 				|	}
-				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		end if

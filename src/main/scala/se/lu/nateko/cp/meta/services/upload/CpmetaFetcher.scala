@@ -163,19 +163,21 @@ trait CpmetaFetcher extends FetchingHelper{
 		.filter(isComplete)
 		.toIndexedSeq
 
-	private def isPlainCollection(item: IRI): Boolean =
+	protected def isPlainCollection(item: IRI): Boolean =
 		server.resourceHasType(item, metaVocab.plainCollectionClass)
 
-	private def isComplete(objOrProperColl: IRI): Boolean =
+	protected def isComplete(item: IRI): Boolean =
 		import metaVocab.*
-		val itemTypes = server.getUriValues(objOrProperColl, RDF.TYPE).toSet
+		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
 
 		itemTypes.contains(collectionClass) || (
+			itemTypes.contains(plainCollectionClass) &&
+			server.getUriValues(item, dcterms.hasPart).exists(isComplete)
+		) || (
 			if itemTypes.containsEither(docObjectClass, dataObjectClass)
-			then server.hasStatement(Some(objOrProperColl), Some(hasSizeInBytes), None)
+			then server.hasStatement(Some(item), Some(hasSizeInBytes), None)
 			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
 		)
-
 
 	protected def getLatestVersion(item: IRI): OneOrSeq[URI] =
 

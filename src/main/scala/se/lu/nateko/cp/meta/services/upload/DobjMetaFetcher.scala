@@ -203,16 +203,18 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 		val columnsWithDeployments: Option[Seq[VarMeta]] = columns.map{
 			_.map{vm =>
-				val dep: Option[InstrumentDeployment] = deployments.find{dep =>
+				val deps: Option[Seq[InstrumentDeployment]] = deployments.filter{dep =>
 					dep.variableName.contains(vm.label) &&                //variable name matches
 					dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
 					acq.interval.fold(false){ti =>
 						dep.start.fold(true)(start => start.isBefore(ti.stop)) && //starts before data collection end
 						dep.stop.fold(true)(stop => stop.isAfter(ti.start))       //ends after data collection start
 					}
-				}
+				} match
+					case IndexedSeq() => None
+					case deps => Some(deps)
 
-				vm.copy(instrumentDeployment = dep)
+				vm.copy(instrumentDeployments = deps)
 			}
 		}
 

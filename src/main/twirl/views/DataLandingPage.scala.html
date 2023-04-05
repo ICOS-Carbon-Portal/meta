@@ -144,9 +144,8 @@
 								}
 							}
 							<th>Preview</th>
-							@if(!variables.filter(_.instrumentDeployment.isDefined).isEmpty){
-								<th>Position</th>
-								<th>Instrument</th>
+							@if(!variables.filter(_.instrumentDeployments.isDefined).isEmpty){
+								<th>Deployments</th>
 							}
 						</tr>
 					</thead>
@@ -167,13 +166,27 @@
 										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
-								@for(depl <- varInfo.instrumentDeployment){
-									@for(p <- depl.pos){
-										<td>@p.textSpecification</td>
+								<td>
+									@for(depls <- varInfo.instrumentDeployments){
+										<table class="table">
+											<thead><tr>
+												<th>Position</th>
+												<th>Instrument</th>
+												<th>Interval</th>
+											</tr></thead>
+											@for(depl <- depls){
+												<tr>
+												@for(p <- depl.pos){
+													<td>@p.textSpecification</td>
+												}
+												<td>@resourceLink(depl.instrument)</td>
+												<td>Start time: @depl.start.getDateTimeStr, Stop time: @depl.stop.getDateTimeStr </td>
+											</tr>
+											}
+										</table>
 									}
-									<td>@resourceLink(depl.instrument)</td>
-								}
-						</tr>
+								</td>
+							</tr>
 						}
 					</tbody>
 				</table>

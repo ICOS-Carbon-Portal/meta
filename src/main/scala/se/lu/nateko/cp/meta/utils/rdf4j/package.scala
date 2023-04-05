@@ -52,12 +52,14 @@ extension (uri: JavaUri){
 	def ===(other: JavaUri): Boolean = uri.toString == other.toString
 }
 
-extension [T](res: CloseableIteration[T, _]){
+extension [T](res: CloseableIteration[T, _])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
 		override def hasNext: Boolean = res.hasNext()
 		override def next(): T = res.next()
 	}
-}
+
+	def asCloseableIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res)
+
 
 extension (repo: Repository)
 

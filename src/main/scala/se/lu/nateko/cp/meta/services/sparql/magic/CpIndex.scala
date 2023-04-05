@@ -34,6 +34,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
 
+
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
 	private def this() = this(null, null, null, null)//for Kryo deserialization
 }
@@ -257,6 +258,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
+		import vocab.dcterms.hasPart
 
 
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
@@ -389,19 +391,19 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 								deprecator.isNextVersion = true
 								//only fully-uploaded deprecators can actually deprecate:
 								if deprecator.size > -1 then deprecated.add(oe.idx)
-							}
+							}.isDefined
 							if !subjIsDobj then subj.toJava match
 								case Hash.Collection(_) =>
 									//proper collections are always fully uploaded
 									deprecated.add(oe.idx)
 								case _ => subj match
 									case CpVocab.NextVersColl(_) =>
-										//TODO Check that the next-version collection has some fully-uploaded members
-										deprecated.add(oe.idx)
+										if sail.accessEagerly(nextVersCollIsComplete(subj, _))
+										then deprecated.add(oe.idx)
 									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+						!sail.accessEagerly(_.hasStatement(null, isNextVersionOf, obj, false))
 					then deprecated.remove(oe.idx)
 				}
 
@@ -413,18 +415,26 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 
 					if oe.isNextVersion then
 						val deprecated = boolMap(DeprecationFlag)
-						matchStatements(subj, pred, null)
-							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
-							.foreach{oldIri =>
-								modForDobj(oldIri){old =>
-									if isAssertion then deprecated.add(old.idx)
-									else if isRetraction then deprecated.remove(old.idx)
-								}
-							}
+						val directPrevVers = getIdxsOfDirectPrevVers(subj)
+						directPrevVers.foreach{oldIdx =>
+							if isAssertion then deprecated.add(oldIdx)
+							else if isRetraction then deprecated.remove(oldIdx)
+						}
+						if directPrevVers.isEmpty then getIdxsOfPrevVersThroughColl(subj).foreach{
+							throughColl => if isAssertion then deprecated.add(throughColl)
+						}
 
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}
 			}
+
+			case `hasPart` => if isAssertion then subj match
+				case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj){oe =>
+					oe.isNextVersion = true
+					if oe.size > -1 then
+						boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+				}
+				case _ =>
 
 			case `hasSamplingHeight` => ifFloat(obj){height =>
 				subj match{
@@ -458,15 +468,13 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		}
 	}
 
-	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Boolean = dobj match{
+	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if(entry.prefix == "") entry.prefix = prefix.intern()
-			mod(entry)
-			true
+			Some(mod(entry))
 
-		case _ => false
-	}
+		case _ => None
 
 	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
 		if obj.spec == null || obj.submitter == null then None
@@ -484,10 +492,34 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		initOk.add(obj.idx)
 	}
 
-	private def matchStatements(subj: IRI, pred: IRI, obj: Value): IndexedSeq[Statement] =
-		sail.accessEagerly(_.getStatements(subj, pred, obj, false).asPlainScalaIterator.toIndexedSeq)
+	private def nextVersCollIsComplete(obj: IRI, conn: SailConnection): Boolean =
+		conn.getStatements(obj, vocab.dcterms.hasPart, null, false).asPlainScalaIterator
+			.collect{
+				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
+					oe.isNextVersion = true
+					oe.size > -1
+				}
+			}
+			.flatten
+			.toIndexedSeq
+			.exists(identity)
 
+	private def getIdxsOfDirectPrevVers(deprecator: IRI): IndexedSeq[Int] = sail.accessEagerly{conn =>
+		conn.getStatements(deprecator, vocab.isNextVersionOf, null, false)
+			.asPlainScalaIterator
+			.flatMap{
+				st => modForDobj(st.getObject)(_.idx)
+			}
+			.toIndexedSeq
+	}
 
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI): Option[Int] = sail.accessEagerly{_
+		.getStatements(null, vocab.dcterms.hasPart, deprecator, false)
+		.asPlainScalaIterator
+		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
+		.toIndexedSeq
+		.headOption
+	}
 }
 
 object CpIndex{

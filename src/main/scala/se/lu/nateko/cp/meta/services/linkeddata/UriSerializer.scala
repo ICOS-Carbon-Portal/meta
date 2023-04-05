@@ -295,9 +295,7 @@ private object Rdf4jUriSerializer{
 		val conn = use(repo.getConnection())
 
 		val propInfos = use(
-			new Rdf4jIterationIterator(
-				conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate()
-			)
+			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate().asCloseableIterator
 		).map{bset =>
 
 			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
@@ -314,9 +312,7 @@ private object Rdf4jUriSerializer{
 		}.flatten.take(Limit).toIndexedSeq
 
 		val usageInfos = use(
-			new Rdf4jIterationIterator(
-				conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate()
-			)
+			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate().asCloseableIterator
 		).map{bset =>
 			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
 		}.flatten.take(Limit).toIndexedSeq

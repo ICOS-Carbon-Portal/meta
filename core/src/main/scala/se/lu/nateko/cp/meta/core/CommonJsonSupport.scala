@@ -59,6 +59,7 @@ trait CommonJsonSupport {
 
 	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
+	//TODO use analoguos function from cpauthCore
 	def enumFormat[T <: reflect.Enum](valueOf: String => T, values: Array[T]) = new RootJsonFormat[T] {
 		def write(v: T) = JsString(v.toString)
 

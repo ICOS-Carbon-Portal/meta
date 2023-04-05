@@ -104,7 +104,7 @@ object UploadDtoReader{
 			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
 			duplicateFilenameAllowed = None,
 			autodeprecateSameFilenameObjects = None,
-			nextVersionIsPartial = None
+			partialUpload = None
 		)
 	)
 

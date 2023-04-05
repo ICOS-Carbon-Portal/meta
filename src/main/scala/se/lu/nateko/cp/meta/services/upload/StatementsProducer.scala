@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -44,7 +45,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		val dct = metaVocab.dcterms
 
 		val nextVersionStatements =
-			if meta.nextVersionIsPartial then
+			if meta.partialUpload then
 				meta.isNextVersionOf match
 					case Some(Left(v)) =>
 						val collIri = vocab.getNextVersionColl(v)

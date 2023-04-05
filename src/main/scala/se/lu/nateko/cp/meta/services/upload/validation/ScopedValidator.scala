@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -57,7 +58,7 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 	def validatePrevVers(dto: ObjectUploadDto)(using Envri): Try[NotUsed] =
 		val prevVersions = dto.isNextVersionOf.flattenToSeq
 
-		if dto.nextVersionIsPartial && prevVersions.length > 1
+		if dto.partialUpload && prevVersions.length > 1
 			then userFail("Cannot deprecate multiple objects with partial upload")
 		else
 			prevVersions.iterator.map{prevHash =>
@@ -70,7 +71,7 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 						existsAndIsCompleted(prevDobj),
 						{
 							val except = vocab.getStaticObject(dto.hashSum)
-							hasNoOtherDeprecators(prevDobj, except, true, dto.nextVersionIsPartial)
+							hasNoOtherDeprecators(prevDobj, except, true, dto.partialUpload)
 						}
 					)
 			}

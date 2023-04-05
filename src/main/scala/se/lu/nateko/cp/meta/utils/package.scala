@@ -35,11 +35,6 @@ def getStackTrace(err: Throwable): String = {
 	traceWriter.toString
 }
 
-extension [T](item: Option[Either[T, Seq[T]]])
-	def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
-		either.fold(Seq(_), identity)
-	}
-
 extension (inner: AnyRef)
 	def asOptInstanceOf[T: ClassTag]: Option[T] = inner match{
 		case t: T => Some(t)

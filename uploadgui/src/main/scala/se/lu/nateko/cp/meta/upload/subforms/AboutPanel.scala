@@ -11,19 +11,21 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.SubmitterProfile
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, StaticCollectionDto}
 
 import formcomponents.*
-import ItemTypeRadio.{ItemType, Collection, Data, Document}
+import ItemTypeRadio.ItemType
+import ItemType.{Collection, Data, Document}
 import UploadApp.whenDone
 import Utils.*
 import java.net.URI
 import se.lu.nateko.cp.meta.upload.formcomponents.ModeRadio.*
 
 
-class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envri: Envri) extends PanelSubform("about-section"){
+class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envri: Envri) extends PanelSubform("about-section"):
 
 	def submitterOpt: Option[SubmitterProfile] = submitterIdSelect.value
 	def submitter: Try[SubmitterProfile] = submitterOpt.withMissingError("Submitter Id not set")
@@ -32,15 +34,15 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	def file: Try[dom.File] = fileInput.file
 	def itemName: Try[String] = if(isNewItemOrVersion) fileInput.file.map(_.name) else fileNameInput.value;
 	def itemHash: Try[Sha256Sum] = if(isNewItemOrVersion) fileInput.hash else Success(fileHash.get)
-	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value.withErrorContext("Previous version")
+	def previousVersion: Try[OptionalOneOrSeq[Sha256Sum]] = previousVersionInput.value
+		.flatMap(validateNextVersion).withErrorContext("Previous version")
 	def existingDoi: Try[Option[Doi]] = existingDoiInput.value.withErrorContext("Pre-existing DOI")
 	def metadataUri: Try[URI] = metadataUriInput.value
 	def duplicateFilenameAllowed: Option[Boolean] = Some(duplicateFilenameAllowedInput.checked)
 	def autodeprecateSameFilenameObjects: Option[Boolean] = Some(autoDeprecateInput.checked)
-	def nextVersionIsPartial: Option[Boolean] = Some(multiNextVersionInput.checked)
+	def partialUpload: Option[Boolean] = Some(partialUploadCheckbox.checked)
 
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
-
 
 	private val modeControl = new ModeRadio("new-update-radio", onModeSelected)
 	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
@@ -53,8 +55,8 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val duplicateFilenameAllowedElement = new HtmlElements("#duplicatefile-checkbox-elem")
 	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile-checkbox", _ => notifyUpdate())
 	private val autoDeprecateInput = new Checkbox("autodeprecate-checkbox", c => {onAutoDeprecateSelected(c); notifyUpdate()})
-	private val multiNextVersionInput = new Checkbox("multinextvers-checkbox", c => {notifyUpdate()}) // TODO do sth before update
-	private val previousVersionInput = new HashOptOneOrManyInput("previoushash", notifyUpdate)
+	private val partialUploadCheckbox = Checkbox("partialupload-checkbox", _ => notifyUpdate())
+	private val previousVersionInput = HashOptOneOrManyInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")
 	private val metadataUriInput = new UriInput("metadata-update", updateGetMetadataButton)
@@ -213,4 +215,11 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 		}
 	}
 
-}
+	private def validateNextVersion(next: OptionalOneOrSeq[Sha256Sum]): Try[OptionalOneOrSeq[Sha256Sum]] =
+		if partialUploadCheckbox.checked then
+			val amount = next.flattenToSeq.size
+			if amount == 1 then Success(next)
+			else fail(s"Partial upload requires exactly one previous version, but $amount were given")
+		else Success(next)
+
+end AboutPanel

@@ -55,6 +55,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val duplicateFilenameAllowedElement = new HtmlElements("#duplicatefile-checkbox-elem")
 	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile-checkbox", _ => notifyUpdate())
 	private val autoDeprecateInput = new Checkbox("autodeprecate-checkbox", c => {onAutoDeprecateSelected(c); notifyUpdate()})
+	private val partialUploadElement = new HtmlElements("#partialupload-checkbox-elem")
 	private val partialUploadCheckbox = Checkbox("partialupload-checkbox", _ => notifyUpdate())
 	private val previousVersionInput = HashOptOneOrManyInput("previoushash", notifyUpdate)
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
@@ -78,6 +79,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 		fileOptionsElement.hide()
 		metadataUrlElement.hide()
 		clearFields()
+		partialUploadElement.hide()
 	}
 
 	private def clearFields(): Unit = {
@@ -86,6 +88,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 		previousVersionInput.reset()
 		existingDoiInput.reset()
 		updateGetMetadataButton()
+		partialUploadElement.hide()
 	}
 
 	private def onModeSelected(mode: Mode): Unit = {
@@ -97,6 +100,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				typeControl.reset()
 				fileOptionsElement.hide()
 				setPreviousVersionEditability(mode)
+				partialUploadElement.hide()
 			case Update =>
 				fileElement.hide()
 				fileNameElement.show()
@@ -106,6 +110,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				metadataUriInput.focus()
 				fileOptionsElement.show()
 				setPreviousVersionEditability(mode)
+				partialUploadElement.hide()
 			case NewVersion =>
 				fileNameElement.hide()
 				metadataUrlElement.show()
@@ -113,6 +118,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 				typeControl.disable()
 				fileOptionsElement.hide()
 				metadataUriInput.focus()
+				partialUploadElement.hide()
 			}
 		bus.publish(ModeChanged)
 		clearFields()
@@ -138,8 +144,10 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 			fileElement.hide()
 			fileNameElement.hide()
 			fileOptionsElement.hide()
+			partialUploadElement.hide()
 		case _ =>
 			fileOptionsElement.show()
+			partialUploadElement.show()
 			if(isNewItemOrVersion) {
 				fileElement.show()
 				fileNameElement.hide()

@@ -166,26 +166,28 @@
 										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
-								<td>
-									@for(depls <- varInfo.instrumentDeployments){
-										<table class="table">
-											<thead><tr>
-												<th>Position</th>
-												<th>Instrument</th>
-												<th>Interval</th>
-											</tr></thead>
-											@for(depl <- depls){
-												<tr>
-												@for(p <- depl.pos){
-													<td>@p.textSpecification</td>
+								@if(varInfo.instrumentDeployments.isDefined){
+									<td>
+										@for(depls <- varInfo.instrumentDeployments){
+											<table class="table">
+												<thead><tr>
+													<th>Position</th>
+													<th>Instrument</th>
+													<th>Interval</th>
+												</tr></thead>
+												@for(depl <- depls){
+													<tr>
+													@for(p <- depl.pos){
+														<td>@p.textSpecification</td>
+													}
+													<td>@resourceLink(depl.instrument)</td>
+													<td>Start time: @depl.start.getDateTimeStr, Stop time: @depl.stop.getDateTimeStr </td>
+												</tr>
 												}
-												<td>@resourceLink(depl.instrument)</td>
-												<td>Start time: @depl.start.getDateTimeStr, Stop time: @depl.stop.getDateTimeStr </td>
-											</tr>
-											}
-										</table>
-									}
-								</td>
+											</table>
+										}
+									</td>
+								}
 							</tr>
 						}
 					</tbody>

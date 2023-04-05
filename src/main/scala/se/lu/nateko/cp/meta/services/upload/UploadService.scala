@@ -23,6 +23,7 @@ import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.services.upload.validation.UploadValidator
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.upload.completion.Report
 import se.lu.nateko.cp.meta.ConfigLoader
@@ -35,7 +36,7 @@ class UploadService(
 	sparql: SparqlRunner,
 	val etcHelper: EtcUploadTransformer,
 	conf: UploadServiceConfig
-)(implicit system: ActorSystem, mat: Materializer) {
+)(using system: ActorSystem, mat: Materializer) {
 
 	import servers.{ metaVocab, vocab }
 	import system.dispatcher

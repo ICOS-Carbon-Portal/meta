@@ -56,8 +56,9 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	private val duplicateFilenameAllowedInput = new Checkbox("duplicatefile-checkbox", _ => notifyUpdate())
 	private val autoDeprecateInput = new Checkbox("autodeprecate-checkbox", c => {onAutoDeprecateSelected(c); notifyUpdate()})
 	private val partialUploadElement = new HtmlElements("#partialupload-checkbox-elem")
-	private val partialUploadCheckbox = Checkbox("partialupload-checkbox", _ => notifyUpdate())
+	private val partialUploadCheckbox = Checkbox("partialupload-checkbox", c =>{onPartialUploadSelected(c); notifyUpdate()})
 	private val previousVersionInput = HashOptOneOrManyInput("previoushash", notifyUpdate)
+	private val previousVersionDescr = Text("previoushash-descr")
 	private val existingDoiInput = new DoiOptInput("existingdoi", notifyUpdate)
 	private val metadataUrlElement = new HtmlElements("#metadata-url")
 	private val metadataUriInput = new UriInput("metadata-update", updateGetMetadataButton)
@@ -138,6 +139,12 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 			duplicateFilenameAllowedInput.enable()
 			duplicateFilenameAllowedElement.enable()
 	}
+
+	private def onPartialUploadSelected(checked: Boolean): Unit =
+		if checked then
+			previousVersionDescr.setText("Previous version (one hex or base64 hashsum)")
+		else
+			previousVersionDescr.setText("Previous versions (one hex or base64 hashsum per line)")
 
 	private def setFileAndFilenameVisibility(itemType: ItemType): Unit = itemType match {
 		case Collection =>

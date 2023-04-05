@@ -209,3 +209,9 @@ class Checkbox(elemId: String, cb: (Boolean) => Unit) {
 
 	checkbox.onchange = _ => cb(checked)
 }
+
+class Text(elemId: String):
+	private val label = getElementById[html.Span](elemId).get
+
+	def setText(text: String): Unit =
+		label.innerHTML = text

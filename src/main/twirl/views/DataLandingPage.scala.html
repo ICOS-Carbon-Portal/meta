@@ -166,9 +166,8 @@
 										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
-								@if(varInfo.instrumentDeployments.isDefined){
+								@for(depls <- varInfo.instrumentDeployments){
 									<td>
-										@for(depls <- varInfo.instrumentDeployments){
 											<table class="table">
 												<thead><tr>
 													<th>Position</th>
@@ -185,7 +184,6 @@
 												</tr>
 												}
 											</table>
-										}
 									</td>
 								}
 							</tr>

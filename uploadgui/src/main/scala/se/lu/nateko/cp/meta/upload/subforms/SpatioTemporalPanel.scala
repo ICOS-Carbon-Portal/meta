@@ -117,12 +117,15 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				externalPageInput.value = spatTemp.customLandingPage
 				varInfoForm.setValues(spatTemp.variables)
 				spatTemp.spatial match{
-					case Left(box) =>
-						// minLatInput.value = box.min.lat
-						// minLonInput.value = box.min.lon
-						// maxLatInput.value = box.max.lat
-						// maxLonInput.value = box.max.lon
-						spatCovLabel.value = box.label
+					case Left(cov) =>
+						cov match
+							case b: LatLonBox =>
+								minLatInput.value = b.min.lat
+								minLonInput.value = b.min.lon
+								maxLatInput.value = b.max.lat
+								maxLonInput.value = b.max.lon
+							case _ => ()
+						spatCovLabel.value = cov.label
 						spatialCovSelect.value = customSpatCov
 						spatCoverElements.show()
 					case Right(covUri) =>

@@ -153,7 +153,7 @@ Clarifications:
 	- `moratorium` (optional) is an ISO 8601 timestamp with the desired publication time in the future (instead of the moment of data upload). The data object will be prevented from being downloaded until the moratorium expires.
 	- `duplicateFilenameAllowed` (optional) boolean flag signalling upload of (potentially) duplicate-filename data/doc object without deprecating the existing object(s) with the same filename (and the same [object format](https://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat), in case of data objects).
 	- `autodeprecateSameFilenameObjects` (optional) boolean flag requesting that all the existing non-deprecated data/doc objects with the same filename (and the same [object format](https://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat), in case of data objects), as the one being uploaded, will be automatically deprecated by this upload.
-	- `partialUpload` (optional) boolean flag signalling that a single selected data/doc object is allowed to be deprecated by multiple uploads data/doc objects
+	- `partialUpload` (optional) boolean flag signalling that the data/doc object being uploaded is expected to be a part of a group, together deprecating a single other object; if the flat is set to 'true', then the deprecated single object must be specified in the `isNextVersionOf` property of this metadata package.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 

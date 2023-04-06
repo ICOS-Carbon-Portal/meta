@@ -59,7 +59,7 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking{
+class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
 
 	import data.*
 
@@ -520,9 +520,9 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		.toIndexedSeq
 		.headOption
 	}
-}
+end CpIndex
 
-object CpIndex{
+object CpIndex:
 	val UpdateQueueSize = 1 << 13
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
@@ -568,31 +568,22 @@ object CpIndex{
 		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
 	}
 
-	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match{
+	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.DATETIME =>
-			try{
-				mod(Instant.parse(lit.stringValue).toEpochMilli)
-			}catch{
-				case _: Throwable => //ignoring wrong dateTimes
-			}
-	}
+			try mod(Instant.parse(lit.stringValue).toEpochMilli)
+			catch case _: Throwable => ()//ignoring wrong dateTimes
+		case _ =>
 
-	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match{
+	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.LONG =>
-			try{
-				mod(lit.longValue)
-			}catch{
-				case _: Throwable => //ignoring wrong longs
-			}
-	}
+			try mod(lit.longValue)
+			catch case _: Throwable => ()//ignoring wrong longs
+		case _ =>
 
-	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match{
+	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.FLOAT =>
-			try{
-				mod(lit.floatValue)
-			}catch{
-				case _: Throwable => //ignoring wrong floats
-			}
-	}
+			try mod(lit.floatValue)
+			catch case _: Throwable => ()//ignoring wrong floats
+		case _ =>
 
-}
+end CpIndex

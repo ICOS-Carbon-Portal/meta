@@ -93,7 +93,7 @@ case class VarMeta(
 	valueType: ValueType,
 	valueFormat: Option[URI],
 	minMax: Option[(Double, Double)],
-	instrumentDeployment: Option[InstrumentDeployment]
+	instrumentDeployments: Option[Seq[InstrumentDeployment]]
 )
 
 case class SpatioTemporalMeta(
@@ -166,7 +166,8 @@ case class DataObject(
 				l2 => l2.columns
 			).toSeq
 			col <- cols
-			dep <- col.instrumentDeployment
+			deps <- col.instrumentDeployments.toSeq
+			dep <- deps
 			pos <- dep.pos
 		yield
 			pos -> dep.variableName

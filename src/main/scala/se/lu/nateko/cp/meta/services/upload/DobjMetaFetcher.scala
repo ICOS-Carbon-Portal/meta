@@ -154,7 +154,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		labelingDate -> discontinued
 	}
 
-	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): StationTimeSeriesMeta = {
+	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): StationTimeSeriesMeta =
 		val vf = server.factory
 		val acqUri = getSingleUri(dobj, metaVocab.wasAcquiredBy)
 		val instrumentRefs = server.getUriValues(acqUri, metaVocab.wasPerformedWith)
@@ -203,7 +203,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 		val columnsWithDeployments: Option[Seq[VarMeta]] = columns.map{
 			_.map{vm =>
-				val dep: Option[InstrumentDeployment] = deployments.find{dep =>
+				val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
 					dep.variableName.contains(vm.label) &&                //variable name matches
 					dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
 					acq.interval.fold(false){ti =>
@@ -211,13 +211,12 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 						dep.stop.fold(true)(stop => stop.isAfter(ti.start))       //ends after data collection start
 					}
 				}
-
-				vm.copy(instrumentDeployment = dep)
+				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
 			}
 		}
 
 		StationTimeSeriesMeta(acq, prod, nRows, coverage, columnsWithDeployments)
-	}
+	end getStationTimeSerMeta
 
 	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): SpatioTemporalMeta =
 

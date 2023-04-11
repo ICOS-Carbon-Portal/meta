@@ -14,7 +14,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.8",
+		version := "0.7.9",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",

@@ -90,6 +90,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 	def getVarInfo(hash: Sha256Sum, varLabel: String)(using Envri) = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
 	def getPosition(pos: Position)(using Envri) = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
 
+	def getNextVersionColl(hash: Sha256Sum)(using Envri) = getRelativeRaw(NextVersionCollPrefix + hash.id)
+
 	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) =
 		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
 		else getRelative("objspecs/", lastSegment)
@@ -104,6 +106,7 @@ object CpVocab{
 	import CustomVocab.urlEncode
 	import Sha256Sum.IdLength
 
+	val NextVersionCollPrefix = "nextvcoll_"
 	val AcqPrefix = "acq_"
 	val ProdPrefix = "prod_"
 	val SubmPrefix = "subm_"
@@ -134,6 +137,9 @@ object CpVocab{
 			}
 		}
 	}
+
+	object NextVersColl:
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, NextVersionCollPrefix)
 
 	object VarInfo{
 

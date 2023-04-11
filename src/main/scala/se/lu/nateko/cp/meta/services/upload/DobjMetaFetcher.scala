@@ -123,32 +123,32 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			"http://meta.icos-cp.eu/resources/stationlabeling/"
 		).map(vf.createIRI)
 
-		val fetcher = FetchingHelper(server.withContexts(ctxts, Nil))
+		val lblServer = server.withContexts(ctxts, Nil)
 
 		val Seq(prodStLink, appStatus, statusDate, stationId) = Seq(
 				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate", "hasShortName"
 			)
 			.map(vf.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
 
-		val provStOpt: Option[IRI] = fetcher.server
+		val provStOpt: Option[IRI] = lblServer
 			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
 			.toIndexedSeq
 			.collect{
-				case Rdf4jStatement(provSt, _, _) if fetcher.server.hasStatement(Some(provSt), Some(appStatus), None) => provSt
+				case Rdf4jStatement(provSt, _, _) if lblServer.hasStatement(Some(provSt), Some(appStatus), None) => provSt
 			}
 			.headOption
 
 		val labelingDate = provStOpt
-			.filter{ provSt => fetcher
-				.server.hasStatement(provSt, appStatus, vf.createLiteral(CpVocab.LabeledStationStatus))
+			.filter{ provSt => lblServer
+				.hasStatement(provSt, appStatus, vf.createLiteral(CpVocab.LabeledStationStatus))
 			}
-			.flatMap{labeledSt => fetcher
+			.flatMap{labeledSt => FetchingHelper(lblServer)
 				.getOptionalInstant(labeledSt, statusDate)
 				.map(_.atZone(ZoneId.of("UTC")).toLocalDate)
 			}
 
 		val discontinued: Boolean = provStOpt.fold(true){provSt =>
-			!fetcher.server.hasStatement(Some(provSt), Some(stationId), None)
+			!lblServer.hasStatement(Some(provSt), Some(stationId), None)
 		}
 
 		labelingDate -> discontinued

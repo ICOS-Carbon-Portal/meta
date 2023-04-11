@@ -3,10 +3,11 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 import java.net.URI
 import scala.util.{ Success, Try, Failure }
 import se.lu.nateko.cp.meta.upload.Utils.*
+import se.lu.nateko.cp.meta.core.data.OneOrSeq
 
 class UriOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[URI](elemId, cb)(UriInput.parser(_).map(Some(_)), _.toString())
 
-class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Either[URI, Seq[URI]]](elemId, cb)(s =>
+class UriOptionalOneOrSeqInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[OneOrSeq[URI]](elemId, cb)(s =>
 	if(s.isEmpty) Success(None)
 	else if(s.contains("\n")) Try(Some(Right(UriListInput.parser(s).get)))
 	else Try(Some(Left(UriInput.parser(s).get))),

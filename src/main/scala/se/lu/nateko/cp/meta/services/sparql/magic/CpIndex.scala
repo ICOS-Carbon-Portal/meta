@@ -34,6 +34,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
 
+
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
 	private def this() = this(null, null, null, null)//for Kryo deserialization
 }
@@ -58,7 +59,7 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking{
+class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
 
 	import data.*
 
@@ -257,6 +258,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
+		import vocab.dcterms.hasPart
 
 
 		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
@@ -392,14 +394,19 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 									deprecated.add(oe.idx)
 									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
 								else log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
-							}
+							}.isDefined
 							if !subjIsDobj then subj.toJava match
-								//collections are always fully uploaded
-								case Hash.Collection(_) => deprecated.add(oe.idx)
-								case _ =>
+								case Hash.Collection(_) =>
+									//proper collections are always fully uploaded
+									deprecated.add(oe.idx)
+								case _ => subj match
+									case CpVocab.NextVersColl(_) =>
+										if sail.accessEagerly(nextVersCollIsComplete(subj, _))
+										then deprecated.add(oe.idx)
+									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!sail.accessEagerly(_.hasStatement(null, pred, obj, false))
+						!sail.accessEagerly(_.hasStatement(null, isNextVersionOf, obj, false))
 					then deprecated.remove(oe.idx)
 				}
 
@@ -412,25 +419,27 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 					if oe.isNextVersion then
 						log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
 						val deprecated = boolBitmap(DeprecationFlag)
-						val olds = matchStatements(subj, isNextVersionOf, null)
-							.collect{case Rdf4jStatement(_, _, old: IRI) => old}
-						if olds.isEmpty then
-							log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
-
-						olds.foreach{oldIri =>
-							modForDobj(oldIri){old =>
-								if isAssertion then
-									deprecated.add(old.idx)
-									log.debug(s"Marked ${old.hash.id} as deprecated")
-								else if isRetraction then
-									deprecated.remove(old.idx)
-									log.debug(s"Marked ${old.hash.id} as non-deprecated")
-							}
+						val directPrevVers = getIdxsOfDirectPrevVers(subj)
+						directPrevVers.foreach{oldIdx =>
+							if isAssertion then deprecated.add(oldIdx)
+							else if isRetraction then deprecated.remove(oldIdx)
+							log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
 						}
+						if directPrevVers.isEmpty then getIdxsOfPrevVersThroughColl(subj) match
+							case None => log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+							case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
 
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
 				}
 			}
+
+			case `hasPart` => if isAssertion then subj match
+				case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj){oe =>
+					oe.isNextVersion = true
+					if oe.size > -1 then
+						boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+				}
+				case _ =>
 
 			case `hasSamplingHeight` => ifFloat(obj){height =>
 				subj match{
@@ -464,15 +473,13 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		}
 	}
 
-	private def modForDobj(dobj: Value)(mod: ObjEntry => Unit): Boolean = dobj match{
+	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if(entry.prefix == "") entry.prefix = prefix.intern()
-			mod(entry)
-			true
+			Some(mod(entry))
 
-		case _ => false
-	}
+		case _ => None
 
 	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
 		if obj.spec == null || obj.submitter == null then None
@@ -490,13 +497,37 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		initOk.add(obj.idx)
 	}
 
-	private def matchStatements(subj: IRI, pred: IRI, obj: Value): IndexedSeq[Statement] =
-		sail.accessEagerly(_.getStatements(subj, pred, obj, false).asPlainScalaIterator.toIndexedSeq)
+	private def nextVersCollIsComplete(obj: IRI, conn: SailConnection): Boolean =
+		conn.getStatements(obj, vocab.dcterms.hasPart, null, false).asPlainScalaIterator
+			.collect{
+				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
+					oe.isNextVersion = true
+					oe.size > -1
+				}
+			}
+			.flatten
+			.toIndexedSeq
+			.exists(identity)
 
+	private def getIdxsOfDirectPrevVers(deprecator: IRI): IndexedSeq[Int] = sail.accessEagerly{conn =>
+		conn.getStatements(deprecator, vocab.isNextVersionOf, null, false)
+			.asPlainScalaIterator
+			.flatMap{
+				st => modForDobj(st.getObject)(_.idx)
+			}
+			.toIndexedSeq
+	}
 
-}
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI): Option[Int] = sail.accessEagerly{_
+		.getStatements(null, vocab.dcterms.hasPart, deprecator, false)
+		.asPlainScalaIterator
+		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
+		.toIndexedSeq
+		.headOption
+	}
+end CpIndex
 
-object CpIndex{
+object CpIndex:
 	val UpdateQueueSize = 1 << 13
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
@@ -542,31 +573,22 @@ object CpIndex{
 		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
 	}
 
-	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match{
+	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.DATETIME =>
-			try{
-				mod(Instant.parse(lit.stringValue).toEpochMilli)
-			}catch{
-				case _: Throwable => //ignoring wrong dateTimes
-			}
-	}
+			try mod(Instant.parse(lit.stringValue).toEpochMilli)
+			catch case _: Throwable => ()//ignoring wrong dateTimes
+		case _ =>
 
-	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match{
+	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.LONG =>
-			try{
-				mod(lit.longValue)
-			}catch{
-				case _: Throwable => //ignoring wrong longs
-			}
-	}
+			try mod(lit.longValue)
+			catch case _: Throwable => ()//ignoring wrong longs
+		case _ =>
 
-	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match{
+	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.FLOAT =>
-			try{
-				mod(lit.floatValue)
-			}catch{
-				case _: Throwable => //ignoring wrong floats
-			}
-	}
+			try mod(lit.floatValue)
+			catch case _: Throwable => ()//ignoring wrong floats
+		case _ =>
 
-}
+end CpIndex

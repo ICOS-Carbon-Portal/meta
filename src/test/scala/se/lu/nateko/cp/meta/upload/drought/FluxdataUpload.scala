@@ -136,7 +136,7 @@ class FluxdataUpload(
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevHash.map(Left(_)),
 			preExistingDoi = if(haveDois) Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))) else None,
-			references = Some(ReferencesDto(Some(Seq("Warm Winter 2020")), None, None, None, None))
+			references = Some(ReferencesDto(Some(Seq("Warm Winter 2020")), None, None, None, None, None))
 		)
 	}
 

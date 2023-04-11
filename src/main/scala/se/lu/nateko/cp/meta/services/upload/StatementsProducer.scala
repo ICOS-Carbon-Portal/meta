@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -39,7 +40,24 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		import meta.hashSum
 
 		val objectUri = vocab.getStaticObject(hashSum)
+
 		val submissionUri = vocab.getSubmission(hashSum)
+		val dct = metaVocab.dcterms
+
+		val nextVersionStatements =
+			if meta.partialUpload then
+				meta.isNextVersionOf match
+					case Some(Left(v)) =>
+						val collIri = vocab.getNextVersionColl(v)
+
+						Iterable(
+							makeSt(collIri, metaVocab.isNextVersionOf, vocab.getStaticObject(v)),
+							makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass),
+							makeSt(collIri, dct.hasPart, objectUri)
+						)
+					case _ => Iterable.empty
+			else
+				makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject))
 
 		val specificStatements = meta match {
 			case dobj: DataObjectDto => getDobjStatements(dobj)
@@ -64,7 +82,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
 			makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
-			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
+			nextVersionStatements ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
 	}
 
@@ -95,8 +113,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
-		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		moratoriumStatements
+		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++ moratoriumStatements
 	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {

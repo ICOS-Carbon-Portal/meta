@@ -78,7 +78,7 @@ class CollectionFetcher(
 			creator = getOrganization(getSingleUri(coll, dct.creator)),
 			title = getTitle(coll),
 			description = getOptionalString(coll, dct.description),
-			nextVersion = getNextVersion(coll).map(_.toJava),
+			nextVersion = getNextVersionAsUri(coll),
 			latestVersion = getLatestVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi),

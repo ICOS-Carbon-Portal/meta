@@ -10,14 +10,12 @@ import se.lu.nateko.cp.meta.icos.TcMetaSource
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.utils.flattenToSeq
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.containsEither
 
 import java.net.URI
 import scala.util.Try
-import scala.annotation.tailrec
-
 
 trait CpmetaFetcher extends FetchingHelper{
 	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
@@ -146,36 +144,68 @@ trait CpmetaFetcher extends FetchingHelper{
 			.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
 			.withUri(covUri.toJava)
 
+	protected def getNextVersionAsUri(item: IRI): OptionalOneOrSeq[URI] =
+		getNextVersions(item) match
+			case Nil => None
+			case Seq(single) => Some(Left(single.toJava))
+			case many => Some(Right(many.map(_.toJava)))
 
-	protected def getNextVersion(item: IRI): Option[IRI] = server
+	private def getNextVersions(item: IRI): Seq[IRI] = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-		.toIndexedSeq
-		.collectFirst{
-			case Rdf4jStatement(next, _, _) if isComplete(next) => next
+		.flatMap{
+			case Rdf4jStatement(next, _, _) =>
+				if isPlainCollection(next)
+				then server.getUriValues(next, metaVocab.dcterms.hasPart)
+				else Seq(next)
+			case _ => Nil //should not happen in practice, but just in case, for completeness
 		}
+		.filter(isComplete)
+		.toIndexedSeq
+
+	protected def isPlainCollection(item: IRI): Boolean =
+		server.resourceHasType(item, metaVocab.plainCollectionClass)
 
 	protected def isComplete(item: IRI): Boolean =
+		import metaVocab.*
 		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-		if itemTypes.contains(metaVocab.collectionClass) then true
-		else if Seq(metaVocab.docObjectClass, metaVocab.dataObjectClass).exists(itemTypes.contains)
-		then server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
-		else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
 
-	protected def getLatestVersion(item: IRI): URI =
-		@tailrec
-		def latest(item: IRI, seen: Set[IRI]): IRI = getNextVersion(item) match
-			case None => item
-			case Some(next) =>
-				if seen.contains(next) then item
+		itemTypes.contains(collectionClass) || (
+			itemTypes.contains(plainCollectionClass) &&
+			server.getUriValues(item, dcterms.hasPart).exists(isComplete)
+		) || (
+			if itemTypes.containsEither(docObjectClass, dataObjectClass)
+			then server.hasStatement(Some(item), Some(hasSizeInBytes), None)
+			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
+		)
+
+	protected def getLatestVersion(item: IRI): OneOrSeq[URI] =
+
+		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
+			val nextVersions = getNextVersions(item).flatMap{next =>
+				if seen.contains(next)
+				then Nil
 				else latest(next, seen + next)
-		latest(item, Set.empty).toJava
+			}
+			if nextVersions.isEmpty then Seq(item) else nextVersions
+
+		latest(item, Set.empty).map(_.toJava) match
+			case Seq(single) => Left(single)
+			case many => Right(many)
+
 
 	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
-		server.getUriValues(item, metaVocab.isNextVersionOf).map(_.toJava).toList match {
+		val allPrevVersions: Seq[IRI] =
+			server.getUriValues(item, metaVocab.isNextVersionOf) ++
+			server.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap{
+				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
+					server.getUriValues(coll, metaVocab.isNextVersionOf)
+				case _ => Nil
+			}
+		allPrevVersions.map(_.toJava) match
 			case Nil => None
-			case single :: Nil => Some(Left(single))
+			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
-		}
+
 
 	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).flattenToSeq
 

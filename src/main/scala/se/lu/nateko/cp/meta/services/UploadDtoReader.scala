@@ -103,7 +103,8 @@ object UploadDtoReader{
 			licence = obj.references.licence.map(_.url),
 			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
 			duplicateFilenameAllowed = None,
-			autodeprecateSameFilenameObjects = None
+			autodeprecateSameFilenameObjects = None,
+			partialUpload = None
 		)
 	)
 

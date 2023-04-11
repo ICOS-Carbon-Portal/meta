@@ -9,7 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
 import Utils.*
 import se.lu.nateko.cp.meta.upload.formcomponents.*
-import ItemTypeRadio.*
+import ItemTypeRadio.ItemType.{Collection, Data, Document}
 import UploadApp.{hideAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms.*
 import se.lu.nateko.cp.meta.{SpatioTemporalDto, StationTimeSeriesDto}
@@ -133,7 +133,8 @@ class Form(
 			licence = licence,
 			moratorium = moratorium,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			partialUpload = aboutPanel.partialUpload
 		))
 	)
 
@@ -202,7 +203,8 @@ class Form(
 			licence = licence,
 			moratorium = None,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			partialUpload = aboutPanel.partialUpload
 		))
 	)
 

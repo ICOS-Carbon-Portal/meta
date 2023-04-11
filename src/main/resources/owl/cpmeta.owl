@@ -654,7 +654,7 @@
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Collection"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
                 </owl:unionOf>
             </owl:Class>
@@ -2298,26 +2298,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Collection -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Collection">
-        <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/prov#Entity"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf"/>
-                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Collection"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.org/dc/terms/hasPart"/>
-                <owl:allValuesFrom>
-                    <owl:Class>
-                        <owl:unionOf rdf:parseType="Collection">
-                            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Collection"/>
-                            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
-                        </owl:unionOf>
-                    </owl:Class>
-                </owl:allValuesFrom>
-            </owl:Restriction>
-        </rdfs:subClassOf>
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://purl.org/dc/terms/creator"/>
@@ -2338,6 +2319,7 @@
                 <owl:onDataRange rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <owl:disjointWith rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
     </owl:Class>
     
 
@@ -2372,6 +2354,7 @@
                 <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <owl:disjointWith rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject"/>
     </owl:Class>
     
 
@@ -2805,6 +2788,27 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/prov#Entity"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.org/dc/terms/hasPart"/>
+                <owl:allValuesFrom>
+                    <owl:Class>
+                        <owl:unionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Collection"/>
+                            <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
+                        </owl:unionOf>
+                    </owl:Class>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
     </owl:Class>

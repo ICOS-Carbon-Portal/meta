@@ -128,7 +128,7 @@
 
 			<br>
 
-			@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
+			@for(variables <- varMetas){
 				<h2 class="fs-3 mt-5">Previewable variables</h2>
 				<div class="col-md-12">
 				<table class="table">
@@ -144,8 +144,8 @@
 								}
 							}
 							<th>Preview</th>
-							@if(!variables.filter(_.instrumentDeployments.isDefined).isEmpty){
-								<th>Deployments</th>
+							@if(instrumentDeploymentsPresent){
+								<th>Instrument Deployments</th>
 							}
 						</tr>
 					</thead>
@@ -166,24 +166,44 @@
 										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
-								@for(depls <- varInfo.instrumentDeployments){
+								@varInfo.instrumentDeployments.fold{
+									@if(instrumentDeploymentsPresent){
+										<td></td>
+									}
+								}{depls =>
 									<td>
-											<table class="table">
-												<thead><tr>
+										<table class="table instrument-deployment">
+											<thead>
+												<tr>
+													<th>Time interval</th>
 													<th>Position</th>
 													<th>Instrument</th>
-													<th>Interval</th>
-												</tr></thead>
-												@for(depl <- depls){
-													<tr>
-													@for(p <- depl.pos){
-														<td>@p.textSpecification</td>
-													}
-													<td>@resourceLink(depl.instrument)</td>
-													<td>Start time: @depl.start.getDateTimeStr, Stop time: @depl.stop.getDateTimeStr </td>
 												</tr>
-												}
-											</table>
+											</thead>
+											@for(depl <- depls.sortBy(_.start)){
+												<tr>
+													<td style="white-space: nowrap;">
+														Start: @depl.start.getDateTimeStr
+														<br/>
+														Stop: @depl.stop.getDateTimeStr
+													</td>
+													@depl.pos.fold{
+														<td></td>
+													}{pos =>
+														<td style="white-space: nowrap;">
+															Latitude: @pos.lat6
+															<br/>
+															Longitude: @pos.lon6
+															@for(alt <- pos.alt){
+																<br/>
+																Altitude: @alt m
+															}
+														</td>
+													}</td>
+													<td>@resourceLink(depl.instrument)</td>
+												</tr>
+											}
+										</table>
 									</td>
 								}
 							</tr>
@@ -380,4 +400,12 @@
 			@previewTab
 		</li>
 	</ul>
+}
+
+@varMetas = @{
+	dobj.specificInfo.fold(_.variables, _.columns)
+}
+
+@instrumentDeploymentsPresent = @{
+	varMetas.exists(_.exists(_.instrumentDeployments.isDefined))
 }

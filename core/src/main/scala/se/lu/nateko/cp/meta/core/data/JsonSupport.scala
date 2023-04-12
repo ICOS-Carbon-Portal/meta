@@ -6,6 +6,8 @@ import se.lu.nateko.cp.meta.core.toTypedJson
 import spray.json.*
 import DefaultJsonProtocol.*
 import se.lu.nateko.cp.doi.DoiMeta
+import CommonJsonSupport.TypeField
+
 
 object JsonSupport extends CommonJsonSupport{
 
@@ -33,8 +35,8 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]{
-		def write(geo: GeoFeature): JsValue = geo match {
+	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]:
+		def write(geo: GeoFeature): JsValue = geo match
 			case llb: LatLonBox => llb.toJson
 			case gt: GeoTrack => gt.toJson
 			case pos: Position => pos.toJson
@@ -42,36 +44,40 @@ object JsonSupport extends CommonJsonSupport{
 			case geocol: FeatureCollection => geocol.toJson
 			case c: Circle => c.toJson
 			case p: Pin => p.toJson
-		}
 
-		def read(value: JsValue): GeoFeature = value match {
+		def read(value: JsValue): GeoFeature = value match
 			case JsObject(fields) =>
-				if(fields.contains("points"))
-					value.convertTo[GeoTrack]
-				else if(fields.contains("vertices"))
-					value.convertTo[Polygon]
-				else if(fields.contains("min") && fields.contains("max"))
-					value.convertTo[LatLonBox]
-				else if(fields.contains("lat") && fields.contains("lon"))
-					value.convertTo[Position]
-				else if(fields.contains("features"))
-					value.convertTo[FeatureCollection]
-				else if(fields.contains("radius"))
-					value.convertTo[Circle]
-				else if(fields.contains("pinkind"))
-					value.convertTo[Pin]
-				else
-					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
+				fields.get(TypeField) match
+					case Some(JsString(typeName)) => typeName match
+						case "se.lu.nateko.cp.meta.core.data.GeoTrack" => value.convertTo[GeoTrack]
+
+						case _: String => deserializationError(s"Unexpected GeoFeature type $typeName")
+					case _ => deserializationError("Expected a 'type' property representing the type of GeoFeature")
+				// if(fields.contains("points"))
+				// 	value.convertTo[GeoTrack]
+				// else if(fields.contains("vertices"))
+				// 	value.convertTo[Polygon]
+				// else if(fields.contains("min") && fields.contains("max"))
+				// 	value.convertTo[LatLonBox]
+				// else if(fields.contains("lat") && fields.contains("lon"))
+				// 	value.convertTo[Position]
+				// else if(fields.contains("features"))
+				// 	value.convertTo[FeatureCollection]
+				// else if(fields.contains("radius"))
+				// 	value.convertTo[Circle]
+				// else if(fields.contains("pinkind"))
+				// 	value.convertTo[Pin]
+				// else
+				// 	deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
 			case _ =>
 				deserializationError("Expected a JsObject representing a GeoFeature")
-		}
-	}
+	end vanillaGeoFeatureFormat
 
 	given RootJsonFormat[GeoFeature] with{
 		def write(geo: GeoFeature): JsValue = {
 			val base = vanillaGeoFeatureFormat.write(geo)
 			val geoJson = GeoJson.fromFeatureWithLabels(geo)
-			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
+			val allFields = base.asJsObject.fields + ("geo" -> geoJson) + (TypeField -> JsString(geo.getClass.getName))
 			JsObject(allFields)
 		}
 
@@ -218,8 +224,6 @@ object JsonSupport extends CommonJsonSupport{
 				deserializationError("Expected JS object representing static collection or a plain data object")
 		}
 	}
-
-	import CommonJsonSupport.TypeField
 
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
 	given RootJsonFormat[AtcStationSpecifics] = jsonFormat8(AtcStationSpecifics.apply)

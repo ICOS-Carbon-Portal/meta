@@ -93,6 +93,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	}
 
 	private def onModeSelected(mode: Mode): Unit = {
+		UploadApp.hideAlert()
 		mode match {
 			case NewItem =>
 				fileNameElement.hide()

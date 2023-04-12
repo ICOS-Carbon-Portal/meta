@@ -14,17 +14,34 @@ import se.lu.nateko.cp.doi.*
 
 object JsonSupport {
 
+	given [T: Writes]: Writes[Seq[T]] = Writes.iterableWrites2
+	
 	given OFormat[Position] = Json.format[Position]
 	given OFormat[LatLonBox] = Json.format[LatLonBox]
+	given OFormat[Circle] = Json.format[Circle]
+	given OFormat[GeoTrack] = Json.format[GeoTrack]
+	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
+	given OFormat[Polygon] = Json.format[Polygon]
+	given OFormat[Pin] = Json.format[Pin]
+	given Format[PinKind] with
+		def writes(pk: PinKind): JsValue = JsString(pk.toString)
+		def reads(js: JsValue): JsResult[PinKind] = js.validate[String].map(PinKind.valueOf)
+
 
 	given OFormat[GeoFeature] with
 		private val notImplError = "Only LatLonBoxes are supported as custom GeoFeatures in UploadGUI at this time"
 
 		def writes(gf: GeoFeature) = gf match
 			case box: LatLonBox => Json.toJsObject(box)
-			case _ => throw NotImplementedError(notImplError)
+			case pos: Position => Json.toJsObject(pos)
+			case c: Circle => Json.toJsObject(c)
+			case col: FeatureCollection => Json.toJsObject(col)
+			
 
-		def reads(js: JsValue) = js.validate[LatLonBox].orElse(JsError(notImplError))
+		def reads(js: JsValue) = js.validate[LatLonBox]
+			.orElse(js.validate[FeatureCollection])
+			.orElse(js.validate[Position])
+			.orElse(JsError(notImplError))
 
 	given Format[Instant] with{
 		def writes(i: Instant) = JsString(i.toString)

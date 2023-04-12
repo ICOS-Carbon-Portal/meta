@@ -12,6 +12,8 @@ import se.lu.nateko.cp.meta.core.data.TemporalCoverage
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.upload.UploadApp
 
 class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
@@ -38,9 +40,9 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		variables = varInfo
 	)
 
-	def spatialCoverage: Try[Either[LatLonBox, URI]] = spatialCovSelect
+	def spatialCoverage: Try[Either[GeoFeature, URI]] = spatialCovSelect
 		.value.withMissingError("spatial coverage").flatMap{spCov =>
-			if(spCov eq customSpatCov) {
+			if(spCov eq customLatLonBox)
 				for(
 					minLat <- minLatInput.value;
 					minLon <- minLonInput.value;
@@ -48,7 +50,8 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 					maxLon <- maxLonInput.value;
 					label <- spatCovLabel.value
 				) yield Left(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
-			} else Success(Right(spCov.uri))
+			else if (spCov eq customSpatCov) Success(Left(gf))
+			else Success(Right(spCov.uri))
 		}
 
 	def varnames: Try[Option[Seq[String]]] = varInfoForm.varInfos
@@ -72,9 +75,12 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)
 	private val maxLonInput = new DoubleInput("l3maxlon", notifyUpdate)
 
+	private var gf: GeoFeature = null
+
+	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
 	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
 
-	spatialCovSelect.setOptions(customSpatCov +: covs)
+	spatialCovSelect.setOptions(customLatLonBox +: covs)
 
 	def resetForm(): Unit = {
 		Iterable(
@@ -84,6 +90,8 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		spatialCovSelect.reset()
 		varInfoForm.setValues(None)
 		resetLatLonBox()
+		spatialCovSelect.setOptions(customLatLonBox +: covs)
+		spatialCovSelect.enable()
 	}
 
 	bus.subscribe{
@@ -94,11 +102,17 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
 	}
 
-	private def onSpatCoverSelected(): Unit = {
-		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()
-		else spatCoverElements.hide()
+	private def onSpatCoverSelected(): Unit =
+		if(spatialCovSelect.value == Some(customLatLonBox))
+			spatCoverElements.show()
+			UploadApp.hideAlert()
+		else if (spatialCovSelect.value == Some(customSpatCov))
+			UploadApp.showAlert("The data object has custom spatial coverage which cannot be updated in UploadGUI, please use the API to update", "alert alert-warning")
+			spatCoverElements.hide()
+		else
+			spatCoverElements.hide()
+			UploadApp.hideAlert()
 		notifyUpdate()
-	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo match{
@@ -124,10 +138,18 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 								minLonInput.value = b.min.lon
 								maxLatInput.value = b.max.lat
 								maxLonInput.value = b.max.lon
-							case _ => ()
+								spatialCovSelect.value = customLatLonBox
+								spatCoverElements.show()
+								spatialCovSelect.enable()
+							case cov: GeoFeature =>
+								spatialCovSelect.setOptions(IndexedSeq(customSpatCov))
+								gf = cov
+								spatCoverElements.hide()
+								spatialCovSelect.value = customSpatCov
+								spatialCovSelect.disable()
+								UploadApp.showAlert("The data object has custom spatial coverage which cannot be updated in UploadGUI, please use the API to update",
+								"alert alert-warning")
 						spatCovLabel.value = cov.label
-						spatialCovSelect.value = customSpatCov
-						spatCoverElements.show()
 					case Right(covUri) =>
 						resetLatLonBox()
 						spatCoverElements.hide()

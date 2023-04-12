@@ -173,7 +173,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 		libraryDependencies ++= Seq(
 			"org.scala-js"      %%% "scalajs-dom"       % "2.1.0",
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
-			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC6",
+			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC7",
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.0",
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)

@@ -12,9 +12,24 @@ import scala.reflect.ClassTag
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.doi.*
 
+trait SealedTraitFormatPrecursor[T] extends OWrites[T]:
+	def typedReads(js: JsValue, typeName: String): JsResult[T]
+
+
 object JsonSupport {
 
 	val TypeField = "_type"
+
+	def sealedTraitFormat[T](precursor: SealedTraitFormatPrecursor[T], typeHint: String) = new OFormat[T]:
+		def writes(t: T) = precursor.writes(t) + (TypeField -> JsString(t.getClass.getSimpleName))
+
+		def reads(js: JsValue) = js match
+			case JsObject(fields) =>
+				fields.get(TypeField) match
+					case Some(JsString(typeName)) => precursor.typedReads(js, typeName)
+					case _ => JsError(s"Missing $TypeField field representing the type of $typeHint")
+			case _ => JsError(s"Expected JsObject when parsing $typeHint, got ${js.toString}")
+	end sealedTraitFormat
 
 	given [T: Writes]: Writes[Seq[T]] = Writes.iterableWrites2
 	
@@ -29,43 +44,28 @@ object JsonSupport {
 		def reads(js: JsValue): JsResult[PinKind] = js.validate[String].map(PinKind.valueOf)
 
 
-	private object vanillaGeoFeatureFormat extends OFormat[GeoFeature]:
-		def getAllFields(base: JsObject, geo: GeoFeature): JsObject =
-			val allFields = base.fields ++ Seq(TypeField -> JsString(geo.getClass.getName))
-			JsObject(allFields)
-
+	private object geoFeatureFormatPrecursor extends SealedTraitFormatPrecursor[GeoFeature]:
 		def writes(gf: GeoFeature) = gf match
-			case box: LatLonBox => getAllFields(Json.toJsObject(box), box)
-			case pos: Position => getAllFields(Json.toJsObject(pos), pos)
-			case c: Circle => getAllFields(Json.toJsObject(c), c)
-			case geocol: FeatureCollection => getAllFields(Json.toJsObject(geocol), geocol)
-			case gpoly: Polygon => getAllFields(Json.toJsObject(gpoly), gpoly)
-			case p: Pin => getAllFields(Json.toJsObject(p), p)
-			case gt: GeoTrack => getAllFields(Json.toJsObject(gt), gt)
+			case box: LatLonBox            => Json.toJsObject(box)
+			case pos: Position             => Json.toJsObject(pos)
+			case c: Circle                 => Json.toJsObject(c)
+			case geocol: FeatureCollection => Json.toJsObject(geocol)
+			case gpoly: Polygon            => Json.toJsObject(gpoly)
+			case p: Pin                    => Json.toJsObject(p)
+			case gt: GeoTrack              => Json.toJsObject(gt)
 
-		def reads(js: JsValue) = js match
-			case JsObject(fields) =>
-				fields.get(TypeField) match
-					case Some(JsString(typeName)) => typeName match
-						case "se.lu.nateko.cp.meta.core.data.Position" => js.validate[Position]
-						case "se.lu.nateko.cp.meta.core.data.LatLonBox" => js.validate[LatLonBox]
-						case "se.lu.nateko.cp.meta.core.data.Circle" => js.validate[Circle]
-						case "se.lu.nateko.cp.meta.core.data.GeoTrack" => js.validate[GeoTrack]
-						case "se.lu.nateko.cp.meta.core.data.FeatureCollection" => js.validate[FeatureCollection]
-						case "se.lu.nateko.cp.meta.core.data.Polygon" => js.validate[Polygon]
-						case "se.lu.nateko.cp.meta.core.data.Pin" => js.validate[Pin]
-						case _ => JsError(s"Unexpected GeoFeature type $typeName")	
-					case _ => JsError("Expected a 'type' property representing the type of GeoFeature")
-			case _ => JsError("Expected a JsObject representing a GeoFeature")
-	end vanillaGeoFeatureFormat
+		def typedReads(js: JsValue, typeName: String) = typeName match
+			case "Position"          => js.validate[Position]
+			case "LatLonBox"         => js.validate[LatLonBox]
+			case "Circle"            => js.validate[Circle]
+			case "GeoTrack"          => js.validate[GeoTrack]
+			case "FeatureCollection" => js.validate[FeatureCollection]
+			case "Polygon"           => js.validate[Polygon]
+			case "Pin"               => js.validate[Pin]
+			case _ => JsError(s"Unexpected GeoFeature type $typeName")
+	end geoFeatureFormatPrecursor
 
-	given OFormat[GeoFeature] with
-		def writes(geo: GeoFeature) =
-			val base = vanillaGeoFeatureFormat.writes(geo)
-			val allFields = base.fields ++ Seq(TypeField -> JsString(geo.getClass.getName))
-			JsObject(allFields)
-
-		def reads(value: JsValue) = vanillaGeoFeatureFormat.reads(value)
+	given OFormat[GeoFeature] = sealedTraitFormat(geoFeatureFormatPrecursor, "GeoFeature")
 
 	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
 
@@ -109,29 +109,20 @@ object JsonSupport {
 	given OFormat[DocObjectDto] = Json.format[DocObjectDto]
 	given OFormat[StaticCollectionDto] = Json.format[StaticCollectionDto]
 
-	given Format[UploadDto] with{
+	private object uploadDtoFormatPrecursor extends SealedTraitFormatPrecursor[UploadDto]:
 		def writes(dto: UploadDto) = dto match
-			case dataObjectDto: DataObjectDto => 
-				val fields = Json.toJsObject(dataObjectDto).fields ++ Seq(TypeField -> JsString(dataObjectDto.getClass.getName))
-				JsObject(fields)
-			case documentObjectDto: DocObjectDto => 
-				val fields = Json.toJsObject(documentObjectDto).fields ++ Seq(TypeField -> JsString(documentObjectDto.getClass.getName))
-				JsObject(fields)
-			case staticCollectionDto: StaticCollectionDto =>
-				val fields = Json.toJsObject(staticCollectionDto).fields ++ Seq(TypeField -> JsString(staticCollectionDto.getClass.getName))
-				JsObject(fields)
+			case dataObjectDto: DataObjectDto             => Json.toJsObject(dataObjectDto)
+			case documentObjectDto: DocObjectDto          => Json.toJsObject(documentObjectDto)
+			case staticCollectionDto: StaticCollectionDto => Json.toJsObject(staticCollectionDto)
 
-		def reads(js: JsValue) = js match
-			case JsObject(fields) =>
-				fields.get(TypeField) match
-					case Some(JsString(typeName)) => typeName match
-						case "se.lu.nateko.cp.meta.DataObjectDto" => Json.fromJson[DataObjectDto](js)
-						case "se.lu.nateko.cp.meta.DocObjectDto" => Json.fromJson[DocObjectDto](js)
-						case "se.lu.nateko.cp.meta.StaticCollectionDto" => Json.fromJson[StaticCollectionDto](js)
-						case _ => JsError(s"Unexpected GeoFeature type $typeName")
-					case _ => JsError("Expected a 'type' property representing the type of GeoFeature")
-			case _ => JsError("Expected a JsObject representing a GeoFeature")
-	}
+		def typedReads(js: JsValue, typeName: String) = typeName match
+			case "se.lu.nateko.cp.meta.upload.DataObjectDto"       => js.validate[DataObjectDto]
+			case "se.lu.nateko.cp.meta.upload.DocObjectDto"        => js.validate[DocObjectDto]
+			case "se.lu.nateko.cp.meta.upload.StaticCollectionDto" => js.validate[StaticCollectionDto]
+			case _ => JsError(s"Unexpected UploadDto type $typeName")
+	end uploadDtoFormatPrecursor
+
+	given OFormat[UploadDto] = sealedTraitFormat(uploadDtoFormatPrecursor, "UploadDto")
 
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 

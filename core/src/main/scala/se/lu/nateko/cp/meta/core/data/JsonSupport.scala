@@ -7,6 +7,7 @@ import spray.json.*
 import DefaultJsonProtocol.*
 import se.lu.nateko.cp.doi.DoiMeta
 import CommonJsonSupport.TypeField
+import scala.reflect.ClassTag
 
 object JsonSupport extends CommonJsonSupport{
 
@@ -35,38 +36,53 @@ object JsonSupport extends CommonJsonSupport{
 	}
 
 	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]:
-		def getAllFields(base: JsValue, geo: GeoFeature): JsValue =
-			val geoJson = GeoJson.fromFeatureWithLabels(geo)
-			val allFields = base.asJsObject.fields + ("geo" -> geoJson) + (TypeField -> JsString(geo.getClass.getName))
-			JsObject(allFields)
 
-		def write(geo: GeoFeature): JsValue = geo match
-			case llb: LatLonBox => getAllFields(llb.toJson, llb)
-			case gt: GeoTrack => getAllFields(gt.toJson, gt)
-			case pos: Position => getAllFields(pos.toJson, pos)
-			case gpoly: Polygon => getAllFields(gpoly.toJson, gpoly)
-			case geocol: FeatureCollection => getAllFields(geocol.toJson, geocol)
-			case c: Circle => getAllFields(c.toJson, c)
-			case p: Pin => getAllFields(p.toJson, p)
+		private def subtypeEntry[T <: GeoFeature : JsonFormat](using tag: ClassTag[T]): (String, JsValue => T) =
+			val name = tag.runtimeClass.getSimpleName
+			(name, _.convertTo[T])
+
+		private val parsers: Map[String, JsValue => GeoFeature] = Map(
+			subtypeEntry[LatLonBox],
+			subtypeEntry[GeoTrack],
+			subtypeEntry[Position],
+			subtypeEntry[Polygon],
+			subtypeEntry[FeatureCollection],
+			subtypeEntry[Circle],
+			subtypeEntry[Pin]
+		)
+
+		def write(geo: GeoFeature): JsValue =
+			val vanilla = geo match
+				case llb: LatLonBox => llb.toJson
+				case gt: GeoTrack => gt.toJson
+				case pos: Position => pos.toJson
+				case gpoly: Polygon => gpoly.toJson
+				case geocol: FeatureCollection => geocol.toJson
+				case c: Circle => c.toJson
+				case p: Pin => p.toJson
+			val allFields = vanilla.asJsObject.fields + (TypeField -> JsString(geo.getClass.getName))
+			JsObject(allFields)
 
 		def read(value: JsValue): GeoFeature = value match
 			case JsObject(fields) =>
 				fields.get(TypeField) match
-					case Some(JsString(typeName)) => typeName match
-						case "se.lu.nateko.cp.meta.core.data.GeoTrack" => value.convertTo[GeoTrack]
-						case "se.lu.nateko.cp.meta.core.data.Polygon" => value.convertTo[Polygon]
-						case "se.lu.nateko.cp.meta.core.data.LatLonBox" => value.convertTo[LatLonBox]
-						case "se.lu.nateko.cp.meta.core.data.Position" => value.convertTo[Position]
-						case "se.lu.nateko.cp.meta.core.data.FeatureCollection" => value.convertTo[FeatureCollection]
-						case "se.lu.nateko.cp.meta.core.data.Circle" => value.convertTo[Circle]
-						case "se.lu.nateko.cp.meta.core.data.Pin" => value.convertTo[Pin]
-						case _: String => deserializationError(s"Unexpected GeoFeature type $typeName")
-					case _ => deserializationError("Expected a 'type' property representing the type of GeoFeature")
-			case _ => deserializationError("Expected a JsObject representing a GeoFeature")
+					case Some(JsString(typeName)) => parsers.get(typeName) match
+						case Some(parser) => parser(value)
+						case None =>
+							val knownTypes = parsers.keys.mkString(", ")
+							deserializationError(s"Unexpected GeoFeature type $typeName, supported types are: $knownTypes")
+					case _ =>
+						deserializationError(s"Expected a $TypeField property representing the type of GeoFeature")
+			case _ =>
+				deserializationError("Expected a JsObject representing a GeoFeature")
 	end vanillaGeoFeatureFormat
 
 	given RootJsonFormat[GeoFeature] with{
-		def write(geo: GeoFeature): JsValue = vanillaGeoFeatureFormat.write(geo)
+		def write(geo: GeoFeature): JsValue =
+			val geoJson = GeoJson.fromFeatureWithLabels(geo)
+			val vanilla = vanillaGeoFeatureFormat.write(geo)
+			val allFields = vanilla.asJsObject.fields + ("geo" -> geoJson)
+			JsObject(allFields)
 
 		def read(value: JsValue): GeoFeature = vanillaGeoFeatureFormat.read(value)
 

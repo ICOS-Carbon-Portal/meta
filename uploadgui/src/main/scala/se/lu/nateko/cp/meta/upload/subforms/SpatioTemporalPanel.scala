@@ -79,8 +79,9 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 
 	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
 	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
+	private val customSpatCovWarningMsg = "The data object has custom spatial coverage which cannot be updated in UploadGUI. All other metadata can be updated."
 
-	spatialCovSelect.setOptions(customLatLonBox +: covs)
+	def resetSpatialCovOptions = spatialCovSelect.setOptions(customLatLonBox +: covs)
 
 	def resetForm(): Unit = {
 		Iterable(
@@ -90,7 +91,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		spatialCovSelect.reset()
 		varInfoForm.setValues(None)
 		resetLatLonBox()
-		spatialCovSelect.setOptions(customLatLonBox +: covs)
+		resetSpatialCovOptions
 		spatialCovSelect.enable()
 	}
 
@@ -107,7 +108,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 			spatCoverElements.show()
 			UploadApp.hideAlert()
 		else if (spatialCovSelect.value == Some(customSpatCov))
-			UploadApp.showAlert("The data object has custom spatial coverage which cannot be updated in UploadGUI, please use the API to update", "alert alert-warning")
+			UploadApp.showAlert(customSpatCovWarningMsg, "alert alert-warning")
 			spatCoverElements.hide()
 		else
 			spatCoverElements.hide()
@@ -134,6 +135,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 					case Left(cov) =>
 						cov match
 							case b: LatLonBox =>
+								resetSpatialCovOptions
 								minLatInput.value = b.min.lat
 								minLonInput.value = b.min.lon
 								maxLatInput.value = b.max.lat
@@ -147,12 +149,12 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 								spatCoverElements.hide()
 								spatialCovSelect.value = customSpatCov
 								spatialCovSelect.disable()
-								UploadApp.showAlert("The data object has custom spatial coverage which cannot be updated in UploadGUI, please use the API to update",
-								"alert alert-warning")
+								UploadApp.showAlert(customSpatCovWarningMsg, "alert alert-warning")
 						spatCovLabel.value = cov.label
 					case Right(covUri) =>
 						resetLatLonBox()
 						spatCoverElements.hide()
+						resetSpatialCovOptions
 						covs.find(_.uri == covUri).fold(spatialCovSelect.reset()){
 							cov => spatialCovSelect.value = cov
 						}

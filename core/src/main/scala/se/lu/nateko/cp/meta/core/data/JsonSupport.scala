@@ -60,7 +60,7 @@ object JsonSupport extends CommonJsonSupport{
 				case geocol: FeatureCollection => geocol.toJson
 				case c: Circle => c.toJson
 				case p: Pin => p.toJson
-			val allFields = vanilla.asJsObject.fields + (TypeField -> JsString(geo.getClass.getName))
+			val allFields = vanilla.asJsObject.fields + (TypeField -> JsString(geo.getClass.getSimpleName))
 			JsObject(allFields)
 
 		def read(value: JsValue): GeoFeature = value match

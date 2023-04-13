@@ -121,7 +121,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[ObjectUploadDto] with{
 		override def write(umd: ObjectUploadDto) =
 			val base = vanillaDtoFormat.write(umd)
-			base + ("_type" -> umd.getClass.getName)
+			base + ("_type" -> umd.getClass.getSimpleName)
 		override def read(value: JsValue): ObjectUploadDto = vanillaDtoFormat.read(value)
 	}
 

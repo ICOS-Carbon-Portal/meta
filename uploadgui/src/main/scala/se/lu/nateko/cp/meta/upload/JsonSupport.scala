@@ -116,9 +116,9 @@ object JsonSupport {
 			case staticCollectionDto: StaticCollectionDto => Json.toJsObject(staticCollectionDto)
 
 		def typedReads(js: JsValue, typeName: String) = typeName match
-			case "se.lu.nateko.cp.meta.upload.DataObjectDto"       => js.validate[DataObjectDto]
-			case "se.lu.nateko.cp.meta.upload.DocObjectDto"        => js.validate[DocObjectDto]
-			case "se.lu.nateko.cp.meta.upload.StaticCollectionDto" => js.validate[StaticCollectionDto]
+			case "DataObjectDto"       => js.validate[DataObjectDto]
+			case "DocObjectDto"        => js.validate[DocObjectDto]
+			case "StaticCollectionDto" => js.validate[StaticCollectionDto]
 			case _ => JsError(s"Unexpected UploadDto type $typeName")
 	end uploadDtoFormatPrecursor
 

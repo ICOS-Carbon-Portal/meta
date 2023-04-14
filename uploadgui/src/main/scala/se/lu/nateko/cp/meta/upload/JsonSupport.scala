@@ -16,7 +16,7 @@ trait SealedTraitFormatPrecursor[T] extends OWrites[T]:
 	def typedReads(js: JsValue, typeName: String): JsResult[T]
 
 
-object JsonSupport {
+object JsonSupport:
 
 	val TypeField = "_type"
 
@@ -69,62 +69,65 @@ object JsonSupport {
 
 	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
 
-	given Format[Instant] with{
+	given Format[Instant] with
 		def writes(i: Instant) = JsString(i.toString)
 		def reads(js: JsValue) = js.validate[String].map(Instant.parse(_))
-	}
 
 	given OFormat[TimeInterval] = Json.format[TimeInterval]
 	given OFormat[TemporalCoverage] = Json.format[TemporalCoverage]
 
-	given Format[URI] with{
+	given Format[URI] with
 		def writes(uri: URI) = JsString(uri.toASCIIString)
 		def reads(js: JsValue) = js.validate[String].map(new URI(_))
-	}
 
-	given Format[Sha256Sum] with{
+	given Format[Sha256Sum] with
 		def writes(hash: Sha256Sum) = JsString(hash.base64Url)
 		def reads(js: JsValue) = js.validate[String].map(Sha256Sum.fromString(_).get)
-	}
 
-	given [L: Format, R: Format]: Format[Either[L, R]] with{
+	given [L: Format, R: Format]: Format[Either[L, R]] with
 		def writes(e: Either[L, R]) = e.fold(Json.toJson(_), Json.toJson(_))
 		def reads(js: JsValue) = Json.fromJson[R](js).map(Right(_))
 			.orElse(Json.fromJson[L](js).map(Left(_)))
-	}
 
 	given OFormat[DataProductionDto] = Json.format[DataProductionDto]
 	given OFormat[ReferencesDto] = Json.format[ReferencesDto]
 	given OFormat[SpatioTemporalDto] = Json.format[SpatioTemporalDto]
 	given OFormat[StationTimeSeriesDto] = Json.format[StationTimeSeriesDto]
 
-	given Format[Doi] with{
+	given Format[Doi] with
 		def writes(doi: Doi) = JsString(doi.toString)
 		def reads(js: JsValue) = js.validate[String].flatMap(s =>
 			Doi.parse(s).fold(err => JsError(err.getMessage), doi => JsSuccess(doi))
 		)
-	}
 
 	given OFormat[DataObjectDto] = Json.format[DataObjectDto]
 	given OFormat[DocObjectDto] = Json.format[DocObjectDto]
 	given OFormat[StaticCollectionDto] = Json.format[StaticCollectionDto]
 
 	given Format[UploadDto] with
-			def writes(dto: UploadDto) = dto match
-				case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
-				case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
-				case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
+		def writes(dto: UploadDto) = dto match
+			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
+			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
+			case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
 
-			def reads(js: JsValue) = Json.fromJson[DataObjectDto](js)
-				.orElse(Json.fromJson[DocObjectDto](js))
-				.orElse(Json.fromJson[StaticCollectionDto](js))
+		def reads(js: JsValue) =
+			val dataObjectResult = Json.fromJson[DataObjectDto](js)
+			val docObjectResult = Json.fromJson[DocObjectDto](js)
+			val staticCollectionResult = Json.fromJson[StaticCollectionDto](js)
+
+			val results = Seq(dataObjectResult, docObjectResult, staticCollectionResult)
+
+			results.collectFirst { case JsSuccess(dto, _) => dto } match
+				case Some(dto) => JsSuccess(dto)
+				case None =>
+					val errors = results.collect { case JsError(errors) => errors }.flatten
+					JsError(errors)
 
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 
-	given Reads[Envri] with{
+	given Reads[Envri] with
 		def reads(js: JsValue) = js.validate[String].map(Envri.valueOf)
-	}
 
 	given Reads[EnvriConfig] = Json.reads[EnvriConfig]
 
-}
+end JsonSupport

@@ -107,7 +107,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[DataObjectDto] = jsonFormat8(DataObjectDto.apply)
 	given RootJsonFormat[DocObjectDto] = jsonFormat9(DocObjectDto.apply)
 
-	private object vanillaDtoFormat extends RootJsonFormat[ObjectUploadDto]:
+	given RootJsonFormat[ObjectUploadDto] with
 		override def write(umd: ObjectUploadDto) = umd match{
 			case data: DataObjectDto => data.toJson
 			case doc: DocObjectDto => doc.toJson
@@ -117,13 +117,6 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 			if(obj.fields.contains("objectSpecification")) obj.convertTo[DataObjectDto]
 			else obj.convertTo[DocObjectDto]
 		}
-
-	given RootJsonFormat[ObjectUploadDto] with{
-		override def write(umd: ObjectUploadDto) =
-			val base = vanillaDtoFormat.write(umd)
-			base + ("_type" -> umd.getClass.getSimpleName)
-		override def read(value: JsValue): ObjectUploadDto = vanillaDtoFormat.read(value)
-	}
 
 	given RootJsonFormat[StaticCollectionDto] = jsonFormat6(StaticCollectionDto.apply)
 

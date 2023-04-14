@@ -109,20 +109,15 @@ object JsonSupport {
 	given OFormat[DocObjectDto] = Json.format[DocObjectDto]
 	given OFormat[StaticCollectionDto] = Json.format[StaticCollectionDto]
 
-	private object uploadDtoFormatPrecursor extends SealedTraitFormatPrecursor[UploadDto]:
-		def writes(dto: UploadDto) = dto match
-			case dataObjectDto: DataObjectDto             => Json.toJsObject(dataObjectDto)
-			case documentObjectDto: DocObjectDto          => Json.toJsObject(documentObjectDto)
-			case staticCollectionDto: StaticCollectionDto => Json.toJsObject(staticCollectionDto)
+	given Format[UploadDto] with
+			def writes(dto: UploadDto) = dto match
+				case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
+				case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
+				case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
 
-		def typedReads(js: JsValue, typeName: String) = typeName match
-			case "DataObjectDto"       => js.validate[DataObjectDto]
-			case "DocObjectDto"        => js.validate[DocObjectDto]
-			case "StaticCollectionDto" => js.validate[StaticCollectionDto]
-			case _ => JsError(s"Unexpected UploadDto type $typeName")
-	end uploadDtoFormatPrecursor
-
-	given OFormat[UploadDto] = sealedTraitFormat(uploadDtoFormatPrecursor, "UploadDto")
+			def reads(js: JsValue) = Json.fromJson[DataObjectDto](js)
+				.orElse(Json.fromJson[DocObjectDto](js))
+				.orElse(Json.fromJson[StaticCollectionDto](js))
 
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 

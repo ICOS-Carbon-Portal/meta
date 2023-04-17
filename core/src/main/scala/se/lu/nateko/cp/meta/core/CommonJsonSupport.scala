@@ -83,6 +83,39 @@ extension [T: RootJsonWriter](v: T){
 	)
 }
 
-object CommonJsonSupport{
+
+object CommonJsonSupport:
 	val TypeField = "_type"
-}
+
+	import scala.quoted.*
+
+	inline def sealedTraitTypeclassLookup[T, TC[_]]: Any = ${sealedTraitTypeclassLookupImpl[T, TC]}
+
+	private def sealedTraitTypeclassLookupImpl[T: Type, TC[_] : Type](using qctx: Quotes): Expr[Any] =
+		import qctx.reflect.*
+
+		def summonInstance(ccSym: Symbol): Expr[Any] =
+			val tpe = ccSym.typeRef
+			val instanceTpe = TypeRepr.of[TC].appliedTo(tpe)
+			Implicits.search(instanceTpe) match
+				case iss: ImplicitSearchSuccess => iss.tree.asExpr.asInstanceOf[Expr[Any]]
+				case _ => report.errorAndAbort(s"No given instance found for ${ccSym.name}") //Expr(s"not found: ${instanceTpe} \nfor $tpe \n for $ccSym")
+
+		val traitSymbol = TypeRepr.of[T].typeSymbol
+		val flags = traitSymbol.flags
+
+		if !traitSymbol.flags.is(Flags.Sealed & Flags.Trait) then
+			report.errorAndAbort("Type parameter must be a sealed trait")
+
+		else
+			val caseClassChildren = traitSymbol.children.filter(_.flags.is(Flags.Case))
+
+			val pairs = caseClassChildren.map{cc =>
+				summonInstance(cc) //Expr.ofTuple(Expr(cc.name) -> 
+			}
+			val expr = Expr.ofList(pairs)//.asInstanceOf[Map[String, TC[T]]]
+			println("DONE:" + expr.show)
+			expr
+	end sealedTraitTypeclassLookupImpl
+
+end CommonJsonSupport

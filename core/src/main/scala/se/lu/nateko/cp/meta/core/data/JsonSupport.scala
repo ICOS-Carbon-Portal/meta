@@ -93,6 +93,10 @@ object JsonSupport extends CommonJsonSupport{
 		jsonFormat3(FeatureCollection.apply)
 	}
 
+	import CommonJsonSupport.sealedTraitTypeclassLookup
+
+	def geoFormatsLookup = sealedTraitTypeclassLookup[GeoFeature, JsonFormat]
+
 	given JsonFormat[Orcid] with{
 		def write(id: Orcid): JsValue = JsString(id.shortId)
 

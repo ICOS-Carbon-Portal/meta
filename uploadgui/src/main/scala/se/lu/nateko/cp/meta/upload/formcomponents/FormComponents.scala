@@ -109,11 +109,6 @@ class DescriptionInput(elemId: String, cb: () => Unit) extends GenericOptionalIn
 }, _.toString())
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
-class Clickable[T <: html.Element](elemId: String, cb: () => Unit)(using tag: scala.reflect.ClassTag[T]):
-	private val modal = getElementById[T](elemId).get
-
-	modal.onclick = _ => cb()
-
 class Button(elemId: String, onClick: () => Unit){
 	private val button = getElementById[html.Button](elemId).get
 	private var popover = initializeBootstrapPopover(button.parentElement)

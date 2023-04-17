@@ -8,7 +8,6 @@ import se.lu.nateko.cp.meta.core.data
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.upload.formcomponents.Button
-import se.lu.nateko.cp.meta.upload.formcomponents.Clickable
 import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 import se.lu.nateko.cp.meta.upload.formcomponents.ProgressBar
 
@@ -26,27 +25,21 @@ object UploadApp {
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
 	private val headerButtons = new HtmlElements("#header-buttons-container")
-	private val modalBody = getElementById[html.Div]("upload-help-modal-body").get
-	val helpModalButton = new Clickable[html.Span]("upload-help-button", insertHelpModalIframe)
-	val closeModalButton = new Clickable[html.Button]("help-modal-close-btn", removeHelpModalIframe)
+	private val modal = getElementById[html.Div]("upload-help-modal").get
 	val progressBar = new ProgressBar("#progress-bar")
 	private val alert = getElementById[html.Div]("alert-placeholder").get
 
-	def insertHelpModalIframe(): Unit =
-		val iframe = dom.document.createElement("iframe").asInstanceOf[dom.html.IFrame]
-		iframe.id = "help-modal-iframe"
-		iframe.src = "https://www.youtube.com/embed/8TpbRZPaTuU"
-		iframe.title = "YouTube video player"
-		iframe.setAttribute("frameborder", "0")
-		iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share")
-		iframe.setAttribute("allowfullscreen", "")
-		iframe.width = "100%"
-		iframe.height = "400"
-		modalBody.appendChild(iframe)
-
-	def removeHelpModalIframe(): Unit =
+	private def setModalSrc(src: String): Unit =
 		val iframe = getElementById[dom.html.IFrame]("help-modal-iframe")
-		if iframe.isDefined then modalBody.removeChild(iframe.get)
+		iframe.map(_.src = src)
+
+	modal.addEventListener("show.bs.modal", { _ =>
+		setModalSrc("https://www.youtube.com/embed/8TpbRZPaTuU")
+	})
+
+	modal.addEventListener("hide.bs.modal", { _ =>
+		setModalSrc("")
+	})
 
 	def main(args: Array[String]): Unit = whenDone(Backend.fetchConfig) {
 		case InitAppInfo(Some(_), envri, envriConf) => setupForm(envri, envriConf)

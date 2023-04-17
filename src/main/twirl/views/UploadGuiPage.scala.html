@@ -536,10 +536,12 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" id="upload-help-modal-title">Help</h5>
-					<button id="help-modal-close-btn" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div id="upload-help-modal-body" class="modal-body">
 					<p>The following video is a walkthrough of this upload interface. More information about the metadata properties and scripted uploads is avalaible on <a href="https://github.com/ICOS-Carbon-Portal/meta/blob/master/README.md#upload-instructions-manual" target="_blank">Github</a>.</p>
+					<iframe id="help-modal-iframe" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-
+					write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 				</div>
 			</div>
 		</div>
@@ -562,7 +564,7 @@
 @header = {
 	<div id="header-buttons-container">
 		<div id="header-buttons" class="d-flex justify-content-end my-2 gap-3 flex-wrap">
-			<span id="upload-help-button" data-bs-toggle="modal" data-bs-target="#upload-help-modal" class="btn btn-link">
+			<span data-bs-toggle="modal" data-bs-target="#upload-help-modal" class="btn btn-link">
 				<i class="fas fa-info-circle"></i>
 			</span>
 			<span class="new-doi-button" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Upload required to create a draft DOI">

@@ -29,16 +29,16 @@ object UploadApp {
 	val progressBar = new ProgressBar("#progress-bar")
 	private val alert = getElementById[html.Div]("alert-placeholder").get
 
-	private def setModalSrc(src: String): Unit =
+	private def setIframeSrc(src: String): Unit =
 		val iframe = getElementById[dom.html.IFrame]("help-modal-iframe")
-		iframe.map(_.src = src)
+		iframe.foreach(_.src = src)
 
 	modal.addEventListener("show.bs.modal", { _ =>
-		setModalSrc("https://www.youtube.com/embed/8TpbRZPaTuU")
+		setIframeSrc("https://www.youtube.com/embed/8TpbRZPaTuU")
 	})
 
 	modal.addEventListener("hide.bs.modal", { _ =>
-		setModalSrc("")
+		setIframeSrc("")
 	})
 
 	def main(args: Array[String]): Unit = whenDone(Backend.fetchConfig) {

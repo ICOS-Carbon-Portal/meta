@@ -79,9 +79,9 @@ object JsonSupport extends CommonJsonSupport{
 
 	given RootJsonFormat[GeoFeature] with{
 		def write(geo: GeoFeature): JsValue =
+			val base = vanillaGeoFeatureFormat.write(geo)
 			val geoJson = GeoJson.fromFeatureWithLabels(geo)
-			val vanilla = vanillaGeoFeatureFormat.write(geo)
-			val allFields = vanilla.asJsObject.fields + ("geo" -> geoJson)
+			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
 			JsObject(allFields)
 
 		def read(value: JsValue): GeoFeature = vanillaGeoFeatureFormat.read(value)

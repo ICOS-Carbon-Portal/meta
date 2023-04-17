@@ -104,18 +104,18 @@ object JsonSupport:
 	given OFormat[DocObjectDto] = Json.format[DocObjectDto]
 	given OFormat[StaticCollectionDto] = Json.format[StaticCollectionDto]
 
-	given Format[UploadDto] with
+	given OFormat[UploadDto] with
 		def writes(dto: UploadDto) = dto match
-			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
-			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
-			case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
+			case dataObjectDto: DataObjectDto             => Json.toJsObject(dataObjectDto)
+			case documentObjectDto: DocObjectDto          => Json.toJsObject(documentObjectDto)
+			case staticCollectionDto: StaticCollectionDto => Json.toJsObject(staticCollectionDto)
 
 		def reads(js: JsValue) =
-			val dataObjectResult = Json.fromJson[DataObjectDto](js)
-			val docObjectResult = Json.fromJson[DocObjectDto](js)
-			val staticCollectionResult = Json.fromJson[StaticCollectionDto](js)
-
-			val results = Seq(dataObjectResult, docObjectResult, staticCollectionResult)
+			val results = LazyList(
+				Json.fromJson[DataObjectDto](js),
+				Json.fromJson[DocObjectDto](js),
+				Json.fromJson[StaticCollectionDto](js)
+			)
 
 			results.collectFirst { case JsSuccess(dto, _) => dto } match
 				case Some(dto) => JsSuccess(dto)

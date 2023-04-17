@@ -18,23 +18,23 @@ import scala.util.Success
 import scala.util.Try
 
 
-class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3spatcover-element"):
-	
+class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage])(using PubSubBus) extends PanelSubform(".l3spatcover-element"):
+
 	private val spatialCovSelect = new Select[SpatialCoverage]("l3spatcoverselect", _.label, autoselect = false, onSpatCoverSelected)
 	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
-	
+
 	private var customSpatCovMeta: Option[GeoFeature] = None
-	
+
 	private val spatCovLabel = new TextOptInput("l3spatcoverlabel", () => ())
 	private val minLatInput = new DoubleInput("l3minlat", notifyUpdate)
 	private val minLonInput = new DoubleInput("l3minlon", notifyUpdate)
 	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)
 	private val maxLonInput = new DoubleInput("l3maxlon", notifyUpdate)
-	
+
 	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
 	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
 	private val customSpatCovWarningMsg = "The data object has custom spatial coverage which cannot be updated in UploadGUI. All other metadata can be updated."
-	
+
 	def spatialCoverage: Try[Either[GeoFeature, URI]] = spatialCovSelect
 		.value.withMissingError("spatial coverage").flatMap{spCov =>
 			if(spCov eq customLatLonBox)

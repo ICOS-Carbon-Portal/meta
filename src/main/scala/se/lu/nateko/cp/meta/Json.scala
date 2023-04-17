@@ -107,7 +107,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[DataObjectDto] = jsonFormat8(DataObjectDto.apply)
 	given RootJsonFormat[DocObjectDto] = jsonFormat9(DocObjectDto.apply)
 
-	given RootJsonFormat[ObjectUploadDto] with{
+	given RootJsonFormat[ObjectUploadDto] with
 		override def write(umd: ObjectUploadDto) = umd match{
 			case data: DataObjectDto => data.toJson
 			case doc: DocObjectDto => doc.toJson
@@ -117,7 +117,6 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 			if(obj.fields.contains("objectSpecification")) obj.convertTo[DataObjectDto]
 			else obj.convertTo[DocObjectDto]
 		}
-	}
 
 	given RootJsonFormat[StaticCollectionDto] = jsonFormat6(StaticCollectionDto.apply)
 

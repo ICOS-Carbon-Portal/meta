@@ -12,77 +12,122 @@ import scala.reflect.ClassTag
 import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.doi.*
 
-object JsonSupport {
+trait SealedTraitFormatPrecursor[T] extends OWrites[T]:
+	def typedReads(js: JsValue, typeName: String): JsResult[T]
 
+
+object JsonSupport:
+
+	val TypeField = "_type"
+
+	def sealedTraitFormat[T](precursor: SealedTraitFormatPrecursor[T], typeHint: String) = new OFormat[T]:
+		def writes(t: T) = precursor.writes(t) + (TypeField -> JsString(t.getClass.getSimpleName))
+
+		def reads(js: JsValue) = js match
+			case JsObject(fields) =>
+				fields.get(TypeField) match
+					case Some(JsString(typeName)) => precursor.typedReads(js, typeName)
+					case _ => JsError(s"Missing $TypeField field representing the type of $typeHint")
+			case _ => JsError(s"Expected JsObject when parsing $typeHint, got ${js.toString}")
+	end sealedTraitFormat
+
+	given [T: Writes]: Writes[Seq[T]] = Writes.iterableWrites2
+	
 	given OFormat[Position] = Json.format[Position]
 	given OFormat[LatLonBox] = Json.format[LatLonBox]
+	given OFormat[Circle] = Json.format[Circle]
+	given OFormat[GeoTrack] = Json.format[GeoTrack]
+	given OFormat[Polygon] = Json.format[Polygon]
+	given OFormat[Pin] = Json.format[Pin]
+	given Format[PinKind] with
+		def writes(pk: PinKind): JsValue = JsString(pk.toString)
+		def reads(js: JsValue): JsResult[PinKind] = js.validate[String].map(PinKind.valueOf)
 
-	given OFormat[GeoFeature] with
-		private val notImplError = "Only LatLonBoxes are supported as custom GeoFeatures in UploadGUI at this time"
 
+	private object geoFeatureFormatPrecursor extends SealedTraitFormatPrecursor[GeoFeature]:
 		def writes(gf: GeoFeature) = gf match
-			case box: LatLonBox => Json.toJsObject(box)
-			case _ => throw NotImplementedError(notImplError)
+			case box: LatLonBox            => Json.toJsObject(box)
+			case pos: Position             => Json.toJsObject(pos)
+			case c: Circle                 => Json.toJsObject(c)
+			case geocol: FeatureCollection => Json.toJsObject(geocol)
+			case gpoly: Polygon            => Json.toJsObject(gpoly)
+			case p: Pin                    => Json.toJsObject(p)
+			case gt: GeoTrack              => Json.toJsObject(gt)
 
-		def reads(js: JsValue) = js.validate[LatLonBox].orElse(JsError(notImplError))
+		def typedReads(js: JsValue, typeName: String) = typeName match
+			case "Position"          => js.validate[Position]
+			case "LatLonBox"         => js.validate[LatLonBox]
+			case "Circle"            => js.validate[Circle]
+			case "GeoTrack"          => js.validate[GeoTrack]
+			case "FeatureCollection" => js.validate[FeatureCollection]
+			case "Polygon"           => js.validate[Polygon]
+			case "Pin"               => js.validate[Pin]
+			case _ => JsError(s"Unexpected GeoFeature type $typeName")
+	end geoFeatureFormatPrecursor
 
-	given Format[Instant] with{
+	given OFormat[GeoFeature] = sealedTraitFormat(geoFeatureFormatPrecursor, "GeoFeature")
+
+	given OFormat[FeatureCollection] = Json.format[FeatureCollection]
+
+	given Format[Instant] with
 		def writes(i: Instant) = JsString(i.toString)
 		def reads(js: JsValue) = js.validate[String].map(Instant.parse(_))
-	}
 
 	given OFormat[TimeInterval] = Json.format[TimeInterval]
 	given OFormat[TemporalCoverage] = Json.format[TemporalCoverage]
 
-	given Format[URI] with{
+	given Format[URI] with
 		def writes(uri: URI) = JsString(uri.toASCIIString)
 		def reads(js: JsValue) = js.validate[String].map(new URI(_))
-	}
 
-	given Format[Sha256Sum] with{
+	given Format[Sha256Sum] with
 		def writes(hash: Sha256Sum) = JsString(hash.base64Url)
 		def reads(js: JsValue) = js.validate[String].map(Sha256Sum.fromString(_).get)
-	}
 
-	given [L: Format, R: Format]: Format[Either[L, R]] with{
+	given [L: Format, R: Format]: Format[Either[L, R]] with
 		def writes(e: Either[L, R]) = e.fold(Json.toJson(_), Json.toJson(_))
 		def reads(js: JsValue) = Json.fromJson[R](js).map(Right(_))
 			.orElse(Json.fromJson[L](js).map(Left(_)))
-	}
 
 	given OFormat[DataProductionDto] = Json.format[DataProductionDto]
 	given OFormat[ReferencesDto] = Json.format[ReferencesDto]
 	given OFormat[SpatioTemporalDto] = Json.format[SpatioTemporalDto]
 	given OFormat[StationTimeSeriesDto] = Json.format[StationTimeSeriesDto]
 
-	given Format[Doi] with{
+	given Format[Doi] with
 		def writes(doi: Doi) = JsString(doi.toString)
 		def reads(js: JsValue) = js.validate[String].flatMap(s =>
 			Doi.parse(s).fold(err => JsError(err.getMessage), doi => JsSuccess(doi))
 		)
-	}
 
 	given OFormat[DataObjectDto] = Json.format[DataObjectDto]
 	given OFormat[DocObjectDto] = Json.format[DocObjectDto]
 	given OFormat[StaticCollectionDto] = Json.format[StaticCollectionDto]
 
-	given Format[UploadDto] with{
-		def writes(dto: UploadDto) = dto match {
-			case dataObjectDto: DataObjectDto => Json.toJson(dataObjectDto)
-			case documentObjectDto: DocObjectDto => Json.toJson(documentObjectDto)
-			case staticCollectionDto: StaticCollectionDto => Json.toJson(staticCollectionDto)
-		}
-		def reads(js: JsValue) = Json.fromJson[DataObjectDto](js)
-			.orElse(Json.fromJson[DocObjectDto](js))
-			.orElse(Json.fromJson[StaticCollectionDto](js))
-	}
+	given OFormat[UploadDto] with
+		def writes(dto: UploadDto) = dto match
+			case dataObjectDto: DataObjectDto             => Json.toJsObject(dataObjectDto)
+			case documentObjectDto: DocObjectDto          => Json.toJsObject(documentObjectDto)
+			case staticCollectionDto: StaticCollectionDto => Json.toJsObject(staticCollectionDto)
+
+		def reads(js: JsValue) =
+			val results = LazyList(
+				Json.fromJson[DataObjectDto](js),
+				Json.fromJson[DocObjectDto](js),
+				Json.fromJson[StaticCollectionDto](js)
+			)
+
+			results.collectFirst { case JsSuccess(dto, _) => dto } match
+				case Some(dto) => JsSuccess(dto)
+				case None =>
+					val errors = results.collect { case JsError(errors) => errors }.flatten
+					JsError(errors)
 
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 
-	given Reads[Envri] with{
+	given Reads[Envri] with
 		def reads(js: JsValue) = js.validate[String].map(Envri.valueOf)
-	}
 
 	given Reads[EnvriConfig] = Json.reads[EnvriConfig]
 
-}
+end JsonSupport

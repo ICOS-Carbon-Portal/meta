@@ -73,7 +73,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		val citInfo = sobj match
 			case doc:  DocObject  => getDocCitation(doc)
 			case dobj: DataObject => envri match
-				case Envri.SITES => getSitesCitation(dobj)
+				case Envri.SITES | Envri.ICOSCities => getSitesCitation(dobj)
 				case Envri.ICOS => getIcosCitation(dobj)
 
 		val dobj = vocab.getStaticObject(sobj.hash)
@@ -214,7 +214,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	}
 
-	private def getSitesCitation(dobj: DataObject)(using Envri): CitationInfo = {
+	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo =
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
@@ -242,11 +242,11 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			year <- yearOpt;
 			title <- titleOpt;
 			pidUrl <- pidUrlOpt
-		) yield s"$authors($year). $title [Data set]. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
+		) yield s"$authors($year). $title [Data set]. ${e.longName} (${e.shortName}). $pidUrl"
 
 		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 
-	}
+	end getSitesCitation
 
 	private def getPidUrl(dobj: StaticObject): Option[String] = for(
 		pid <- dobj.doi.orElse(dobj.pid);
@@ -279,7 +279,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			pidUrl <- pidUrlOpt
 		yield envri match
 			case Envri.SITES =>
-				s"${authorString}($year). $title. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
+				s"${authorString}($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
 			case Envri.ICOS | Envri.ICOSCities =>
 				s"${authorString}ICOS RI, $year. $title, $pidUrl"
 
@@ -290,7 +290,7 @@ end CitationMaker
 object CitationMaker:
 
 	def defaultLicence(using envri: Envri): Licence = envri match
-		case Envri.ICOS => Licence(
+		case Envri.ICOS | Envri.ICOSCities => Licence(
 			new URI(CpmetaVocab.MetaPrefix + "icosLicence"),
 			"ICOS CCBY4 Data Licence",
 			new URI("https://data.icos-cp.eu/licence"),

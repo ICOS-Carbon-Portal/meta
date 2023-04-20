@@ -78,11 +78,10 @@ object SparqlQueries {
 		|	}
 		|} order by ?name""".stripMargin
 
-	def objSpecs(implicit envri: Envri): String = envri match {
+	def objSpecs(using envri: Envri): String = envri match
 		case Envri.SITES => objSpecsTempl("https://meta.fieldsites.se/resources/sites/")
 		case Envri.ICOS => objSpecsTempl("http://meta.icos-cp.eu/resources/cpmeta/")
-		case Envri.ICOSCities => objSpecsTempl("https://citymeta.icos-cp.eu/resources/cities/")
-	}
+		case Envri.ICOSCities => objSpecsTempl("https://citymeta.icos-cp.eu/resources/cpmeta/")
 
 	def toObjSpec(b: Binding) = {
 		def keywords(varname: String) = b.get(varname).map(_.split(",").toSeq).getOrElse(Seq.empty)

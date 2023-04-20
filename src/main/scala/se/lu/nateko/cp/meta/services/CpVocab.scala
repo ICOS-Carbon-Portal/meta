@@ -93,9 +93,11 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getNextVersionColl(hash: Sha256Sum)(using Envri) = getRelativeRaw(NextVersionCollPrefix + hash.id)
 
-	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) = envri match
-		case Envri.ICOS => getRelative("cpmeta/", lastSegment)
-		case Envri.SITES =>  getRelative("objspecs/", lastSegment)
+	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) =
+		val suffix: String = envri match
+			case Envri.ICOS | Envri.ICOSCities => "cpmeta/"
+			case Envri.SITES =>  "objspecs/"
+		getRelative(suffix, lastSegment)
 
 	def lookupIcosDatasetVar(varName: String): Option[IRI] =
 		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))

@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 
 abstract class MetadataUpdater(vocab: CpVocab) {
 	import MetadataUpdater.*

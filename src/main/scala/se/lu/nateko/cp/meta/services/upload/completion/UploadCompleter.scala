@@ -8,7 +8,6 @@ import scala.util.Try
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
 import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
@@ -17,6 +16,7 @@ import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import eu.icoscp.envri.Envri
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(implicit system: ActorSystem) {

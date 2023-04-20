@@ -1,4 +1,5 @@
 @import se.lu.nateko.cp.meta.core.data._
+@import eu.icoscp.envri.Envri
 
 @(breadcrumbs: Map[Envri, IndexedSeq[(String, String)]])(implicit envri: Envri)
 @if(breadcrumbs(envri).isEmpty) {} else {

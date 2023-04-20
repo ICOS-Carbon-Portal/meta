@@ -8,7 +8,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -17,6 +16,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import java.time.Instant
+import eu.icoscp.envri.Envri
 
 class StaticObjectFetcher(
 	val server: InstanceServer,

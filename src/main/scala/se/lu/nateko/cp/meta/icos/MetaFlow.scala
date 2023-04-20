@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 
 
 class MetaFlow(val atcSource: AtcMetaSource, val cancel: () => Unit)
@@ -22,7 +22,7 @@ object MetaFlow {
 	def initiate(db: MetaDb, conf: CpmetaConfig)(using mat: Materializer, system: ActorSystem): Try[MetaFlow] = Try{
 
 		implicit val envriConfs = conf.core.envriConfigs
-		
+
 
 		val vf = db.repo.getValueFactory
 

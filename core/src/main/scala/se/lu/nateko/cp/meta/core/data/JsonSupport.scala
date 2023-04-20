@@ -106,7 +106,7 @@ object JsonSupport extends CommonJsonSupport{
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
-	given RootJsonFormat[Station] = jsonFormat8(Station.apply)
+	given RootJsonFormat[Station] = jsonFormat9(Station.apply)
 
 	given RootJsonFormat[Agent] with{
 
@@ -222,9 +222,9 @@ object JsonSupport extends CommonJsonSupport{
 	import CommonJsonSupport.TypeField
 
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
-	given RootJsonFormat[AtcStationSpecifics] = jsonFormat8(AtcStationSpecifics.apply)
-	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
-	given RootJsonFormat[OtcStationSpecifics] = jsonFormat7(OtcStationSpecifics.apply)
+	given RootJsonFormat[AtcStationSpecifics] = jsonFormat7(AtcStationSpecifics.apply)
+	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
+	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"

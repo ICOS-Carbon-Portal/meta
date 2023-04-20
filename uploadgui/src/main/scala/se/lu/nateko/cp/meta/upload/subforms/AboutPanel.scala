@@ -9,7 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import se.lu.nateko.cp.doi.Doi
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.SubmitterProfile

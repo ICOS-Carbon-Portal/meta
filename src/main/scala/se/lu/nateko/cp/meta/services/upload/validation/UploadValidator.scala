@@ -18,7 +18,6 @@ import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.DatasetType
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
@@ -42,6 +41,7 @@ import scala.util.Try
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
+import eu.icoscp.envri.Envri
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived

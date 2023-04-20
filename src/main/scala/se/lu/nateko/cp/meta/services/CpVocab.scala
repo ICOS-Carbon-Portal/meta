@@ -5,7 +5,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
+
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.IcosStationSpecifics
@@ -25,6 +25,7 @@ import se.lu.nateko.cp.meta.icos.TcId
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.net.URI
+import eu.icoscp.envri.Envri
 
 class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab {
 	import CpVocab.*
@@ -92,9 +93,9 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getNextVersionColl(hash: Sha256Sum)(using Envri) = getRelativeRaw(NextVersionCollPrefix + hash.id)
 
-	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) =
-		if(envri == Envri.ICOS) getRelative("cpmeta/", lastSegment)
-		else getRelative("objspecs/", lastSegment)
+	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) = envri match
+		case Envri.ICOS => getRelative("cpmeta/", lastSegment)
+		case Envri.SITES =>  getRelative("objspecs/", lastSegment)
 
 	def lookupIcosDatasetVar(varName: String): Option[IRI] =
 		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))

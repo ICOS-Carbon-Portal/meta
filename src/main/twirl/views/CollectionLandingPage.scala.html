@@ -7,6 +7,7 @@
 @import se.lu.nateko.cp.doi.meta.Title
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import landpagesnips._
+@import eu.icoscp.envri.Envri
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(coll.title, Some(getDoiTitle(coll.references).getOrElse(coll.title)), CpMenu.default, headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){

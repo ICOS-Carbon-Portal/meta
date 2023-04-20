@@ -11,8 +11,9 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import java.net.URI
+import eu.icoscp.envri.Envri
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager

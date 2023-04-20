@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import eu.icoscp.envri.Envri
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 
@@ -69,10 +70,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		fund.core.awardUrl.map{auri =>
 			(iri, meta.awardURI, vocab.lit(auri))
 		} ++:
-		fund.core.start.map{startD => 
+		fund.core.start.map{startD =>
 			(iri, meta.hasStartDate, vocab.lit(startD))
 		} ++:
-		fund.core.stop.map{endD => 
+		fund.core.stop.map{endD =>
 			(iri, meta.hasEndDate, vocab.lit(endD))
 		} ++:
 		uriResourceTriples(iri, fund.core.self) ++:
@@ -110,6 +111,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				} ++:
 				s.core.location.toSeq.flatMap(positionTriples(_, uri)) ++:
 				coverageTriples(uri, s.core.coverage) ++:
+				s.core.countryCode.map{ cc =>
+					(uri, meta.countryCode, vocab.lit(cc.code))
+				} ++:
 				s.funding.flatMap{fund =>
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
@@ -273,9 +277,6 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		s.stationClass.map{ stClass =>
 			(iri, meta.hasStationClass, vocab.lit(stClass.toString))
 		}.toSeq ++
-		s.countryCode.map{ cc =>
-			(iri, meta.countryCode, vocab.lit(cc.code))
-		} ++
 		s.timeZoneOffset.map{tz =>
 			(iri, meta.hasTimeZoneOffset, vocab.lit(tz))
 		}

@@ -67,6 +67,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			responsibleOrganization = getOptionalUri(stat, metaVocab.hasResponsibleOrganization).map(getOrganization),
 			specificInfo = getStationSpecifics(stat),
 			pictures = server.getUriLiteralValues(stat, metaVocab.hasDepiction),
+			countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
 			funding = Option(getFundings(stat)).filterNot(_.isEmpty)
 		)
 	}
@@ -108,7 +109,6 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			stationClass = getOptionalString(stat, metaVocab.hasStationClass).map(IcosStationClass.valueOf),
 			labelingDate = lblDate,
 			discontinued = discont,
-			countryCode = getOptionalString(stat, metaVocab.countryCode).flatMap(CountryCode.unapply),
 			timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset),
 			documentation = getDocumentationObjs(stat)
 		)

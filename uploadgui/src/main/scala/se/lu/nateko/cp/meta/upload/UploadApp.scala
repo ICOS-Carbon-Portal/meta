@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.upload
 import org.scalajs.dom
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.upload.formcomponents.{HtmlElements, ProgressBar}
 
@@ -14,6 +13,7 @@ import scala.util.{ Success, Failure }
 import java.net.URI
 import se.lu.nateko.cp.meta.upload.formcomponents.Button
 import se.lu.nateko.cp.meta.core.data
+import eu.icoscp.envri.Envri
 
 object UploadApp {
 	import Utils.*
@@ -76,7 +76,7 @@ object UploadApp {
 	}(dataURL => {
 		progressBar.hide()
 		val metaURL = new URI("https://" + envriConf.metaHost + dataURL.getPath())
-		val doiCreation = if(envri == data.Envri.ICOS) " or create a draft DOI." else ""
+		val doiCreation = if(envri != Envri.SITES) " or create a draft DOI." else ""
 		showAlert(s"Success! <a class='alert-link' href='${metaURL}'>View metadata</a>$doiCreation", "alert alert-success")
 		val createDoiButton = new Button("new-doi-button", () => createDoi(metaURL))
 		createDoiButton.enable()

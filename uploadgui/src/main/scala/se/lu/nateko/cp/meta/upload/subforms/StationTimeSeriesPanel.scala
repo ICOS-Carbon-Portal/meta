@@ -7,7 +7,7 @@ import scala.util.{Try, Success}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.upload.*

@@ -7,7 +7,7 @@ import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import spray.json.*

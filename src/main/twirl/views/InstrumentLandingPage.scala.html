@@ -1,10 +1,10 @@
 @import se.lu.nateko.cp.meta.core.data.Instrument
-@import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.core.data.Agent
 @import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.*
 @import landpagesnips._
+@import eu.icoscp.envri.Envri
 
 @(instr: Instrument)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, Some(title), CpMenu.default, subHeading = Some("Instrument")){

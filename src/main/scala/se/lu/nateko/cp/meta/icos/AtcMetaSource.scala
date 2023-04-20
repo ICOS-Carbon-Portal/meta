@@ -215,11 +215,11 @@ object AtcMetaSource{
 				coverage = None,
 				responsibleOrganization = None,
 				pictures = Nil,
+				countryCode = country,
 				specificInfo = AtcStationSpecifics(
 					wigosId = wigosId,
 					theme = None,
 					stationClass = stClass,
-					countryCode = country,
 					labelingDate = None, //not provided by TCs
 					discontinued = false, //not provided by TCs
 					timeZoneOffset = tzOffset,

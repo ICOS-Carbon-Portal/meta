@@ -1,6 +1,6 @@
 @import java.net.URI
-@import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import eu.icoscp.envri.Envri
 
 @(devVersion: Boolean, licences: Seq[(URI, String)])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage("Upload", Some("Upload"), headerExtra = Some(header), bootstrapJavascript = true){
@@ -82,7 +82,7 @@
 		.instrument-block {
 			display: none;
 		}
-	} else {}
+	}
 	</style>
 
 	<div id="main">
@@ -553,7 +553,7 @@
 }
 
 @optionalsite = @{
-	if (envri == Envri.ICOS) optional else {}
+	if (envri != Envri.SITES) optional else {}
 }
 
 @optional = {

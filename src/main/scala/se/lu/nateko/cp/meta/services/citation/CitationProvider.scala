@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.core.data.References
@@ -37,6 +37,7 @@ import scala.util.Using
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import akka.event.LoggingAdapter
+import eu.icoscp.envri.Envri
 
 
 type CitationProviderFactory = Sail => CitationProvider
@@ -117,11 +118,11 @@ class CitationProvider(
 		coll <- collFetcher.fetchStatic(hash)
 	yield coll
 
-	private def inferObjectEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
+	private def inferObjectEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))
 	}
 
-	private def inferCollEnvri(obj: IRI): Option[Envri] = Envri.infer(obj.toJava).filter{
+	private def inferCollEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(collectionPrefix(using envriConfs(envri)))
 	}
 

@@ -2,9 +2,10 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.core.data.Envri
+
 import se.lu.nateko.cp.meta.upload.*
 
+import eu.icoscp.envri.Envri
 import java.net.URI
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.Try

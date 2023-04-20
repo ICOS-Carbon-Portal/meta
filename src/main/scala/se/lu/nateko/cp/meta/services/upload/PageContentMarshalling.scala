@@ -8,7 +8,6 @@ import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshall
 import akka.http.scaladsl.model.*
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
@@ -24,6 +23,7 @@ import se.lu.nateko.cp.meta.core.data.StaticObject
 import scala.util.Failure
 import scala.util.Try
 import scala.util.Success
+import eu.icoscp.envri.Envri
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient) {
 

@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.*
 

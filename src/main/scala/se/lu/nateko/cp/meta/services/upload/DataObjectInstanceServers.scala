@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{ DataObjectSpec, Station }
-import se.lu.nateko.cp.meta.core.data.{ Envri, EnvriConfigs }
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer.AtMostOne
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.utils.*
 import scala.util.Success
 import se.lu.nateko.cp.meta.instanceserver.CompositeReadonlyInstanceServer
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import eu.icoscp.envri.Envri
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],

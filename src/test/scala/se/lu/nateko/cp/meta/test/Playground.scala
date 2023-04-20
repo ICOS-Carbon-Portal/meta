@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.icos.EtcMetaSource
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import scala.collection.concurrent.TrieMap
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.mail.SendMail

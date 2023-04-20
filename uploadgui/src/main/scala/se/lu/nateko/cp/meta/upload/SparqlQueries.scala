@@ -2,8 +2,7 @@ package se.lu.nateko.cp.meta.upload
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.DatasetType
 
 object SparqlQueries {
@@ -82,6 +81,7 @@ object SparqlQueries {
 	def objSpecs(implicit envri: Envri): String = envri match {
 		case Envri.SITES => objSpecsTempl("https://meta.fieldsites.se/resources/sites/")
 		case Envri.ICOS => objSpecsTempl("http://meta.icos-cp.eu/resources/cpmeta/")
+		case Envri.ICOSCities => objSpecsTempl("https://citymeta.icos-cp.eu/resources/cities/")
 	}
 
 	def toObjSpec(b: Binding) = {

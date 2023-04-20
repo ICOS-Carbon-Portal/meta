@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.upload
 
 import java.net.URI
-
+import eu.icoscp.envri.Envri
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils.encodeURIComponent
 import scala.scalajs.js.Thenable.Implicits.thenable2future
 import org.scalajs.dom.File
 import org.scalajs.dom.fetch
-import org.scalajs.dom.raw.XMLHttpRequest
+import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.RequestInit
 import org.scalajs.dom.Headers
 import org.scalajs.dom.RequestCredentials
@@ -17,7 +17,7 @@ import org.scalajs.dom.HttpMethod
 import JsonSupport.given
 import play.api.libs.json.*
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.doi.Doi
 import scala.scalajs.js.Dictionary
 

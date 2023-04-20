@@ -1,6 +1,7 @@
 @import se.lu.nateko.cp.meta.services.metaexport.Inspire
 @import se.lu.nateko.cp.meta.core.data._
 @import java.time.Instant
+@import eu.icoscp.envri.Envri
 
 @(dobj: Inspire, envri: Envri, conf: EnvriConfig)
 <?xml version="1.0" encoding="UTF-8"?>

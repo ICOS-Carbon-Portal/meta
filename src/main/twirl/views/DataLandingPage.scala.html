@@ -8,6 +8,7 @@
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.meta.utils.*
 @import landpagesnips.*
+@import eu.icoscp.envri.Envri
 
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(
@@ -139,7 +140,7 @@
 							<th>Unit</th>
 							@envri match{
 								case Envri.SITES => {}
-								case Envri.ICOS => {
+								case _ => {
 									<th>Quantity kind</th>
 								}
 							}
@@ -157,7 +158,7 @@
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
 								@envri match{
 									case Envri.SITES => {}
-									case Envri.ICOS => {
+									case _ => {
 										<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
 									}
 								}

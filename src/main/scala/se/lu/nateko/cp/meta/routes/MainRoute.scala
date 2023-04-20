@@ -11,7 +11,6 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.icos.MetaFlow

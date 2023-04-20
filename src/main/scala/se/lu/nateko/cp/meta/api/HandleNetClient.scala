@@ -18,7 +18,7 @@ import akka.stream.Materializer
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 

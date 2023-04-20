@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.upload
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.DatasetType
 

@@ -1,7 +1,7 @@
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / scalaVersion := "3.2.2"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -14,10 +14,11 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.10",
+		version := "0.7.12",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
+			"eu.icoscp"             %% "envri"                              % "0.1.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
@@ -172,6 +173,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 
 		libraryDependencies ++= Seq(
 			"org.scala-js"      %%% "scalajs-dom"       % "2.1.0",
+			"eu.icoscp"         %%% "envri"             % "0.1.0",
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
 			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC6",
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.0",

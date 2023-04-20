@@ -18,7 +18,6 @@ import se.lu.nateko.cp.meta.DoiConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
@@ -31,6 +30,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
+import eu.icoscp.envri.Envri
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 

@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import se.lu.nateko.cp.doi.meta.PersonalName
 import se.lu.nateko.cp.doi.meta.GenericName
+import eu.icoscp.envri.Envri
 
 object SchemaOrg:
 
@@ -146,11 +147,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		val country: Option[CountryCode] = envri match
 			case Envri.SITES => CountryCode.unapply("SE")
-			case Envri.ICOS => dobj.specificInfo.toOption.flatMap(
-				_.acquisition.station.specificInfo match
-					case iss: IcosStationSpecifics => iss.countryCode
-					case _ => None
-			)
+			case Envri.ICOS | Envri.ICOSCities => dobj.specificInfo.toOption.flatMap(_.acquisition.station.countryCode)
 
 		val spatialCoverage: JsValue = optJs(dobj.coverage)(fromGeoFeature(_, country))
 
@@ -165,7 +162,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		val creator = envri match
 			case Envri.SITES => stationCreator
-			case Envri.ICOS => dobj.references.authors.toSeq.flatten match
+			case Envri.ICOS | Envri.ICOSCities => dobj.references.authors.toSeq.flatten match
 				case Seq() => dobj.production.map(p => fromAgent(p.creator)).getOrElse(stationCreator)
 				case authors => asOptArray(authors)(fromAgent)
 
@@ -237,7 +234,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		//TODO Move to EnvriConfig
 		val publisherLogoUri: String = envri match
 			case Envri.SITES => "https://static.icos-cp.eu/images/sites-logo.png"
-			case Envri.ICOS => "https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png"
+			case Envri.ICOS | Envri.ICOSCities => "https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png"
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),

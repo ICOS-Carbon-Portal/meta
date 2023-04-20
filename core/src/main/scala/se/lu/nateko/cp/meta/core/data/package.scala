@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.core.data
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.net.URI
+import eu.icoscp.envri.Envri
 
 def staticObjLandingPage(hash: Sha256Sum)(using EnvriConfig) = new URI(
 	s"$objectPrefix${hash.id}"

@@ -32,7 +32,6 @@ import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.core.data.Envri
 
 class TestDb {
 

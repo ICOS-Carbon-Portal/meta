@@ -42,6 +42,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import scala.collection.mutable.ListBuffer
 import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
+import eu.icoscp.envri.Envri
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
@@ -471,10 +472,10 @@ object EtcMetaSource{
 				coverage = None,
 				responsibleOrganization = None,
 				pictures = picture.toSeq,
+				countryCode = countryCode,
 				specificInfo = EtcStationSpecifics(
 					theme = None,
 					stationClass = stClass,
-					countryCode = countryCode,
 					labelingDate = None, //not provided by TCs
 					discontinued = false, //not provided by TCs
 					climateZone = climZone,

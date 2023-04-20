@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
@@ -30,6 +29,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
+import eu.icoscp.envri.Envri
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 

@@ -10,7 +10,7 @@ import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import scala.language.postfixOps
 import scala.util.Using
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import eu.icoscp.envri.Envri
 
 object StaticRoute {
 

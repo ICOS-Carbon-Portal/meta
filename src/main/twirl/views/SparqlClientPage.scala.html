@@ -1,4 +1,4 @@
-@import se.lu.nateko.cp.meta.core.data.Envri
+@import eu.icoscp.envri.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import landpagesnips._
 
@@ -82,7 +82,8 @@
 @pageTitle = @{
 	envri match {
 		case Envri.SITES => "SITES SPARQL Client"
-		case _ => "Carbon Portal SPARQL Client"
+		case Envri.ICOS => "Carbon Portal SPARQL Client"
+		case Envri.ICOSCities => "ICOS Cities SPARQL Client"
 	}
 }
 

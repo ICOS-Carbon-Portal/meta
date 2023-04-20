@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
 import java.net.URI
+import eu.icoscp.envri.Envri
 
 //TODO Add logotype URL
 case class EnvriConfig(
@@ -16,12 +17,9 @@ case class EnvriConfig(
 		host == dataItemPrefix.getHost || host == metaItemPrefix.getHost
 }
 
-enum Envri derives CanEqual:
-	case ICOS, SITES
-
 type EnvriConfigs = Map[Envri, EnvriConfig]
 
-object Envri{
+object EnvriResolver{
 
 	def infer(uri: URI)(using EnvriConfigs): Option[Envri] = infer(uri.getHost)
 

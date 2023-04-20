@@ -10,7 +10,6 @@ import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
@@ -21,6 +20,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
 import spray.json.DefaultJsonProtocol.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import eu.icoscp.envri.Envri
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller

@@ -16,6 +16,7 @@ import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import RdfDiffCalcTests.*
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
+import eu.icoscp.envri.Envri
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 
@@ -45,7 +46,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 			coverage = None,
 			responsibleOrganization = None,
 			pictures = Seq.empty,
-			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, true, Some(se), None, Nil),
+			Some(se),
+			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, true, None, Nil),
 			funding = None
 		),
 		responsibleOrg = None,

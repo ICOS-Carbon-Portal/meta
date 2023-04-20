@@ -31,6 +31,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Using
+import eu.icoscp.envri.Envri
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -98,7 +99,7 @@ class Rdf4jUriSerializer(
 		),
 		rdfMarshaller
 	)
-	private def inferEnvri(uri: Uri) = Envri.infer(new java.net.URI(uri.toString)).getOrElse(
+	private def inferEnvri(uri: Uri) = EnvriResolver.infer(new java.net.URI(uri.toString)).getOrElse(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
 

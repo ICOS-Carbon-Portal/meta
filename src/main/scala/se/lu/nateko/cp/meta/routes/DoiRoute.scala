@@ -9,7 +9,6 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer

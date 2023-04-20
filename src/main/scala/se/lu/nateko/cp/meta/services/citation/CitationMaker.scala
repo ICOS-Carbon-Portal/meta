@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
+
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
@@ -40,6 +40,7 @@ import se.lu.nateko.cp.doi.meta.GenericName
 import se.lu.nateko.cp.doi.meta.NameIdentifier
 import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
 import se.lu.nateko.cp.doi.meta.Contributor
+import eu.icoscp.envri.Envri
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -73,7 +74,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 			case doc:  DocObject  => getDocCitation(doc)
 			case dobj: DataObject => envri match
 				case Envri.SITES => getSitesCitation(dobj)
-				case Envri.ICOS  => getIcosCitation(dobj)
+				case Envri.ICOS => getIcosCitation(dobj)
 
 		val dobj = vocab.getStaticObject(sobj.hash)
 		val keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
@@ -279,7 +280,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		yield envri match
 			case Envri.SITES =>
 				s"${authorString}($year). $title. Swedish Infrastructure for Ecosystem Science (SITES). $pidUrl"
-			case Envri.ICOS =>
+			case Envri.ICOS | Envri.ICOSCities =>
 				s"${authorString}ICOS RI, $year. $title, $pidUrl"
 
 		CitationInfo(pidUrlOpt, refs.authors, refs.title, yearOpt, None, citString)

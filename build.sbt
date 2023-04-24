@@ -84,7 +84,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.7.0",
+		version := "0.8.0",
 		scalacOptions ++= commonScalacOptions,
 
 		excludeDependencies ++= Seq(

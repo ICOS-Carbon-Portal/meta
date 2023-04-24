@@ -57,7 +57,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting,
-		atcMetaSource: AtcMetaSource,
+		atcMetaSourceOpt: Option[AtcMetaSource],
 		coreConf: MetaCoreConfig
 	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
 
@@ -66,20 +66,24 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 
 		pathPrefix("upload"){
 			pathPrefix("atcmeta"){
-				post{
-					path(Segment){tblKind =>
-						authRouting.mustBeLoggedIn{uploader =>
-							onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
-								extractDataBytes{data =>
-									onSuccess(data.toMat(sink)(Keep.right).run()){_ =>
-										complete(StatusCodes.OK)
+				atcMetaSourceOpt.fold(
+					complete(StatusCodes.NotFound -> "ATC metadata upload is not configured on this server")
+				){atcMetaSource =>
+					post{
+						path(Segment){tblKind =>
+							authRouting.mustBeLoggedIn{uploader =>
+								onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
+									extractDataBytes{data =>
+										onSuccess(data.toMat(sink)(Keep.right).run()){_ =>
+											complete(StatusCodes.OK)
+										}
 									}
 								}
 							}
 						}
-					}
-				} ~
-				getFromBrowseableDirectory(atcMetaSource.getDirectory().toString)
+					} ~
+					getFromBrowseableDirectory(atcMetaSource.getDirectory().toString)
+				}
 			} ~
 			post{
 				path("etc"){

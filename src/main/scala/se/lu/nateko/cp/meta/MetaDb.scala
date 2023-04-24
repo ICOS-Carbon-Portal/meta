@@ -287,8 +287,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 			val basicInit = {
 				val init = Future{makeInstanceServer(repo, servConf, config)}
 
-				if(id == config.instanceServers.otcMetaInstanceServerId)
-					init.map(new WriteNotifyingInstanceServer(_))
+				if config.instanceServers.metaFlow.map(_.otcMetaInstanceServerId).contains(id)
+				then init.map(new WriteNotifyingInstanceServer(_))
 				else init
 			}
 

@@ -43,9 +43,14 @@ case class DataObjectInstServersConfig(
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
 	forDataObjects: Map[Envri, DataObjectInstServersConfig],
+	metaFlow: Option[MetaFlowConfig]
+)
+
+case class MetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	icosMetaInstanceServerId: String,
-	otcMetaInstanceServerId: String
+	otcMetaInstanceServerId: String,
+	atcMetaUploadUser: String
 )
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
@@ -175,7 +180,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
 	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
-	given RootJsonFormat[InstanceServersConfig] = jsonFormat5(InstanceServersConfig.apply)
+	given RootJsonFormat[MetaFlowConfig] = jsonFormat4(MetaFlowConfig.apply)
+	given RootJsonFormat[InstanceServersConfig] = jsonFormat3(InstanceServersConfig.apply)
 	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
 	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
 	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)

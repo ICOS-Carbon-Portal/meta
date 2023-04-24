@@ -36,7 +36,8 @@ import se.lu.nateko.cp.meta.core.data.Envri
 
 class TestDb {
 
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.withDummyPasswords
+
 	val akkaConf = ConfigFactory.defaultReference()
 		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("ERROR"))
 	private val system = ActorSystem("sparqlRegrTesting", akkaConf)

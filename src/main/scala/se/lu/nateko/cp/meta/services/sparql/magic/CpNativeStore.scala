@@ -1,29 +1,26 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import java.io.File
-import java.io.IOException
-import java.nio.file.Paths
-import java.nio.file.Files
-
-import scala.compiletime.uninitialized
-
+import akka.Done
 import akka.event.LoggingAdapter
-
 import org.eclipse.rdf4j.sail.Sail
-
+import org.eclipse.rdf4j.sail.SailConnection
+import org.eclipse.rdf4j.sail.SailConnectionListener
+import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.citation.*
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.utils.async.ok
 
-import org.eclipse.rdf4j.sail.helpers.SailWrapper
-import org.eclipse.rdf4j.sail.SailConnection
-import scala.concurrent.Future
-import akka.Done
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import org.eclipse.rdf4j.sail.SailConnectionListener
+import java.io.File
+import java.io.IOException
+import java.nio.file.FileVisitOption
+import java.nio.file.Files
+import java.nio.file.Paths
+import scala.compiletime.uninitialized
 import scala.concurrent.ExecutionContext
-import scala.util.Success
+import scala.concurrent.Future
 import scala.util.Failure
+import scala.util.Success
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
@@ -107,7 +104,7 @@ class CpNativeStore(
 
 		val didNotExist = !Files.exists(storageDir)
 
-		def storageFiles = Files.walk(storageDir).filter(Files.isRegularFile(_))
+		def storageFiles = Files.walk(storageDir, FileVisitOption.FOLLOW_LINKS).filter(Files.isRegularFile(_))
 
 		if(didNotExist)
 			Files.createDirectories(storageDir)

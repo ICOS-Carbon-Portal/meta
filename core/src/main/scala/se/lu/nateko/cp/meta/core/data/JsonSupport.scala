@@ -95,7 +95,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	import CommonJsonSupport.sealedTraitTypeclassLookup
 
-	def geoFormatsLookup = sealedTraitTypeclassLookup[GeoFeature, JsonFormat]
+	lazy val geoFormatsLookup = sealedTraitTypeclassLookup[GeoFeature, JsonFormat]
 
 	given JsonFormat[Orcid] with{
 		def write(id: Orcid): JsValue = JsString(id.shortId)

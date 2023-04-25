@@ -98,7 +98,7 @@ object CommonJsonSupport:
 			val tpe = ccSym.typeRef
 			val instanceTpe = TypeRepr.of[TC].appliedTo(tpe)
 			Implicits.search(instanceTpe) match
-				case iss: ImplicitSearchSuccess => iss.tree.asExpr.asInstanceOf[Expr[Any]]
+				case iss: ImplicitSearchSuccess => iss.tree.asExpr//.asInstanceOf[Expr[Any]]
 				case _ => report.errorAndAbort(s"No given instance found for ${ccSym.name}") //Expr(s"not found: ${instanceTpe} \nfor $tpe \n for $ccSym")
 
 		val traitSymbol = TypeRepr.of[T].typeSymbol
@@ -119,3 +119,53 @@ object CommonJsonSupport:
 	end sealedTraitTypeclassLookupImpl
 
 end CommonJsonSupport
+
+import scala.compiletime.{erasedValue, summonInline}
+import scala.quoted.*
+import spray.json._
+
+object SealedTraitJsonFormat {
+
+	inline def summonJsonFormats[T <: Tuple]: List[JsonFormat[_]] = inline erasedValue[T] match {
+		case _: EmptyTuple => Nil
+		case _: (t *: ts) => summonInline[JsonFormat[t]].asInstanceOf[JsonFormat[_]] :: summonJsonFormats[ts]
+	}
+
+	inline def fromSealedTrait[T: Type]: JsonFormat[T] = {
+		import scala.deriving.Mirror
+		val formats = summonJsonFormats[Mirror.Of[T]#MirroredElemTypes]
+		val subtypes = getSubtypes[T]
+		new SealedTraitJsonFormat[T](formats, subtypes)
+	}
+
+	private def getSubtypes[T: Type]: List[String] =
+		TypeRepr.of[T].typeSymbol.children.map(_.name.toString)
+
+	private class SealedTraitJsonFormat[T](formats: List[JsonFormat[_]], subtypes: List[String]) extends JsonFormat[T] {
+		def read(json: JsValue): T = {
+		json.asJsObject.getFields("type", "value") match {
+			case Seq(JsString(typeName), value) =>
+			val index = subtypes.indexOf(typeName)
+			if (index >= 0) {
+				formats(index).asInstanceOf[JsonFormat[T]].read(value)
+			} else {
+				deserializationError(s"Unknown type: $typeName")
+			}
+
+			case _ => deserializationError("Expected a JSON object with 'type' and 'value' fields")
+		}
+		}
+
+		def write(obj: T): JsValue = {
+		val index = subtypes.indexOf(obj.getClass.getSimpleName)
+		if (index >= 0) {
+			JsObject(
+			"type" -> JsString(subtypes(index)),
+			"value" -> formats(index).asInstanceOf[JsonFormat[T]].write(obj)
+			)
+		} else {
+			serializationError(s"Cannot serialize unknown subtype: ${obj.getClass.getName}")
+		}
+		}
+	}
+}

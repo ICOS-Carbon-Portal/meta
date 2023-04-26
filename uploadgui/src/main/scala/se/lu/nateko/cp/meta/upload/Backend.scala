@@ -155,7 +155,7 @@ object Backend {
 		.flatMap(_.text())
 
 	def getMetadata(uri: URI): Future[UploadDto] =
-		fetchOk("fetch existing object", s"/dtodownload?uri=$uri")
+		fetchOk("fetch existing object", s"/dtodownload?uri=${encodeURIComponent(uri.toString)}")
 			.flatMap(parseTo[UploadDto])
 
 	def createDraftDoi(uri: URI): Future[Doi] =

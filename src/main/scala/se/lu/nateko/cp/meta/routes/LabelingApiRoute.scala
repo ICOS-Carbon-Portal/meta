@@ -53,9 +53,20 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 	private given Unmarshaller[String, URI] = Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
 
 	def apply(
-		service: StationLabelingService,
-		authRouting: AuthenticationRouting
-	)(implicit mat: Materializer): Route = (handleExceptions(exceptionHandler) & pathPrefix("labeling")){
+		service: Option[StationLabelingService], authRouting: AuthenticationRouting
+	)(using Materializer): Route =
+		pathPrefix("labeling"){
+			service match
+				case Some(lblService) =>
+					handleExceptions(exceptionHandler){inner(lblService, authRouting)}
+				case None =>
+					inline def msg = "Labeling service has not been enabled on this server"
+					complete(StatusCodes.ServiceUnavailable -> msg)
+		}
+
+	private def inner(
+		service: StationLabelingService, authRouting: AuthenticationRouting
+	)(using mat: Materializer): Route = {
 
 		implicit val ctxt = mat.executionContext
 

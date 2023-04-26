@@ -52,8 +52,3 @@ class SendMail(config: EmailConfig, log: LoggingAdapter) {
 		}
 	}
 }
-
-object SendMail{
-	def default(log: LoggingAdapter): SendMail = new SendMail(ConfigLoader.default.stationLabelingService.mailing, log)
-	def apply(config: EmailConfig, log: LoggingAdapter) = new SendMail(config, log)
-}

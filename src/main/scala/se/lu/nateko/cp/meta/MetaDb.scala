@@ -52,7 +52,7 @@ class MetaDb (
 	val instanceServers: Map[String, InstanceServer],
 	val instOntos: Map[String, InstOnto],
 	val uploadService: UploadService,
-	val labelingService: StationLabelingService,
+	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	val repo: Repository,
@@ -141,8 +141,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
-			val labelingService = {
-				val conf = config.stationLabelingService
+			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
 				new StationLabelingService(instanceServers, onto, fileService, conf, log)
 			}

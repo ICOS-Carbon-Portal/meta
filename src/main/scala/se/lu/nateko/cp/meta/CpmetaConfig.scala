@@ -158,7 +158,7 @@ case class CpmetaConfig(
 	port: Int,
 	httpBindInterface: String,
 	dataUploadService: UploadServiceConfig,
-	stationLabelingService: LabelingServiceConfig,
+	stationLabelingService: Option[LabelingServiceConfig],
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,

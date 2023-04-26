@@ -105,7 +105,7 @@ object Playground {
 	}
 
 	def mailSender = {
-		val conf = ConfigLoader.default.stationLabelingService.mailing
+		val conf = ConfigLoader.default.stationLabelingService.get.mailing
 		SendMail(conf.copy(mailSendingActive = true), system.log)
 	}
 

@@ -105,7 +105,7 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
-			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
+			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,

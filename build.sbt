@@ -61,7 +61,8 @@ val frontendBuild = taskKey[Unit]("Builds the front end apps")
 frontendBuild := {
 	import scala.sys.process.Process
 	val log = streams.value.log
-	val exitCode = (Process("npm ci") #&& Process("npm run gulp")).!
+	val targetDir = (Compile / classDirectory).value.getAbsolutePath
+	val exitCode = (Process("npm ci") #&& Process(s"npm run gulp -- --target=$targetDir")).!
 	if(exitCode == 0) log.info("Front end build was successfull")
 	else sys.error("Front end build error")
 }

@@ -12,6 +12,7 @@ import org.eclipse.rdf4j.model.Literal
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
+import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
 trait StationInfoService { self: StationLabelingService =>
 
@@ -74,25 +75,28 @@ trait StationInfoService { self: StationLabelingService =>
 			yield new StationLabelingHistory(stInfo, hist)
 	}
 
-	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory = {
+	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory =
 		val statusStr = statusLit.stringValue
 		import LifecycleService.AppStatus
 		import AppStatus.*
 
 		def statusIs(status: AppStatus): Boolean = status.toString == statusStr
+		import LabelingProgressDates.empty
+		import hist.progress
+		val progressUpdate: LabelingProgressDates =
+			if statusIs(step1submitted) then
+				if progress.step1start.isDefined then empty else empty.copy(step1start = Some(ts))
+			else if statusIs(step1approved) then
+				empty.copy(step1approval = Some(ts))
+			else if statusIs(step2ontrack) || statusIs(step2started_old) then
+				if progress.step2start.isDefined then empty else empty.copy(step2start = Some(ts))
+			else if statusIs(step2approved) then
+				empty.copy(step2approval = Some(ts))
+			else if statusIs(step3approved) then
+				empty.copy(labelled = Some(ts))
+			else empty
+		hist.withOverrides(progressUpdate)
 
-		if(statusIs(step1submitted)) {
-			if(hist.step1start.isDefined) hist else hist.copy(step1start = Some(ts))
-		} else if(statusIs(step1approved))
-			hist.copy(step1approval = Some(ts))
-		else if(statusIs(step2ontrack) || statusIs(step2started_old)){
-			if(hist.step2start.isDefined) hist else hist.copy(step2start = Some(ts))
-		} else if(statusIs(step2approved))
-			hist.copy(step2approval = Some(ts))
-		else if(statusIs(step3approved))
-			hist.copy(labelled = Some(ts))
-		else hist
-	}
 
 	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[IRI] =
 		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createIRI(uri))
@@ -116,6 +120,17 @@ trait StationInfoService { self: StationLabelingService =>
 		def prodStr(pred: IRI): Option[String] =
 			prodUriOpt.flatMap(prodUri => icosInfoServer.getStringValues(prodUri, pred).headOption)
 
+		val labelingProgress =
+			val provFetcher = FetchingHelper(provInfoServer)
+			def progrDate(pred: IRI): Option[Instant] = provFetcher.getOptionalInstant(provUri, pred)
+			LabelingProgressDates(
+				step1start = progrDate(vocab.step1StartDate),
+				step1approval = progrDate(vocab.step1EndDate),
+				step2start = progrDate(vocab.step2StartDate),
+				step2approval = progrDate(vocab.step2EndDate),
+				labelled = progrDate(vocab.labelingEndDate)
+			)
+
 		for(provId <- provIdOpt; provName <- provNameOpt; theme <- themeOpt; provClass <- provClassOpt) yield
 			StationBasicInfo(
 				provId = provId,
@@ -126,19 +141,32 @@ trait StationInfoService { self: StationLabelingService =>
 				prodUri = prodUriOpt.map(_.toJava),
 				theme = theme,
 				provClass = provClass,
-				prodClass = prodStr(metaVocab.hasStationClass)
+				prodClass = prodStr(metaVocab.hasStationClass),
+				labelingProgressOverrides = labelingProgress
 			)
 	}
 }
 
-case class LabelingHistory(
-	added: Instant,
+case class LabelingProgressDates(
 	step1start: Option[Instant],
 	step1approval: Option[Instant],
 	step2start: Option[Instant],
 	step2approval: Option[Instant],
 	labelled: Option[Instant]
 )
+object LabelingProgressDates:
+	def empty = LabelingProgressDates(None, None, None, None, None)
+
+case class LabelingHistory(added: Instant, progress: LabelingProgressDates):
+	def withOverrides(overrides: LabelingProgressDates): LabelingHistory = copy(
+		progress = progress.copy(
+			step1start = overrides.step1start.orElse(progress.step1start),
+			step1approval = overrides.step1approval.orElse(progress.step1approval),
+			step2start = overrides.step2start.orElse(progress.step2start),
+			step2approval = overrides.step2approval.orElse(progress.step2approval),
+			labelled = overrides.labelled.orElse(progress.labelled)
+		)
+	)
 
 case class StationBasicInfo(
 	provId: String,
@@ -149,23 +177,25 @@ case class StationBasicInfo(
 	prodUri: Option[URI],
 	theme: String,
 	provClass: String,
-	prodClass: Option[String]
+	prodClass: Option[String],
+	labelingProgressOverrides: LabelingProgressDates
 )
 
 class StationLabelingHistory(val station: StationBasicInfo, val hist: LabelingHistory)
 
 object StationLabelingHistory{
 
-	def empty(ts: Instant) = LabelingHistory(ts, None, None, None, None, None)
+	def empty(ts: Instant) = LabelingHistory(ts, LabelingProgressDates.empty)
 
 	val CsvHeader = "Theme,ID,Name,Class,Added,Step1Start,Step1End,Step2Start,Step2End,Labelled"
 
 	def toCsvRow(shist: StationLabelingHistory): String = {
-		val hist = shist.hist
+		val hist = shist.hist.withOverrides(shist.station.labelingProgressOverrides)
+		import hist.progress.*
 		val st = shist.station
 		val cells: Seq[String] =
 			Seq(st.theme, st.prodId.getOrElse(st.provId), st.prodName.getOrElse(st.provName), st.prodClass.getOrElse(st.provClass)) ++
-			Seq(Some(hist.added), hist.step1start, hist.step1approval, hist.step2start, hist.step2approval, hist.labelled).map(cell)
+			Seq(Some(hist.added), step1start, step1approval, step2start, step2approval, labelled).map(cell)
 		cells.mkString("\n", ",", "")
 	}
 

@@ -2,7 +2,7 @@
 @import eu.icoscp.envri.Envri
 
 @(breadcrumbs: Map[Envri, IndexedSeq[(String, String)]])(implicit envri: Envri)
-@if(breadcrumbs(envri).isEmpty) {} else {
+@if(breadcrumbs.get(envri).isEmpty) {} else {
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb bg-light p-2">
 			@for((label, url) <- breadcrumbs(envri)){

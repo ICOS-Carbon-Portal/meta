@@ -1,7 +1,8 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import eu.icoscp.envri.Envri
 
-@()(implicit conf: EnvriConfig)
-@CpCommonPage("Station labelling status - ICOS", authHost = conf.authHost, dataHost = conf.dataHost){
+@()(implicit conf: EnvriConfig, envri: Envri)
+@CpCommonPage("Station labelling status - ICOS"){
 	<style>
 		.cp-lnk:hover{
 			cursor: pointer;

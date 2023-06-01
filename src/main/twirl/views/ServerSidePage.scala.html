@@ -26,6 +26,6 @@
 }
 
 @template = @{
-	if(envri == Envri.SITES) SitesPage(title, bootstrapJavascript, conf.authHost, conf.dataHost) _
-	else CpCommonPage(title, menu, conf.authHost, bootstrapJavascript, conf.dataHost) _
+	if(envri == Envri.SITES) SitesPage(title, bootstrapJavascript) _
+	else CpCommonPage(title, menu, bootstrapJavascript) _
 }

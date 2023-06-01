@@ -25,7 +25,7 @@ import eu.icoscp.envri.Envri
 object StaticRoute {
 
 	private val pages: PartialFunction[(String, Envri, EnvriConfig), Html] = {
-		case ("labeling", _, envriConfig) => views.html.LabelingPage()(envriConfig)
+		case ("labeling", envri, envriConfig) => views.html.LabelingPage()(envriConfig, envri)
 		case ("sparqlclient", envri, envriConfig) => views.html.SparqlClientPage()(envri, envriConfig)
 		case ("station", envri, _) => views.html.StationPage(envri)
 	}

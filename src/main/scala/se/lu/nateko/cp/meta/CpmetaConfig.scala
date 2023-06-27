@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.ConfigValueFactory
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
@@ -207,25 +208,32 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
-	val appConfig: Config = {
+	lazy val appConfig: Config = loadWithOverride(localConfigOverride)
+	lazy val default: CpmetaConfig = withOverride(localConfigOverride)
+
+	private lazy val localConfigOverride: Config =
 		val confFile = new java.io.File("application.conf").getAbsoluteFile
-		if(!confFile.exists) ConfigFactory.load
-		else
-			ConfigFactory.parseFile(confFile)
-				.withFallback(ConfigFactory.defaultApplication)
-				.withFallback(ConfigFactory.defaultReferenceUnresolved)
-				.resolve
-	}
+		if confFile.exists then ConfigFactory.parseFile(confFile) else ConfigFactory.empty
+
+	private def loadWithOverride(confOverride: Config): Config = confOverride
+		.withFallback(ConfigFactory.defaultApplication)
+		.withFallback(ConfigFactory.defaultReferenceUnresolved)
+		.resolve
 
 	private val renderOpts = ConfigRenderOptions.concise.setJson(true)
 
-	val default: CpmetaConfig = {
-		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
+	def withDummyPasswords: CpmetaConfig = withOverride(ConfigFactory.empty()
+		.withValue("cpmeta.rdfLog.credentials.password", ConfigValueFactory.fromAnyRef("dummy"))
+		.withValue("cpmeta.citations.doi.envries.ICOS.password", ConfigValueFactory.fromAnyRef("dummy"))
+		.withValue("cpmeta.citations.doi.envries.SITES.password", ConfigValueFactory.fromAnyRef("dummy"))
+		.withValue("cpmeta.stationLabelingService.mailing.password", ConfigValueFactory.fromAnyRef("dummy"))
+	)
 
+	private def withOverride(confOverride: Config): CpmetaConfig =
+		val confJson: String = loadWithOverride(confOverride).getValue("cpmeta").render(renderOpts)
 		confJson.parseJson.convertTo[CpmetaConfig]
-	}
 
-	def submittersConfig: SubmittersConfig = {
+	lazy val submittersConfig: SubmittersConfig = {
 		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
 
 		if(confFile.exists) {

@@ -1,24 +1,24 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
 
-import scala.util.{Try, Success}
-
+import se.lu.nateko.cp.meta.DataObjectDto
+import se.lu.nateko.cp.meta.DataProductionDto
+import se.lu.nateko.cp.meta.SpatioTemporalDto
+import se.lu.nateko.cp.meta.UploadDto
+import se.lu.nateko.cp.meta.core.data.TemporalCoverage
 import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto, SpatioTemporalDto}
+
+import scala.util.Try
 
 import formcomponents.*
 import Utils.*
-import se.lu.nateko.cp.meta.core.data.TemporalCoverage
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import java.net.URI
-import se.lu.nateko.cp.meta.core.data.Position
 
 class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
 	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for(
 		title <- titleInput.value;
 		descr <- descriptionInput.value;
-		spatCov <- spatialCoverage;
+		spatCov <- spatialCovSelect.spatialCoverage;
 		tempCovOpt <- timeIntevalInput.value;
 		tempCov <- tempCovOpt.withMissingError("time interval");
 		tempRes <- temporalResInput.value;
@@ -38,22 +38,8 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		variables = varInfo
 	)
 
-	def spatialCoverage: Try[Either[LatLonBox, URI]] = spatialCovSelect
-		.value.withMissingError("spatial coverage").flatMap{spCov =>
-			if(spCov eq customSpatCov) {
-				for(
-					minLat <- minLatInput.value;
-					minLon <- minLonInput.value;
-					maxLat <- maxLatInput.value;
-					maxLon <- maxLonInput.value;
-					label <- spatCovLabel.value
-				) yield Left(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
-			} else Success(Right(spCov.uri))
-		}
-
 	def varnames: Try[Option[Seq[String]]] = varInfoForm.varInfos
 
-	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
 	private val descriptionInput = new DescriptionInput("l3descr", notifyUpdate)
 	private val timeStartInput = new InstantInput("l3startinput", notifyUpdate)
@@ -62,28 +48,17 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val temporalResInput = new TextOptInput("l3tempres", notifyUpdate)
 	private val stationSelect = new Select[Station]("elabstationselect", s => s"${s.id} (${s.namedUri.name})")
 	private val samplingHeightInput = new FloatOptInput("elabsampleheight", notifyUpdate)
-	private val spatialCovSelect = new Select[SpatialCoverage]("l3spatcoverselect", _.label, autoselect = false, onSpatCoverSelected)
+	private val spatialCovSelect = new GeoCoverageSelector(covs)
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
-
-	private val spatCovLabel = new TextOptInput("l3spatcoverlabel", () => ())
-	private val minLatInput = new DoubleInput("l3minlat", notifyUpdate)
-	private val minLonInput = new DoubleInput("l3minlon", notifyUpdate)
-	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)
-	private val maxLonInput = new DoubleInput("l3maxlon", notifyUpdate)
-
-	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
-
-	spatialCovSelect.setOptions(customSpatCov +: covs)
 
 	def resetForm(): Unit = {
 		Iterable(
 			titleInput, descriptionInput, timeStartInput, timeStopInput,
 			temporalResInput, externalPageInput
 		).foreach(_.reset())
-		spatialCovSelect.reset()
 		varInfoForm.setValues(None)
-		resetLatLonBox()
+		spatialCovSelect.resetForm()
 	}
 
 	bus.subscribe{
@@ -92,12 +67,6 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case ObjSpecSelected(spec) =>
 			if(spec.isSpatiotemporal) show() else hide()
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
-	}
-
-	private def onSpatCoverSelected(): Unit = {
-		if(spatialCovSelect.value == Some(customSpatCov)) spatCoverElements.show()
-		else spatCoverElements.hide()
-		notifyUpdate()
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
@@ -116,35 +85,12 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				samplingHeightInput.value = spatTemp.samplingHeight
 				externalPageInput.value = spatTemp.customLandingPage
 				varInfoForm.setValues(spatTemp.variables)
-				spatTemp.spatial match{
-					case Left(cov) =>
-						cov match
-							case b: LatLonBox =>
-								minLatInput.value = b.min.lat
-								minLonInput.value = b.min.lon
-								maxLatInput.value = b.max.lat
-								maxLonInput.value = b.max.lon
-							case _ => ()
-						spatCovLabel.value = cov.label
-						spatialCovSelect.value = customSpatCov
-						spatCoverElements.show()
-					case Right(covUri) =>
-						resetLatLonBox()
-						spatCoverElements.hide()
-						covs.find(_.uri == covUri).fold(spatialCovSelect.reset()){
-							cov => spatialCovSelect.value = cov
-						}
-				}
+				spatialCovSelect.handleReceivedSpatialCoverage(spatTemp.spatial)
 				show()
 			case _ =>
 				hide()
 		}
 		case _ =>
 			hide()
-	}
-
-	private def resetLatLonBox(): Unit = {
-		spatCovLabel.reset()
-		Seq(minLatInput, minLonInput, maxLatInput, maxLonInput).foreach(_.reset())
 	}
 }

@@ -209,7 +209,6 @@ class Form(
 	)
 
 	private def handleDto(): Unit = {
-		hideAlert()
 		if(!aboutPanel.isNewItemOrVersion) {
 			for(
 				metaURL <- aboutPanel.metadataUri.toOption

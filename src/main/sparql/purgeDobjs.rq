@@ -4,7 +4,7 @@ construct {
 ?o ?p2 ?o2 .
 } where{
 	values ?dobj {
-		<https://meta.icos-cp.eu/objects/y9CWc6l4Gkd9x_oI62yr4EH5>
+		<https://meta.icos-cp.eu/objects/y-gEd0Ce9MyzrvEg0L1LPpxQ>
 	}
 	graph <http://meta.icos-cp.eu/resources/otcprodcsv/> {
 		?dobj ?p ?o .

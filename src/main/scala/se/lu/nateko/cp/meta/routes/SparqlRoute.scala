@@ -39,6 +39,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.Random
+import scala.util.Success
 
 object SparqlRoute {
 
@@ -162,24 +163,26 @@ object SparqlRoute {
 
 }
 
-class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat: Materializer) extends Cache[Sha256Sum, RouteResult]{
+class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(using Materializer) extends Cache[Sha256Sum, RouteResult]{
 
-	private val inner = LfuCache.apply[Sha256Sum, RouteResult](system)
+	private val inner = LfuCache.apply[Sha256Sum, RouteResult](using system)
 	val quota = new CachedSource.Quota[ByteString](_.length, maxCacheableQuerySize)
 
-	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] = {
+	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] =
 		import system.dispatcher
+		removeInappropriate(key)
 		inner.apply(key, () => genValue().map(makeCached(key)))
-	}
 
-	override def getOrLoad(key: Sha256Sum, loadValue: Sha256Sum => Future[RouteResult]): Future[RouteResult] = {
+	override def getOrLoad(key: Sha256Sum, loadValue: Sha256Sum => Future[RouteResult]): Future[RouteResult] =
 		import system.dispatcher
+		removeInappropriate(key)
 		inner.getOrLoad(key, hash => loadValue(hash).map(makeCached(key)))
-	}
 
-	override def get(key: Sha256Sum): Option[Future[RouteResult]] = inner.get(key)
+	override def get(key: Sha256Sum): Option[Future[RouteResult]] =
+		removeInappropriate(key)
+		inner.get(key)
 
-	override def put(key: Sha256Sum, mayBeValue: Future[RouteResult])(implicit ex: ExecutionContext): Future[RouteResult] = {
+	override def put(key: Sha256Sum, mayBeValue: Future[RouteResult])(using ExecutionContext): Future[RouteResult] = {
 		val fresh = mayBeValue.map(makeCached(key))
 		inner.put(key, fresh)
 		fresh
@@ -215,10 +218,20 @@ class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat:
 		meth == HttpMethods.GET || meth == HttpMethods.POST
 	}
 
-	private def makeCached(key: Sha256Sum)(rr: RouteResult)(implicit ex: ExecutionContext): RouteResult = rr match {
+	private def removeInappropriate(key: Sha256Sum): Unit = inner.get(key) match
+		case None => () //not cached, nothing to remove
+		case Some(fut) => fut.value match
+			case None => () //still executing
+			case Some(Success(Complete(resp))) =>
+				val status = resp.status
+				val shouldBeCached = status.isSuccess() && status != StatusCodes.NoContent
+				if !shouldBeCached then remove(key)
+			case _ => remove(key)
+
+	private def makeCached(key: Sha256Sum)(rr: RouteResult)(using ExecutionContext): RouteResult = rr match
 		case _: Rejected => rr
 		case Complete(response) =>
-			val cachedEnt = response.entity match {
+			val cachedEnt = response.entity match
 				case se: Strict => se
 				case ent =>
 					val cachedPayload = CachedSource(ent.dataBytes, quota).recover{
@@ -229,12 +242,11 @@ class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(implicit mat:
 							"Try running the query with 'Cache-Control: no-cache' to get full response\n")
 					}
 					HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
-			}
 			Complete(
 				response
 					.withEntity(cachedEnt)
 					//this header is specific for the web app that makes the query, so should not be cached
 					.mapHeaders(_.filterNot(_.name == `Access-Control-Allow-Origin`.name))
 			)
-	}
+	end makeCached
 }

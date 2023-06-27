@@ -1,11 +1,16 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
+import org.scalajs.dom.document
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.upload.formcomponents.{HtmlElements, ProgressBar}
+import se.lu.nateko.cp.meta.upload.formcomponents.Button
+import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
+import se.lu.nateko.cp.meta.upload.formcomponents.ProgressBar
 
+import java.net.URI
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
 import scala.concurrent.Future
@@ -22,8 +27,21 @@ object UploadApp {
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
 	private val headerButtons = new HtmlElements("#header-buttons-container")
+	private val modal = getElementById[html.Div]("upload-help-modal").get
 	val progressBar = new ProgressBar("#progress-bar")
 	private val alert = getElementById[html.Div]("alert-placeholder").get
+
+	private def setIframeSrc(src: String): Unit =
+		val iframe = getElementById[dom.html.IFrame]("help-modal-iframe")
+		iframe.foreach(_.src = src)
+
+	modal.addEventListener("show.bs.modal", { _ =>
+		setIframeSrc("https://www.youtube.com/embed/8TpbRZPaTuU")
+	})
+
+	modal.addEventListener("hide.bs.modal", { _ =>
+		setIframeSrc("")
+	})
 
 	def main(args: Array[String]): Unit = whenDone(Backend.fetchConfig) {
 		case InitAppInfo(Some(_), envri, envriConf) => setupForm(envri, envriConf)

@@ -127,7 +127,7 @@ lazy val meta = (project in file("."))
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(metaCore / Test / test, Test / test, frontendBuild, fetchGCMDKeywords).value,
 		cpDeployPlaybook := "cities.yml",
-		cpDeployPermittedInventories := Some(Seq("staging", "cities")),
+		cpDeployPermittedInventories := Some(Seq("staging", "cities", "production")),
 		cpDeployInfraBranch := "cities-deployment",
 
 		assembly / assemblyMergeStrategy := {

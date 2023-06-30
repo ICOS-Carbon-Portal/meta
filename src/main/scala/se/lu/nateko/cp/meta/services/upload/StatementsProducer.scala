@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
@@ -23,13 +24,13 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
-import eu.icoscp.envri.Envri
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -45,9 +46,11 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		val dct = metaVocab.dcterms
 
 		val nextVersionStatements =
+			val prevVersions = meta.isNextVersionOf.flattenToSeq
 			if meta.partialUpload then
-				meta.isNextVersionOf match
-					case Some(Left(v)) =>
+				prevVersions match
+					case Seq() => Iterable.empty
+					case Seq(v) =>
 						val collIri = vocab.getNextVersionColl(v)
 
 						Iterable(
@@ -55,9 +58,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 							makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass),
 							makeSt(collIri, dct.hasPart, objectUri)
 						)
-					case _ => Iterable.empty
+					case _ => throw UploadUserErrorException("Partial upload to multiple previous versions is not supported")
 			else
-				makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject))
+				makeSt(objectUri, metaVocab.isNextVersionOf, prevVersions.map(vocab.getStaticObject))
 
 		val specificStatements = meta match {
 			case dobj: DataObjectDto => getDobjStatements(dobj)

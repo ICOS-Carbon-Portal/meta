@@ -264,7 +264,9 @@ trait CpmetaFetcher extends FetchingHelper{
 			instr.getLocalName
 		}
 
-		UriResource(instr.toJava, Some(label), Nil)
+		val comments = server.getStringValues(instr, RDFS.COMMENT)
+
+		UriResource(instr.toJava, Some(label), comments)
 	}
 
 	def getInstrumentDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =

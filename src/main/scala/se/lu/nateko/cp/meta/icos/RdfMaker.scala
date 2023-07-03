@@ -140,6 +140,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 				instr.name.toSeq.map{name =>
 					(uri, meta.hasName, vocab.lit(name))
 				} ++:
+				instr.comment.toSeq.map{comm =>
+					(uri, RDFS.COMMENT, vocab.lit(comm))
+				} ++:
 				instr.owner.toSeq.map{owner =>
 					(uri, meta.hasInstrumentOwner, getIri(owner))
 				} ++:

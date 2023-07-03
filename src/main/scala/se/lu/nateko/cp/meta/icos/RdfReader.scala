@@ -5,19 +5,22 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
-
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.{Position, Person, Organization, Orcid}
+import se.lu.nateko.cp.meta.core.data.Funder
+import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.data.Organization
+import se.lu.nateko.cp.meta.core.data.Person
+import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaFetcher
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
-import se.lu.nateko.cp.meta.core.data.Funder
 
 class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: PlainStaticObjectFetcher)(implicit envriConfigs: EnvriConfigs) {
 
@@ -105,6 +108,7 @@ private class IcosMetaInstancesFetcher(
 			model = getSingleString(uri, metaVocab.hasModel),
 			sn = getSingleString(uri, metaVocab.hasSerialNumber),
 			name = getOptionalString(uri, metaVocab.hasName),
+			comment = getOptionalString(uri, RDFS.COMMENT),
 			owner = getOptionalUri(uri, metaVocab.hasInstrumentOwner).flatMap(o => getTcOrganization(o)),
 			vendor = getOptionalUri(uri, metaVocab.hasVendor).flatMap(v => getTcOrganization(v)),
 			partsCpIds = server.getUriValues(uri, metaVocab.hasInstrumentComponent).map(UriId.apply),

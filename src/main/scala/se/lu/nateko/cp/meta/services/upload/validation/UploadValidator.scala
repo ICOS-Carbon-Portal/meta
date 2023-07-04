@@ -285,8 +285,11 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters")
 	)
 
+	private val formatsWithRowInfoInHeader = Set(
+		metaVocab.wdcggFormat, metaVocab.atcProductFormat, metaVocab.netCDFTimeSeriesFormat, metaVocab.asciiAtcFlaskTimeSer
+	)
+
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): Try[NotUsed] = {
-		def hasFormat(format: IRI): Boolean = format === spec.format.uri
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
 
@@ -314,7 +317,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 					if(
 						(spec.datasetSpec.isDefined) && stationMeta.nRows.isEmpty &&
-						!hasFormat(metaVocab.wdcggFormat) && !hasFormat(metaVocab.atcProductFormat) && !hasFormat(metaVocab.netCDFTimeSeriesFormat)
+						!formatsWithRowInfoInHeader.contains(spec.format.uri.toRdf)
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
 					if(subm.submittingOrganization === vocab.atc){

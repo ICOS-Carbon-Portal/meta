@@ -18,6 +18,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 abstract class MetadataUpdater(vocab: CpVocab) {
 	import MetadataUpdater.*
 	import StatementStability.*
@@ -42,11 +45,15 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
 		}
-		statDiff.filter{//keep only the effectful ones
+		val ret = statDiff.filter{//keep only the effectful ones
 			case RdfUpdate(Rdf4jStatement(s, p, o), isAssertion) =>
 				isAssertion != server.hasStatement(s, p, o)
 			case _ => true
 		}
+
+		println("updates: " + ret)
+
+		ret
 	}
 }
 
@@ -106,12 +113,33 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
 				|			a <${metaVocab.plainCollectionClass}> ;
 				|			<${metaVocab.isNextVersionOf}> [] .
-				|		?s ?p ?o .
-				|		FILTER(?p != <${metaVocab.dcterms.hasPart}> || ?o = <$objUri>)
+				|		BIND(
+				|			EXISTS {
+				|				?s <${metaVocab.dcterms.hasPart}> ?anotherNextVers
+				|				FILTER(?anotherNextVers != <$objUri>)
+				|			} AS ?multiNextVersion
+				|		)
+				|		{
+				|			{
+				|				BIND(<${metaVocab.dcterms.hasPart}> AS ?p)
+				|				BIND(<$objUri> AS ?o)
+				|				FILTER (?multiNextVersion)
+				|			}
+				|			UNION
+				|			{
+				|				?s ?p ?o .
+    |							FILTER(! ?multiNextVersion)
+				|			}
+				|		}
 				|	}
 				|}
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
+			println(query)
+			val res = Await.result(Future(sparql.evaluateGraphQuery(query).toIndexedSeq), Duration.Inf)
+
+			println("current statements: " + res)
+
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		end if
 	end getCurrentStatements

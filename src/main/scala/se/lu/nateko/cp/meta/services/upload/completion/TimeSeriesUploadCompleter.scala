@@ -27,7 +27,7 @@ private class TimeSeriesUploadCompleter(
 )(implicit ex: ExecutionContext, envri: Envri) extends PidMinter(handles, vocab) {
 
 	private val factory = vocab.factory
-	private val statementsProd = new StatementsProducer(vocab, metaVocab)
+	private val statementsProd = new StatementsProducer(server, vocab, metaVocab)
 
 	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = extract match {
 

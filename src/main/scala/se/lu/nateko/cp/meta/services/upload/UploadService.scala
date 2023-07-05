@@ -106,10 +106,10 @@ class UploadService(
 			newStatements = statementProd.getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
-			_ = log.info(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
+			_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
 			_ <- Future.fromTry(server.applyAll(updates)())
 		yield
-			log.info(s"Updates for object ${dto.hashSum.id} have been applied successfully")
+			log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =

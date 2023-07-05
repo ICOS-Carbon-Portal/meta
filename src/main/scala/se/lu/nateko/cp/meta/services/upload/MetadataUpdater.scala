@@ -94,10 +94,10 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 			val query = SparqlQuery(s"""construct{?s ?p ?o}
 				|$fromClauses
 				|where{
+				|{
 				|	{
 				|		BIND(<$objUri> AS ?s)
 				|		?s ?p ?o .
-				|		FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|	} UNION {
 				|		<$objUri> ?p0 ?s .
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
@@ -109,6 +109,8 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		?s ?p ?o .
 				|		FILTER(?p != <${metaVocab.dcterms.hasPart}> || ?o = <$objUri>)
 				|	}
+				|}
+				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		end if

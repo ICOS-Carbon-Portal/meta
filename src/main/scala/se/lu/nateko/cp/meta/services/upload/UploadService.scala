@@ -38,7 +38,7 @@ class UploadService(
 )(using system: ActorSystem, mat: Materializer) {
 
 	import servers.{ metaVocab, vocab }
-	import system.dispatcher
+	import system.{ dispatcher, log }
 
 	private given ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
@@ -99,19 +99,17 @@ class UploadService(
 		registerObjUpload(meta, serverTry, submittingOrg)
 	}
 
-	private def registerObjUpload(
-		dto: ObjectUploadDto,
-		serverTry: Try[InstanceServer],
-		submittingOrg: URI
-	)(implicit envri: Envri): Future[AccessUri] =
-		for(
+	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(using Envri): Future[AccessUri] =
+		for
 			server <- Future.fromTry(serverTry);
 			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
 			newStatements = statementProd.getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
+			_ = log.info(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
 			_ <- Future.fromTry(server.applyAll(updates)())
-		) yield
+		yield
+			log.info(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =

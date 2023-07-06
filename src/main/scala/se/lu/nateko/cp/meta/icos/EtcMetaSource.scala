@@ -232,7 +232,9 @@ object EtcMetaSource{
 		val sensorSerial = "SN"
 		val sensorVar = "VARIABLE"
 		val sensorLat = "LAT"
+		val sensorNorthSouthOffset = "NSDIST"
 		val sensorLon = "LONG"
+		val sensorEastWestOffset = "EWDIST"
 		val sensorHeight = "HEIGHT"
 		val deploymentStart = "START_DATE"
 		val fileId = "FILE_ID"
@@ -555,12 +557,14 @@ object EtcMetaSource{
 
 	private def getSensorDeployment(
 		stationLookup: Map[TcId[E], EtcStation]
-	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for(
+	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for
 		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
 		varName <- lookUp(Vars.sensorVar).optional;
 		sensorId <- lookUp(Vars.sensorId).require("sensor deployment must have sensor id");
 		latOpt <- getNumber(Vars.sensorLat).map(_.doubleValue).optional;
+		northOpt <- getNumber(Vars.sensorNorthSouthOffset).map(_.doubleValue).optional;
 		lonOpt <- getNumber(Vars.sensorLon).map(_.doubleValue).optional;
+		eastOpt <- getNumber(Vars.sensorEastWestOffset).map(_.doubleValue).optional;
 		heightOpt <- getNumber(Vars.sensorHeight).map(_.floatValue).optional;
 		startLocal <- getLocalDateTime(Vars.deploymentStart, LocalTime.MIN, 1, 1).optional;
 		stationTcId = makeId(stationTcIdStr);
@@ -571,11 +575,24 @@ object EtcMetaSource{
 		};
 		tz <- new Validated(tzOpt).require(s"Could not look up time zone offset for station with id $stationTcId");
 		statPos <- new Validated(station.core.location).require(s"Position for station with id $stationTcId could not be looked up")
-	) yield{
-		val pos = for lat <- latOpt; lon <- lonOpt yield Position(lat, lon, heightOpt, None, None)
+	yield
+		inline val Rearth = 6371000d
+
+		inline def latNaive = northOpt.map: north =>
+			statPos.lat + Math.toDegrees(north / Rearth)
+
+		inline def lonNaive = eastOpt.map: east =>
+			val Rlat = Rearth * Math.cos(Math.toRadians(statPos.lat))
+			statPos.lon + Math.toDegrees(east / Rlat)
+
+		val pos = for
+			lat <- latOpt.orElse(latNaive)
+			lon <- lonOpt.orElse(lonNaive)
+		yield Position(lat, lon, heightOpt, None, None)
+
 		val start = startLocal.map(_.toInstant(ZoneOffset.ofHours(tz)))
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
-	}
+
 
 	def mergeInstrDeployments(
 		depls: Seq[(String, InstrumentDeployment[E])]

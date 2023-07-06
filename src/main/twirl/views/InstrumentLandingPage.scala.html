@@ -28,6 +28,9 @@
 				@for(parent <- instr.partOf) {
 					@htmlProperty{Is part of}(resourceLink(parent))
 				}
+				@for(comment <- instr.self.comments){
+					@property("Comment", comment)
+				}
 				@if(!instr.deployments.isEmpty){
 					<h2 class="fs-3 mt-5">Deployments</h2>
 					<div class="col-md-12">

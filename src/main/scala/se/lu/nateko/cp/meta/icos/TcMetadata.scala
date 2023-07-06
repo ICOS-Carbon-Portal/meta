@@ -101,6 +101,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	model: String,
 	sn: String,
 	name: Option[String] = None,
+	comment: Option[String] = None,
 	vendor: Option[TcOrg[T]] = None,
 	owner: Option[TcOrg[T]] = None,
 	partsCpIds: Seq[UriId] = Nil,

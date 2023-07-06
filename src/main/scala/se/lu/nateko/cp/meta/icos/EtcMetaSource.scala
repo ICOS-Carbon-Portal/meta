@@ -174,7 +174,7 @@ object EtcMetaSource{
 	type EtcStation = TcStation[E]
 	type EtcCompany = TcGenericOrg[E]
 	type EtcMembership = Membership[E]
-	class SensorModel(val modelId: String, val compId: Int, val name: String)
+	class SensorModel(val modelId: String, val compId: Int, val name: String, val description: Option[String])
 	given Envri = Envri.ICOS
 
 
@@ -186,17 +186,17 @@ object EtcMetaSource{
 		val stations = "station"
 		val companies = "companies"
 		val instruments = "logger"
-		val sensorModels = "models"
+		val sensorModels = "models2"
 		val sensors = "sensors"
-		val meteosens = "meteosens"
+		val meteosens = "meteosens2"
 		val files = "file"
 		val funding = "funding"
 	}
 
 	object Vars{
-		val lat = "LOCATION_LAT"
-		val lon = "LOCATION_LONG"
-		val elev = "LOCATION_ELEV"
+		val stationLat = "LOCATION_LAT"
+		val stationLon = "LOCATION_LONG"
+		val staionElev = "LOCATION_ELEV"
 		val fname = "TEAM_MEMBER_FIRSTNAME"
 		val lname = "TEAM_MEMBER_LASTNAME"
 		val email = "TEAM_MEMBER_EMAIL"
@@ -226,13 +226,16 @@ object EtcMetaSource{
 		val loggerSensorId = "LOGGER_SENSOR_ID"
 		val loggerId = "LOGGER_ID"
 		val sensorModelId = "ID_MODEL"
-		val sensorName = "SENSOR"
+		val sensorName = "NAME"
+		val sensorDescription = "DESCRIPTION"
 		val sensorId = "ID_SENSOR"
 		val sensorSerial = "SN"
 		val sensorVar = "VARIABLE"
-		val northSouthOffset = "NSDIST"
-		val eastWestOffset = "EWDIST"
-		val height = "HEIGHT"
+		val sensorLat = "LAT"
+		val sensorNorthSouthOffset = "NSDIST"
+		val sensorLon = "LONG"
+		val sensorEastWestOffset = "EWDIST"
+		val sensorHeight = "HEIGHT"
 		val deploymentStart = "START_DATE"
 		val fileId = "FILE_ID"
 		val fileLoggerId = "FILE_LOGGER_ID"
@@ -288,11 +291,11 @@ object EtcMetaSource{
 	private def getLocalDate(varName: String, defaultMonth: Int, defaultDay: Int)(using Lookup): Validated[LocalDate] =
 		getLocalDateTime(varName, LocalTime.NOON, defaultMonth, defaultDay).map(_.toLocalDate)
 
-	def getPosition(using Lookup): Validated[Option[Position]] =
+	private def getStationPosition(using Lookup): Validated[Option[Position]] =
 		for(
-			latOpt <- getNumber(Vars.lat).optional;
-			lonOpt <- getNumber(Vars.lon).optional;
-			alt <- getNumber(Vars.elev).optional
+			latOpt <- getNumber(Vars.stationLat).optional;
+			lonOpt <- getNumber(Vars.stationLon).optional;
+			alt <- getNumber(Vars.staionElev).optional
 		) yield for(lat <- latOpt; lon <- lonOpt)
 			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None, None)
 
@@ -327,8 +330,9 @@ object EtcMetaSource{
 		for(
 			modelId <- lookUp(Vars.sensorModelId).require("sensor model must have id");
 			compId <- getNumber(Vars.companyTcId).map(_.intValue).require("sensor model must have vendor company id");
-			name <- lookUp(Vars.sensorName).require("sensor model must have name")
-		) yield modelId -> new SensorModel(modelId, compId, name)
+			name <- lookUp(Vars.sensorName).require("sensor model must have name");
+			descript <- lookUp(Vars.sensorDescription).optional
+		) yield modelId -> new SensorModel(modelId, compId, name, descript)
 
 	private def getSiteUtc(using Lookup): Validated[(Int, StationId, Option[Int])] =
 		for(
@@ -432,7 +436,7 @@ object EtcMetaSource{
 	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
-		pos <- getPosition;
+		pos <- getStationPosition;
 		tcIdStr <- lookUp(Vars.stationTcId);
 		fundingsLookup <- fundingsV;
 		name <- lookUp(Vars.siteName);
@@ -545,6 +549,7 @@ object EtcMetaSource{
 		TcInstrument[E](
 			tcId = makeId(tcIdStr),
 			model = model.name,
+			comment = model.description,
 			sn = serial,
 			vendor = vendor,
 			deployments = deploymentsDict.getOrElse(tcIdStr, Nil)
@@ -552,13 +557,15 @@ object EtcMetaSource{
 
 	private def getSensorDeployment(
 		stationLookup: Map[TcId[E], EtcStation]
-	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for(
+	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for
 		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
 		varName <- lookUp(Vars.sensorVar).optional;
 		sensorId <- lookUp(Vars.sensorId).require("sensor deployment must have sensor id");
-		northOpt <- getNumber(Vars.northSouthOffset).map(_.doubleValue).optional;
-		eastOpt <- getNumber(Vars.eastWestOffset).map(_.doubleValue).optional;
-		heightOpt <- getNumber(Vars.height).map(_.floatValue).optional;
+		latOpt <- getNumber(Vars.sensorLat).map(_.doubleValue).optional;
+		northOpt <- getNumber(Vars.sensorNorthSouthOffset).map(_.doubleValue).optional;
+		lonOpt <- getNumber(Vars.sensorLon).map(_.doubleValue).optional;
+		eastOpt <- getNumber(Vars.sensorEastWestOffset).map(_.doubleValue).optional;
+		heightOpt <- getNumber(Vars.sensorHeight).map(_.floatValue).optional;
 		startLocal <- getLocalDateTime(Vars.deploymentStart, LocalTime.MIN, 1, 1).optional;
 		stationTcId = makeId(stationTcIdStr);
 		station <- new Validated(stationLookup.get(stationTcId)).require(s"Failed to look up a station with ETC id $stationTcId");
@@ -568,17 +575,24 @@ object EtcMetaSource{
 		};
 		tz <- new Validated(tzOpt).require(s"Could not look up time zone offset for station with id $stationTcId");
 		statPos <- new Validated(station.core.location).require(s"Position for station with id $stationTcId could not be looked up")
-	) yield{
-		val pos = for(north <- northOpt; east <- eastOpt) yield{
-			val Rearth = 6371000d
-			val dlat = Math.toDegrees(north / Rearth)
+	yield
+		inline val Rearth = 6371000d
+
+		inline def latNaive = northOpt.map: north =>
+			statPos.lat + Math.toDegrees(north / Rearth)
+
+		inline def lonNaive = eastOpt.map: east =>
 			val Rlat = Rearth * Math.cos(Math.toRadians(statPos.lat))
-			val dlon = Math.toDegrees(east / Rlat)
-			Position(statPos.lat + dlat, statPos.lon + dlon, heightOpt, None, None)
-		}
+			statPos.lon + Math.toDegrees(east / Rlat)
+
+		val pos = for
+			lat <- latOpt.orElse(latNaive)
+			lon <- lonOpt.orElse(lonNaive)
+		yield Position(lat, lon, heightOpt, None, None)
+
 		val start = startLocal.map(_.toInstant(ZoneOffset.ofHours(tz)))
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
-	}
+
 
 	def mergeInstrDeployments(
 		depls: Seq[(String, InstrumentDeployment[E])]

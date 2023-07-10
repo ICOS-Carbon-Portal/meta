@@ -9,6 +9,9 @@ import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===
+import org.eclipse.rdf4j.model.Resource
+import scala.collection.mutable.Buffer
+import org.eclipse.rdf4j.model.ValueFactory
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
@@ -160,7 +163,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		}
 
 		val existingAppearedInCp = {
-			val keys = cpKeys.intersect(fromKeys).toSeq
+			val keys = cpKeys.intersect(fromKeys).intersect(toKeys).toSeq
 
 			val rdfDiff = keys.flatMap{key =>
 
@@ -254,3 +257,57 @@ object SequenceDiff{
 		def toSeqDiff[T <: TC] = new SequenceDiff[T](rdfupd, Map.empty)
 
 }
+
+class RdfDiffBuilder(factory: ValueFactory):
+	import RdfDiffBuilder.*
+	import scala.collection.mutable
+
+	private val allDiffs = mutable.Map.empty[SubjPred, Buffer[Diff]]
+
+	def update(stats: Seq[Statement], typ: UpdateType): Unit = stats.foreach: stat =>
+		val diffs = allDiffs.getOrElseUpdate(stat.getSubject -> stat.getPredicate, Buffer.empty[Diff])
+		diffs += stat.getObject -> typ
+
+	def build: Seq[RdfUpdate] =
+		val updates = for
+			((subj, pred), diffs) <- allDiffs
+			(obj, updType) <- materialize(diffs.toIndexedSeq)
+		yield
+			val isAssertion = updType match
+				case Assertion => true
+				case Retraction => false
+			val stat = factory.createStatement(subj, pred, obj)
+			RdfUpdate(stat, isAssertion)
+		updates.toSeq
+	
+
+object RdfDiffBuilder:
+	case object Assertion
+	case object Retraction
+	case object WeakRetraction //only retract if there is a later replacement assertion
+
+	type ProperUpdateType = Assertion.type | Retraction.type
+	type UpdateType = ProperUpdateType | WeakRetraction.type
+	type SubjPred = (Resource, IRI)
+	type Diff = (Value, UpdateType)
+	type ProperDiff = (Value, ProperUpdateType)
+
+	def materialize(diffs: IndexedSeq[Diff]): IndexedSeq[ProperDiff] =
+		val firstPass: IndexedSeq[ProperDiff] = diffs.indices.flatMap: i =>
+			diffs.apply(i) match
+				case (v, WeakRetraction) =>
+					if diffs.drop(i + 1).collectFirst{case (_, Assertion) => true}.isDefined //has a later assertion
+					then Some(v -> Retraction) else None
+				case (v, pUpd: ProperUpdateType) => Some(v -> pUpd)
+
+		if firstPass.length <= 1 then firstPass else firstPass
+			.groupMapReduce[Value, Option[ProperUpdateType]](_._1)(tpl => Some(tpl._2)):
+				case (None, x) => x
+				case (x, None) => x
+				case (Some(Assertion),  Some(Retraction)) => None
+				case (Some(Retraction), Some(Assertion))  => Some(Assertion)
+				case (Some(Assertion),  Some(Assertion))  => Some(Assertion)
+				case (Some(Retraction), Some(Retraction)) => Some(Retraction)
+			.collect:
+				case (v, Some(pUpd)) => v -> pUpd
+			.toIndexedSeq

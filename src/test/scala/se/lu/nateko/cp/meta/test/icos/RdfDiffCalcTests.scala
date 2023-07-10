@@ -204,6 +204,24 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		}
 	}
 
+	describe("TC adds ORCID id info to a person that CP took responsibility for"):
+		Given("starting with a single org with single researcher without ORCID, described by CP's own metadata")
+		val initSnap = atcInitSnap(jane)
+		val state = init(initSnap :: Nil, _.getStatements(jane))
+		val initUpdates = state.calc.calcDiff(initSnap).result.get
+		initUpdates.foreach(println)
+		state.tcServer.applyAll(initUpdates)()
+
+		When("a new TC metadata snapshot comes, where the researcher got an ORCID id")
+		val janeWithOrcid = jane.copy(orcid = Orcid.unapply("0000-0002-4742-958X"))
+		val snapWithOrcid = atcInitSnap(janeWithOrcid)
+
+		it("results in a single-statement update"):
+			val updates = state.calc.calcDiff(snapWithOrcid).result.get.toIndexedSeq
+			updates.foreach(println)
+			assert(updates.size === 1)
+
+
 	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
 		val repo = Loading.emptyInMemory
 		val factory = repo.getValueFactory

@@ -1,17 +1,20 @@
 package se.lu.nateko.cp.meta.icos
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
-
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.Assertion
+import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.Retraction
+import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.WeakRetraction
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import java.time.Instant
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===
-import org.eclipse.rdf4j.model.Resource
+
+import java.time.Instant
 import scala.collection.mutable.Buffer
-import org.eclipse.rdf4j.model.ValueFactory
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
@@ -88,17 +91,14 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		)
 	}
 
-	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] = {
-		val fromSet = from.toSet
-		val toSet = to.toSet
-		val assertions = toSet.diff(fromSet).toSeq.map(RdfUpdate(_, true))
-		val mentionedPredicates = toSet.map(_.getPredicate)
-		val retractions = fromSet.diff(toSet).iterator.collect{
-			//all the predicates are made "sticky", meaning one cannot remove a value, but can update
-			case st if mentionedPredicates.contains(st.getPredicate) => RdfUpdate(st, false)
-		}.toSeq
-		retractions ++ assertions
-	}
+	private def diffBuilder = new RdfDiffBuilder(rdfMaker.meta.factory)
+
+	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] =
+		import RdfDiffBuilder.{Assertion, WeakRetraction}
+		diffBuilder
+			.update(from, WeakRetraction) // all the properties are 'sticky'
+			.update(to, Assertion)
+			.build
 
 	private def swapSubject(subj: IRI)(stat: Statement): Statement =
 		rdfMaker.createStatement(subj, stat.getPredicate, stat.getObject)
@@ -164,6 +164,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val existingAppearedInCp = {
 			val keys = cpKeys.intersect(fromKeys).intersect(toKeys).toSeq
+			def algoError: Nothing = throw Exception("Algorithmic error in RdfDiffCalc")
 
 			val rdfDiff = keys.flatMap{key =>
 
@@ -171,7 +172,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				val deleteCand: Option[E] = if(deleteCands.size > 1)
 						deleteCands.find(e => e.cpId != cpMap(key).cpId) //should delete TC's that has different URI than CP's
 					else deleteCands.headOption
-				val toDelete = deleteCand.getOrElse(throw new Exception("Algorithmic error in RdfDiffCalc"))
+				val toDelete = deleteCand.getOrElse(algoError)
 
 				val deletedIri = rdfMaker.getIri(toDelete)
 				val replacementIri = rdfMaker.getIri(cpMap(key))
@@ -179,19 +180,25 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				val cpPredicates = rdfReader.getCpStatements(replacementIri).map(_.getPredicate)
 					.filterNot(multivaluePredicates.contains).toSet //multiple-value properties are possible
 
-				val (statementsToDelete, statementsToKeep) = rdfReader.getTcOnlyStatements(deletedIri)
-					.partition(st => cpPredicates.contains(st.getPredicate)) //CP statements override TCs'
+				val builder = diffBuilder
+				val tcOnlyStatsOld = rdfReader.getTcOnlyStatements(deletedIri)
+				val tcOnlyStatsNew = if deletedIri === replacementIri then tcOnlyStatsOld
+					else tcOnlyStatsOld.map(swapSubject(replacementIri))
+				if !(deletedIri === replacementIri) then
+					builder.update(tcOnlyStatsOld, Retraction)
+					builder.update(tcOnlyStatsNew, Assertion)
+				builder.update(tcOnlyStatsNew, WeakRetraction)
 
-				val renamingUpdates = if(deletedIri === replacementIri) Nil else {
-					statementsToKeep.map(RdfUpdate(_, false)) ++ statementsToKeep.map(swapSubject(replacementIri)).map(RdfUpdate(_, true))
-				}
+				val newStatements = rdfMaker.getStatements(toMap.getOrElse(key, algoError))
+					.filterNot(st => cpPredicates.contains(st.getPredicate))
+				builder.update(newStatements, Assertion)
 
-				val renamingUsages = if(deletedIri === replacementIri) Nil else {
+				//TODO Renaming usages has to be done globally in all RDF graphs
+				val renamingUsages = if deletedIri === replacementIri then Nil else
 					val usagesToRename = rdfReader.getTcOnlyUsages(deletedIri)
 					usagesToRename.map(RdfUpdate(_, false)) ++ usagesToRename.map(swapObject(replacementIri)).map(RdfUpdate(_, true))
-				}
 
-				renamingUpdates ++ renamingUsages ++ statementsToDelete.map(RdfUpdate(_, false))
+				builder.build ++ renamingUsages
 			}
 
 			new SequenceDiff(rdfDiff, cpIdLookup(keys, fromMap))
@@ -264,9 +271,11 @@ class RdfDiffBuilder(factory: ValueFactory):
 
 	private val allDiffs = mutable.Map.empty[SubjPred, Buffer[Diff]]
 
-	def update(stats: Seq[Statement], typ: UpdateType): Unit = stats.foreach: stat =>
-		val diffs = allDiffs.getOrElseUpdate(stat.getSubject -> stat.getPredicate, Buffer.empty[Diff])
-		diffs += stat.getObject -> typ
+	def update(stats: Seq[Statement], typ: UpdateType): RdfDiffBuilder =
+		stats.foreach: stat =>
+			val diffs = allDiffs.getOrElseUpdate(stat.getSubject -> stat.getPredicate, Buffer.empty[Diff])
+			diffs += stat.getObject -> typ
+		this
 
 	def build: Seq[RdfUpdate] =
 		val updates = for
@@ -279,7 +288,7 @@ class RdfDiffBuilder(factory: ValueFactory):
 			val stat = factory.createStatement(subj, pred, obj)
 			RdfUpdate(stat, isAssertion)
 		updates.toSeq
-	
+
 
 object RdfDiffBuilder:
 	case object Assertion

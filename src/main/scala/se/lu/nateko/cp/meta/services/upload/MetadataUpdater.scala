@@ -113,28 +113,18 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
 				|			a <${metaVocab.plainCollectionClass}> ;
 				|			<${metaVocab.isNextVersionOf}> [] .
-				|		BIND(
-				|			EXISTS {
+				|		?s ?p ?o .
+				|		FILTER (
+				|			NOT EXISTS {
 				|				?s <${metaVocab.dcterms.hasPart}> ?anotherNextVers
 				|				FILTER(?anotherNextVers != <$objUri>)
-				|			} AS ?multiNextVersion
+				|			} || ?p = <${metaVocab.dcterms.hasPart}> && ?o = <$objUri>
 				|		)
-				|		{
-				|			{
-				|				BIND(<${metaVocab.dcterms.hasPart}> AS ?p)
-				|				BIND(<$objUri> AS ?o)
-				|				FILTER (?multiNextVersion)
-				|			}
-				|			UNION
-				|			{
-				|				?s ?p ?o .
-				|				FILTER(! ?multiNextVersion)
-				|			}
-				|		}
 				|	}
 				|}
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
+			
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		end if
 	end getCurrentStatements

@@ -1,8 +1,7 @@
-package se.lu.nateko.cp.meta.services.sparql.index
+package se.lu.nateko.cp.meta.core.algo
 
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing java.time.Instant keys
@@ -25,11 +24,6 @@ object DatetimeHierarchicalBitmap{
 		given Geo[Long] = LongGeo(millisLookup)
 		new HierarchicalBitmap[Long](0, None)
 	}
-
-	def dataStart(idx: IndexData) = apply(value => idx.objs(value).dataStart)
-	def dataEnd(idx: IndexData) = apply(value => idx.objs(value).dataEnd)
-	def submStart(idx: IndexData) = apply(value => idx.objs(value).submissionStart)
-	def submEnd(idx: IndexData) = apply(value => idx.objs(value).submissionEnd)
 
 	class LongGeo(lookup: Int => Long) extends Geo[Long]{
 		private def this() = this(null)//for Kryo deserialization

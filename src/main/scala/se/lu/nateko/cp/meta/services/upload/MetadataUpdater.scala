@@ -128,18 +128,13 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|			UNION
 				|			{
 				|				?s ?p ?o .
-    |							FILTER(! ?multiNextVersion)
+				|				FILTER(! ?multiNextVersion)
 				|			}
 				|		}
 				|	}
 				|}
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
-			println(query)
-			val res = Await.result(Future(sparql.evaluateGraphQuery(query).toIndexedSeq), Duration.Inf)
-
-			println("current statements: " + res)
-
 			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
 		end if
 	end getCurrentStatements

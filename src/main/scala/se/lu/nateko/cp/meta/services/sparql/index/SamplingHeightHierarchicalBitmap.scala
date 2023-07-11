@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
-import HierarchicalBitmap.*
 import scala.annotation.tailrec
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
  * between -3000 and 3000 with precision of 0.001. Assumes limited number of discrete heights.
 */
 object SamplingHeightHierarchicalBitmap{
+	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 2
 

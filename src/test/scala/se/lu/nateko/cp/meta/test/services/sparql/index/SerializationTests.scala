@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.All
 import se.lu.nateko.cp.meta.services.sparql.index.CategFilter
 import se.lu.nateko.cp.meta.services.sparql.index.ContFilter
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.MinFilter
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.services.sparql.index.Property
 import se.lu.nateko.cp.meta.services.sparql.index.Station
 import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd

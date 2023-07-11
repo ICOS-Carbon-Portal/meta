@@ -15,9 +15,9 @@ import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceRes
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
 import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.EqualsFilter
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*

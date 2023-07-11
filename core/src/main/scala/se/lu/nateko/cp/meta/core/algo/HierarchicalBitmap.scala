@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.index
+package se.lu.nateko.cp.meta.core.algo
 
 import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala

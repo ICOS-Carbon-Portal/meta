@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
-import HierarchicalBitmap.*
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
  * algorithm are chosen so that the algorithm works correctly only for years from approximately 1420 AD to 2520 AD
 */
 object DatetimeHierarchicalBitmap{
+	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
 

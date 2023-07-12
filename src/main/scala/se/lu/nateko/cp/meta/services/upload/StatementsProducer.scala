@@ -65,8 +65,6 @@ class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: Cpme
 			else
 				makeSt(objectUri, metaVocab.isNextVersionOf, prevVersions.map(vocab.getStaticObject))
 
-		println("Next version statements: " + nextVersionStatements)
-
 		val specificStatements = meta match {
 			case dobj: DataObjectDto => getDobjStatements(dobj)
 			case doc: DocObjectDto => Seq(

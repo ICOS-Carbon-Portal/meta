@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.core.tests.algo
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.index.*
 
 import java.time.Instant
 import scala.jdk.CollectionConverters.IteratorHasAsScala

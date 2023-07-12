@@ -51,8 +51,6 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 			case _ => true
 		}
 
-		println("updates: " + ret)
-
 		ret
 	}
 }

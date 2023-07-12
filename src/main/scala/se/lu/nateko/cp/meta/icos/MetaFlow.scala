@@ -64,18 +64,15 @@ object MetaFlow:
 
 		def applyDiff[T <: TC : TcConf](tip: String)(state: TcState[T]): Unit = {
 			val diffV = diffCalc.calcDiff(state)
-			if(diffV.errors.isEmpty) {
-				diffV.foreach{updates =>
-					icosServer.applyAll(updates)().fold(
-						err => log.error(err, s"Problem applying $tip station-metadata diff"),
-						_ => log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
-					)
-				}
-			} else{
+			if diffV.errors.nonEmpty then
 				val nUpdates = diffV.result.fold(0)(_.size)
 				val errors = diffV.errors.distinct.mkString("\n")
 				log.warning(s"Error(s) calculating RDF diff (got $nUpdates updates) for $tip metadata:\n$errors")
-			}
+			for updates <- diffV do
+				icosServer.applyAll(updates)().fold(
+					err => log.error(err, s"Problem applying $tip station-metadata diff"),
+					_ => log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")
+				)
 		}
 
 		val stopAtc = atcSource.state.map{applyDiff[ATC.type]("ATC")}.to(Sink.ignore).run()

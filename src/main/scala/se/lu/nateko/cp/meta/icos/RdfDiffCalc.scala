@@ -192,7 +192,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				builder.update(tcStatsNew, WeakRetraction) // new TC statements will take over, if any are available
 				builder.update(tcStatsNew.filterByPredicate(cpExclusivePredicates), Retraction) // CP has taken over these
 
-				val newStatements = toMap.get(key).map(rdfMaker.getStatements).getOrElse(Nil)
+				val newStatements = toMap.get(key)
+					.map(_.withCpId(cpMap(key).cpId))
+					.map(rdfMaker.getStatements)
+					.getOrElse(Nil)
 					.filterByPredicate(p => !cpExclusivePredicates.contains(p)) // do not override what CP is saying
 				builder.update(newStatements, Assertion)
 

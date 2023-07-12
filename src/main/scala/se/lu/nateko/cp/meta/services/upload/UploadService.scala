@@ -46,7 +46,7 @@ class UploadService(
 	private val completer = new UploadCompleter(servers, handles)
 	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab, sparql)
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
-	private val statementProd = new StatementsProducer(vocab, metaVocab)
+	private def statementProd(server: InstanceServer) = new StatementsProducer(server, vocab, metaVocab)
 
 	def registerUpload(meta0: ObjectUploadDto, uploader: UserId)(using Envri): Future[AccessUri] = {
 		val metaAndSubmitterTry = for(
@@ -81,7 +81,7 @@ class UploadService(
 			submitterConf <- validator.getSubmitterConfig(coll);
 			submittingOrg = submitterConf.submittingOrganization;
 			collIri = vocab.getCollection(collHash);
-			newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg);
+			newStatements = statementProd(server).getCollStatements(coll, collIri, submittingOrg);
 			oldStatements = server.getStatements(collIri);
 			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
 			_ <- server.applyAll(updates)()
@@ -103,7 +103,7 @@ class UploadService(
 		for
 			server <- Future.fromTry(serverTry);
 			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
-			newStatements = statementProd.getObjStatements(dto, submittingOrg);
+			newStatements = statementProd(server).getObjStatements(dto, submittingOrg);
 			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
 			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
 			_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");

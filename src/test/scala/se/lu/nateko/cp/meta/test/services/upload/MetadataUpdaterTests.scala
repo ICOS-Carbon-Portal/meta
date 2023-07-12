@@ -63,11 +63,9 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 
 	def getProvenanceTriples(objHash: Sha256Sum, obj: IRI, setup: Setup): Seq[(IRI, IRI, Value)] =
 		val submissionUri = setup.cpVocab.getSubmission(objHash)
-		val acquisitionUri = setup.cpVocab.getAcquisition(objHash)
 		val submittingOrg = "http://meta.icos-cp.eu/resources/organizations/CP"
 
 		Seq(
-			(obj, setup.metaVocab.wasAcquiredBy, acquisitionUri),
 			(submissionUri, RDF.TYPE, setup.metaVocab.submissionClass),
 			(submissionUri, setup.metaVocab.prov.startedAtTime, setup.cpVocab.lit(Instant.now)),
 			(submissionUri, setup.metaVocab.prov.wasAssociatedWith, setup.factory.createIRI(submittingOrg)),
@@ -116,7 +114,7 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 				updater.getCurrentStatements(newHash2, server).map: stats =>
 					assert(stats.size === 4)
 
-		describe("single object with provenance"):
+		describe("one object with provenance being deprecated by another"):
 			val setup = initTestSetup
 			import setup.*
 			val objHash = hash("old_vJN69j6rRPKxTbJZckEa")
@@ -128,16 +126,17 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 			val newVTriples: Seq[(IRI, IRI, Value)] =
 				getObjTriples(newObjHash, "new_1_file_name.txt", setup, withProvenance = true)
 
-			Given("single object with submission & acquisition provenance")
+			Given("single object with submission provenance")
 			server.addAll(initTriples.map(factory.createStatement.tupled))
 
-			it("object props, acquisition and submission provenance"):
+			it("returns own object props and submission provenance"):
 				updater.getCurrentStatements(objHash, server).map: stats =>
-					assert(stats.size === 6) //file name, submission provenance triples, acquisition provenance triples
+					assert(stats.size === 5) //file name, submission provenance triples, acquisition provenance triples
 
-			When("new version of object")
-			it("returned triples don't include old version"): 
+			When("new version of the object is added, and the new object is queried")
+			it("returns triples with deprecation link but without old object's statements"): 
 				server.addAll(newVTriples.map(factory.createStatement.tupled))
+				server.add(factory.createStatement(cpVocab.getStaticObject(newObjHash), metaVocab.isNextVersionOf, cpVocab.getStaticObject(objHash)))
 
 				updater.getCurrentStatements(newObjHash, server).map: stats =>
 					assert(stats.size === 6) //file name, submission provenance triples, acquisition provenance triples

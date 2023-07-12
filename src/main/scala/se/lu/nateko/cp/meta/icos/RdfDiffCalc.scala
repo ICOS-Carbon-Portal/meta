@@ -107,7 +107,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		rdfMaker.createStatement(stat.getSubject, stat.getPredicate, obj)
 
 
-	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T] = {
+	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T] =
 
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
@@ -162,9 +162,8 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			new SequenceDiff(Nil, idLookup)
 		}
 
-		val existingAppearedInCp = {
-			val keys = cpKeys.intersect(fromKeys).intersect(toKeys).toSeq
-			def algoError: Nothing = throw Exception("Algorithmic error in RdfDiffCalc")
+		val existingAppearedInCp =
+			val keys = cpKeys.intersect(fromKeys).toSeq
 
 			val rdfDiff = keys.flatMap{key =>
 
@@ -172,40 +171,44 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				val deleteCand: Option[E] = if(deleteCands.size > 1)
 						deleteCands.find(e => e.cpId != cpMap(key).cpId) //should delete TC's that has different URI than CP's
 					else deleteCands.headOption
-				val toDelete = deleteCand.getOrElse(algoError)
+				val toDelete = deleteCand.getOrElse(throw Exception("Algorithmic error in RdfDiffCalc"))
 
 				val deletedIri = rdfMaker.getIri(toDelete)
 				val replacementIri = rdfMaker.getIri(cpMap(key))
 
-				val cpPredicates = rdfReader.getCpStatements(replacementIri).map(_.getPredicate)
-					.filterNot(multivaluePredicates.contains).toSet //multiple-value properties are possible
-
 				val builder = diffBuilder
-				val tcOnlyStatsOld = rdfReader.getTcOnlyStatements(deletedIri)
-				val tcOnlyStatsNew = if deletedIri === replacementIri then tcOnlyStatsOld
-					else tcOnlyStatsOld.map(swapSubject(replacementIri))
-				if !(deletedIri === replacementIri) then
-					builder.update(tcOnlyStatsOld, Retraction)
-					builder.update(tcOnlyStatsNew, Assertion)
-				builder.update(tcOnlyStatsNew, WeakRetraction)
+				val tcStatsOld = rdfReader.getTcStatements(deletedIri)
+				val tcStatsNew = if deletedIri === replacementIri then tcStatsOld
+					else tcStatsOld.map(swapSubject(replacementIri))
 
-				val newStatements = rdfMaker.getStatements(toMap.getOrElse(key, algoError))
-					.filterNot(st => cpPredicates.contains(st.getPredicate))
+				if !(deletedIri === replacementIri) then
+					builder.update(tcStatsOld, Retraction)
+					builder.update(tcStatsNew, Assertion)
+
+				val cpOwnStatements = rdfReader.getCpStatements(replacementIri).toIndexedSeq
+				val cpExclusivePredicates = cpOwnStatements.iterator.map(_.getPredicate).filterNot(multivaluePredicates.contains).toSet
+
+				builder.update(tcStatsNew, WeakRetraction) // new TC statements will take over, if any are available
+				builder.update(tcStatsNew.filterByPredicate(cpExclusivePredicates), Retraction) // CP has taken over these
+
+				val newStatements = toMap.get(key).map(rdfMaker.getStatements).getOrElse(Nil)
+					.filterByPredicate(p => !cpExclusivePredicates.contains(p)) // do not override what CP is saying
 				builder.update(newStatements, Assertion)
 
-				//TODO Renaming usages has to be done globally in all RDF graphs
+				//TODO Renaming usages has to be also done globally in all RDF graphs
 				val renamingUsages = if deletedIri === replacementIri then Nil else
-					val usagesToRename = rdfReader.getTcOnlyUsages(deletedIri)
+					val usagesToRename = rdfReader.getTcUsages(deletedIri)
 					usagesToRename.map(RdfUpdate(_, false)) ++ usagesToRename.map(swapObject(replacementIri)).map(RdfUpdate(_, true))
-
 				builder.build ++ renamingUsages
 			}
 
 			new SequenceDiff(rdfDiff, cpIdLookup(keys, fromMap))
-		}
+
+		end existingAppearedInCp
 
 		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp).join
-	}
+
+	end diff
 
 	def rolesDiff[T <: TC](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
 		val cpMap = cp.groupBy(m => m.role.id)
@@ -248,7 +251,7 @@ class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup:
 	)
 }
 
-object SequenceDiff{
+object SequenceDiff:
 
 	def empty[T <: TC] = new SequenceDiff[T](Nil, Map.empty)
 
@@ -259,11 +262,13 @@ object SequenceDiff{
 			new SequenceDiff(rdfDiff, lookup)
 		}
 
-
 	extension (rdfupd: Seq[RdfUpdate])
 		def toSeqDiff[T <: TC] = new SequenceDiff[T](rdfupd, Map.empty)
 
-}
+	extension (stats: Iterable[Statement])
+		def filterByPredicate(in: IRI => Boolean): Iterable[Statement] = stats.filter(s => in(s.getPredicate))
+
+end SequenceDiff
 
 class RdfDiffBuilder(factory: ValueFactory):
 	import RdfDiffBuilder.*
@@ -271,7 +276,7 @@ class RdfDiffBuilder(factory: ValueFactory):
 
 	private val allDiffs = mutable.Map.empty[SubjPred, Buffer[Diff]]
 
-	def update(stats: Seq[Statement], typ: UpdateType): RdfDiffBuilder =
+	def update(stats: Iterable[Statement], typ: UpdateType): RdfDiffBuilder =
 		stats.foreach: stat =>
 			val diffs = allDiffs.getOrElseUpdate(stat.getSubject -> stat.getPredicate, Buffer.empty[Diff])
 			diffs += stat.getObject -> typ

@@ -18,7 +18,7 @@ import RdfDiffCalcTests.*
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import eu.icoscp.envri.Envri
 
-class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
+class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	given EnvriConfigs = Map(
 		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
@@ -205,21 +205,27 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 	}
 
 	describe("TC adds ORCID id info to a person that CP took responsibility for"):
-		Given("starting with a single org with single researcher without ORCID, described by CP's own metadata")
+		Given("starting with a single org with single researcher without ORCID, described by both CP and TC")
 		val initSnap = atcInitSnap(jane)
 		val state = init(initSnap :: Nil, _.getStatements(jane))
+		When("a no-change metadata update comes")
 		val initUpdates = state.calc.calcDiff(initSnap).result.get
-		initUpdates.foreach(println)
 		state.tcServer.applyAll(initUpdates)()
+		it("erases all the duplicate statements about the researcher from the TC/ICOS RDF graph"):
+			assert(initUpdates.length === 5)
+			assert(initUpdates.forall(_.isAssertion == false))
 
 		When("a new TC metadata snapshot comes, where the researcher got an ORCID id")
-		val janeWithOrcid = jane.copy(orcid = Orcid.unapply("0000-0002-4742-958X"))
+		val orcidStr = "0000-0002-4742-958X"
+		val janeWithOrcid = jane.copy(orcid = Orcid.unapply(orcidStr))
 		val snapWithOrcid = atcInitSnap(janeWithOrcid)
 
-		it("results in a single-statement update"):
+		it("results in a single-triple ORCID info update"):
 			val updates = state.calc.calcDiff(snapWithOrcid).result.get.toIndexedSeq
-			updates.foreach(println)
 			assert(updates.size === 1)
+			val theUpdate = updates.head
+			assert(theUpdate.isAssertion)
+			assert(theUpdate.statement.getObject.stringValue.endsWith(orcidStr))
 
 
 	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
@@ -242,18 +248,17 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen{
 		new TestState(new RdfDiffCalc(rdfMaker, rdfReader), rdfReader, rdfMaker, tcServer, cpServer)
 	}
 
-	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] = {
-		implicit val tcConf = state.tcConf
-		state.stations.flatMap(rdfMaker.getStatements[T]) ++
-		state.roles.flatMap(rdfMaker.getStatements[T]) ++
-		state.instruments.flatMap(rdfMaker.getStatements[T])
-	}
+	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
+		given TcConf[T] = state.tcConf
+		state.stations.flatMap(rdfMaker.getStatements) ++
+		state.roles.flatMap(rdfMaker.getStatements) ++
+		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
+		state.instruments.flatMap(rdfMaker.getStatements)
 
-}
+end RdfDiffCalcTests
 
-object RdfDiffCalcTests{
+object RdfDiffCalcTests:
 	class TestState(
 		val calc: RdfDiffCalc, val reader: RdfReader, val maker: RdfMaker,
 		val tcServer: InstanceServer, val cpServer: InstanceServer
 	)
-}

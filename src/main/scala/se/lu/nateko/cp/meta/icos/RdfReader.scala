@@ -33,15 +33,11 @@ class RdfReader(cpInsts: InstanceServer, tcInsts: InstanceServer, plainFetcher: 
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = tcMetasFetcher.getCurrentState[T]
 
-	def getTcOnlyUsages(iri: IRI): IndexedSeq[Statement] = minus(
-		tcInsts.getStatements(None, None, Some(iri)).map(stripContext),
-		cpInsts.getStatements(None, None, Some(iri)).map(stripContext)
-	)
+	def getTcUsages(iri: IRI): IndexedSeq[Statement] =
+		tcInsts.getStatements(None, None, Some(iri)).map(stripContext).toIndexedSeq
 
-	def getTcOnlyStatements(iri: IRI): IndexedSeq[Statement] = minus(
-		tcInsts.getStatements(Some(iri), None, None).map(stripContext),
-		getCpStatements(iri)
-	)
+	def getTcStatements(iri: IRI): IndexedSeq[Statement] =
+		tcInsts.getStatements(Some(iri), None, None).map(stripContext).toIndexedSeq
 
 	def getCpStatements(iri: IRI): Iterator[Statement] =
 		cpInsts.getStatements(Some(iri), None, None).map(stripContext)

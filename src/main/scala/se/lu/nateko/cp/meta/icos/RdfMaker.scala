@@ -39,7 +39,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 			(uri, RDFS.LABEL, vocab.lit(label)) +:
 			(uri, meta.atOrganization, getIri(org)) +:
 			(uri, meta.hasRole, vocab.getRole(role)) +:
-			(getIri(memb.role.holder), meta.hasMembership, uri) +:
+			(getIri(holder), meta.hasMembership, uri) +:
 			memb.start.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))
 			} ++:

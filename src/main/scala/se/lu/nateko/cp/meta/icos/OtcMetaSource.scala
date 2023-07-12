@@ -1,14 +1,5 @@
 package se.lu.nateko.cp.meta.icos
 
-import java.time.Instant
-import java.time.LocalDate
-
-import scala.concurrent.duration.DurationInt
-import scala.util.Try
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
-
 import akka.actor.ActorRef
 import akka.actor.Status
 import akka.event.LoggingAdapter
@@ -16,18 +7,27 @@ import akka.stream.OverflowStrategy
 import akka.stream.ThrottleMode
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Source
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import org.eclipse.rdf4j.query.BindingSet
+import se.lu.nateko.cp.meta.api.CustomVocab
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.time.Instant
+import java.time.LocalDate
+import scala.concurrent.duration.DurationInt
+import scala.util.Try
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -231,10 +231,12 @@ class OtcMetaSource(
 		|}""".stripMargin
 
 		getLookup(q, "role"){(b, tcId) =>
+			val orgIri = b.getValue("org").asInstanceOf[IRI]
+			inline def orgError = s"Organization $orgIri not found, maybe it's a station without a platform deployment"
 			val role = new AssumedRole[O](
 				kind = otcVocab.Roles.map(b.getValue("roleKind").asInstanceOf[IRI]),
 				holder = pers(b.getValue("person").asInstanceOf[IRI]),
-				org = orgs(b.getValue("org").asInstanceOf[IRI]),
+				org = orgs.get(orgIri).getOrElse(throw MetadataException(orgError)),
 				weight = Option(b.getValue("weight")).map(_.stringValue.toInt),
 				extra = None
 			)

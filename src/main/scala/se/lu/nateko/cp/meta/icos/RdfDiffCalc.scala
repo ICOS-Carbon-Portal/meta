@@ -70,9 +70,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val instrDiff = diff[T, TcInstrument[T]](current.instruments, tcInstrs, Nil)
 
-		val tcPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
-		val cpPeople = uniqBestId(current.roles.map(_.role.holder))
-		val peopleDiff = diff[T, TcPerson[T]](cpPeople, tcPeople, cpOwnPeople)
+		val toPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
+		val fromPeople = uniqBestId(current.roles.map(_.role.holder))
+		val peopleDiff = diff[T, TcPerson[T]](fromPeople, toPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
 			role.kind,
@@ -112,6 +112,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
 
+		//TODO This looks like it can be replaced by simply `cpMap.mapValues(_.cpId)` for all inputs
 		def cpIdLookup(keys: Iterable[TcId[T]], map: Map[TcId[T], E]): Map[TcId[T], UriId] = keys.collect{
 			case key if map(key).cpId != cpMap(key).cpId => key -> cpMap(key).cpId
 		}.toMap

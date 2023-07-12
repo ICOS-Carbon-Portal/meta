@@ -172,6 +172,7 @@ private class IcosMetaInstancesFetcher(
 
 	private def getPerson[T <: TC](tcId: Option[TcId[T]], uri: IRI): TcPerson[T] = {
 		val core: Person = getPerson(uri)
+		//TODO User core: Person in TcPerson more/directly (email, orcid are there now)
 		val email = getOptionalString(uri, metaVocab.hasEmail)
 		val orcid = getOptionalString(uri, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
 		TcPerson[T](UriId(uri), tcId, core.firstName, core.lastName, email, orcid)

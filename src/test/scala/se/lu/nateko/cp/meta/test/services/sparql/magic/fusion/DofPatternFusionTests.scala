@@ -10,12 +10,12 @@ import org.eclipse.rdf4j.query.algebra.FunctionCall
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.ValueConstant
 
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.IntervalFilter
 import se.lu.nateko.cp.meta.services.sparql.index.*
+import HierarchicalBitmap.{EqualsFilter, IntervalFilter}
 import PatternFinder.*
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.EqualsFilter
 
 object ChosenTest extends Tag("fusion.ChosenTest")
 

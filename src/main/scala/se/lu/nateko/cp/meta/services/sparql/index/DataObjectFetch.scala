@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.index
 import scala.language.implicitConversions
 import org.eclipse.rdf4j.model.IRI
 
-import HierarchicalBitmap.FilterRequest
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 
 case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
 

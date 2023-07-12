@@ -12,12 +12,14 @@ import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -117,10 +119,10 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		case FileName =>        StringHierarchicalBitmap.fileName(data)
 		case FileSize =>        FileSizeHierarchicalBitmap(data)
 		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(data)
-		case DataStart =>       DatetimeHierarchicalBitmap.dataStart(data)
-		case DataEnd =>         DatetimeHierarchicalBitmap.dataEnd(data)
-		case SubmissionStart => DatetimeHierarchicalBitmap.submStart(data)
-		case SubmissionEnd =>   DatetimeHierarchicalBitmap.submEnd(data)
+		case DataStart =>       data.dataStartBm
+		case DataEnd =>         data.dataEndBm
+		case SubmissionStart => data.submStartBm
+		case SubmissionEnd =>   data.submEndBm
 	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
@@ -541,6 +543,10 @@ object CpIndex:
 		val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
 		val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
 		val initOk = emptyBitmap
+		def dataStartBm = DatetimeHierarchicalBitmap(i => objs(i).dataStart)
+		def dataEndBm = DatetimeHierarchicalBitmap(i => objs(i).dataEnd)
+		def submStartBm = DatetimeHierarchicalBitmap(i => objs(i).submissionStart)
+		def submEndBm = DatetimeHierarchicalBitmap(i => objs(i).submissionEnd)
 	}
 
 	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{

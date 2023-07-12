@@ -28,11 +28,13 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 import java.net.URI
 import java.time.Instant
+import scala.collection.mutable.Buffer
 
-class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
+class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private given factory: ValueFactory = vocab.factory
 
@@ -52,12 +54,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 					case Seq() => Iterable.empty
 					case Seq(v) =>
 						val collIri = vocab.getNextVersionColl(v)
+						val isTheOnlyNextVersion = server.getValues(collIri, dct.hasPart).filter(_ != objectUri).isEmpty
+						val statements = Buffer(makeSt(collIri, dct.hasPart, objectUri))
 
-						Iterable(
-							makeSt(collIri, metaVocab.isNextVersionOf, vocab.getStaticObject(v)),
-							makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass),
-							makeSt(collIri, dct.hasPart, objectUri)
-						)
+						if isTheOnlyNextVersion then
+							statements += makeSt(collIri, metaVocab.isNextVersionOf, vocab.getStaticObject(v))
+							statements += makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass)
+						statements.toIndexedSeq
 					case _ => throw UploadUserErrorException("Partial upload to multiple previous versions is not supported")
 			else
 				makeSt(objectUri, metaVocab.isNextVersionOf, prevVersions.map(vocab.getStaticObject))

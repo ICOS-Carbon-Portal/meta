@@ -5,8 +5,8 @@ import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 
 import java.time.Instant
 
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.*
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.*
 

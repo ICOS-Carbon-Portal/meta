@@ -1,13 +1,14 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
-import HierarchicalBitmap.*
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing file sizes in bytes
 */
 object FileSizeHierarchicalBitmap{
+	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
 

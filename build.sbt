@@ -14,12 +14,13 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtTsGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.12",
+		version := "0.7.14",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
+			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(
@@ -112,7 +113,6 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
-			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.27",
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.0",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",

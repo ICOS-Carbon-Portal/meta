@@ -1,0 +1,12 @@
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?memb ?membProp ?membVal .
+	?pers cpmeta:hasMembership ?memb
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	?memb a cpmeta:Membership .
+	filter not exists{?memb cpmeta:atOrganization ?org }
+	?memb ?membProp ?membVal .
+	optional{?pers cpmeta:hasMembership ?memb}
+}

@@ -22,7 +22,7 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 	import maker.sparqlHelper.sparql
 
 	def makeColls(): Future[Done] = for(
-		stationToColl <- sparql.select(stationCollsQuery("2021-05-24", "2021-05-27")).map(parseStationColls);
+		stationToColl <- sparql.select(stationCollsQuery("2022-07-07", "2022-09-22")).map(parseStationColls);
 		stationToItems <- sparql.select(dobjStationQuery).map(parseStationObjs);
 		done <- executeSequentially(stationToItems){
 			(makeStationColl(stationToColl) _).tupled
@@ -35,10 +35,11 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 			val dobjUris = items.map.values.flatten.toSeq
 			val doneFutOpt = for(
 				l2 <- sampleDobjs.head.specificInfo.toOption;
-				hash <- UploadService.collectionHash(dobjUris).toOption
+				hash <- UploadService.collectionHash(dobjUris).toOption;
+				prevCol <- prevColLookup.get(l2.acquisition.station.org.self.uri)
 			) yield {
 				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
-				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevColLookup)
+				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevCol)
 				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
 				// println(dto)
 				// println(doiMeta)
@@ -94,7 +95,7 @@ object AtcCollMaker{
 			creators = creators :+ icosRiCreator,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(2022),
+			publicationYear = Some(2023),
 			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
@@ -113,15 +114,15 @@ object AtcCollMaker{
 		)
 	}
 
-	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColLookup: Map[URI, URI]) = StaticCollectionDto(
+	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevCol: URI) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2022-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2023-1",
 		description = Some(
 			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, and Meteorological Observations, " +
-			s"period up to March 2022, station ${station.org.name}, final quality controlled Level 2 data, release 2022-1"
+			s"period up to March 2023, station ${station.org.name}, final quality controlled Level 2 data, release 2023-1"
 		),
-		isNextVersionOf = prevColLookup.get(station.org.self.uri).flatMap(getHashSuff).map(Left(_)),
+		isNextVersionOf = getHashSuff(prevCol).map(Left(_)),
 		preExistingDoi = Some(doi)
 	)
 
@@ -134,7 +135,15 @@ object AtcCollMaker{
 prefix prov: <http://www.w3.org/ns/prov#>
 select ?dobj ?station ?spec #?fileName
 where {
-	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject>}
+	VALUES ?spec {
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject>
+	}
 	?dobj cpmeta:hasObjectSpec ?spec .
 	?dobj cpmeta:hasSizeInBytes ?size .
 	#?dobj cpmeta:hasName ?fileName .
@@ -155,6 +164,7 @@ prefix dcterms: <http://purl.org/dc/terms/>
 prefix prov: <http://www.w3.org/ns/prov#>
 select distinct ?coll ?station where{
 	?coll a cpmeta:Collection .
+	filter not exists {[] cpmeta:isNextVersionOf ?coll}
 	?coll dcterms:hasPart ?dobj .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 	filter exists{

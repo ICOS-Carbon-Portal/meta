@@ -29,15 +29,17 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 		}
 	) yield done
 
-	def makeStationColl(prevColLookup: Map[URI, URI])(station: URI, items: SpecDobjs): Future[Done] = {
+	def makeStationColl(prevColLookup: Map[URI, URI])(stationUri: URI, items: SpecDobjs): Future[Done] = {
 		val sampleUris = items.map.values.map(_.head)
 		traverseFut(sampleUris)(uploader.fetchDataObject).flatMap{sampleDobjs =>
 			val dobjUris = items.map.values.flatten.toSeq
-			val doneFutOpt = for(
+			val doneFutOpt = for
 				l2 <- sampleDobjs.head.specificInfo.toOption;
+				station = l2.acquisition.station;
+				//if Set("CBW", "IZO") contains station.id;
 				hash <- UploadService.collectionHash(dobjUris).toOption;
-				prevCol <- prevColLookup.get(l2.acquisition.station.org.self.uri)
-			) yield {
+				prevCol = prevColLookup.get(station.org.self.uri)
+			yield
 				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
 				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevCol)
 				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
@@ -45,15 +47,13 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 				// println(doiMeta)
 				// println(s"done for $station")
 				// ok
-				for(
+				for
 					_ <- uploader.uploadSingleCollMeta(dto);
-					_ = println(s"collection created for $station");
+					_ = println(s"collection created for $stationUri");
 					_ <- maker.client.putMetadata(doiMeta)
-				) yield {
-					println(s"minted DOI; done for $station")
+				yield
+					println(s"minted DOI; done for $stationUri")
 					Done
-				}
-			}
 			doneFutOpt.getOrElse(ok)
 		}
 	}
@@ -114,7 +114,7 @@ object AtcCollMaker{
 		)
 	}
 
-	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevCol: URI) = StaticCollectionDto(
+	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
 		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2023-1",
@@ -122,7 +122,7 @@ object AtcCollMaker{
 			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, and Meteorological Observations, " +
 			s"period up to March 2023, station ${station.org.name}, final quality controlled Level 2 data, release 2023-1"
 		),
-		isNextVersionOf = getHashSuff(prevCol).map(Left(_)),
+		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi)
 	)
 

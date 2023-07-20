@@ -196,7 +196,8 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			Some(emptyBitmap)
 	}
 
-	private def negate(bm: ImmutableRoaringBitmap) = ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
+	private def negate(bm: ImmutableRoaringBitmap) =
+		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
 
 	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
 		var condHappened = false

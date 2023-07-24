@@ -1,0 +1,22 @@
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+construct{
+	?ds ?dsPred ?dsObj .
+	?col ?colPred ?colObj .
+	?valType ?vtypePred ?vtypeObj .
+	?qkind ?qkindPred ?qkindObj .
+}
+where{
+	bind (<http://meta.icos-cp.eu/resources/cpmeta/etcFluxesDataset> as ?ds)
+	?ds ?dsPred ?dsObj .
+	?ds cpmeta:hasColumn ?col .
+	?col ?colPred ?colObj .
+	OPTIONAL{
+		?col cpmeta:hasValueType ?valType .
+		?valType ?vtypePred ?vtypeObj .
+		OPTIONAL{
+			?valType cpmeta:hasQuantityKind ?qkind .
+			?qkind ?qkindPred ?qkindObj .
+		}
+	}
+}

@@ -86,7 +86,7 @@ case class EtcConfig(
 	saheatObjSpecId: String,
 	phenocamObjSpecId: String,
 	metaService: URI,
-	ingestFileMetaAtStart: Boolean
+	ingestFileMeta: Boolean
 )
 
 case class UploadServiceConfig(

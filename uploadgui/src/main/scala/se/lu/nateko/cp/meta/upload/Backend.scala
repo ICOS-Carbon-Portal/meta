@@ -104,7 +104,7 @@ object Backend {
 		//TODO Find a good place for the ZIP obj format URI constant
 		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
 
-		if(spec.isStationTimeSer || firstVarName.isDefined || isZip){
+		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>

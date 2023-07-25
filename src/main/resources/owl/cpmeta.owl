@@ -3339,6 +3339,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/badmIF -->
+
+    <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/badmIF">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label>BADM Interchange Format</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/binEtcRawTimeSer -->
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/binEtcRawTimeSer">

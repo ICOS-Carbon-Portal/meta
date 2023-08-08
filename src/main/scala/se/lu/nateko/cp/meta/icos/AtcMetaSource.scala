@@ -132,6 +132,7 @@ object AtcMetaSource{
 		"belgium"         -> "BE",
 		"czech republic"  -> "CZ",
 		"denmark"         -> "DK",
+		"estonia"         -> "EE",
 		"finland"         -> "FI",
 		"france"          -> "FR",
 		"germany"         -> "DE",

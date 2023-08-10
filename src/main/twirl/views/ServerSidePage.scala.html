@@ -6,7 +6,6 @@
 @(
 	title: String,
 	header: Option[String],
-	menu: Seq[CpMenuItem] = CpMenu.default,
 	headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
 	bootstrapJavascript: Boolean = false,
@@ -14,7 +13,7 @@
 	breadcrumbs: Option[Html] = None,
 	tabs: Option[Html] = None
 )(body: Html)(implicit envri: Envri, conf: EnvriConfig)
-@template{
+@CommonPage(title, bootstrapJavascript){
 	@extraMetaTags
 	@LandingPageStyle()
 }{
@@ -23,9 +22,4 @@
 		@pageHeader(header, headerExtra, subHeading, tabs)
 	}
 	@body
-}
-
-@template = @{
-	if(envri == Envri.SITES) SitesPage(title, bootstrapJavascript) _
-	else CpCommonPage(title, menu, bootstrapJavascript) _
 }

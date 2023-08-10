@@ -3,14 +3,13 @@
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiTitle
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.doi.meta.Title
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import landpagesnips._
 @import eu.icoscp.envri.Envri
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, Some(getDoiTitle(coll.references).getOrElse(coll.title)), CpMenu.default, headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, Some(getDoiTitle(coll.references).getOrElse(coll.title)), headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		@newerVersionsAlert(coll, "Collection")
 		@doiMetaAlerts(coll.doi, coll.references.doi)

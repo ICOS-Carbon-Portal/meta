@@ -2585,6 +2585,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/IcosCitiesStation -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/IcosCitiesStation">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:label>ICOS Cities station</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation">

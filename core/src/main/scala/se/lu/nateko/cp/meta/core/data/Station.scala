@@ -22,6 +22,11 @@ case class Station(
 		case single :: Nil => Some(single)
 		case multiple => Some(FeatureCollection(multiple, Some(org.name), None).flatten) // ?
 	}
+
+	def timeZoneOffset: Option[Int] = specificInfo match
+		case icos: IcosStationSpecifics => icos.timeZoneOffset
+		case cities: IcosCitiesStationSpecifics => cities.timeZoneOffset
+		case _: SitesStationSpecifics | NoStationSpecifics => None
 }
 
 case class Funding(
@@ -115,6 +120,8 @@ case class EtcStationSpecifics(
 ) extends IcosStationSpecifics with EcoStationSpecifics{
 	override def ecosystems = ecosystemType.toSeq
 }
+
+case class IcosCitiesStationSpecifics(timeZoneOffset: Option[Int]) extends StationSpecifics
 
 object EtcStationSpecifics{
 	def apply(base: IcosStationSpecifics): EtcStationSpecifics = EtcStationSpecifics(

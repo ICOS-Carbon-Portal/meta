@@ -233,11 +233,13 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
 	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
+	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat1(IcosCitiesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"
 	private val EtcSpec = "etc"
 	private val OtcSpec = "otc"
 	private val SitesSpec = "sites"
+	private val CitiesSpec = "cities"
 	given RootJsonFormat[StationSpecifics] with{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
@@ -245,6 +247,7 @@ object JsonSupport extends CommonJsonSupport{
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
 			case etc: OtcStationSpecifics => etc.toTypedJson(OtcSpec)
 			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
+			case cities: IcosCitiesStationSpecifics => cities.toTypedJson(CitiesSpec)
 		}
 
 		def read(value: JsValue) =
@@ -253,6 +256,7 @@ object JsonSupport extends CommonJsonSupport{
 				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
 				case Some(JsString(OtcSpec)) => value.convertTo[OtcStationSpecifics]
 				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
+				case Some(JsString(CitiesSpec)) => value.convertTo[IcosCitiesStationSpecifics]
 				case None => NoStationSpecifics
 				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
 			}

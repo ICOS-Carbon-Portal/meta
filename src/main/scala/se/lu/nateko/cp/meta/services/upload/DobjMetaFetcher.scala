@@ -99,6 +99,9 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			)
 		else if(server.resourceHasType(stat, metaVocab.oceStationClass))
 			getBasicIcosSpecifics(stat, vocab.otc)
+
+		else if(server.resourceHasType(stat, metaVocab.cityStationClass))
+			IcosCitiesStationSpecifics(timeZoneOffset = getOptionalInt(stat, metaVocab.hasTimeZoneOffset))
 		else NoStationSpecifics
 	}
 

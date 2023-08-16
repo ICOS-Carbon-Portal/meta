@@ -117,16 +117,6 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			get{
 				import spray.json.*
-				//TODO Remove this when data with update meta-core dependency is deployed
-				path("etc" / "utcOffset"){
-					parameter("stationId"){
-						case StationId(stationId) =>
-							val offsetJs = service.etcHelper.etcMeta.getUtcOffset(stationId).fold[JsValue](JsNull)(JsNumber(_))
-							complete(offsetJs)
-						case notStation =>
-							complete(StatusCodes.BadRequest -> s"$notStation is not a proper ICOS ETC station id")
-					}
-				} ~
 				extractEnvri { implicit envri =>
 					import MetaCoreConfig.given
 					path("envri"){

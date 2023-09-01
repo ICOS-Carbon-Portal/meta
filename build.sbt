@@ -11,7 +11,7 @@ val commonScalacOptions = Seq(
 )
 
 lazy val metaCore = (project in file("core"))
-	.enablePlugins(IcosCpSbtTsGenPlugin)
+	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(
 		name := "meta-core",
 		version := "0.7.15",
@@ -31,15 +31,25 @@ lazy val metaCore = (project in file("core"))
 			"Orcid" -> "string",
 			"JsValue" -> "object",
 			"DoiMeta" -> "object",
-			"CountryCode" -> "string"
+			"CountryCode" -> "string",
 		),
-		cpTsGenSources := {
+		cpCodeGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
 			Seq(
 				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
 				dir / "Station.scala", dir / "Instrument.scala", dir / "package.scala"
 			)
 		},
+		cpPyGenTypeMap := Map(
+			"URI" -> "str",
+			"Instant" -> "str",
+			"LocalDate" -> "str",
+			"Sha256Sum" -> "str",
+			"Orcid" -> "str",
+			"JsValue" -> "object",
+			"DoiMeta" -> "object",
+			"CountryCode" -> "str"
+		),
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"
 			if (isSnapshot.value)

@@ -44,8 +44,6 @@ enum FunderIdType:
 
 case class Funder(org: Organization, id: Option[(String, FunderIdType)])
 
-sealed trait StationSpecifics
-
 case object NoStationSpecifics extends StationSpecifics
 
 sealed trait EcoStationSpecifics extends StationSpecifics{
@@ -71,6 +69,8 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def timeZoneOffset: Option[Int]
 	def documentation: Seq[PlainStaticObject]
 }
+
+sealed trait StationSpecifics
 
 case class AtcStationSpecifics(
 	wigosId: Option[String],

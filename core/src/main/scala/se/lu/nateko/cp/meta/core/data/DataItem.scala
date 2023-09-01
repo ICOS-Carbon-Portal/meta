@@ -4,8 +4,6 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
-sealed trait DataItem
-
 sealed trait StaticDataItem extends DataItem:
 	def res: URI
 	def hash: Sha256Sum
@@ -22,6 +20,8 @@ sealed trait DataItemCollection extends DataItem {
 	def description: Option[String]
 	def doi: Option[String]
 }
+
+sealed trait DataItem
 
 final case class StaticCollection(
 	res: URI,

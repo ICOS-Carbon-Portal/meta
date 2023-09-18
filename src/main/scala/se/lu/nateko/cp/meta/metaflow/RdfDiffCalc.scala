@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
@@ -6,9 +6,9 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.Assertion
-import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.Retraction
-import se.lu.nateko.cp.meta.icos.RdfDiffBuilder.WeakRetraction
+import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.Assertion
+import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.Retraction
+import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.WeakRetraction
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===

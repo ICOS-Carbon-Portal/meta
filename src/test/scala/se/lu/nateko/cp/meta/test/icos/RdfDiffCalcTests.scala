@@ -7,10 +7,11 @@ import org.scalatest.funspec.AnyFunSpec
 
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.icos.*
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.metaflow.*
+import se.lu.nateko.cp.meta.metaflow.icos.{ATC, AtcConf}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -25,7 +26,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	)
 
 	type A = ATC.type
-	import TcConf.AtcConf.{makeId => aId}
+	import AtcConf.{makeId => aId}
 
 	val jane = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
 	val se = CountryCode.unapply("SE").get

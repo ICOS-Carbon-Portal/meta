@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
-import se.lu.nateko.cp.meta.icos.EtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import eu.icoscp.envri.Envri
 import scala.collection.concurrent.TrieMap
 import se.lu.nateko.cp.meta.ConfigLoader

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
 import java.time.Instant
 import java.time.LocalDate
@@ -33,6 +33,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.etc.*
@@ -43,6 +44,7 @@ import java.net.URI
 import scala.collection.mutable.ListBuffer
 import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
 import eu.icoscp.envri.Envri
+
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
@@ -178,7 +180,7 @@ object EtcMetaSource{
 	given Envri = Envri.ICOS
 
 
-	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
+	def makeId(id: String): TcId[E] = EtcConf.makeId(id)
 
 	object Types{
 		val roles = "teamrole"

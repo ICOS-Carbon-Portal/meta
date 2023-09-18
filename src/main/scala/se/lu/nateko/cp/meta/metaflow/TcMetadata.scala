@@ -1,13 +1,36 @@
-package se.lu.nateko.cp.meta.icos
-
-import java.time.Instant
+package se.lu.nateko.cp.meta.metaflow
 
 import akka.stream.scaladsl.Source
+import java.time.Instant
+import java.time.LocalDateTime
+import org.eclipse.rdf4j.model.IRI
+
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station}
 import se.lu.nateko.cp.meta.core.data.{Organization, Funding, Funder}
 import se.lu.nateko.cp.meta.services.CpVocab
-import java.time.LocalDateTime
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+
+
+trait TC
+sealed trait TcId[+T <: TC]{
+	def id: String
+}
+
+trait TcConf[+T <: TC]{
+	private case class Id(val id: String) extends TcId[T]
+	def makeId(id: String): TcId[T] = new Id(id)
+	def tc: T
+	def stationPrefix: String
+	def tcPrefix: String
+	def stationClass(meta: CpmetaVocab): IRI
+	def tcIdPredicate(meta: CpmetaVocab): IRI
+}
+
+object TcConf:
+	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
+	def stationId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
+	def tcScopedId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
 
 
 sealed trait Entity[+T <: TC]{

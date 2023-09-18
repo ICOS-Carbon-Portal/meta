@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.icos.MetaFlow
+import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller

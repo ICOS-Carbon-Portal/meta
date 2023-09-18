@@ -17,11 +17,8 @@ import se.lu.nateko.cp.meta.core.data.staticCollLandingPage
 import se.lu.nateko.cp.meta.core.data.staticObjAccessUrl
 import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
-import se.lu.nateko.cp.meta.icos.ETC
-import se.lu.nateko.cp.meta.icos.Role
-import se.lu.nateko.cp.meta.icos.TC
-import se.lu.nateko.cp.meta.icos.TcConf
-import se.lu.nateko.cp.meta.icos.TcId
+import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
+import se.lu.nateko.cp.meta.metaflow.{TC, Role, TcConf, TcId}
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.net.URI
@@ -65,7 +62,7 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getIcosInstrument(id: UriId) = getRelative("instruments/", id)(using icosBup)
 	def getEtcInstrument(station: Int, id: Int) = getIcosInstrument{
-		instrCpId(getEtcInstrTcId(station, id))(TcConf.EtcConf)
+		instrCpId(getEtcInstrTcId(station, id))(EtcConf)
 	}
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(using Envri.ICOS))
@@ -157,7 +154,7 @@ object CpVocab{
 	}
 
 	def etcStationUriId(station: EtcStationId) = TcConf.stationId[ETC.type](UriId.escaped(station.id))
-	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = TcConf.EtcConf.makeId(s"${station}_$id")
+	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = EtcConf.makeId(s"${station}_$id")
 	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {

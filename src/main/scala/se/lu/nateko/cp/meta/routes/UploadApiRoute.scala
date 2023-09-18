@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.icos.AtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata

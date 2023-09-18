@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow
 
 import scala.concurrent.duration.DurationInt
 

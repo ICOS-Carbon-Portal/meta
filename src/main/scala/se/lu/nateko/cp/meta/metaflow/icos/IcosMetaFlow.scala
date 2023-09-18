@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
 import scala.util.Success
 import scala.util.Try
@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaFlowConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
@@ -18,9 +19,7 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 
-class MetaFlow(val atcSourceOpt: Option[AtcMetaSource], val cancel: () => Unit)
-
-object MetaFlow:
+object IcosMetaFlow:
 
 	def initiate(db: MetaDb, conf: CpmetaConfig)(using Materializer, ActorSystem): Try[MetaFlow] =
 		conf.instanceServers.metaFlow match
@@ -86,4 +85,4 @@ object MetaFlow:
 			}
 		)
 	end init
-end MetaFlow
+end IcosMetaFlow

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
 import java.io.File
 import java.net.URI
@@ -26,6 +26,7 @@ import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
@@ -78,7 +79,7 @@ class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends Trig
 
 object AtcMetaSource{
 	type A = ATC.type
-	import TcConf.AtcConf.makeId
+	import AtcConf.makeId
 	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
 	val StorageDir = "atcmeta"
@@ -369,7 +370,7 @@ object AtcMetaSource{
 
 	private def parseRelatedInstrs(list: String): Validated[Seq[UriId]] = Validated{
 		list.split(",").map{idStr =>
-			TcConf.tcScopedId(UriId.escaped(idStr.trim))(TcConf.AtcConf)
+			TcConf.tcScopedId(UriId.escaped(idStr.trim))(AtcConf)
 		}.toIndexedSeq
 	}
 

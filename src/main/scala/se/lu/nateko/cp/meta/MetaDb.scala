@@ -17,6 +17,7 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.SparqlServer
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
@@ -286,7 +287,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 			val basicInit = {
 				val init = Future{makeInstanceServer(repo, servConf, config)}
 
-				if config.instanceServers.metaFlow.map(_.otcMetaInstanceServerId).contains(id)
+				if
+					config.instanceServers.metaFlow.flattenToSeq.collect{
+						case icos: IcosMetaFlowConfig => icos.otcMetaInstanceServerId
+					}.contains(id)
 				then init.map(new WriteNotifyingInstanceServer(_))
 				else init
 			}

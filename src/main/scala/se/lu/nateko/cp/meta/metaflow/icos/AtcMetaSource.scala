@@ -32,42 +32,10 @@ import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
+import se.lu.nateko.cp.meta.MetaUploadConf
 
-class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
+class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMetaSource[ATC.type](conf):
 	import AtcMetaSource.*
-	import system.dispatcher
-
-	def log = system.log
-	private var listener: ActorRef = system.deadLetters
-
-	override def registerListener(actor: ActorRef): Unit = {
-		if(listener != system.deadLetters) listener ! Status.Success
-		listener = actor
-	}
-
-	def getTableSink(tableId: String, user: UserId): Try[Sink[ByteString, Future[IOResult]]] = {
-
-		if(user == allowedUser) Try{
-			val file = getTableFile(tableId)
-			FileIO.toPath(file).mapMaterializedValue{_
-				.andThen{
-					case Success(_) => listener ! 1
-					case Failure(exc) => system.log.error(exc, "Error writing ATC metadata table")
-				}
-			}
-		} else
-			Failure(new UnauthorizedUploadException(s"Only $allowedUser is allowed to upload ATC metadata to CP"))
-	}
-
-	def getDirectory(): Path = {
-		val dir = Paths.get("atcmeta").toAbsolutePath
-		Files.createDirectories(dir)
-	}
-
-	def getTableFile(tableId: String): Path = {
-		getDirectory().resolve(tableId)
-	}
-
 	override def readState: Validated[State] = for(
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
 			stations <- parseStations(getTableFile(stationsTbl), orgs);
@@ -75,14 +43,13 @@ class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends Trig
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
 			new TcState(stations, membs, instruments)
-}
+
 
 object AtcMetaSource{
 	type A = ATC.type
 	import AtcConf.makeId
 	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
-	val StorageDir = "atcmeta"
 	val stationsTbl = "combineStations"
 	val instrumentsTbl = "combineInstruments"
 	val undefinedOrgId = "41"
@@ -370,7 +337,7 @@ object AtcMetaSource{
 
 	private def parseRelatedInstrs(list: String): Validated[Seq[UriId]] = Validated{
 		list.split(",").map{idStr =>
-			TcConf.tcScopedId(UriId.escaped(idStr.trim))(AtcConf)
+			TcConf.tcScopedId(UriId.escaped(idStr.trim))(using AtcConf)
 		}.toIndexedSeq
 	}
 

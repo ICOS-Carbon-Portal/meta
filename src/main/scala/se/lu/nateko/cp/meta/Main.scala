@@ -8,7 +8,7 @@ import scala.concurrent.duration.DurationInt
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.metaflow.icos.IcosMetaFlow
+import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
@@ -45,7 +45,7 @@ object Main extends App with CpmetaJsonProtocol{
 	val startup = for(
 		(citCache, doiCache) <- readCitCache(log).zip(readDoiCache(log));
 		db <- metaFactory(citCache, doiCache, config);
-		metaflow <- Future.fromTry(IcosMetaFlow.initiate(db, config));
+		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		idxOpt <- optIndexDataFut;
 		_ = db.store.initSparqlMagicIndex(idxOpt);
 		route = MainRoute(db, metaflow, config);

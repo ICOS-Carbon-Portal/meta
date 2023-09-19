@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.MetaFlowConfig
+import se.lu.nateko.cp.meta.IcosMetaFlowConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
@@ -21,13 +21,8 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 object IcosMetaFlow:
 
-	def initiate(db: MetaDb, conf: CpmetaConfig)(using Materializer, ActorSystem): Try[MetaFlow] =
-		conf.instanceServers.metaFlow match
-			case None => Success(new MetaFlow(None, () => ()))
-			case Some(flowConf) => Try(init(db, conf, flowConf))
-
-	private def init(
-		db: MetaDb, conf: CpmetaConfig, flowConf: MetaFlowConfig
+	def init(
+		db: MetaDb, conf: CpmetaConfig, flowConf: IcosMetaFlowConfig
 	)(using Materializer, ActorSystem): MetaFlow =
 
 		given EnvriConfigs = conf.core.envriConfigs
@@ -57,7 +52,7 @@ object IcosMetaFlow:
 
 		val sparql = new Rdf4jSparqlRunner(db.repo)
 
-		val atcSource = new AtcMetaSource(UserId(flowConf.atcMetaUploadUser))
+		val atcSource = new AtcMetaSource(flowConf.atcUpload)
 		val otcSource = new OtcMetaSource(otcServer, sparql, log)
 		val etcSource = new EtcMetaSource(conf.dataUploadService.etc, vocab)
 
@@ -77,7 +72,7 @@ object IcosMetaFlow:
 		val stopAtc = atcSource.state.map{applyDiff[ATC.type]("ATC")}.to(Sink.ignore).run()
 		val stopOtc = otcSource.state.map{applyDiff[OTC.type]("OTC")}.to(Sink.ignore).run()
 		val stopEtc = etcSource.state.map{applyDiff[ETC.type]("ETC")}.to(Sink.ignore).run()
-		new MetaFlow(Some(atcSource),
+		new MetaFlow(Seq(atcSource),
 			() => {
 				stopAtc()
 				stopOtc()

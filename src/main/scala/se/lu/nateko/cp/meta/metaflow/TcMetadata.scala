@@ -28,9 +28,9 @@ trait TcConf[+T <: TC]{
 }
 
 object TcConf:
-	def makeId[T <: TC](id: String)(implicit conf: TcConf[T]): TcId[T] = conf.makeId(id)
-	def stationId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
-	def tcScopedId[T <: TC](baseId: UriId)(implicit tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
+	def makeId[T <: TC](id: String)(using conf: TcConf[T]): TcId[T] = conf.makeId(id)
+	def stationId[T <: TC](baseId: UriId)(using tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
+	def tcScopedId[T <: TC](baseId: UriId)(using tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
 
 
 sealed trait Entity[+T <: TC]{
@@ -165,13 +165,11 @@ class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq
 	def tcConf = implicitly[TcConf[T]]
 }
 
-abstract class TcMetaSource[T <: TC : TcConf]{
+trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]
 	def state: Source[State, Any]
 	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
-}
 
-object TcMetaSource{
+object TcMetaSource:
 	val defaultInstrModel = "N/A"
 	val defaultSerialNum = "N/A"
-}

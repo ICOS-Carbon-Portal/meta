@@ -52,7 +52,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 
 	private val baseEtcApiUrl = Uri(conf.metaService.toString)
 
-	def state: Source[State, Cancellable] = Source
+	override def state: Source[State, () => Unit] = Source
 		.tick(35.seconds, 5.hours, NotUsed)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
@@ -66,6 +66,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 			if(validated.result.isEmpty) system.log.error("ETC metadata parsing has failed, preceding warnings may give a clue")
 			validated.result.toList
 		}
+		.mapMaterializedValue(c => () => {c.cancel(); ()})
 
 
 	def fetchFromEtc(): Future[Validated[State]] = {

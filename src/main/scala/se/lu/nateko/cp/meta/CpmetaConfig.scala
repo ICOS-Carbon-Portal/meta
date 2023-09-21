@@ -51,7 +51,9 @@ case class InstanceServersConfig(
 	metaFlow: OptionalOneOrSeq[MetaFlowConfig]
 )
 
-sealed trait MetaFlowConfig
+sealed trait MetaFlowConfig:
+	def cpMetaInstanceServerId: String
+
 case class IcosMetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	icosMetaInstanceServerId: String,

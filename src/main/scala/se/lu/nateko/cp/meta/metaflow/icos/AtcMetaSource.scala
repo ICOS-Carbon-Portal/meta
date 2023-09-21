@@ -1,38 +1,19 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
-import java.io.File
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.Instant
-import java.time.LocalDate
-
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Try
-import scala.util.Success
-
-import akka.actor.ActorRef
-import akka.actor.Actor
 import akka.actor.ActorSystem
-import akka.actor.Status
-import akka.Done
-import akka.stream.IOResult
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
-import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.utils.Validated
 
+import java.net.URI
+import java.nio.file.Path
+import java.time.Instant
+import java.time.LocalDate
+
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
-import se.lu.nateko.cp.meta.MetaUploadConf
 
 class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMetaSource[ATC.type](conf):
 	import AtcMetaSource.*
@@ -138,8 +119,6 @@ object AtcMetaSource{
 	)
 
 	private def makeOrgId(base: String) = makeId("org_" + base)
-
-	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
 	def parseCountryCode(s: String): Validated[CountryCode] = {
 		val ccOpt = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))

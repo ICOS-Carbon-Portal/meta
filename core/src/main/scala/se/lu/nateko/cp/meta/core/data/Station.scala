@@ -58,6 +58,7 @@ case class SitesStationSpecifics(
 	climateZone: Option[UriResource],
 	meanAnnualTemp: Option[Float],
 	operationalPeriod: Option[String],
+	discontinued: Boolean,
 	documentation: Seq[PlainStaticObject]
 ) extends EcoStationSpecifics
 

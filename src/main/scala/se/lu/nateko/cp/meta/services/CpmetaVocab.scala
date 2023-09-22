@@ -135,6 +135,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val isOptionalColumn = getRelativeRaw("isOptionalColumn")
 	val isRegexVariable = getRelativeRaw("isRegexVariable")
 	val isRegexColumn = getRelativeRaw("isRegexColumn")
+	val isDiscontinued = getRelativeRaw("isDiscontinued")
 
 	val personClass = getRelativeRaw("Person")
 	val roleClass = getRelativeRaw("Role")

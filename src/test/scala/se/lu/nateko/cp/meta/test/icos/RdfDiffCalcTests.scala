@@ -234,7 +234,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val factory = repo.getValueFactory
 		val vocab = new CpVocab(factory)
 		val meta = new CpmetaVocab(factory)
-		val rdfMaker = new RdfMaker(vocab, meta)
+		val rdfMaker = RdfMaker(vocab, meta)(using Envri.ICOS)
 
 		val tcGraphUri = factory.createIRI("http://test.icos.eu/tcState")
 		val cpGraphUri = factory.createIRI("http://test.icos.eu/cpOwnMetaInstances")

@@ -37,7 +37,7 @@ trait FileDropMetaSource[T <: TC : TcConf](
 		listener = actor
 
 	override def getTableSink(tableId: String, user: UserId): Try[Sink[ByteString, Future[IOResult]]] =
-		if user == conf.uploader then Try:
+		if user.email == conf.uploader then Try:
 			val file = getTableFile(tableId)
 			FileIO.toPath(file).mapMaterializedValue:
 				_.andThen:

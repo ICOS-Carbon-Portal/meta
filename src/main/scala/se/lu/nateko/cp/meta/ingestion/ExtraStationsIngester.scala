@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import eu.icoscp.envri.Envri
 
 class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
 	import IcosStationsIngester.*
@@ -46,7 +47,7 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 		)
 
 		station => {
-			val stUri = vocab.getIcosLikeStation(UriId(s"${station.project}_${station.id}"))
+			val stUri = vocab.getStation(UriId(s"${station.project}_${station.id}"))(using Envri.ICOS)
 
 			val iter = projToClass.get(station.project).fold(Iterator.empty[(IRI, IRI, Value)]){stClass =>
 				Iterator(

@@ -14,6 +14,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
+import scala.util.Using
 
 class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMetaSource[ATC.type](conf):
 	import AtcMetaSource.*
@@ -216,18 +217,26 @@ object AtcMetaSource{
 	def lookUpMandatory(tableName: String)(varName: String)(using row: Lookup): Validated[String] =
 		lookUp(varName).require(s"$varName not found in $tableName table on row ${row.mkString(", ")}")
 
-	def parseFromCsv[T](path: Path)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] = Validated{
+	def parseFromCsv[T](path: Path)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] =
+		parseFromSimpleCsv(path, ';')(extractor)
 
-		val lines = scala.io.Source.fromFile(path.toFile).getLines()
+	def parseFromSimpleCsv[T](path: Path, sep: Char)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] =
+		import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
+		import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-		val colNames: Array[String] = lines.next().split(';').map(_.trim)
+		val tryRes = Using(java.io.FileReader(path.toFile)): reader =>
+			val parser = CSVParserBuilder().withSeparator(sep).build()
+			val csvReader = CSVReaderBuilder(reader).withCSVParser(parser).build()
+			val lines = csvReader.iterator().asScala
 
-		val seqOfValidated = lines.map{lineStr =>
-			extractor(using colNames.zip(lineStr.split(';').map(_.trim)).toMap)
-		}
+			val colNames: Array[String] = lines.next().map(_.trim)
 
-		Validated.sequence(seqOfValidated)
-	}.flatMap(identity)
+			val seqOfValidated = lines.map: lineStr =>
+				extractor(using colNames.zip(lineStr.map(_.trim)).toMap)
+
+			Validated.sequence(seqOfValidated)
+
+		Validated.fromTry(tryRes).flatMap(identity)
 
 	def parsePerson(using Lookup): Validated[TcPerson[A]] =
 		for(

@@ -69,7 +69,7 @@ case class CitiesMetaFlowConfig(
 	zurichUpload: MetaUploadConf
 ) extends MetaFlowConfig
 
-case class MetaUploadConf(dirName: String, uploader: UserId)
+case class MetaUploadConf(dirName: String, uploader: String)
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
 

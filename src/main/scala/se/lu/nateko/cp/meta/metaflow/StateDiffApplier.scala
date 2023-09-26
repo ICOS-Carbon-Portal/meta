@@ -19,7 +19,10 @@ class StateDiffApplier(
 	private val meta = new CpmetaVocab(vf)
 	private val rdfMaker = new RdfMaker(db.vocab, meta)
 
-	private val cpServer = db.instanceServers(flowConf.cpMetaInstanceServerId)
+	private val cpServer = db.instanceServers.getOrElse(
+		flowConf.cpMetaInstanceServerId,
+		throw Exception(s"Instance server with id ${flowConf.cpMetaInstanceServerId} was not found")
+	)
 	private val envriServId = flowConf match
 		case c: CitiesMetaFlowConfig => c.citiesMetaInstanceServerId
 		case i: IcosMetaFlowConfig => i.icosMetaInstanceServerId

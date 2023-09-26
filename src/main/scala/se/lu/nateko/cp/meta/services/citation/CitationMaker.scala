@@ -135,14 +135,6 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
 
-	def presentDoiMetaCitation(eagerRes: Option[Try[DoiMeta]]): Option[DoiMeta] = eagerRes match{
-		case None => Some(DoiMeta(Doi("", "")))
-		case Some(Success(doiMeta)) => Some(doiMeta)
-		case Some(Failure(err)) =>
-			log.error(err, "Error fetching DOI citation")
-			None
-	}
-
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
 			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
@@ -155,7 +147,12 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 		for
 			doiStr <- item.doi;
 			doi <- Doi.parse(doiStr).toOption;
-			doiMeta <- presentDoiMetaCitation(doiCiter.getDoiEager(doi))
+			doiMeta <- doiCiter.getDoiEager(doi) match
+				case None => Some(DoiMeta(doi))
+				case Some(Success(doiMeta)) => Some(doiMeta)
+				case Some(Failure(err)) =>
+					log.error(err, "Error fetching DOI citation")
+					None
 		yield doiMeta
 
 	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {

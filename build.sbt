@@ -137,8 +137,8 @@ lazy val meta = (project in file("."))
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(metaCore / Test / test, Test / test, frontendBuild, fetchGCMDKeywords).value,
 		cpDeployPlaybook := "core.yml",
-		cpDeployPermittedInventories := Some(Seq("staging")),
-		cpDeployInfraBranch := "metaflow",
+		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
+		cpDeployInfraBranch := "master",
 
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first

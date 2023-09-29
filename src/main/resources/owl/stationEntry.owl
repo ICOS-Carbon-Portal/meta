@@ -339,7 +339,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasAtcSpecificValue">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/AS"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </owl:DatatypeProperty>
     
@@ -768,7 +768,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasEtcSpecificValue">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/ES"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </owl:DatatypeProperty>
     
@@ -1000,7 +1000,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/hasOtcSpecificValue">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/OS"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </owl:DatatypeProperty>
     
@@ -1466,11 +1466,23 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+        <rdfs:label>labelling join year</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
         <rdfs:comment>just a grouping property, not to be used directly</rdfs:comment>
         <rdfs:label>labeling progress date</rdfs:label>
     </owl:DatatypeProperty>
@@ -1484,7 +1496,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/stationentry/Station"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
-        <rdfs:label>labeling step 1 end date</rdfs:label>
+        <rdfs:label>labelling step 1 end date</rdfs:label>
     </owl:DatatypeProperty>
     
 

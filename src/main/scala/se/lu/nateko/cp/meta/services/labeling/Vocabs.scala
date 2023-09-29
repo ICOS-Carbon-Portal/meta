@@ -32,6 +32,7 @@ class StationsVocab(val factory: ValueFactory) extends CustomVocab{
 	val hasStationClass = getRelativeRaw("hasStationClass")
 
 	val labelingEndDate = getRelativeRaw("labelingEndDate")
+	val labelingJoinYear = getRelativeRaw("labelingJoinYear")
 	val step2EndDate = getRelativeRaw("step2EndDate")
 	val step2StartDate = getRelativeRaw("step2StartDate")
 	val step1EndDate = getRelativeRaw("step1EndDate")

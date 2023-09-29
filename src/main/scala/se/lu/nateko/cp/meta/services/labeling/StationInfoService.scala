@@ -142,6 +142,7 @@ trait StationInfoService { self: StationLabelingService =>
 				theme = theme,
 				provClass = provClass,
 				prodClass = prodStr(metaVocab.hasStationClass),
+				joinYear = provInfoServer.getIntValues(provUri, vocab.labelingJoinYear).headOption,
 				labelingProgressOverrides = labelingProgress
 			)
 	}
@@ -178,6 +179,7 @@ case class StationBasicInfo(
 	theme: String,
 	provClass: String,
 	prodClass: Option[String],
+	joinYear: Option[Int],
 	labelingProgressOverrides: LabelingProgressDates
 )
 
@@ -187,7 +189,7 @@ object StationLabelingHistory{
 
 	def empty(ts: Instant) = LabelingHistory(ts, LabelingProgressDates.empty)
 
-	val CsvHeader = "Theme,ID,Name,Class,Added,Step1Start,Step1End,Step2Start,Step2End,Labelled"
+	val CsvHeader = "Theme,ID,Name,Class,JoinYear,AddedToDb,Step1Start,Step1End,Step2Start,Step2End,Labelled"
 
 	def toCsvRow(shist: StationLabelingHistory): String = {
 		val hist = shist.hist.withOverrides(shist.station.labelingProgressOverrides)
@@ -195,6 +197,7 @@ object StationLabelingHistory{
 		val st = shist.station
 		val cells: Seq[String] =
 			Seq(st.theme, st.prodId.getOrElse(st.provId), st.prodName.getOrElse(st.provName), st.prodClass.getOrElse(st.provClass)) ++
+			Seq(st.joinYear.fold("")(_.toString)) ++
 			Seq(Some(hist.added), step1start, step1approval, step2start, step2approval, labelled).map(cell)
 		cells.mkString("\n", ",", "")
 	}

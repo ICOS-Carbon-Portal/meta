@@ -7,7 +7,10 @@ import com.typesafe.config.ConfigValueFactory
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.toTypedJson
+import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
@@ -15,6 +18,7 @@ import spray.json.*
 
 import java.net.URI
 import java.net.URL
+import se.lu.nateko.cp.cpauth.core.UserId
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -44,15 +48,28 @@ case class DataObjectInstServersConfig(
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
 	forDataObjects: Map[Envri, DataObjectInstServersConfig],
-	metaFlow: Option[MetaFlowConfig]
+	metaFlow: OptionalOneOrSeq[MetaFlowConfig]
 )
 
-case class MetaFlowConfig(
+sealed trait MetaFlowConfig:
+	def cpMetaInstanceServerId: String
+
+case class IcosMetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	icosMetaInstanceServerId: String,
 	otcMetaInstanceServerId: String,
-	atcMetaUploadUser: String
-)
+	atcUpload: MetaUploadConf
+) extends MetaFlowConfig
+
+case class CitiesMetaFlowConfig(
+	cpMetaInstanceServerId: String,
+	citiesMetaInstanceServerId: String,
+	munichUpload: MetaUploadConf,
+	parisUpload: MetaUploadConf,
+	zurichUpload: MetaUploadConf
+) extends MetaFlowConfig
+
+case class MetaUploadConf(dirName: String, uploader: String)
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
 
@@ -177,11 +194,28 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
 
+	private val IcosFlow = "icos"
+	private val CitiesFlow = "cities"
+
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
 	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
-	given RootJsonFormat[MetaFlowConfig] = jsonFormat4(MetaFlowConfig.apply)
+	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
+	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
+	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat5(CitiesMetaFlowConfig.apply)
+	given RootJsonFormat[MetaFlowConfig] with
+		def write(mfc: MetaFlowConfig): JsValue = mfc match
+			case icos: IcosMetaFlowConfig => icos.toTypedJson(IcosFlow)
+			case cities: CitiesMetaFlowConfig => cities.toTypedJson(CitiesFlow)
+
+		def read(json: JsValue): MetaFlowConfig =
+			json.asJsObject("Expected MetaFlowConfig to be a JSON object").fields.get(TypeField) match
+				case Some(JsString(IcosFlow)) => json.convertTo[IcosMetaFlowConfig]
+				case Some(JsString(CitiesFlow)) => json.convertTo[CitiesMetaFlowConfig]
+				case Some(bad) => deserializationError(s"Unknown type of MetaFlowConfig: $bad")
+				case None => deserializationError(s"Cannot deserialize as MetaFlowConfig, missing field $TypeField")
+
 	given RootJsonFormat[InstanceServersConfig] = jsonFormat3(InstanceServersConfig.apply)
 	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
 	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
 import akka.actor.ActorRef
 import akka.actor.Status
@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
+import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.Validated

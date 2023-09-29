@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow
 
 sealed trait Role{
 	//ATTENTION name must be URL-friendly, it is a technical id, not user-facing label

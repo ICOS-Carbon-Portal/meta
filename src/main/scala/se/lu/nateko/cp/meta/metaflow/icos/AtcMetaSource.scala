@@ -1,72 +1,23 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
-import java.io.File
+import akka.actor.ActorSystem
+import se.lu.nateko.cp.meta.MetaUploadConf
+import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.metaflow.*
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.utils.Validated
+
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Instant
 import java.time.LocalDate
 
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Try
-import scala.util.Success
-
-import akka.actor.ActorRef
-import akka.actor.Actor
-import akka.actor.ActorSystem
-import akka.actor.Status
-import akka.Done
-import akka.stream.IOResult
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
-import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
-import se.lu.nateko.cp.meta.utils.Validated
-
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
+import scala.util.Using
 
-class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends TriggeredMetaSource[ATC.type] {
+class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMetaSource[ATC.type](conf):
 	import AtcMetaSource.*
-	import system.dispatcher
-
-	def log = system.log
-	private var listener: ActorRef = system.deadLetters
-
-	override def registerListener(actor: ActorRef): Unit = {
-		if(listener != system.deadLetters) listener ! Status.Success
-		listener = actor
-	}
-
-	def getTableSink(tableId: String, user: UserId): Try[Sink[ByteString, Future[IOResult]]] = {
-
-		if(user == allowedUser) Try{
-			val file = getTableFile(tableId)
-			FileIO.toPath(file).mapMaterializedValue{_
-				.andThen{
-					case Success(_) => listener ! 1
-					case Failure(exc) => system.log.error(exc, "Error writing ATC metadata table")
-				}
-			}
-		} else
-			Failure(new UnauthorizedUploadException(s"Only $allowedUser is allowed to upload ATC metadata to CP"))
-	}
-
-	def getDirectory(): Path = {
-		val dir = Paths.get("atcmeta").toAbsolutePath
-		Files.createDirectories(dir)
-	}
-
-	def getTableFile(tableId: String): Path = {
-		getDirectory().resolve(tableId)
-	}
-
 	override def readState: Validated[State] = for(
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
 			stations <- parseStations(getTableFile(stationsTbl), orgs);
@@ -74,14 +25,13 @@ class AtcMetaSource(allowedUser: UserId)(using system: ActorSystem) extends Trig
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
 			new TcState(stations, membs, instruments)
-}
+
 
 object AtcMetaSource{
 	type A = ATC.type
-	import TcConf.AtcConf.makeId
+	import AtcConf.makeId
 	private type OrgsMap = Map[TcId[A], TcPlainOrg[A]]
 
-	val StorageDir = "atcmeta"
 	val stationsTbl = "combineStations"
 	val instrumentsTbl = "combineInstruments"
 	val undefinedOrgId = "41"
@@ -170,8 +120,6 @@ object AtcMetaSource{
 	)
 
 	private def makeOrgId(base: String) = makeId("org_" + base)
-
-	def parseRow(line: String): Array[String] = line.split(';').map(_.trim)
 
 	def parseCountryCode(s: String): Validated[CountryCode] = {
 		val ccOpt = CountryCode.unapply(countryMap.getOrElse(s.trim.toLowerCase, s.trim))
@@ -269,18 +217,26 @@ object AtcMetaSource{
 	def lookUpMandatory(tableName: String)(varName: String)(using row: Lookup): Validated[String] =
 		lookUp(varName).require(s"$varName not found in $tableName table on row ${row.mkString(", ")}")
 
-	def parseFromCsv[T](path: Path)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] = Validated{
+	def parseFromCsv[T](path: Path)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] =
+		parseFromSimpleCsv(path, ';')(extractor)
 
-		val lines = scala.io.Source.fromFile(path.toFile).getLines()
+	def parseFromSimpleCsv[T](path: Path, sep: Char)(extractor: Lookup ?=> Validated[T]): Validated[IndexedSeq[T]] =
+		import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
+		import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-		val colNames: Array[String] = lines.next().split(';').map(_.trim)
+		val tryRes = Using(java.io.FileReader(path.toFile)): reader =>
+			val parser = CSVParserBuilder().withSeparator(sep).build()
+			val csvReader = CSVReaderBuilder(reader).withCSVParser(parser).build()
+			val lines = csvReader.iterator().asScala
 
-		val seqOfValidated = lines.map{lineStr =>
-			extractor(using colNames.zip(lineStr.split(';').map(_.trim)).toMap)
-		}
+			val colNames: Array[String] = lines.next().map(_.trim)
 
-		Validated.sequence(seqOfValidated)
-	}.flatMap(identity)
+			val seqOfValidated = lines.map: lineStr =>
+				extractor(using colNames.zip(lineStr.map(_.trim)).toMap)
+
+			Validated.sequence(seqOfValidated)
+
+		Validated.fromTry(tryRes).flatMap(identity)
 
 	def parsePerson(using Lookup): Validated[TcPerson[A]] =
 		for(
@@ -369,7 +325,7 @@ object AtcMetaSource{
 
 	private def parseRelatedInstrs(list: String): Validated[Seq[UriId]] = Validated{
 		list.split(",").map{idStr =>
-			TcConf.tcScopedId(UriId.escaped(idStr.trim))(TcConf.AtcConf)
+			TcConf.tcScopedId(UriId.escaped(idStr.trim))(using AtcConf)
 		}.toIndexedSeq
 	}
 

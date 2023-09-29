@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.icos.MetaFlow
+import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
@@ -43,7 +43,7 @@ object MainRoute {
 		val staticRoute = StaticRoute(sparqler, config.onto)
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
-		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.atcSourceOpt, config.core)
+		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
 		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)

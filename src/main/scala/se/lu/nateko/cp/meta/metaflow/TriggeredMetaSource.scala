@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow
 
 import scala.concurrent.duration.DurationInt
 
@@ -13,7 +13,7 @@ import akka.stream.ThrottleMode
 
 import se.lu.nateko.cp.meta.utils.Validated
 
-abstract class TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
+trait TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	def log: LoggingAdapter
 	def readState: Validated[State]
 

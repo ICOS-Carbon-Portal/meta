@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.Station
-import se.lu.nateko.cp.meta.icos.Role
+import se.lu.nateko.cp.meta.metaflow.Role
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import spray.json.*
 

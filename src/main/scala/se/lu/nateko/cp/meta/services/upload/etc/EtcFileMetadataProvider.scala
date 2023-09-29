@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.icos.EtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
 
 class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{

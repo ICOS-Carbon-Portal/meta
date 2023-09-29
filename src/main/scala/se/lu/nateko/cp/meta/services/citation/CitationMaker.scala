@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.icos.EtcMetaSource.toCETnoon
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.CpVocab

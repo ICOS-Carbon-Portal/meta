@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.icos
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.icos.InstrumentDeployment
+import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.api.UriId
 import java.time.Instant
@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.core.data.PositionUtil
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
-	import se.lu.nateko.cp.meta.icos.EtcMetaSource.*
+	import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.*
 
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
 		InstrumentDeployment[E](

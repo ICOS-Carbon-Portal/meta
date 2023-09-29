@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow.icos
 
 import java.time.Instant
 import java.time.LocalDate
@@ -33,6 +33,7 @@ import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.etc.*
@@ -44,13 +45,14 @@ import scala.collection.mutable.ListBuffer
 import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
 import eu.icoscp.envri.Envri
 
+
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
 	import system.dispatcher
 
 	private val baseEtcApiUrl = Uri(conf.metaService.toString)
 
-	def state: Source[State, Cancellable] = Source
+	override def state: Source[State, () => Unit] = Source
 		.tick(35.seconds, 5.hours, NotUsed)
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
@@ -64,6 +66,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 			if(validated.result.isEmpty) system.log.error("ETC metadata parsing has failed, preceding warnings may give a clue")
 			validated.result.toList
 		}
+		.mapMaterializedValue(c => () => {c.cancel(); ()})
 
 
 	def fetchFromEtc(): Future[Validated[State]] = {
@@ -178,7 +181,7 @@ object EtcMetaSource{
 	given Envri = Envri.ICOS
 
 
-	def makeId(id: String): TcId[E] = TcConf.EtcConf.makeId(id)
+	def makeId(id: String): TcId[E] = EtcConf.makeId(id)
 
 	object Types{
 		val roles = "teamrole"

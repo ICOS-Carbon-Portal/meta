@@ -1,18 +1,20 @@
 package se.lu.nateko.cp.meta
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.metaflow.MetaFlow
+import se.lu.nateko.cp.meta.routes.MainRoute
+import se.lu.nateko.cp.meta.services.citation.CitationClient.readCitCache
+import se.lu.nateko.cp.meta.services.citation.CitationClient.readDoiCache
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import se.lu.nateko.cp.meta.icos.MetaFlow
-import se.lu.nateko.cp.meta.routes.MainRoute
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
 object Main extends App with CpmetaJsonProtocol{
 
@@ -21,6 +23,7 @@ object Main extends App with CpmetaJsonProtocol{
 	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
+	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 
 	val optIndexDataFut: Future[Option[IndexData]] =

@@ -22,9 +22,9 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.icos.Role
-import se.lu.nateko.cp.meta.icos.PI
-import se.lu.nateko.cp.meta.icos.Administrator
+import se.lu.nateko.cp.meta.metaflow.Role
+import se.lu.nateko.cp.meta.metaflow.PI
+import se.lu.nateko.cp.meta.metaflow.Administrator
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import scala.util.Try

@@ -82,7 +82,9 @@ class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(using EnvriC
 
 object AuthenticationRouting {
 
-	def forbid(msg: String): StandardRoute = complete((StatusCodes.Forbidden, msg))
+	def forbid(msg: String): Route = extractRequestContext: ctxt =>
+		ctxt.request.discardEntityBytes(ctxt.materializer)
+		complete(StatusCodes.Forbidden -> msg)
 
 	case class InvalidCpauthTokenRejection(message: String) extends Rejection
 

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.icos
+package se.lu.nateko.cp.meta.metaflow
 
 import java.time.Instant
 
@@ -18,9 +18,8 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import eu.icoscp.envri.Envri
 
-class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
+class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
-	private given Envri = Envri.ICOS
 	private given factory: ValueFactory = vocab.factory
 	private type Triple = (IRI, IRI, Value)
 
@@ -150,7 +149,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 					(uri, meta.hasVendor, getIri(vendor))
 				} ++:
 				instr.partsCpIds.map{cpId =>
-					(uri, meta.hasInstrumentComponent, vocab.getIcosInstrument(cpId))
+					(uri, meta.hasInstrumentComponent, vocab.getInstrument(cpId))
 				} ++:
 				instr.deployments.flatMap{depl =>
 					val deplIri = getIri(depl)
@@ -172,13 +171,13 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)
 
-		case s: TcStation[T] => vocab.getIcosLikeStation(s.cpId)
+		case s: TcStation[T] => vocab.getStation(s.cpId)
 
 		case ci: TcPlainOrg[T] =>
 			vocab.getOrganization(ci.cpId)
 
 		case instr: TcInstrument[T] =>
-			vocab.getIcosInstrument(instr.cpId)
+			vocab.getInstrument(instr.cpId)
 
 		case depl: InstrumentDeployment[T] =>
 			vocab.getInstrDeployment(depl.cpId)
@@ -219,7 +218,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab) {
 	}
 
 	private def getInstrDeploymentTriples[T <: TC](depl: InstrumentDeployment[T], deplIri: IRI): Seq[Triple] = {
-		val stationIri: IRI = vocab.getIcosLikeStation(depl.stationUriId)
+		val stationIri: IRI = vocab.getStation(depl.stationUriId)
 
 		(deplIri, RDF.TYPE, meta.ssn.deploymentClass) +:
 		(deplIri, meta.atOrganization, stationIri) +:

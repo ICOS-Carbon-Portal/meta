@@ -20,6 +20,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val atmoStationClass = getRelativeRaw("AS")
 	val ecoStationClass = getRelativeRaw("ES")
 	val oceStationClass = getRelativeRaw("OS")
+	val munichStationClass = getRelativeRaw("MunichMidLow")
+	val parisStationClass = getRelativeRaw("ParisMidLow")
+	val zurichStationClass = getRelativeRaw("ZurichMidLow")
 //	val tcClass = getRelativeRaw("ThematicCenter")
 //	val cfClass = getRelativeRaw("CentralFacility")
 	val orgClass = getRelativeRaw("Organization")
@@ -164,6 +167,10 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasAtcId = getRelativeRaw("hasAtcId")
 	val hasEtcId = getRelativeRaw("hasEtcId")
 	val hasOtcId = getRelativeRaw("hasOtcId")
+	val hasMunichId = getRelativeRaw("hasMunichId")
+	val hasParisId = getRelativeRaw("hasParisId")
+	val hasZurichId = getRelativeRaw("hasZurichId")
+
 	val hasWigosId = getRelativeRaw("hasWigosId")
 
 	val ancillaryValueClass = getRelativeRaw("AncillaryValue")

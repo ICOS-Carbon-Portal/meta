@@ -103,12 +103,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 						}
 				} else None
 			}
-			opOpt.fold(inner)(op => inner match {
-				case _: PlainDofPattern | _: DofPatternUnion | _: ProjectionDofPattern =>
-					ProjectionDofPattern(inner, Some(op), None, None, None)
-				case _ =>
-					inner
-			})
+			opOpt.fold(inner)(op => ProjectionDofPattern(inner, Some(op), None, None, None))
 
 		case ext: Extension if ext.getArg.isInstanceOf[SingletonSet] =>
 			ext.getElements.asScala.toSeq match {

@@ -139,8 +139,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			val engagedVars = namedVarProps.keySet.toSet[QVar]
 
 			val statPattExprs = patt.propPaths.values.flatten.collect{
-				//filenames are not in the index, need to leave this pattern in the query
-				case sp2 @ StatementPattern2(pred, sp) if pred != meta.hasName && engagedVars.contains(sp2.targetVar) => sp
+				case sp2 @ StatementPattern2(pred, sp) if engagedVars.contains(sp2.targetVar) => sp
 			}
 			val assignmentExprs = patt.varValues.collect{
 				case (v, vif) if varProps.contains(v) => vif.providers

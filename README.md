@@ -235,7 +235,11 @@ To demonstrate some of the possibilities that are accessible via SPARQL, we refe
 
 ---
 
-## Metadata flow (for ATC only)
+## Metadata flow (for ICOS ATC and ICOS Cities mid- and low cost sernsor networks)
+
+Authentication with a pre-configured data portal account is required. The authentication mechanism is the same as for data object upload.
+
+### ATC
 
 The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form
 
@@ -243,7 +247,17 @@ The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST reque
 
 where `<tableName>` is a name used to distinguish different tables, for example "roles", "stations", "instruments", "instrumentsLifecycle", etc.
 
-Authentication with a pre-configured CP account is required. The authentication mechanism is the same as for data object upload.
+### ICOS Cities mid- and low cost sensor networks
+
+The URL to POST metadata files to is of the form
+
+`https://citymeta.icos-cp.eu/upload/midLowCost<city>/<tableName>`
+
+where `<city>` is a city (e.g. `Zurich`, `Paris`, `Munich`) and `<tableName>` is the name of a metadata table (e.g. `sites`). For example, to upload with `curl`:
+
+`$ curl -X POST --data-binary "@zuerich_sites.csv" https://citymeta.icos-cp.eu/upload/midLowCostZurich/sites --cookie "cpauthToken=..."`
+
+
 
 ---
 

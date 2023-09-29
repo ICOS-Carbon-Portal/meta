@@ -56,7 +56,7 @@ trait StationInfoService { self: StationLabelingService =>
 		server.applyDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
 	}
 
-	def labelingHistory: Iterable[StationLabelingHistory] = {
+	def labelingHistory: Seq[StationLabelingHistory] =
 		import vocab.{hasShortName, hasApplicationStatus}
 
 		val histLookup = (provRdfLog.timedUpdates ++ labelingRdfLog.timedUpdates)
@@ -71,9 +71,10 @@ trait StationInfoService { self: StationLabelingService =>
 					case _ => map
 				}
 			}
-		for((iri, hist) <- histLookup; stInfo <- getStationBasicInfo(iri))
+		val histIter = for((iri, hist) <- histLookup; stInfo <- getStationBasicInfo(iri))
 			yield new StationLabelingHistory(stInfo, hist)
-	}
+		histIter.toSeq.sorted(using StationLabelingHistory.histOrder)
+
 
 	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory =
 		val statusStr = statusLit.stringValue
@@ -181,7 +182,8 @@ case class StationBasicInfo(
 	prodClass: Option[String],
 	joinYear: Option[Int],
 	labelingProgressOverrides: LabelingProgressDates
-)
+):
+	def bestName = prodName.getOrElse(provName)
 
 class StationLabelingHistory(val station: StationBasicInfo, val hist: LabelingHistory)
 
@@ -196,11 +198,13 @@ object StationLabelingHistory{
 		import hist.progress.*
 		val st = shist.station
 		val cells: Seq[String] =
-			Seq(st.theme, st.prodId.getOrElse(st.provId), st.prodName.getOrElse(st.provName), st.prodClass.getOrElse(st.provClass)) ++
+			Seq(st.theme, st.prodId.getOrElse(st.provId), st.bestName, st.prodClass.getOrElse(st.provClass)) ++
 			Seq(st.joinYear.fold("")(_.toString)) ++
 			Seq(Some(hist.added), step1start, step1approval, step2start, step2approval, labelled).map(cell)
 		cells.mkString("\n", ",", "")
 	}
 
 	private def cell(ts: Option[Instant]): String = ts.fold("")(_.toString)
+
+	val histOrder = Ordering.by[StationLabelingHistory, String](_.station.theme).orElseBy(_.station.bestName)
 }

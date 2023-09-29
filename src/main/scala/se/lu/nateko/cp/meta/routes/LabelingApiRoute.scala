@@ -34,7 +34,7 @@ import scala.util.Try
 import spray.json.RootJsonReader
 import spray.json.DefaultJsonProtocol.RootJsObjectFormat
 
-object LabelingApiRoute extends CpmetaJsonProtocol{
+object LabelingApiRoute extends CpmetaJsonProtocol:
 
 	private val exceptionHandler = ExceptionHandler{
 
@@ -66,7 +66,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 
 	private def inner(
 		service: StationLabelingService, authRouting: AuthenticationRouting
-	)(using mat: Materializer): Route = {
+	)(using mat: Materializer): Route =
 
 		implicit val ctxt = mat.executionContext
 
@@ -112,26 +112,23 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		} ~
-		get{
-			path("userinfo"){
-				authRouting.mustBeLoggedIn{ user =>
+		get:
+			path("userinfo"):
+				authRouting.mustBeLoggedIn: user =>
 					complete(service.getLabelingUserInfo(user))
-				}
-			} ~
-			path("filepack" / Segment){ _ =>
-				parameter("stationId".as[URI]){stationId =>
+			~
+			path("filepack" / Segment): _ =>
+				parameter("stationId".as[URI]): stationId =>
 					complete(service.getFilePack(stationId))
-				}
-			} ~
-			path("labelingHistory.csv" | "labelingHistory"){
+			~
+			path("labelingHistory.csv" | "labelingHistory"):
 				import StationLabelingHistory.*
 				val src = Source(
-					CsvHeader +: service.labelingHistory.toSeq.sortBy(_.station.provId).map(toCsvRow)
+					CsvHeader +: service.labelingHistory.map(toCsvRow)
 				).map(ByteString(_, StandardCharsets.UTF_8))
 
 				complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, src))
-			}
-		}
-	}
 
-}
+	end inner
+
+end LabelingApiRoute

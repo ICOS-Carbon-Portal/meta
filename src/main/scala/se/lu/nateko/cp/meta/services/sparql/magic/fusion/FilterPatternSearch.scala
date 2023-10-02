@@ -22,6 +22,7 @@ import org.eclipse.rdf4j.model.IRI
 import scala.util.Try
 import scala.util.matching.Regex
 import org.eclipse.rdf4j.query.algebra.StatementPattern
+import org.eclipse.rdf4j.query.algebra.Join
 
 class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	import FilterPatternSearch.*
@@ -56,6 +57,11 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 				else if(!o.hasValue && isDobj(s))
 					getExistsPropLookup(meta).get(p.getValue).map(index.Exists(_))
 				else None
+
+			case jp: Join => for (
+					left <- parseFilterExpr(Exists(jp.getLeftArg));
+					right <- parseFilterExpr(Exists(jp.getRightArg))
+				) yield index.And(Seq(left, right))
 
 			case _ => None
 		}
@@ -153,6 +159,8 @@ object FilterPatternSearch{
 		meta.hasName         -> FileName,
 		meta.hasSizeInBytes  -> FileSize,
 		meta.hasVariableName -> HasVarList,
-		meta.hasKeyword      -> Keyword
+		meta.hasKeyword      -> Keyword,
+		meta.wasSubmittedBy  -> Submitter,
+		meta.prov.endedAtTime -> SubmissionEnd
 	)
 }

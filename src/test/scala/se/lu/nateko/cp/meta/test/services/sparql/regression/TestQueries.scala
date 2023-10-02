@@ -918,4 +918,18 @@ object TestQueries {
 			optional { ?valueTypeRes cpmeta:hasUnit ?unit }
 		}
 	"""
+
+	val incompleteUploads = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+
+		select ?dobj ?submTime where{
+			?dobj cpmeta:hasName ?fileName .
+			?dobj cpmeta:hasObjectSpec ?spec .
+			FILTER NOT EXISTS { ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime [] }
+			?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime
+		}
+		order by desc(?submTime)
+		limit 10	
+	"""
 }

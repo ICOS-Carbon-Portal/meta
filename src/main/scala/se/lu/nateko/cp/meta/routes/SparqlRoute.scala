@@ -199,7 +199,7 @@ class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(using Materia
 	val cacheKeyer: PartialFunction[RequestContext, Sha256Sum] = {
 		case reqCtxt if shouldCache(reqCtxt) =>
 			val req = reqCtxt.request
-			val accept = req.header[Accept].map(_.mediaRanges.map(_.mainType)).fold("")(_.sorted.mkString)
+			val accept = req.header[Accept].map(_.mediaRanges.map(_.value)).fold("")(_.sorted.mkString)
 			val query = req.uri.rawQueryString.getOrElse("")
 			val payload = req.entity match{
 				case Strict(_, data) => data

@@ -47,7 +47,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 				case _ => None
 			}
 
-		case exists: Exists => exists.getSubQuery match{
+		case exists: Exists => exists.getSubQuery match
 			case sp: StatementPattern =>
 
 				val (s, p, o) = splitTriple(sp)
@@ -58,13 +58,17 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 					getExistsPropLookup(meta).get(p.getValue).map(index.Exists(_))
 				else None
 
-			case jp: Join => for (
-					left <- parseFilterExpr(Exists(jp.getLeftArg));
-					right <- parseFilterExpr(Exists(jp.getRightArg))
-				) yield index.And(Seq(left, right))
+			case expr =>
 
-			case _ => None
-		}
+				val dofPatt0 = DofPattern.Empty.copy(
+					dobjVar = varProps.collectFirst{ case (qvar: NamedVar, DobjUri) => qvar}
+				)
+				val dofPatt = dofPatt0.join(DofPatternSearch(meta).find(expr))
+				val fusions = DofPatternFusion(meta).findFusions(dofPatt)
+
+				fusions match
+					case Seq(fus: DobjListFusion) if fus.isPureCpIndexQuery => Some(fus.fetch.filter)
+					case _ => None
 
 		case r: RdfRegex => (r.getArg, r.getPatternArg) match{
 			case (v: Var, c: ValueConstant) => for(
@@ -159,8 +163,6 @@ object FilterPatternSearch{
 		meta.hasName         -> FileName,
 		meta.hasSizeInBytes  -> FileSize,
 		meta.hasVariableName -> HasVarList,
-		meta.hasKeyword      -> Keyword,
-		meta.wasSubmittedBy  -> Submitter,
-		meta.prov.endedAtTime -> SubmissionEnd
+		meta.hasKeyword      -> Keyword
 	)
 }

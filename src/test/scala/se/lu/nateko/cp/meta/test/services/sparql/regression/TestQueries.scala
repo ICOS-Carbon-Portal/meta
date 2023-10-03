@@ -930,6 +930,5 @@ object TestQueries {
 			?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime
 		}
 		order by desc(?submTime)
-		limit 10	
 	"""
 }

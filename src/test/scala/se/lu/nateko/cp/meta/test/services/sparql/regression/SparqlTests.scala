@@ -501,7 +501,7 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		)
 	}
 
-	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 10, 5){
+	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 81, 5){
 		f => Map(
 			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/UxugPrSsx3GRm6GnUq-iCQGd"),
 			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)

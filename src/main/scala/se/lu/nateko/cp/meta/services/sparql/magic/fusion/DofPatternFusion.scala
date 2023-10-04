@@ -136,8 +136,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 				case (nv: NamedVar, prop) => nv -> prop
 			}
 
-			val engagedVars = namedVarProps.keySet.toSet[QVar]
-
+			val engagedVars = namedVarProps.keySet.toSet[QVar].filterNot(v => patt.dobjVar.fold(false)(_ == v))
 			val statPattExprs = patt.propPaths.values.flatten.collect{
 				case sp2 @ StatementPattern2(pred, sp) if engagedVars.contains(sp2.targetVar) => sp
 			}

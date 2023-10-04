@@ -132,14 +132,14 @@ class DofPatternFusion(meta: CpmetaVocab){
 				}.distinct.toSeq
 			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_))).optimize
 
-			val namedVarProps = varProps.collect{
+			val namedVarProps = varProps.collect:
 				case (nv: NamedVar, prop) => nv -> prop
-			}
 
-			val engagedVars = namedVarProps.keySet.toSet[QVar].filterNot(v => patt.dobjVar.fold(false)(_ == v))
-			val statPattExprs = patt.propPaths.values.flatten.collect{
-				case sp2 @ StatementPattern2(pred, sp) if engagedVars.contains(sp2.targetVar) => sp
-			}
+			val statPattExprs =
+				val engagedVars = namedVarProps.keySet.toSet[QVar] - dobjVar
+				patt.propPaths.values.flatten.collect:
+					case sp2 if engagedVars.contains(sp2.targetVar) => sp2.sp
+
 			val assignmentExprs = patt.varValues.collect{
 				case (v, vif) if varProps.contains(v) => vif.providers
 			}.flatten

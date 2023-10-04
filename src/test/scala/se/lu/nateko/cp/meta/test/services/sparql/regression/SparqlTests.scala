@@ -507,4 +507,12 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)
 		)
 	}
+
+	describeQ(TestQueries.dataObjsWithCollections, "Data objects that are part of a collection", 702, 10){
+		f => Map(
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/1BZq2-9V_ulCrak-yCl31Hqd"),
+			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject"),
+			"coll" -> f.createIRI("https://meta.icos-cp.eu/collections/qrhcaIUVRky49JrFtGFsuYvv"),
+		)
+	}
 }

@@ -931,4 +931,24 @@ object TestQueries {
 		}
 		order by desc(?submTime)
 	"""
+	
+	val dataObjsWithCollections = """
+		PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix dcterms: <http://purl.org/dc/terms/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?spec ?coll where{
+			{
+				?dobj cpmeta:hasObjectSpec ?spec .
+				?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+				?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+				FILTER( ?submTime >= '2021-05-24T00:00:00.000Z'^^xsd:dateTime && ?submTime <= '2021-05-27T00:00:00.000Z'^^xsd:dateTime)
+			}
+			?spec cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
+				cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos>;
+				cpmeta:hasDataLevel "2"^^xsd:integer .
+			#?coll a cpmeta:Collection .
+			?coll dcterms:hasPart ?dobj .
+		}
+	"""
 }

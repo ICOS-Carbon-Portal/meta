@@ -40,6 +40,8 @@ class UploadService(
 	import servers.{ metaVocab, vocab }
 	import system.{ dispatcher, log }
 
+	private[this] val objLock = new ObjectLock("is currently already being uploaded")
+
 	private given ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
@@ -56,13 +58,16 @@ class UploadService(
 
 		for(
 			(meta, submitterOrg) <- Future.fromTry(metaAndSubmitterTry);
+			_ <- Future.fromTry(objLock.lock(meta0.hashSum));
 			accessUri <- meta match {
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)
 				case _: DocObjectDto =>
 					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
 			}
-		) yield accessUri
+		) yield
+			objLock.unlock(meta0.hashSum)
+			accessUri
 	}
 
 	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[AccessUri] = {

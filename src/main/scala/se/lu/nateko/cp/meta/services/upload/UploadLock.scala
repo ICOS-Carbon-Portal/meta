@@ -9,12 +9,12 @@ import scala.util.Success
 import scala.util.Try
 import se.lu.nateko.cp.meta.services.MetadataException
 
-private[upload] class ObjectLock(msg: String) {
+private[upload] class UploadLock {
 
-	private[this] val locked = Set.empty[Sha256Sum]
+	private val locked = Set.empty[Sha256Sum]
 
 	def lock(hash: Sha256Sum): Try[Done] = synchronized{
-		if(locked.contains(hash)) Failure(new MetadataException(s"Metadata about object $hash $msg"))
+		if(locked.contains(hash)) Failure(new MetadataException(s"Metadata registration for $hash is already ongoing"))
 		else{
 			locked.add(hash)
 			Success(Done)

@@ -40,7 +40,7 @@ class UploadService(
 	import servers.{ metaVocab, vocab }
 	import system.{ dispatcher, log }
 
-	private[this] val objLock = new ObjectLock("is currently already being uploaded")
+	private val uploadLock = new UploadLock
 
 	private given ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
@@ -58,7 +58,6 @@ class UploadService(
 
 		for(
 			(meta, submitterOrg) <- Future.fromTry(metaAndSubmitterTry);
-			_ <- Future.fromTry(objLock.lock(meta0.hashSum));
 			accessUri <- meta match {
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)
@@ -66,7 +65,6 @@ class UploadService(
 					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
 			}
 		) yield
-			objLock.unlock(meta0.hashSum)
 			accessUri
 	}
 
@@ -79,8 +77,11 @@ class UploadService(
 	}
 
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
+		val getCollHash = UploadService.collectionHash(coll.members);
+
 		val resTry = for(
-			collHash <- UploadService.collectionHash(coll.members);
+			collHash <- getCollHash;
+			_ <- uploadLock.lock(collHash);
 			server <- Try{servers.collectionServers(envri)};
 			_ <- validator.validateCollection(coll, collHash, uploader);
 			submitterConf <- validator.getSubmitterConfig(coll);
@@ -90,7 +91,12 @@ class UploadService(
 			oldStatements = server.getStatements(collIri);
 			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
 			_ <- server.applyAll(updates)()
-		) yield new AccessUri(collIri.toJava)
+		) yield
+			new AccessUri(collIri.toJava)
+		
+		resTry.collect{
+			case _ => for(collHash <- getCollHash) yield uploadLock.unlock(collHash)
+		}
 
 		Future.fromTry(resTry)
 	}
@@ -105,7 +111,8 @@ class UploadService(
 	}
 
 	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(using Envri): Future[AccessUri] =
-		for
+		val resFut = for
+			_ <- Future.fromTry(uploadLock.lock(dto.hashSum));
 			server <- Future.fromTry(serverTry);
 			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
 			newStatements = statementProd(server).getObjStatements(dto, submittingOrg);
@@ -116,6 +123,10 @@ class UploadService(
 		yield
 			log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
+
+		resFut.andThen{
+			case _ => uploadLock.unlock(dto.hashSum)
+		}
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
 		ConfigLoader.submittersConfig.submitters(envri).values

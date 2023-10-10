@@ -16,7 +16,7 @@ private[upload] class UploadLock {
 	private val locked = Set.empty[Sha256Sum]
 
 	def lock(hash: Sha256Sum): Try[Done] = synchronized{
-		if(locked.contains(hash)) Failure(new MetadataException(s"Metadata registration for $hash is already ongoing"))
+		if(locked.contains(hash)) Failure(new MetadataException(s"Metadata registration for ${hash.id} is already ongoing"))
 		else{
 			locked.add(hash)
 			Success(Done)

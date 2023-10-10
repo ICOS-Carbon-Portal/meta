@@ -2,12 +2,14 @@ package se.lu.nateko.cp.meta.services.upload
 
 import akka.Done
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.services.MetadataException
 
 import scala.collection.mutable.Set
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import se.lu.nateko.cp.meta.services.MetadataException
 
 private[upload] class UploadLock {
 
@@ -25,4 +27,19 @@ private[upload] class UploadLock {
 		locked.remove(hash)
 		Done
 	}
+
+	def wrapTry[T](hash: Sha256Sum)(inner: => Try[T]): Try[T] =
+		val lockTry = lock(hash)
+		val res = lockTry.flatMap(_ => inner)
+		if lockTry.isSuccess then unlock(hash)
+		res
+
+	def wrapFuture[T](hash: Sha256Sum)(inner: => Future[T])(using ExecutionContext): Future[T] =
+		val lockTry = lock(hash)
+		val res = Future.fromTry(lockTry).flatMap(_ => inner)
+		if lockTry.isSuccess then
+			res.andThen:
+				case _ => unlock(hash)
+		else res
+
 }

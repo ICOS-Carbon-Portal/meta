@@ -35,7 +35,7 @@ class UploadService(
 	sparql: SparqlRunner,
 	val etcHelper: EtcUploadTransformer,
 	conf: UploadServiceConfig
-)(using system: ActorSystem, mat: Materializer) {
+)(using system: ActorSystem, mat: Materializer):
 
 	import servers.{ metaVocab, vocab }
 	import system.{ dispatcher, log }
@@ -56,16 +56,14 @@ class UploadService(
 			submitterConf <- validator.getSubmitterConfig(meta)
 		) yield meta -> submitterConf.submittingOrganization
 
-		for(
+		for
 			(meta, submitterOrg) <- Future.fromTry(metaAndSubmitterTry);
-			accessUri <- meta match {
+			accessUri <- meta match
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)
 				case _: DocObjectDto =>
 					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
-			}
-		) yield
-			accessUri
+		yield accessUri
 	}
 
 	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[AccessUri] = {
@@ -76,32 +74,25 @@ class UploadService(
 		) yield accessUri
 	}
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(implicit envri: Envri): Future[AccessUri] = {
-		val getCollHash = UploadService.collectionHash(coll.members);
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Future[AccessUri] =
+		Future.fromTry:
+			UploadService.collectionHash(coll.members).flatMap: collHash =>
+				uploadLock.wrapTry(collHash):
+					for
+						_ <- validator.validateCollection(coll, collHash, uploader);
+						submitterConf <- validator.getSubmitterConfig(coll);
+						submittingOrg = submitterConf.submittingOrganization;
+						collIri = vocab.getCollection(collHash);
+						server = servers.collectionServers(envri);
+						newStatements = statementProd(server).getCollStatements(coll, collIri, submittingOrg);
+						oldStatements = server.getStatements(collIri);
+						updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
+						_ <- server.applyAll(updates)()
+					yield
+						AccessUri(collIri.toJava)
 
-		val resTry = for(
-			collHash <- getCollHash;
-			_ <- uploadLock.lock(collHash);
-			server <- Try{servers.collectionServers(envri)};
-			_ <- validator.validateCollection(coll, collHash, uploader);
-			submitterConf <- validator.getSubmitterConfig(coll);
-			submittingOrg = submitterConf.submittingOrganization;
-			collIri = vocab.getCollection(collHash);
-			newStatements = statementProd(server).getCollStatements(coll, collIri, submittingOrg);
-			oldStatements = server.getStatements(collIri);
-			updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
-			_ <- server.applyAll(updates)()
-		) yield
-			new AccessUri(collIri.toJava)
-		
-		resTry.collect{
-			case _ => for(collHash <- getCollHash) yield uploadLock.unlock(collHash)
-		}
 
-		Future.fromTry(resTry)
-	}
-
-	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(implicit envri: Envri): Future[AccessUri] = {
+	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(using Envri): Future[AccessUri] = {
 		val serverTry = for(
 			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
 			server <- servers.getInstServerForFormat(format)
@@ -111,22 +102,19 @@ class UploadService(
 	}
 
 	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(using Envri): Future[AccessUri] =
-		val resFut = for
-			_ <- Future.fromTry(uploadLock.lock(dto.hashSum));
-			server <- Future.fromTry(serverTry);
-			_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
-			newStatements = statementProd(server).getObjStatements(dto, submittingOrg);
-			currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
-			updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
-			_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
-			_ <- Future.fromTry(server.applyAll(updates)())
-		yield
-			log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
-			new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
+		uploadLock.wrapFuture(dto.hashSum):
+			for
+				server <- Future.fromTry(serverTry);
+				_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
+				newStatements = statementProd(server).getObjStatements(dto, submittingOrg);
+				currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
+				updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
+				_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
+				_ <- Future.fromTry(server.applyAll(updates)())
+			yield
+				log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
+				new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
-		resFut.andThen{
-			case _ => uploadLock.unlock(dto.hashSum)
-		}
 
 	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
 		ConfigLoader.submittersConfig.submitters(envri).values
@@ -138,10 +126,11 @@ class UploadService(
 			SubmitterProfile(id, submConf.producingOrganizationClass, submConf.producingOrganization, submConf.authorizedThemes, submConf.authorizedProjects)
 	}.toSeq.sortBy(sp => sp.id)
 
-	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(implicit envri: Envri): Future[Report] =
-		completer.completeUpload(hash, info)
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
+		uploadLock.wrapFuture(hash):
+			completer.completeUpload(hash, info)
 
-}
+end UploadService
 
 object UploadService{
 

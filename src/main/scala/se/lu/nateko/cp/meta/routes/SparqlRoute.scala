@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.Cache
@@ -30,18 +31,19 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CacheSizeLimitExceeded
 import se.lu.nateko.cp.meta.utils.getStackTrace
-import se.lu.nateko.cp.meta.utils.streams.CachedSource
 
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
+import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.Random
 import scala.util.Success
+import akka.http.scaladsl.server.Directive
 
-object SparqlRoute {
+object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
 
@@ -54,7 +56,7 @@ object SparqlRoute {
 		case Tuple1(None) => respondWithHeaders(`Access-Control-Allow-Origin`.*)
 	}
 
-	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route = {
+	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route =
 
 		val makeResponse: String => Route = query => withPermissiveCorsHeader{
 			handleExceptions(MainRoute.exceptionHandler){
@@ -97,23 +99,26 @@ object SparqlRoute {
 				}
 			}
 
-		val spCache = new SparqlCache(system, conf.maxCacheableQuerySize)
+		val spCache = SparqlCache(conf.maxCacheableQuerySize)
 		val bypass = respondWithHeader(RawHeader(X_Cache_Status, "BYPASS")){plainRoute}
 
-		path("sparql"){
-			cachingProhibited{bypass} ~
-			extractRequestContext{ctxt =>
-				spCache.cacheKeyer.lift(ctxt).fold(bypass){key =>
-					val cacheStat = if(spCache.keys.contains(key)) "HIT" else "MISS"
-					respondWithHeader(RawHeader(X_Cache_Status, cacheStat)){
-						withPermissiveCorsHeader{//is applied on per-origin basis, so cannot cache these
-							_ => spCache.apply(key, () => plainRoute(ctxt))
-						}
-					}
-				}
-			}
-		}
-	}
+		def cacheStatus(key: Sha256Sum): Directive[Tuple2[String, Boolean]] = cachingProhibited
+			.tmap(_ => ("BYPASS", true))
+			.or:
+				val msg = if(spCache.contains(key)) "HIT" else "MISS"
+				tprovide((msg, false))
+
+		path("sparql"):
+			extractRequestContext: ctxt =>
+				spCache.makeKey(ctxt).fold(bypass): key =>
+					cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
+						respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)):
+							withPermissiveCorsHeader://is applied on per-origin basis, so cannot cache these
+								_ =>
+									if cacheProhibited
+									then spCache.put(key, plainRoute(ctxt))
+									else spCache.apply(key, () => plainRoute(ctxt))
+	end apply
 
 	private val ensureNoEmptyOkResponseDueToTimeout: Directive0 = extractRequestContext.flatMap{ctxt =>
 		import ctxt.{executionContext, materializer}
@@ -127,7 +132,7 @@ object SparqlRoute {
 	}
 
 	private def delayResponseUntilStreamingStarts(resp: HttpResponse)(
-			implicit mat: Materializer, exe: ExecutionContext
+			using mat: Materializer, exe: ExecutionContext
 	): Future[HttpResponse] = {
 
 		val (respMat, queue) = resp.entity.dataBytes.toMat(Sink.queue[ByteString]())(Keep.both).run()
@@ -161,92 +166,89 @@ object SparqlRoute {
 		}
 	}
 
-}
+end SparqlRoute
 
-class SparqlCache(system: ActorSystem, maxCacheableQuerySize: Int)(using Materializer) extends Cache[Sha256Sum, RouteResult]{
+class SparqlCache(maxCacheableQuerySize: Int)(using system: ActorSystem):
+	import system.dispatcher
+	private val inner = LfuCache.apply[Sha256Sum, RouteResult]
 
-	private val inner = LfuCache.apply[Sha256Sum, RouteResult](using system)
-	val quota = new CachedSource.Quota[ByteString](_.length, maxCacheableQuerySize)
+	def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] =
+		inner.get(key).getOrElse(genValue().map(makeCached(key)))
 
-	override def apply(key: Sha256Sum, genValue: () => Future[RouteResult]): Future[RouteResult] =
-		import system.dispatcher
-		removeInappropriate(key)
-		inner.apply(key, () => genValue().map(makeCached(key)))
+	def put(key: Sha256Sum, mayBeValue: Future[RouteResult]): Future[RouteResult] =
+		mayBeValue.map(makeCached(key))
 
-	override def getOrLoad(key: Sha256Sum, loadValue: Sha256Sum => Future[RouteResult]): Future[RouteResult] =
-		import system.dispatcher
-		removeInappropriate(key)
-		inner.getOrLoad(key, hash => loadValue(hash).map(makeCached(key)))
+	def contains(key: Sha256Sum) = inner.keys.contains(key)
 
-	override def get(key: Sha256Sum): Option[Future[RouteResult]] =
-		removeInappropriate(key)
-		inner.get(key)
+	def makeKey(reqCtxt: RequestContext): Option[Sha256Sum] = Some(reqCtxt).filter(shouldCache).map: reqCtxt =>
+		val req = reqCtxt.request
+		val accept = req.header[Accept].map(_.mediaRanges.map(_.value)).fold("")(_.sorted.mkString)
+		val query = req.uri.rawQueryString.getOrElse("")
+		val payload = req.entity match
+			case Strict(_, data) => data
+			//randomize cache key to prevent caching in other cases
+			case _ => ByteString(Random.nextBytes(32))
 
-	override def put(key: Sha256Sum, mayBeValue: Future[RouteResult])(using ExecutionContext): Future[RouteResult] = {
-		val fresh = mayBeValue.map(makeCached(key))
-		inner.put(key, fresh)
-		fresh
-	}
+		val digest = MessageDigest.getInstance("SHA-256")
+		digest.update(accept.getBytes())
+		digest.update(query.getBytes())
+		payload.asByteBuffers.foreach(digest.update)
+		Sha256Sum(digest.digest())
 
-	override def remove(key: Sha256Sum): Unit = inner.remove(key)
-
-	override def clear(): Unit = inner.clear()
-
-	override def keys: Set[Sha256Sum] = inner.keys
-
-	override def size(): Int = inner.size()
-
-	val cacheKeyer: PartialFunction[RequestContext, Sha256Sum] = {
-		case reqCtxt if shouldCache(reqCtxt) =>
-			val req = reqCtxt.request
-			val accept = req.header[Accept].map(_.mediaRanges.map(_.value)).fold("")(_.sorted.mkString)
-			val query = req.uri.rawQueryString.getOrElse("")
-			val payload = req.entity match{
-				case Strict(_, data) => data
-				//randomize cache key to prevent caching in other cases
-				case _ => ByteString(Random.nextBytes(32))
-			}
-			val digest = MessageDigest.getInstance("SHA-256")
-			digest.update(accept.getBytes())
-			digest.update(query.getBytes())
-			payload.asByteBuffers.foreach(digest.update)
-			new Sha256Sum(digest.digest())
-	}
-
-	private def shouldCache(ctxt: RequestContext): Boolean = {
+	private def shouldCache(ctxt: RequestContext): Boolean =
 		val meth = ctxt.request.method
 		meth == HttpMethods.GET || meth == HttpMethods.POST
-	}
 
-	private def removeInappropriate(key: Sha256Sum): Unit = inner.get(key) match
-		case None => () //not cached, nothing to remove
-		case Some(fut) => fut.value match
-			case None => () //still executing
-			case Some(Success(Complete(resp))) =>
-				val status = resp.status
-				val shouldBeCached = status.isSuccess() && status != StatusCodes.NoContent
-				if !shouldBeCached then remove(key)
-			case _ => remove(key)
 
 	private def makeCached(key: Sha256Sum)(rr: RouteResult)(using ExecutionContext): RouteResult = rr match
+
 		case _: Rejected => rr
+
 		case Complete(response) =>
-			val cachedEnt = response.entity match
-				case se: Strict => se
-				case ent =>
-					val cachedPayload = CachedSource(ent.dataBytes, quota).recover{
-						case CacheSizeLimitExceeded =>
-							remove(key)
-							ByteString("\nSPARQL RESPONSE TOO LARGE TO BE CACHED.\n" +
-							s"The largest cacheable response size is ${quota.maxCost} bytes.\n" +
-							"Try running the query with 'Cache-Control: no-cache' to get full response\n")
-					}
-					HttpEntity.CloseDelimited(ent.contentType, cachedPayload)
-			Complete(
-				response
-					.withEntity(cachedEnt)
-					//this header is specific for the web app that makes the query, so should not be cached
-					.mapHeaders(_.filterNot(_.name == `Access-Control-Allow-Origin`.name))
-			)
+
+			def completeResult(ent: ResponseEntity): RouteResult =
+				// Access-Control-Allow-Origin is specific for the web app that makes the query, so should not be cached
+				Complete(response.withEntity(ent).mapHeaders(_.filterNot(_.name == `Access-Control-Allow-Origin`.name)))
+
+			import response.status
+			val shouldBeCached = status.isSuccess() && status != StatusCodes.NoContent
+
+			if !shouldBeCached then rr else
+				val cacheingEntity = response.entity match
+					case se: Strict => se
+					case ent =>
+						val cacheingPayload = ent.dataBytes.alsoTo:
+							cacheUpdatingSink: cache =>
+								val builder = ByteString.newBuilder
+								cache.foreach(builder.addAll)
+								val entity = HttpEntity.Strict(ent.contentType, builder.result())
+								val rRes = completeResult(entity)
+								inner.put(key, Future.successful(rRes))
+
+						HttpEntity.CloseDelimited(ent.contentType, cacheingPayload)
+
+				val cachedRr = completeResult(cacheingEntity)
+
+				cacheingEntity match
+					case _: Strict => inner.put(key, Future.successful(cachedRr))
+					case _ =>
+
+				cachedRr
 	end makeCached
-}
+
+	private type MaybeCache = Option[Seq[ByteString]]
+
+	private def cacheUpdatingSink(callback: Seq[ByteString] => Unit): Sink[ByteString, NotUsed] =
+		cacheBuildingSink.mapMaterializedValue: fut =>
+			fut.foreach(_.foreach(callback))
+			NotUsed
+
+	private val cacheBuildingSink: Sink[ByteString, Future[MaybeCache]] =
+		val aux = Sink.fold[Option[(Queue[ByteString], Int)], ByteString](Some(Queue.empty -> 0)): (acc, elem) =>
+			acc.flatMap: (cache, cost) =>
+				val newCost = cost + elem.length
+				if newCost > maxCacheableQuerySize then None
+				else Some((cache :+ elem, newCost))
+		aux.mapMaterializedValue(_.map(_.map(_._1)))
+
+end SparqlCache

@@ -1,5 +1,6 @@
+const envri = window.envri;
+
 var queryParams = processQuery(window.location.search);
-var isSites = window.location.host.endsWith("fieldsites.se");
 
 if (queryParams.coverage || queryParams.station || queryParams.dobj) {
 	getGeoJson(queryParams).then(function (geoJsonArray) {
@@ -40,11 +41,11 @@ function initMap(locations) {
 					} else if (feature.properties && feature.properties.pinkind) {
 						return L.marker(latlng);
 					} else {
-						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);  
+						return icon ? L.marker(latlng, {icon}) : L.marker(latlng);
 					}
 				},
 				onEachFeature: function(feature, layer) {
-					if (isSites && label) {
+					if (envri == "SITES" && label) {
 						layercontrol.addOverlay(layer, label);
 						!!description
 							? layer.bindPopup(label + ": " + description)
@@ -75,8 +76,7 @@ function initMap(locations) {
 	var len = allGeoms.length;
 
 	if(len === 1 && allGeoms[0].type === 'Point'){
-		 const zoom = isSites ? 12 : 4;
-		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], zoom);
+		map.setView([allGeoms[0].coordinates[1], allGeoms[0].coordinates[0]], window.initialZoom);
 	} else if(len > 0 ){
 		const bounds = featureGroups.reduce(
 			function(acc, curr){
@@ -91,9 +91,9 @@ function initMap(locations) {
 
 function hasFeatureLabels(geoJson){
 	switch(geoJson.type){
-		case 'FeatureCollection': 
+		case 'FeatureCollection':
 			return geoJson.features.some(hasFeatureLabels);
-		case 'Feature': 
+		case 'Feature':
 			return geoJson.properties && !!(geoJson.properties.label);
 		default:
 			return false;
@@ -102,15 +102,12 @@ function hasFeatureLabels(geoJson){
 
 function collectGeometries(geoJson){
 	switch(geoJson.type){
-		case 'FeatureCollection': 
+		case 'FeatureCollection':
 			return geoJson.features.flatMap(collectGeometries);
-      break;
-		case 'Feature': 
+		case 'Feature':
 			return collectGeometries(geoJson.geometry);
-      break;
 		case 'GeometryCollection':
 			return geoJson.geometries.flatMap(collectGeometries);
-      break;
 		default:
 			return geoJson;
 	}
@@ -163,7 +160,7 @@ function getBaseMaps(maxZoom){
 	var osm = L.tileLayer(window.location.protocol + "//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom
 	});
-	return isSites
+	return envri == "SITES"
 	? {
 		"Topographic": topoLM,
 		"Topographic Toned": topoTonedLM,

@@ -36,7 +36,9 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def getFormat(obj: StaticObject): Option[String] = obj match {
-		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
+		case dataObj: DataObject =>
+			val objFormat = dataObj.specification.format.self
+			Some(objFormat.label.getOrElse(objFormat.uri.toString))
 		case docObj: DocObject => docObj.fileName.split('.').lastOption.map(_.toUpperCase)
 	}
 

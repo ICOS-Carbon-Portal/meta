@@ -27,12 +27,13 @@ case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoF
 
 case class Project(self: UriResource, keywords: Option[Seq[String]])
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
+case class ObjectFormat(self: UriResource, goodFlagValues: Option[Seq[String]])
 
 case class DataObjectSpec(
 	self: UriResource,
 	project: Project,
 	theme: DataTheme,
-	format: UriResource,
+	format: ObjectFormat,
 	encoding: UriResource,
 	dataLevel: Int,
 	specificDatasetType: DatasetType,
@@ -92,6 +93,7 @@ case class VarMeta(
 	label: String,
 	valueType: ValueType,
 	valueFormat: Option[URI],
+	isFlagFor: Option[Seq[URI]],
 	minMax: Option[(Double, Double)],
 	instrumentDeployments: Option[Seq[InstrumentDeployment]]
 )

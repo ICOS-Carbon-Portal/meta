@@ -174,7 +174,7 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
 			Some(Left(prevHash)), _, _
 		) =>
-			if(spec.dataLevel == 1 && spec.format.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){
+			if(spec.dataLevel == 1 && spec.format.self.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){
 				val prevDobj = vocab.getStaticObject(prevHash)
 				val prevAcqStop = server.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
 					getOptionalInstant(acq, metaVocab.prov.endedAtTime)

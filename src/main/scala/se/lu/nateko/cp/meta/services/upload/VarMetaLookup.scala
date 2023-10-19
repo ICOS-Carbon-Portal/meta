@@ -12,12 +12,13 @@ class DatasetVariable(
 	val title: String,
 	val valueType: ValueType,
 	val valueFormat: Option[URI],
+	val isFlagFor: Option[Seq[URI]],
 	val isRegex: Boolean,
 	val isOptional: Boolean
 ):
 	def plain: Option[VarMeta] =
 		if !isRegex
-		then Some(VarMeta(self, title, valueType, valueFormat, None, None))
+		then Some(VarMeta(self, title, valueType, valueFormat, isFlagFor, None, None))
 		else None
 
 class VarMetaLookup(varDefs: Seq[DatasetVariable]):
@@ -30,8 +31,7 @@ class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 		dv => new Regex(dv.title) -> dv
 	}
 
-	def lookup(varName: String): Option[VarMeta] = plainLookup.get(varName).orElse(
-		regexes.collectFirst{
-			case (reg, dv) if reg.matches(varName) => VarMeta(dv.self, varName, dv.valueType, dv.valueFormat, None, None)
-		}
-	)
+	def lookup(varName: String): Option[VarMeta] = plainLookup.get(varName).orElse:
+		regexes.collectFirst:
+			case (reg, dv) if reg.matches(varName) =>
+				VarMeta(dv.self, varName, dv.valueType, dv.valueFormat, dv.isFlagFor, None, None)

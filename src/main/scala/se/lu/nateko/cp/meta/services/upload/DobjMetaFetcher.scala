@@ -28,7 +28,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 		self = getLabeledResource(spec),
 		project = getProject(getSingleUri(spec, metaVocab.hasAssociatedProject)),
 		theme = getDataTheme(getSingleUri(spec, metaVocab.hasDataTheme)),
-		format = getLabeledResource(spec, metaVocab.hasFormat),
+		format = getObjectFormat(getSingleUri(spec, metaVocab.hasFormat)),
 		specificDatasetType = getDatasetType(getSingleUri(spec, metaVocab.hasSpecificDatasetType)),
 		encoding = getLabeledResource(spec, metaVocab.hasEncoding),
 		dataLevel = getSingleInt(spec, metaVocab.hasDataLevel),

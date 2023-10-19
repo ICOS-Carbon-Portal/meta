@@ -63,7 +63,7 @@ class StaticObjectFetcher(
 			accessUrl = if(hasBeenPublished) getAccessUrl(hash, spec) else None,
 			fileName = getSingleString(dobj, metaVocab.hasName),
 			size = size,
-			pid = if(size.isDefined) getPid(hash, spec.format.uri) else None,
+			pid = if(size.isDefined) getPid(hash, spec.format.self.uri) else None,
 			doi = getOptionalString(dobj, metaVocab.hasDoi),
 			submission = submission,
 			specification = spec,
@@ -107,7 +107,7 @@ class StaticObjectFetcher(
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri): Option[URI] = {
 
-		if(metaVocab.wdcggFormat === spec.format.uri)
+		if(metaVocab.wdcggFormat === spec.format.self.uri)
 			Some(new URI("https://gaw.kishou.go.jp/"))
 		else {
 			val dobj = vocab.getStaticObject(hash)

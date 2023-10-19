@@ -17,6 +17,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
 	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
+	given RootJsonFormat[ObjectFormat] = jsonFormat2(ObjectFormat.apply)
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
 	given RootJsonFormat[Position] = jsonFormat5(Position.apply)
@@ -142,7 +143,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
 	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given RootJsonFormat[VarMeta] = jsonFormat6(VarMeta.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat7(VarMeta.apply)
 	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
 	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 

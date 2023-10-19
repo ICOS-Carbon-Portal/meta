@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter
 import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.urlEncode
+import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 object LandingPageHelpers:
 
@@ -40,8 +41,8 @@ object LandingPageHelpers:
 
 	extension (dobj: DataObject)
 		def hasSupportingPreviewApp: Boolean = dobj.isPreviewable ||
-			dobj.specification.format.uri == CpmetaVocab.icosMultiImageZipUri ||
-			dobj.specification.format.uri == CpmetaVocab.sitesMultiImageZipUri
+			dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
+			dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
 
 	def agentString(a: Agent): String = a match {
 		case person: Person =>

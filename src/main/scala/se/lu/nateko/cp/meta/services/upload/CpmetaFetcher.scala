@@ -104,6 +104,11 @@ trait CpmetaFetcher extends FetchingHelper{
 		keywords = getOptionalString(project, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
 	)
 
+	protected def getObjectFormat(format: IRI) = ObjectFormat(
+		self = getLabeledResource(format),
+		goodFlagValues = Some(server.getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
+	)
+
 	protected def getDataTheme(theme: IRI) = DataTheme(
 		self = getLabeledResource(theme),
 		icon = getSingleUriLiteral(theme, metaVocab.hasIcon),
@@ -240,11 +245,13 @@ trait CpmetaFetcher extends FetchingHelper{
 
 	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
 		server.getUriValues(ds, varProp).map{dv =>
+			val flaggedCols = server.getUriValues(dv, metaVocab.isQualityFlagFor).map(_.toJava)
 			DatasetVariable(
 				self = getLabeledResource(dv),
 				title = getSingleString(dv, titleProp),
 				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
 				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
+				isFlagFor = Some(flaggedCols).filterNot(_.isEmpty),
 				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
 				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
 			)

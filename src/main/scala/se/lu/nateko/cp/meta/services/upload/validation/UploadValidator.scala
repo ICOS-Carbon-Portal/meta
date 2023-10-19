@@ -68,7 +68,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
-		instServer <- servers.getInstServerForFormat(spec.format.uri.toRdf);
+		instServer <- servers.getInstServerForFormat(spec.format.self.uri.toRdf);
 		scoped = ScopedValidator(instServer, vocab);
 		_ <- scoped.validatePrevVers(meta);
 		_ <- scoped.validateLicence(meta);
@@ -317,7 +317,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 					if(
 						(spec.datasetSpec.isDefined) && stationMeta.nRows.isEmpty &&
-						!formatsWithRowInfoInHeader.contains(spec.format.uri.toRdf)
+						!formatsWithRowInfoInHeader.contains(spec.format.self.uri.toRdf)
 					) errors += "Must provide 'nRows' with number of rows in the uploaded data file."
 
 					if(subm.submittingOrganization === vocab.atc){

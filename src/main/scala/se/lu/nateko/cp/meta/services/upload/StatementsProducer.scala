@@ -134,7 +134,8 @@ class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: Cpme
 			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(_.toString).map(vocab.lit)) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
-			}
+			} ++
+			makeSt(collIri, RDFS.SEEALSO, coll.documentation.map(vocab.getStaticObject))
 	}
 
 	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] =

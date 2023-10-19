@@ -52,7 +52,8 @@ case class StaticCollectionDto(
 	title: String,
 	description: Option[String],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
-	preExistingDoi: Option[Doi]
+	preExistingDoi: Option[Doi],
+	documentation: Option[Sha256Sum]
 ) extends UploadDto
 
 case class StationTimeSeriesDto(

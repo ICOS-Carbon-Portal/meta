@@ -123,7 +123,8 @@ object AtcCollMaker{
 			s"period up to March 2023, station ${station.org.name}, final quality controlled Level 2 data, release 2023-1"
 		),
 		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
-		preExistingDoi = Some(doi)
+		preExistingDoi = Some(doi),
+		documentation = None
 	)
 
 	def parseStationObjs(spRes: SparqlSelectResult): Map[URI, SpecDobjs] =

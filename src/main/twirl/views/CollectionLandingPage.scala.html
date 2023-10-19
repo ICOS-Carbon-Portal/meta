@@ -31,6 +31,17 @@
 				}
 				@citations(coll.references)
 
+				@coll.documentation match {
+					case None => {}
+					case Some(doc) => {
+						@htmlProperty{Documentation}{
+						<span>
+							<a href=@{doc.res.getRawPath}>@{doc.name}</a>
+						</span>
+						}
+					}
+				}
+
 				<h2 class="fs-3 mt-5">Content</h2>
 				@property("Number of items", coll.members.size.toString)
 				@for((item, i) <- coll.members.zipWithIndex){

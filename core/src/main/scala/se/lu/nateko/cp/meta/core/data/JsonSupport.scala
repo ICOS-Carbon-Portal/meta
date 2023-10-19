@@ -208,7 +208,7 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[StaticCollection] = jsonFormat11(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] = jsonFormat12(StaticCollection.apply)
 
 	given RootJsonFormat[StaticDataItem] with{
 

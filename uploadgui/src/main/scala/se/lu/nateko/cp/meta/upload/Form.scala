@@ -167,6 +167,7 @@ class Form(
 		title <- collPanel.title;
 		description <- collPanel.description;
 		members <- collPanel.members;
+		documentation <- collPanel.documentation;
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
 		submitter <- aboutPanel.submitter
@@ -176,7 +177,8 @@ class Form(
 		title = title,
 		description = description,
 		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
+		preExistingDoi = doi,
+		documentation = documentation
 	)
 
 	def documentObjectDto: Try[DocObjectDto] = for(

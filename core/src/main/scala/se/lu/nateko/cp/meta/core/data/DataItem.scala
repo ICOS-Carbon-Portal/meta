@@ -34,6 +34,7 @@ final case class StaticCollection(
 	nextVersion: OptionalOneOrSeq[URI],
 	latestVersion: OneOrSeq[URI],
 	doi: Option[String],
+	documentation: Option[PlainStaticObject],
 	references: References
 ) extends DataItemCollection with StaticDataItem with CitableItem{
 	type M = StaticDataItem

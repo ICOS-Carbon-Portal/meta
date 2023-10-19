@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 
 class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
@@ -83,6 +84,7 @@ class CollectionFetcher(
 			latestVersion = getLatestVersion(coll),
 			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 			doi = getOptionalString(coll, metaVocab.hasDoi),
+			documentation = getOptionalUri(coll, RDFS.SEEALSO).map(plainFetcher.getPlainStaticObject),
 			references = References.empty
 		)
 		val citerRefs = citer.getItemCitationInfo(init)

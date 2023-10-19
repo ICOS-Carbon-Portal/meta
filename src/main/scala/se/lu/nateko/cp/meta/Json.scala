@@ -118,7 +118,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 			else obj.convertTo[DocObjectDto]
 		}
 
-	given RootJsonFormat[StaticCollectionDto] = jsonFormat6(StaticCollectionDto.apply)
+	given RootJsonFormat[StaticCollectionDto] = jsonFormat7(StaticCollectionDto.apply)
 
 	given RootJsonWriter[UploadDto] with{
 		override def write(dto: UploadDto) = dto match {

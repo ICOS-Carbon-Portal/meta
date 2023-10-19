@@ -10,15 +10,18 @@ class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection
 	def title = collectionTitle.value.withErrorContext("Collection title")
 	def description = collectionDescription.value
 	def members = collectionMembers.value.withErrorContext("Collection members (list of object urls)")
+	def documentation = collectionDoc.value
 
 	private val collectionTitle = new TextInput("collectiontitle", notifyUpdate, "collection title")
 	private val collectionDescription = new DescriptionInput("collectiondescription", notifyUpdate)
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
+	private val collectionDoc = new HashOptInput("colldoc", notifyUpdate)
 
 	def resetForm(): Unit = {
 		collectionTitle.reset()
 		collectionDescription.reset()
 		collectionMembers.reset()
+		collectionDoc.reset()
 	}
 
 	bus.subscribe{
@@ -30,6 +33,7 @@ class CollectionPanel(implicit bus: PubSubBus) extends PanelSubform(".collection
 			collectionTitle.value = dto.title
 			collectionMembers.value = dto.members
 			collectionDescription.value = dto.description
+			collectionDoc.value = dto.documentation
 			notifyUpdate()
 			show()
 		case _ =>

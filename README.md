@@ -184,7 +184,8 @@ Carbon Portal supports creation of static collections with constant lists of imm
 	"description": "Optional collection description",
 	"members": ["https://meta.icos-cp.eu/objects/G6PjIjYC6Ka_nummSJ5lO8SV", "https://meta.icos-cp.eu/objects/sdfRNhhI5EN_BckuQQfGpdvE"],
 	"isNextVersionOf": "CkSE78VzQ3bmHBtkMLt4ogJy",
-	"preExistingDoi": "10.18160/VG28-H2QA"
+	"preExistingDoi": "10.18160/VG28-H2QA",
+	"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM"
 }
 ```
 The fields are either self-explanatory, or have the same meaning as for the data object upload.

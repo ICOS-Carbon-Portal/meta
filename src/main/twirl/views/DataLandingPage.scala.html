@@ -239,6 +239,9 @@
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Technical information</h2>
 				@resourceproperty("Format", dobj.specification.format.self)
+				@for(goodFlags <- dobj.specification.format.goodFlagValues){
+					@property("Good flag values", goodFlags.mkString(", "))
+				}
 				@resourceproperty("Encoding", dobj.specification.encoding)
 				@property("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", dobj.hash.base64)

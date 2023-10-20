@@ -31,14 +31,11 @@
 				}
 				@citations(coll.references)
 
-				@coll.documentation match {
-					case None => {}
-					case Some(doc) => {
-						@htmlProperty{Documentation}{
-						<span>
-							<a href=@{doc.res.getRawPath}>@{doc.name}</a>
-						</span>
-						}
+				@for(doc <- coll.documentation){
+					@htmlProperty{Documentation}{
+					<span>
+						<a href=@{doc.res.getRawPath}>@{doc.name}</a>
+					</span>
 					}
 				}
 

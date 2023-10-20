@@ -17,7 +17,14 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
 	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
-	given RootJsonFormat[ObjectFormat] = jsonFormat2(ObjectFormat.apply)
+	private val vanillaObjectFormatFormat = jsonFormat2(ObjectFormat.apply)
+	given RootJsonFormat[ObjectFormat] with
+		def read(json: JsValue): ObjectFormat = vanillaObjectFormatFormat.read(json)
+		def write(obj: ObjectFormat): JsValue =
+			val vanilla = vanillaObjectFormatFormat.write(obj).asJsObject
+			// extra field for backwards compatibility with the older version of the JSON
+			JsObject(vanilla.fields + ("uri" -> obj.self.uri.toJson))
+
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
 	given RootJsonFormat[Position] = jsonFormat5(Position.apply)

@@ -23,6 +23,7 @@ object JsonSupport extends CommonJsonSupport{
 		def write(obj: ObjectFormat): JsValue =
 			val vanilla = vanillaObjectFormatFormat.write(obj).asJsObject
 			// extra field for backwards compatibility with the older version of the JSON
+			// (needed by icoscp pylib version 0.1.19 and below)
 			JsObject(vanilla.fields + ("uri" -> obj.self.uri.toJson))
 
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)

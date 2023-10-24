@@ -116,6 +116,8 @@ object Backend {
 			fetchOk("validating data object", url, new RequestInit{
 				body = if isZip then file.slice(0, 100) else file
 				method = HttpMethod.PUT
+				headers = Dictionary("Content-Type" -> "application/octet-stream")
+				credentials = RequestCredentials.include
 			}).map(_ => ())
 		} else Future.successful(())
 	}

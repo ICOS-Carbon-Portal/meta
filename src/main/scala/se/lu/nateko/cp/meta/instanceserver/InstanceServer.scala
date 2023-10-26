@@ -1,13 +1,26 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import java.net.{URI => JavaUri}
 import org.eclipse.rdf4j.model.*
-import org.eclipse.rdf4j.model.vocabulary.{RDF, XSD}
-import scala.util.Try
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.api.CloseableIterator.empty
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.parseInstant
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.rdf4j.toJava
+
+import java.net.{URI => JavaUri}
+import java.time.Instant
+import java.time.LocalDate
+import scala.util.Try
 
 trait InstanceServer extends AutoCloseable{
 	import InstanceServer.*
+	import CardinalityExpectation.Default
 
 	/**
 	 * Makes a new IRI for the new instance, but does not add any triples to the repository.
@@ -82,7 +95,7 @@ trait InstanceServer extends AutoCloseable{
 
 	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] = {
 		val values = getValues(subj, pred).collect{
-			case lit: Literal if(lit.getDatatype == dType) => lit.stringValue
+			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
 		}.distinct
 		assertCardinality(values.size, exp, s"${dType.getLocalName} value(s) of $pred for $subj")
 		values
@@ -110,19 +123,154 @@ trait InstanceServer extends AutoCloseable{
 		getLiteralValues(subj, pred, XSD.ANYURI, exp).map(new JavaUri(_))
 }
 
-object InstanceServer{
-	sealed trait CardinalityExpectation
-	case object AtMostOne extends CardinalityExpectation
-	case object AtLeastOne extends CardinalityExpectation
-	case object ExactlyOne extends CardinalityExpectation
-	case object Default extends CardinalityExpectation
+object InstanceServer:
+	enum CardinalityExpectation(val descr: String):
+		case AtMostOne extends CardinalityExpectation("at most one")
+		case AtLeastOne extends CardinalityExpectation("at least one")
+		case ExactlyOne extends CardinalityExpectation("exactly one")
+		case Default extends CardinalityExpectation("any amount")
 
-	private def assertCardinality(actual: Int, expectation: CardinalityExpectation, errorTip: => String): Unit = {
-		expectation match{
+	export CardinalityExpectation.{AtMostOne, AtLeastOne, ExactlyOne, Default}
+
+	private def assertCardinality(actual: Int, expectation: CardinalityExpectation, errorTip: => String): Unit =
+		expectation match
 			case Default => ()
 			case AtMostOne => assert(actual <= 1, s"Expected at most one $errorTip, but got $actual")
 			case AtLeastOne => assert(actual >= 1, s"Expected at least one $errorTip, but got $actual")
 			case ExactlyOne => assert(actual == 1, s"Expected exactly one $errorTip, but got $actual")
-		}
-	}
-}
+
+
+trait TriplestoreConnection extends AutoCloseable:
+	import InstanceServer.*
+
+	def readContexts: Seq[IRI]
+	def factory: ValueFactory
+
+	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
+	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
+	def hasStatement(s: Statement): Boolean
+	def withReadContexts(ctxts: Seq[IRI]): this.type
+
+end TriplestoreConnection
+
+object TriplestoreConnection:
+	type TSC2[T] = TriplestoreConnection ?=> T
+	type TSC2V[T] = TSC2[Validated[T]]
+
+	import InstanceServer.*
+
+	def getValues(instUri: IRI, propUri: IRI): TSC2[IndexedSeq[Value]] =
+		conn ?=> conn.getStatements(Some(instUri), Some(propUri), None).map(_.getObject).toIndexedSeq
+
+	def getLiteralValues(subj: IRI, pred: IRI, dType: IRI): TSC2[IndexedSeq[String]] = getValues(subj, pred)
+		.collect:
+			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
+		.distinct
+
+	def getUriValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[IRI]] =
+		getValues(subj, pred).collect{case uri: IRI => uri}.distinct
+
+	def getStringValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[String]] =
+		getLiteralValues(subj, pred, XSD.STRING)
+
+	def getIntValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[Int]] =
+		getLiteralValues(subj, pred, XSD.INTEGER).flatMap(_.toIntOption)
+
+	def getLongValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[Long]] =
+		getLiteralValues(subj, pred, XSD.LONG).flatMap(_.toLongOption)
+
+	def getDoubleValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[Double]] =
+		getLiteralValues(subj, pred, XSD.DOUBLE).flatMap(_.toDoubleOption)
+
+	def getFloatValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[Float]] =
+		getLiteralValues(subj, pred, XSD.FLOAT).flatMap(_.toFloatOption)
+
+	def getUriLiteralValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[JavaUri]] =
+		getLiteralValues(subj, pred, XSD.ANYURI).map(new JavaUri(_))
+
+
+	def validate[T](
+		getter: (IRI, IRI) => TSC2[IndexedSeq[T]],
+		subj: IRI,
+		pred: IRI,
+		card: CardinalityExpectation
+	): TSC2V[IndexedSeq[T]] = Validated(getter(subj, pred)).flatMap: vals =>
+
+		def error: Validated[IndexedSeq[T]] =
+			val err = s"Expected ${card.descr} values of property $pred for resource $subj, but got ${vals.length}"
+			new Validated(Some(vals).filterNot(_.isEmpty), Seq(err))
+
+		card match
+			case AtMostOne  if vals.length  > 1 =>
+				error
+			case AtLeastOne if vals.length  < 1 =>
+				error
+			case ExactlyOne if vals.length != 1 =>
+				error
+			case Default | AtLeastOne | AtMostOne | ExactlyOne =>
+				Validated.ok(vals)
+	end validate
+
+
+	def getSingleUri(subj: IRI, pred: IRI): TSC2V[IRI] =
+		validate(getUriValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalUri(subj: IRI, pred: IRI): TSC2V[Option[IRI]] =
+		validate(getUriValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getLabeledResource(subj: IRI, pred: IRI): TSC2V[UriResource] =
+		getSingleUri(subj, pred).flatMap(getLabeledResource)
+
+	def getLabeledResource(uri: IRI): TSC2V[UriResource] = getOptionalString(uri, RDFS.LABEL).map: label =>
+		UriResource(uri.toJava, label, getStringValues(uri, RDFS.COMMENT))
+
+	def getOptionalString(subj: IRI, pred: IRI): TSC2V[Option[String]] =
+		validate(getStringValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getSingleString(subj: IRI, pred: IRI): TSC2V[String] =
+		validate(getStringValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getSingleInt(subj: IRI, pred: IRI): TSC2V[Int] =
+		validate(getIntValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalInt(subj: IRI, pred: IRI): TSC2V[Option[Int]] =
+		validate(getIntValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalLong(subj: IRI, pred: IRI): TSC2V[Option[Long]] =
+		validate(getLongValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalDouble(subj: IRI, pred: IRI): TSC2V[Option[Double]] =
+		validate(getDoubleValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalFloat(subj: IRI, pred: IRI): TSC2V[Option[Float]] =
+		validate(getFloatValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalBool(subj: IRI, pred: IRI): TSC2V[Option[Boolean]] =
+		validate(getLiteralValues(_, _, XSD.BOOLEAN), subj, pred, AtMostOne)
+			.map(_.headOption.map(_.toLowerCase == "true"))
+
+	def getSingleDouble(subj: IRI, pred: IRI): TSC2V[Double] =
+		validate(getDoubleValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalInstant(subj: IRI, pred: IRI): TSC2V[Option[Instant]] =
+		validate(getLiteralValues(_, _, XSD.DATETIME), subj, pred, AtMostOne).map(_.headOption.map(parseInstant))
+
+	def getSingleInstant(subj: IRI, pred: IRI): TSC2V[Instant] =
+		validate(getLiteralValues(_, _, XSD.DATETIME), subj, pred, ExactlyOne).map(_.map(parseInstant).head)
+
+	def getOptionalLocalDate(subj: IRI, pred: IRI): TSC2V[Option[LocalDate]] =
+		validate(getLiteralValues(_, _, XSD.DATE), subj, pred, AtMostOne).map(_.headOption.map(LocalDate.parse))
+
+	def getSingleUriLiteral(subj: IRI, pred: IRI): TSC2V[JavaUri] =
+		validate(getUriLiteralValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalUriLiteral(subj: IRI, pred: IRI): TSC2V[Option[JavaUri]] =
+		validate(getUriLiteralValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getHashsum(dataObjUri: IRI, pred: IRI): TSC2V[Sha256Sum] =
+		for
+			hashLits <- validate(getLiteralValues(_, _, XSD.BASE64BINARY), dataObjUri, pred, ExactlyOne)
+			hash <- Validated.fromTry(Sha256Sum.fromBase64(hashLits.head))
+		yield hash
+
+end TriplestoreConnection

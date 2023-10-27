@@ -6,13 +6,14 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.containsEither
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.containsEither
 
 import java.net.URI
 import scala.util.Try
@@ -308,3 +309,75 @@ trait CpmetaFetcher extends FetchingHelper{
 		) else None
 
 }
+
+
+
+
+
+
+
+
+
+
+
+class CpmetaReader(val metaVocab: CpmetaVocab):
+	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+
+	def getOptionalSpecificationFormat(spec: IRI): TSC2V[Option[IRI]] =
+		getOptionalUri(spec, metaVocab.hasFormat)
+
+	def getPosition(iri: IRI): TSC2V[Option[Position]] = getLatLon(iri).flatMap: latLonOpt =>
+		val optVal = latLonOpt.map: latLon =>
+			for
+				altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
+				lblOpt <- getOptionalString(iri, RDFS.LABEL)
+			yield latLon.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava))
+		Validated.sinkOption(optVal)
+
+
+	def getInstrumentPosition(deploymentIri: IRI): TSC2V[Option[Position]] =
+		for
+			latLonOpt <- getLatLon(deploymentIri)
+			altOpt <- getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
+		yield
+			latLonOpt.map(_.copy(alt = altOpt))
+
+	private def getLatLon(iri: IRI): TSC2V[Option[Position]] =
+		for
+			latOpt <- getOptionalDouble(iri, metaVocab.hasLatitude)
+			lonOpt <- getOptionalDouble(iri, metaVocab.hasLongitude)
+		yield
+			for lat <- latOpt; lon <- lonOpt
+			yield Position.ofLatLon(lat, lon)
+
+	def getLatLonBox(cov: IRI): TSC2V[LatLonBox] =
+		for
+			minLat <- getSingleDouble(cov, metaVocab.hasSouthernBound)
+			minLon <- getSingleDouble(cov, metaVocab.hasWesternBound)
+			maxLat <- getSingleDouble(cov, metaVocab.hasNorthernBound)
+			maxLon <- getSingleDouble(cov, metaVocab.hasEasternBound)
+			lblOpt <- getOptionalString(cov, RDFS.LABEL)
+		yield
+			LatLonBox(
+				min = Position.ofLatLon(minLat, minLon),
+				max = Position.ofLatLon(maxLat, maxLon),
+				label = lblOpt,
+				uri = Some(cov.toJava)
+			)
+
+	def getSubmission(subm: IRI): TSC2V[DataSubmission] =
+		for
+			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+			submitter <- getOrganization(submitterUri)
+			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)
+			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)
+		yield
+			DataSubmission(
+				submitter = submitter,
+				start = start,
+				stop = stop
+			)
+
+	def getOrganization(uri: IRI): TSC2V[Organization] = ???
+
+end CpmetaReader

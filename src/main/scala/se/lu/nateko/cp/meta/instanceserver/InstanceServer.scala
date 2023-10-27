@@ -141,8 +141,6 @@ object InstanceServer:
 
 
 trait TriplestoreConnection extends AutoCloseable:
-	import InstanceServer.*
-
 	def readContexts: Seq[IRI]
 	def factory: ValueFactory
 
@@ -151,7 +149,6 @@ trait TriplestoreConnection extends AutoCloseable:
 	def hasStatement(s: Statement): Boolean
 	def withReadContexts(ctxts: Seq[IRI]): this.type
 
-end TriplestoreConnection
 
 object TriplestoreConnection:
 	type TSC2[T] = TriplestoreConnection ?=> T

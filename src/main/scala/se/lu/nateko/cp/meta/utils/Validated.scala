@@ -91,6 +91,10 @@ object Validated{
 		_.map(res => new Validated[T](Some(res), v.errors))
 	}
 
+	def sinkOption[T](o: Option[Validated[T]]): Validated[Option[T]] = o match
+		case None => Validated.ok(None)
+		case Some(v) => v.map(Some(_))
+
 	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
 		val res = (l.result ++ r.result).reduceOption(m.merge)
 		new Validated(res, l.errors ++ r.errors)

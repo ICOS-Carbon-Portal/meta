@@ -28,15 +28,19 @@ class StatementsEnricher(val citer: CitationProvider) {
 	private def empty[E <: Exception]: StatIter[E] = new EmptyIteration
 
 	def enrich[E <: Exception](base: StatIter[E], subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
-		val extras = getExtras[E](subj, pred, obj)
-		if(!extras.hasNext) base else UnionIteration(base, extras)
+		try
+			val extras = getExtras[E](subj, pred, obj)
+			if(!extras.hasNext) base else UnionIteration(base, extras)
+		catch case err => 
+			throw SailException(err.getMessage, err)
 	}
 
-	def getExtras[E <: Exception](subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
+	private def getExtras[E <: Exception](subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
 		if(subj == null || obj != null) empty //lookup by magic values/predicates not possible
 		else{
 			val magicFactories = magicPredValueFactories(subj)
-			if(pred != null && !magicFactories.contains(pred)) empty //not a magic predicate
+			if(pred != null && !magicFactories.contains(pred))
+				empty //not a magic predicate
 			else if(pred == null) {
 				val extras = magicFactories.iterator.flatMap{
 					(pred, thunk) => thunk().map(v => factory.createStatement(subj, pred, v))
@@ -61,7 +65,12 @@ class StatementsEnricher(val citer: CitationProvider) {
 				refs.map(js => factory.createStringLiteral(js.toJson.compactPrint))
 			}),
 			metaVocab.hasCitationString -> (
-				() => refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(factory.createStringLiteral)
+				() => {
+					try
+						refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(factory.createStringLiteral)
+					catch case err => 
+						throw new SailException(err.getMessage)
+				}
 			),
 			metaVocab.dcterms.license -> (
 				() => refsCache.fold(citer.getLicence(subj))(_.flatMap(_.licence)).map(_.url.toRdf)

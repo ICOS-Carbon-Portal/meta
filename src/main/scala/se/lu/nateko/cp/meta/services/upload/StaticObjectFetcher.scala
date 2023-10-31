@@ -74,6 +74,14 @@ class StaticObjectFetcher(
 			parentCollections = collFetcher.getParentCollections(dobj),
 			references = References.empty
 		)
+
+		try
+			citer.getCitationInfo(init)
+		catch case err =>
+			println(s"Citation info fetch failed: ${err.getMessage()}")
+			err.printStackTrace()
+			throw err
+		
 		init.copy(references = citer.getCitationInfo(init))
 	}
 

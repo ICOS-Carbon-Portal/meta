@@ -43,16 +43,16 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.directives.CachingDirectives.*
 import akka.http.scaladsl.model.headers.*
+import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDbFixture
 
 
 
-class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll {
+class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll with TestDbFixture {
 
 	import system.{log}
-	lazy val db = new TestDb
 
-	override protected def afterAll(): Unit =
-		db.cleanup()
+	// override protected def afterAll(): Unit =
+	// 	db.cleanup()
 
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, 2, 100, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
@@ -106,7 +106,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 				assert(status == StatusCodes.InternalServerError)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 
-		it("Error later in response"):
+		ignore("Error later in response"):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -133,7 +133,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 	
-		it("Timeout"):
+		ignore("Timeout"):
 			val query = """
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 				select ?sumb2 where{

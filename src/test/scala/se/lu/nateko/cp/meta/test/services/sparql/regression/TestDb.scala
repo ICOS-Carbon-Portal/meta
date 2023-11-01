@@ -27,6 +27,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import org.scalatest.{fixture, Outcome}
 
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
@@ -107,4 +108,12 @@ object TestDb{
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
 		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
+
+		private val instance = new TestDb
+
+		def getInstance: TestDb = instance
+}
+
+trait TestDbFixture {
+  val db: TestDb = TestDb.getInstance
 }

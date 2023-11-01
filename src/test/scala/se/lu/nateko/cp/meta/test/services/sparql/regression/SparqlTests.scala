@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import org.scalatest.Informer
 
 
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
+class QueryTests extends AsyncFunSpec with BeforeAndAfterAll with TestDbFixture {
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -27,8 +27,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		}
 		f
 	}
-
-	lazy val db = new TestDb
 
 	type Rows = Future[IndexedSeq[BindingSet]]
 

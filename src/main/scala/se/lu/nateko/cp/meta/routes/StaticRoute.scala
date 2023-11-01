@@ -96,6 +96,9 @@ object StaticRoute {
 				} ~
 				complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
 			}
+		} ~
+		path("robots.txt"){
+			getFromResource("robots.txt")
 		}
 	}
 

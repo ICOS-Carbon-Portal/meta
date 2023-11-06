@@ -33,6 +33,10 @@ import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import se.lu.nateko.cp.doi.DoiMeta
+import org.scalatest.Suite
+import org.scalatest.BeforeAndAfterAll
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
 
 class TestDb {
 
@@ -114,6 +118,18 @@ object TestDb{
 		def getInstance: TestDb = instance
 }
 
-trait TestDbFixture {
-  val db: TestDb = TestDb.getInstance
-}
+trait TestDbFixture:
+	val db: TestDb = TestDb.getInstance
+
+trait CleanupTestDb extends BeforeAndAfterAll:
+	this: Suite =>
+
+	override protected def afterAll(): Unit =
+		TestDb.getInstance.cleanup()
+		super.afterAll()
+
+class AllTests extends Suite with CleanupTestDb:
+	override def nestedSuites: collection.immutable.IndexedSeq[Suite] = Vector(
+		new QueryTests,
+		new SparqlRouteTests
+		)

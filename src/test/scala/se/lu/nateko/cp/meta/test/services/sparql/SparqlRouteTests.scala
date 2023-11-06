@@ -46,13 +46,9 @@ import akka.http.scaladsl.model.headers.*
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDbFixture
 
 
-
-class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll with TestDbFixture {
+class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
 
 	import system.{log}
-
-	// override protected def afterAll(): Unit =
-	// 	db.cleanup()
 
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, 2, 100, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
@@ -147,4 +143,5 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 
 			testRoute(query):
 				assert(status == StatusCodes.RequestTimeout)
-}
+
+end SparqlRouteTests

@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import org.scalatest.Informer
 
 
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll with TestDbFixture {
+class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -29,10 +29,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll with TestDbFixture 
 	}
 
 	type Rows = Future[IndexedSeq[BindingSet]]
-
-	override def afterAll() = {
-		db.cleanup()
-	}
 
 	def describeQfull(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int

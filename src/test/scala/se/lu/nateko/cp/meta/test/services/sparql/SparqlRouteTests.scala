@@ -106,7 +106,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 				assert(status == StatusCodes.InternalServerError)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 
-		ignore("Error later in response"):
+		it("Error later in response"):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -117,7 +117,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 							?dobj cpmeta:hasObjectSpec ?specUri .
 							?dobj cpmeta:hasBiblioInfo ?cit .
 						}
-						limit 500
+						limit 50
 					}
 					UNION
 					{
@@ -133,7 +133,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 	
-		ignore("Timeout"):
+		it("Timeout"):
 			val query = """
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 				select ?sumb2 where{

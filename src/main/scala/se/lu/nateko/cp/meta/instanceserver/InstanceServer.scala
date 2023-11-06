@@ -156,6 +156,17 @@ object TriplestoreConnection:
 
 	import InstanceServer.*
 
+	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): TSC2[CloseableIterator[Statement]] =
+		conn ?=> conn.getStatements(subject, predicate, obj)
+
+	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): TSC2[Boolean] =
+		conn ?=> conn.hasStatement(subject, predicate, obj)
+
+	def hasStatement(subject: IRI, predicate: IRI, obj: Value): TSC2[Boolean] =
+		conn ?=> conn.hasStatement(Option(subject), Option(predicate), Option(obj))
+
+	def resourceHasType(res: IRI, tpe: IRI): TSC2[Boolean] = hasStatement(res, RDF.TYPE, tpe)
+
 	def getValues(instUri: IRI, propUri: IRI): TSC2[IndexedSeq[Value]] =
 		conn ?=> conn.getStatements(Some(instUri), Some(propUri), None).map(_.getObject).toIndexedSeq
 

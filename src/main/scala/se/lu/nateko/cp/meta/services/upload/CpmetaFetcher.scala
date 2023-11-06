@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -326,14 +327,13 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 	def getOptionalSpecificationFormat(spec: IRI): TSC2V[Option[IRI]] =
 		getOptionalUri(spec, metaVocab.hasFormat)
 
-	def getPosition(iri: IRI): TSC2V[Option[Position]] = getLatLon(iri).flatMap: latLonOpt =>
-		val optVal = latLonOpt.map: latLon =>
-			for
-				altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
-				lblOpt <- getOptionalString(iri, RDFS.LABEL)
-			yield latLon.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava))
-		Validated.sinkOption(optVal)
-
+	def getPosition(iri: IRI): TSC2V[Option[Position]] =
+		for
+			latLonOpt <- getLatLon(iri)
+			altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
+			lblOpt <- getOptionalString(iri, RDFS.LABEL)
+		yield
+			latLonOpt.map(_.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava)))
 
 	def getInstrumentPosition(deploymentIri: IRI): TSC2V[Option[Position]] =
 		for
@@ -378,6 +378,194 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				stop = stop
 			)
 
-	def getOrganization(uri: IRI): TSC2V[Organization] = ???
+	def getAgent(uri: IRI): TSC2V[Agent] =
+		getOptionalString(uri, metaVocab.hasFirstName).flatMap: a =>
+			if a.isDefined then
+				getPerson(uri)
+			else
+				getOrganization(uri)
+
+	def getOrganization(org: IRI): TSC2V[Organization] =
+		for
+			self <- getLabeledResource(org)
+			name <- getSingleString(org, metaVocab.hasName)
+			email <- getOptionalString(org, metaVocab.hasEmail)
+			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
+			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
+			webpageDetailsOpt <- Validated.sinkOption(webpageUriOpt.map(getWebpageElems))
+		yield
+			Organization(
+				self = self,
+				name = name,
+				email = email,
+				website = websiteOpt.map(_.toJava),
+				webpageDetails = webpageDetailsOpt
+			)
+
+	def getWebpageElems(elems: IRI): TSC2V[WebpageElements] =
+		for
+			self <- getLabeledResource(elems)
+			coverImage <- getOptionalUriLiteral(elems, metaVocab.hasCoverImage)
+			linkBoxes <- Validated.sequence(getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox))
+		yield
+			WebpageElements(
+				self = self,
+				coverImage = coverImage,
+				linkBoxes = Option(linkBoxes.sortBy(_.orderWeight)).filterNot(_.isEmpty)
+			)
+
+	def getLinkBox(lbox: IRI): TSC2V[LinkBox] =
+		for
+			name <- getSingleString(lbox, metaVocab.hasName)
+			coverImage <- getSingleUriLiteral(lbox, metaVocab.hasCoverImage)
+			target <- getSingleUriLiteral(lbox, metaVocab.hasWebpageLink)
+			orderWeightOpt <- getOptionalInt(lbox, metaVocab.hasOrderWeight)
+		yield
+			LinkBox(
+				name = name,
+				coverImage = coverImage,
+				target = target,
+				orderWeight = orderWeightOpt
+			)
+
+	def getPerson(pers: IRI): TSC2V[Person] =
+		for
+			self <- getLabeledResource(pers)
+			firstName <- getSingleString(pers, metaVocab.hasFirstName)
+			lastName <- getSingleString(pers, metaVocab.hasLastName)
+			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
+			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)
+		yield
+			Person(
+				self = self,
+				firstName = firstName,
+				lastName = lastName,
+				email = emailOpt,
+				orcid = orcidOpt.flatMap(Orcid.unapply)
+			)
+
+	def getProject(project: IRI): TSC2V[Project] =
+		for
+			self <- getLabeledResource(project)
+			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)
+		yield
+			Project(
+				self = self,
+				keywords = keywordsOpt.map(s => parseCommaSepList(s).toIndexedSeq)
+			)
+
+	def getObjectFormat(format: IRI): TSC2V[ObjectFormat] =
+		for
+			self <- getLabeledResource(format)
+		yield
+			ObjectFormat(
+				self = self,
+				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
+			)
+
+	def getDataTheme(theme: IRI): TSC2V[DataTheme] =
+		for
+			self <- getLabeledResource(theme)
+			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)
+			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
+		yield DataTheme(self = self, icon = icon, markerIcon = markerIconOpt)
+
+	def getTemporalCoverage(dobj: IRI): TSC2V[TemporalCoverage] =
+		for
+			start <- getSingleInstant(dobj, metaVocab.hasStartTime)
+			stop <- getSingleInstant(dobj, metaVocab.hasEndTime)
+			resolutionOpt <- getOptionalString(dobj, metaVocab.hasTemporalResolution)
+		yield
+			TemporalCoverage(
+				interval = TimeInterval(
+					start = start,
+					stop = stop
+				),
+				resolution = resolutionOpt
+			)
+
+	def getStationLocation(stat: IRI, labelOpt: Option[String]): TSC2V[Option[Position]] =
+		for
+			posLatOpt <- getOptionalDouble(stat, metaVocab.hasLatitude)
+			posLonOpt <- getOptionalDouble(stat, metaVocab.hasLongitude)
+			altOpt <- getOptionalFloat(stat, metaVocab.hasElevation)
+			stLabelOpt <- getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
+		yield
+			for posLat <- posLatOpt; posLon <- posLonOpt
+			yield Position(posLat, posLon, altOpt, stLabelOpt, None)
+
+	def getSite(site: IRI): TSC2V[Site] =
+		for
+			self <- getLabeledResource(site)
+			ecosystem <- getLabeledResource(site, metaVocab.hasEcosystemType)
+			locationUriOpt <- getOptionalUri(site, metaVocab.hasSpatialCoverage)
+			location <- Validated.sinkOption(locationUriOpt.map(getCoverage))
+		yield
+			Site(
+				self = self,
+				ecosystem = ecosystem,
+				location = location
+			)
+
+	def getCoverage(covUri: IRI): TSC2V[GeoFeature] =
+		getSingleUri(covUri, RDF.TYPE).flatMap: covClass =>
+			if covClass === metaVocab.latLonBoxClass then
+				getLatLonBox(covUri)
+			else if covClass === metaVocab.positionClass then
+				for positionOpt <- getPosition(covUri)
+				yield positionOpt.getOrElse(throw MetadataException(s"Could not read Position from URI $covUri"))
+			else
+				for
+					geoJson <- getSingleString(covUri, metaVocab.asGeoJSON)
+					labelOpt <- getOptionalString(covUri, RDFS.LABEL)
+				yield GeoJson.toFeature(geoJson).get.withOptLabel(labelOpt).withUri(covUri.toJava)
+
+	def getNextVersionAsUri(item: IRI): TSC2V[OptionalOneOrSeq[URI]] =
+		getNextVersions(item).map: nextVersions =>
+			nextVersions match
+				case Nil => None
+				case Seq(single) => Some(Left(single.toJava))
+				case many => Some(Right(many.map(_.toJava)))
+
+	private def getNextVersions(item: IRI): TSC2V[Seq[IRI]] =
+		Validated(
+			getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+			.flatMap:
+				case Rdf4jStatement(next, _, _) =>
+					if isPlainCollection(next).result.get
+					then getUriValues(next, metaVocab.dcterms.hasPart)
+					else Seq(next)
+				case _ => Nil //should not happen in practice, but just in case, for completeness
+			.filter(iri => isComplete(iri).result.get).toIndexedSeq
+		)
+
+	def isPlainCollection(item: IRI): TSC2V[Boolean] =
+		Validated(resourceHasType(item, metaVocab.plainCollectionClass))
+
+	def isComplete(item: IRI): TSC2V[Boolean] =
+		import metaVocab.*
+		val itemTypes = getUriValues(item, RDF.TYPE).toSet
+		Validated(itemTypes.contains(collectionClass) || (
+			itemTypes.contains(plainCollectionClass) &&
+			getUriValues(item, dcterms.hasPart).exists(uri => isComplete(uri).result.get)
+		) || (
+			if itemTypes.containsEither(docObjectClass, dataObjectClass)
+			then hasStatement(Some(item), Some(hasSizeInBytes), None)
+			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
+		))
+
+	def getLatestVersion(item: IRI): TSC2V[OneOrSeq[URI]] =
+		def latest(item: IRI, seen: Set[IRI]): TSC2V[Seq[IRI]] =
+			getNextVersions(item).map: nextVersionsSeq =>
+				val nextVersions = nextVersionsSeq.flatMap: next =>
+					if seen.contains(next)
+					then Nil
+					else latest(next, seen + next).result.get
+				if nextVersions.isEmpty then Seq(item) else nextVersions
+		for lv <- latest(item, Set.empty)
+		yield
+			lv.map(_.toJava) match
+				case Seq(single) => Left(single)
+				case many => Right(many)
 
 end CpmetaReader

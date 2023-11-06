@@ -58,19 +58,19 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 
 	describe("SparqlFailureHandleTest"):
 
-		ignore("Sending error in prologue results in InternalServerError"):
+		it("Sending error in prologue results in InternalServerError"):
 			val source = getFailureSource(2, new RuntimeException())
 			assertStatusCode(source, StatusCodes.InternalServerError)
 
-		ignore("Sending stream with an error after many elements results in a 200"):
+		it("Sending stream with an error after many elements results in a 200"):
 			val source = getFailureSource(20, Exception())
 			assertStatusCode(source, StatusCodes.OK)
 
-		ignore("CancellationException results in a RequestTimeout response"):
+		it("CancellationException results in a RequestTimeout response"):
 			val source = getFailureSource(2, new CancellationException())
 			assertStatusCode(source, StatusCodes.RequestTimeout)
 
-		ignore("Sending stream without error results in a 200"):
+		it("Sending stream without error results in a 200"):
 			assertStatusCode(makeGoodSource(4), StatusCodes.OK)
 
 		it("Sending stream with an error after many elements is handled by appending the error report at the end of the stream"):

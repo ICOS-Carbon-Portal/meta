@@ -118,7 +118,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 						catch case err =>
 							outStr.flush()
 							errPromise.tryFailure(err)
-							println(err.getMessage)
 							err.printStackTrace()
 					},
 					qquoter

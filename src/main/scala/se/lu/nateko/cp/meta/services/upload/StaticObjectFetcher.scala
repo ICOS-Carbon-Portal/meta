@@ -78,7 +78,6 @@ class StaticObjectFetcher(
 		try
 			citer.getCitationInfo(init)
 		catch case err =>
-			println(s"Citation info fetch failed: ${err.getMessage()}")
 			err.printStackTrace()
 			throw err
 		

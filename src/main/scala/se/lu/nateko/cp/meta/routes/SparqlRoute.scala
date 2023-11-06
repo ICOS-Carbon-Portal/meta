@@ -145,7 +145,6 @@ object SparqlRoute:
 
 		headFut
 			.map: head =>
-				// println(s"Got as prologue: \n" + head.map(_.utf8String).mkString)
 				val data = if head.size < peekN then Source(head) else Source(head).concat(
 					Source.unfoldResourceAsync(
 						() =>
@@ -165,7 +164,6 @@ object SparqlRoute:
 				case _: CancellationException =>
 					HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
 				case err: Throwable =>
-					// println("Got SPARQL error while peeking into the response stream")
 					HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
 
 

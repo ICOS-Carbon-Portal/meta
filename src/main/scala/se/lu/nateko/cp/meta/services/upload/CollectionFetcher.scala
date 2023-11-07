@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
@@ -94,3 +95,38 @@ class CollectionFetcher(
 	}
 
 }
+
+class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
+	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+
+	val memberProp = metaVocab.dcterms.hasPart
+
+	def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, metaVocab.dcterms.title)
+
+	def collectionExists(collUri: IRI): TSC2[Boolean] =
+		hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
+
+	def fetchLite(collUri: IRI): TSC2V[UriResource] =
+		if collectionExists(collUri) then
+			getTitle(collUri).map: title =>
+				UriResource(collUri.toJava, Some(title), Nil)
+		else Validated.error("collection does not exist")
+
+
+	def getParentCollections(dobj: IRI): TSC2V[Seq[UriResource]] =
+		val allIris = getStatements(None, Some(memberProp), Some(dobj))
+			.map(_.getSubject)
+			.collect{case iri: IRI => iri}
+			.toIndexedSeq
+
+		val deprecatedColls = allIris.flatMap(getPreviousVersions).toSet
+
+		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
+
+
+	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Option[IRI] = {
+		val collUri = vocab.getCollection(hash)
+		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
+	}
+
+	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))

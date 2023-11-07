@@ -324,6 +324,16 @@ trait CpmetaFetcher extends FetchingHelper{
 class CpmetaReader(val metaVocab: CpmetaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
+	def getPlainStaticObject(dobj: IRI): TSC2V[PlainStaticObject] =
+		for
+			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
+			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:
+				case None => getSingleString(dobj, metaVocab.hasName)
+				case Some(title) => Validated.ok(title)
+		yield
+			PlainStaticObject(dobj.toJava, hashsum, fileName)
+
+
 	def getOptionalSpecificationFormat(spec: IRI): TSC2V[Option[IRI]] =
 		getOptionalUri(spec, metaVocab.hasFormat)
 

@@ -568,4 +568,157 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				case Seq(single) => Left(single)
 				case many => Right(many)
 
+	def getPreviousVersion(item: IRI): TSC2V[OptionalOneOrSeq[URI]] =
+		val allPrevVersions: TSC2V[Seq[IRI]] = Validated(
+			getUriValues(item, metaVocab.isNextVersionOf) ++
+			getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
+				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll).result.get =>
+					getUriValues(coll, metaVocab.isNextVersionOf)
+				case _ => Nil
+		)
+		allPrevVersions.map: allPrevVersionsSeq =>
+			allPrevVersionsSeq.map(_.toJava) match
+				case Nil => None
+				case Seq(single) => Some(Left(single))
+				case many => Some(Right(many))
+
+	def getPreviousVersions(item: IRI): TSC2V[Seq[URI]] = getPreviousVersion(item).map(flattenToSeq)
+
+	def getValTypeLookup(datasetSpec: IRI): TSC2V[VarMetaLookup] =
+		for
+			datasetVars <- getDatasetVars(datasetSpec)
+			datasetColumns <- getDatasetColumns(datasetSpec)
+		yield
+			VarMetaLookup(datasetVars ++ datasetColumns)
+
+	def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): TSC2V[Option[VarMeta]] =
+		for
+			minValue <- getOptionalDouble(vi, metaVocab.hasMinValue)
+			maxValue <- getOptionalDouble(vi, metaVocab.hasMaxValue)
+			varNameOpt <- getOptionalString(vi, RDFS.LABEL)
+		yield
+			for
+				varName <- varNameOpt
+				varMeta <- vtLookup.lookup(varName)
+			yield
+				varMeta.copy(
+					minMax = minValue.flatMap(min =>maxValue.map(min -> _))
+				)
+
+	def getValueType(vt: IRI): TSC2V[ValueType] =
+		for
+			labeledResource <- getLabeledResource(vt)
+			quantityKind <- getOptionalUri(vt, metaVocab.hasQuantityKind)
+			quantityKindLR <- Validated.sinkOption(quantityKind.map(getLabeledResource))
+			unit <- getOptionalString(vt, metaVocab.hasUnit)
+		yield
+			ValueType(labeledResource, quantityKindLR, unit)
+
+	private def getDatasetVars(ds: IRI): TSC2V[Seq[DatasetVariable]] =
+		import metaVocab.*
+		getDatasetVarsOrCols(ds, hasVariable, hasVariableTitle, isRegexVariable, isOptionalVariable)
+
+	private def getDatasetColumns(ds: IRI): TSC2V[Seq[DatasetVariable]] =
+		import metaVocab.*
+		getDatasetVarsOrCols(ds, hasColumn, hasColumnTitle, isRegexColumn, isOptionalColumn)
+
+	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): TSC2V[Seq[DatasetVariable]] =
+		Validated.sequence(getUriValues(ds, varProp).map: dv =>
+			for
+				self <- getLabeledResource(dv)
+				title <- getSingleString(dv, titleProp)
+				valueTypeUri <- getSingleUri(dv, metaVocab.hasValueType)
+				valueType <- getValueType(valueTypeUri)
+				valueFormat <- getOptionalUri(dv, metaVocab.hasValueFormat)
+				isRegex <- getOptionalBool(dv, regexProp)
+				isOptional <- getOptionalBool(dv, optProp)
+			yield
+				val flaggedCols = getUriValues(dv, metaVocab.isQualityFlagFor).map(_.toJava)
+				DatasetVariable(
+					self = self,
+					title = title,
+					valueType = valueType,
+					valueFormat = valueFormat.map(_.toJava),
+					isFlagFor = Some(flaggedCols).filterNot(_.isEmpty),
+					isRegex = isRegex.getOrElse(false),
+					isOptional = isOptional.getOrElse(false)
+				)
+		)
+
+	def getInstrumentLite(instr: IRI): TSC2V[UriResource] =
+		val modelVal = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
+		val serialNumberVal = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
+
+		for
+			model <- modelVal
+			serialNumber <- serialNumberVal
+			name <- getOptionalString(instr, metaVocab.hasName)
+		yield
+			val label = name.orElse:
+				(model, serialNumber) match
+					case (None, None) => None
+					case (None, nbr) => nbr
+					case (m, None) => m
+					case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
+			.getOrElse:
+				instr.getLocalName
+
+			val comments = getStringValues(instr, RDFS.COMMENT)
+
+			UriResource(instr.toJava, Some(label), comments)
+
+	def getInstrumentDeployment(iri: IRI, instrument: IRI): TSC2V[InstrumentDeployment] =
+		for
+			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
+			instrument <- getInstrumentLite(instrument)
+			station <- getOrganization(stationIri)
+			pos <- getInstrumentPosition(iri)
+			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
+			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
+			forPropertyLR <- Validated.sinkOption(forPropertyOpt.map(getLabeledResource))
+			start <- getOptionalInstant(iri, metaVocab.hasStartTime)
+			stop <- getOptionalInstant(iri, metaVocab.hasEndTime)
+		yield
+			InstrumentDeployment(
+				instrument = instrument,
+				station = station,
+				pos = pos,
+				variableName = variableNameOpt,
+				forProperty = forPropertyLR,
+				start = start,
+				stop = stop
+			)
+
+	def getInstrument(instr: IRI): TSC2V[Option[Instrument]] =
+		for
+			self <- getInstrumentLite(instr)
+			model <- getSingleString(instr, metaVocab.hasModel)
+			serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
+			name <- getOptionalString(instr, metaVocab.hasName)
+			vendor <- getOptionalUri(instr, metaVocab.hasVendor)
+			vendorOrg <- Validated.sinkOption(vendor.map(getOrganization))
+			owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
+			ownerOrg <- Validated.sinkOption(owner.map(getOrganization))
+			parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
+			partOf <- Validated.sinkOption(
+				getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
+					case iri: IRI => getInstrumentLite(iri)
+				}.toList.headOption
+			)
+			deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
+		yield
+			if resourceHasType(instr, metaVocab.instrumentClass) then Some(
+				Instrument(
+					self = self,
+					model = model,
+					serialNumber = serialNumber,
+					name = name,
+					vendor = vendorOrg,
+					owner = ownerOrg,
+					parts = parts,
+					partOf = partOf,
+					deployments = deployments
+				)
+			) else None
+
 end CpmetaReader

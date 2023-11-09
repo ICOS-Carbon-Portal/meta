@@ -4,21 +4,24 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.toTypedJson
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
-import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.toTypedJson
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import spray.json.*
 
 import java.net.URI
 import java.net.URL
-import se.lu.nateko.cp.cpauth.core.UserId
+import java.nio.file.Files
+import java.nio.file.attribute.FileTime
+import scala.collection.mutable.WeakHashMap
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -189,7 +192,7 @@ case class CpmetaConfig(
 	statsClient: StatsClientConfig
 )
 
-object ConfigLoader extends CpmetaJsonProtocol{
+object ConfigLoader extends CpmetaJsonProtocol:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
@@ -267,15 +270,17 @@ object ConfigLoader extends CpmetaJsonProtocol{
 		val confJson: String = loadWithOverride(confOverride).getValue("cpmeta").render(renderOpts)
 		confJson.parseJson.convertTo[CpmetaConfig]
 
-	lazy val submittersConfig: SubmittersConfig = {
+	private val submConfCache = WeakHashMap.empty[FileTime, SubmittersConfig]
+
+	def submittersConfig: SubmittersConfig =
 		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
-
-		if(confFile.exists) {
-			val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
-			confJson.parseJson.convertTo[SubmittersConfig]
-		} else {
+		if confFile.exists then
+			val key = Files.getLastModifiedTime(confFile.toPath)
+			submConfCache.getOrElseUpdate(key, {
+				val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
+				confJson.parseJson.convertTo[SubmittersConfig]
+			})
+		else
 			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
-		}
-	}
 
-}
+end ConfigLoader

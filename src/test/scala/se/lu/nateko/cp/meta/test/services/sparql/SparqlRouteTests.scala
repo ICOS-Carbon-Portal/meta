@@ -26,9 +26,6 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
-import java.time.Duration
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.server.RequestContext
 
 @DoNotDiscover
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
@@ -49,12 +46,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			SparqlRoute.apply(sparqlConfig)
 
-	def req(query: String, additionalHeader: Option[HttpHeader] = None, ip: String = "127.0.0.1") =
+	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None) =
 		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), RawHeader("X-Forwarded-For", ip), additionalHeader.getOrElse(RawHeader("", "")))
 
-	def testRoute(query: String, additionalHeader: Option[HttpHeader] = None, ip: String = "127.0.0.1")(test: => Assertion): Future[Assertion] =
+	def testRoute(query: String, ip: String = "127.0.0.1", additionalHeader: Option[HttpHeader] = None)(test: => Assertion): Future[Assertion] =
 		sparqlRoute map: route =>
-			req(query, additionalHeader, ip) ~> route ~> check(test)
+			req(query, ip, additionalHeader) ~> route ~> check(test)
 
 	describe("SparqlRoute"):
 		it("Correct query should produce correct result and get cached"):
@@ -153,16 +150,17 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
+			val ip = "127.0.1.1"
 
 			val initRequests = Future.sequence(Seq(
-				testRoute(longRunningQuery, ip = "127.0.1.1"):
+				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.RequestTimeout), 
-				testRoute(longRunningQuery, ip = "127.0.1.1"):
+				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.RequestTimeout))
 				)
 
 			initRequests.flatMap: res =>
-				testRoute(longRunningQuery, ip = "127.0.1.1"):
+				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
 		it("Too many parallel queries"):
@@ -172,11 +170,11 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			val ip = "127.0.2.1"
 
 			sparqlRoute.flatMap: route =>
-				def request(n: Int) = req(longRunningQuery, Some(`Cache-Control`(`no-cache`)), ip)
+				def request(n: Int) = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
 				route(request(1))
 				route(request(2))
 				Thread.sleep(100)
-				testRoute(query(3), Some(`Cache-Control`(`no-cache`)), ip):
+				testRoute(query(3), ip, Some(`Cache-Control`(`no-cache`))):
 					assert(status == StatusCodes.RequestTimeout)
 
 end SparqlRouteTests

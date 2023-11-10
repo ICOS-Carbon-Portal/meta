@@ -1,29 +1,25 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
-import org.scalatest.funspec.AsyncFunSpec
-import akka.util.ByteString
-import scala.concurrent.Future
-import akka.stream.scaladsl.SinkQueueWithCancel
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Source
+import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.actor.FSM.Failure
-import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
-import org.scalatest.BeforeAndAfterAll
-import se.lu.nateko.cp.meta.routes.SparqlRoute
-import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.server.RouteResult.Complete
-import akka.http.scaladsl.model.StatusCodes
-import akka.NotUsed
-import se.lu.nateko.cp.meta.routes.SparqlRoute.handleSparqlFailures
-import java.util.concurrent.CancellationException
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.StatusCode
+import akka.http.scaladsl.model.StatusCodes
+import akka.stream.Materializer
+import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AsyncFunSpec
+import se.lu.nateko.cp.meta.routes.SparqlRoute
+
+import java.util.concurrent.CancellationException
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
 
 class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 

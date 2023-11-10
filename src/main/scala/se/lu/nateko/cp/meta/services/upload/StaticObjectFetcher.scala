@@ -74,7 +74,6 @@ class StaticObjectFetcher(
 			parentCollections = collFetcher.getParentCollections(dobj),
 			references = References.empty
 		)
-
 		init.copy(references = citer.getCitationInfo(init))
 	}
 

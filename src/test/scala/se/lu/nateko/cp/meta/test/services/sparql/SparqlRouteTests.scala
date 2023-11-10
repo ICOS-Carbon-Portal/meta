@@ -63,12 +63,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 						VALUES ?s { <$uri> }
 						?s ?p ?o }"""
 
-			testRoute(query, ip = "127.0.5.1"):
+			testRoute(query):
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains(uri))
 				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "MISS"))
 			.flatMap: _ =>
-				testRoute(query, ip = "127.0.5.1"):
+				testRoute(query):
 					assert(status == StatusCodes.OK)
 					assert(header("x-cache-status").get == RawHeader("X-Cache-Status", "HIT"))
 
@@ -78,12 +78,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 						VALUES ?s { <$uri> }
 						?s ?p ?o }"""
 
-			testRoute(query, additionalHeader = Some(`Cache-Control`(`no-cache`)), "127.0.5.1"):
+			testRoute(query, additionalHeader = Some(`Cache-Control`(`no-cache`))):
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains(uri))
 				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "BYPASS"))
 			.flatMap: _ =>
-				testRoute(query, ip = "127.0.5.1"):
+				testRoute(query):
 					assert(status == StatusCodes.OK)
 					assert(header("x-cache-status").fold(false)(_ == RawHeader("X-Cache-Status", "HIT")))
 

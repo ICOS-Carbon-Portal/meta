@@ -72,7 +72,7 @@ class Rdf4jUriSerializer(
 	servers: DataObjectInstanceServers,
 	doiCiter: PlainDoiCiter,
 	config: CpmetaConfig
-)(implicit envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer{
+)(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
@@ -81,8 +81,9 @@ class Rdf4jUriSerializer(
 	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
-	val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-	val pcm = new PageContentMarshalling(config.core.handleProxies, stats)
+	private val pcm =
+		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
+		new PageContentMarshalling(config.core.handleProxies, stats)
 
 	import pcm.{staticObjectMarshaller, statCollMarshaller}
 
@@ -277,7 +278,8 @@ class Rdf4jUriSerializer(
 
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
-}
+
+end Rdf4jUriSerializer
 
 private object Rdf4jUriSerializer{
 

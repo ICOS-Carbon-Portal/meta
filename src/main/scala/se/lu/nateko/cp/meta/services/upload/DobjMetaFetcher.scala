@@ -183,16 +183,22 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			samplingHeight = getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 		)
 
-		val deployments = server.getStatements(None, Some(metaVocab.atOrganization), Some(stationUri)).collect{
-			case Rdf4jStatement(subj, _, _) if server.hasStatement(subj, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
-				val instr = server.getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(subj)).collect{
-					case Rdf4jStatement(instr, _, _) => instr
-				}.toList match
-					case Nil => throw new Exception(s"No instruments for deployment $subj")
-					case one :: Nil => one
-					case many => throw new Exception(s"Too many instruments for deployment $subj")
-				getInstrumentDeployment(subj, instr)
-		}.toIndexedSeq
+		val deployments = server
+			.getStatements(None, Some(metaVocab.atOrganization), Some(stationUri))
+			.toIndexedSeq
+			.collect:
+				case Rdf4jStatement(subj, _, _) if server.hasStatement(subj, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+					val instrs = server
+						.getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(subj))
+						.collect:
+							case Rdf4jStatement(instr, _, _) => instr
+						.toList
+					val instr = instrs match
+						case Nil => throw new Exception(s"No instruments for deployment $subj")
+						case one :: Nil => one
+						case many => throw new Exception(s"Too many instruments for deployment $subj")
+					getInstrumentDeployment(subj, instr)
+			.toIndexedSeq
 
 		val nRows = getOptionalInt(dobj, metaVocab.hasNumberOfRows)
 

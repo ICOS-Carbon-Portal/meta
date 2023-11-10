@@ -87,9 +87,11 @@ object InstanceServerSerializer {
 					use.acquire(outStr)
 					val rdfWriter = writerFactory.getWriter(outStr)
 					rdfWriter.startRDF()
-					producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
-					statements.foreach(rdfWriter.handleStatement)
-					rdfWriter.endRDF()
+					try
+						producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
+						statements.foreach(rdfWriter.handleStatement)
+					finally
+						rdfWriter.endRDF()
 				}
 				.failed.filter{//swallow the exception raised if entityBytes' consumer cancels
 					case io: IOException =>

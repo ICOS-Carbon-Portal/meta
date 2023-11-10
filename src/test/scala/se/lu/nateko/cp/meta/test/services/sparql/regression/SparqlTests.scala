@@ -15,8 +15,9 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
 import scala.concurrent.ExecutionContext
 import org.scalatest.Informer
+import org.scalatest.DoNotDiscover
 
-
+@DoNotDiscover
 class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {

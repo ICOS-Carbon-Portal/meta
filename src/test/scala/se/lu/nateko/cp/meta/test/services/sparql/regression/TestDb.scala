@@ -128,8 +128,8 @@ trait CleanupTestDb extends BeforeAndAfterAll:
 		TestDb.getInstance.cleanup()
 		super.afterAll()
 
-class AllTests extends Suite with CleanupTestDb:
+class TestDbSuites extends Suite with CleanupTestDb:
 	override def nestedSuites: collection.immutable.IndexedSeq[Suite] = Vector(
-		new QueryTests,
-		new SparqlRouteTests
+			new QueryTests,
+			new SparqlRouteTests
 		)

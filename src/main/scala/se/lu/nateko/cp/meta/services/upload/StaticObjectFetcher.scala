@@ -75,12 +75,6 @@ class StaticObjectFetcher(
 			references = References.empty
 		)
 
-		try
-			citer.getCitationInfo(init)
-		catch case err =>
-			err.printStackTrace()
-			throw err
-		
 		init.copy(references = citer.getCitationInfo(init))
 	}
 

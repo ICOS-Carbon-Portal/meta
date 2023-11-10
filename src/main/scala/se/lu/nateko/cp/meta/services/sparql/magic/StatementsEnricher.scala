@@ -39,8 +39,7 @@ class StatementsEnricher(val citer: CitationProvider) {
 		if(subj == null || obj != null) empty //lookup by magic values/predicates not possible
 		else{
 			val magicFactories = magicPredValueFactories(subj)
-			if(pred != null && !magicFactories.contains(pred))
-				empty //not a magic predicate
+			if(pred != null && !magicFactories.contains(pred)) empty //not a magic predicate
 			else if(pred == null) {
 				val extras = magicFactories.iterator.flatMap{
 					(pred, thunk) => thunk().map(v => factory.createStatement(subj, pred, v))
@@ -65,12 +64,7 @@ class StatementsEnricher(val citer: CitationProvider) {
 				refs.map(js => factory.createStringLiteral(js.toJson.compactPrint))
 			}),
 			metaVocab.hasCitationString -> (
-				() => {
-					try
-						refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(factory.createStringLiteral)
-					catch case err => 
-						throw new SailException(err.getMessage)
-				}
+				() => refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(factory.createStringLiteral)
 			),
 			metaVocab.dcterms.license -> (
 				() => refsCache.fold(citer.getLicence(subj))(_.flatMap(_.licence)).map(_.url.toRdf)

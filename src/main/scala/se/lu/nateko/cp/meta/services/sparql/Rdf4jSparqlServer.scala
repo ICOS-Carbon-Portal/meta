@@ -103,8 +103,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
-			val qquoter = quoter.logNewQueryStart(queryStr.clientId)
-			println(s"Logged new query ${qquoter.qid} for client ${qquoter.cid}")
+			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
 			val errPromise = Promise[ByteString]()
 			val sparqlEntityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
@@ -118,7 +117,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 						catch case err =>
 							outStr.flush()
 							errPromise.tryFailure(err)
-							err.printStackTrace()
 					},
 					qquoter
 				)

@@ -1,56 +1,42 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import se.lu.nateko.cp.meta.routes.SparqlRoute
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import se.lu.nateko.cp.meta.SparqlServerConfig
-import spray.json.*
-import scala.concurrent.Await
-import concurrent.duration.DurationInt
-import eu.icoscp.envri.Envri
-import java.net.URI
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.StatusCodes
-import org.scalatest.funspec.AsyncFunSpec
-import scala.concurrent.Future
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.RouteResult
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.RequestEntity
-import org.scalatest.BeforeAndAfterAll
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.model.headers.Accept
-import org.scalatest.compatible.Assertion
 import akka.actor.ActorSystem
-import akka.http.scaladsl.testkit.RouteTestTimeout
-import akka.http.scaladsl.model.headers.`X-Forwarded-For`
-import akka.http.scaladsl.model.RemoteAddress
-import java.net.SocketAddress
-import java.net.InetAddress
-import akka.http.scaladsl.model.headers.RawHeader
-import scala.util.Success
-import scala.util.Failure
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.headers.CacheDirectives._
-import akka.http.scaladsl.server.directives.CachingDirectives.*
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.CacheDirectives.*
 import akka.http.scaladsl.model.headers.*
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.testkit.RouteTestTimeout
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import eu.icoscp.envri.Envri
+import org.scalatest.DoNotDiscover
+import org.scalatest.compatible.Assertion
+import org.scalatest.funspec.AsyncFunSpec
+import se.lu.nateko.cp.meta.SparqlServerConfig
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.routes.SparqlRoute
+import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDbFixture
 
+import java.net.URI
+import scala.concurrent.Await
+import scala.concurrent.Future
 
+import concurrent.duration.DurationInt
+import java.time.Duration
+import akka.http.scaladsl.model.StatusCode
+import akka.http.scaladsl.server.RequestContext
+
+@DoNotDiscover
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
 
 	import system.{log}
 
-	val sparqlConfig = new SparqlServerConfig(5, 2, 2, 2, 100, 10, 8388608, Seq("test@nateko.lu.se"))
+	val numberOfParallelQueries = 2
+	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
 
 	val sparqlRoute: Future[Route] =
@@ -63,22 +49,43 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			SparqlRoute.apply(sparqlConfig)
 
-	def testRoute(query: String, additionalHeader: Option[HttpHeader] = None)(test: => Assertion): Future[Assertion] =
-		sparqlRoute map: route =>
-			Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), RawHeader("X-Forwarded-For", "127.0.5.1"), additionalHeader.getOrElse(RawHeader("", ""))) ~> route ~> check(test)
+	def req(query: String, additionalHeader: Option[HttpHeader] = None, ip: String = "127.0.0.1") =
+		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), RawHeader("X-Forwarded-For", ip), additionalHeader.getOrElse(RawHeader("", "")))
 
+	def testRoute(query: String, additionalHeader: Option[HttpHeader] = None, ip: String = "127.0.0.1")(test: => Assertion): Future[Assertion] =
+		sparqlRoute map: route =>
+			req(query, additionalHeader, ip) ~> route ~> check(test)
 
 	describe("SparqlRoute"):
-		it("Correct query should produce correct result"):
+		it("Correct query should produce correct result and get cached"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val query = s"""select * where { 
 						VALUES ?s { <$uri> }
 						?s ?p ?o }"""
 
-			testRoute(query):
+			testRoute(query, ip = "127.0.5.1"):
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains(uri))
+				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "MISS"))
+			.flatMap: _ =>
+				testRoute(query, ip = "127.0.5.1"):
+					assert(status == StatusCodes.OK)
+					assert(header("x-cache-status").get == RawHeader("X-Cache-Status", "HIT"))
 
+		it("Request with cache disabled should update cache"):
+			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
+			val query = s"""select * where { 
+						VALUES ?s { <$uri> }
+						?s ?p ?o }"""
+
+			testRoute(query, additionalHeader = Some(`Cache-Control`(`no-cache`)), "127.0.5.1"):
+				assert(status == StatusCodes.OK)
+				assert(responseAs[String].contains(uri))
+				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "BYPASS"))
+			.flatMap: _ =>
+				testRoute(query, ip = "127.0.5.1"):
+					assert(status == StatusCodes.OK)
+					assert(header("x-cache-status").fold(false)(_ == RawHeader("X-Cache-Status", "HIT")))
 
 		it("Syntax error in query"):
 			val query = "selecct * where { ?s ?p ?o }"
@@ -128,20 +135,48 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			testRoute(query):
 				assert(status == StatusCodes.OK)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
-	
-		it("Timeout"):
-			val query = """
-				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?sumb2 where{
-					?subm1 a cpmeta:DataSubmission .
-					?sumb2 a cpmeta:DataSubmission .
-					filter (?subm1 = ?sumb2)
-				}
-				order by ?subm1
-				limit 3
-			"""
 
-			testRoute(query):
+		val longRunningQuery = """
+			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			select ?sumb2 where{
+				?subm1 a cpmeta:DataSubmission .
+				?sumb2 a cpmeta:DataSubmission .
+				filter (?subm1 = ?sumb2)
+			}
+			order by ?subm1
+			limit 3
+		"""		
+
+		it("Long running query should result in timeout"):
+			testRoute(longRunningQuery):
 				assert(status == StatusCodes.RequestTimeout)
+
+		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
+			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
+
+			val initRequests = Future.sequence(Seq(
+				testRoute(longRunningQuery, ip = "127.0.1.1"):
+					assert(status == StatusCodes.RequestTimeout), 
+				testRoute(longRunningQuery, ip = "127.0.1.1"):
+					assert(status == StatusCodes.RequestTimeout))
+				)
+
+			initRequests.flatMap: res =>
+				testRoute(longRunningQuery, ip = "127.0.1.1"):
+					assert(status == StatusCodes.ServiceUnavailable)
+
+		it("Too many parallel queries"):
+			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
+			def query(n: Int) = s"""select * where { <$uri> ?p ?o } # $n"""
+
+			val ip = "127.0.2.1"
+
+			sparqlRoute.flatMap: route =>
+				def request(n: Int) = req(longRunningQuery, Some(`Cache-Control`(`no-cache`)), ip)
+				route(request(1))
+				route(request(2))
+				Thread.sleep(100)
+				testRoute(query(3), Some(`Cache-Control`(`no-cache`)), ip):
+					assert(status == StatusCodes.RequestTimeout)
 
 end SparqlRouteTests

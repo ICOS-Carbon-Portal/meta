@@ -13,7 +13,10 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 	def require(test: T => Boolean, errMsg: String) = if(result.map(test).getOrElse(true)) this else
 		new Validated(result, errors :+ errMsg)
 
-	def optional = new Validated(Some(result), errors)
+	def optional: Validated[Option[T]] =
+		if result.isDefined
+		then new Validated(Some(result), errors)
+		else Validated.empty
 
 	def orElse[U >: T](fallback:  => U) =
 		if(result.isDefined) this
@@ -70,6 +73,7 @@ object Validated{
 
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
+	def empty[T] = new Validated[T](None, Nil)
 
 	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
 

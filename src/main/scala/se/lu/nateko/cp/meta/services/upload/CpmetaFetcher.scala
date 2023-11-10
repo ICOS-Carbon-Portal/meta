@@ -337,28 +337,27 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 	def getOptionalSpecificationFormat(spec: IRI): TSC2V[Option[IRI]] =
 		getOptionalUri(spec, metaVocab.hasFormat)
 
-	def getPosition(iri: IRI): TSC2V[Option[Position]] =
+	def getPosition(iri: IRI): TSC2V[Position] =
 		for
-			latLonOpt <- getLatLon(iri)
+			latLon <- getLatLon(iri)
 			altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
 			lblOpt <- getOptionalString(iri, RDFS.LABEL)
 		yield
-			latLonOpt.map(_.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava)))
+			latLon.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava))
 
-	def getInstrumentPosition(deploymentIri: IRI): TSC2V[Option[Position]] =
+	def getInstrumentPosition(deploymentIri: IRI): TSC2V[Position] =
 		for
-			latLonOpt <- getLatLon(deploymentIri)
+			latLon <- getLatLon(deploymentIri)
 			altOpt <- getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
 		yield
-			latLonOpt.map(_.copy(alt = altOpt))
+			latLon.copy(alt = altOpt)
 
-	private def getLatLon(iri: IRI): TSC2V[Option[Position]] =
+	private def getLatLon(iri: IRI): TSC2V[Position] =
 		for
-			latOpt <- getOptionalDouble(iri, metaVocab.hasLatitude)
-			lonOpt <- getOptionalDouble(iri, metaVocab.hasLongitude)
+			lat <- getSingleDouble(iri, metaVocab.hasLatitude)
+			lon <- getSingleDouble(iri, metaVocab.hasLongitude)
 		yield
-			for lat <- latOpt; lon <- lonOpt
-			yield Position.ofLatLon(lat, lon)
+			Position.ofLatLon(lat, lon)
 
 	def getLatLonBox(cov: IRI): TSC2V[LatLonBox] =
 		for
@@ -494,15 +493,14 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				resolution = resolutionOpt
 			)
 
-	def getStationLocation(stat: IRI, labelOpt: Option[String]): TSC2V[Option[Position]] =
+	def getStationLocation(stat: IRI, labelOpt: Option[String]): TSC2V[Position] =
 		for
-			posLatOpt <- getOptionalDouble(stat, metaVocab.hasLatitude)
-			posLonOpt <- getOptionalDouble(stat, metaVocab.hasLongitude)
+			posLat <- getSingleDouble(stat, metaVocab.hasLatitude)
+			posLon <- getSingleDouble(stat, metaVocab.hasLongitude)
 			altOpt <- getOptionalFloat(stat, metaVocab.hasElevation)
 			stLabelOpt <- getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
 		yield
-			for posLat <- posLatOpt; posLon <- posLonOpt
-			yield Position(posLat, posLon, altOpt, stLabelOpt, None)
+			Position(posLat, posLon, altOpt, stLabelOpt, None)
 
 	def getSite(site: IRI): TSC2V[Site] =
 		for
@@ -522,35 +520,35 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			if covClass === metaVocab.latLonBoxClass then
 				getLatLonBox(covUri)
 			else if covClass === metaVocab.positionClass then
-				for positionOpt <- getPosition(covUri)
-				yield positionOpt.getOrElse(throw MetadataException(s"Could not read Position from URI $covUri"))
+				getPosition(covUri).require(s"Could not read Position from URI $covUri")
 			else
 				for
 					geoJson <- getSingleString(covUri, metaVocab.asGeoJSON)
 					labelOpt <- getOptionalString(covUri, RDFS.LABEL)
-				yield GeoJson.toFeature(geoJson).get.withOptLabel(labelOpt).withUri(covUri.toJava)
+					feature <- Validated.fromTry(GeoJson.toFeature(geoJson))
+				yield
+					feature.withOptLabel(labelOpt).withUri(covUri.toJava)
 
 	def getNextVersionAsUri(item: IRI): TSC2V[OptionalOneOrSeq[URI]] =
-		getNextVersions(item).map: nextVersions =>
-			nextVersions match
-				case Nil => None
-				case Seq(single) => Some(Left(single.toJava))
-				case many => Some(Right(many.map(_.toJava)))
+		getNextVersions(item).map:
+			case Nil => None
+			case Seq(single) => Some(Left(single.toJava))
+			case many => Some(Right(many.map(_.toJava)))
 
 	private def getNextVersions(item: IRI): TSC2V[Seq[IRI]] =
 		Validated(
 			getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 			.flatMap:
 				case Rdf4jStatement(next, _, _) =>
-					if isPlainCollection(next).result.get
+					if isPlainCollection(next)
 					then getUriValues(next, metaVocab.dcterms.hasPart)
 					else Seq(next)
 				case _ => Nil //should not happen in practice, but just in case, for completeness
 			.filter(iri => isComplete(iri).result.get).toIndexedSeq
 		)
 
-	def isPlainCollection(item: IRI): TSC2V[Boolean] =
-		Validated(resourceHasType(item, metaVocab.plainCollectionClass))
+	def isPlainCollection(item: IRI): TSC2[Boolean] =
+		resourceHasType(item, metaVocab.plainCollectionClass)
 
 	def isComplete(item: IRI): TSC2V[Boolean] =
 		import metaVocab.*
@@ -582,7 +580,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 		val allPrevVersions: TSC2V[Seq[IRI]] = Validated(
 			getUriValues(item, metaVocab.isNextVersionOf) ++
 			getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
-				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll).result.get =>
+				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
 					getUriValues(coll, metaVocab.isNextVersionOf)
 				case _ => Nil
 		)
@@ -612,7 +610,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				varMeta <- vtLookup.lookup(varName)
 			yield
 				varMeta.copy(
-					minMax = minValue.flatMap(min =>maxValue.map(min -> _))
+					minMax = minValue.flatMap(min => maxValue.map(min -> _))
 				)
 
 	def getValueType(vt: IRI): TSC2V[ValueType] =
@@ -682,7 +680,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
 			instrument <- getInstrumentLite(instrument)
 			station <- getOrganization(stationIri)
-			pos <- getInstrumentPosition(iri)
+			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
 			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
 			forPropertyLR <- Validated.sinkOption(forPropertyOpt.map(getLabeledResource))

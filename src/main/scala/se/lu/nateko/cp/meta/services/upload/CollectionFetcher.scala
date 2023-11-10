@@ -119,14 +119,17 @@ class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends Cpmet
 			.collect{case iri: IRI => iri}
 			.toIndexedSeq
 
-		val deprecatedColls = allIris.flatMap(getPreviousVersions).toSet
+		for
+			deprecatedColls <- Validated.sequence(allIris.map(getPreviousVersions))
+			allParentCols <- Validated.sequence(allIris.map(fetchLite))
+		yield
+			val deprecatedSet = deprecatedColls.flatten.toSet
+			allParentCols.filterNot(res => deprecatedSet.contains(res.uri))
 
-		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
+
+	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): TSC2V[Option[IRI]] =
+		getOptionalUri(vocab.getCollection(hash), metaVocab.dcterms.creator)
 
 
-	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Option[IRI] = {
-		val collUri = vocab.getCollection(hash)
-		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
-	}
-
-	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))
+	def collectionExists(coll: Sha256Sum)(using Envri): TSC2[Boolean] =
+		collectionExists(vocab.getCollection(coll))

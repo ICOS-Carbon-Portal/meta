@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.HttpEntity.Default
 import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.model.headers.*
+import akka.http.scaladsl.server.Directive
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.*
@@ -20,9 +21,14 @@ import akka.http.scaladsl.server.RouteResult.Complete
 import akka.http.scaladsl.server.RouteResult.Rejected
 import akka.http.scaladsl.server.directives.CachingDirectives.*
 import akka.stream.Materializer
+import akka.stream.SinkShape
+import akka.stream.scaladsl.Broadcast
 import akka.stream.scaladsl.Concat
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.GraphDSL
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.SinkQueueWithCancel
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
@@ -32,6 +38,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CacheSizeLimitExceeded
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
@@ -41,7 +48,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.Random
 import scala.util.Success
-import akka.http.scaladsl.server.Directive
 
 object SparqlRoute:
 
@@ -127,44 +133,49 @@ object SparqlRoute:
 			case rejected: Rejected =>
 				Future.successful(rejected)
 			case Complete(resp) =>
-				delayResponseUntilStreamingStarts(resp).map(Complete.apply)
+				handleSparqlFailures(resp).map(Complete.apply)
 		}
 	}
 
-	private def delayResponseUntilStreamingStarts(resp: HttpResponse)(
+	def handleSparqlFailures(resp: HttpResponse)(
 			using mat: Materializer, exe: ExecutionContext
-	): Future[HttpResponse] = {
+	): Future[HttpResponse] =
+		val peekN = 4
+		val (headFut, tailQueue) = resp.entity.dataBytes.toMat(sparqlPeekSink(peekN))(Keep.right).run()
 
-		val (respMat, queue) = resp.entity.dataBytes.toMat(Sink.queue[ByteString]())(Keep.both).run()
-
-		def respondWith(data: Source[ByteString, Any]) = resp.withEntity(HttpEntity(resp.entity.contentType, data))
-
-		queue.pull().map{
-
-			case None => //empty original entity
-				val sparqlErr: Option[Throwable] = respMat match{
-					case fut: Future[Any] => fut.value.flatMap(_.failed.toOption)
-					case _ => None
+		headFut
+			.map: head =>
+				val data = if head.size < peekN then Source(head) else Source(head).concat(
+					Source.unfoldResourceAsync(
+						() =>
+							Future.successful(tailQueue),
+						_.pull(),
+						q =>
+							q.cancel()
+							Future.successful(akka.Done)
+					)
+				).recover{
+					case err =>
+						ByteString.apply("\n" + err.getMessage + "\n" + getStackTrace(err), StandardCharsets.UTF_8)
 				}
+				resp.withEntity(HttpEntity(resp.entity.contentType, data))
+			.recover:
+				case _: CancellationException =>
+					HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
+				case err: Throwable =>
+					HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
 
-				sparqlErr.fold(respondWith(Source.empty)){
-					case _: CancellationException =>
-						HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
-					case err: Throwable =>
-						HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
-				}
 
-			case Some(first) =>
-				val restSrc = Source.unfoldAsync(queue)(q => q.pull().map(_.map(q -> _)))
-
-				val data = Source.combine(Source.single(first), restSrc)(Concat.apply(_))
-					.watchTermination()((_, done) => {
-						done.onComplete(_ => queue.cancel())
-					})
-
-				respondWith(data)
-		}
-	}
+	private def sparqlPeekSink(n: Int): Sink[ByteString, (Future[Seq[ByteString]], SinkQueueWithCancel[ByteString])] =
+		val peek = Flow[ByteString].take(n).toMat(Sink.seq)(Keep.right)
+		val tail = Flow[ByteString].drop(n).toMat(Sink.queue())(Keep.right)
+		Sink.fromGraph(GraphDSL.createGraph(peek, tail)(Keep.both){implicit b => (s1, s2) =>
+			import GraphDSL.Implicits._
+			val fork = b.add(Broadcast[ByteString](2, eagerCancel = false))
+			fork.out(0) ~> s1
+			fork.out(1) ~> s2
+			SinkShape(fork.in)
+		})
 
 end SparqlRoute
 

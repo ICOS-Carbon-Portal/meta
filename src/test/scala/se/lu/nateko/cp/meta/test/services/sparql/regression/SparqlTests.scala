@@ -4,20 +4,23 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
+import org.scalatest
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.DoNotDiscover
+import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.test.services.sparql.TestDbFixture
+import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
 import se.lu.nateko.cp.meta.utils.rdf4j.createLiteral
-import org.scalatest
+
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
-import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
-import scala.concurrent.ExecutionContext
-import org.scalatest.Informer
 
-
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
+@DoNotDiscover
+class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -28,13 +31,7 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		f
 	}
 
-	lazy val db = new TestDb
-
 	type Rows = Future[IndexedSeq[BindingSet]]
-
-	override def afterAll() = {
-		db.cleanup()
-	}
 
 	def describeQfull(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int

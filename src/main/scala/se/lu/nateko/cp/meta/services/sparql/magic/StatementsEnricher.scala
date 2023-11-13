@@ -28,11 +28,14 @@ class StatementsEnricher(val citer: CitationProvider) {
 	private def empty[E <: Exception]: StatIter[E] = new EmptyIteration
 
 	def enrich[E <: Exception](base: StatIter[E], subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
-		val extras = getExtras[E](subj, pred, obj)
-		if(!extras.hasNext) base else UnionIteration(base, extras)
+		try
+			val extras = getExtras[E](subj, pred, obj)
+			if(!extras.hasNext) base else UnionIteration(base, extras)
+		catch case err => 
+			throw SailException(err.getMessage, err)
 	}
 
-	def getExtras[E <: Exception](subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
+	private def getExtras[E <: Exception](subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
 		if(subj == null || obj != null) empty //lookup by magic values/predicates not possible
 		else{
 			val magicFactories = magicPredValueFactories(subj)

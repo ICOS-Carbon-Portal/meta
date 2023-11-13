@@ -30,15 +30,7 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 		system.terminate()
 
 	def getFailureSource(chunks: Int, exception: Exception): Source[ByteString, NotUsed] =
-		val errPromise = Promise[ByteString]()
-		val failedSource = Source.future(errPromise.future)
-
-		val combinedSource = failedSource.merge(makeGoodSource(chunks))
-		
-		system.scheduler.scheduleOnce(1.second):
-			errPromise.tryFailure(exception)
-
-		combinedSource
+		makeGoodSource(chunks).concat(Source.failed(exception))
 
 	def makeGoodSource(chunks: Int): Source[ByteString, NotUsed] = Source
 		.fromIterator(() => Iterator.from(1))

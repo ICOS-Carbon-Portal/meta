@@ -4,18 +4,20 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
+import org.scalatest
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.DoNotDiscover
+import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.test.services.sparql.TestDbFixture
+import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
 import se.lu.nateko.cp.meta.utils.rdf4j.createLiteral
-import org.scalatest
+
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
-import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
-import scala.concurrent.ExecutionContext
-import org.scalatest.Informer
-import org.scalatest.DoNotDiscover
 
 @DoNotDiscover
 class QueryTests extends AsyncFunSpec with TestDbFixture {

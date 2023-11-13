@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDbFixture
+import se.lu.nateko.cp.meta.test.services.sparql.TestDbFixture
 
 import java.net.URI
 import scala.concurrent.Await
@@ -47,7 +47,8 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			SparqlRoute.apply(sparqlConfig)
 
 	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None) =
-		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), RawHeader("X-Forwarded-For", ip), additionalHeader.getOrElse(RawHeader("", "")))
+		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip)) ++ additionalHeader
+		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), otherHeaders*)
 
 	def testRoute(query: String, ip: String = "127.0.0.1", additionalHeader: Option[HttpHeader] = None)(test: => Assertion): Future[Assertion] =
 		sparqlRoute map: route =>
@@ -58,37 +59,38 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val query = s"""select * where { 
 						VALUES ?s { <$uri> }
-						?s ?p ?o }"""
+						?s ?p ?o } limit 1"""
+			var firstResponse: String = ""
 
 			testRoute(query):
-				assert(status == StatusCodes.OK)
-				assert(responseAs[String].contains(uri))
+				assert(status === StatusCodes.OK)
 				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "MISS"))
+				firstResponse = responseAs[String]
+				assert(firstResponse.contains(uri))
 			.flatMap: _ =>
 				testRoute(query):
-					assert(status == StatusCodes.OK)
+					assert(status === StatusCodes.OK)
+					assert(responseAs[String] === firstResponse)
 					assert(header("x-cache-status").get == RawHeader("X-Cache-Status", "HIT"))
 
-		it("Request with cache disabled should update cache"):
+		it("Request with cache disabled should update the cache"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
-			val query = s"""select * where { 
-						VALUES ?s { <$uri> }
-						?s ?p ?o }"""
+			val query = s"""select * where { <$uri> ?p ?o } limit 30"""
+			var firstResponse: String = ""
 
 			testRoute(query, additionalHeader = Some(`Cache-Control`(`no-cache`))):
-				assert(status == StatusCodes.OK)
-				assert(responseAs[String].contains(uri))
+				firstResponse = responseAs[String]
 				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "BYPASS"))
 			.flatMap: _ =>
 				testRoute(query):
-					assert(status == StatusCodes.OK)
-					assert(header("x-cache-status").fold(false)(_ == RawHeader("X-Cache-Status", "HIT")))
+					assert(responseAs[String] === firstResponse)
+					assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "HIT"))
 
 		it("Syntax error in query"):
 			val query = "selecct * where { ?s ?p ?o }"
 			
 			testRoute(query):
-				assert(status == StatusCodes.BadRequest)
+				assert(status === StatusCodes.BadRequest)
 				assert(responseAs[String].contains("selecct"))
 
 		it("Error in prologue"):
@@ -103,7 +105,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				"""
 
 			testRoute(query):
-				assert(status == StatusCodes.InternalServerError)
+				assert(status === StatusCodes.InternalServerError)
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 
 		it("Error later in response"):
@@ -163,18 +165,17 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		it("Too many parallel queries"):
+		it("Too many parallel queries result in timeout responses"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
-			def query(n: Int) = s"""select * where { <$uri> ?p ?o } # $n"""
-
 			val ip = "127.0.2.1"
 
 			sparqlRoute.flatMap: route =>
-				def request(n: Int) = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
-				route(request(1))
-				route(request(2))
-				Thread.sleep(100)
-				testRoute(query(3), ip, Some(`Cache-Control`(`no-cache`))):
+				val request = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
+				route(request)
+				route(request)
+				Thread.sleep(100) // to ensure that the third query gets started last
+				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
+				testRoute(query, ip):
 					assert(status == StatusCodes.RequestTimeout)
 
 end SparqlRouteTests

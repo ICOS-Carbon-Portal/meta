@@ -8,7 +8,12 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Outcome
+import org.scalatest.Suite
+import org.scalatest.fixture
 import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig.apply
 import se.lu.nateko.cp.meta.api.CloseableIterator
@@ -26,17 +31,13 @@ import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
-import org.scalatest.{fixture, Outcome}
 
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
-import se.lu.nateko.cp.doi.DoiMeta
-import org.scalatest.Suite
-import org.scalatest.BeforeAndAfterAll
-import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
-import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
 
 class TestDb {
 
@@ -100,7 +101,7 @@ class TestDb {
 	}
 }
 
-object TestDb{
+object TestDb:
 	val graphIriToFile = Seq(
 			"atmprodcsv", "cpmeta", "ecocsv", "etcbin", "etcprodcsv", "excel",
 			"extrastations", "icos", "netcdf", "stationentry", "stationlabeling"
@@ -113,23 +114,4 @@ object TestDb{
 		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-		private val instance = new TestDb
-
-		def getInstance: TestDb = instance
-}
-
-trait TestDbFixture:
-	val db: TestDb = TestDb.getInstance
-
-trait CleanupTestDb extends BeforeAndAfterAll:
-	this: Suite =>
-
-	override protected def afterAll(): Unit =
-		TestDb.getInstance.cleanup()
-		super.afterAll()
-
-class TestDbSuites extends Suite with CleanupTestDb:
-	override def nestedSuites: collection.immutable.IndexedSeq[Suite] = Vector(
-			new QueryTests,
-			new SparqlRouteTests
-		)
+	lazy val instance = new TestDb

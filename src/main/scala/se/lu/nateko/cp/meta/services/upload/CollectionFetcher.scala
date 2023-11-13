@@ -133,3 +133,63 @@ class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends Cpmet
 
 	def collectionExists(coll: Sha256Sum)(using Envri): TSC2[Boolean] =
 		collectionExists(vocab.getCollection(coll))
+
+class CollectionReader(vocab: CpVocab, metaVocab: CpmetaVocab, citer: CitationMaker) extends CollectionReaderLite(vocab, metaVocab):
+	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+
+	def fetchStatic(hash: Sha256Sum)(using Envri): TSC2V[Option[StaticCollection]] =
+		val collUri = citer.vocab.getCollection(hash)
+		val test = getPosition((collUri))
+		for
+			staticColl <- getExistingStaticColl(collUri, Some(hash))
+		yield
+			if collectionExists(collUri) then Some(staticColl)
+			else None
+
+	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): TSC2V[StaticCollection] =
+		val dct = metaVocab.dcterms
+
+		val membersValidSeq = Validated.sequence(
+			getUriValues(coll, memberProp).map: item =>
+				if collectionExists(item) then getExistingStaticColl(item)
+				else getPlainStaticObject(item)
+		)
+		val membersSeq = for
+			memb <- membersValidSeq
+		yield
+			memb.sortBy(_ match{
+				case coll: StaticCollection => coll.title
+				case dobj: PlainStaticObject => dobj.name
+			})
+
+		for
+			creatorUri <- getSingleUri(coll, dct.creator)
+			members <- membersSeq
+			creator <- getOrganization(creatorUri)
+			title <- getTitle(coll)
+			description <- getOptionalString(coll, dct.description)
+			nextVersion <- getNextVersionAsUri(coll)
+			latestVersion <- getLatestVersion(coll)
+			previousVersion <- getPreviousVersion(coll)
+			doi <- getOptionalString(coll, metaVocab.hasDoi)
+			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)
+			documentation <- Validated.sinkOption(documentationUriOpt.map(getPlainStaticObject))
+		yield
+			val init = StaticCollection(
+				res = coll.toJava,
+				hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
+				members = members,
+				creator = creator,
+				title = title,
+				description = description,
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
+				previousVersion = previousVersion.flattenToSeq.headOption,
+				doi = doi,
+				documentation = documentation,
+				references = References.empty
+			)
+			val citerRefs = citer.getItemCitationInfo(init)
+			//TODO Consider adding collection-specific logic for licence information
+			val updatedRefs = citerRefs.copy(title = Some(init.title))
+			init.copy(references = updatedRefs)

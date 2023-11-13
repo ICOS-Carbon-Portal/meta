@@ -29,8 +29,12 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 	override protected def afterAll(): Unit =
 		system.terminate()
 
-	def getFailureSource(chunks: Int, exception: Exception): Source[ByteString, NotUsed] =
-		makeGoodSource(chunks).concat(Source.failed(exception))
+	def getFailureSource(chunks: Int, exception: Exception): Source[ByteString, NotUsed] = Source
+		.fromIterator(() => Iterator.from(1))
+		.take(chunks)
+		.flatMapConcat: i =>
+			if i < chunks then Source.single(ByteString(s"chunk $i, ", "UTF-8"))
+			else Source.failed(exception)
 
 	def makeGoodSource(chunks: Int): Source[ByteString, NotUsed] = Source
 		.fromIterator(() => Iterator.from(1))
@@ -68,6 +72,7 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 				r <- handleErrors(source)
 				allBytes <- r.entity.dataBytes.toMat(Sink.reduce(_ ++ _))(Keep.right).run()
 			yield
+				assert(r.status === StatusCodes.OK)
 				assert(allBytes.utf8String.contains(msg))
 
 }

@@ -158,7 +158,6 @@ object SparqlRoute:
 					case err =>
 						ByteString.apply("\n" + err.getMessage + "\n" + getStackTrace(err), StandardCharsets.UTF_8)
 				}
-
 				resp.withEntity(HttpEntity(resp.entity.contentType, data))
 			.recover:
 				case _: CancellationException =>

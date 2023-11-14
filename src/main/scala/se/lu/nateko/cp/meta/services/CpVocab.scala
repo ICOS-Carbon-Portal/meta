@@ -100,6 +100,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))
 			Some(getRelativeRaw("cpmeta/SWC_n_n_n")(using icosBup))
 		else None
+
+	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
 }
 
 object CpVocab{

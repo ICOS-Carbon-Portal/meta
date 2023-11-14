@@ -176,7 +176,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					val station = acq.station.org.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
 					val vars =
-						if dobj.specification.self.uri == URI("http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct") then
+						if dobj.specification.self.uri === vocab.atmGhgProdSpec then
 							stationTs.columns.fold("")(_.collect{
 								case v if v.valueType.unit.isDefined => v.label
 							}.mkString(" (", ", ", ")"))

@@ -18,7 +18,7 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		then new Validated(Some(result), errors)
 		else Validated.empty
 
-	def orElse[U >: T](fallback:  => U) =
+	def orElse[U >: T](fallback: => U) =
 		if(result.isDefined) this
 		else new Validated[U](Some(fallback), errors)
 
@@ -30,6 +30,8 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		val newErrors = errors ++ valOpt.map(_.errors).getOrElse(Nil)
 		new Validated(newRes, newErrors)
 	}
+
+	def flatten = result.getOrElse(new Validated(None, errors))
 
 	def collect[U](f: PartialFunction[T, U]): Validated[U] = new Validated(result.collect(f), errors)
 
@@ -73,7 +75,7 @@ object Validated{
 
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
-	def empty[T] = new Validated[T](None, Nil)
+	def empty[T] = new Validated[T](None)
 
 	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
 
@@ -96,7 +98,7 @@ object Validated{
 	}
 
 	def sinkOption[T](o: Option[Validated[T]]): Validated[Option[T]] = o match
-		case None => Validated.ok(None)
+		case None => Validated.empty
 		case Some(v) => v.map(Some(_))
 
 	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =

@@ -3,19 +3,20 @@ package se.lu.nateko.cp.meta.services.upload
 import java.net.URI
 
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.IRI
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
@@ -119,11 +120,11 @@ class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends Cpmet
 			.collect{case iri: IRI => iri}
 			.toIndexedSeq
 
+		val deprecatedSet = allIris.flatMap(getPreviousVersions).toSet
+
 		for
-			deprecatedColls <- Validated.sequence(allIris.map(getPreviousVersions))
 			allParentCols <- Validated.sequence(allIris.map(fetchLite))
 		yield
-			val deprecatedSet = deprecatedColls.flatten.toSet
 			allParentCols.filterNot(res => deprecatedSet.contains(res.uri))
 
 
@@ -137,40 +138,26 @@ class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends Cpmet
 class CollectionReader(vocab: CpVocab, metaVocab: CpmetaVocab, citer: CitationMaker) extends CollectionReaderLite(vocab, metaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
-	def fetchStatic(hash: Sha256Sum)(using Envri): TSC2V[Option[StaticCollection]] =
+	def fetchStatic(hash: Sha256Sum)(using Envri): TSC2V[StaticCollection] =
 		val collUri = citer.vocab.getCollection(hash)
-		val test = getPosition((collUri))
-		for
-			staticColl <- getExistingStaticColl(collUri, Some(hash))
-		yield
-			if collectionExists(collUri) then Some(staticColl)
-			else None
+		if !collectionExists(collUri) then Validated.empty
+		else getExistingStaticColl(collUri, Some(hash))
 
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): TSC2V[StaticCollection] =
+	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): TSC2V[StaticCollection] = conn ?=>
 		val dct = metaVocab.dcterms
 
-		val membersValidSeq = Validated.sequence(
+		val membersV = Validated.sequence(
 			getUriValues(coll, memberProp).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
-				else getPlainStaticObject(item)
+				else getPlainStaticObject(item)(using conn.withReadContexts(Nil))
 		)
-		val membersSeq = for
-			memb <- membersValidSeq
-		yield
-			memb.sortBy(_ match{
-				case coll: StaticCollection => coll.title
-				case dobj: PlainStaticObject => dobj.name
-			})
 
 		for
 			creatorUri <- getSingleUri(coll, dct.creator)
-			members <- membersSeq
+			members <- membersV
 			creator <- getOrganization(creatorUri)
 			title <- getTitle(coll)
 			description <- getOptionalString(coll, dct.description)
-			nextVersion <- getNextVersionAsUri(coll)
-			latestVersion <- getLatestVersion(coll)
-			previousVersion <- getPreviousVersion(coll)
 			doi <- getOptionalString(coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)
 			documentation <- Validated.sinkOption(documentationUriOpt.map(getPlainStaticObject))
@@ -178,13 +165,16 @@ class CollectionReader(vocab: CpVocab, metaVocab: CpmetaVocab, citer: CitationMa
 			val init = StaticCollection(
 				res = coll.toJava,
 				hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
-				members = members,
+				members = members.sortBy:
+					case coll: StaticCollection => coll.title
+					case dobj: PlainStaticObject => dobj.name
+				,
 				creator = creator,
 				title = title,
 				description = description,
-				nextVersion = nextVersion,
-				latestVersion = latestVersion,
-				previousVersion = previousVersion.flattenToSeq.headOption,
+				nextVersion = getNextVersionAsUri(coll),
+				latestVersion = getLatestVersion(coll),
+				previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
 				doi = doi,
 				documentation = documentation,
 				references = References.empty

@@ -146,8 +146,10 @@ trait TriplestoreConnection extends AutoCloseable:
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
+	def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean
 	def hasStatement(s: Statement): Boolean
-	def withReadContexts(ctxts: Seq[IRI]): this.type
+	def withReadContexts(ctxts: Seq[IRI]): TriplestoreConnection
+	def primaryContextView: TriplestoreConnection
 
 
 object TriplestoreConnection:

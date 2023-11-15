@@ -398,7 +398,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 		for
 			self <- getLabeledResource(org)
 			name <- getSingleString(org, metaVocab.hasName)
-			email <- getOptionalString(org, metaVocab.hasEmail)
+			emailOpt <- getOptionalString(org, metaVocab.hasEmail)
 			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
 			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
 			webpageDetailsOpt <- Validated.sinkOption(webpageUriOpt.map(getWebpageElems))
@@ -406,7 +406,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			Organization(
 				self = self,
 				name = name,
-				email = email,
+				email = emailOpt,
 				website = websiteOpt.map(_.toJava),
 				webpageDetails = webpageDetailsOpt
 			)
@@ -414,12 +414,12 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 	def getWebpageElems(elems: IRI): TSC2V[WebpageElements] =
 		for
 			self <- getLabeledResource(elems)
-			coverImage <- getOptionalUriLiteral(elems, metaVocab.hasCoverImage)
+			coverImageOpt <- getOptionalUriLiteral(elems, metaVocab.hasCoverImage)
 			linkBoxes <- Validated.sequence(getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox))
 		yield
 			WebpageElements(
 				self = self,
-				coverImage = coverImage,
+				coverImage = coverImageOpt,
 				linkBoxes = Option(linkBoxes.sortBy(_.orderWeight)).filterNot(_.isEmpty)
 			)
 
@@ -529,68 +529,62 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				yield
 					feature.withOptLabel(labelOpt).withUri(covUri.toJava)
 
-	def getNextVersionAsUri(item: IRI): TSC2V[OptionalOneOrSeq[URI]] =
-		getNextVersions(item).map:
+	def getNextVersionAsUri(item: IRI): TSC2[OptionalOneOrSeq[URI]] =
+		getNextVersions(item) match
 			case Nil => None
 			case Seq(single) => Some(Left(single.toJava))
 			case many => Some(Right(many.map(_.toJava)))
 
-	private def getNextVersions(item: IRI): TSC2V[Seq[IRI]] =
-		Validated(
-			getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.flatMap:
-				case Rdf4jStatement(next, _, _) =>
-					if isPlainCollection(next)
-					then getUriValues(next, metaVocab.dcterms.hasPart)
-					else Seq(next)
-				case _ => Nil //should not happen in practice, but just in case, for completeness
-			.filter(iri => isComplete(iri).result.get).toIndexedSeq
-		)
+	private def getNextVersions(item: IRI): TSC2[Seq[IRI]] =
+		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+		.flatMap:
+			case Rdf4jStatement(next, _, _) =>
+				if isPlainCollection(next)
+				then getUriValues(next, metaVocab.dcterms.hasPart)
+				else Seq(next)
+			case _ => Nil //should not happen in practice, but just in case, for completeness
+		.filter(isComplete)
+		.toIndexedSeq
 
 	def isPlainCollection(item: IRI): TSC2[Boolean] =
 		resourceHasType(item, metaVocab.plainCollectionClass)
 
-	def isComplete(item: IRI): TSC2V[Boolean] =
+	def isComplete(item: IRI): TSC2[Boolean] =
 		import metaVocab.*
 		val itemTypes = getUriValues(item, RDF.TYPE).toSet
-		Validated(itemTypes.contains(collectionClass) || (
+		itemTypes.contains(collectionClass) || (
 			itemTypes.contains(plainCollectionClass) &&
-			getUriValues(item, dcterms.hasPart).exists(uri => isComplete(uri).result.get)
+			getUriValues(item, dcterms.hasPart).exists(isComplete)
 		) || (
 			if itemTypes.containsEither(docObjectClass, dataObjectClass)
 			then hasStatement(Some(item), Some(hasSizeInBytes), None)
-			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
-		))
+			else true //we are probably using a wrong context, so have to assume the item is complete
+		)
 
-	def getLatestVersion(item: IRI): TSC2V[OneOrSeq[URI]] =
-		def latest(item: IRI, seen: Set[IRI]): TSC2V[Seq[IRI]] =
-			getNextVersions(item).map: nextVersionsSeq =>
-				val nextVersions = nextVersionsSeq.flatMap: next =>
-					if seen.contains(next)
-					then Nil
-					else latest(next, seen + next).result.get
-				if nextVersions.isEmpty then Seq(item) else nextVersions
-		for lv <- latest(item, Set.empty)
-		yield
-			lv.map(_.toJava) match
-				case Seq(single) => Left(single)
-				case many => Right(many)
+	def getLatestVersion(item: IRI): TSC2[OneOrSeq[URI]] =
+		def latest(item: IRI, seen: Set[IRI]): TSC2[Seq[IRI]] =
+			val nextVersions = getNextVersions(item).flatMap: next =>
+				if seen.contains(next)
+				then Nil
+				else latest(next, seen + next)
+			if nextVersions.isEmpty then Seq(item) else nextVersions
+		latest(item, Set.empty).map(_.toJava) match
+			case Seq(single) => Left(single)
+			case many => Right(many)
 
-	def getPreviousVersion(item: IRI): TSC2V[OptionalOneOrSeq[URI]] =
-		val allPrevVersions: TSC2V[Seq[IRI]] = Validated(
+	def getPreviousVersion(item: IRI): TSC2[OptionalOneOrSeq[URI]] =
+		val allPrevVersions: TSC2[Seq[IRI]] =
 			getUriValues(item, metaVocab.isNextVersionOf) ++
 			getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
 				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
 					getUriValues(coll, metaVocab.isNextVersionOf)
 				case _ => Nil
-		)
-		allPrevVersions.map: allPrevVersionsSeq =>
-			allPrevVersionsSeq.map(_.toJava) match
-				case Nil => None
-				case Seq(single) => Some(Left(single))
-				case many => Some(Right(many))
+		allPrevVersions.map(_.toJava) match
+			case Nil => None
+			case Seq(single) => Some(Left(single))
+			case many => Some(Right(many))
 
-	def getPreviousVersions(item: IRI): TSC2V[Seq[URI]] = getPreviousVersion(item).map(flattenToSeq)
+	def getPreviousVersions(item: IRI): TSC2[Seq[URI]] = getPreviousVersion(item).flattenToSeq
 
 	def getValTypeLookup(datasetSpec: IRI): TSC2V[VarMetaLookup] =
 		for
@@ -616,11 +610,11 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 	def getValueType(vt: IRI): TSC2V[ValueType] =
 		for
 			labeledResource <- getLabeledResource(vt)
-			quantityKind <- getOptionalUri(vt, metaVocab.hasQuantityKind)
-			quantityKindLR <- Validated.sinkOption(quantityKind.map(getLabeledResource))
+			quantityKindUri <- getOptionalUri(vt, metaVocab.hasQuantityKind)
+			quantityKind <- Validated.sinkOption(quantityKindUri.map(getLabeledResource))
 			unit <- getOptionalString(vt, metaVocab.hasUnit)
 		yield
-			ValueType(labeledResource, quantityKindLR, unit)
+			ValueType(labeledResource, quantityKind, unit)
 
 	private def getDatasetVars(ds: IRI): TSC2V[Seq[DatasetVariable]] =
 		import metaVocab.*
@@ -654,12 +648,12 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 		)
 
 	def getInstrumentLite(instr: IRI): TSC2V[UriResource] =
-		val modelVal = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
-		val serialNumberVal = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
+		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
+		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
 
 		for
-			model <- modelVal
-			serialNumber <- serialNumberVal
+			model <- modelValid
+			serialNumber <- serialNumberValid
 			name <- getOptionalString(instr, metaVocab.hasName)
 		yield
 			val label = name.orElse:
@@ -683,7 +677,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
 			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
-			forPropertyLR <- Validated.sinkOption(forPropertyOpt.map(getLabeledResource))
+			forProperty <- Validated.sinkOption(forPropertyOpt.map(getLabeledResource))
 			start <- getOptionalInstant(iri, metaVocab.hasStartTime)
 			stop <- getOptionalInstant(iri, metaVocab.hasEndTime)
 		yield
@@ -692,30 +686,30 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				station = station,
 				pos = pos,
 				variableName = variableNameOpt,
-				forProperty = forPropertyLR,
+				forProperty = forProperty,
 				start = start,
 				stop = stop
 			)
 
-	def getInstrument(instr: IRI): TSC2V[Option[Instrument]] =
-		for
-			self <- getInstrumentLite(instr)
-			model <- getSingleString(instr, metaVocab.hasModel)
-			serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
-			name <- getOptionalString(instr, metaVocab.hasName)
-			vendor <- getOptionalUri(instr, metaVocab.hasVendor)
-			vendorOrg <- Validated.sinkOption(vendor.map(getOrganization))
-			owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
-			ownerOrg <- Validated.sinkOption(owner.map(getOrganization))
-			parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
-			partOf <- Validated.sinkOption(
-				getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
-					case iri: IRI => getInstrumentLite(iri)
-				}.toList.headOption
-			)
-			deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
-		yield
-			if resourceHasType(instr, metaVocab.instrumentClass) then Some(
+	def getInstrument(instr: IRI): TSC2V[Instrument] =
+		if resourceHasType(instr, metaVocab.instrumentClass) then
+			for
+				self <- getInstrumentLite(instr)
+				model <- getSingleString(instr, metaVocab.hasModel)
+				serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
+				name <- getOptionalString(instr, metaVocab.hasName)
+				vendor <- getOptionalUri(instr, metaVocab.hasVendor)
+				vendorOrg <- Validated.sinkOption(vendor.map(getOrganization))
+				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
+				ownerOrg <- Validated.sinkOption(owner.map(getOrganization))
+				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
+				partOf <- Validated.sinkOption(
+					getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
+						case iri: IRI => getInstrumentLite(iri)
+					}.toList.headOption
+				)
+				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
+			yield
 				Instrument(
 					self = self,
 					model = model,
@@ -727,6 +721,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 					partOf = partOf,
 					deployments = deployments
 				)
-			) else None
+		else
+			Validated.error(s"$instr is not an instrument")
 
 end CpmetaReader

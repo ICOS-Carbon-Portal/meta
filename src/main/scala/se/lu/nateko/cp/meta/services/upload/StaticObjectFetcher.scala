@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import java.time.Instant
@@ -129,3 +130,114 @@ class PlainStaticObjectFetcher(allDataObjServer: InstanceServer) extends Fetchin
 		getOptionalString(dobj, metaVocab.dcterms.title).getOrElse(getSingleString(dobj, metaVocab.hasName))
 	)
 }
+
+
+
+class StaticObjectReader(
+	documentsGraph: IRI,
+	vocab: CpVocab,
+	metaVocab: CpmetaVocab,
+	collFetcher: CollectionFetcherLite,
+	pidFactory: HandleNetClient.PidFactory,
+	citer: CitationMaker
+) extends DobjMetaReader(documentsGraph, vocab, metaVocab):
+	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+
+	def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
+		val dataObjUri = vocab.getStaticObject(hash)
+		if hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass) then
+			getExistingDataObject(hash)
+		else if(hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
+			getExistingDocumentObject(hash)
+		else Validated.empty
+
+	private def getExistingDataObject(hash: Sha256Sum)(using Envri): TSC2V[DataObject] =
+		val dobj = vocab.getStaticObject(hash)
+
+		for
+			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
+			spec <- getSpecification(specIri)
+			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
+			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
+			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
+			productionOpt <- Validated.sinkOption(productionUri.map(getDataProduction(dobj, _)))
+			levelSpecificInfo <- spec.specificDatasetType match
+				case DatasetType.SpatioTemporal =>
+					getSpatioTempMeta(dobj, valTypeLookup, productionOpt).map(Left.apply)
+				case DatasetType.StationTimeSeries =>
+					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt).map(Right.apply)
+			hash <- getHashsum(dobj, metaVocab.hasSha256sum)
+			accessUrl <- getAccessUrl(hash, spec)
+			fileName <- getSingleString(dobj, metaVocab.hasName)
+			sizeOpt <- getOptionalLong(dobj, metaVocab.hasSizeInBytes)
+			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)
+			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)
+			submission <- getSubmission(submissionUri)
+		yield
+			val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
+			val init = DataObject(
+				hash = hash,
+				accessUrl = if hasBeenPublished then accessUrl else None,
+				fileName = fileName,
+				size = sizeOpt,
+				pid = if(sizeOpt.isDefined) getPid(hash, spec.format.self.uri) else None,
+				doi = doiOpt,
+				submission = submission,
+				specification = spec,
+				specificInfo = levelSpecificInfo,
+				nextVersion = getNextVersionAsUri(dobj),
+				latestVersion = getLatestVersion(dobj),
+				previousVersion = getPreviousVersion(dobj),
+				parentCollections = collFetcher.getParentCollections(dobj),
+				references = References.empty
+			)
+			init.copy(references = citer.getCitationInfo(init))
+	end getExistingDataObject
+
+	private def getExistingDocumentObject(hash: Sha256Sum)(using Envri): TSC2V[DocObject] =
+		val doc = vocab.getStaticObject(hash)
+		for
+			hash <- getHashsum(doc, metaVocab.hasSha256sum)
+			fileName <- getSingleString(doc, metaVocab.hasName)
+			sizeOpt <- getOptionalLong(doc, metaVocab.hasSizeInBytes)
+			submissionUri <- getSingleUri(doc, metaVocab.wasSubmittedBy)
+			submission <- getSubmission(submissionUri)
+			doiOpt <- getOptionalString(doc, metaVocab.hasDoi)
+			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
+			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
+			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
+		yield
+			val init = DocObject(
+				hash = hash,
+				accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
+				fileName = fileName,
+				size = sizeOpt,
+				pid = submission.stop.map(_ => pidFactory.getPid(hash)),
+				doi = doiOpt,
+				description = descriptionOpt,
+				submission = submission,
+				nextVersion = getNextVersionAsUri(doc),
+				latestVersion = getLatestVersion(doc),
+				previousVersion = getPreviousVersion(doc),
+				parentCollections = collFetcher.getParentCollections(doc),
+				references = References.empty.copy(
+					title = titleOpt,
+					authors = Option(authors)
+				)
+			)
+			init.copy(references = citer.getCitationInfo(init))
+
+	private def getPid(hash: Sha256Sum, format: URI)(using Envri): TSC2[Option[String]] =
+		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
+
+	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri): TSC2V[Option[URI]] =
+		if(metaVocab.wdcggFormat === spec.format.self.uri)
+			Validated(Some(new URI("https://gaw.kishou.go.jp/")))
+		else {
+			val dobj = vocab.getStaticObject(hash)
+			for uri <- getOptionalUri(dobj, RDFS.SEEALSO)
+			yield uri.map(_.toJava).orElse(
+				if(spec.dataLevel < 1 && spec.theme.self.uri === vocab.atmoTheme) None
+				else Some(vocab.getStaticObjectAccessUrl(hash))
+			)
+		}

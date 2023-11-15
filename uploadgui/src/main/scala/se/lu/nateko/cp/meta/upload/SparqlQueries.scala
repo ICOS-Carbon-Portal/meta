@@ -35,6 +35,7 @@ object SparqlQueries {
 		|SELECT *
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|FROM <https://citymeta.icos-cp.eu/resources/cpmeta/>
+		|FROM <https://citymeta.icos-cp.eu/resources/citymeta/>
 		|WHERE {
 		|	$orgFilter
 		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .

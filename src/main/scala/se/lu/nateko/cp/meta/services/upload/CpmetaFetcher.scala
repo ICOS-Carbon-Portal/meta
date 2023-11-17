@@ -401,7 +401,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			emailOpt <- getOptionalString(org, metaVocab.hasEmail)
 			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
 			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
-			webpageDetailsOpt <- Validated.sinkOption(webpageUriOpt.map(getWebpageElems))
+			webpageDetailsOpt <- webpageUriOpt.map(getWebpageElems).sinkOption
 		yield
 			Organization(
 				self = self,
@@ -507,7 +507,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			self <- getLabeledResource(site)
 			ecosystem <- getLabeledResource(site, metaVocab.hasEcosystemType)
 			locationUriOpt <- getOptionalUri(site, metaVocab.hasSpatialCoverage)
-			location <- Validated.sinkOption(locationUriOpt.map(getCoverage))
+			location <- locationUriOpt.map(getCoverage).sinkOption
 		yield
 			Site(
 				self = self,
@@ -611,7 +611,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 		for
 			labeledResource <- getLabeledResource(vt)
 			quantityKindUri <- getOptionalUri(vt, metaVocab.hasQuantityKind)
-			quantityKind <- Validated.sinkOption(quantityKindUri.map(getLabeledResource))
+			quantityKind <- quantityKindUri.map(getLabeledResource).sinkOption
 			unit <- getOptionalString(vt, metaVocab.hasUnit)
 		yield
 			ValueType(labeledResource, quantityKind, unit)
@@ -677,7 +677,7 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
 			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
-			forProperty <- Validated.sinkOption(forPropertyOpt.map(getLabeledResource))
+			forProperty <- forPropertyOpt.map(getLabeledResource).sinkOption
 			start <- getOptionalInstant(iri, metaVocab.hasStartTime)
 			stop <- getOptionalInstant(iri, metaVocab.hasEndTime)
 		yield
@@ -699,15 +699,12 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 				serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
 				name <- getOptionalString(instr, metaVocab.hasName)
 				vendor <- getOptionalUri(instr, metaVocab.hasVendor)
-				vendorOrg <- Validated.sinkOption(vendor.map(getOrganization))
+				vendorOrg <- vendor.map(getOrganization).sinkOption
 				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
-				ownerOrg <- Validated.sinkOption(owner.map(getOrganization))
+				ownerOrg <- owner.map(getOrganization).sinkOption
 				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
-				partOf <- Validated.sinkOption(
-					getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
-						case iri: IRI => getInstrumentLite(iri)
-					}.toList.headOption
-				)
+				partOf <- getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr))
+					.map(_.getSubject).collect{ case iri: IRI => getInstrumentLite(iri)}.toList.headOption.sinkOption
 				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
 			yield
 				Instrument(

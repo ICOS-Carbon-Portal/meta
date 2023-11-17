@@ -314,7 +314,7 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			encoding <- getLabeledResource(spec, metaVocab.hasEncoding)
 			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)
 			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)
-			datasetSpec <- Validated.sinkOption(datasetSpecUri.map(getDatasetSpec))
+			datasetSpec <- datasetSpecUri.map(getDatasetSpec).sinkOption
 			documentation <- getDocumentationObjs(spec)
 			keywords <- getOptionalString(spec, metaVocab.hasKeywords)
 		yield
@@ -349,10 +349,10 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 	private def getDocumentationObjs(item: IRI): TSC2V[Seq[PlainStaticObject]] =
 		Validated.sequence(getUriValues(item, metaVocab.hasDocumentationObject).map(getPlainStaticObject))
 
-	def getOptionalStation(station: IRI): TSC2V[Station] =
+	def getOptionalStation(station: IRI): TSC2V[Option[Station]] =
 		if hasStatement(Some(station), Some(metaVocab.hasStationId), None) then
-			getStation(station)
-		else Validated.empty
+			getStation(station).map(Some.apply)
+		else Validated.ok(None)
 
 	def getStation(stat: IRI): TSC2V[Station] =
 		for
@@ -360,9 +360,9 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			id <- getSingleString(stat, metaVocab.hasStationId)
 			location <- getStationLocation(stat, Some(org.name))
 			coverageUri <- getOptionalUri(stat, metaVocab.hasSpatialCoverage)
-			coverage <- Validated.sinkOption(coverageUri.map(getCoverage))
+			coverage <- coverageUri.map(getCoverage).sinkOption
 			responsibleOrganizationUri <- getOptionalUri(stat, metaVocab.hasResponsibleOrganization)
-			responsibleOrganization <- Validated.sinkOption(responsibleOrganizationUri.map(getOrganization))
+			responsibleOrganization <- responsibleOrganizationUri.map(getOrganization).sinkOption
 			specificInfo <- getStationSpecifics(stat)
 			countryCode <- getOptionalString(stat, metaVocab.countryCode)
 			funding <- getFundings(stat)
@@ -385,7 +385,7 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 				sites <- Validated.sequence(getUriValues(stat, metaVocab.operatesOn).map(getSite))
 				ecosystems <- Validated.sequence(getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource))
 				climateZoneUri <- getOptionalUri(stat, metaVocab.hasClimateZone)
-				climateZone <- Validated.sinkOption(climateZoneUri.map(getLabeledResource))
+				climateZone <- climateZoneUri.map(getLabeledResource).sinkOption
 				meanAnnualTemp <- getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp)
 				operationalPeriod <- getOptionalString(stat, metaVocab.hasOperationalPeriod)
 				discontinued <- getOptionalBool(stat, metaVocab.isDiscontinued)
@@ -404,9 +404,9 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			for
 				icosSpecs <- getBasicIcosSpecifics(stat, vocab.etc)
 				climateZoneUri <- getOptionalUri(stat, metaVocab.hasClimateZone)
-				climateZone <- Validated.sinkOption(climateZoneUri.map(getLabeledResource))
+				climateZone <- climateZoneUri.map(getLabeledResource).sinkOption
 				ecosystemTypeUri <- getOptionalUri(stat, metaVocab.hasEcosystemType)
-				ecosystemType <- Validated.sinkOption(ecosystemTypeUri.map(getLabeledResource))
+				ecosystemType <- ecosystemTypeUri.map(getLabeledResource).sinkOption
 				meanAnnualTemp <- getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp)
 				meanAnnualPrecip <- getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip)
 				meanAnnualRad <- getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation)
@@ -438,7 +438,7 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 		for
 			(lblDate, discont) <- getLabelingDateAndDiscontinuation(stat)
 			themeUri <- getOptionalUri(thematicCenter, metaVocab.hasDataTheme)
-			theme <- Validated.sinkOption(themeUri.map(getDataTheme))
+			theme <- themeUri.map(getDataTheme).sinkOption
 			stationClass <- getOptionalString(stat, metaVocab.hasStationClass)
 			timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 			documentation <- getDocumentationObjs(stat)
@@ -488,26 +488,24 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			!lblConn.hasStatement(Some(provSt), Some(stationId), None)
 		}
 
-		Validated.sinkOption(labelingDate).map(_.flatten -> discontinued)
+		labelingDate.sinkOption.map(_.flatten -> discontinued)
 
-	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): TSC2V[StationTimeSeriesMeta] = conn ?=>
-		val vf = conn.factory
-
-		val stationTimeSeriesMeta = for
+	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): TSC2V[StationTimeSeriesMeta] =
+		val resV = for
 			acqUri <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
 			instrumentsSeq <- Validated.sequence(getUriValues(acqUri, metaVocab.wasPerformedWith).map(getInstrumentLite))
 			stationUri <- getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)
 			station <- getStation(stationUri)
 			siteUri <- getOptionalUri(acqUri, metaVocab.wasPerformedAt)
-			site <- Validated.sinkOption(siteUri.map(getSite))
+			site <- siteUri.map(getSite).sinkOption
 			startOpt <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime)
 			stopOpt <- getOptionalInstant(acqUri, metaVocab.prov.endedAtTime)
 			samplingPointUri <- getOptionalUri(acqUri, metaVocab.hasSamplingPoint)
-			samplingPoint <- Validated.sinkOption(samplingPointUri.map(getPosition))
+			samplingPoint <- samplingPointUri.map(getPosition).sinkOption
 			samplingHeight <- getOptionalFloat(acqUri, metaVocab.hasSamplingHeight)
 			nRows <- getOptionalInt(dobj, metaVocab.hasNumberOfRows)
 			coverageUri <- getOptionalUri(dobj, metaVocab.hasSpatialCoverage)
-			coverage <- Validated.sinkOption(coverageUri.map(getCoverage))
+			coverage <- coverageUri.map(getCoverage).sinkOption
 			columnNames <- getOptionalString(dobj, metaVocab.hasActualColumnNames)
 		yield
 			val instrument = instrumentsSeq.toList match
@@ -515,60 +513,55 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 				case single :: Nil => Some(Left(single))
 				case many => Some(Right(many))
 
+			val acqIntervalOpt = for start <- startOpt; stop <- stopOpt yield TimeInterval(start, stop)
 			val acq = DataAcquisition(
 				station = station,
 				site = site,
-				interval = for
-					start <- startOpt
-					stop <- stopOpt
-				yield TimeInterval(start, stop),
+				interval = acqIntervalOpt,
 				instrument = instrument,
 				samplingPoint = samplingPoint,
 				samplingHeight = samplingHeight
 			)
-
-			val deploymentsV = Validated.sequence(getStatements(None, Some(metaVocab.atOrganization), Some(stationUri))
-				.toIndexedSeq
-				.collect:
-					case Rdf4jStatement(subj, _, _) if hasStatement(subj, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
-						val instrs = getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(subj))
-							.collect:
-								case Rdf4jStatement(instr, _, _) => instr
-							.toList
-						val instr = instrs match
-							case Nil => Validated.error(s"No instruments for deployment $subj")
-							case one :: Nil => Validated.ok(one)
-							case many => Validated.error(s"Too many instruments for deployment $subj")
-						instr.flatMap(getInstrumentDeployment(subj, _))
-				.toIndexedSeq
-			)
-
-			val columns = columnNames.flatMap(parseJsonStringArray)
-				.map{
+			val columnsOptV = columnNames.flatMap(parseJsonStringArray)
+				.map:
 					_.flatMap(vtLookup.lookup).toIndexedSeq
-				}.orElse{ //if no actualColumnNames info is available, then all the plain mandatory columns have to be there
+				.orElse: //if no actualColumnNames info is available, then all the plain mandatory columns have to be there
 					Some(vtLookup.plainMandatory)
-				}.filter(_.nonEmpty)
-
-			val columnsWithDeployments = deploymentsV.map(deployments =>
-				columns.map{
-					_.map{vm =>
-						val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
-							dep.variableName.contains(vm.label) &&                //variable name matches
-							dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
-							acq.interval.fold(false){ti =>
-								dep.start.fold(true)(start => start.isBefore(ti.stop)) && //starts before data collection end
-								dep.stop.fold(true)(stop => stop.isAfter(ti.start))       //ends after data collection start
-							}
-						}
-						vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
-					}
-				}
-			)
-
-			columnsWithDeployments.map(StationTimeSeriesMeta(acq, prod, nRows, coverage, _))
-		stationTimeSeriesMeta.flatten
+				.filter(_.nonEmpty)
+				.map: columns =>
+					acqIntervalOpt match
+						case None => Validated.ok(columns)
+						case Some(interval) =>
+							addInstrDeplInfo(stationUri, interval, columns)
+			columnsOptV.sinkOption.map: columnsOpt =>
+				StationTimeSeriesMeta(acq, prod, nRows, coverage, columnsOpt)
+		resV.flatMap(identity)
 	end getStationTimeSerMeta
+
+	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): TSC2V[Seq[VarMeta]] =
+		val deploymentVs = getStatements(None, Some(metaVocab.atOrganization), Some(stationUri))
+			.collect:
+				case Rdf4jStatement(depl, _, _) if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+					val instrs = getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(depl))
+						.collect:
+							case Rdf4jStatement(instr, _, _) => instr
+						.toList
+					val instr = instrs match
+						case Nil => Validated.error(s"No instruments for deployment $depl")
+						case one :: Nil => Validated.ok(one)
+						case many => Validated.error(s"Too many instruments for deployment $depl")
+					instr.flatMap(getInstrumentDeployment(depl, _))
+			.toIndexedSeq
+		Validated.sequence(deploymentVs).map: deployments =>
+			cols.map: vm =>
+				val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
+					dep.variableName.contains(vm.label) &&                //variable name matches
+					dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
+					dep.start.fold(true)(start => start.isBefore(acqInterval.stop)) && //starts before data collection end
+					dep.stop.fold(true)(stop => stop.isAfter(acqInterval.start))       //ends after data collection start
+				}
+				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
+	end addInstrDeplInfo
 
 	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): TSC2V[SpatioTemporalMeta] = conn ?=>
 
@@ -588,9 +581,9 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			coverage <- coverageV
 			temporal <- getTemporalCoverage(dobj)
 			acqOpt <- getOptionalUri(dobj, metaVocab.wasAcquiredBy)
-			stationOpt <- Validated.sinkOption(acqOpt.map(getOptionalUri(_, metaVocab.prov.wasAssociatedWith)))
-			station <- Validated.sinkOption(stationOpt.flatten.map(getStation))
-			samplingHeightOpt <- Validated.sinkOption(acqOpt.map(getOptionalFloat(_, metaVocab.hasSamplingHeight)))
+			stationOpt <- acqOpt.map(getOptionalUri(_, metaVocab.prov.wasAssociatedWith)).sinkOption
+			station <- stationOpt.flatten.map(getStation).sinkOption
+			samplingHeightOpt <- acqOpt.map(getOptionalFloat(_, metaVocab.hasSamplingHeight)).sinkOption
 			prod <- prodV.require("Production info must be provided for a spatial data object")
 			variables <- Validated.sequence(getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup)))
 		yield
@@ -611,11 +604,11 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 			creator <- getAgent(creatorUri)
 			contributors <- Validated.sequence(getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent))
 			hostUri <- getOptionalUri(prod, metaVocab.wasHostedBy)
-			host <- Validated.sinkOption(hostUri.map(getOrganization))
+			host <- hostUri.map(getOrganization).sinkOption
 			comment <- getOptionalString(prod, RDFS.COMMENT)
 			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject))
 			documentationUri <- getOptionalUri(prod, RDFS.SEEALSO)
-			documentation <- Validated.sinkOption(documentationUri.map(getPlainStaticObject))
+			documentation <- documentationUri.map(getPlainStaticObject).sinkOption
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
 			DataProduction(
@@ -628,17 +621,17 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 				dateTime = dateTime
 			)
 
-	private def getFundings(stat: IRI): TSC2V[Seq[Funding]] =
-		Validated.sequence(getUriValues(stat, metaVocab.hasFunding).map: furi =>
+	private def getFundings(stat: IRI): TSC2V[Seq[Funding]] = Validated.sequence:
+		getUriValues(stat, metaVocab.hasFunding).map: furi =>
 			for
-				self <- getLabeledResource(furi)
-				funderUri <- getSingleUri(furi, metaVocab.hasFunder)
-				funder <- getFunder(funderUri)
-				awardTitle <- getOptionalString(furi, metaVocab.awardTitle)
+				self        <- getLabeledResource(furi)
+				funderUri   <- getSingleUri(furi, metaVocab.hasFunder)
+				funder      <- getFunder(funderUri)
+				awardTitle  <- getOptionalString(furi, metaVocab.awardTitle)
 				awardNumber <- getOptionalString(furi, metaVocab.awardNumber)
-				awardUrl <- getOptionalUriLiteral(furi, metaVocab.awardURI)
-				start <- getOptionalLocalDate(furi, metaVocab.hasStartDate)
-				stop <- getOptionalLocalDate(furi, metaVocab.hasEndDate)
+				awardUrl    <- getOptionalUriLiteral(furi, metaVocab.awardURI)
+				start       <- getOptionalLocalDate(furi, metaVocab.hasStartDate)
+				stop        <- getOptionalLocalDate(furi, metaVocab.hasEndDate)
 			yield
 				Funding(
 					self = self,
@@ -649,7 +642,6 @@ class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab
 					start = start,
 					stop = stop
 				)
-		)
 
 	protected def getFunder(iri: IRI): TSC2V[Funder] =
 		for

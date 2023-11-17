@@ -137,7 +137,7 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 		else
 			val allDuplicates = server
 				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
-				.collect{case Rdf4jStatement(subj, _, _) if !isDeprecated(subj) => subj.toJava}
+				.collect{case Rdf4jStatement(subj, _, _) if isCompleted(subj) && !isDeprecated(subj) => subj.toJava}
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
 
@@ -157,6 +157,9 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 					)
 				)
 	end validateFileName
+
+	private def isCompleted(item: IRI): Boolean =
+		server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
 
 	private def isDeprecated(item: IRI): Boolean = server
 		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))

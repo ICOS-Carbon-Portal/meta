@@ -69,21 +69,21 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		.mapMaterializedValue(c => () => {c.cancel(); ()})
 
 
-	def fetchFromEtc(): Future[Validated[State]] = {
+	def fetchFromEtc(): Future[Validated[State]] =
 		val peopleFut = fetchFromTsv(Types.people, getPerson)
 
-		val futfutValVal = for(
+		val futfutValVal = for
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
 			sensorsVal <- fetchSensors(stationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
-		) yield Validated.liftFuture{
+		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
 				stations <- stationsVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
-			) yield {
+			) yield
 				val membExtractor: Lookup ?=> Validated[EtcMembership] = getMembership(
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
@@ -92,11 +92,9 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
 					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
-			}
-		}
 
 		futfutValVal.flatten.map(_.flatMap(identity))
-	}
+	end fetchFromEtc
 
 	def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
@@ -130,19 +128,16 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 			}
 	}
 
-	def fetchSensors(stationsVal: Validated[Seq[EtcStation]]): Future[Validated[Seq[EtcInstrument]]] = {
-		val futfutValVal = for(
+	def fetchSensors(stationsVal: Validated[Seq[EtcStation]]): Future[Validated[Seq[EtcInstrument]]] =
+		val futfutValVal = for
 			modelDictVal <- getSensorModelDict;
 			compDictVal <- getCompaniesDict;
-			deplDictVal <- Validated.liftFuture(
-				stationsVal.map(getDeploymentsDict)
-			).map(_.flatMap(identity))
-		) yield Validated.liftFuture{
-			for(modelDict <- modelDictVal; compDict <- compDictVal; deplDict <- deplDictVal) yield
+			deplDictVal <- stationsVal.map(getDeploymentsDict).liftFuture
+		yield Validated.liftFuture:
+			for(modelDict <- modelDictVal; compDict <- compDictVal; deplDict <- deplDictVal.flatten) yield
 				fetchFromTsv(Types.sensors, getSensor(modelDict, compDict, deplDict))
-		}
-		futfutValVal.flatten.map(_.flatMap(identity))
-	}
+		futfutValVal.flatten.map(_.flatten)
+
 
 	private def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
 		fetchFromTsv(Types.companies, getCompany(vocab)).map(_.map(_.toMap))

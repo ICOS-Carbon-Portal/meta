@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.*
 
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -97,25 +98,26 @@ class CollectionFetcher(
 
 }
 
-class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+class CollectionReaderLite(
+	vocab: CpVocab,
+	metaVocab: CpmetaVocab
+)(using Envri ?=> TriplestoreConnection) extends CpmetaReader(metaVocab):
 
-	val memberProp = metaVocab.dcterms.hasPart
+	import metaVocab.{dcterms => dct}
 
-	def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, metaVocab.dcterms.title)
+	protected def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
 
-	def collectionExists(collUri: IRI): TSC2[Boolean] =
+	protected def collectionExists(collUri: IRI): TSC2[Boolean] =
 		hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
 
-	def fetchLite(collUri: IRI): TSC2V[UriResource] =
+	def fetchLite(collUri: IRI)(using Envri): Validated[UriResource] =
 		if collectionExists(collUri) then
 			getTitle(collUri).map: title =>
 				UriResource(collUri.toJava, Some(title), Nil)
 		else Validated.error("collection does not exist")
 
-
-	def getParentCollections(dobj: IRI): TSC2V[Seq[UriResource]] =
-		val allIris = getStatements(None, Some(memberProp), Some(dobj))
+	def getParentCollections(dobj: IRI)(using Envri): Validated[Seq[UriResource]] =
+		val allIris = getStatements(None, Some(dct.hasPart), Some(dobj))
 			.map(_.getSubject)
 			.collect{case iri: IRI => iri}
 			.toIndexedSeq
@@ -128,29 +130,31 @@ class CollectionReaderLite(vocab: CpVocab, metaVocab: CpmetaVocab) extends Cpmet
 			allParentCols.filterNot(res => deprecatedSet.contains(res.uri))
 
 
-	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): TSC2V[Option[IRI]] =
-		getOptionalUri(vocab.getCollection(hash), metaVocab.dcterms.creator)
+	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Validated[Option[IRI]] =
+		getOptionalUri(vocab.getCollection(hash), dct.creator)
 
-
-	def collectionExists(coll: Sha256Sum)(using Envri): TSC2[Boolean] =
+	def collectionExists(coll: Sha256Sum)(using Envri): Boolean =
 		collectionExists(vocab.getCollection(coll))
 
-class CollectionReader(vocab: CpVocab, metaVocab: CpmetaVocab, citer: CitationMaker) extends CollectionReaderLite(vocab, metaVocab):
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+class CollectionReader(
+	vocab: CpVocab,
+	metaVocab: CpmetaVocab,
+	citer: CitationMaker,
+)(using Envri ?=> TriplestoreConnection) extends CollectionReaderLite(vocab, metaVocab):
 
-	def fetchStatic(hash: Sha256Sum)(using Envri): TSC2V[StaticCollection] =
+	import metaVocab.{dcterms => dct}
+
+	def fetchStatic(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		val collUri = citer.vocab.getCollection(hash)
-		if !collectionExists(collUri) then Validated.empty
+		if !collectionExists(collUri) then Validated.error(s"Collection with id ${hash.id} does not exist")
 		else getExistingStaticColl(collUri, Some(hash))
 
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): TSC2V[StaticCollection] = conn ?=>
-		val dct = metaVocab.dcterms
+	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None): TSC2V[StaticCollection] = conn ?=>
 
-		val membersV = Validated.sequence(
-			getUriValues(coll, memberProp).map: item =>
+		val membersV = Validated.sequence:
+			getUriValues(coll, dct.hasPart).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
 				else getPlainStaticObject(item)(using conn.withReadContexts(Nil))
-		)
 
 		for
 			creatorUri <- getSingleUri(coll, dct.creator)
@@ -160,7 +164,7 @@ class CollectionReader(vocab: CpVocab, metaVocab: CpmetaVocab, citer: CitationMa
 			description <- getOptionalString(coll, dct.description)
 			doi <- getOptionalString(coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)
-			documentation <- Validated.sinkOption(documentationUriOpt.map(getPlainStaticObject))
+			documentation <- documentationUriOpt.map(getPlainStaticObject).sinkOption
 		yield
 			val init = StaticCollection(
 				res = coll.toJava,

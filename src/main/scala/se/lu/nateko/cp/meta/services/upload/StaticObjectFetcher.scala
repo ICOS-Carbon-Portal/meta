@@ -137,19 +137,19 @@ class StaticObjectReader(
 	documentsGraph: IRI,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	collFetcher: CollectionFetcherLite,
+	collReader: CollectionReaderLite,
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
 ) extends DobjMetaReader(documentsGraph, vocab, metaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
 	def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
-		val dataObjUri = vocab.getStaticObject(hash)
-		if hasStatement(dataObjUri, RDF.TYPE, metaVocab.dataObjectClass) then
+		val dobjUri = vocab.getStaticObject(hash)
+		if hasStatement(dobjUri, RDF.TYPE, metaVocab.dataObjectClass) then
 			getExistingDataObject(hash)
-		else if(hasStatement(dataObjUri, RDF.TYPE, metaVocab.docObjectClass))
+		else if(hasStatement(dobjUri, RDF.TYPE, metaVocab.docObjectClass))
 			getExistingDocumentObject(hash)
-		else Validated.empty
+		else Validated.error(s"$dobjUri is neither known data- nor a document object")
 
 	private def getExistingDataObject(hash: Sha256Sum)(using Envri): TSC2V[DataObject] =
 		val dobj = vocab.getStaticObject(hash)
@@ -160,7 +160,7 @@ class StaticObjectReader(
 			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
 			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
-			productionOpt <- Validated.sinkOption(productionUri.map(getDataProduction(dobj, _)))
+			productionOpt <- productionUri.map(getDataProduction(dobj, _)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
 				case DatasetType.SpatioTemporal =>
 					getSpatioTempMeta(dobj, valTypeLookup, productionOpt).map(Left.apply)
@@ -173,6 +173,7 @@ class StaticObjectReader(
 			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)
 			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)
 			submission <- getSubmission(submissionUri)
+			parendColls <- collReader.getParentCollections(dobj)
 		yield
 			val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
 			val init = DataObject(
@@ -188,7 +189,7 @@ class StaticObjectReader(
 				nextVersion = getNextVersionAsUri(dobj),
 				latestVersion = getLatestVersion(dobj),
 				previousVersion = getPreviousVersion(dobj),
-				parentCollections = collFetcher.getParentCollections(dobj),
+				parentCollections = parendColls,
 				references = References.empty
 			)
 			init.copy(references = citer.getCitationInfo(init))
@@ -206,6 +207,7 @@ class StaticObjectReader(
 			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
 			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
 			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
+			parendColls <- collReader.getParentCollections(doc)
 		yield
 			val init = DocObject(
 				hash = hash,
@@ -219,7 +221,7 @@ class StaticObjectReader(
 				nextVersion = getNextVersionAsUri(doc),
 				latestVersion = getLatestVersion(doc),
 				previousVersion = getPreviousVersion(doc),
-				parentCollections = collFetcher.getParentCollections(doc),
+				parentCollections = parendColls,
 				references = References.empty.copy(
 					title = titleOpt,
 					authors = Option(authors)

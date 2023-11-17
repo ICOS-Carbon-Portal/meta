@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
+class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
 	def require(errMsg: String) = if(result.isDefined) this else
 		new Validated(result, errors :+ errMsg)
@@ -16,7 +16,7 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 	def optional: Validated[Option[T]] =
 		if result.isDefined
 		then new Validated(Some(result), errors)
-		else Validated.empty
+		else Validated.ok(None)
 
 	def orElse[U >: T](fallback: => U) =
 		if(result.isDefined) this
@@ -30,8 +30,6 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 		val newErrors = errors ++ valOpt.map(_.errors).getOrElse(Nil)
 		new Validated(newRes, newErrors)
 	}
-
-	def flatten = result.getOrElse(new Validated(None, errors))
 
 	def collect[U](f: PartialFunction[T, U]): Validated[U] = new Validated(result.collect(f), errors)
 
@@ -62,20 +60,16 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil){
 				new Validated[U](None, errors :+ s"${err.getClass.getName}: $msg")
 		}
 
-}
+end Validated
 
-object Validated{
+object Validated:
 
-	def apply[T](v: => T) = try{
-			new Validated(Some(v))
-		}catch {
-			case err: Throwable =>
-				new Validated(None, Seq(err.getMessage))
-		}
+	def apply[T](v: => T): Validated[T] =
+		try ok(v) catch case err: Throwable =>
+			new Validated(None, Seq(err.getMessage))
 
 	def ok[T](v: T) = new Validated(Some(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
-	def empty[T] = new Validated[T](None)
 
 	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
 
@@ -91,17 +85,21 @@ object Validated{
 		new Validated(Some(res.toIndexedSeq), errs.toSeq)
 	}
 
-	def liftFuture[T](v: Validated[Future[T]])(implicit ctxt: ExecutionContext): Future[Validated[T]] = v.result.fold(
-		Future.successful(new Validated[T](None, v.errors))
-	){
-		_.map(res => new Validated[T](Some(res), v.errors))
-	}
+	extension[T] (v: Validated[Validated[T]])
+		def flatten: Validated[T] = v.flatMap(identity)
 
-	def sinkOption[T](o: Option[Validated[T]]): Validated[Option[T]] = o match
-		case None => Validated.empty
-		case Some(v) => v.map(Some(_))
+	extension[T] (v: Validated[Future[T]])
+		def liftFuture(using ExecutionContext): Future[Validated[T]] = v.result
+			.fold(Future.successful(new Validated[T](None, v.errors))):
+				_.map(res => new Validated[T](Some(res), v.errors))
+
+	extension[T] (o: Option[Validated[T]])
+		def sinkOption: Validated[Option[T]] = o match
+			case None => ok(None)
+			case Some(v) => v.map(Some(_))
 
 	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
 		val res = (l.result ++ r.result).reduceOption(m.merge)
 		new Validated(res, l.errors ++ r.errors)
-}
+
+end Validated

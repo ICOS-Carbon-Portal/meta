@@ -43,6 +43,11 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			"sens2" -> mkDepl(22, "SE-Htm", p1, "VAR1", "2020-04-01T10:00:00Z"),
 		)
 
+		val input3 = Seq(
+			"sens1" -> mkDepl(22, "SE-Htm", p1, "VAR1", "2020-01-01T10:00:00Z"),
+			"sens1" -> mkDepl(22, "SE-Htm", p1, "VAR2", "2020-01-01T10:00:00Z"),
+		)
+
 		it("works on empty input"){
 			assert(mergeInstrDeployments(Seq.empty).isEmpty)
 		}
@@ -79,6 +84,16 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			assert(out("sens1").size === 2)
 			assert(out("sens2").size === 1)
 		}
+
+		it("allows multi-variable-measuring sensors"):
+			val output = mergeInstrDeployments(input3)
+
+			assert(output === Map(
+				"sens1" -> Seq(
+					mkDepl(22, "SE-Htm", p1, "VAR1", "2020-01-01T10:00:00Z", None, Some("sens1_0")),
+					mkDepl(22, "SE-Htm", p1, "VAR2", "2020-01-01T10:00:00Z", None, Some("sens1_1")),
+				)
+			))
 	}
 
 }

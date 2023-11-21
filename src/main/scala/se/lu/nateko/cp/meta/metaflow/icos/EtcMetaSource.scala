@@ -626,7 +626,11 @@ object EtcMetaSource{
 		pass1.groupMap(_._1)(_._2).view.mapValues{depls =>
 			val deplsSorted = depls.toSeq.sortBy(_.start)
 			deplsSorted.sliding(2,1).collect{
-				case Seq(d1, d2) => d1.copy(stop = minOptInst(d1.stop, d2.start))
+				case Seq(d1, d2) =>
+					// allow multiple simultaneous vars by single sensor
+					if d1.start == d2.start && d1.pos == d2.pos
+					then d1
+					else d1.copy(stop = minOptInst(d1.stop, d2.start))
 			}.toSeq :+ deplsSorted.last
 		}.map{
 			case (instrId, depls) =>

@@ -24,7 +24,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.===
 import java.net.URI
 import eu.icoscp.envri.Envri
 
-class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab {
+class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab:
 	import CpVocab.*
 	import CustomVocab.urlEncode
 
@@ -97,12 +97,22 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 		getRelative(suffix, lastSegment)
 
 	def lookupIcosDatasetVar(varName: String): Option[IRI] =
-		if("""^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName))
-			Some(getRelativeRaw("cpmeta/SWC_n_n_n")(using icosBup))
-		else None
+		given BaseUriProvider = icosBup
+
+		if """^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName) then
+			Some(getRelativeRaw("cpmeta/SWC_n_n_n"))
+
+		else if """^TS_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName) then
+			Some(getRelativeRaw("cpmeta/TS_n_n_n"))
+
+		else
+			None
+
 
 	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
-}
+
+end CpVocab
+
 
 object CpVocab{
 	import CustomVocab.urlEncode

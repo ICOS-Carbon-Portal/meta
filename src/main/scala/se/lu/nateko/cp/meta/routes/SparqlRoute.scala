@@ -64,26 +64,20 @@ object SparqlRoute:
 
 	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route =
 
-		val makeResponse: String => Route = query => withPermissiveCorsHeader{
-			handleExceptions(MainRoute.exceptionHandler){
-				handleRejections(RejectionHandler.default){
-					getClientIp{ip =>
-						ensureNoEmptyOkResponseDueToTimeout{
+		val makeResponse: String => Route = query =>
+			handleExceptions(MainRoute.exceptionHandler):
+				handleRejections(RejectionHandler.default):
+					getClientIp: ip =>
+						ensureNoEmptyOkResponseDueToTimeout:
 							complete(SparqlQuery(query, ip))
-						}
-					}
-				}
-			}
-		}
 
-		val badRequestResponse: Route = withPermissiveCorsHeader{
+		val badRequestResponse: Route =
 			complete(StatusCodes.BadRequest -> (
 				"Expected a SPARQL query provided as 'query' URL parameter.\n" +
 				"Alternatively, the query can be HTTP POSTed as 'query' Form field or as a plain text payload\n" +
 				"See the specification at https://www.w3.org/TR/sparql11-protocol/#query-operation\n" +
 				"Human users may want to use the Web app at https://meta.icos-cp.eu/sparqlclient/"
 			))
-		}
 
 		val plainRoute =
 			get{
@@ -94,15 +88,6 @@ object SparqlRoute:
 				formField("query")(makeResponse) ~
 				entity(as[String])(makeResponse) ~
 				badRequestResponse
-			} ~
-			options{
-				respondWithHeaders(
-					`Access-Control-Allow-Origin`.*,
-					`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
-					`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
-				){
-					complete(StatusCodes.OK)
-				}
 			}
 
 		val spCache = SparqlCache(conf.maxCacheableQuerySize)
@@ -115,15 +100,20 @@ object SparqlRoute:
 				tprovide((msg, false))
 
 		path("sparql"):
-			extractRequestContext: ctxt =>
-				spCache.makeKey(ctxt).fold(bypass): key =>
-					cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
-						respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)):
-							withPermissiveCorsHeader://is applied on per-origin basis, so cannot cache these
-								_ =>
-									if cacheProhibited
-									then spCache.put(key, plainRoute(ctxt))
-									else spCache.apply(key, () => plainRoute(ctxt))
+			withPermissiveCorsHeader:
+				options:
+					respondWithHeaders(
+						`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
+						`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
+					)(complete(StatusCodes.OK))
+				~
+				extractRequestContext: ctxt =>
+					spCache.makeKey(ctxt).fold(bypass): key =>
+						cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
+							respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)): _ =>
+								if cacheProhibited
+								then spCache.put(key, plainRoute(ctxt))
+								else spCache.apply(key, () => plainRoute(ctxt))
 	end apply
 
 	private val ensureNoEmptyOkResponseDueToTimeout: Directive0 = extractRequestContext.flatMap{ctxt =>

@@ -33,6 +33,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 	import system.{log}
 
 	val numberOfParallelQueries = 2
+	private val reqOrigin = "https://example4567.icos-cp.eu"
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
 
@@ -46,13 +47,18 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			SparqlRoute.apply(sparqlConfig)
 
-	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None) =
-		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip)) ++ additionalHeader
+	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin) =
+		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip), Origin(HttpOrigin(origin))) ++ additionalHeader
 		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), otherHeaders*)
 
-	def testRoute(query: String, ip: String = "127.0.0.1", additionalHeader: Option[HttpHeader] = None)(test: => Assertion): Future[Assertion] =
+	def testRoute(
+		query: String, ip: String = "127.0.0.1", additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin
+	)(test: => Assertion): Future[Assertion] =
 		sparqlRoute map: route =>
-			req(query, ip, additionalHeader) ~> route ~> check(test)
+			req(query, ip, additionalHeader, origin) ~> route ~> check(test)
+
+	private def assertCORS(expectedOrigin: String = reqOrigin): Assertion =
+		assert(header(`Access-Control-Allow-Origin`.name).get.value() === expectedOrigin)
 
 	describe("SparqlRoute"):
 		it("Correct query should produce correct result and get cached"):
@@ -65,11 +71,14 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			testRoute(query):
 				assert(status === StatusCodes.OK)
 				assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "MISS"))
+				assertCORS()
 				firstResponse = responseAs[String]
 				assert(firstResponse.contains(uri))
 			.flatMap: _ =>
-				testRoute(query):
+				val anotherOrigin = "https://blabla.com"
+				testRoute(query, origin = anotherOrigin):
 					assert(status === StatusCodes.OK)
+					assertCORS(anotherOrigin) // CORS headers are not cached
 					assert(responseAs[String] === firstResponse)
 					assert(header("x-cache-status").get == RawHeader("X-Cache-Status", "HIT"))
 
@@ -91,6 +100,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			
 			testRoute(query):
 				assert(status === StatusCodes.BadRequest)
+				assertCORS()
 				assert(responseAs[String].contains("selecct"))
 
 		it("Error in prologue"):
@@ -106,6 +116,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			testRoute(query):
 				assert(status === StatusCodes.InternalServerError)
+				assertCORS()
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 
 		it("Error later in response"):
@@ -133,6 +144,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			testRoute(query):
 				assert(status == StatusCodes.OK)
+				assertCORS()
 				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
 
 		val longRunningQuery = """
@@ -148,6 +160,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 		it("Long running query should result in timeout"):
 			testRoute(longRunningQuery):
+				assertCORS()
 				assert(status == StatusCodes.RequestTimeout)
 
 		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
@@ -176,6 +189,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				Thread.sleep(100) // to ensure that the third query gets started last
 				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
 				testRoute(query, ip):
+					assertCORS()
 					assert(status == StatusCodes.RequestTimeout)
 
 end SparqlRouteTests

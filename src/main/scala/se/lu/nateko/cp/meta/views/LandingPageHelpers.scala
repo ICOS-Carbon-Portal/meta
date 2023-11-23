@@ -40,9 +40,12 @@ object LandingPageHelpers:
 	}
 
 	extension (dobj: DataObject)
-		def hasSupportingPreviewApp: Boolean = dobj.isPreviewable ||
-			dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
-			dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
+		def previewEnabled: Boolean =
+			dobj.submission.stop.fold(false)(_.isBefore(Instant.now)) && (
+				dobj.isPreviewable ||
+				dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
+				dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
+			)
 
 	def agentString(a: Agent): String = a match {
 		case person: Person =>

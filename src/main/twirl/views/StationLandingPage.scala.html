@@ -22,29 +22,37 @@
 			</div>
 			}
 			@for(descr <- details.self.comments.headOption){
-			<div class="row">
-				<div class="col-lg-8 mx-auto text-center lead my-5 py-5 fw-normal">
-					@descr
+			<div class="container-xl">
+				<div class="row">
+					<div class="col text-center lead my-5 p-5 fw-normal">
+						@descr
+					</div>
 				</div>
 			</div>
 			}
 		}
-		<div class="row justify-content-start justify-content-md-center bg-primary bg-opacity-10 py-5 text-primary">
-			@for(cc <- station.countryCode){
-				@quickfact(cc.displayCountry, "fa-map-marker-alt")
-			}
-			@for(alt <- station.location.flatMap(_.alt)){
-				@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Altitude"})
-			}
-			@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
-				@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
-			}
-			@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
-				@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
-			}
-			@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
-				@quickfact(climateZone, "fa-image", Some("Climate zone"))
-			}
+		<div class="row bg-primary bg-opacity-10">
+			<div class="col">
+				<div class="container-xl">
+					<div class="row justify-content-start justify-content-md-around justify-content-xl-center py-5 text-primary">
+						@for(cc <- station.countryCode){
+							@quickfact(cc.displayCountry, "fa-map-marker-alt")
+						}
+						@for(alt <- station.location.flatMap(_.alt)){
+							@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Altitude"})
+						}
+						@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
+							@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
+						}
+						@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
+							@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
+						}
+						@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
+							@quickfact(climateZone, "fa-image", Some("Climate zone"))
+						}
+					</div>
+				</div>
+			</div>
 		</div>
 		@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes)) {
 			@linkBoxes(boxes)

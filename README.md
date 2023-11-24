@@ -37,9 +37,9 @@ It has validity period of 100000 seconds (about 27.8 hours).
 
 Alternatively, the authentication token can be fetched in an automation-friendly way by HTTP-POSTing the username and password as HTML form fields `mail` and `password` to **https://cpauth.icos-cp.eu/password/login**. For example, using a popular command-line tool `curl` on Linux, it can be done as follows:
 
-`$ curl --cookie-jar cookies.txt --data "mail=<user email>&password=<password>" https://cpauth.icos-cp.eu/password/login`
+`$ curl --cookie-jar cookies.txt --data "mail=user_email&password=user_password" https://cpauth.icos-cp.eu/password/login`
 
-(please note that if the password contains special characters, such as $ or &amp;, it must be URL-encoded; this can be done for example using `encodeURIComponent()` function of any Web browser's Javascript console)
+(please note that both email and the password strings must be URL-encoded, at least when they contain special characters, such as e.g. `+`, `$`, `&`, or spaces; encoding can be done for example using `encodeURIComponent()` function of any Web browser's Javascript console)
 
 The resulting `cookies.txt` file will then contain the authentication cookie token, which can be automatically resent during later requests. (Note for developers: the file must be edited if you want to use it for tests against `localhost`).
 

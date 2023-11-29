@@ -62,7 +62,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 	private val metaVocab = new CpmetaVocab(server.factory)
 	val attrProvider = new AttributionProvider(repo, vocab)
 
-	def getItemCitationInfo(item: CitableItem) = item.references.copy(
+	def getItemCitationInfo(item: CitableItem): References = item.references.copy(
 		citationString = getDoiCitation(item, CitationStyle.HTML),
 		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
 		citationRis    = getDoiCitation(item, CitationStyle.ris),

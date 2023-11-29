@@ -1,12 +1,13 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
-import scala.util.Try
-import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
-class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extends InstanceServer{
+import scala.util.Try
+
+class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extends InstanceServer:
 
 	def factory = inner.factory
 	def readContexts = inner.readContexts
@@ -34,4 +35,7 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 	}
 
 	def withContexts(read: Seq[IRI], write: Seq[IRI]) = new LoggingInstanceServer(inner.withContexts(read, write), log)
-}
+
+	def getConnection(): TriplestoreConnection = inner.getConnection()
+
+end LoggingInstanceServer

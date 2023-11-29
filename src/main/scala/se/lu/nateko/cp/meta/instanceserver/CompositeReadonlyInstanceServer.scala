@@ -1,11 +1,12 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import scala.util.Try
-import scala.util.Success
 import org.eclipse.rdf4j.model.*
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
-class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceServer*) extends InstanceServer{
+import scala.util.Success
+import scala.util.Try
+
+class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceServer*) extends InstanceServer:
 
 	private val parts = first :: others.toList
 
@@ -37,4 +38,10 @@ class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceSer
 
 	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer = ???
 
-}
+	override def getConnection(): TriplestoreConnection =
+		val conn = first.getConnection()
+		conn.withContexts(conn.primaryContext, readContexts)
+
+	override def shutDown(): Unit = ()
+
+end CompositeReadonlyInstanceServer

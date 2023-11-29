@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.CloseableIterator.empty
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.utils.Validated
@@ -36,13 +37,19 @@ trait InstanceServer extends AutoCloseable{
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit]
 	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer
-	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
+	def getConnection(): TriplestoreConnection
+	def access[T](read: TriplestoreConnection ?=> T): T =
+		given conn: TriplestoreConnection = getConnection()
+		try read finally conn.close()
 
-	final override def close(): Unit = shutDown()
-	def shutDown(): Unit = {}
+	def shutDown(): Unit
+
+	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
 
 	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))()
 	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))()
+
+	final override def close(): Unit = shutDown()
 
 	final def getInstances(classUri: IRI): IndexedSeq[IRI] =
 		getStatements(None, Some(RDF.TYPE), Some(classUri))
@@ -140,16 +147,20 @@ object InstanceServer:
 			case ExactlyOne => assert(actual == 1, s"Expected exactly one $errorTip, but got $actual")
 
 
-trait TriplestoreConnection extends AutoCloseable:
+trait TriplestoreConnection extends SparqlRunner with AutoCloseable:
+	def primaryContext: IRI
 	def readContexts: Seq[IRI]
 	def factory: ValueFactory
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
-	def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean
-	def hasStatement(s: Statement): Boolean
-	def withReadContexts(ctxts: Seq[IRI]): TriplestoreConnection
-	def primaryContextView: TriplestoreConnection
+	def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection
+
+	final def withReadContexts(read: Seq[IRI]): TriplestoreConnection = withContexts(primaryContext, read)
+	final def primaryContextView: TriplestoreConnection = withContexts(primaryContext, Seq(primaryContext))
+
+	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
+		hasStatement(Option(subject), Option(predicate), Option(obj))
 
 
 object TriplestoreConnection:
@@ -160,6 +171,8 @@ object TriplestoreConnection:
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): TSC2[CloseableIterator[Statement]] =
 		conn ?=> conn.getStatements(subject, predicate, obj)
+
+	def getStatements(subject: IRI): TSC2[IndexedSeq[Statement]] = getStatements(Some(subject), None, None).toIndexedSeq
 
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): TSC2[Boolean] =
 		conn ?=> conn.hasStatement(subject, predicate, obj)

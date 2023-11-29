@@ -98,25 +98,22 @@ class CollectionFetcher(
 
 }
 
-class CollectionReaderLite(
-	vocab: CpVocab,
-	metaVocab: CpmetaVocab
-)(using Envri ?=> TriplestoreConnection) extends CpmetaReader(metaVocab):
+class CollectionReader(metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader(metaVocab):
 
 	import metaVocab.{dcterms => dct}
 
-	protected def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
+	private def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
 
-	protected def collectionExists(collUri: IRI): TSC2[Boolean] =
+	private def collectionExists(collUri: IRI): TSC2[Boolean] =
 		hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
 
-	def fetchLite(collUri: IRI)(using Envri): Validated[UriResource] =
+	def fetchLite(collUri: IRI): TSC2V[UriResource] =
 		if collectionExists(collUri) then
 			getTitle(collUri).map: title =>
 				UriResource(collUri.toJava, Some(title), Nil)
 		else Validated.error("collection does not exist")
 
-	def getParentCollections(dobj: IRI)(using Envri): Validated[Seq[UriResource]] =
+	def getParentCollections(dobj: IRI): TSC2V[Seq[UriResource]] =
 		val allIris = getStatements(None, Some(dct.hasPart), Some(dobj))
 			.map(_.getSubject)
 			.collect{case iri: IRI => iri}
@@ -130,24 +127,13 @@ class CollectionReaderLite(
 			allParentCols.filterNot(res => deprecatedSet.contains(res.uri))
 
 
-	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Validated[Option[IRI]] =
-		getOptionalUri(vocab.getCollection(hash), dct.creator)
+	// def getCreatorIfCollExists(hash: Sha256Sum): TSC2V[Option[IRI]] =
+	// 	getOptionalUri(vocab.getCollection(hash), dct.creator)
 
-	def collectionExists(coll: Sha256Sum)(using Envri): Boolean =
-		collectionExists(vocab.getCollection(coll))
 
-class CollectionReader(
-	vocab: CpVocab,
-	metaVocab: CpmetaVocab,
-	citer: CitationMaker,
-)(using Envri ?=> TriplestoreConnection) extends CollectionReaderLite(vocab, metaVocab):
-
-	import metaVocab.{dcterms => dct}
-
-	def fetchStatic(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		val collUri = citer.vocab.getCollection(hash)
-		if !collectionExists(collUri) then Validated.error(s"Collection with id ${hash.id} does not exist")
-		else getExistingStaticColl(collUri, Some(hash))
+	def fetchStatic(collUri: IRI, hashOpt: Option[Sha256Sum]): TSC2V[StaticCollection] =
+		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
+		else getExistingStaticColl(collUri, hashOpt)
 
 	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None): TSC2V[StaticCollection] = conn ?=>
 
@@ -183,7 +169,7 @@ class CollectionReader(
 				documentation = documentation,
 				references = References.empty
 			)
-			val citerRefs = citer.getItemCitationInfo(init)
 			//TODO Consider adding collection-specific logic for licence information
-			val updatedRefs = citerRefs.copy(title = Some(init.title))
-			init.copy(references = updatedRefs)
+			init.copy(references = citer(init).copy(title = Some(init.title)))
+
+end CollectionReader

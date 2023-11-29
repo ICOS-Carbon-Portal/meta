@@ -185,7 +185,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
-		new UploadService(dataObjServers, sparqlRunner, etcHelper, uploadConf)
+		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
 	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer = {

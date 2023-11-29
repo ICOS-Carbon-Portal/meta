@@ -137,7 +137,7 @@ class StaticObjectReader(
 	documentsGraph: IRI,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	collReader: CollectionReaderLite,
+	collReader: CollectionReader,
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
 ) extends DobjMetaReader(documentsGraph, vocab, metaVocab):

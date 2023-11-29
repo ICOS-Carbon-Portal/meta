@@ -1,12 +1,12 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import scala.util.Try
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 
-class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceServer {
+import scala.util.Try
+
+class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceServer:
 
 	private var cb: Function0[Unit] = () => ()
 
@@ -28,4 +28,8 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	def readContexts = inner.readContexts
 	def writeContexts = inner.writeContexts
 	def withContexts(read: Seq[IRI], write: Seq[IRI]) = inner.withContexts(read, write)
-}
+	def getConnection(): TriplestoreConnection = inner.getConnection()
+
+	override def shutDown(): Unit = inner.shutDown()
+
+end WriteNotifyingInstanceServer

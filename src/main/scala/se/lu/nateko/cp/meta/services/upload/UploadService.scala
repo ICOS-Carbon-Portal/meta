@@ -32,11 +32,11 @@ class AccessUri(val uri: URI)
 
 class UploadService(
 	val servers: DataObjectInstanceServers,
-	sparql: SparqlRunner,
 	val etcHelper: EtcUploadTransformer,
 	conf: UploadServiceConfig
 )(using system: ActorSystem, mat: Materializer):
 
+	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 	import servers.{ metaVocab, vocab }
 	import system.{ dispatcher, log }
 
@@ -46,82 +46,78 @@ class UploadService(
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
-	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab, sparql)
+	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab)
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
-	private def statementProd(server: InstanceServer) = new StatementsProducer(server, vocab, metaVocab)
+	private val statementProd = StatementsProducer(vocab, metaVocab)
 
-	def registerUpload(meta0: ObjectUploadDto, uploader: UserId)(using Envri): Future[AccessUri] = {
-		val metaAndSubmitterTry = for(
-			meta <- validator.validateObject(meta0, uploader);
-			submitterConf <- validator.getSubmitterConfig(meta)
-		) yield meta -> submitterConf.submittingOrganization
-
+	def registerUpload(meta0: ObjectUploadDto, uploader: UserId)(using Envri): Try[AccessUri] =
 		for
-			(meta, submitterOrg) <- Future.fromTry(metaAndSubmitterTry);
+			meta <- validator.validateObject(meta0, uploader)
+			submitterConf <- validator.getSubmitterConfig(meta)
+			submitterOrg = submitterConf.submittingOrganization
 			accessUri <- meta match
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)
 				case _: DocObjectDto =>
-					registerObjUpload(meta, servers.getDocInstServer, submitterOrg)
+					servers.getDocInstServer.flatMap(registerObjUpload(meta, _, submitterOrg))
 		yield accessUri
-	}
 
-	def registerEtcUpload(etcMeta: EtcUploadMetadata): Future[AccessUri] = {
-		implicit val envri = Envri.ICOS
-		for(
-			meta <- Future.fromTry(etcHelper.transform(etcMeta));
+
+	def registerEtcUpload(etcMeta: EtcUploadMetadata): Try[AccessUri] =
+		given Envri = Envri.ICOS
+		for
+			meta <- etcHelper.transform(etcMeta)
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
-		) yield accessUri
-	}
-
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Future[AccessUri] =
-		Future.fromTry:
-			UploadService.collectionHash(coll.members).flatMap: collHash =>
-				uploadLock.wrapTry(collHash):
-					for
-						_ <- validator.validateCollection(coll, collHash, uploader);
-						submitterConf <- validator.getSubmitterConfig(coll);
-						submittingOrg = submitterConf.submittingOrganization;
-						collIri = vocab.getCollection(collHash);
-						server = servers.collectionServers(envri);
-						newStatements = statementProd(server).getCollStatements(coll, collIri, submittingOrg);
-						oldStatements = server.getStatements(collIri);
-						updates = staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements, server);
-						_ <- server.applyAll(updates)()
-					yield
-						AccessUri(collIri.toJava)
+		yield accessUri
 
 
-	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(using Envri): Future[AccessUri] = {
-		val serverTry = for(
-			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf);
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Try[AccessUri] =
+		UploadService.collectionHash(coll.members).flatMap: collHash =>
+			uploadLock.wrapTry(collHash):
+				for
+					_ <- validator.validateCollection(coll, collHash, uploader);
+					submitterConf <- validator.getSubmitterConfig(coll);
+					submittingOrg = submitterConf.submittingOrganization;
+					collIri = vocab.getCollection(collHash);
+					server = servers.collectionServers(envri);
+					updates = server.access:
+						val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
+						val oldStatements = getStatements(collIri)
+						staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
+					_ <- server.applyAll(updates)()
+				yield
+					AccessUri(collIri.toJava)
+
+
+	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(using Envri): Try[AccessUri] =
+		for
+			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf)
 			server <- servers.getInstServerForFormat(format)
-		) yield server
+			accessUri <- registerObjUpload(meta, server, submittingOrg)
+		yield accessUri
 
-		registerObjUpload(meta, serverTry, submittingOrg)
-	}
 
-	private def registerObjUpload(dto: ObjectUploadDto, serverTry: Try[InstanceServer], submittingOrg: URI)(using Envri): Future[AccessUri] =
-		uploadLock.wrapFuture(dto.hashSum):
+	private def registerObjUpload(dto: ObjectUploadDto, server: InstanceServer, submittingOrg: URI)(using Envri): Try[AccessUri] =
+		uploadLock.wrapTry(dto.hashSum):
 			for
-				server <- Future.fromTry(serverTry);
-				_ <- Future.fromTry(validator.updateValidIfObjectNotNew(dto, submittingOrg));
-				newStatements = statementProd(server).getObjStatements(dto, submittingOrg);
-				currentStatements <- metaUpdater.getCurrentStatements(dto.hashSum, server);
-				updates = metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements, server);
+				_ <- validator.updateValidIfObjectNotNew(dto, submittingOrg)
+				updates = server.access:
+					val newStatements = statementProd.getObjStatements(dto, submittingOrg)
+					val currentStatements = metaUpdater.getCurrentStatements(dto.hashSum)
+					metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements)
 				_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
-				_ <- Future.fromTry(server.applyAll(updates)())
+				_ <- server.applyAll(updates)()
 			yield
 				log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 				new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 
-	def checkPermissions(submitter: URI, userId: String)(implicit envri: Envri): Boolean =
+	def checkPermissions(submitter: URI, userId: String)(using envri: Envri): Boolean =
 		ConfigLoader.submittersConfig.submitters(envri).values
 			.filter(_.submittingOrganization === submitter)
 			.exists(_.authorizedUserIds.contains(userId))
 
-	def availableSubmitterIds(uploader: UserId)(implicit envri: Envri): Seq[SubmitterProfile] = ConfigLoader.submittersConfig.submitters(envri).collect{
+	def availableSubmitterIds(uploader: UserId)(using envri: Envri): Seq[SubmitterProfile] = ConfigLoader.submittersConfig.submitters(envri).collect{
 		case (id, submConf) if submConf.authorizedUserIds.contains(uploader.email) =>
 			SubmitterProfile(id, submConf.producingOrganizationClass, submConf.producingOrganization, submConf.authorizedThemes, submConf.authorizedProjects)
 	}.toSeq.sortBy(sp => sp.id)

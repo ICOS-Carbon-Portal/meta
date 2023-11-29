@@ -67,7 +67,7 @@ module.exports = React.createClass({
 					obj: oldValue
 				}, {
 					isAssertion: true,
-					obj: newValue
+					obj: newValue.trim()
 				}]
 			});
 

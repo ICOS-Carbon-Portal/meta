@@ -17,12 +17,11 @@ export default {
 		return ajax.getJson(url);
 	},
 
-	checkSuffix(baseClass, suffix){
-		var uri = baseClass + encodeURI(suffix);
+	checkUri(uri){
 		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
 
 		return ajax.getJson(url).then(function(isAvailable){
-			return {candidateUri: uri, suffixAvailable: isAvailable};
+			return {candidateUri: uri, uriAvailable: isAvailable};
 		});
 	},
 

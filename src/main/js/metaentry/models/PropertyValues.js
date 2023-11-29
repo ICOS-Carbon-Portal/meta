@@ -25,10 +25,6 @@ export default class PropertyValues{
 		return this._propertyDto.type;
 	}
 
-	getValues(){
-		return this._values;
-	}
-
 	getValidity(){
 		var valid = false;
 		var errors = [];

@@ -1,4 +1,15 @@
-export default function(Backend, chooseTypeAction, checkSuffixAction){
+export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
+
+	const uriCheck = _.debounce(
+		function(uri, onSuccess){
+			Backend.checkUri(uri).then(
+				onSuccess,
+				function(err){console.log(err)}
+			)
+		},
+		200
+	)
+
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -10,15 +21,14 @@ export default function(Backend, chooseTypeAction, checkSuffixAction){
 				types: [],
 				chosen: null,
 				chosenIdx: -1,
-				candidateUriSuffix: null,
 				candidateUri: null,
-				suffixAvailable: false
+				uriAvailable: false
 			};
 		},
 
 		init: function(){
 			this.listenTo(chooseTypeAction, this.setChosenType);
-			this.listenTo(checkSuffixAction, this.checkSuffix);
+			this.listenTo(checkUriOrSuffixAction, this.checkUriOrSuffix);
 			this.state = this.getInitialState();
 			var self = this;
 
@@ -48,33 +58,31 @@ export default function(Backend, chooseTypeAction, checkSuffixAction){
 
 		},
 
-		checkSuffix: function(suffix){
-			var self = this;
-			var baseClass = this.state.chosen;
-
-			_.extend(this.state, {
-				candidateUriSuffix: suffix,
-				candidateUri: null,
-				suffixAvailable: false
-			});
-
-			if(!baseClass || !suffix) {
-				self.publishState();
-				return;
+		checkUriOrSuffix: function(uriOrSuffix){
+			if(!uriOrSuffix || this.state.chosenIdx < 0 || this.state.chosenIdx >= this.state.types.length){
+				_.extend(this.state, {uriAvailable: false, candidateUri: null})
+				this.publishState()
+				return
 			}
 
-			const uriBase = this.state.types[this.state.chosenIdx].newInstanceBaseUri;
+			var regex = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi);
+			var uri = uriOrSuffix.match(regex)
 
-			Backend.checkSuffix(uriBase, suffix).then(
-				function(checkRes){
-					if(baseClass === self.state.chosen && suffix === self.state.candidateUriSuffix){
-						_.extend(self.state, checkRes);
-						self.publishState();
-					}
-				},
-				function(err){console.log(err);}
-			);
+			if(!uri || uri.length == 0){
+				var uriBase = this.state.types[this.state.chosenIdx].newInstanceBaseUri;
+				var uri = uriBase + uriOrSuffix.trim().replace(/ /g, '_');
+			}
+
+			_.extend(this.state, {candidateUri: uri, uriAvailable: false});
+			this.publishState()
+
+			var self = this;
+			uriCheck(uri, function(checkRes){
+				if(uri === self.state.candidateUri){
+					_.extend(self.state, checkRes);
+					self.publishState();
+				}
+			})
 		}
 	});
 }
-

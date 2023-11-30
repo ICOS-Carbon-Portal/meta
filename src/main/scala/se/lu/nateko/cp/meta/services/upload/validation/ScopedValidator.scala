@@ -45,10 +45,6 @@ import eu.icoscp.envri.Envri
 
 private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher:
 
-	type Validated[Dto <: ObjectUploadDto] <: Try[ObjectUploadDto] = Dto match
-		case DataObjectDto => Try[DataObjectDto]
-		case DocObjectDto => Try[DocObjectDto]
-
 	given vf: ValueFactory = server.factory
 
 	def existsAndIsCompleted(item: IRI): Try[NotUsed] =
@@ -132,8 +128,8 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 		}
 	end hasNoOtherDeprecators
 
-	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri): Validated[Dto] =
-		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then passValidation(dto)
+	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri): Try[Dto] =
+		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then Success(dto)
 		else
 			val allDuplicates = server
 				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
@@ -141,21 +137,20 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
 
-			if allDuplicates.isEmpty then passValidation(dto)
+			if allDuplicates.isEmpty then Success(dto)
 			else
 				val deprecated = dto.isNextVersionOf.flattenToSeq
-				if allDuplicates.exists(deprecated.contains) then passValidation(dto)
+				if allDuplicates.exists(deprecated.contains) then Success(dto)
 
 				else if dto.autodeprecateSameFilenameObjects then
 					withDeprecations(dto, deprecated ++ allDuplicates)
 
-				else failValidation(
+				else
 					userFail(
 						s"File name is already taken by other object(s) (${allDuplicates.mkString(", ")})." +
 						" Please deprecate older version(s) or set either 'duplicateFilenameAllowed' or " +
 						"'autodeprecateSameFilenameObjects' flag in 'references' to 'true'"
 					)
-				)
 	end validateFileName
 
 	private def isCompleted(item: IRI): Boolean =
@@ -210,15 +205,10 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 				else userFail("Moratorium only allowed if object has not already been published")
 		}
 
-	private def withDeprecations[Dto <: ObjectUploadDto](dto: Dto, deprecated: Seq[Sha256Sum]): Validated[Dto] =
+	private def withDeprecations[Dto <: ObjectUploadDto](dto: Dto, deprecated: Seq[Sha256Sum]): Try[Dto] =
 		val nextVers: OptionalOneOrSeq[Sha256Sum] = Some(Right(deprecated))
 		dto match
-			case dobj: DataObjectDto => Success(dobj.copy(isNextVersionOf = nextVers))
-			case doc: DocObjectDto => Success(doc.copy(isNextVersionOf = nextVers))
+			case dobj: DataObjectDto => Success(dobj.copy(isNextVersionOf = nextVers).asInstanceOf[Dto])
+			case doc: DocObjectDto => Success(doc.copy(isNextVersionOf = nextVers).asInstanceOf[Dto])
 
-	private def passValidation[Dto <: ObjectUploadDto](dto: Dto): Validated[Dto] = dto match
-		case dobj: DataObjectDto => Success(dobj)
-		case doc: DocObjectDto => Success(doc)
-
-	private def failValidation[Dto <: ObjectUploadDto](err: Failure[Nothing]) = err.asInstanceOf[Validated[Dto]]
 end ScopedValidator

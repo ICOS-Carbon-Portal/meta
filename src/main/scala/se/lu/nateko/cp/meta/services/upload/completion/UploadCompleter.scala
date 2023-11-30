@@ -1,11 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
-import java.time.Instant
-
-import scala.concurrent.Future
-import scala.util.Try
-
-import akka.actor.ActorSystem
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
@@ -13,63 +8,56 @@ import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import eu.icoscp.envri.Envri
+
+import java.time.Instant
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Try
 
 
-class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(implicit system: ActorSystem) {
+class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
 	import servers.{ metaVocab, vocab }
-	import system.dispatcher
+	import TriplestoreConnection.hasStatement
 
-	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] = {
-		for(
-			(specific, server) <- Future.fromTry(getSpecificCompleter(hash, info.ingestionResult));
-			specificUpdates <- specific.getUpdates(hash);
-			stopTimeUpdates = getUploadStopTimeUpdates(server, hash);
-			byteSizeUpdates = getBytesSizeUpdates(server, hash, info.bytes);
-			report <- specific.finalize(hash);
-			_ <- Future.fromTry(server.applyAll(specificUpdates ++ stopTimeUpdates ++ byteSizeUpdates)())
-		) yield report
-	}
+	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
+		for
+			server <- Future.fromTry(servers.getInstServerForStaticObj(hash))
 
-	private def getSpecificCompleter(
-		hash: Sha256Sum,
-		ingestionResult: Option[IngestionMetadataExtract]
-	)(using Envri): Try[(FormatSpecificCompleter, InstanceServer)] =
-		servers.getInstServerForStaticObj(hash).map{server =>
-			val completer = ingestionResult match{
-				case None =>
-					new PidMinter(handles, vocab)
+			completer = info.ingestionResult.fold(new PidMinter(handles, vocab)):
+				case tsOrSpat: (TimeSeriesExtract | SpatialTimeSeriesExtract) =>
+					new TimeSeriesUploadCompleter(tsOrSpat, handles, vocab, metaVocab)
 
-				case Some(extract) => extract match {
-					case _: TimeSeriesExtract | _: SpatialTimeSeriesExtract =>
-						new TimeSeriesUploadCompleter(server, extract, handles, vocab, metaVocab)
+				case netcdf: NetCdfExtract =>
+					new NetCdfUploadCompleter(netcdf, handles, vocab, metaVocab)
 
-					case netcdf: NetCdfExtract =>
-						new NetCdfUploadCompleter(server, netcdf, handles, vocab, metaVocab)
-				}
-			}
-			(completer, server)
-		}
+			updates = server.access:
+				completer.getUpdates(hash) ++ getUploadStopTimeUpdates(hash) ++ getBytesSizeUpdates(hash, info.bytes)
 
-	private def getUploadStopTimeUpdates(server: InstanceServer, hash: Sha256Sum)(using Envri): Seq[RdfUpdate] = {
+			report <- completer.finalize(hash)
+
+			_ <- Future.fromTry(server.applyAll(updates)())
+
+		yield report
+
+
+	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
 		val submissionUri = vocab.getSubmission(hash)
-		if(server.hasStatement(Some(submissionUri), Some(metaVocab.prov.endedAtTime), None)) Nil
+		if(hasStatement(Some(submissionUri), Some(metaVocab.prov.endedAtTime), None)) Nil
 		else {
 			val stopInfo = vocab.factory.createStatement(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(Instant.now))
 			Seq(RdfUpdate(stopInfo, true))
 		}
-	}
 
-	private def getBytesSizeUpdates(server: InstanceServer, hash: Sha256Sum, size: Long)(using Envri): Seq[RdfUpdate] = {
+
+	private def getBytesSizeUpdates(hash: Sha256Sum, size: Long)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
 		val dobj = vocab.getStaticObject(hash)
-		if(server.hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
+		if(hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
 		else{
 			val sizeInfo = vocab.factory.createStatement(dobj, metaVocab.hasSizeInBytes, vocab.lit(size))
 			Seq(RdfUpdate(sizeInfo, true))
 		}
-	}
 
-}
+end UploadCompleter

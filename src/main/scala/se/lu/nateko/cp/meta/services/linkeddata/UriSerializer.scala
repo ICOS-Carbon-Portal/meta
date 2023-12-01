@@ -32,6 +32,9 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Using
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.services.upload.CollectionReader
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.utils.Validated
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
@@ -77,10 +80,13 @@ class Rdf4jUriSerializer(
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
+	import servers.{vocab, metaVocab, collectionLens}
 
 	private given ValueFactory = repo.getValueFactory
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
+	private val collReader = CollectionReader(metaVocab, citer.getItemCitationInfo)
+	private val objReader = StaticObjectReader(vocab, metaVocab, collReader, collectionLens, pidFactory, citer)
 	private val pcm =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
@@ -104,34 +110,32 @@ class Rdf4jUriSerializer(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
 
-	def fetchStaticObject(uri: Uri): Option[StaticObject] = uri.path match {
+	def fetchStaticObject(uri: Uri): Validated[StaticObject] = uri.path match
 		case Hash.Object(hash) =>
 			given Envri = inferEnvri(uri)
 			fetchStaticObj(hash)
-		case _ => None
-	}
+		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
-	def fetchStaticCollection(uri: Uri): Option[StaticCollection] = uri.path match {
+
+	def fetchStaticCollection(uri: Uri): Validated[StaticCollection] = uri.path match
 		case Hash.Collection(hash) =>
 			given Envri = inferEnvri(uri)
 			fetchStaticColl(hash)
-		case _ => None
-	}
+		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
 
-	private def fetchStaticObj(hash: Sha256Sum)(using envri: Envri): Option[StaticObject] = {
-		import servers.vocab
-		for(
-			server <- servers.getInstServerForStaticObj(hash).toOption;
-			collFetcher <- servers.collFetcherLite;
-			metaFetcher <- servers.metaFetchers.get(envri);
-			plainFetcher = metaFetcher.plainObjFetcher;
-			objectFetcher = new StaticObjectFetcher(server, collFetcher, plainFetcher, pidFactory, citer);
-			dobj <- objectFetcher.fetch(hash)
-		) yield dobj
-	}
 
-	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Option[StaticCollection] =
-		servers.collFetcher(citer).flatMap(_.fetchStatic(hash))
+	private def fetchStaticObj(hash: Sha256Sum)(using envri: Envri): Validated[StaticObject] =
+		Validated.fromTry(servers.getInstServerForStaticObj(hash)).flatMap: server =>
+			server.access:
+				objReader.fetch(hash)
+
+
+	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
+		servers.collectionServer.flatMap: server =>
+			server.access:
+				val collUri = vocab.getCollection(hash)
+				collReader.fetchStatic(collUri, Some(hash))
+
 
 	private def fetchStation(uri: Uri)(using Envri): TOOE[Station] = servers.getStation(makeIri(uri)).map{stOpt =>
 		stOpt.map{st =>

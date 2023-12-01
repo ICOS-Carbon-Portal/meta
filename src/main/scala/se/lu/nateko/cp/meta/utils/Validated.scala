@@ -39,6 +39,9 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
 	def withExtraError(msg: String) = new Validated(result, errors :+ msg)
 
+	def getOrThrow[E <: Exception](exc: String => E): T = result.getOrElse:
+		throw exc(errors.mkString("\n"))
+
 	@inline final def withFilter(p: T => Boolean): WithFilter = new WithFilter(p)
 
 	final class WithFilter(p: T => Boolean) {

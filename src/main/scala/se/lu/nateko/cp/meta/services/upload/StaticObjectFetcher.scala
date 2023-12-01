@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import java.time.Instant
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
 class StaticObjectFetcher(
 	val server: InstanceServer,
@@ -134,13 +135,13 @@ class PlainStaticObjectFetcher(allDataObjServer: InstanceServer) extends Fetchin
 
 
 class StaticObjectReader(
-	documentsGraph: IRI,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	collReader: CollectionReader,
+	collectionLens: (Envri, TriplestoreConnection) ?=> TriplestoreConnection,
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
-) extends DobjMetaReader(documentsGraph, vocab, metaVocab):
+) extends DobjMetaReader(vocab, metaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
 	def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
@@ -173,7 +174,7 @@ class StaticObjectReader(
 			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)
 			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)
 			submission <- getSubmission(submissionUri)
-			parendColls <- collReader.getParentCollections(dobj)
+			parendColls <- collReader.getParentCollections(dobj)(using collectionLens)
 		yield
 			val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
 			val init = DataObject(
@@ -186,9 +187,10 @@ class StaticObjectReader(
 				submission = submission,
 				specification = spec,
 				specificInfo = levelSpecificInfo,
-				nextVersion = getNextVersionAsUri(dobj),
+				// next version can have different format, so may be in an arbitrary RDF graph
+				nextVersion = getNextVersionAsUri(dobj)(using globalLens),
 				latestVersion = getLatestVersion(dobj),
-				previousVersion = getPreviousVersion(dobj),
+				previousVersion = getPreviousVersion(dobj).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty
 			)
@@ -207,7 +209,7 @@ class StaticObjectReader(
 			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
 			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
 			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
-			parendColls <- collReader.getParentCollections(doc)
+			parendColls <- collReader.getParentCollections(doc)(using collectionLens)
 		yield
 			val init = DocObject(
 				hash = hash,
@@ -220,7 +222,7 @@ class StaticObjectReader(
 				submission = submission,
 				nextVersion = getNextVersionAsUri(doc),
 				latestVersion = getLatestVersion(doc),
-				previousVersion = getPreviousVersion(doc),
+				previousVersion = getPreviousVersion(doc).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty.copy(
 					title = titleOpt,

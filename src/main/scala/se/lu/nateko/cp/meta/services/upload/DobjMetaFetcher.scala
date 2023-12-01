@@ -294,11 +294,8 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 }
 
-class DobjMetaReader(documentsGraph: IRI, vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
+class DobjMetaReader(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-
-	def getDocument(dobj: IRI): TSC2V[PlainStaticObject] = conn ?=>
-		getPlainStaticObject(dobj)(using conn.withReadContexts(Seq(documentsGraph)))
 
 	def getSpecification(spec: IRI): TSC2V[DataObjectSpec] =
 		for

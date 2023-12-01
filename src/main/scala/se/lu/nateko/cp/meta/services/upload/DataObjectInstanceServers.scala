@@ -22,6 +22,8 @@ import scala.util.Success
 import se.lu.nateko.cp.meta.instanceserver.CompositeReadonlyInstanceServer
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.services.MetadataException
 
 class DataObjectInstanceServers(
 	val metaServers: Map[Envri, InstanceServer],
@@ -47,6 +49,12 @@ class DataObjectInstanceServers(
 			}
 		}
 	}
+
+	val collectionLens: (Envri, TriplestoreConnection) ?=> TriplestoreConnection =
+		(envri, conn) ?=> collectionServer
+			.map(_.writeContexts.head)
+			.map(ctxt => conn.withContexts(ctxt, Seq(ctxt)))
+			.getOrThrow(new MetadataException(_))
 
 	def metaFetcher(using envri: Envri) = metaFetchers.get(envri).toTry{
 		new UploadUserErrorException(s"ENVRI $envri unknown or not configured properly")
@@ -126,6 +134,10 @@ class DataObjectInstanceServers(
 
 	def collFetcherLite(using envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
 		.map(new CollectionFetcherLite(_, vocab))
+
+	def collectionServer(using envri: Envri): Validated[InstanceServer] =
+		new Validated(collectionServers.get(envri)).require:
+			s"ENVRI $envri or its collections 'server' was not configured properly"
 
 	def dataObjExists(dobj: IRI)(using envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)

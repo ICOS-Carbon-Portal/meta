@@ -33,9 +33,14 @@ type OneOrSeq[T] = Either[T, Seq[T]]
 type OptionalOneOrSeq[T] = Option[OneOrSeq[T]]
 
 extension [T](item: OptionalOneOrSeq[T])
-	def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
+	def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]): either =>
 		either.fold(Seq(_), identity)
-	}
+
+	def mapO3[R](f: T => R): OptionalOneOrSeq[R] = item match
+		case None => None
+		case Some(Left(t)) => Some(Left(f(t)))
+		case Some(Right(ts)) => Some(Right(ts.map(f)))
+
 
 enum DatasetType derives CanEqual:
 	case StationTimeSeries, SpatioTemporal

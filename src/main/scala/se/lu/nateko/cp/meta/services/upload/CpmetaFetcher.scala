@@ -324,6 +324,9 @@ trait CpmetaFetcher extends FetchingHelper{
 class CpmetaReader(val metaVocab: CpmetaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
+	val globalLens: TriplestoreConnection ?=> TriplestoreConnection =
+		conn ?=> conn.withReadContexts(Nil)
+
 	def getPlainStaticObject(dobj: IRI): TSC2V[PlainStaticObject] =
 		for
 			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
@@ -572,19 +575,19 @@ class CpmetaReader(val metaVocab: CpmetaVocab):
 			case Seq(single) => Left(single)
 			case many => Right(many)
 
-	def getPreviousVersion(item: IRI): TSC2[OptionalOneOrSeq[URI]] =
+	def getPreviousVersion(item: IRI): TSC2[OptionalOneOrSeq[IRI]] =
 		val allPrevVersions: TSC2[Seq[IRI]] =
 			getUriValues(item, metaVocab.isNextVersionOf) ++
 			getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
 				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
 					getUriValues(coll, metaVocab.isNextVersionOf)
 				case _ => Nil
-		allPrevVersions.map(_.toJava) match
+		allPrevVersions match
 			case Nil => None
 			case Seq(single) => Some(Left(single))
 			case many => Some(Right(many))
 
-	def getPreviousVersions(item: IRI): TSC2[Seq[URI]] = getPreviousVersion(item).flattenToSeq
+	def getPreviousVersions(item: IRI): TSC2[Seq[IRI]] = getPreviousVersion(item).flattenToSeq
 
 	def getValTypeLookup(datasetSpec: IRI): TSC2V[VarMetaLookup] =
 		for

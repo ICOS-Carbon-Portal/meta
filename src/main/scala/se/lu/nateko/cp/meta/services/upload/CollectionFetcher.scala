@@ -114,17 +114,14 @@ class CollectionReader(metaVocab: CpmetaVocab, citer: CitableItem => References)
 		else Validated.error("collection does not exist")
 
 	def getParentCollections(dobj: IRI): TSC2V[Seq[UriResource]] =
-		val allIris = getStatements(None, Some(dct.hasPart), Some(dobj))
+		val allParentColls = getStatements(None, Some(dct.hasPart), Some(dobj))
 			.map(_.getSubject)
 			.collect{case iri: IRI => iri}
 			.toIndexedSeq
 
-		val deprecatedSet = allIris.flatMap(getPreviousVersions).toSet
+		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
-		for
-			allParentCols <- Validated.sequence(allIris.map(fetchLite))
-		yield
-			allParentCols.filterNot(res => deprecatedSet.contains(res.uri))
+		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchLite))
 
 
 	// def getCreatorIfCollExists(hash: Sha256Sum): TSC2V[Option[IRI]] =
@@ -164,7 +161,7 @@ class CollectionReader(metaVocab: CpmetaVocab, citer: CitableItem => References)
 				description = description,
 				nextVersion = getNextVersionAsUri(coll),
 				latestVersion = getLatestVersion(coll),
-				previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
+				previousVersion = getPreviousVersion(coll).flattenToSeq.headOption.map(_.toJava),
 				doi = doi,
 				documentation = documentation,
 				references = References.empty

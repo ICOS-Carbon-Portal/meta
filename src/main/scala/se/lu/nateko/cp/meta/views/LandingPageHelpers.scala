@@ -105,4 +105,14 @@ object LandingPageHelpers:
 		s"""https://${conf.dataHost}/portal/#${params}"""
 	}
 
+	extension(station: Station) {
+		def isDiscontinued: Boolean = {
+			station.specificInfo match {
+				case s: IcosStationSpecifics => s.discontinued
+				case s: SitesStationSpecifics => s.discontinued
+				case _ => false
+			}
+		}
+}
+
 end LandingPageHelpers

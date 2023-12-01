@@ -1,0 +1,12 @@
+@import se.lu.nateko.cp.meta.core.data.Station
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.isDiscontinued
+
+@(station: Station)
+@if(station.isDiscontinued) {
+	<div class="col-md-12">
+		<div class="alert alert-warning d-flex align-items-center">
+			<i class="fas fa-exclamation-triangle me-2"></i>
+			<div>@(s"The collaboration with ${station.org.name} is discontinued and their data will no longer be updated.")</div>
+		</div>
+	</div>
+}

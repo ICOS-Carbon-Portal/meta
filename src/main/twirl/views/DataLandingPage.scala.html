@@ -21,7 +21,10 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
-		@newerVersionsAlert(dobj, "Object")
+		@for(acquisition <- dobj.acquisition){
+			@discontinuedStationWarning(acquisition.station)
+		}
+		@newerVersionsAlert(dobj, "data")
 		@incompleteUploadAlert(dobj)
 		@alertWarning("Under moratorium", underMoratorium){
 			@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)

@@ -3,13 +3,11 @@
 
 @(item: CitableItem, itemType: String)
 @for(nextUri <- item.nextVersion) {
-	@alertWarning(s"$itemType is deprecated"){
-		<ul>
-			@if(nextUri != item.latestVersion){
-				<li>Next version(s): @versionLink(nextUri)</li>
-			}
-			<li>Latest version(s): @versionLink(item.latestVersion)</li>
-		</ul>
+	@alertWarning(s"Deprecated $itemType"){
+		@if(nextUri != item.latestVersion){
+			<div>Next version(s): @versionLink(nextUri)</div>
+		}
+		<div>Latest version(s): @versionLink(item.latestVersion)</div>
 	}
 }
 

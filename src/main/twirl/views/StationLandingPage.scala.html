@@ -10,6 +10,7 @@
 
 @(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), header){
+	@discontinuedStationWarning(station)
 	@if(webpageDetailsPresent) {
 		@for(details <- station.org.webpageDetails) {
 			@for(cover <- details.coverImage) {

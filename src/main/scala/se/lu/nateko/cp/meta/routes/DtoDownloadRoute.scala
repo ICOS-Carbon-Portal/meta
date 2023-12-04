@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import scala.concurrent.Future
 import scala.util.Try
+import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.UploadDtoReader
@@ -23,10 +24,10 @@ object DtoDownloadRoute extends CpmetaJsonProtocol{
 
 		(get & path("dtodownload")){
 			parameter("uri".as[Uri]){uri =>
-				service.readDto(uri) match {
-					case None => complete(StatusCodes.NotFound)
-					case Some(dto) => complete(dto)
-				}
+				val uDtoV = service.readDto(uri)
+				uDtoV.result match
+					case None => complete(StatusCodes.NotFound -> uDtoV.errors.mkString("\n"))
+					case Some(dto) => complete(WithErrors(dto, uDtoV.errors))
 			} ~
 			complete(StatusCodes.BadRequest -> "Expected a URL as 'uri' query parameter")
 		}

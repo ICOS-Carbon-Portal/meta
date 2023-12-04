@@ -137,7 +137,11 @@ class DataObjectInstanceServers(
 
 	def collectionServer(using envri: Envri): Validated[InstanceServer] =
 		new Validated(collectionServers.get(envri)).require:
-			s"ENVRI $envri or its collections 'server' was not configured properly"
+			s"ENVRI $envri or its collections 'instance server' was not configured properly"
+
+	def metaServer(using envri: Envri): Validated[InstanceServer] =
+		new Validated(metaServers.get(envri)).require:
+			s"ENVRI $envri or its metadata 'instance server' was not configured properly"
 
 	def dataObjExists(dobj: IRI)(using envri: Envri): Boolean =
 		allDataObjs(envri).hasStatement(dobj, RDF.TYPE, metaVocab.dataObjectClass)

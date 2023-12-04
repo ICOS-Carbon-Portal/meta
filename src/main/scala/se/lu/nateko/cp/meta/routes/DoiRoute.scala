@@ -18,13 +18,15 @@ import java.net.URI
 import scala.language.implicitConversions
 import scala.util.Failure
 import scala.util.Success
+import akka.event.LoggingAdapter
 
 object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
 		doiCitClient: CitationClient,
-		coreConf: MetaCoreConfig
+		coreConf: MetaCoreConfig,
+		log: LoggingAdapter
 	): Route = {
 
 		given EnvriConfigs = coreConf.envriConfigs
@@ -35,11 +37,14 @@ object DoiRoute extends CpmetaJsonProtocol{
 				authRouting.mustBeLoggedIn{ _ =>
 					extractEnvri{implicit envri =>
 						entity(as[URI]){ uri =>
-							onSuccess(service.createDraftDoi(uri)){doiOpt =>
-								doiOpt.fold(
-									complete(StatusCodes.NotFound -> s"Resource with landing page $uri not found, no DOI created")
-								)(complete(_))
-							}
+							onSuccess(service.createDraftDoi(uri)): doiV =>
+								doiV.result match
+									case None =>
+										val msg = s"Resource with landing page $uri not found, no DOI created\n${doiV.errors.mkString("\n")}"
+										complete(StatusCodes.NotFound -> msg)
+									case Some(doi) =>
+										log.warning(s"Problems reading metadata for $uri:\n${doiV.errors.mkString("\n")}")
+										complete(doi)
 						} ~
 						requirePost
 					}

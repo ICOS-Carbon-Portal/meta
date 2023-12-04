@@ -32,7 +32,7 @@ object MainRoute {
 			}
 	}
 
-	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using ActorSystem, ExecutionContext): Route = {
+	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using sys: ActorSystem, ctxt: ExecutionContext): Route =
 
 		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs
@@ -45,8 +45,8 @@ object MainRoute {
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
-		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core)
-		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
+		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core, sys.log)
+		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab, sys.log)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)
@@ -77,6 +77,6 @@ object MainRoute {
 				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
 			}
 		}
-	}
+	end apply
 
 }

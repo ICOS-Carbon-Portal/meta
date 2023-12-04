@@ -34,12 +34,16 @@ import scala.util.Using
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.upload.CollectionReader
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+
 
 trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
-	def fetchStaticObject(uri: Uri): Option[StaticObject]
-	def fetchStaticCollection(uri: Uri): Option[StaticCollection]
+	def fetchStaticObject(uri: Uri): Validated[StaticObject]
+	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
 }
 
 object UriSerializer{
@@ -77,6 +81,7 @@ class Rdf4jUriSerializer(
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
+	import TriplestoreConnection.{TSC2V, getLabeledResource, hasStatement}
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
@@ -125,41 +130,43 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using envri: Envri): Validated[StaticObject] =
-		Validated.fromTry(servers.getInstServerForStaticObj(hash)).flatMap: server =>
-			server.access:
-				objReader.fetch(hash)
+		access(Validated.fromTry(servers.getInstServerForStaticObj(hash))):
+			objReader.fetch(hash)
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		servers.collectionServer.flatMap: server =>
-			server.access:
-				val collUri = vocab.getCollection(hash)
-				collReader.fetchStatic(collUri, Some(hash))
+		access(servers.collectionServer):
+			val collUri = vocab.getCollection(hash)
+			collReader.fetchStatic(collUri, Some(hash))
 
 
-	private def fetchStation(uri: Uri)(using Envri): TOOE[Station] = servers.getStation(makeIri(uri)).map{stOpt =>
-		stOpt.map{st =>
-			val membs = citer.attrProvider.getMemberships(st.org.self.uri)
-			OrganizationExtra(st, membs)
-		}
-	}
+	private def fetchStation(uri: Uri)(using Envri): VOE[Station] =
+		access(servers.metaServer):
+			objReader.getStation(uri.toRdf).map: st =>
+				val membs = citer.attrProvider.getMemberships(st.org.self.uri)
+				OrganizationExtra(st, membs)
 
-	private def fetchOrg(uri: Uri)(using Envri): TOOE[Organization] = servers
-		.metaFetcher
-		.map(f =>
-			Try(f.getOrganization(makeIri(uri))).toOption.map{org =>
+	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] =
+		access(servers.metaServer):
+			objReader.getOrganization(uri.toRdf).map: org =>
 				val membs = citer.attrProvider.getMemberships(org.self.uri)
 				OrganizationExtra(org, membs)
-			}
-		)
-	private def fetchPerson(uri: Uri)(using Envri): Try[Option[PersonExtra]] = servers
-		.metaFetcher
-		.map{f =>
-			Try(f.getPerson(makeIri(uri))).toOption.map{pers =>
+
+	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] =
+		access(servers.metaServer):
+			objReader.getPerson(uri.toRdf).map: pers =>
 				val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
 				PersonExtra(pers, roles)
-			}
-		}
+
+	private def fetchInstrument(uri: Uri)(using Envri): Validated[Instrument] =
+		access(servers.metaServer):
+			objReader.getInstrument(uri.toRdf)
+
+	private def access[T](serverV: Validated[InstanceServer])(reader: TSC2V[T]): Validated[T] =
+		serverV.flatMap(_.access(reader))
+
+	private def readMetaRes[T](uri: Uri)(reader: (DobjMetaReader, IRI) => TSC2V[T])(using Envri): Validated[T] =
+		servers.metaServer.flatMap(_.access(reader(objReader, uri.toRdf)))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
 		implicit val envri = inferEnvri(uri)
@@ -182,15 +189,15 @@ class Rdf4jUriSerializer(
 		)
 	}
 
-	private def makeIri(uri: Uri) = JavaUri.create(uri.toString).toRdf
+	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean =
+		servers.metaServers(envri).access:
+			hasStatement(Some(uri.toRdf), Some(servers.metaVocab.hasDataLevel), None)
 
-	private def isObjSpec(uri: Uri)(implicit envri: Envri): Boolean =
-		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(servers.metaVocab.hasDataLevel), None)
+	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean =
+		servers.metaServers(envri).access:
+			hasStatement(Some(uri.toRdf), Some(RDFS.LABEL), None)
 
-	private def isLabeledRes(uri: Uri)(implicit envri: Envri): Boolean =
-		servers.metaServers(envri).hasStatement(Some(makeIri(uri)), Some(RDFS.LABEL), None)
-
-	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR = uri.path match {
+	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR = uri.path match
 		case Hash.Object(hash) =>
 			delegatedRepr(() => fetchStaticObj(hash))
 
@@ -200,9 +207,9 @@ class Rdf4jUriSerializer(
 		case UriPath("resources", "stations", stId) => oneOf(
 			customHtml[OrganizationExtra[Station]](
 				() => fetchStation(uri),
-				st => views.html.StationLandingPage(st, citer.vocab),
+				(st, errors) => views.html.StationLandingPage(st, citer.vocab),
 				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
-				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.getMessage}")
+				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.mkString("\n")}")
 			),
 			customJson(() => {
 				fetchStation(uri.withQuery(Uri.Query.Empty))
@@ -212,9 +219,9 @@ class Rdf4jUriSerializer(
 		case UriPath("resources", "organizations", orgId) => oneOf(
 			customHtml[OrganizationExtra[Organization]](
 				() => fetchOrg(uri),
-				org => views.html.OrgLandingPage(org),
+				(org, errors) => views.html.OrgLandingPage(org),
 				views.html.MessagePage("Organization not found", s"No organization whose URL ends with $orgId"),
-				err => views.html.MessagePage("Organization metadata error", s"Error fetching metadata for organization $orgId :\n${err.getMessage}")
+				err => views.html.MessagePage("Organization metadata error", s"Error fetching metadata for organization $orgId :\n${err.mkString("\n")}")
 			),
 			customJson(() => {
 				fetchOrg(uri.withQuery(Uri.Query.Empty))
@@ -223,62 +230,66 @@ class Rdf4jUriSerializer(
 
 		case UriPath("resources", "instruments", instrId) => oneOf(
 			customHtml[Instrument](
-				() => servers.metaFetcher.map(_.getInstrument(makeIri(uri))),
-				inst => views.html.InstrumentLandingPage(inst),
+				() => readMetaRes(uri)(_ getInstrument _),
+				(inst, errors) => views.html.InstrumentLandingPage(inst),
 				views.html.MessagePage("Instrument not found", s"No instrument whose URL ends with $instrId"),
-				err => views.html.MessagePage("Instrument metadata error", s"Error fetching metadata for instrument $instrId :\n${err.getMessage}")
+				err => views.html.MessagePage("Instrument metadata error", s"Error fetching metadata for instrument $instrId :\n${err.mkString("\n")}")
 			),
-			customJson(() =>
-				servers.metaFetcher.map(_.getInstrument(makeIri(uri)))
-			)
+			customJson(() => readMetaRes(uri)(_ getInstrument _))
 		)
 
 		case UriPath("resources", "people", persId) => oneOf(
 			customHtml[PersonExtra](
 				() => fetchPerson(uri),
-				pers => views.html.PersonLandingPage(pers),
+				views.html.PersonLandingPage(_, _),
 				views.html.MessagePage("Person not found", s"No person page whose URL ends with $persId"),
-				err => views.html.MessagePage("Person metadata error", s"Error fetching metadata for person $persId :\n${err.getMessage}")
+				errors => views.html.MessagePage(
+					"Person metadata error",
+					s"Error fetching metadata for person $persId :\n${errors.mkString("\n")}"
+				)
 			),
 			customJson(() => fetchPerson(uri))(using OrganizationExtra.persExtraWriter)
 		)
 
 		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-			customJson(() => servers.getDataObjSpecification(makeIri(uri)).map(Some(_))),
+			customJson(() => readMetaRes(uri)(_ getSpecification _)),
 			defaultHtml(uri)
 		)
 
 		case _ if isLabeledRes(uri) => oneOf(
-			customJson(() => servers.metaFetcher.map(_.getLabeledResource(makeIri(uri))).map(Some(_))),
+			customJson(() => readMetaRes(uri)((_, uri) => getLabeledResource(uri))),
 			defaultHtml(uri)
 		)
 
 		case _ =>
 			oneOf(defaultHtml(uri))
-	}
+
+	end getMarshallings
 
 	private def oneOf(opts: Marshalling[HttpResponse]*): FLMHR  = Future.successful(opts.toList)
 
-	private def delegatedRepr[T](fetchDto: () => Option[T])(
-		implicit trm: ToResponseMarshaller[() => Option[T]], ctxt: ExecutionContext
+	private def delegatedRepr[T](fetchDto: () => Validated[T])(
+		using trm: ToResponseMarshaller[() => Validated[T]], ctxt: ExecutionContext
 	): FLMHR = trm(fetchDto)
 
-	private def customJson[T : JsonWriter](fetchDto: () => Try[Option[T]]): Marshalling[HttpResponse] =
+	private def customJson[T : JsonWriter](fetchDto: () => Validated[T]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
+	import PageContentMarshalling.ErrorList
+
 	private def customHtml[T](
-		fetchDto: () => Try[Option[T]],
-		pageTemplate: T => Html,
+		fetchDto: () => Validated[T],
+		pageTemplate: (T, ErrorList) => Html,
 		notFoundPage: => Html,
-		errorPage: Throwable => Html
+		errorPage: ErrorList => Html
 	): Marshalling[HttpResponse] =
-		PageContentMarshalling.twirlStatusHtmlMarshalling{
-			() => fetchDto() match {
-				case Success(Some(value)) => StatusCodes.OK -> pageTemplate(value)
-				case Success(None) => StatusCodes.NotFound -> notFoundPage
-				case Failure(err) => StatusCodes.InternalServerError -> errorPage(err)
-			}
-		}
+		PageContentMarshalling.twirlStatusHtmlMarshalling: () =>
+			val itemV = fetchDto()
+			itemV.result match
+				case Some(value) => StatusCodes.OK -> pageTemplate(value, itemV.errors)
+				case None =>
+					if itemV.errors.isEmpty then StatusCodes.NotFound -> notFoundPage
+					else StatusCodes.InternalServerError -> errorPage(itemV.errors)
 
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
@@ -288,7 +299,7 @@ end Rdf4jUriSerializer
 private object Rdf4jUriSerializer{
 
 	type FLMHR = Future[List[Marshalling[HttpResponse]]]
-	type TOOE[O] = Try[Option[OrganizationExtra[O]]]
+	type VOE[O] = Validated[OrganizationExtra[O]]
 
 	val Limit = 500
 

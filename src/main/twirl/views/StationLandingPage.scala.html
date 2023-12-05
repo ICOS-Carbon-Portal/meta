@@ -8,7 +8,7 @@
 @import landpagesnips.*
 @import eu.icoscp.envri.Envri
 
-@(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
+@(stExt: OrganizationExtra[Station], vocab: CpVocab, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), header){
 	@if(webpageDetailsPresent) {
 		@for(details <- station.org.webpageDetails) {

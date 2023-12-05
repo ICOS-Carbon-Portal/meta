@@ -21,8 +21,7 @@ import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
@@ -54,44 +53,51 @@ def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 
 class UploadValidator(servers: DataObjectInstanceServers):
 	import servers.{ metaVocab, vocab }
+	import TriplestoreConnection.*
 	given vf: ValueFactory = metaVocab.factory
+	private val scoped = ScopedValidator(vocab, metaVocab)
 
 	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[ObjectUploadDto] = meta match
 		case dobj: DataObjectDto => validateDobj(dobj, uploader)
 		case doc: DocObjectDto => validateDoc(doc, uploader)
 
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = for(
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] = for
 		submConf <- getSubmitterConfig(meta);
 		_ <- userAuthorizedBySubmitter(submConf, uploader);
 		_ <- userAuthorizedByProducer(meta, submConf);
 		spec <- servers.getDataObjSpecification(meta.objectSpecification.toRdf);
 		_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 		_ <- validateForFormat(meta, spec, submConf);
-		instServer <- servers.getInstServerForFormat(spec.format.self.uri.toRdf);
-		scoped = ScopedValidator(instServer, vocab);
-		_ <- scoped.validatePrevVers(meta);
-		_ <- scoped.validateLicence(meta);
-		_ <- scoped.growingIsGrowing(meta, spec, submConf);
-		_ <- validateActors(meta, instServer);
-		_ <- validateTemporalCoverage(meta, spec);
-		_ <- validateSpatialCoverage(meta, instServer);
-		_ <- noProductionProvenanceIfL0(meta, spec);
-		amended <- scoped.validateFileName(meta);
-		_ <- scoped.validateMoratorium(amended);
 		_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
-	) yield amended
+		instServer <- servers.getInstServerForFormat(spec.format.self.uri.toRdf);
+		amended <- instServer.access:
+			for
+				_ <- scoped.validatePrevVers(meta)
+				_ <- scoped.validateLicence(meta)
+				_ <- scoped.growingIsGrowing(meta, spec, submConf)
+				_ <- validateActors(meta)
+				_ <- validateTemporalCoverage(meta, spec)
+				_ <- validateSpatialCoverage(meta)
+				_ <- noProductionProvenanceIfL0(meta, spec)
+				amended <- scoped.validateFileName(meta)
+				_ <- scoped.validateMoratorium(amended)
+			yield amended
+	yield amended
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] = for(
-		submConf <- getSubmitterConfig(meta);
-		_ <- userAuthorizedBySubmitter(submConf, uploader);
-		instServer <- servers.getDocInstServer;
-		scoped = ScopedValidator(instServer, vocab);
-		_ <- scoped.validatePrevVers(meta);
-		amended <- scoped.validateFileName(meta);
-		_ <- scoped.validateLicence(meta);
-		_ <- validateDescription(meta.description)
-	) yield amended
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] =
+		for
+			_ <- validateDescription(meta.description)
+			submConf <- getSubmitterConfig(meta)
+			_ <- userAuthorizedBySubmitter(submConf, uploader)
+			instServer <- servers.getDocInstServer
+			amended <- instServer.access:
+				for
+					_ <- scoped.validatePrevVers(meta)
+					_ <- scoped.validateLicence(meta)
+					amended <- scoped.validateFileName(meta)
+				yield amended
+		yield amended
 
 
 	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): Try[NotUsed] = for(
@@ -210,22 +216,20 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		}
 	}
 
-	private def validateActors(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
-		import scala.language.implicitConversions
-		given Conversion[URI, IRI] = instServ.factory.createIRI(_)
+	private def validateActors(meta: DataObjectDto): TSC2[Try[NotUsed]] =
 
-		def isOrg(iri: IRI) = instServ.hasStatement(Some(iri), Some(metaVocab.hasName), None)
-		def isPerson(iri: IRI) = instServ.resourceHasType(iri, metaVocab.personClass)
+		def isOrg(iri: IRI) = hasStatement(Some(iri), Some(metaVocab.hasName), None)
+		def isPerson(iri: IRI) = resourceHasType(iri, metaVocab.personClass)
 		def isActor(iri: IRI) = isOrg(iri) || isPerson(iri)
 
 		def validate(prod: DataProductionDto): Try[NotUsed] =
 			val errors = Buffer.empty[String]
-			if !isActor(prod.creator) then errors += s"Invalid creator URL ${prod.creator}"
+			if !isActor(prod.creator.toRdf) then errors += s"Invalid creator URL ${prod.creator}"
 
-			for(contributor <- prod.contributors if !isActor(contributor))
+			for(contributor <- prod.contributors if !isActor(contributor.toRdf))
 				errors += s"Invalid contributor URL $contributor"
 
-			for (org <- prod.hostOrganization if !isOrg(org))
+			for (org <- prod.hostOrganization if !isOrg(org.toRdf))
 				errors += s"Invalid host organization URL $org"
 
 			if errors.isEmpty then ok else userFail(errors.mkString("\n"))
@@ -250,14 +254,14 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	private def validateSpatialCoverage(meta: DataObjectDto, instServ: InstanceServer): Try[NotUsed] =
-		def coverageExistsIn(covUri: URI, serv: InstanceServer): Boolean =
+	private def validateSpatialCoverage(meta: DataObjectDto): TSC2[Try[NotUsed]] = conn ?=>
+		def coverageExistsIn(covUri: URI)(using TriplestoreConnection): Boolean =
 			val cov = covUri.toRdf
-			serv.hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
-			serv.resourceHasType(cov, metaVocab.latLonBoxClass) ||
-			serv.resourceHasType(cov, metaVocab.positionClass)
-		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ.writeContextsView)
-		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri, instServ) && !customCoverageExists(covUri)
+			hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
+			resourceHasType(cov, metaVocab.latLonBoxClass) ||
+			resourceHasType(cov, metaVocab.positionClass)
+		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri)(using conn.primaryContextView)
+		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri) && !customCoverageExists(covUri)
 
 		meta.specificInfo match
 			case Left(spTemp) => spTemp.spatial match
@@ -349,8 +353,8 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				val inServer = servers.collectionServers(envri)
 				val prevColl = vocab.getCollection(coll)
 				val exceptColl = vocab.getCollection(newCollHash)
-				val scopedValidator = ScopedValidator(inServer, vocab)
-				scopedValidator.hasNoOtherDeprecators(prevColl, exceptColl, false, false)
+				inServer.access:
+					scoped.hasNoOtherDeprecators(prevColl, exceptColl, false, false)
 			}) else
 				userFail(s"Previous-version collection was not found: $coll")
 		}

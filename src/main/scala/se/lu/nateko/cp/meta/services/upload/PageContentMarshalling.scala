@@ -55,9 +55,10 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		makeMarshaller(template, messagePage("Collection not found", _))
 
 
+	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
 	private def makeMarshaller[T: JsonWriter](
-		templateFetcher: (T, Seq[String]) => Future[Html],
-		notFoundPage: Seq[String] => Html,
+		templateFetcher: (T, ErrorList) => Future[Html],
+		notFoundPage: ErrorList => Html,
 	): ToResponseMarshaller[() => Validated[T]] = {
 
 		def fetchHtmlMaker(itemV: Validated[T])(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match

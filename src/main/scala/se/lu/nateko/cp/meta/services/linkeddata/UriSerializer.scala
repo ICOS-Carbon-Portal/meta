@@ -1,43 +1,59 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
-import java.net.{URI => JavaUri}
-
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
-import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
-import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
+import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling.Marshalling
+import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
+import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.http.scaladsl.model.Uri.Path.Empty
+import akka.http.scaladsl.model.Uri.Path.Segment
+import akka.http.scaladsl.model.Uri.Path.Slash
 import akka.http.scaladsl.model.*
 import akka.stream.Materializer
-import org.eclipse.rdf4j.model.{IRI, Literal, Statement, ValueFactory}
-import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
-import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
-import se.lu.nateko.cp.meta.{CpmetaConfig, api}
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
-import se.lu.nateko.cp.meta.services.upload.{StaticObjectFetcher, DataObjectInstanceServers, PageContentMarshalling}
-import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import spray.json.JsonWriter
-import se.lu.nateko.cp.meta.views.ResourceViewInfo
-import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
-import scala.concurrent.{ExecutionContext, Future}
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import scala.util.Try
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Using
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.services.upload.CollectionReader
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
-import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
-import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.upload.CollectionReader
+import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
+import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
+import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
+import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.views.ResourceViewInfo
+import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
+import spray.json.JsonWriter
+
+import java.net.{URI => JavaUri}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
 
 
 trait UriSerializer {
@@ -140,37 +156,33 @@ class Rdf4jUriSerializer(
 			collReader.fetchStatic(collUri, Some(hash))
 
 
-	private def fetchStation(uri: Uri)(using Envri): VOE[Station] =
-		access(servers.metaServer):
-			objReader.getStation(uri.toRdf).map: st =>
-				val membs = citer.attrProvider.getMemberships(st.org.self.uri)
-				OrganizationExtra(st, membs)
+	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:
+		objReader.getStation(uri.toRdf).map: st =>
+			val membs = citer.attrProvider.getMemberships(st.org.self.uri)
+			OrganizationExtra(st, membs)
 
-	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] =
-		access(servers.metaServer):
-			objReader.getOrganization(uri.toRdf).map: org =>
-				val membs = citer.attrProvider.getMemberships(org.self.uri)
-				OrganizationExtra(org, membs)
+	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
+		objReader.getOrganization(uri.toRdf).map: org =>
+			val membs = citer.attrProvider.getMemberships(org.self.uri)
+			OrganizationExtra(org, membs)
 
-	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] =
-		access(servers.metaServer):
-			objReader.getPerson(uri.toRdf).map: pers =>
-				val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
-				PersonExtra(pers, roles)
-
-	private def fetchInstrument(uri: Uri)(using Envri): Validated[Instrument] =
-		access(servers.metaServer):
-			objReader.getInstrument(uri.toRdf)
+	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
+		objReader.getPerson(uri.toRdf).map: pers =>
+			val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
+			PersonExtra(pers, roles)
 
 	private def access[T](serverV: Validated[InstanceServer])(reader: TSC2V[T]): Validated[T] =
 		serverV.flatMap(_.access(reader))
 
+	private def accessMeta[T](reader: TSC2V[T])(using Envri): Validated[T] =
+		access(servers.metaServer)(reader)
+
 	private def readMetaRes[T](uri: Uri)(reader: (DobjMetaReader, IRI) => TSC2V[T])(using Envri): Validated[T] =
 		servers.metaServer.flatMap(_.access(reader(objReader, uri.toRdf)))
 
-	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse = {
-		implicit val envri = inferEnvri(uri)
-		implicit val envriConfig = envries(envri)
+	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
+		given envri: Envri = inferEnvri(uri)
+		given EnvriConfig = envries(envri)
 		getViewInfo(uri, repo).fold(
 			err => HttpResponse(
 				status = StatusCodes.InternalServerError,
@@ -187,7 +199,7 @@ class Rdf4jUriSerializer(
 				)
 			)
 		)
-	}
+
 
 	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean =
 		servers.metaServers(envri).access:
@@ -197,72 +209,74 @@ class Rdf4jUriSerializer(
 		servers.metaServers(envri).access:
 			hasStatement(Some(uri.toRdf), Some(RDFS.LABEL), None)
 
-	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR = uri.path match
-		case Hash.Object(hash) =>
-			delegatedRepr(() => fetchStaticObj(hash))
+	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =
 
-		case Hash.Collection(hash) =>
-			delegatedRepr(() => fetchStaticColl(hash))
+		def resourceMarshallings[T : JsonWriter](
+			resId: String, resourceType: String, fetcher: Uri => Validated[T],
+			pageTemplate: (T, ErrorList) => Html
+		): FLMHR =
+			lazy val itemV = fetcher(uri.withQuery(Uri.Query.Empty))
+			oneOf(
+				PageContentMarshalling.twirlStatusHtmlMarshalling: () =>
+					itemV.result match
+						case Some(value) =>
+							StatusCodes.OK -> pageTemplate(value, itemV.errors)
+						case None =>
+							if itemV.errors.isEmpty then
+								val notFoundPage = views.html.MessagePage(
+									s"${resourceType.capitalize} not found",
+									s"No $resourceType page whose URL ends with $resId"
+								)
+								StatusCodes.NotFound -> notFoundPage
+							else
+								val errorPage = views.html.MessagePage(
+									s"${resourceType.capitalize} metadata error",
+									s"Error fetching metadata for $resourceType $resId :\n${itemV.errors.mkString("\n")}"
+								)
+								StatusCodes.InternalServerError -> errorPage
+				,
+				customJson(() => itemV)
+			)
 
-		case UriPath("resources", "stations", stId) => oneOf(
-			customHtml[OrganizationExtra[Station]](
-				() => fetchStation(uri),
-				(st, errors) => views.html.StationLandingPage(st, citer.vocab),
-				views.html.MessagePage("Station not found", s"No station whose URL ends with $stId"),
-				err => views.html.MessagePage("Station metadata error", s"Error fetching metadata for station $stId :\n${err.mkString("\n")}")
-			),
-			customJson(() => {
-				fetchStation(uri.withQuery(Uri.Query.Empty))
-			})
-		)
+		uri.path match
+			case Hash.Object(hash) =>
+				delegatedRepr(() => fetchStaticObj(hash))
 
-		case UriPath("resources", "organizations", orgId) => oneOf(
-			customHtml[OrganizationExtra[Organization]](
-				() => fetchOrg(uri),
-				(org, errors) => views.html.OrgLandingPage(org),
-				views.html.MessagePage("Organization not found", s"No organization whose URL ends with $orgId"),
-				err => views.html.MessagePage("Organization metadata error", s"Error fetching metadata for organization $orgId :\n${err.mkString("\n")}")
-			),
-			customJson(() => {
-				fetchOrg(uri.withQuery(Uri.Query.Empty))
-			})
-		)
+			case Hash.Collection(hash) =>
+				delegatedRepr(() => fetchStaticColl(hash))
 
-		case UriPath("resources", "instruments", instrId) => oneOf(
-			customHtml[Instrument](
-				() => readMetaRes(uri)(_ getInstrument _),
-				(inst, errors) => views.html.InstrumentLandingPage(inst),
-				views.html.MessagePage("Instrument not found", s"No instrument whose URL ends with $instrId"),
-				err => views.html.MessagePage("Instrument metadata error", s"Error fetching metadata for instrument $instrId :\n${err.mkString("\n")}")
-			),
-			customJson(() => readMetaRes(uri)(_ getInstrument _))
-		)
+			case UriPath("resources", "stations", stId) => resourceMarshallings(
+				stId, "station", fetchStation,
+				(st, errors) => views.html.StationLandingPage(st, citer.vocab, errors)
+			)
 
-		case UriPath("resources", "people", persId) => oneOf(
-			customHtml[PersonExtra](
-				() => fetchPerson(uri),
-				views.html.PersonLandingPage(_, _),
-				views.html.MessagePage("Person not found", s"No person page whose URL ends with $persId"),
-				errors => views.html.MessagePage(
-					"Person metadata error",
-					s"Error fetching metadata for person $persId :\n${errors.mkString("\n")}"
-				)
-			),
-			customJson(() => fetchPerson(uri))(using OrganizationExtra.persExtraWriter)
-		)
+			case UriPath("resources", "organizations", orgId) => resourceMarshallings(
+				orgId, "organization", fetchOrg,
+				views.html.OrgLandingPage(_, _)
+			)
 
-		case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-			customJson(() => readMetaRes(uri)(_ getSpecification _)),
-			defaultHtml(uri)
-		)
+			case UriPath("resources", "instruments", instrId) => resourceMarshallings(
+				instrId, "instrument", readMetaRes(_)(_ getInstrument _),
+				views.html.InstrumentLandingPage(_, _)
+			)
 
-		case _ if isLabeledRes(uri) => oneOf(
-			customJson(() => readMetaRes(uri)((_, uri) => getLabeledResource(uri))),
-			defaultHtml(uri)
-		)
+			case UriPath("resources", "people", persId) => resourceMarshallings(
+				persId, "person", fetchPerson,
+				views.html.PersonLandingPage(_, _)
+			)(using OrganizationExtra.persExtraWriter)
 
-		case _ =>
-			oneOf(defaultHtml(uri))
+			case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
+				customJson(() => readMetaRes(uri)(_ getSpecification _)),
+				defaultHtml(uri)
+			)
+
+			case _ if isLabeledRes(uri) => oneOf(
+				customJson(() => accessMeta(getLabeledResource(uri.toRdf))),
+				defaultHtml(uri)
+			)
+
+			case _ =>
+				oneOf(defaultHtml(uri))
 
 	end getMarshallings
 
@@ -276,20 +290,6 @@ class Rdf4jUriSerializer(
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
 	import PageContentMarshalling.ErrorList
-
-	private def customHtml[T](
-		fetchDto: () => Validated[T],
-		pageTemplate: (T, ErrorList) => Html,
-		notFoundPage: => Html,
-		errorPage: ErrorList => Html
-	): Marshalling[HttpResponse] =
-		PageContentMarshalling.twirlStatusHtmlMarshalling: () =>
-			val itemV = fetchDto()
-			itemV.result match
-				case Some(value) => StatusCodes.OK -> pageTemplate(value, itemV.errors)
-				case None =>
-					if itemV.errors.isEmpty then StatusCodes.NotFound -> notFoundPage
-					else StatusCodes.InternalServerError -> errorPage(itemV.errors)
 
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))

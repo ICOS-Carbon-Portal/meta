@@ -4,6 +4,8 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
@@ -39,8 +41,14 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
 	def withExtraError(msg: String) = new Validated(result, errors :+ msg)
 
-	def getOrThrow[E <: Exception](exc: String => E): T = result.getOrElse:
-		throw exc(errors.mkString("\n"))
+	def getOrThrow[E <: Throwable](exc: String => E): T = toTry(exc).get
+
+	def toTry[E <: Throwable](exc: String => E): Try[T] = result match
+		case Some(value) => Success(value)
+		case None =>
+			val msg = if errors.isEmpty then "no element found"
+				else errors.mkString(";\n")
+			Failure(exc(msg))
 
 	@inline final def withFilter(p: T => Boolean): WithFilter = new WithFilter(p)
 

@@ -185,6 +185,9 @@ object TriplestoreConnection:
 	def getValues(instUri: IRI, propUri: IRI): TSC2[IndexedSeq[Value]] =
 		conn ?=> conn.getStatements(Some(instUri), Some(propUri), None).map(_.getObject).toIndexedSeq
 
+	def getTypes(res: IRI): TSC2[IndexedSeq[IRI]] = getValues(res, RDF.TYPE).collect:
+		case classUri: IRI => classUri
+
 	def getLiteralValues(subj: IRI, pred: IRI, dType: IRI): TSC2[IndexedSeq[String]] = getValues(subj, pred)
 		.collect:
 			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
@@ -275,11 +278,14 @@ object TriplestoreConnection:
 	def getSingleDouble(subj: IRI, pred: IRI): TSC2V[Double] =
 		validate(getDoubleValues, subj, pred, ExactlyOne).map(_.head)
 
+	def getInstantValues(subj: IRI, pred: IRI): TSC2[IndexedSeq[Instant]] =
+		getLiteralValues(subj, pred, XSD.DATETIME).map(parseInstant)
+
 	def getOptionalInstant(subj: IRI, pred: IRI): TSC2V[Option[Instant]] =
-		validate(getLiteralValues(_, _, XSD.DATETIME), subj, pred, AtMostOne).map(_.headOption.map(parseInstant))
+		validate(getInstantValues, subj, pred, AtMostOne).map(_.headOption)
 
 	def getSingleInstant(subj: IRI, pred: IRI): TSC2V[Instant] =
-		validate(getLiteralValues(_, _, XSD.DATETIME), subj, pred, ExactlyOne).map(_.map(parseInstant).head)
+		validate(getInstantValues, subj, pred, ExactlyOne).map(_.head)
 
 	def getOptionalLocalDate(subj: IRI, pred: IRI): TSC2V[Option[LocalDate]] =
 		validate(getLiteralValues(_, _, XSD.DATE), subj, pred, AtMostOne).map(_.headOption.map(LocalDate.parse))

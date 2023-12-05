@@ -23,13 +23,13 @@ import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import se.lu.nateko.cp.meta.services.upload.CpmetaReader
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -42,16 +42,18 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider.getOptInstant
 
-private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher:
+private class ScopedValidator(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
 
-	given vf: ValueFactory = server.factory
+	given vf: ValueFactory = vocab.factory
+	import TriplestoreConnection.*
 
-	def existsAndIsCompleted(item: IRI): Try[NotUsed] =
+	def existsAndIsCompleted(item: IRI): TSC2[Try[NotUsed]] =
 		if isComplete(item) then ok
 		else userFail(s"Item $item was not found or has not been successfully uploaded")
 
-	def validatePrevVers(dto: ObjectUploadDto)(using Envri): Try[NotUsed] =
+	def validatePrevVers(dto: ObjectUploadDto)(using Envri): TSC2[Try[NotUsed]] =
 		val prevVersions = dto.isNextVersionOf.flattenToSeq
 
 		if dto.partialUpload && prevVersions.length > 1
@@ -73,28 +75,25 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 			}
 			.foldLeft(ok)(bothOk(_, _))
 
-	def validateLicence(dto: ObjectUploadDto): Try[NotUsed] =
+	def validateLicence(dto: ObjectUploadDto): TSC2[Try[NotUsed]] =
 		dto.references.flatMap(_.licence).fold(Success(NotUsed)){licUri =>
-			if(server.getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
+			if(getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
 			else userFail(s"Unknown licence $licUri")
 		}
 
-	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean): Try[NotUsed] =
+	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean): TSC2[Try[NotUsed]] =
 
 		val allowedPlainColl: Option[IRI] =
-			if partialUpload then server
-				.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(except))
-				.collect{
+			if partialUpload then getStatements(None, Some(metaVocab.dcterms.hasPart), Some(except))
+				.collect:
 					case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) &&
-						server.hasStatement(coll, metaVocab.isNextVersionOf, item) => coll
-				}
+						hasStatement(coll, metaVocab.isNextVersionOf, item) => coll
 				.toIndexedSeq
 				.headOption
 			else None
 
-		val deprs = server
-			.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.collect{
+		val deprs = getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+			.collect:
 				case Rdf4jStatement(depr, _, _) if {
 						if partialUpload then allowedPlainColl match
 							case Some(coll) => coll != depr
@@ -102,7 +101,6 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 						else
 							depr != except
 					} => depr
-			}
 			.toIndexedSeq
 
 		val otherDeprs = if amongCompleted then deprs.filter(isComplete) else deprs
@@ -128,11 +126,10 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 		}
 	end hasNoOtherDeprecators
 
-	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri): Try[Dto] =
+	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri): TSC2[Try[Dto]] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then Success(dto)
 		else
-			val allDuplicates = server
-				.getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
+			val allDuplicates = getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
 				.collect{case Rdf4jStatement(subj, _, _) if isCompleted(subj) && !isDeprecated(subj) => subj.toJava}
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
@@ -153,20 +150,20 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 					)
 	end validateFileName
 
-	private def isCompleted(item: IRI): Boolean =
-		server.hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
+	private def isCompleted(item: IRI): TSC2[Boolean] =
+		hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
 
-	private def isDeprecated(item: IRI): Boolean = server
-		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-		.collect{case Rdf4jStatement(subj, _, _) if isComplete(subj) => true}
-		.toIndexedSeq
-		.nonEmpty
+	private def isDeprecated(item: IRI): TSC2[Boolean] =
+		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
+			.collect{case Rdf4jStatement(subj, _, _) if isComplete(subj) => true}
+			.toIndexedSeq
+			.nonEmpty
 
 	def growingIsGrowing(
 		dto: ObjectUploadDto,
 		spec: DataObjectSpec,
 		subm: DataSubmitterConfig
-	)(using Envri): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
+	)(using Envri): TSC2[Try[NotUsed]] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
 			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
@@ -174,8 +171,8 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 		) =>
 			if(spec.dataLevel == 1 && spec.format.self.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){
 				val prevDobj = vocab.getStaticObject(prevHash)
-				val prevAcqStop = server.getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
-					getOptionalInstant(acq, metaVocab.prov.endedAtTime)
+				val prevAcqStop = getUriValues(prevDobj, metaVocab.wasAcquiredBy).flatMap{acq =>
+					getInstantValues(acq, metaVocab.prov.endedAtTime)
 				}
 				if(prevAcqStop.exists(_ == acqStop)) userFail(
 					"The supposedly NRT growing data object you intend to upload " +
@@ -186,10 +183,10 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 		case _ => ok
 	} else ok
 
-	def validateMoratorium(meta: DataObjectDto)(using Envri): Try[NotUsed] =
-		meta.references.flatMap(_.moratorium).fold(ok) {moratorium =>
+	def validateMoratorium(meta: DataObjectDto)(using Envri): TSC2[Try[NotUsed]] =
+		meta.references.flatMap(_.moratorium).fold(ok): moratorium =>
 			val iri = vocab.getStaticObject(meta.hashSum)
-			val uploadComplete = server.hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
+			val uploadComplete = hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
 
 			def validateMoratorium =
 				if moratorium.compareTo(Instant.now()) > 0 then ok
@@ -197,13 +194,13 @@ private class ScopedValidator(val server: InstanceServer, vocab: CpVocab) extend
 
 			if !uploadComplete then validateMoratorium else
 				val submissionIri = vocab.getSubmission(meta.hashSum)
-				val submissionEndDate = getSingleInstant(submissionIri, metaVocab.prov.endedAtTime)
+				getSingleInstant(submissionIri, metaVocab.prov.endedAtTime)
+					.toTry(msg => userFail(msg).exception)
+					.flatMap: submissionEndDate =>
+						val uploadedDobjUnderMoratorium = submissionEndDate.compareTo(Instant.now()) > 0
+						if uploadedDobjUnderMoratorium then validateMoratorium
+						else userFail("Moratorium only allowed if object has not already been published")
 
-				val uploadedDobjUnderMoratorium = submissionEndDate.compareTo(Instant.now()) > 0
-
-				if uploadedDobjUnderMoratorium then validateMoratorium
-				else userFail("Moratorium only allowed if object has not already been published")
-		}
 
 	private def withDeprecations[Dto <: ObjectUploadDto](dto: Dto, deprecated: Seq[Sha256Sum]): Try[Dto] =
 		val nextVers: OptionalOneOrSeq[Sha256Sum] = Some(Right(deprecated))

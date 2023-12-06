@@ -26,7 +26,7 @@ export default React.createClass({
 							type="text" className="form-control"
 							id="newObjPropValue" list="newPropValueList" ref="valueSelect"
 							onChange={v => this.setState(urlValidator(v.target.value))}
-							onKeyDown={this.keyDownHandler}
+							onKeyDown={this.keyDownHandler} autoFocus
 						/>
 						<button type="button" className="btn btn-secondary" onClick={this.props.cancelAddition}>Cancel</button>
 						<button type="button" className={saveButtClass} onClick={this.saveValue} disabled={saveDisabled}>{saveButtMsg}</button>
@@ -50,11 +50,8 @@ export default React.createClass({
 
 	keyDownHandler: function(event){
 		if(event.keyCode == 13){
-			var uri = event.currentTarget.value
-			var valid = urlValidator(uri)
-			if(valid.valid){
-				this.props.saveValue(uri);
-			}
+			let value = React.findDOMNode(this.refs.valueSelect).value;
+			this.props.saveValue(value);
 			return false;
 		}else if(event.keyCode == 27){
 			this.props.cancelAddition();

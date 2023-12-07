@@ -21,6 +21,7 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
+		@errorList(extras.errors)
 		@newerVersionsAlert(dobj, "Object")
 		@incompleteUploadAlert(dobj)
 		@alertWarning("Under moratorium", underMoratorium){

@@ -6,11 +6,9 @@
 @(persExtra: PersonExtra, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, Some(title), subHeading = Some("Person")){
 	<div class="row gy-2">
+		@errorList(errors)
 		<div class="col-md-8">
 			<div class="row gy-2">
-				@for(error <- errors){
-					@property("Error", error)
-				}
 				@property("First name", pers.firstName)
 				@property("Last name", pers.lastName)
 				@for(emailStr <- pers.email) {

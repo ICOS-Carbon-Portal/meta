@@ -321,8 +321,10 @@ trait CpmetaFetcher extends FetchingHelper{
 
 
 
-class CpmetaReader(val metaVocab: CpmetaVocab):
+trait CpmetaReader:
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+
+	val metaVocab: CpmetaVocab
 
 	val globalLens: TriplestoreConnection ?=> TriplestoreConnection =
 		conn ?=> conn.withReadContexts(Nil)

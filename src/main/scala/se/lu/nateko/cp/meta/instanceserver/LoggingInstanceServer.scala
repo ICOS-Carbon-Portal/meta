@@ -11,7 +11,7 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 
 	def factory = inner.factory
 	def readContexts = inner.readContexts
-	def writeContexts = inner.writeContexts
+	def writeContext = inner.writeContext
 	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]) =
@@ -34,7 +34,7 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 		log.close()
 	}
 
-	def withContexts(read: Seq[IRI], write: Seq[IRI]) = new LoggingInstanceServer(inner.withContexts(read, write), log)
+	def withContexts(read: Seq[IRI], write: IRI) = new LoggingInstanceServer(inner.withContexts(read, write), log)
 
 	def getConnection(): TriplestoreConnection = inner.getConnection()
 

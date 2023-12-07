@@ -54,6 +54,9 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import scala.util.Using
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.resourceHasType
 
 
 trait UriSerializer {
@@ -92,7 +95,9 @@ object UriSerializer{
 
 class Rdf4jUriSerializer(
 	repo: Repository,
-	servers: DataObjectInstanceServers,
+	vocab: CpVocab,
+	metaVocab: CpmetaVocab,
+	lenses: RdfLenses,
 	doiCiter: PlainDoiCiter,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
@@ -101,13 +106,13 @@ class Rdf4jUriSerializer(
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
-	import servers.{vocab, metaVocab, collectionLens}
 
 	private given ValueFactory = repo.getValueFactory
+	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
 	private val collReader = CollectionReader(metaVocab, citer.getItemCitationInfo)
-	private val objReader = StaticObjectReader(vocab, metaVocab, collReader, collectionLens, pidFactory, citer)
+	private val objReader = StaticObjectReader(vocab, metaVocab, collReader, lenses, pidFactory, citer)
 	private val pcm =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
@@ -145,13 +150,23 @@ class Rdf4jUriSerializer(
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
 
 
-	private def fetchStaticObj(hash: Sha256Sum)(using envri: Envri): Validated[StaticObject] =
-		access(Validated.fromTry(servers.getInstServerForStaticObj(hash))):
-			objReader.fetch(hash)
+	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
+		server.access: conn ?=>
+			val objIri = vocab.getStaticObject(hash)
+			if resourceHasType(objIri, metaVocab.docObjectClass) then
+				lenses.documentLens.flatMap: docLens =>
+					given TriplestoreConnection = docLens(using conn)
+					objReader.getExistingDocumentObject(objIri)
+			else for
+				objFormat <- objReader.getObjFormatForDobj(objIri)
+				dobjLens <- lenses.dataObjectLens(objFormat.toJava)
+				given TriplestoreConnection = dobjLens(using conn)
+				dobj <- objReader.getExistingDataObject(objIri)
+			yield dobj
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		access(servers.collectionServer):
+		access(lenses.collectionLens):
 			val collUri = vocab.getCollection(hash)
 			collReader.fetchStatic(collUri, Some(hash))
 
@@ -171,14 +186,16 @@ class Rdf4jUriSerializer(
 			val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
 			PersonExtra(pers, roles)
 
-	private def access[T](serverV: Validated[InstanceServer])(reader: TSC2V[T]): Validated[T] =
-		serverV.flatMap(_.access(reader))
+	private def access[T](lensV: Validated[RdfLens])(reader: TSC2V[T]): Validated[T] =
+		server.access:
+			lensV.flatMap: lens =>
+				reader(using lens)
 
 	private def accessMeta[T](reader: TSC2V[T])(using Envri): Validated[T] =
-		access(servers.metaServer)(reader)
+		access(lenses.metaInstanceLens)(reader)
 
 	private def readMetaRes[T](uri: Uri)(reader: (DobjMetaReader, IRI) => TSC2V[T])(using Envri): Validated[T] =
-		servers.metaServer.flatMap(_.access(reader(objReader, uri.toRdf)))
+		accessMeta(reader(objReader, uri.toRdf))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
@@ -201,13 +218,11 @@ class Rdf4jUriSerializer(
 		)
 
 
-	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean =
-		servers.metaServers(envri).access:
-			hasStatement(Some(uri.toRdf), Some(servers.metaVocab.hasDataLevel), None)
+	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean = server.access:
+		hasStatement(Some(uri.toRdf), Some(metaVocab.hasDataLevel), None)
 
-	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean =
-		servers.metaServers(envri).access:
-			hasStatement(Some(uri.toRdf), Some(RDFS.LABEL), None)
+	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean = server.access:
+		hasStatement(Some(uri.toRdf), Some(RDFS.LABEL), None)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =
 

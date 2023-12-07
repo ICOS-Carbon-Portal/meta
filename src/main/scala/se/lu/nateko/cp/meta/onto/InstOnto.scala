@@ -45,12 +45,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		DataRangeDto(XSD.ANYURI.toJava, Nil)
 	)
 
-	def getWriteContext: URI = {
-		val writeContexts = instServer.writeContexts
-		val nCtxts = writeContexts.length
-		assert(nCtxts == 1, s"Expected exactly one write context, found $nCtxts")
-		writeContexts.head.toJava
-	}
+	def getWriteContext: URI = instServer.writeContext.toJava
 
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
 		val labeler = onto.getLabelerForClassIndividuals(classUri)

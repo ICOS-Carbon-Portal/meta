@@ -29,7 +29,7 @@ case class IngestionConfig(
 )
 
 case class InstanceServerConfig(
-	writeContexts: Seq[URI],
+	writeContext: URI,
 	logName: Option[String],
 	skipLogIngestionAtStart: Option[Boolean],
 	logIngestionFromId: Option[Int],

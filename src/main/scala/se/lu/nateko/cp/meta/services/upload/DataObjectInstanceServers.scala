@@ -24,8 +24,11 @@ import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.api.RdfLenses
+
 
 class DataObjectInstanceServers(
+	val lenses: RdfLenses,
 	val metaServers: Map[Envri, InstanceServer],
 	val collectionServers: Map[Envri, InstanceServer],
 	docServers: Map[Envri, InstanceServer],
@@ -52,7 +55,7 @@ class DataObjectInstanceServers(
 
 	val collectionLens: (Envri, TriplestoreConnection) ?=> TriplestoreConnection =
 		(envri, conn) ?=> collectionServer
-			.map(_.writeContexts.head)
+			.map(_.writeContext)
 			.map(ctxt => conn.withContexts(ctxt, Seq(ctxt)))
 			.getOrThrow(new MetadataException(_))
 

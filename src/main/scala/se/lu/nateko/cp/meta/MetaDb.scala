@@ -42,11 +42,14 @@ import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService, DoiService }
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
-import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
+import se.lu.nateko.cp.meta.api.RdfLenses
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
 
 class MetaDb (
@@ -61,8 +64,8 @@ class MetaDb (
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable{
 
-	export uploadService.servers.vocab
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, uploadService.servers, store.getCitationClient,config)
+	export uploadService.servers.{vocab, metaVocab, lenses}
+	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, vocab, metaVocab, lenses, store.getCitationClient,config)
 
 	override def close(): Unit = {
 		sparql.shutdown()
@@ -72,7 +75,7 @@ class MetaDb (
 
 }
 
-object MetaDb{
+object MetaDb:
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
 		confs.specific ++ confs.forDataObjects.values.flatMap{dataObjServers =>
 			dataObjServers.definitions.map{ servDef =>
@@ -82,7 +85,7 @@ object MetaDb{
 					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
 					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
-					writeContexts = Seq(writeCtxt),
+					writeContext = writeCtxt,
 					ingestion = None
 				)
 			}
@@ -92,7 +95,35 @@ object MetaDb{
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
 
-}
+	def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): RdfLenses =
+
+		def confsToLenses(confs: Map[Envri, String]): Map[Envri, RdfLens] = confs
+			.flatMap: (envri, instServId) =>
+				servConf.specific.get(instServId).map: conf =>
+					val readContexts = conf.readContexts.getOrElse(Seq(conf.writeContext))
+					(
+						envri,
+						(conn: TriplestoreConnection) ?=>
+							RdfLens.fromContexts(conf.writeContext, readContexts)
+					)
+
+		val perFormat = servConf.forDataObjects.map: (envri, conf) =>
+			envri -> conf
+				.definitions
+				.map: doisd =>
+					val writeCtxt = getInstServerContext(conf, doisd)
+					val readCtxts = writeCtxt +: conf.commonReadContexts
+					(doisd.format, (conn: TriplestoreConnection) ?=> RdfLens.fromContexts(writeCtxt, readCtxts))
+				.toMap
+
+		RdfLenses(
+			metaInstances = confsToLenses(uplConf.metaServers),
+			collections = confsToLenses(uplConf.collectionServers),
+			documents = confsToLenses(uplConf.documentServers),
+			dobjPerFormat = perFormat
+		)
+	end getLenses
+end MetaDb
 
 class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	import MetaDb.*
@@ -104,6 +135,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		validateConfig(config0)
 
+		val lenses = getLenses(config0.instanceServers, config0.dataUploadService)
 		val citerFactory = CitationProviderFactory(citCache, metaCache, config0)
 		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
 		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, citerFactory, log)
@@ -138,7 +170,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(config, repo, instanceServers)
+			val uploadService = makeUploadService(repo, lenses, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
@@ -154,9 +186,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	}
 
 	private def makeUploadService(
-		config: CpmetaConfig,
 		repo: Repository,
-		instanceServers: Map[String, InstanceServer]
+		lenses: RdfLenses,
+		instanceServers: Map[String, InstanceServer],
+		config: CpmetaConfig
 	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
@@ -164,13 +197,13 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
 			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
-			val instServConf = InstanceServerConfig(Nil, None, None, None, Some(readContexts), None)
+			val instServConf = InstanceServerConfig(null, None, None, None, Some(readContexts), None)
 			envri -> makeInstanceServer(repo, instServConf, config)
 		}
 
 		val perFormatServers: Map[Envri, Map[IRI, InstanceServer]] = config.instanceServers.forDataObjects.map{
 			case (envri, dobjServConfs) => envri -> dobjServConfs.definitions.map{ servDef =>
-				factory.createIRI(servDef.format) -> instanceServers(servDef.label)
+				servDef.format.toRdf -> instanceServers(servDef.label)
 			}.toMap
 		}
 
@@ -182,7 +215,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 		implicit val envriConfs = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(lenses, metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)
@@ -190,10 +223,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer = {
 
-		val factory = initRepo.getValueFactory
+		given factory: ValueFactory = initRepo.getValueFactory
 
-		val writeContexts = conf.writeContexts.map(ctxt => factory.createIRI(ctxt))
-		val readContexts = conf.readContexts.getOrElse(conf.writeContexts).map(ctxt => factory.createIRI(ctxt))
+		val writeContext = conf.writeContext.toRdf
+		val readContexts = conf.readContexts.fold(Seq(writeContext))(_.map(_.toRdf))
 
 		conf.logName match{
 			case Some(logName) =>
@@ -206,16 +239,16 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 						val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
 						log.info(s"Ingesting from RDF log $logName $msgDetail...")
 						val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContexts*)
+						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
 					}
 
-				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContexts)
+				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 
 			case None =>
-				new Rdf4jInstanceServer(initRepo, readContexts, writeContexts)
+				new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 		}
 
 	}

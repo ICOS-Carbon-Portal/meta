@@ -26,8 +26,8 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	def hasStatement(subj: Option[IRI], pred: Option[IRI], obj: Option[Value]) = inner.hasStatement(subj, pred, obj)
 	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)
 	def readContexts = inner.readContexts
-	def writeContexts = inner.writeContexts
-	def withContexts(read: Seq[IRI], write: Seq[IRI]) = inner.withContexts(read, write)
+	def writeContext = inner.writeContext
+	def withContexts(read: Seq[IRI], write: IRI) = inner.withContexts(read, write)
 	def getConnection(): TriplestoreConnection = inner.getConnection()
 
 	override def shutDown(): Unit = inner.shutDown()

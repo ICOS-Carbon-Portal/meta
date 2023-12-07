@@ -15,11 +15,11 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.util.UUID
 import scala.util.Try
 
-class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContexts: Seq[IRI]) extends InstanceServer:
+class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
 
-	def this(repo: Repository) = this(repo, Nil, Nil)
-	def this(repo: Repository, context: IRI) = this(repo, Seq(context), Seq(context))
-	def this(repo: Repository, readContext: IRI, writeContext: IRI) = this(repo, Seq(readContext), Seq(writeContext))
+	def this(repo: Repository) = this(repo, Nil, null)
+	def this(repo: Repository, context: IRI) = this(repo, Seq(context), context)
+	def this(repo: Repository, readContext: IRI, writeContext: IRI) = this(repo, Seq(readContext), writeContext)
 	def this(repo: Repository, contextUri: String) = this(repo, repo.getValueFactory.createIRI(contextUri))
 
 	val factory = repo.getValueFactory
@@ -49,8 +49,8 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = repo.transact(conn =>
 		updates.foreach(update => {
-			if(update.isAssertion) conn.add(update.statement, writeContexts*)
-			else conn.remove(update.statement, writeContexts*)
+			if(update.isAssertion) conn.add(update.statement, writeContext)
+			else conn.remove(update.statement, writeContext)
 		})
 		cotransact
 	)
@@ -61,9 +61,9 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 		}
 	}
 
-	def withContexts(read: Seq[IRI], write: Seq[IRI]) = new Rdf4jInstanceServer(repo, read, write)
+	def withContexts(read: Seq[IRI], write: IRI) = new Rdf4jInstanceServer(repo, read, write)
 
-	def getConnection(): TriplestoreConnection = Rdf4jTriplestoreConnection(writeContexts.head, readContexts, repo.getConnection())
+	def getConnection(): TriplestoreConnection = Rdf4jTriplestoreConnection(writeContext, readContexts, repo.getConnection())
 
 	override def shutDown(): Unit = repo.shutDown()
 

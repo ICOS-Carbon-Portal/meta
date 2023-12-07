@@ -34,9 +34,9 @@ class CompositeReadonlyInstanceServer(first: InstanceServer, others: InstanceSer
 
 	def readContexts: Seq[IRI] = parts.flatMap(_.readContexts).distinct
 
-	def writeContexts: Seq[IRI] = Nil
+	def writeContext: IRI = ???
 
-	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer = ???
+	def withContexts(read: Seq[IRI], write: IRI): InstanceServer = ???
 
 	override def getConnection(): TriplestoreConnection =
 		val conn = first.getConnection()

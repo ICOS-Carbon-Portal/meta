@@ -61,7 +61,7 @@ object LinkedDataRoute {
 
 					val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
 						case (id, instServConf)
-							if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
+							if instServConf.writeContext.toString.endsWith(path) =>
 								instanceServers.get(id).map((id, _))
 					}.flatten
 

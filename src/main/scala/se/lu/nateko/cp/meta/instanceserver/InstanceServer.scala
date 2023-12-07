@@ -29,14 +29,14 @@ trait InstanceServer extends AutoCloseable{
 	 */
 	def makeNewInstance(prefix: IRI): IRI
 	def readContexts: Seq[IRI]
-	def writeContexts: Seq[IRI]
+	def writeContext: IRI
 	def factory: ValueFactory
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement]
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit]
-	def withContexts(read: Seq[IRI], write: Seq[IRI]): InstanceServer
+	def withContexts(read: Seq[IRI], write: IRI): InstanceServer
 	def getConnection(): TriplestoreConnection
 	def access[T](read: TriplestoreConnection ?=> T): T =
 		given conn: TriplestoreConnection = getConnection()
@@ -44,7 +44,7 @@ trait InstanceServer extends AutoCloseable{
 
 	def shutDown(): Unit
 
-	final def writeContextsView: InstanceServer = withContexts(writeContexts, writeContexts)
+	final def writeContextsView: InstanceServer = withContexts(Seq(writeContext), writeContext)
 
 	final def addAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, true)))()
 	final def removeAll(statements: Seq[Statement]): Try[Unit] = applyAll(statements.map(RdfUpdate(_, false)))()

@@ -130,7 +130,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 			"http://meta.icos-cp.eu/resources/stationlabeling/"
 		).map(vf.createIRI)
 
-		val lblServer = server.withContexts(ctxts, Nil)
+		val lblServer = server.withContexts(ctxts, null)
 
 		val Seq(prodStLink, appStatus, statusDate, stationId) = Seq(
 				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate", "hasShortName"
@@ -294,7 +294,7 @@ trait DobjMetaFetcher extends CpmetaFetcher{
 
 }
 
-class DobjMetaReader(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
+trait DobjMetaReader(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
 	def getSpecification(spec: IRI): TSC2V[DataObjectSpec] =
@@ -327,6 +327,10 @@ class DobjMetaReader(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReade
 				documentation = documentation,
 				keywords = keywords.map(s => parseCommaSepList(s).toIndexedSeq)
 			)
+
+	def getObjFormatForDobj(dobj: IRI): TSC2V[IRI] =
+		getSingleUri(dobj, metaVocab.hasObjectSpec).flatMap: spec =>
+			getSingleUri(spec, metaVocab.hasFormat)
 
 	private def getDatasetSpec(ds: IRI): TSC2V[DatasetSpec] =
 		for

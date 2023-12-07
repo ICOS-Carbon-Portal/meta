@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import java.time.Instant
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.api.RdfLenses
 
 class StaticObjectFetcher(
 	val server: InstanceServer,
@@ -138,7 +139,7 @@ class StaticObjectReader(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	collReader: CollectionReader,
-	collectionLens: (Envri, TriplestoreConnection) ?=> TriplestoreConnection,
+	lenses: RdfLenses,
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
 ) extends DobjMetaReader(vocab, metaVocab):
@@ -147,14 +148,12 @@ class StaticObjectReader(
 	def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
 		val dobjUri = vocab.getStaticObject(hash)
 		if hasStatement(dobjUri, RDF.TYPE, metaVocab.dataObjectClass) then
-			getExistingDataObject(hash)
+			getExistingDataObject(dobjUri)
 		else if(hasStatement(dobjUri, RDF.TYPE, metaVocab.docObjectClass))
-			getExistingDocumentObject(hash)
+			getExistingDocumentObject(dobjUri)
 		else Validated.error(s"$dobjUri is neither known data- nor a document object")
 
-	private def getExistingDataObject(hash: Sha256Sum)(using Envri): TSC2V[DataObject] =
-		val dobj = vocab.getStaticObject(hash)
-
+	def getExistingDataObject(dobj: IRI)(using Envri): TSC2V[DataObject] =
 		for
 			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
 			spec <- getSpecification(specIri)
@@ -174,6 +173,7 @@ class StaticObjectReader(
 			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)
 			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)
 			submission <- getSubmission(submissionUri)
+			collectionLens <- lenses.collectionLens
 			parendColls <- collReader.getParentCollections(dobj)(using collectionLens)
 		yield
 			val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
@@ -197,8 +197,7 @@ class StaticObjectReader(
 			init.copy(references = citer.getCitationInfo(init))
 	end getExistingDataObject
 
-	private def getExistingDocumentObject(hash: Sha256Sum)(using Envri): TSC2V[DocObject] =
-		val doc = vocab.getStaticObject(hash)
+	def getExistingDocumentObject(doc: IRI)(using Envri): TSC2V[DocObject] =
 		for
 			hash <- getHashsum(doc, metaVocab.hasSha256sum)
 			fileName <- getSingleString(doc, metaVocab.hasName)
@@ -209,6 +208,7 @@ class StaticObjectReader(
 			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
 			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
 			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
+			collectionLens <- lenses.collectionLens
 			parendColls <- collReader.getParentCollections(doc)(using collectionLens)
 		yield
 			val init = DocObject(
@@ -235,13 +235,12 @@ class StaticObjectReader(
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri): TSC2V[Option[URI]] =
-		if(metaVocab.wdcggFormat === spec.format.self.uri)
+		if metaVocab.wdcggFormat === spec.format.self.uri then
 			Validated(Some(new URI("https://gaw.kishou.go.jp/")))
-		else {
+		else
 			val dobj = vocab.getStaticObject(hash)
 			for uri <- getOptionalUri(dobj, RDFS.SEEALSO)
 			yield uri.map(_.toJava).orElse(
 				if(spec.dataLevel < 1 && spec.theme.self.uri === vocab.atmoTheme) None
 				else Some(vocab.getStaticObjectAccessUrl(hash))
 			)
-		}

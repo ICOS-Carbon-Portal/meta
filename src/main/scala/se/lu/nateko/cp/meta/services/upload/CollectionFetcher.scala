@@ -98,7 +98,7 @@ class CollectionFetcher(
 
 }
 
-class CollectionReader(metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader(metaVocab):
+class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
 	import metaVocab.{dcterms => dct}
 

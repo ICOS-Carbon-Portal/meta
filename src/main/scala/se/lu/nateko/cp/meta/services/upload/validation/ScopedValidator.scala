@@ -44,7 +44,7 @@ import scala.util.Try
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider.getOptInstant
 
-private class ScopedValidator(vocab: CpVocab, metaVocab: CpmetaVocab) extends CpmetaReader(metaVocab):
+private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 
 	given vf: ValueFactory = vocab.factory
 	import TriplestoreConnection.*

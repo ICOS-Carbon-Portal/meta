@@ -110,7 +110,7 @@ class Rdf4jUriSerializer(
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, repo, config.core, system.log)
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, system.log)
 	private val collReader = CollectionReader(metaVocab, citer.getItemCitationInfo)
 	private val objReader = StaticObjectReader(vocab, metaVocab, collReader, lenses, pidFactory, citer)
 	private val pcm =
@@ -172,19 +172,22 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:
-		objReader.getStation(uri.toRdf).map: st =>
-			val membs = citer.attrProvider.getMemberships(st.org.self.uri)
-			OrganizationExtra(st, membs)
+		for
+			st <- objReader.getStation(uri.toRdf)
+			membs <- citer.attrProvider.getMemberships(st.org.self.uri)
+		yield OrganizationExtra(st, membs)
 
 	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
-		objReader.getOrganization(uri.toRdf).map: org =>
-			val membs = citer.attrProvider.getMemberships(org.self.uri)
-			OrganizationExtra(org, membs)
+		for
+			org <- objReader.getOrganization(uri.toRdf)
+			membs <- citer.attrProvider.getMemberships(org.self.uri)
+		yield OrganizationExtra(org, membs)
 
 	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
-		objReader.getPerson(uri.toRdf).map: pers =>
-			val roles = citer.attrProvider.getPersonRoles(pers.self.uri)
-			PersonExtra(pers, roles)
+		for
+			pers <- objReader.getPerson(uri.toRdf)
+			roles <- citer.attrProvider.getPersonRoles(pers.self.uri)
+		yield PersonExtra(pers, roles)
 
 	private def access[T](lensV: Validated[RdfLens])(reader: TSC2V[T]): Validated[T] =
 		server.access:
@@ -262,7 +265,7 @@ class Rdf4jUriSerializer(
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,
-				(st, errors) => views.html.StationLandingPage(st, citer.vocab, errors)
+				(st, errors) => views.html.StationLandingPage(st, vocab, errors)
 			)
 
 			case UriPath("resources", "organizations", orgId) => resourceMarshallings(

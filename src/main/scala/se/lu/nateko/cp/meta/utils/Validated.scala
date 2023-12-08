@@ -79,7 +79,7 @@ object Validated:
 		try ok(v) catch case err: Throwable =>
 			new Validated(None, Seq(err.getMessage))
 
-	def ok[T](v: T) = new Validated(Some(v))
+	def ok[T](v: T) = new Validated(Option(v))
 	def error[T](errorMsg: String) = new Validated[T](None, Seq(errorMsg))
 
 	def fromTry[T](t: Try[T]): Validated[T] = t.fold(err => error(err.getMessage), ok)
@@ -108,6 +108,11 @@ object Validated:
 		def sinkOption: Validated[Option[T]] = o match
 			case None => ok(None)
 			case Some(v) => v.map(Some(_))
+
+	extension[T] (o: Option[T])
+		def getOrElseV(v: => Validated[T]): Validated[T] = o match
+			case Some(t) => Validated.ok(t)
+			case None => v
 
 	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
 		val res = (l.result ++ r.result).reduceOption(m.merge)

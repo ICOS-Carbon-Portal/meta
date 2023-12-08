@@ -29,7 +29,7 @@ class StaticObjectFetcher(
 	citer: CitationMaker
 ) extends DobjMetaFetcher {
 
-	override protected val vocab = citer.vocab
+	override protected val vocab = null//citer.vocab
 
 	def fetch(hash: Sha256Sum)(using Envri): Option[StaticObject] = {
 		val dataObjUri = vocab.getStaticObject(hash)
@@ -77,7 +77,7 @@ class StaticObjectFetcher(
 			parentCollections = collFetcher.getParentCollections(dobj),
 			references = References.empty
 		)
-		init.copy(references = citer.getCitationInfo(init))
+		init//.copy(references = citer.getCitationInfo(init))
 	}
 
 	private def getExistingDocumentObject(hash: Sha256Sum)(using Envri): DocObject = {
@@ -101,7 +101,7 @@ class StaticObjectFetcher(
 				authors = Option(server.getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
 			)
 		)
-		init.copy(references = citer.getCitationInfo(init))
+		init//.copy(references = citer.getCitationInfo(init))
 	}
 
 	private def getPid(hash: Sha256Sum, format: URI)(using Envri): Option[String] = {
@@ -145,13 +145,13 @@ class StaticObjectReader(
 ) extends DobjMetaReader(vocab, metaVocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
-	def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
-		val dobjUri = vocab.getStaticObject(hash)
-		if hasStatement(dobjUri, RDF.TYPE, metaVocab.dataObjectClass) then
-			getExistingDataObject(dobjUri)
-		else if(hasStatement(dobjUri, RDF.TYPE, metaVocab.docObjectClass))
-			getExistingDocumentObject(dobjUri)
-		else Validated.error(s"$dobjUri is neither known data- nor a document object")
+	// def fetch(hash: Sha256Sum)(using Envri): TSC2V[StaticObject] =
+	// 	val dobjUri = vocab.getStaticObject(hash)
+	// 	if hasStatement(dobjUri, RDF.TYPE, metaVocab.dataObjectClass) then
+	// 		getExistingDataObject(dobjUri)
+	// 	else if(hasStatement(dobjUri, RDF.TYPE, metaVocab.docObjectClass))
+	// 		getExistingDocumentObject(dobjUri)
+	// 	else Validated.error(s"$dobjUri is neither known data- nor a document object")
 
 	def getExistingDataObject(dobj: IRI)(using Envri): TSC2V[DataObject] =
 		for
@@ -175,9 +175,8 @@ class StaticObjectReader(
 			submission <- getSubmission(submissionUri)
 			collectionLens <- lenses.collectionLens
 			parendColls <- collReader.getParentCollections(dobj)(using collectionLens)
-		yield
-			val hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
-			val init = DataObject(
+			hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
+			init = DataObject(
 				hash = hash,
 				accessUrl = if hasBeenPublished then accessUrl else None,
 				fileName = fileName,
@@ -194,7 +193,9 @@ class StaticObjectReader(
 				parentCollections = parendColls,
 				references = References.empty
 			)
-			init.copy(references = citer.getCitationInfo(init))
+			refs <- citer.getCitationInfo(init)
+		yield
+			init.copy(references = refs)
 	end getExistingDataObject
 
 	def getExistingDocumentObject(doc: IRI)(using Envri): TSC2V[DocObject] =
@@ -210,8 +211,7 @@ class StaticObjectReader(
 			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
 			collectionLens <- lenses.collectionLens
 			parendColls <- collReader.getParentCollections(doc)(using collectionLens)
-		yield
-			val init = DocObject(
+			init = DocObject(
 				hash = hash,
 				accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
 				fileName = fileName,
@@ -229,7 +229,9 @@ class StaticObjectReader(
 					authors = Option(authors)
 				)
 			)
-			init.copy(references = citer.getCitationInfo(init))
+			refs <- citer.getCitationInfo(init)
+		yield
+			init.copy(references = refs)
 
 	private def getPid(hash: Sha256Sum, format: URI)(using Envri): TSC2[Option[String]] =
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))

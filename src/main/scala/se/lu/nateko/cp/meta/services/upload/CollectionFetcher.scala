@@ -57,12 +57,13 @@ class CollectionFetcher(
 	server: InstanceServer,
 	plainFetcher: PlainStaticObjectFetcher,
 	citer: CitationMaker
-) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
+) extends CollectionFetcherLite(server, null) {collFetcher =>
 
 	def fetchStatic(hash: Sha256Sum)(using Envri): Option[StaticCollection] = {
-		val collUri = citer.vocab.getCollection(hash)
-		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri, Some(hash)))
-		else None
+		// val collUri = citer.vocab.getCollection(hash)
+		// if(collectionExists(collUri)) Some(getExistingStaticColl(collUri, Some(hash)))
+		// else None
+		None
 	}
 
 	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): StaticCollection = {
@@ -132,12 +133,12 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
 		else getExistingStaticColl(collUri, hashOpt)
 
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None): TSC2V[StaticCollection] = conn ?=>
+	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None): TSC2V[StaticCollection] =
 
 		val membersV = Validated.sequence:
 			getUriValues(coll, dct.hasPart).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
-				else getPlainStaticObject(item)(using conn.withReadContexts(Nil))
+				else getPlainStaticObject(item)(using globalLens)
 
 		for
 			creatorUri <- getSingleUri(coll, dct.creator)

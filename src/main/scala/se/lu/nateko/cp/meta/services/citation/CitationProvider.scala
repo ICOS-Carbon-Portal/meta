@@ -1,7 +1,9 @@
 package se.lu.nateko.cp.meta.services.citation
 
 import akka.actor.ActorSystem
+import akka.event.LoggingAdapter
 import akka.stream.Materializer
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
@@ -15,8 +17,8 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
-import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.core.data.StaticCollection
@@ -24,20 +26,20 @@ import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.collectionPrefix
 import se.lu.nateko.cp.meta.core.data.objectPrefix
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.CollectionFetcher
+import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import CitationClient.CitationCache
-import CitationClient.DoiCache
 
 import java.net.URI
-import scala.util.Using
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.services.upload.DoiService
-import akka.event.LoggingAdapter
-import eu.icoscp.envri.Envri
+import scala.util.Using
+
+import CitationClient.CitationCache
+import CitationClient.DoiCache
 
 
 type CitationProviderFactory = Sail => CitationProvider
@@ -68,8 +70,12 @@ class CitationProvider(
 	private val repo = new SailRepository(sail)
 	private val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
-	private val citer = new CitationMaker(doiCiter, repo, coreConf, log)
+	val vocab = new CpVocab(repo.getValueFactory)
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, coreConf, log)
 
+	// TODO Replace with StaticObjectReader and CollectionReader
+	// TODO Make StaticObjectReader extend CollectionReader
+	// TODO Make sure all context switching is done to read e.g. documents while reading a station, etc.
 	private val (objFetcher, collFetcher) = {
 		val pidFactory = new HandleNetClient.PidFactory(uploadConf.handle)
 		val plainFetcher = new PlainStaticObjectFetcher(server)
@@ -84,11 +90,12 @@ class CitationProvider(
 
 	def getReferences(res: Resource): Option[References] = getCitableItem(res).map(_.references)
 
-	def getLicence(res: Resource): Option[Licence] = for
-		iri <- toIRI(res)
-		hash <- extractHash(iri)
-		given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
-	yield citer.getLicence(hash)
+	def getLicence(res: Resource): Option[Licence] = server.access:
+		for
+			iri <- toIRI(res)
+			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+			lic <- citer.getLicence(iri).result
+		yield lic
 
 	private def getDoiCitation(res: Resource): Option[String] = toIRI(res).flatMap{iri =>
 		server.getStringValues(iri, metaVocab.hasDoi).headOption

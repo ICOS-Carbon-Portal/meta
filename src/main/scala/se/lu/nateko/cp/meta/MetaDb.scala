@@ -1,21 +1,17 @@
 package se.lu.nateko.cp.meta
 
-import java.io.Closeable
-import java.nio.file.Files
-import java.nio.file.Paths
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.semanticweb.owlapi.apibinding.OWLManager
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.api.SparqlServer
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.Sail
+import org.semanticweb.owlapi.apibinding.OWLManager
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLenses
+import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.ingestion.Extractor
@@ -25,6 +21,7 @@ import se.lu.nateko.cp.meta.ingestion.StatementProvider
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.onto.Onto
@@ -33,23 +30,28 @@ import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.ServiceException
+import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
+import se.lu.nateko.cp.meta.services.citation.CitationClient.DoiCache
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.upload.{ DataObjectInstanceServers, UploadService, DoiService }
+import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import se.lu.nateko.cp.meta.services.upload.DoiService
+import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.api.RdfLenses
-import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+
+import java.io.Closeable
+import java.nio.file.Files
+import java.nio.file.Paths
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 
 class MetaDb (
@@ -142,7 +144,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val repo = new SailRepository(native)
 		repo.init()
-		(repo, native.isFreshInit, native.getCitationClient)
 
 		val config: CpmetaConfig = if(native.isFreshInit)
 				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
@@ -170,7 +171,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(repo, lenses, instanceServers, config)
+			val uploadService = makeUploadService(repo, native.getCitationProvider, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
@@ -187,7 +188,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 	private def makeUploadService(
 		repo: Repository,
-		lenses: RdfLenses,
+		citationProvider: CitationProvider,
 		instanceServers: Map[String, InstanceServer],
 		config: CpmetaConfig
 	): UploadService = {
@@ -215,7 +216,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
 		implicit val envriConfs = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(lenses, metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(repo, citationProvider, metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

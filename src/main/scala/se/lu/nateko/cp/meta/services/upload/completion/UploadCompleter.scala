@@ -16,6 +16,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
+import se.lu.nateko.cp.meta.services.MetadataException
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
@@ -24,7 +25,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
 		for
-			server <- Future.fromTry(servers.getInstServerForStaticObj(hash))
+			server <- Future.fromTry(servers.getInstServerForStaticObj(hash).toTry(new MetadataException(_)))
 
 			completer = info.ingestionResult.fold(new PidMinter(handles, vocab)):
 				case tsOrSpat: (TimeSeriesExtract | SpatialTimeSeriesExtract) =>

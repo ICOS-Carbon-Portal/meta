@@ -29,10 +29,10 @@ class StateDiffApplier(
 	private val envriServer = db.instanceServers(envriServId)
 
 
-	private val rdfReader = {
-		val plainFetcher = db.uploadService.servers.metaFetcher.get.plainObjFetcher
-		new RdfReader(cpServer, envriServer, plainFetcher)
-	}
+	private val rdfReader =
+		val metaReader = db.store.getCitationProvider.metaReader
+		new RdfReader(metaReader, cpServer, envriServer)
+
 
 	private val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
 

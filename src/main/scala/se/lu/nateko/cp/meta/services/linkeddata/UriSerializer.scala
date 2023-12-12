@@ -34,12 +34,10 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.CollectionReader
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
-import se.lu.nateko.cp.meta.services.upload.StaticObjectFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -111,8 +109,7 @@ class Rdf4jUriSerializer(
 	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, system.log)
-	private val collReader = CollectionReader(metaVocab, citer.getItemCitationInfo)
-	private val objReader = StaticObjectReader(vocab, metaVocab, collReader, lenses, pidFactory, citer)
+	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 	private val pcm =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
@@ -151,24 +148,15 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		server.access: conn ?=>
+		server.access:
 			val objIri = vocab.getStaticObject(hash)
-			if resourceHasType(objIri, metaVocab.docObjectClass) then
-				lenses.documentLens.flatMap: docLens =>
-					given TriplestoreConnection = docLens(using conn)
-					objReader.getExistingDocumentObject(objIri)
-			else for
-				objFormat <- objReader.getObjFormatForDobj(objIri)
-				dobjLens <- lenses.dataObjectLens(objFormat.toJava)
-				given TriplestoreConnection = dobjLens(using conn)
-				dobj <- objReader.getExistingDataObject(objIri)
-			yield dobj
+			objReader.fetchStaticObject(objIri)
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		access(lenses.collectionLens):
 			val collUri = vocab.getCollection(hash)
-			collReader.fetchStatic(collUri, Some(hash))
+			objReader.fetchStaticColl(collUri, Some(hash))
 
 
 	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:

@@ -75,6 +75,13 @@ end Validated
 
 object Validated:
 
+	enum CardinalityExpectation(val descr: String):
+		case AtMostOne extends CardinalityExpectation("at most one")
+		case AtLeastOne extends CardinalityExpectation("at least one")
+		case ExactlyOne extends CardinalityExpectation("exactly one")
+		case Default extends CardinalityExpectation("any amount")
+
+
 	def apply[T](v: => T): Validated[T] =
 		try ok(v) catch case err: Throwable =>
 			new Validated(None, Seq(err.getMessage))
@@ -113,6 +120,22 @@ object Validated:
 		def getOrElseV(v: => Validated[T]): Validated[T] = o match
 			case Some(t) => Validated.ok(t)
 			case None => v
+
+	extension[T] (s: IndexedSeq[T])
+		def validateSize(card: CardinalityExpectation, errorMsg: => String): Validated[IndexedSeq[T]] =
+			import CardinalityExpectation.{AtLeastOne, AtMostOne, ExactlyOne, Default}
+			def error: Validated[IndexedSeq[T]] =
+				new Validated(Some(s).filterNot(_.isEmpty), Seq(errorMsg))
+
+			card match
+				case AtMostOne  if s.length  > 1 =>
+					error
+				case AtLeastOne if s.length  < 1 =>
+					error
+				case ExactlyOne if s.length != 1 =>
+					error
+				case Default | AtLeastOne | AtMostOne | ExactlyOne =>
+					Validated.ok(s)
 
 	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
 		val res = (l.result ++ r.result).reduceOption(m.merge)

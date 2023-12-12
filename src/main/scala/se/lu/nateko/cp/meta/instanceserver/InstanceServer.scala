@@ -10,6 +10,8 @@ import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.Validated.CardinalityExpectation
+import se.lu.nateko.cp.meta.utils.Validated.validateSize
 import se.lu.nateko.cp.meta.utils.parseInstant
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
@@ -21,7 +23,6 @@ import scala.util.Try
 
 trait InstanceServer extends AutoCloseable{
 	import InstanceServer.*
-	import CardinalityExpectation.Default
 
 	/**
 	 * Makes a new IRI for the new instance, but does not add any triples to the repository.
@@ -131,11 +132,6 @@ trait InstanceServer extends AutoCloseable{
 }
 
 object InstanceServer:
-	enum CardinalityExpectation(val descr: String):
-		case AtMostOne extends CardinalityExpectation("at most one")
-		case AtLeastOne extends CardinalityExpectation("at least one")
-		case ExactlyOne extends CardinalityExpectation("exactly one")
-		case Default extends CardinalityExpectation("any amount")
 
 	export CardinalityExpectation.{AtMostOne, AtLeastOne, ExactlyOne, Default}
 
@@ -156,11 +152,20 @@ trait TriplestoreConnection extends SparqlRunner with AutoCloseable:
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection
 
-	final def withReadContexts(read: Seq[IRI]): TriplestoreConnection = withContexts(primaryContext, read)
-	final def primaryContextView: TriplestoreConnection = withContexts(primaryContext, Seq(primaryContext))
+	final def withReadContexts(read: Seq[IRI]): TriplestoreConnection =
+		if readContexts == read then this
+		else withContexts(primaryContext, read)
+
+	final def primaryContextView: TriplestoreConnection =
+		if readContexts.length == 1 && readContexts.head == primaryContext then this
+		else withContexts(primaryContext, Seq(primaryContext))
 
 	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
 		hasStatement(Option(subject), Option(predicate), Option(obj))
+
+	final def hasStatement(st: Statement): Boolean = st.getSubject() match
+		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
+		case _ => false
 
 
 object TriplestoreConnection:
@@ -221,20 +226,7 @@ object TriplestoreConnection:
 		pred: IRI,
 		card: CardinalityExpectation
 	): TSC2V[IndexedSeq[T]] = Validated(getter(subj, pred)).flatMap: vals =>
-
-		def error: Validated[IndexedSeq[T]] =
-			val err = s"Expected ${card.descr} values of property $pred for resource $subj, but got ${vals.length}"
-			new Validated(Some(vals).filterNot(_.isEmpty), Seq(err))
-
-		card match
-			case AtMostOne  if vals.length  > 1 =>
-				error
-			case AtLeastOne if vals.length  < 1 =>
-				error
-			case ExactlyOne if vals.length != 1 =>
-				error
-			case Default | AtLeastOne | AtMostOne | ExactlyOne =>
-				Validated.ok(vals)
+		vals.validateSize(card, s"Expected ${card.descr} values of property $pred for resource $subj, but got ${vals.length}")
 	end validate
 
 

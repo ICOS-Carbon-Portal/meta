@@ -27,6 +27,7 @@ import se.lu.nateko.cp.meta.services.upload.completion.Report
 import se.lu.nateko.cp.meta.ConfigLoader
 import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.services.MetadataException
 
 class AccessUri(val uri: URI)
 
@@ -74,42 +75,48 @@ class UploadService(
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Try[AccessUri] =
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
-				for
-					_ <- validator.validateCollection(coll, collHash, uploader);
-					submitterConf <- validator.getSubmitterConfig(coll);
-					submittingOrg = submitterConf.submittingOrganization;
-					collIri = vocab.getCollection(collHash);
-					server = servers.collectionServers(envri);
-					updates = server.access:
-						val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
-						val oldStatements = getStatements(collIri)
-						staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
-					_ <- server.applyAll(updates)()
-				yield
-					AccessUri(collIri.toJava)
+				servers.global.access:
+					for
+						_ <- validator.validateCollection(coll, collHash, uploader);
+						submitterConf <- validator.getSubmitterConfig(coll);
+						submittingOrg = submitterConf.submittingOrganization;
+						collIri = vocab.getCollection(collHash);
+						server = servers.collectionServers(envri);
+						updates = server.access:
+							val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
+							val oldStatements = getStatements(collIri)
+							staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
+						_ <- server.applyAll(updates)()
+					yield
+						AccessUri(collIri.toJava)
 
 
 	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(using Envri): Try[AccessUri] =
+		val serverV = servers.global.access:
+			for
+				format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf)
+				server <- servers.getInstServerForFormat(format)
+			yield server
 		for
-			format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf)
-			server <- servers.getInstServerForFormat(format)
+			server <- serverV.toTry(new MetadataException(_))
 			accessUri <- registerObjUpload(meta, server, submittingOrg)
 		yield accessUri
 
 
 	private def registerObjUpload(dto: ObjectUploadDto, server: InstanceServer, submittingOrg: URI)(using Envri): Try[AccessUri] =
 		uploadLock.wrapTry(dto.hashSum):
-			for
-				_ <- validator.updateValidIfObjectNotNew(dto, submittingOrg)
-				updates = server.access:
-					val newStatements = statementProd.getObjStatements(dto, submittingOrg)
-					val currentStatements = metaUpdater.getCurrentStatements(dto.hashSum)
-					metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements)
-				_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
-				_ <- server.applyAll(updates)()
-			yield
-				log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
-				new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
+			server.access:
+				for
+					_ <- validator.updateValidIfObjectNotNew(dto, submittingOrg)
+					updates =
+						val newStatements = statementProd.getObjStatements(dto, submittingOrg)
+						val currentStatements = metaUpdater.getCurrentStatements(dto.hashSum)
+						metaUpdater.calculateUpdates(dto.hashSum, currentStatements, newStatements)
+					_ = log.debug(s"Computed ${updates.size} RDF updates for metadata upload for object ${dto.hashSum.id}, will apply them now...");
+					_ <- server.applyAll(updates)()
+				yield
+					log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
+					new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
 
 
 	def checkPermissions(submitter: URI, userId: String)(using envri: Envri): Boolean =

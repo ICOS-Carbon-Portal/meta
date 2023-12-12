@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
 
+//TODO Remove CollectionFetcherLite
 class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
 
 	val memberProp = metaVocab.dcterms.hasPart
@@ -53,51 +54,6 @@ class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends 
 	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))
 }
 
-class CollectionFetcher(
-	server: InstanceServer,
-	plainFetcher: PlainStaticObjectFetcher,
-	citer: CitationMaker
-) extends CollectionFetcherLite(server, null) {collFetcher =>
-
-	def fetchStatic(hash: Sha256Sum)(using Envri): Option[StaticCollection] = {
-		// val collUri = citer.vocab.getCollection(hash)
-		// if(collectionExists(collUri)) Some(getExistingStaticColl(collUri, Some(hash)))
-		// else None
-		None
-	}
-
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): StaticCollection = {
-		val dct = metaVocab.dcterms
-
-		val members = server.getUriValues(coll, memberProp).map{item =>
-			if(collectionExists(item)) getExistingStaticColl(item)
-			else plainFetcher.getPlainStaticObject(item)
-		}.sortBy(_ match{
-			case coll: StaticCollection => coll.title
-			case dobj: PlainStaticObject => dobj.name
-		})
-
-		val init = StaticCollection(
-			res = coll.toJava,
-			hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
-			members = members,
-			creator = getOrganization(getSingleUri(coll, dct.creator)),
-			title = getTitle(coll),
-			description = getOptionalString(coll, dct.description),
-			nextVersion = getNextVersionAsUri(coll),
-			latestVersion = getLatestVersion(coll),
-			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
-			doi = getOptionalString(coll, metaVocab.hasDoi),
-			documentation = getOptionalUri(coll, RDFS.SEEALSO).map(plainFetcher.getPlainStaticObject),
-			references = References.empty
-		)
-		val citerRefs = citer.getItemCitationInfo(init)
-		//TODO Consider adding collection-specific logic for licence information
-		val updatedRefs = citerRefs.copy(title = Some(init.title))
-		init.copy(references = updatedRefs)
-	}
-
-}
 
 class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
@@ -105,10 +61,9 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 
 	private def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
 
-	private def collectionExists(collUri: IRI): TSC2[Boolean] =
-		hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
+	def collectionExists(collUri: IRI): TSC2[Boolean] = resourceHasType(collUri, metaVocab.collectionClass)
 
-	def fetchLite(collUri: IRI): TSC2V[UriResource] =
+	def fetchCollLite(collUri: IRI): TSC2V[UriResource] =
 		if collectionExists(collUri) then
 			getTitle(collUri).map: title =>
 				UriResource(collUri.toJava, Some(title), Nil)
@@ -122,14 +77,14 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 
 		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
-		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchLite))
+		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchCollLite))
 
 
 	// def getCreatorIfCollExists(hash: Sha256Sum): TSC2V[Option[IRI]] =
 	// 	getOptionalUri(vocab.getCollection(hash), dct.creator)
 
 
-	def fetchStatic(collUri: IRI, hashOpt: Option[Sha256Sum]): TSC2V[StaticCollection] =
+	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum]): TSC2V[StaticCollection] =
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
 		else getExistingStaticColl(collUri, hashOpt)
 

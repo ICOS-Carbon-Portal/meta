@@ -61,6 +61,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		getSingleUri(dobj, metaVocab.hasObjectSpec).flatMap: spec =>
 			getSingleUri(spec, metaVocab.hasFormat)
 
+	def getObjSubmitter(dobj: IRI): TSC2V[IRI] =
+		getSingleUri(dobj, metaVocab.wasSubmittedBy).flatMap: subm =>
+			getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+
 	private def getDatasetSpec(ds: IRI): TSC2V[DatasetSpec] =
 		for
 			self <- getLabeledResource(ds)

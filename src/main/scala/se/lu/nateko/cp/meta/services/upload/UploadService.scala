@@ -60,7 +60,7 @@ class UploadService(
 				case dobj: DataObjectDto =>
 					registerDataObjUpload(dobj, submitterOrg)
 				case _: DocObjectDto =>
-					servers.getDocInstServer.flatMap(registerObjUpload(meta, _, submitterOrg))
+					servers.docServer.toTry(new MetadataException(_)).flatMap(registerObjUpload(meta, _, submitterOrg))
 		yield accessUri
 
 
@@ -72,7 +72,7 @@ class UploadService(
 		yield accessUri
 
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Try[AccessUri] =
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.global.access:
@@ -81,7 +81,7 @@ class UploadService(
 						submitterConf <- validator.getSubmitterConfig(coll);
 						submittingOrg = submitterConf.submittingOrganization;
 						collIri = vocab.getCollection(collHash);
-						server = servers.collectionServers(envri);
+						server <- servers.collectionServer.toTry(new MetadataException(_))
 						updates = server.access:
 							val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
 							val oldStatements = getStatements(collIri)

@@ -22,9 +22,9 @@ import se.lu.nateko.cp.meta.utils.Validated.CardinalityExpectation
 import se.lu.nateko.cp.meta.utils.Validated.validateSize
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 
-class RdfReader(metaReader: StaticObjectReader, cpInsts: InstanceServer, tcInsts: InstanceServer)(using EnvriConfigs):
+class RdfReader(metaReader: DobjMetaReader, cpInsts: InstanceServer, tcInsts: InstanceServer)(using EnvriConfigs):
 	private val fetcher = new IcosMetaInstancesFetcher(metaReader)
 
 	def getCpOwnOrgs[T <: TC : TcConf]: Validated[Seq[TcPlainOrg[T]]] =
@@ -55,7 +55,7 @@ class RdfReader(metaReader: StaticObjectReader, cpInsts: InstanceServer, tcInsts
 		.createStatement(s.getSubject, s.getPredicate, s.getObject)
 end RdfReader
 
-private class IcosMetaInstancesFetcher(metaReader: StaticObjectReader)(using EnvriConfigs):
+private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriConfigs):
 	//import metaReader.{vocab, metaVocab}
 	val metaVocab = metaReader.metaVocab
 	val vocab = metaReader.vocab

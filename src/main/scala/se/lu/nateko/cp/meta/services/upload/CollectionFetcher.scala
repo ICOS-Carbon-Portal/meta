@@ -19,53 +19,20 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
 
-//TODO Remove CollectionFetcherLite
-class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
-
-	val memberProp = metaVocab.dcterms.hasPart
-
-	def getTitle(collUri: IRI): String = getSingleString(collUri, metaVocab.dcterms.title)
-
-	def collectionExists(collUri: IRI): Boolean =
-		server.hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
-
-	def fetchLite(collUri: IRI): Option[UriResource] = {
-		if(collectionExists(collUri)) Some(
-			UriResource(collUri.toJava, Some(getTitle(collUri)), Nil)
-		) else None
-	}
-
-	def getParentCollections(dobj: IRI): Seq[UriResource] = {
-		val allIris = server.getStatements(None, Some(memberProp), Some(dobj))
-			.map(_.getSubject)
-			.collect{case iri: IRI => iri}
-			.toIndexedSeq
-
-		val deprecatedColls = allIris.flatMap(getPreviousVersions).toSet
-
-		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
-	}
-
-	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Option[IRI] = {
-		val collUri = vocab.getCollection(hash)
-		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
-	}
-
-	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))
-}
-
 
 class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
 	import metaVocab.{dcterms => dct}
 
-	private def getTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
+	private def getCollTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
 
 	def collectionExists(collUri: IRI): TSC2[Boolean] = resourceHasType(collUri, metaVocab.collectionClass)
 
+	def getCreatorIfCollExists(collIri: IRI): TSC2V[Option[IRI]] = getOptionalUri(collIri, dct.creator)
+
 	def fetchCollLite(collUri: IRI): TSC2V[UriResource] =
 		if collectionExists(collUri) then
-			getTitle(collUri).map: title =>
+			getCollTitle(collUri).map: title =>
 				UriResource(collUri.toJava, Some(title), Nil)
 		else Validated.error("collection does not exist")
 
@@ -78,11 +45,6 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
 		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchCollLite))
-
-
-	// def getCreatorIfCollExists(hash: Sha256Sum): TSC2V[Option[IRI]] =
-	// 	getOptionalUri(vocab.getCollection(hash), dct.creator)
-
 
 	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum]): TSC2V[StaticCollection] =
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
@@ -99,7 +61,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			creatorUri <- getSingleUri(coll, dct.creator)
 			members <- membersV
 			creator <- getOrganization(creatorUri)
-			title <- getTitle(coll)
+			title <- getCollTitle(coll)
 			description <- getOptionalString(coll, dct.description)
 			doi <- getOptionalString(coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)

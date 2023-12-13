@@ -34,12 +34,11 @@ import scala.util.Try
 class DataObjectInstanceServers(
 	repo: Repository,
 	citationProvider: CitationProvider,
-	val metaServers: Map[Envri, InstanceServer],
-	val collectionServers: Map[Envri, InstanceServer],
+	metaServers: Map[Envri, InstanceServer],
+	collectionServers: Map[Envri, InstanceServer],
 	docServers: Map[Envri, InstanceServer],
-	val allDataObjs: Map[Envri, InstanceServer],
 	perFormat: Map[Envri, Map[IRI, InstanceServer]]
-)(using envriConfs: EnvriConfigs, factory: ValueFactory){dois =>
+)(using envriConfs: EnvriConfigs, factory: ValueFactory):
 
 	export citationProvider.{vocab, metaVocab, metaReader, lenses}
 	val global = new Rdf4jInstanceServer(repo)
@@ -61,28 +60,11 @@ class DataObjectInstanceServers(
 		new Validated(perFormat.get(envri).flatMap(_.get(format))).require:
 			s"ENVRI $envri unknown or has no instance server configured for data object format '$format'"
 
-	def getInstServerForStaticObj(objHash: Sha256Sum)(using envri: Envri): Validated[InstanceServer] =
+	def getInstServerForStaticObj(objHash: Sha256Sum)(using Envri): Validated[InstanceServer] =
 		global.access:
 			val objIri = vocab.getStaticObject(objHash)
-			if resourceHasType(objIri, metaVocab.docObjectClass)
-			then docServer
+			if metaReader.docObjExists(objIri) then docServer
 			else metaReader.getObjFormatForDobj(objIri).flatMap(getInstServerForFormat)
-
-	def getDocInstServer(using envri: Envri): Try[InstanceServer] = docServers.get(envri).toTry{
-		new UploadUserErrorException(s"ENVRI '$envri' has no document instance server configured for it")
-	}
-
-	def getCollectionCreator(coll: Sha256Sum)(using Envri): Option[IRI] =
-		collFetcherLite.flatMap(_.getCreatorIfCollExists(coll))
-
-	def collectionExists(coll: Sha256Sum)(using Envri): Boolean =
-		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
-
-	def collectionExists(coll: IRI)(using Envri): Boolean =
-		collFetcherLite.map(_.collectionExists(coll)).getOrElse(false)
-
-	def collFetcherLite(using envri: Envri): Option[CollectionFetcherLite] = collectionServers.get(envri)
-		.map(new CollectionFetcherLite(_, vocab))
 
 	def collectionServer(using envri: Envri): Validated[InstanceServer] =
 		new Validated(collectionServers.get(envri)).require:
@@ -96,14 +78,4 @@ class DataObjectInstanceServers(
 		new Validated(docServers.get(envri)).require:
 			s"ENVRI $envri or its document 'instance server' was not configured properly"
 
-	def getObjSubmitter(obj: ObjectUploadDto)(using envri: Envri): Option[IRI] = {
-		val objUri = vocab.getStaticObject(obj.hashSum)
-		val server = obj match{
-			case _: DataObjectDto => allDataObjs(envri)
-			case _: DocObjectDto => getDocInstServer.get
-		}
-		server.getUriValues(objUri, metaVocab.wasSubmittedBy).flatMap{subm =>
-			server.getUriValues(subm, metaVocab.prov.wasAssociatedWith)
-		}.headOption
-	}
-}
+end DataObjectInstanceServers

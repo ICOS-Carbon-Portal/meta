@@ -46,13 +46,13 @@ import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 type CitationProviderFactory = Sail => CitationProvider
 object CitationProviderFactory:
 	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
-		sail => CitationProvider(sail, citCache, doiCache, conf)
+		val citClientFactory: List[Doi] => CitationClient = dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
+		sail => CitationProvider(sail, citClientFactory, conf)
 
 
 class CitationProvider(
 	sail: Sail,
-	citCache: CitationCache,
-	doiCache: DoiCache,
+	citClientFactory: List[Doi] => CitationClient,
 	conf: CpmetaConfig,
 )(using system: ActorSystem, mat: Materializer):
 	import system.log
@@ -70,7 +70,7 @@ class CitationProvider(
 				.toList.distinct.flatMap:
 					Doi.parse(_).toOption
 
-		CitationClientImpl(dois, conf.citations, citCache, doiCache)
+		citClientFactory(dois)
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, log)
 

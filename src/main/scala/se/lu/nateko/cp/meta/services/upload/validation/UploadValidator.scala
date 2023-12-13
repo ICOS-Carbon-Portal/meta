@@ -67,16 +67,15 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		for
 			submConf <- getSubmitterConfig(meta);
 			_ <- userAuthorizedBySubmitter(submConf, uploader);
-			_ <- userAuthorizedByProducer(meta, submConf);
 			spec <- {
 				servers.global.access:
 					for
+						_ <- userAuthorizedByProducer(meta, submConf)
 						spec <- metaReader.getSpecification(meta.objectSpecification.toRdf)
 						_ <- validateForFormat(meta, spec, submConf)
 					yield spec
 			}.toTry(new UploadUserErrorException(_))
 			_ <- userAuthorizedByThemesAndProjects(spec, submConf);
-			
 			_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
 			instServer <- servers.getInstServerForFormat(spec.format.self.uri.toRdf).toTry(new MetadataException(_))
 			amended <- instServer.access:
@@ -98,7 +97,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			_ <- validateDescription(meta.description)
 			submConf <- getSubmitterConfig(meta)
 			_ <- userAuthorizedBySubmitter(submConf, uploader)
-			instServer <- servers.getDocInstServer
+			instServer <- servers.docServer.toTry(new MetadataException(_))
 			amended <- instServer.access:
 				for
 					_ <- scoped.validatePrevVers(meta)
@@ -159,12 +158,14 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		formatValidation.toTry(UnauthorizedUploadException(_)).flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
 	}
 
-	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): Try[NotUsed] =
-		servers.getObjSubmitter(dto).map{subm =>
+	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): TSC2[Try[NotUsed]] =
+		val objIri = vocab.getStaticObject(dto.hashSum)
+		val submitterOpt = metaReader.getObjSubmitter(objIri).result
+		submitterOpt.fold(ok): subm =>
 			if(subm === submittingOrg) ok else authFail(
 				s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
 			)
-		}.getOrElse(ok)
+
 
 	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[NotUsed] = {
 		val userId = uploader.email
@@ -181,14 +182,15 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		else ok
 	}
 
-	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(using Envri): Try[NotUsed] =
-		servers.getCollectionCreator(coll).map{creator =>
+	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(using Envri): TSC2[Try[NotUsed]] =
+		val collIri = vocab.getCollection(coll)
+		metaReader.getCreatorIfCollExists(collIri).result.get.fold(ok): creator =>
 			if(creator === submConf.submittingOrganization)
 				ok
 			else
 				authFail(s"Collection already exists and was submitted by $creator, " +
 					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}")
-		}.getOrElse(ok)
+
 
 	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(using Envri): TSC2[Try[NotUsed]] =
 		val collUri = vocab.getCollection(hash)
@@ -204,25 +206,23 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				case Some(item) => userFail(s"Neither collection nor object was found at $item")
 
 
-	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig)(using envri: Envri): Try[Unit] = Try{
+	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig): TSC2V[NotUsed] =
 		val producer = meta.specificInfo.fold(
 			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
 			_.station
 		)
 
-		for(prodOrgClass <- submConf.producingOrganizationClass){
-			if(!servers.metaServers(envri).hasStatement(producer.toRdf, RDF.TYPE, prodOrgClass.toRdf))
-				throw new UnauthorizedUploadException(
-					s"Data producer '$producer' does not belong to class '$prodOrgClass'"
-				)
-		}
+		val errors = Buffer.empty[String]
 
-		for(prodOrg <- submConf.producingOrganization){
-			if(producer != prodOrg) throw new UnauthorizedUploadException(
-				s"User is not authorized to upload on behalf of producer '$producer'"
-			)
-		}
-	}
+		for prodOrgClass <- submConf.producingOrganizationClass do
+			if !resourceHasType(producer.toRdf, prodOrgClass.toRdf) then
+				errors += s"Data producer '$producer' does not belong to class '$prodOrgClass'"
+
+		for prodOrg <- submConf.producingOrganization do
+			if producer != prodOrg then
+				errors += s"User is not authorized to upload on behalf of producer '$producer'"
+
+		if errors.isEmpty then Validated.ok(NotUsed) else new Validated(None, errors.toSeq)
 
 	private def validateActors(meta: DataObjectDto): TSC2[Try[NotUsed]] =
 
@@ -350,18 +350,22 @@ class UploadValidator(servers: DataObjectInstanceServers):
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
 
-	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using envri: Envri): Try[NotUsed] =
+	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using envri: Envri): TSC2[Try[NotUsed]] =
 		prevVers.flattenToSeq.iterator.map{coll =>
-			if(servers.collectionExists(coll)) bothOk({
-				if(coll != newCollHash) ok
-				else userFail(s"A collection cannot be a next version of itself")
-			},{
-				val inServer = servers.collectionServers(envri)
-				val prevColl = vocab.getCollection(coll)
-				val exceptColl = vocab.getCollection(newCollHash)
-				inServer.access:
-					scoped.hasNoOtherDeprecators(prevColl, exceptColl, false, false)
-			}) else
+			val prevColl = vocab.getCollection(coll)
+			if metaReader.collectionExists(prevColl) then
+				bothOk(
+					if coll != newCollHash then ok
+					else userFail(s"A collection cannot be a next version of itself")
+				,
+					for
+						inServer <- servers.collectionServer.toTry(new MetadataException(_))
+						exceptColl = vocab.getCollection(newCollHash)
+						_ <- inServer.access:
+							scoped.hasNoOtherDeprecators(prevColl, exceptColl, false, false)
+					yield NotUsed
+				)
+			else
 				userFail(s"Previous-version collection was not found: $coll")
 		}
 		.foldLeft(ok)(bothOk(_, _))

@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import org.scalatest.GivenWhenThen
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import RdfDiffCalcTests.*
-import se.lu.nateko.cp.meta.services.upload.PlainStaticObjectFetcher
+import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import eu.icoscp.envri.Envri
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
@@ -238,14 +238,15 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		val tcGraphUri = factory.createIRI("http://test.icos.eu/tcState")
 		val cpGraphUri = factory.createIRI("http://test.icos.eu/cpOwnMetaInstances")
-		val tcServer = new Rdf4jInstanceServer(repo, Seq(tcGraphUri, cpGraphUri), Seq(tcGraphUri))
+		val tcServer = new Rdf4jInstanceServer(repo, Seq(tcGraphUri, cpGraphUri), tcGraphUri)
 		val cpServer = new Rdf4jInstanceServer(repo, cpGraphUri)
 
 		cpServer.addAll(cpOwn(rdfMaker))
 
 		tcServer.addAll(initTcState.flatMap(getStatements(rdfMaker, _)))
-		val plainFetcher = new PlainStaticObjectFetcher(tcServer)
-		val rdfReader = new RdfReader(cpServer, tcServer, plainFetcher)
+		val metaReader = new DobjMetaReader(vocab):
+			val metaVocab = meta
+		val rdfReader = new RdfReader(metaReader, cpServer, tcServer)
 		new TestState(new RdfDiffCalc(rdfMaker, rdfReader), rdfReader, rdfMaker, tcServer, cpServer)
 	}
 

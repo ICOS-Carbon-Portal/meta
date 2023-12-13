@@ -195,12 +195,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
 		given factory: ValueFactory = repo.getValueFactory
-
-		val allDataObjInstServs = config.instanceServers.forDataObjects.map{ case (envri, dobjServConfs) =>
-			val readContexts = dobjServConfs.definitions.map(getInstServerContext(dobjServConfs, _))
-			val instServConf = InstanceServerConfig(null, None, None, None, Some(readContexts), None)
-			envri -> makeInstanceServer(repo, instServConf, config)
-		}
+		given EnvriConfigs = config.core.envriConfigs
 
 		val perFormatServers: Map[Envri, Map[IRI, InstanceServer]] = config.instanceServers.forDataObjects.map{
 			case (envri, dobjServConfs) => envri -> dobjServConfs.definitions.map{ servDef =>
@@ -215,8 +210,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val uploadConf = config.dataUploadService
 
 		val sparqlRunner = new Rdf4jSparqlRunner(repo)
-		implicit val envriConfs = config.core.envriConfigs
-		val dataObjServers = new DataObjectInstanceServers(repo, citationProvider, metaServers, collectionServers, docInstServs, allDataObjInstServs, perFormatServers)
+
+		val dataObjServers = new DataObjectInstanceServers(repo, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

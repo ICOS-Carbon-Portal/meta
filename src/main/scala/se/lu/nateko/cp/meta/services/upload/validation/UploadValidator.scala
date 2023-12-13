@@ -39,7 +39,6 @@ import scala.util.Success
 import scala.util.Try
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 

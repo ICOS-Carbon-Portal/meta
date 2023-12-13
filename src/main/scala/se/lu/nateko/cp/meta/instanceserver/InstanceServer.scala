@@ -39,7 +39,7 @@ trait InstanceServer extends AutoCloseable{
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit]
 	def withContexts(read: Seq[IRI], write: IRI): InstanceServer
 	def getConnection(): TriplestoreConnection
-	def access[T](read: TriplestoreConnection ?=> T): T =
+	final def access[T](read: TriplestoreConnection ?=> T): T =
 		given conn: TriplestoreConnection = getConnection()
 		try read finally conn.close()
 
@@ -64,11 +64,6 @@ trait InstanceServer extends AutoCloseable{
 		getStatements(Some(instUri), Some(propUri), None)
 			.map(_.getObject)
 			.toIndexedSeq
-
-	final def hasStatement(subject: IRI, predicate: IRI, obj: Value): Boolean =
-		hasStatement(Option(subject), Option(predicate), Option(obj))
-
-	final def resourceHasType(res: IRI, tpe: IRI): Boolean = hasStatement(res, RDF.TYPE, tpe)
 
 	final def add(statements: Statement*): Try[Unit] = addAll(statements)
 	final def remove(statements: Statement*): Try[Unit] = removeAll(statements)
@@ -114,18 +109,6 @@ trait InstanceServer extends AutoCloseable{
 
 	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Int] =
 		getLiteralValues(subj, pred, XSD.INTEGER, exp).map(_.toInt)
-
-	//TODO Go back to .map(_.toLong) parsing or rework all the cardinality validation approach
-	//The fix is to work around a broken long value in the RDF (file size of https://meta.icos-cp.eu/objects/I_HZ0N-B0SOWu_hUiD_MMdlG)
-	//(rdflog is ok)
-	final def getLongValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Long] =
-		getLiteralValues(subj, pred, XSD.LONG, exp).flatMap(_.toLongOption)
-
-	final def getDoubleValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Double] =
-		getLiteralValues(subj, pred, XSD.DOUBLE, exp).map(_.toDouble)
-
-	final def getFloatValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Float] =
-		getLiteralValues(subj, pred, XSD.FLOAT, exp).map(_.toFloat)
 
 	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[JavaUri] =
 		getLiteralValues(subj, pred, XSD.ANYURI, exp).map(new JavaUri(_))

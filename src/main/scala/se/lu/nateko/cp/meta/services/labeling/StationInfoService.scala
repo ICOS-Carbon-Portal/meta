@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.model.Literal
 import java.net.URI
 import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
-import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getOptionalInstant
 
 trait StationInfoService { self: StationLabelingService =>
 
@@ -121,9 +121,8 @@ trait StationInfoService { self: StationLabelingService =>
 		def prodStr(pred: IRI): Option[String] =
 			prodUriOpt.flatMap(prodUri => icosInfoServer.getStringValues(prodUri, pred).headOption)
 
-		val labelingProgress =
-			val provFetcher = FetchingHelper(provInfoServer)
-			def progrDate(pred: IRI): Option[Instant] = provFetcher.getOptionalInstant(provUri, pred)
+		val labelingProgress = provInfoServer.access:
+			def progrDate(pred: IRI): Option[Instant] = getOptionalInstant(provUri, pred).result.get
 			LabelingProgressDates(
 				step1start = progrDate(vocab.step1StartDate),
 				step1approval = progrDate(vocab.step1EndDate),

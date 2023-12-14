@@ -50,6 +50,7 @@ sealed trait EcoStationSpecifics extends StationSpecifics{
 	def climateZone: Option[UriResource]
 	def ecosystems: Seq[UriResource]
 	def meanAnnualTemp: Option[Float]
+	def meanAnnualPrecip: Option[Float]
 }
 
 case class SitesStationSpecifics(
@@ -57,6 +58,7 @@ case class SitesStationSpecifics(
 	ecosystems: Seq[UriResource],
 	climateZone: Option[UriResource],
 	meanAnnualTemp: Option[Float],
+	meanAnnualPrecip: Option[Float],
 	operationalPeriod: Option[String],
 	discontinued: Boolean,
 	documentation: Seq[PlainStaticObject]

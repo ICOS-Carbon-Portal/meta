@@ -45,7 +45,7 @@
 						@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
 							@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
 						}
-						@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
+						@for(meanAnnualPrecip <- ecoSpecifics.flatMap(_.meanAnnualPrecip)){
 							@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
 						}
 						@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){

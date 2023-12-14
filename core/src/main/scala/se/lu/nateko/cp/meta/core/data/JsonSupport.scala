@@ -241,7 +241,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[AtcStationSpecifics] = jsonFormat7(AtcStationSpecifics.apply)
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
 	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
-	given RootJsonFormat[SitesStationSpecifics] = jsonFormat7(SitesStationSpecifics.apply)
+	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
 	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat1(IcosCitiesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"

@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.DatasetType
@@ -32,6 +33,7 @@ import se.lu.nateko.cp.meta.services.upload.CpmetaReader
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+
 import java.net.URI
 import java.time.Instant
 import java.util.Date
@@ -47,12 +49,14 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 
 	given vf: ValueFactory = vocab.factory
 	import TriplestoreConnection.*
+	import RdfLens.{DocConn, DobjConn, ItemConn, MetaConn}
 
-	def existsAndIsCompleted(item: IRI): TSC2[Try[NotUsed]] =
+
+	def existsAndIsCompleted(item: IRI)(using ItemConn): Try[NotUsed] =
 		if isComplete(item) then ok
 		else userFail(s"Item $item was not found or has not been successfully uploaded")
 
-	def validatePrevVers(dto: ObjectUploadDto)(using Envri): TSC2[Try[NotUsed]] =
+	def validatePrevVers(dto: ObjectUploadDto)(using Envri, ItemConn): Try[NotUsed] =
 		val prevVersions = dto.isNextVersionOf.flattenToSeq
 
 		if dto.partialUpload && prevVersions.length > 1
@@ -65,22 +69,22 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 				else
 					val prevDobj = vocab.getStaticObject(prevHash)
 					bothOk(
-						existsAndIsCompleted(prevDobj),
+						existsAndIsCompleted(prevDobj)(using RdfLens.global), //can be another RDF graph
 						{
 							val except = vocab.getStaticObject(dto.hashSum)
-							hasNoOtherDeprecators(prevDobj, except, true, dto.partialUpload)
+							hasNoOtherDeprecators(prevDobj, except, true, dto.partialUpload)(using RdfLens.global) //can be another RDF graph
 						}
 					)
 			}
 			.foldLeft(ok)(bothOk(_, _))
 
-	def validateLicence(dto: ObjectUploadDto): TSC2[Try[NotUsed]] =
+	def validateLicence(dto: ObjectUploadDto)(using MetaConn): Try[NotUsed] =
 		dto.references.flatMap(_.licence).fold(Success(NotUsed)){licUri =>
 			if(getTypes(licUri.toRdf).contains(metaVocab.dcterms.licenseDocClass)) ok
 			else userFail(s"Unknown licence $licUri")
 		}
 
-	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean): TSC2[Try[NotUsed]] =
+	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean)(using ItemConn): Try[NotUsed] =
 
 		val allowedPlainColl: Option[IRI] =
 			if partialUpload then getStatements(None, Some(metaVocab.dcterms.hasPart), Some(except))
@@ -125,7 +129,7 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 		}
 	end hasNoOtherDeprecators
 
-	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri): TSC2[Try[Dto]] =
+	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri, DocConn | DobjConn): Try[Dto] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then Success(dto)
 		else
 			val allDuplicates = getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
@@ -149,10 +153,10 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 					)
 	end validateFileName
 
-	private def isCompleted(item: IRI): TSC2[Boolean] =
+	private def isCompleted(item: IRI)(using DobjConn | DocConn): Boolean =
 		hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
 
-	private def isDeprecated(item: IRI): TSC2[Boolean] =
+	private def isDeprecated(item: IRI)(using ItemConn): Boolean =
 		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 			.collect{case Rdf4jStatement(subj, _, _) if isComplete(subj) => true}
 			.toIndexedSeq
@@ -162,7 +166,7 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 		dto: ObjectUploadDto,
 		spec: DataObjectSpec,
 		subm: DataSubmitterConfig
-	)(using Envri): TSC2[Try[NotUsed]] = if(subm.submittingOrganization === vocab.atc) dto match {
+	)(using Envri, DobjConn): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
 			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),

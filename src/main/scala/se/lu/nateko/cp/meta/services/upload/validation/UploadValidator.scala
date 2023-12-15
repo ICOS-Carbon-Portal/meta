@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.DatasetType
@@ -52,22 +53,27 @@ def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
 def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 
 class UploadValidator(servers: DataObjectInstanceServers):
-	import servers.{ metaVocab, vocab, metaReader }
+	import servers.{ metaVocab, vocab, metaReader, lenses }
 	import TriplestoreConnection.*
+	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, ItemConn, GlobConn}
 	given vf: ValueFactory = metaVocab.factory
 	private val scoped = ScopedValidator(vocab, metaVocab)
 
-	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[ObjectUploadDto] = meta match
-		case dobj: DataObjectDto => validateDobj(dobj, uploader)
-		case doc: DocObjectDto => validateDoc(doc, uploader)
+	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[ObjectUploadDto] =
+		servers.global.access:
+			for
+				given DocConn <- lenses.documentLens.toTry(new MetadataException(_))
+				dto <- meta match
+					case dobj: DataObjectDto => validateDobj(dobj, uploader)
+					case doc: DocObjectDto => validateDoc(doc, uploader)
+			yield dto
 
 
-	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri): Try[DataObjectDto] =
+	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri, DocConn): Try[DataObjectDto] =
 		for
 			submConf <- getSubmitterConfig(meta);
 			_ <- userAuthorizedBySubmitter(submConf, uploader);
 			spec <- {
-				servers.global.access:
 					for
 						_ <- userAuthorizedByProducer(meta, submConf)
 						spec <- metaReader.getSpecification(meta.objectSpecification.toRdf)
@@ -76,22 +82,21 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			}.toTry(new UploadUserErrorException(_))
 			_ <- userAuthorizedByThemesAndProjects(spec, submConf);
 			_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
-			instServer <- servers.getInstServerForFormat(spec.format.self.uri.toRdf).toTry(new MetadataException(_))
-			amended <- instServer.access:
-				for
-					_ <- scoped.validatePrevVers(meta)
-					_ <- scoped.validateLicence(meta)
-					_ <- scoped.growingIsGrowing(meta, spec, submConf)
-					_ <- validateActors(meta)
-					_ <- validateTemporalCoverage(meta, spec)
-					_ <- validateSpatialCoverage(meta)
-					_ <- noProductionProvenanceIfL0(meta, spec)
-					amended <- scoped.validateFileName(meta)
-					_ <- scoped.validateMoratorium(amended)
-				yield amended
+			given DobjConn <- lenses.dataObjectLens(spec.format.self.uri).toTry(new MetadataException(_))
+			amended <- for
+				_ <- scoped.validatePrevVers(meta)
+				_ <- scoped.validateLicence(meta)
+				_ <- scoped.growingIsGrowing(meta, spec, submConf)
+				_ <- validateActors(meta)
+				_ <- validateTemporalCoverage(meta, spec)
+				_ <- validateSpatialCoverage(meta)
+				_ <- noProductionProvenanceIfL0(meta, spec)
+				amended <- scoped.validateFileName(meta)
+				_ <- scoped.validateMoratorium(amended)
+			yield amended
 		yield amended
 
-	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri): Try[DocObjectDto] =
+	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri, DocConn): Try[DocObjectDto] =
 		for
 			_ <- validateDescription(meta.description)
 			submConf <- getSubmitterConfig(meta)
@@ -106,14 +111,15 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		yield amended
 
 
-	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri): TSC2[Try[NotUsed]] = for(
-		_ <- collMemberListOk(coll, hash);
-		submConf <- getSubmitterConfig(coll);
-		_ <- validateDescription(coll.description);
-		_ <- userAuthorizedBySubmitter(submConf, uploader);
-		_ <- submitterAuthorizedByCollectionCreator(submConf, hash);
-		_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
-	) yield NotUsed
+	def validateCollection(coll: StaticCollectionDto, hash: Sha256Sum, uploader: UserId)(using Envri, GlobConn): Try[NotUsed] =
+		for
+			_ <- collMemberListOk(coll, hash)
+			submConf <- getSubmitterConfig(coll)
+			_ <- validateDescription(coll.description)
+			_ <- userAuthorizedBySubmitter(submConf, uploader)
+			_ <- submitterAuthorizedByCollectionCreator(submConf, hash)
+			_ <- validatePreviousCollectionVersion(coll.isNextVersionOf, hash)
+		yield NotUsed
 
 	def noProductionProvenanceIfL0(meta: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
 		if spec.dataLevel == 0 && meta.specificInfo.fold(
@@ -127,13 +133,13 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			case Some(conf) => Success(conf)
 
 
-	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): TSC2[Try[NotUsed]] =
+	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
 		objectKindSameIfNotNew(dto).flatMap(_ => dto match {
 			case dobj: DataObjectDto => submitterAndFormatAreSameIfObjectNotNew(dobj, submittingOrg)
 			case _: DocObjectDto => submitterIsSameIfObjNotNew(dto, submittingOrg)
 		})
 
-	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(using Envri): TSC2[Try[NotUsed]] = dto match{
+	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(using Envri, GlobConn): Try[NotUsed] = dto match{
 		case _: DataObjectDto =>
 			if resourceHasType(vocab.getStaticObject(dto.hashSum), metaVocab.docObjectClass)
 			then userFail("Cannot accept data object upload as there is already a document object with id " + dto.hashSum.id)
@@ -144,10 +150,10 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			else Success(NotUsed)
 	}
 
-	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(using Envri): TSC2[Try[NotUsed]] = {
+	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
 		val formatValidation: Validated[NotUsed] =
 			for
-				newFormat <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf)
+				newFormat <- metaReader.getObjSpecFormat(meta.objectSpecification.toRdf)
 				oldFormat <- metaReader.getObjFormatForDobj(vocab.getStaticObject(meta.hashSum))
 				res <- if oldFormat === newFormat then Validated.ok(NotUsed) else Validated.error(
 					s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
@@ -155,9 +161,9 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			yield res
 
 		formatValidation.toTry(UnauthorizedUploadException(_)).flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
-	}
 
-	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri): TSC2[Try[NotUsed]] =
+
+	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
 		val objIri = vocab.getStaticObject(dto.hashSum)
 		val submitterOpt = metaReader.getObjSubmitter(objIri).result
 		submitterOpt.fold(ok): subm =>
@@ -181,7 +187,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		else ok
 	}
 
-	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(using Envri): TSC2[Try[NotUsed]] =
+	private def submitterAuthorizedByCollectionCreator(submConf: DataSubmitterConfig, coll: Sha256Sum)(using Envri, CollConn): Try[NotUsed] =
 		val collIri = vocab.getCollection(coll)
 		metaReader.getCreatorIfCollExists(collIri).result.get.fold(ok): creator =>
 			if(creator === submConf.submittingOrganization)
@@ -191,7 +197,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 					s"whereas you are submitting on behalf of ${submConf.submittingOrganization}")
 
 
-	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(using Envri): TSC2[Try[NotUsed]] =
+	private def collMemberListOk(coll: StaticCollectionDto, hash: Sha256Sum)(using Envri, GlobConn): Try[NotUsed] =
 		val collUri = vocab.getCollection(hash)
 		val metaReader = servers.metaReader
 		import metaReader.{collectionExists, dataObjExists, docObjExists}
@@ -205,7 +211,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				case Some(item) => userFail(s"Neither collection nor object was found at $item")
 
 
-	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig): TSC2V[NotUsed] =
+	private def userAuthorizedByProducer(meta: DataObjectDto, submConf: DataSubmitterConfig)(using MetaConn): Validated[NotUsed] =
 		val producer = meta.specificInfo.fold(
 			l3 => l3.production.hostOrganization.getOrElse(l3.production.creator),
 			_.station
@@ -223,7 +229,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 		if errors.isEmpty then Validated.ok(NotUsed) else new Validated(None, errors.toSeq)
 
-	private def validateActors(meta: DataObjectDto): TSC2[Try[NotUsed]] =
+	private def validateActors(meta: DataObjectDto)(using MetaConn): Try[NotUsed] =
 
 		def isOrg(iri: IRI) = hasStatement(Some(iri), Some(metaVocab.hasName), None)
 		def isPerson(iri: IRI) = resourceHasType(iri, metaVocab.personClass)
@@ -261,10 +267,10 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	private def validateSpatialCoverage(meta: DataObjectDto): TSC2[Try[NotUsed]] = conn ?=>
+	private def validateSpatialCoverage(meta: DataObjectDto)(using conn: DobjConn): Try[NotUsed] =
 		def coverageExistsIn(covUri: URI)(using TriplestoreConnection): Boolean =
 			val cov = covUri.toRdf
-			hasStatement(Some(cov), Some(metaVocab.asGeoJSON), None) ||
+			hasStatement(cov, metaVocab.asGeoJSON, null) ||
 			resourceHasType(cov, metaVocab.latLonBoxClass) ||
 			resourceHasType(cov, metaVocab.positionClass)
 		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri)(using conn.primaryContextView)
@@ -300,7 +306,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		metaVocab.wdcggFormat, metaVocab.atcProductFormat, metaVocab.netCDFTimeSeriesFormat, metaVocab.asciiAtcFlaskTimeSer
 	)
 
-	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using envri: Envri): TSC2V[NotUsed] =
+	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using Envri, MetaConn): Validated[NotUsed] =
 
 		val errors = scala.collection.mutable.Buffer.empty[String]
 
@@ -339,7 +345,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 						if(stationMeta.samplingHeight.isEmpty && spec.dataLevel > 0) errors += "Must provide sampling height"
 					}
 
-					if (envri == Envri.SITES && stationMeta.site.isEmpty)
+					if (summon[Envri] == Envri.SITES && stationMeta.site.isEmpty)
 						errors += "Must provide 'location/ecosystem'"
 
 		new Validated(Some(NotUsed).filter(_ => errors.isEmpty), errors.toSeq)
@@ -349,7 +355,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
 
 
-	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using envri: Envri): TSC2[Try[NotUsed]] =
+	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using Envri, CollConn): Try[NotUsed] =
 		prevVers.flattenToSeq.iterator.map{coll =>
 			val prevColl = vocab.getCollection(coll)
 			if metaReader.collectionExists(prevColl) then

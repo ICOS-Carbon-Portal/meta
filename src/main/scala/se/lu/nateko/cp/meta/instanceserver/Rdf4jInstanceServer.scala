@@ -55,12 +55,6 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 		cotransact
 	)
 
-	def filterNotContainedStatements(statements: IterableOnce[Statement]): Seq[Statement] = {
-		repo.accessEagerly{ conn =>
-			statements.iterator.filter(st => !conn.hasStatement(st, false, readContexts*)).toIndexedSeq
-		}
-	}
-
 	def withContexts(read: Seq[IRI], write: IRI) = new Rdf4jInstanceServer(repo, read, write)
 
 	def getConnection(): TriplestoreConnection = Rdf4jTriplestoreConnection(writeContext, readContexts, repo.getConnection())
@@ -71,6 +65,9 @@ end Rdf4jInstanceServer
 
 
 class Rdf4jTriplestoreConnection(val primaryContext: IRI, val readContexts: Seq[IRI], conn: RepositoryConnection) extends TriplestoreConnection:
+
+	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+		conn.hasStatement(subject, predicate, obj, false, readContexts*)
 
 	override def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
 		conn.hasStatement(subject.getOrElse(null), predicate.getOrElse(null), obj.getOrElse(null), false, readContexts*)

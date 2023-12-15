@@ -177,7 +177,7 @@ class Rdf4jUriSerializer(
 			roles <- citer.attrProvider.getPersonRoles(pers.self.uri)
 		yield PersonExtra(pers, roles)
 
-	private def access[T](lensV: Validated[RdfLens])(reader: TSC2V[T]): Validated[T] =
+	private def access[T, C <: TriplestoreConnection](lensV: Validated[RdfLens[C]])(reader: C ?=> Validated[T]): Validated[T] =
 		server.access:
 			lensV.flatMap: lens =>
 				reader(using lens)

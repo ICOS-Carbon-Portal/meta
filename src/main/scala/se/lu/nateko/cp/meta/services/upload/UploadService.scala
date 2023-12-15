@@ -28,6 +28,7 @@ import se.lu.nateko.cp.meta.ConfigLoader
 import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.api.RdfLens
 
 class AccessUri(val uri: URI)
 
@@ -38,7 +39,8 @@ class UploadService(
 )(using system: ActorSystem, mat: Materializer):
 
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-	import servers.{ metaVocab, vocab }
+	import RdfLens.GlobConn
+	import servers.{ metaVocab, vocab, metaReader }
 	import system.{ dispatcher, log }
 
 	private val uploadLock = new UploadLock
@@ -76,6 +78,7 @@ class UploadService(
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.global.access:
+					given GlobConn = RdfLens.global
 					for
 						_ <- validator.validateCollection(coll, collHash, uploader);
 						submitterConf <- validator.getSubmitterConfig(coll);
@@ -94,7 +97,8 @@ class UploadService(
 	private def registerDataObjUpload(meta: DataObjectDto, submittingOrg: URI)(using Envri): Try[AccessUri] =
 		val serverV = servers.global.access:
 			for
-				format <- servers.getObjSpecificationFormat(meta.objectSpecification.toRdf)
+				metaLens <- servers.lenses.metaInstanceLens
+				format <- metaReader.getObjSpecFormat(meta.objectSpecification.toRdf)(using metaLens)
 				server <- servers.getInstServerForFormat(format)
 			yield server
 		for
@@ -106,6 +110,7 @@ class UploadService(
 	private def registerObjUpload(dto: ObjectUploadDto, server: InstanceServer, submittingOrg: URI)(using Envri): Try[AccessUri] =
 		uploadLock.wrapTry(dto.hashSum):
 			server.access:
+				given GlobConn = RdfLens.global
 				for
 					_ <- validator.updateValidIfObjectNotNew(dto, submittingOrg)
 					updates =

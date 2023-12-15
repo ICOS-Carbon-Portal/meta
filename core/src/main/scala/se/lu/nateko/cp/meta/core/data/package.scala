@@ -32,6 +32,12 @@ val collectionPathPrefix = "collections/"
 type OneOrSeq[T] = Either[T, Seq[T]]
 type OptionalOneOrSeq[T] = Option[OneOrSeq[T]]
 
+object OptionalOneOrSeq:
+	def fromSeq[T](seq: IndexedSeq[T]): OptionalOneOrSeq[T] = seq match
+		case IndexedSeq() => None
+		case IndexedSeq(single) => Some(Left(single))
+		case many => Some(Right(many))
+
 extension [T](item: OptionalOneOrSeq[T])
 	def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){ either =>
 		either.fold(Seq(_), identity)

@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
@@ -20,14 +21,13 @@ import scala.util.Try
 
 
 trait CpmetaReader:
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+	import TriplestoreConnection.*
+	import RdfLens.{MetaConn, DobjConn, DocConn, ItemConn}
 
 	val metaVocab: CpmetaVocab
 
-	val globalLens: TriplestoreConnection ?=> TriplestoreConnection =
-		conn ?=> conn.withReadContexts(Nil)
 
-	def getPlainStaticObject(dobj: IRI): TSC2V[PlainStaticObject] =
+	def getPlainStaticObject(dobj: IRI): RdfLens.DocConn ?=> Validated[PlainStaticObject] =
 		for
 			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
 			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:
@@ -37,10 +37,7 @@ trait CpmetaReader:
 			PlainStaticObject(dobj.toJava, hashsum, fileName)
 
 
-	def getOptionalSpecificationFormat(spec: IRI): TSC2V[Option[IRI]] =
-		getOptionalUri(spec, metaVocab.hasFormat)
-
-	def getPosition(iri: IRI): TSC2V[Position] =
+	def getPosition[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
 		for
 			latLon <- getLatLon(iri)
 			altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
@@ -48,21 +45,21 @@ trait CpmetaReader:
 		yield
 			latLon.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava))
 
-	def getInstrumentPosition(deploymentIri: IRI): TSC2V[Position] =
+	def getInstrumentPosition(deploymentIri: IRI): MetaConn ?=> Validated[Position] =
 		for
-			latLon <- getLatLon(deploymentIri)
+			latLon <- getLatLon[MetaConn](deploymentIri)
 			altOpt <- getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
 		yield
 			latLon.copy(alt = altOpt)
 
-	private def getLatLon(iri: IRI): TSC2V[Position] =
+	private def getLatLon[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
 		for
 			lat <- getSingleDouble(iri, metaVocab.hasLatitude)
 			lon <- getSingleDouble(iri, metaVocab.hasLongitude)
 		yield
 			Position.ofLatLon(lat, lon)
 
-	def getLatLonBox(cov: IRI): TSC2V[LatLonBox] =
+	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI): C ?=> Validated[LatLonBox] =
 		for
 			minLat <- getSingleDouble(cov, metaVocab.hasSouthernBound)
 			minLon <- getSingleDouble(cov, metaVocab.hasWesternBound)
@@ -77,7 +74,7 @@ trait CpmetaReader:
 				uri = Some(cov.toJava)
 			)
 
-	def getSubmission(subm: IRI): TSC2V[DataSubmission] =
+	def getSubmission(subm: IRI): (DobjConn | DocConn) ?=> Validated[DataSubmission] =
 		for
 			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
 			submitter <- getOrganization(submitterUri)
@@ -90,14 +87,14 @@ trait CpmetaReader:
 				stop = stop
 			)
 
-	def getAgent(uri: IRI): TSC2V[Agent] =
+	def getAgent(uri: IRI): MetaConn ?=> Validated[Agent] =
 		getOptionalString(uri, metaVocab.hasFirstName).flatMap: a =>
 			if a.isDefined then
 				getPerson(uri)
 			else
 				getOrganization(uri)
 
-	def getOrganization(org: IRI): TSC2V[Organization] =
+	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
 		for
 			self <- getLabeledResource(org)
 			name <- getSingleString(org, metaVocab.hasName)
@@ -114,7 +111,7 @@ trait CpmetaReader:
 				webpageDetails = webpageDetailsOpt
 			)
 
-	def getWebpageElems(elems: IRI): TSC2V[WebpageElements] =
+	def getWebpageElems(elems: IRI): MetaConn ?=> Validated[WebpageElements] =
 		for
 			self <- getLabeledResource(elems)
 			coverImageOpt <- getOptionalUriLiteral(elems, metaVocab.hasCoverImage)
@@ -126,7 +123,7 @@ trait CpmetaReader:
 				linkBoxes = Option(linkBoxes.sortBy(_.orderWeight)).filterNot(_.isEmpty)
 			)
 
-	def getLinkBox(lbox: IRI): TSC2V[LinkBox] =
+	def getLinkBox(lbox: IRI): MetaConn ?=> Validated[LinkBox] =
 		for
 			name <- getSingleString(lbox, metaVocab.hasName)
 			coverImage <- getSingleUriLiteral(lbox, metaVocab.hasCoverImage)
@@ -140,7 +137,7 @@ trait CpmetaReader:
 				orderWeight = orderWeightOpt
 			)
 
-	def getPerson(pers: IRI): TSC2V[Person] =
+	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
 		for
 			self <- getLabeledResource(pers)
 			firstName <- getSingleString(pers, metaVocab.hasFirstName)
@@ -156,7 +153,7 @@ trait CpmetaReader:
 				orcid = orcidOpt.flatMap(Orcid.unapply)
 			)
 
-	def getProject(project: IRI): TSC2V[Project] =
+	def getProject(project: IRI): MetaConn ?=> Validated[Project] =
 		for
 			self <- getLabeledResource(project)
 			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)
@@ -166,7 +163,7 @@ trait CpmetaReader:
 				keywords = keywordsOpt.map(s => parseCommaSepList(s).toIndexedSeq)
 			)
 
-	def getObjectFormat(format: IRI): TSC2V[ObjectFormat] =
+	def getObjectFormat(format: IRI): MetaConn ?=> Validated[ObjectFormat] =
 		for
 			self <- getLabeledResource(format)
 		yield
@@ -175,14 +172,14 @@ trait CpmetaReader:
 				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
 			)
 
-	def getDataTheme(theme: IRI): TSC2V[DataTheme] =
+	def getDataTheme(theme: IRI): MetaConn ?=> Validated[DataTheme] =
 		for
 			self <- getLabeledResource(theme)
 			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)
 			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
 		yield DataTheme(self = self, icon = icon, markerIcon = markerIconOpt)
 
-	def getTemporalCoverage(dobj: IRI): TSC2V[TemporalCoverage] =
+	def getTemporalCoverage[C <: DobjConn](dobj: IRI): C ?=> Validated[TemporalCoverage] =
 		for
 			start <- getSingleInstant(dobj, metaVocab.hasStartTime)
 			stop <- getSingleInstant(dobj, metaVocab.hasEndTime)
@@ -196,7 +193,7 @@ trait CpmetaReader:
 				resolution = resolutionOpt
 			)
 
-	def getStationLocation(stat: IRI, labelOpt: Option[String]): TSC2V[Position] =
+	def getStationLocation(stat: IRI, labelOpt: Option[String]): MetaConn ?=> Validated[Position] =
 		for
 			posLat <- getSingleDouble(stat, metaVocab.hasLatitude)
 			posLon <- getSingleDouble(stat, metaVocab.hasLongitude)
@@ -205,12 +202,12 @@ trait CpmetaReader:
 		yield
 			Position(posLat, posLon, altOpt, stLabelOpt, None)
 
-	def getSite(site: IRI): TSC2V[Site] =
+	def getSite(site: IRI): MetaConn ?=> Validated[Site] =
 		for
 			self <- getLabeledResource(site)
 			ecosystem <- getLabeledResource(site, metaVocab.hasEcosystemType)
 			locationUriOpt <- getOptionalUri(site, metaVocab.hasSpatialCoverage)
-			location <- locationUriOpt.map(getCoverage).sinkOption
+			location <- locationUriOpt.map(getCoverage[MetaConn]).sinkOption
 		yield
 			Site(
 				self = self,
@@ -218,7 +215,7 @@ trait CpmetaReader:
 				location = location
 			)
 
-	def getCoverage(covUri: IRI): TSC2V[GeoFeature] =
+	def getCoverage[C >: DobjConn <: MetaConn](covUri: IRI): C ?=> Validated[GeoFeature] =
 		getSingleUri(covUri, RDF.TYPE).flatMap: covClass =>
 			if covClass === metaVocab.latLonBoxClass then
 				getLatLonBox(covUri)
@@ -232,13 +229,10 @@ trait CpmetaReader:
 				yield
 					feature.withOptLabel(labelOpt).withUri(covUri.toJava)
 
-	def getNextVersionAsUri(item: IRI): TSC2[OptionalOneOrSeq[URI]] =
-		getNextVersions(item) match
-			case Nil => None
-			case Seq(single) => Some(Left(single.toJava))
-			case many => Some(Right(many.map(_.toJava)))
+	def getNextVersionAsUri[C <: ItemConn](item: IRI): C ?=> OptionalOneOrSeq[URI] =
+		OptionalOneOrSeq.fromSeq(getNextVersions(item).map(_.toJava))
 
-	private def getNextVersions(item: IRI): TSC2[Seq[IRI]] =
+	private def getNextVersions[C <: ItemConn](item: IRI): C ?=> IndexedSeq[IRI] =
 		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
 		.flatMap:
 			case Rdf4jStatement(next, _, _) =>
@@ -249,10 +243,10 @@ trait CpmetaReader:
 		.filter(isComplete)
 		.toIndexedSeq
 
-	def isPlainCollection(item: IRI): TSC2[Boolean] =
+	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
 		resourceHasType(item, metaVocab.plainCollectionClass)
 
-	def isComplete(item: IRI): TSC2[Boolean] =
+	def isComplete(item: IRI): ItemConn ?=> Boolean =
 		import metaVocab.*
 		val itemTypes = getUriValues(item, RDF.TYPE).toSet
 		itemTypes.contains(collectionClass) || (
@@ -264,8 +258,8 @@ trait CpmetaReader:
 			else true //we are probably using a wrong context, so have to assume the item is complete
 		)
 
-	def getLatestVersion(item: IRI): TSC2[OneOrSeq[URI]] =
-		def latest(item: IRI, seen: Set[IRI]): TSC2[Seq[IRI]] =
+	def getLatestVersion[C <: ItemConn](item: IRI): C ?=> OneOrSeq[URI] =
+		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
 			val nextVersions = getNextVersions(item).flatMap: next =>
 				if seen.contains(next)
 				then Nil
@@ -275,28 +269,24 @@ trait CpmetaReader:
 			case Seq(single) => Left(single)
 			case many => Right(many)
 
-	def getPreviousVersion(item: IRI): TSC2[OptionalOneOrSeq[IRI]] =
-		val allPrevVersions: TSC2[Seq[IRI]] =
-			getUriValues(item, metaVocab.isNextVersionOf) ++
-			getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
-				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
-					getUriValues(coll, metaVocab.isNextVersionOf)
-				case _ => Nil
-		allPrevVersions match
-			case Nil => None
-			case Seq(single) => Some(Left(single))
-			case many => Some(Right(many))
+	def getPreviousVersion[C <: ItemConn](item: IRI): C ?=> OptionalOneOrSeq[IRI] =
+		OptionalOneOrSeq.fromSeq(getPreviousVersions(item))
 
-	def getPreviousVersions(item: IRI): TSC2[Seq[IRI]] = getPreviousVersion(item).flattenToSeq
+	def getPreviousVersions[C <: ItemConn](item: IRI): C ?=> IndexedSeq[IRI] =
+		getUriValues(item, metaVocab.isNextVersionOf) ++
+		getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
+			case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
+				getUriValues(coll, metaVocab.isNextVersionOf)
+			case _ => Nil
 
-	def getValTypeLookup(datasetSpec: IRI): TSC2V[VarMetaLookup] =
+	def getValTypeLookup(datasetSpec: IRI): MetaConn ?=> Validated[VarMetaLookup] =
 		for
 			datasetVars <- getDatasetVars(datasetSpec)
 			datasetColumns <- getDatasetColumns(datasetSpec)
 		yield
 			VarMetaLookup(datasetVars ++ datasetColumns)
 
-	def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): TSC2V[Option[VarMeta]] =
+	def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): DobjConn ?=> Validated[Option[VarMeta]] =
 		for
 			minValue <- getOptionalDouble(vi, metaVocab.hasMinValue)
 			maxValue <- getOptionalDouble(vi, metaVocab.hasMaxValue)
@@ -310,7 +300,7 @@ trait CpmetaReader:
 					minMax = minValue.flatMap(min => maxValue.map(min -> _))
 				)
 
-	def getValueType(vt: IRI): TSC2V[ValueType] =
+	def getValueType(vt: IRI): MetaConn ?=> Validated[ValueType] =
 		for
 			labeledResource <- getLabeledResource(vt)
 			quantityKindUri <- getOptionalUri(vt, metaVocab.hasQuantityKind)
@@ -319,15 +309,17 @@ trait CpmetaReader:
 		yield
 			ValueType(labeledResource, quantityKind, unit)
 
-	private def getDatasetVars(ds: IRI): TSC2V[Seq[DatasetVariable]] =
+	private def getDatasetVars(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasVariable, hasVariableTitle, isRegexVariable, isOptionalVariable)
 
-	private def getDatasetColumns(ds: IRI): TSC2V[Seq[DatasetVariable]] =
+	private def getDatasetColumns(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasColumn, hasColumnTitle, isRegexColumn, isOptionalColumn)
 
-	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): TSC2V[Seq[DatasetVariable]] =
+	private def getDatasetVarsOrCols(
+		ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI
+	): MetaConn ?=> Validated[Seq[DatasetVariable]] =
 		Validated.sequence(getUriValues(ds, varProp).map: dv =>
 			for
 				self <- getLabeledResource(dv)
@@ -350,7 +342,7 @@ trait CpmetaReader:
 				)
 		)
 
-	def getInstrumentLite(instr: IRI): TSC2V[UriResource] =
+	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
 		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
 		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
 
@@ -372,7 +364,7 @@ trait CpmetaReader:
 
 			UriResource(instr.toJava, Some(label), comments)
 
-	def getInstrumentDeployment(iri: IRI, instrument: IRI): TSC2V[InstrumentDeployment] =
+	def getInstrumentDeployment(iri: IRI, instrument: IRI): MetaConn ?=> Validated[InstrumentDeployment] =
 		for
 			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
 			instrument <- getInstrumentLite(instrument)
@@ -394,7 +386,7 @@ trait CpmetaReader:
 				stop = stop
 			)
 
-	def getInstrument(instr: IRI): TSC2V[Instrument] =
+	def getInstrument(instr: IRI): MetaConn ?=> Validated[Instrument] =
 		if resourceHasType(instr, metaVocab.instrumentClass) then
 			for
 				self <- getInstrumentLite(instr)

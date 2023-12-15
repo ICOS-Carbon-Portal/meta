@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.DataObjectDto
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLenses
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObjectSpec
@@ -40,20 +41,8 @@ class DataObjectInstanceServers(
 )(using envriConfs: EnvriConfigs, factory: ValueFactory):
 
 	export citationProvider.{vocab, metaVocab, metaReader, lenses}
-	val global = new Rdf4jInstanceServer(repo)
-
-	def getObjSpecificationFormat(objectSpecification: IRI)(using Envri): TSC2V[IRI] =
-		for
-			metaLens <- lenses.metaInstanceLens
-			formatIri <- getSingleUri(objectSpecification, metaVocab.hasFormat)(using metaLens)
-		yield formatIri
-
-	def getDataObjSpecification(specUri: IRI)(using Envri): TSC2V[DataObjectSpec] =
-		for
-			metaLens <- lenses.metaInstanceLens
-			spec <- metaReader.getSpecification(specUri)(using metaLens)
-		yield spec
-
+	import RdfLens.GlobConn
+	val global: InstanceServer = new Rdf4jInstanceServer(repo)
 
 	def getInstServerForFormat(format: IRI)(using envri: Envri): Validated[InstanceServer] =
 		new Validated(perFormat.get(envri).flatMap(_.get(format))).require:
@@ -61,6 +50,7 @@ class DataObjectInstanceServers(
 
 	def getInstServerForStaticObj(objHash: Sha256Sum)(using Envri): Validated[InstanceServer] =
 		global.access:
+			given GlobConn = RdfLens.global
 			val objIri = vocab.getStaticObject(objHash)
 			if metaReader.docObjExists(objIri) then docServer
 			else metaReader.getObjFormatForDobj(objIri).flatMap(getInstServerForFormat)

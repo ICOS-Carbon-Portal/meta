@@ -19,6 +19,8 @@ import java.time.Instant
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.api.RdfLenses
+import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DocConn, GlobConn}
+import se.lu.nateko.cp.meta.api.RdfLens
 
 
 class StaticObjectReader(
@@ -30,34 +32,36 @@ class StaticObjectReader(
 ) extends CollectionReader(metaVocab, citer.getItemCitationInfo) with DobjMetaReader(vocab):
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
-	def fetchStaticObject(objIri: IRI)(using Envri): TSC2V[StaticObject] = conn ?=>
+	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
-			lenses.documentLens.flatMap: docLens =>
-				given TriplestoreConnection = docLens(using conn)
-				getExistingDocumentObject(objIri)
+			for
+				given DocConn <- lenses.documentLens
+				docObj <- getExistingDocumentObject(objIri)
+			yield docObj
 		else for
 			objFormat <- getObjFormatForDobj(objIri)
-			dobjLens <- lenses.dataObjectLens(objFormat.toJava)
-			given TriplestoreConnection = dobjLens(using conn)
+			given DobjConn <- lenses.dataObjectLens(objFormat.toJava)
 			dobj <- getExistingDataObject(objIri)
 		yield dobj
 
-	def dataObjExists(dobj: IRI): TSC2[Boolean] = resourceHasType(dobj, metaVocab.dataObjectClass)
-	def docObjExists(dobj: IRI): TSC2[Boolean] = resourceHasType(dobj, metaVocab.docObjectClass)
+	def dataObjExists(dobj: IRI): GlobConn ?=> Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
+	def docObjExists(dobj: IRI): DocConn ?=> Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
 
-	def getExistingDataObject(dobj: IRI)(using Envri): TSC2V[DataObject] =
+	def getExistingDataObject(dobj: IRI)(using envri: Envri, dobjConn: DobjConn): Validated[DataObject] =
 		for
 			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
-			spec <- getSpecification(specIri)
+			docLens <- lenses.documentLens
+			docConn: DocConn = docLens
+			spec <- getSpecification(specIri)(using docConn)
 			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
 			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
-			productionOpt <- productionUri.map(getDataProduction(dobj, _)).sinkOption
+			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
 				case DatasetType.SpatioTemporal =>
-					getSpatioTempMeta(dobj, valTypeLookup, productionOpt).map(Left.apply)
+					getSpatioTempMeta(dobj, valTypeLookup, productionOpt)(using dobjConn, docConn).map(Left.apply)
 				case DatasetType.StationTimeSeries =>
-					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt).map(Right.apply)
+					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt, docConn).map(Right.apply)
 			hash <- getHashsum(dobj, metaVocab.hasSha256sum)
 			accessUrl <- getAccessUrl(hash, spec)
 			fileName <- getSingleString(dobj, metaVocab.hasName)
@@ -78,10 +82,10 @@ class StaticObjectReader(
 				submission = submission,
 				specification = spec,
 				specificInfo = levelSpecificInfo,
-				// next version can have different format, so may be in an arbitrary RDF graph
-				nextVersion = getNextVersionAsUri(dobj)(using globalLens),
-				latestVersion = getLatestVersion(dobj),
-				previousVersion = getPreviousVersion(dobj).mapO3(_.toJava),
+				// next and previous versions can have different format, so may be in an arbitrary RDF graph
+				nextVersion = getNextVersionAsUri(dobj)(using RdfLens.global),
+				latestVersion = getLatestVersion(dobj)(using RdfLens.global),
+				previousVersion = getPreviousVersion(dobj)(using RdfLens.global).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty
 			)
@@ -90,7 +94,7 @@ class StaticObjectReader(
 			init.copy(references = refs)
 	end getExistingDataObject
 
-	def getExistingDocumentObject(doc: IRI)(using Envri): TSC2V[DocObject] =
+	def getExistingDocumentObject(doc: IRI)(using Envri): DocConn ?=> Validated[DocObject] =
 		for
 			hash <- getHashsum(doc, metaVocab.hasSha256sum)
 			fileName <- getSingleString(doc, metaVocab.hasName)

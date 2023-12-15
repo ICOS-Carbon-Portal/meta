@@ -20,12 +20,13 @@ import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.api.RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 
 trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 
-	def getSpecification(spec: IRI): TSC2V[DataObjectSpec] =
+	def getSpecification(spec: IRI): DocConn ?=> Validated[DataObjectSpec] =
 		for
 			self <- getLabeledResource(spec)
 			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)
@@ -56,15 +57,17 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				keywords = keywords.map(s => parseCommaSepList(s).toIndexedSeq)
 			)
 
-	def getObjFormatForDobj(dobj: IRI): TSC2V[IRI] =
-		getSingleUri(dobj, metaVocab.hasObjectSpec).flatMap: spec =>
-			getSingleUri(spec, metaVocab.hasFormat)
+	def getObjSpecFormat(spec: IRI)(using MetaConn): Validated[IRI] =
+		getSingleUri(spec, metaVocab.hasFormat)
 
-	def getObjSubmitter(dobj: IRI): TSC2V[IRI] =
+	def getObjFormatForDobj(dobj: IRI)(using GlobConn): Validated[IRI] =
+		getSingleUri(dobj, metaVocab.hasObjectSpec).flatMap(getObjSpecFormat)
+
+	def getObjSubmitter(dobj: IRI): GlobConn ?=> Validated[IRI] =
 		getSingleUri(dobj, metaVocab.wasSubmittedBy).flatMap: subm =>
 			getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
 
-	private def getDatasetSpec(ds: IRI): TSC2V[DatasetSpec] =
+	private def getDatasetSpec(ds: IRI): MetaConn ?=> Validated[DatasetSpec] =
 		for
 			self <- getLabeledResource(ds)
 			resolution <- getOptionalString(ds, metaVocab.hasTemporalResolution)
@@ -74,26 +77,27 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				resolution = resolution
 			)
 
-	private def getDatasetType(iri: IRI): TSC2V[DatasetType] =
+	private def getDatasetType(iri: IRI): Validated[DatasetType] =
 		if (iri === metaVocab.stationTimeSeriesDs) Validated.ok(DatasetType.StationTimeSeries)
 		else if (iri === metaVocab.spatioTemporalDs) Validated.ok(DatasetType.SpatioTemporal)
 		else Validated.error(s"URL $iri does not correspond to any of the expected dataset type instances")
 
-	private def getDocumentationObjs(item: IRI): TSC2V[Seq[PlainStaticObject]] =
+	// only usable for doc objects associated to the metadata items (not colls or dobjs)
+	private def getDocumentationObjs(item: IRI): DocConn ?=> Validated[Seq[PlainStaticObject]] =
 		Validated.sequence(getUriValues(item, metaVocab.hasDocumentationObject).map(getPlainStaticObject))
 
-	def getOptionalStation(station: IRI): TSC2V[Option[Station]] =
-		if hasStatement(Some(station), Some(metaVocab.hasStationId), None) then
+	def getOptionalStation(station: IRI): DocConn ?=> Validated[Option[Station]] =
+		if hasStatement(station, metaVocab.hasStationId, null) then
 			getStation(station).map(Some.apply)
 		else Validated.ok(None)
 
-	def getStation(stat: IRI): TSC2V[Station] =
+	def getStation(stat: IRI): DocConn ?=> Validated[Station] =
 		for
 			org <- getOrganization(stat)
 			id <- getSingleString(stat, metaVocab.hasStationId)
 			location <- getStationLocation(stat, Some(org.name))
 			coverageUri <- getOptionalUri(stat, metaVocab.hasSpatialCoverage)
-			coverage <- coverageUri.map(getCoverage).sinkOption
+			coverage <- coverageUri.map(getCoverage[MetaConn]).sinkOption
 			responsibleOrganizationUri <- getOptionalUri(stat, metaVocab.hasResponsibleOrganization)
 			responsibleOrganization <- responsibleOrganizationUri.map(getOrganization).sinkOption
 			specificInfo <- getStationSpecifics(stat)
@@ -112,11 +116,12 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				funding = Option(funding).filterNot(_.isEmpty)
 			)
 
-	private def getStationSpecifics(stat: IRI): TSC2V[StationSpecifics] =
+	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>
 		if resourceHasType(stat, metaVocab.sites.stationClass) then
 			for
 				sites <- Validated.sequence(getUriValues(stat, metaVocab.operatesOn).map(getSite))
-				ecosystems <- Validated.sequence(getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource))
+				ecosystems <- Validated.sequence:
+					getUriValues(stat, metaVocab.hasEcosystemType).map(getLabeledResource)
 				climateZoneUri <- getOptionalUri(stat, metaVocab.hasClimateZone)
 				climateZone <- climateZoneUri.map(getLabeledResource).sinkOption
 				meanAnnualTemp <- getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp)
@@ -167,7 +172,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		else Validated.ok(NoStationSpecifics)
 	end getStationSpecifics
 
-	private def getBasicIcosSpecifics(stat: IRI, thematicCenter: IRI): TSC2V[IcosStationSpecifics] =
+	private def getBasicIcosSpecifics(stat: IRI, thematicCenter: IRI): DocConn ?=> Validated[IcosStationSpecifics] = mc ?=>
 		for
 			(lblDate, discont) <- getLabelingDateAndDiscontinuation(stat)
 			themeUri <- getOptionalUri(thematicCenter, metaVocab.hasDataTheme)
@@ -185,7 +190,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				documentation = documentation
 			)
 
-	private def getLabelingDateAndDiscontinuation(stat: IRI): TSC2V[(Option[LocalDate], Boolean)] = conn ?=>
+	private def getLabelingDateAndDiscontinuation(stat: IRI): MetaConn ?=> Validated[(Option[LocalDate], Boolean)] = conn ?=>
 		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
 		val vf = conn.factory
 
@@ -223,12 +228,14 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 
 		labelingDate.sinkOption.map(_.flatten -> discontinued)
 
-	protected def getStationTimeSerMeta(dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction]): TSC2V[StationTimeSeriesMeta] =
+	protected def getStationTimeSerMeta(
+		dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction], docConn: DocConn
+	): DobjConn ?=> Validated[StationTimeSeriesMeta] = dobjConn ?=>
 		val resV = for
 			acqUri <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
 			instrumentsSeq <- Validated.sequence(getUriValues(acqUri, metaVocab.wasPerformedWith).map(getInstrumentLite))
 			stationUri <- getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)
-			station <- getStation(stationUri)
+			station <- getStation(stationUri)(using docConn)
 			siteUri <- getOptionalUri(acqUri, metaVocab.wasPerformedAt)
 			site <- siteUri.map(getSite).sinkOption
 			startOpt <- getOptionalInstant(acqUri, metaVocab.prov.startedAtTime)
@@ -271,7 +278,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 
-	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): TSC2V[Seq[VarMeta]] =
+	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
 		val deploymentVs = getStatements(None, Some(metaVocab.atOrganization), Some(stationUri))
 			.collect:
 				case Rdf4jStatement(depl, _, _) if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
@@ -296,29 +303,31 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
 	end addInstrDeplInfo
 
-	protected def getSpatioTempMeta(dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]): TSC2V[SpatioTemporalMeta] = conn ?=>
+	protected def getSpatioTempMeta(
+		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]
+	): (DobjConn, DocConn) ?=> Validated[SpatioTemporalMeta] = (dobjConn, docConn) ?=>
 
 		val coverageV: Validated[GeoFeature] =
 			for
-				covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)
-				cov0 <- getCoverage(covIri)
+				covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)(using dobjConn)
+				cov0 <- getCoverage[DobjConn](covIri)
 			yield
-				val isCustomCoverage: Boolean = conn.primaryContextView.hasStatement(Some(covIri), Some(RDF.TYPE), None)
+				val isCustomCoverage: Boolean = dobjConn.primaryContextView.hasStatement(covIri, RDF.TYPE, null)
 				if isCustomCoverage then cov0.withOptUri(None) else cov0
 
 		val prodV = new Validated(prodOpt)
 
 		for
-			title <- getSingleString(dobj, metaVocab.dcterms.title)
-			description <- getOptionalString(dobj, metaVocab.dcterms.description)
+			title <- getSingleString[DobjConn](dobj, metaVocab.dcterms.title)
+			description <- getOptionalString[DobjConn](dobj, metaVocab.dcterms.description)
 			coverage <- coverageV
 			temporal <- getTemporalCoverage(dobj)
-			acqOpt <- getOptionalUri(dobj, metaVocab.wasAcquiredBy)
-			stationOpt <- acqOpt.map(getOptionalUri(_, metaVocab.prov.wasAssociatedWith)).sinkOption
+			acqOpt <- getOptionalUri[DobjConn](dobj, metaVocab.wasAcquiredBy)
+			stationOpt <- acqOpt.map(getOptionalUri[DobjConn](_, metaVocab.prov.wasAssociatedWith)).sinkOption
 			station <- stationOpt.flatten.map(getStation).sinkOption
-			samplingHeightOpt <- acqOpt.map(getOptionalFloat(_, metaVocab.hasSamplingHeight)).sinkOption
+			samplingHeightOpt <- acqOpt.map(getOptionalFloat[DobjConn](_, metaVocab.hasSamplingHeight)).sinkOption
 			prod <- prodV.require("Production info must be provided for a spatial data object")
-			variables <- Validated.sequence(getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup)))
+			variables <- Validated.sequence(getUriValues[DobjConn](dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup)))
 		yield
 			SpatioTemporalMeta(
 				title = title,
@@ -331,7 +340,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				variables = Some(variables.flatten).filterNot(_.isEmpty)
 			)
 
-	protected def getDataProduction(obj: IRI, prod: IRI): TSC2V[DataProduction] =
+	protected def getDataProduction(obj: IRI, prod: IRI, docConn: DocConn): DobjConn ?=> Validated[DataProduction] =
 		for
 			creatorUri <- getSingleUri(prod, metaVocab.wasPerformedBy)
 			creator <- getAgent(creatorUri)
@@ -339,9 +348,9 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			hostUri <- getOptionalUri(prod, metaVocab.wasHostedBy)
 			host <- hostUri.map(getOrganization).sinkOption
 			comment <- getOptionalString(prod, RDFS.COMMENT)
-			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject))
+			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject(_)(using docConn)))
 			documentationUri <- getOptionalUri(prod, RDFS.SEEALSO)
-			documentation <- documentationUri.map(getPlainStaticObject).sinkOption
+			documentation <- documentationUri.map(getPlainStaticObject(_)(using docConn)).sinkOption
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
 			DataProduction(
@@ -354,7 +363,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				dateTime = dateTime
 			)
 
-	private def getFundings(stat: IRI): TSC2V[Seq[Funding]] = Validated.sequence:
+	private def getFundings(stat: IRI): MetaConn ?=> Validated[Seq[Funding]] = Validated.sequence:
 		getUriValues(stat, metaVocab.hasFunding).map: furi =>
 			for
 				self        <- getLabeledResource(furi)
@@ -376,7 +385,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					stop = stop
 				)
 
-	def getFunder(iri: IRI): TSC2V[Funder] =
+	def getFunder(iri: IRI): MetaConn ?=> Validated[Funder] =
 		for
 			org <- getOrganization(iri)
 			funder <- getOptionalString(iri, metaVocab.funderIdentifier)

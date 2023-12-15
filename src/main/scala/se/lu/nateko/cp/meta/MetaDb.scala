@@ -52,6 +52,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import java.net.URI
 
 
 class MetaDb (
@@ -99,14 +100,13 @@ object MetaDb:
 
 	def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): RdfLenses =
 
-		def confsToLenses(confs: Map[Envri, String]): Map[Envri, RdfLens] = confs
+		def confsToLenses[L](confs: Map[Envri, String], factory: (URI, Seq[URI]) => L): Map[Envri, L] = confs
 			.flatMap: (envri, instServId) =>
 				servConf.specific.get(instServId).map: conf =>
 					val readContexts = conf.readContexts.getOrElse(Seq(conf.writeContext))
 					(
 						envri,
-						(conn: TriplestoreConnection) ?=>
-							RdfLens.fromContexts(conf.writeContext, readContexts)
+						factory(conf.writeContext, readContexts)
 					)
 
 		val perFormat = servConf.forDataObjects.map: (envri, conf) =>
@@ -115,13 +115,13 @@ object MetaDb:
 				.map: doisd =>
 					val writeCtxt = getInstServerContext(conf, doisd)
 					val readCtxts = writeCtxt +: conf.commonReadContexts
-					(doisd.format, (conn: TriplestoreConnection) ?=> RdfLens.fromContexts(writeCtxt, readCtxts))
+					(doisd.format, (conn: TriplestoreConnection) ?=> RdfLens.dobjLens(writeCtxt, readCtxts))
 				.toMap
 
 		RdfLenses(
-			metaInstances = confsToLenses(uplConf.metaServers),
-			collections = confsToLenses(uplConf.collectionServers),
-			documents = confsToLenses(uplConf.documentServers),
+			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
+			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
+			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
 			dobjPerFormat = perFormat
 		)
 	end getLenses

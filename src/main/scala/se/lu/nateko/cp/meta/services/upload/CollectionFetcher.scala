@@ -18,25 +18,26 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.api.RdfLens.{CollConn, DocConn}
 
 
 class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
 	import metaVocab.{dcterms => dct}
 
-	private def getCollTitle(collUri: IRI): TSC2V[String] = getSingleString(collUri, dct.title)
+	private def getCollTitle(collUri: IRI)(using CollConn): Validated[String] = getSingleString(collUri, dct.title)
 
-	def collectionExists(collUri: IRI): TSC2[Boolean] = resourceHasType(collUri, metaVocab.collectionClass)
+	def collectionExists(collUri: IRI)(using CollConn): Boolean = resourceHasType(collUri, metaVocab.collectionClass)
 
-	def getCreatorIfCollExists(collIri: IRI): TSC2V[Option[IRI]] = getOptionalUri(collIri, dct.creator)
+	def getCreatorIfCollExists(collIri: IRI)(using CollConn): Validated[Option[IRI]] = getOptionalUri(collIri, dct.creator)
 
-	def fetchCollLite(collUri: IRI): TSC2V[UriResource] =
+	def fetchCollLite(collUri: IRI)(using CollConn): Validated[UriResource] =
 		if collectionExists(collUri) then
 			getCollTitle(collUri).map: title =>
 				UriResource(collUri.toJava, Some(title), Nil)
 		else Validated.error("collection does not exist")
 
-	def getParentCollections(dobj: IRI): TSC2V[Seq[UriResource]] =
+	def getParentCollections(dobj: IRI)(using CollConn): Validated[Seq[UriResource]] =
 		val allParentColls = getStatements(None, Some(dct.hasPart), Some(dobj))
 			.map(_.getSubject)
 			.collect{case iri: IRI => iri}
@@ -46,25 +47,27 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 
 		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchCollLite))
 
-	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum]): TSC2V[StaticCollection] =
+	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum])(using CollConn, DocConn): Validated[StaticCollection] =
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
 		else getExistingStaticColl(collUri, hashOpt)
 
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None): TSC2V[StaticCollection] =
+	private def getExistingStaticColl(
+		coll: IRI, hashOpt: Option[Sha256Sum] = None
+	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
 
 		val membersV = Validated.sequence:
-			getUriValues(coll, dct.hasPart).map: item =>
+			getUriValues[CollConn](coll, dct.hasPart).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
-				else getPlainStaticObject(item)(using globalLens)
+				else getPlainStaticObject(item)
 
 		for
-			creatorUri <- getSingleUri(coll, dct.creator)
+			creatorUri <- getSingleUri[CollConn](coll, dct.creator)
 			members <- membersV
-			creator <- getOrganization(creatorUri)
+			creator <- getOrganization(creatorUri)(using collConn)
 			title <- getCollTitle(coll)
-			description <- getOptionalString(coll, dct.description)
-			doi <- getOptionalString(coll, metaVocab.hasDoi)
-			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)
+			description <- getOptionalString[CollConn](coll, dct.description)
+			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
+			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
 			documentation <- documentationUriOpt.map(getPlainStaticObject).sinkOption
 		yield
 			val init = StaticCollection(
@@ -77,9 +80,9 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				creator = creator,
 				title = title,
 				description = description,
-				nextVersion = getNextVersionAsUri(coll),
-				latestVersion = getLatestVersion(coll),
-				previousVersion = getPreviousVersion(coll).flattenToSeq.headOption.map(_.toJava),
+				nextVersion = getNextVersionAsUri[CollConn](coll),
+				latestVersion = getLatestVersion[CollConn](coll),
+				previousVersion = getPreviousVersions[CollConn](coll).headOption.map(_.toJava),
 				doi = doi,
 				documentation = documentation,
 				references = References.empty

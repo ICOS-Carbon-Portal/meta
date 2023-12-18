@@ -104,6 +104,7 @@ class Rdf4jUriSerializer(
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
+	import RdfLens.{MetaConn, GlobConn, DocConn}
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
@@ -148,19 +149,24 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		server.access:
+		server.access: conn ?=>
 			val objIri = vocab.getStaticObject(hash)
+			given GlobConn = RdfLens.global(using conn)
 			objReader.fetchStaticObject(objIri)
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		access(lenses.collectionLens):
 			val collUri = vocab.getCollection(hash)
-			objReader.fetchStaticColl(collUri, Some(hash))
+			for
+				given DocConn <- lenses.documentLens
+				coll <- objReader.fetchStaticColl(collUri, Some(hash))
+			yield coll
 
 
 	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:
 		for
+			given DocConn <- lenses.documentLens
 			st <- objReader.getStation(uri.toRdf)
 			membs <- citer.attrProvider.getMemberships(st.org.self.uri)
 		yield OrganizationExtra(st, membs)
@@ -182,11 +188,11 @@ class Rdf4jUriSerializer(
 			lensV.flatMap: lens =>
 				reader(using lens)
 
-	private def accessMeta[T](reader: TSC2V[T])(using Envri): Validated[T] =
+	private def accessMeta[T](reader: MetaConn ?=> Validated[T])(using Envri): Validated[T] =
 		access(lenses.metaInstanceLens)(reader)
 
-	private def readMetaRes[T](uri: Uri)(reader: (DobjMetaReader, IRI) => TSC2V[T])(using Envri): Validated[T] =
-		accessMeta(reader(objReader, uri.toRdf))
+	// private def readMetaRes[T, C <: MetaConn](uri: Uri)(reader: (DobjMetaReader, IRI) => C ?=> Validated[T])(using Envri): Validated[T] =
+	// 	accessMeta(reader(objReader, uri.toRdf))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
@@ -262,7 +268,7 @@ class Rdf4jUriSerializer(
 			)
 
 			case UriPath("resources", "instruments", instrId) => resourceMarshallings(
-				instrId, "instrument", readMetaRes(_)(_ getInstrument _),
+				instrId, "instrument", uri => access(lenses.metaInstanceLens)(objReader.getInstrument(uri.toRdf)),
 				views.html.InstrumentLandingPage(_, _)
 			)
 
@@ -272,7 +278,7 @@ class Rdf4jUriSerializer(
 			)(using OrganizationExtra.persExtraWriter)
 
 			case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-				customJson(() => readMetaRes(uri)(_ getSpecification _)),
+				customJson(() => access(lenses.documentLens)(objReader.getSpecification(uri.toRdf))),
 				defaultHtml(uri)
 			)
 

@@ -68,7 +68,14 @@ class MetaDb (
 )(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable{
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
+	def metaReader = store.getCitationProvider.metaReader
+
 	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, vocab, metaVocab, lenses, store.getCitationClient,config)
+
+	lazy val vanillaGlob: InstanceServer =
+		val vanillaSail = store.getBaseSail()
+		val vanillaRepo = new SailRepository(vanillaSail)
+		new Rdf4jInstanceServer(vanillaRepo)
 
 	override def close(): Unit = {
 		sparql.shutdown()
@@ -112,14 +119,23 @@ object MetaDb:
 		val perFormat = servConf.forDataObjects.map: (envri, conf) =>
 			envri -> conf
 				.definitions
-				.map: doisd =>
+				.map[(URI, RdfLens.DobjLens)]: doisd =>
 					val writeCtxt = getInstServerContext(conf, doisd)
 					val readCtxts = writeCtxt +: conf.commonReadContexts
-					(doisd.format, (conn: TriplestoreConnection) ?=> RdfLens.dobjLens(writeCtxt, readCtxts))
+					doisd.format -> RdfLens.dobjLens(writeCtxt, readCtxts)
 				.toMap
+
+		val cpOwn = servConf.metaFlow.flattenToSeq
+			.flatMap: flConf =>
+				val servId = flConf.cpMetaInstanceServerId
+				servConf.specific.get(servId).map[(String, RdfLens.CpLens)]: conf =>
+					val readContexts = conf.readContexts.getOrElse(Seq(conf.writeContext))
+					servId -> RdfLens.cpLens(conf.writeContext, readContexts)
+			.toMap
 
 		RdfLenses(
 			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
+			cpMetaInstances = cpOwn,
 			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
 			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
 			dobjPerFormat = perFormat

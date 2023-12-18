@@ -17,6 +17,7 @@ import se.lu.nateko.cp.doi.meta.Name
 import se.lu.nateko.cp.doi.meta.NameIdentifier
 import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
 import se.lu.nateko.cp.doi.meta.Title
+import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
@@ -74,7 +75,7 @@ class CitationMaker(
 		doi = getDoiMeta(item)
 	)
 
-	def getCitationInfo(sobj: StaticObject)(using envri: Envri): TSC2V[References] =
+	def getCitationInfo(sobj: StaticObject)(using envri: Envri, mc: MetaConn): Validated[References] =
 		for
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
@@ -169,7 +170,7 @@ class CitationMaker(
 					None
 		yield doiMeta
 
-	private def getIcosCitation(dobj: DataObject)(using Envri): TSC2V[CitationInfo] =
+	private def getIcosCitation(dobj: DataObject)(using Envri, MetaConn): Validated[CitationInfo] =
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject

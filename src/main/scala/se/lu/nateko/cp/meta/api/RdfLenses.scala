@@ -4,17 +4,20 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.Validated.getOrElseV
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
 
 import RdfLens.*
+import se.lu.nateko.cp.meta.MetaFlowConfig
 
 
 type RdfLens[C <: TriplestoreConnection] = TriplestoreConnection ?=> C
 
 class RdfLenses(
 	val metaInstances: Map[Envri, MetaLens],
+	cpMetaInstances: Map[String, CpLens],
 	val collections: Map[Envri, CollLens],
 	val documents: Map[Envri, DocLens],
 	val dobjPerFormat: Map[Envri, Map[URI, DobjLens]]
@@ -31,6 +34,14 @@ class RdfLenses(
 			new Validated(form2Lens.get(dobjFormat)).require:
 				s"No RDF graphs were configured for data objects of format $dobjFormat for ENVRI $envri"
 
+	def cpLens(metaFlow: MetaFlowConfig): Validated[CpLens] =
+		val servId = metaFlow.cpMetaInstanceServerId
+		cpMetaInstances.get(servId).getOrElseV:
+			Validated.error(
+				s"Server configuration error. No InstanceServer for " +
+				"portal's own metadata RDF graph, with id $servId"
+			)
+
 	private def forEnvri[T](m: Map[Envri, T], errorTip: String)(using envri: Envri): Validated[T] =
 		new Validated(m.get(envri)).require:
 			s"ENVRI $envri or its $errorTip RDF graphs were not configured properly"
@@ -42,6 +53,8 @@ object RdfLens:
 	opaque type DobjConn >: GlobConn <: MetaConn = TriplestoreConnection
 	opaque type DocConn >: GlobConn <: MetaConn = TriplestoreConnection
 	opaque type CollConn >: GlobConn <: MetaConn = TriplestoreConnection
+	opaque type EnvriMetaConn >: GlobConn <: MetaConn = TriplestoreConnection
+	opaque type CpMetaConn >: GlobConn <: MetaConn = TriplestoreConnection
 
 	type ItemConn = DobjConn | DocConn | CollConn
 
@@ -50,11 +63,14 @@ object RdfLens:
 	type DocLens = RdfLens[DocConn]
 	type DobjLens = RdfLens[DobjConn]
 	type GlobLens = RdfLens[GlobConn]
+	type EnvriLens = RdfLens[EnvriMetaConn]
+	type CpLens = RdfLens[CpMetaConn]
 
 	def metaLens(primaryCtxt: URI, readCtxts: Seq[URI]): MetaLens = mkLens[MetaConn](primaryCtxt, readCtxts, identity)
 	def collLens(primaryCtxt: URI, readCtxts: Seq[URI]): CollLens = mkLens[CollConn](primaryCtxt, readCtxts, identity)
 	def docLens(primaryCtxt: URI, readCtxts: Seq[URI]): DocLens = mkLens[DocConn](primaryCtxt, readCtxts, identity)
 	def dobjLens(primaryCtxt: URI, readCtxts: Seq[URI]): DobjLens = mkLens[DobjConn](primaryCtxt, readCtxts, identity)
+	def cpLens(primaryCtxt: URI, readCtxts: Seq[URI]): CpLens = mkLens[CpMetaConn](primaryCtxt, readCtxts, identity)
 
 	val global: GlobLens = conn ?=> conn.withReadContexts(Nil)
 

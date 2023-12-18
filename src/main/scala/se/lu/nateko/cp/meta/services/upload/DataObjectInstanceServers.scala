@@ -49,8 +49,8 @@ class DataObjectInstanceServers(
 			s"ENVRI $envri unknown or has no instance server configured for data object format '$format'"
 
 	def getInstServerForStaticObj(objHash: Sha256Sum)(using Envri): Validated[InstanceServer] =
-		global.access:
-			given GlobConn = RdfLens.global
+		global.access: conn ?=>
+			given GlobConn = RdfLens.global(using conn)
 			val objIri = vocab.getStaticObject(objHash)
 			if metaReader.docObjExists(objIri) then docServer
 			else metaReader.getObjFormatForDobj(objIri).flatMap(getInstServerForFormat)

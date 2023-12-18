@@ -77,8 +77,8 @@ class UploadService(
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
-				servers.global.access:
-					given GlobConn = RdfLens.global
+				servers.global.access: conn ?=>
+					given GlobConn = RdfLens.global(using conn)
 					for
 						_ <- validator.validateCollection(coll, collHash, uploader);
 						submitterConf <- validator.getSubmitterConfig(coll);
@@ -109,8 +109,8 @@ class UploadService(
 
 	private def registerObjUpload(dto: ObjectUploadDto, server: InstanceServer, submittingOrg: URI)(using Envri): Try[AccessUri] =
 		uploadLock.wrapTry(dto.hashSum):
-			server.access:
-				given GlobConn = RdfLens.global
+			server.access: conn ?=>
+				given GlobConn = RdfLens.global(using conn)
 				for
 					_ <- validator.updateValidIfObjectNotNew(dto, submittingOrg)
 					updates =

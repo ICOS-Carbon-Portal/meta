@@ -9,35 +9,35 @@ import se.lu.nateko.cp.meta.MetaFlowConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.services.MetadataException
 
 
 class StateDiffApplier(
 	db: MetaDb, flowConf: MetaFlowConfig, log: LoggingAdapter
 )(using EnvriConfigs, Envri):
-	private val vf = db.repo.getValueFactory
 
-	private val meta = new CpmetaVocab(vf)
-	private val rdfMaker = new RdfMaker(db.vocab, meta)
+	private val rdfMaker = new RdfMaker(db.vocab, db.metaVocab)
 
-	private val cpServer = db.instanceServers.getOrElse(
-		flowConf.cpMetaInstanceServerId,
-		throw Exception(s"Instance server with id ${flowConf.cpMetaInstanceServerId} was not found")
-	)
 	private val envriServId = flowConf match
 		case c: CitiesMetaFlowConfig => c.citiesMetaInstanceServerId
 		case i: IcosMetaFlowConfig => i.icosMetaInstanceServerId
 	private val envriServer = db.instanceServers(envriServId)
 
 
-	private val rdfReader =
-		val metaReader = db.store.getCitationProvider.metaReader
-		new RdfReader(metaReader, cpServer, envriServer)
-
-
-	private val diffCalc = new RdfDiffCalc(rdfMaker, rdfReader)
+	private val diffCalcV =
+		for
+			cpLens <- db.lenses.cpLens(flowConf)
+			envriLens <- db.lenses.metaInstanceLens
+			docLens <- db.lenses.documentLens
+		yield
+			val lenses = MetaflowLenses(cpLens, envriLens, docLens)
+			val reader = RdfReader(db.metaReader, db.vanillaGlob, lenses)
+			new RdfDiffCalc(rdfMaker, reader)
 
 	def apply[T <: TC](state: TcState[T])(using tcconf: TcConf[T]): Unit =
-		val diffV = diffCalc.calcDiff(state)
+		val diffV = diffCalcV.flatMap(_.calcDiff(state))
 		inline def tip = tcconf.tcPrefix
 		if diffV.errors.nonEmpty then
 			val nUpdates = diffV.result.fold(0)(_.size)

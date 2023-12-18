@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
+import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.Agent
 import se.lu.nateko.cp.meta.core.data.DataObject
@@ -36,7 +37,7 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 	import AttributionProvider.*
 	import TriplestoreConnection.{TSC2V, getLabeledResource}
 
-	def getAuthors(dobj: DataObject): TSC2V[Seq[Person]] = dobj.specificInfo.fold(
+	def getAuthors(dobj: DataObject)(using MetaConn): Validated[Seq[Person]] = dobj.specificInfo.fold(
 		_ => Validated.ok(Nil),
 		l2 => getMemberships(l2.acquisition.station.org.self.uri).map(
 			_.filter(getTcSpecificFilter(dobj))
@@ -48,7 +49,7 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		)
 	)
 
-	def getMemberships(org: URI): TSC2V[IndexedSeq[Membership]] = sparqlAndParse(
+	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] = sparqlAndParse(
 			s"""select distinct ?person $roleDetailsVars where{
 			|	?memb <${metaVocab.atOrganization}> <$org> .
 			|	?person <${metaVocab.hasMembership}> ?memb .
@@ -96,7 +97,7 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		)
 
 
-	private def parsePerson(bs: BindingSet): TSC2V[Person] =
+	private def parsePerson(bs: BindingSet)(using MetaConn): Validated[Person] =
 		Validated(bs.getValue("person")).require("no person found").flatMap:
 			case iri: IRI => getPerson(iri)
 			case other => Validated.error(s"Expected a person's URI, got $other")

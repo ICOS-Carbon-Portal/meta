@@ -14,6 +14,8 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
@@ -111,13 +113,15 @@ class CitationProvider(
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI): TSC2[Option[StaticObject]] = for
+	private def getStaticObject(maybeDobj: IRI): TSC2[Option[StaticObject]] = conn ?=> for
 		given Envri <- inferObjectEnvri(maybeDobj)
+		given GlobConn = RdfLens.global(using conn)
 		obj <- metaReader.fetchStaticObject(maybeDobj).result
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI): TSC2[Option[StaticCollection]] = for
+	private def getStaticColl(maybeColl: IRI): TSC2[Option[StaticCollection]] = conn ?=> for
 		given Envri <- inferCollEnvri(maybeColl)
+		given GlobConn = RdfLens.global(using conn)
 		coll <- metaReader.fetchStaticColl(maybeColl, None).result
 	yield coll
 

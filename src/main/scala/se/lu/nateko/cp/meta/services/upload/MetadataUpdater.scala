@@ -95,10 +95,9 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 		else Plain
 
 
-	def getCurrentStatements(hash: Sha256Sum)(using Envri, TriplestoreConnection): Seq[Statement] =
-		val conn = summon[TriplestoreConnection]
+	def getCurrentStatements(hash: Sha256Sum)(using envri: Envri, conn: TriplestoreConnection, sp: SparqlRunner): Seq[Statement] =
 		val objUri = vocab.getStaticObject(hash)
-		if !conn.hasStatement(Some(objUri), None, None) then Nil
+		if !conn.hasStatement(objUri, null, null) then Nil
 		else
 			val query = SparqlQuery(s"""construct{?s ?p ?o}
 				|FROM <${conn.primaryContext}>
@@ -127,7 +126,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			
-			conn.evaluateGraphQuery(query).toIndexedSeq
+			sp.evaluateGraphQuery(query).toIndexedSeq
 		end if
 	end getCurrentStatements
 

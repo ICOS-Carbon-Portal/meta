@@ -100,7 +100,7 @@ class Rdf4jUriSerializer(
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
-	import TriplestoreConnection.{TSC2V, getLabeledResource, hasStatement}
+	import TriplestoreConnection.{getLabeledResource, hasStatement}
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
@@ -216,10 +216,10 @@ class Rdf4jUriSerializer(
 
 
 	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean = server.access:
-		hasStatement(Some(uri.toRdf), Some(metaVocab.hasDataLevel), None)
+		hasStatement(uri.toRdf, metaVocab.hasDataLevel, null)
 
 	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean = server.access:
-		hasStatement(Some(uri.toRdf), Some(RDFS.LABEL), None)
+		hasStatement(uri.toRdf, RDFS.LABEL, null)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =
 

@@ -110,7 +110,7 @@ class CitationMaker(
 	end getCitationInfo
 
 
-	def getLicence(dobj: IRI)(using Envri): TSC2V[Licence] =
+	def getLicence(dobj: IRI)(using Envri, MetaConn): Validated[Licence] =
 
 		def getLic(licUri: IRI): Validated[Licence] = for
 			name <- getSingleString(licUri, RDFS.LABEL)

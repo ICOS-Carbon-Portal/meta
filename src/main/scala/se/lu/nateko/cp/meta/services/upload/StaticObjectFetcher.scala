@@ -1,26 +1,25 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLenses
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
+
+import java.net.URI
 import java.time.Instant
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.api.RdfLenses
-import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DocConn, GlobConn}
-import se.lu.nateko.cp.meta.api.RdfLens
 
 
 class StaticObjectReader(
@@ -30,7 +29,8 @@ class StaticObjectReader(
 	pidFactory: HandleNetClient.PidFactory,
 	citer: CitationMaker
 ) extends CollectionReader(metaVocab, citer.getItemCitationInfo) with DobjMetaReader(vocab):
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+	import TriplestoreConnection.*
+	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -39,10 +39,13 @@ class StaticObjectReader(
 				docObj <- getExistingDocumentObject(objIri)
 			yield docObj
 		else for
-			objFormat <- getObjFormatForDobj(objIri)
-			given DobjConn <- lenses.dataObjectLens(objFormat.toJava)
+			given DobjConn <- getLensForDataObj(objIri)
 			dobj <- getExistingDataObject(objIri)
 		yield dobj
+
+	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
+		getObjFormatForDobj(dobjIri).flatMap: objFormat =>
+			lenses.dataObjectLens(objFormat.toJava)
 
 	def dataObjExists(dobj: IRI): GlobConn ?=> Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI): DocConn ?=> Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
@@ -129,10 +132,10 @@ class StaticObjectReader(
 		yield
 			init.copy(references = refs)
 
-	private def getPid(hash: Sha256Sum, format: URI)(using Envri): TSC2[Option[String]] =
+	private def getPid(hash: Sha256Sum, format: URI)(using Envri): Option[String] =
 		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
 
-	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri): TSC2V[Option[URI]] =
+	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =
 		if metaVocab.wdcggFormat === spec.format.self.uri then
 			Validated(Some(new URI("https://gaw.kishou.go.jp/")))
 		else

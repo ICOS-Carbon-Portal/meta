@@ -8,31 +8,36 @@ import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+
+import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
 	import servers.{ metaVocab, vocab }
-	import TriplestoreConnection.hasStatement
+	import TriplestoreConnection.{TSC, hasStatement}
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
 		for
 			server <- Future.fromTry(servers.getInstServerForStaticObj(hash).toTry(new MetadataException(_)))
-
 			completer = info.ingestionResult.fold(new PidMinter(handles, vocab)):
+
 				case tsOrSpat: (TimeSeriesExtract | SpatialTimeSeriesExtract) =>
-					new TimeSeriesUploadCompleter(tsOrSpat, handles, vocab, metaVocab)
+					new TimeSeriesUploadCompleter(tsOrSpat, dobjLens(server), handles, vocab, metaVocab)
 
 				case netcdf: NetCdfExtract =>
-					new NetCdfUploadCompleter(netcdf, handles, vocab, metaVocab)
+					new NetCdfUploadCompleter(netcdf, handles, dobjLens(server), vocab, metaVocab)
 
 			updates = server.access:
 				completer.getUpdates(hash) ++ getUploadStopTimeUpdates(hash) ++ getBytesSizeUpdates(hash, info.bytes)
@@ -43,22 +48,22 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 
 		yield report
 
+	private def dobjLens(server: InstanceServer): DobjLens =
+		RdfLens.dobjLens(server.writeContext.toJava, server.readContexts.map(_.toJava))
 
-	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
+	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, TSC): Seq[RdfUpdate] =
 		val submissionUri = vocab.getSubmission(hash)
-		if(hasStatement(Some(submissionUri), Some(metaVocab.prov.endedAtTime), None)) Nil
-		else {
+		if hasStatement(submissionUri, metaVocab.prov.endedAtTime, null) then Nil
+		else
 			val stopInfo = vocab.factory.createStatement(submissionUri, metaVocab.prov.endedAtTime, vocab.lit(Instant.now))
 			Seq(RdfUpdate(stopInfo, true))
-		}
 
 
-	private def getBytesSizeUpdates(hash: Sha256Sum, size: Long)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
+	private def getBytesSizeUpdates(hash: Sha256Sum, size: Long)(using Envri, TSC): Seq[RdfUpdate] =
 		val dobj = vocab.getStaticObject(hash)
-		if(hasStatement(Some(dobj), Some(metaVocab.hasSizeInBytes), None)) Nil //byte size cannot change for same hash
-		else{
+		if hasStatement(dobj, metaVocab.hasSizeInBytes, null) then Nil //byte size cannot change for same hash
+		else
 			val sizeInfo = vocab.factory.createStatement(dobj, metaVocab.hasSizeInBytes, vocab.lit(size))
 			Seq(RdfUpdate(sizeInfo, true))
-		}
 
 end UploadCompleter

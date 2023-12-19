@@ -46,15 +46,15 @@ class RdfReader(metaReader: DobjMetaReader, glob: InstanceServer, lenses: Metafl
 
 	def getTcUsages(iri: IRI): IndexedSeq[Statement] = glob.access:
 		given MetaLens = lenses.envriLens
-		getStatements(None, None, Some(iri)).map(stripContext).toIndexedSeq
+		getStatements(null, null, iri).map(stripContext).toIndexedSeq
 
 	def getTcStatements(iri: IRI): IndexedSeq[Statement] = glob.access:
 		given MetaLens = lenses.envriLens
-		getStatements(Some(iri), None, None).map(stripContext).toIndexedSeq
+		getStatements(iri).map(stripContext).toIndexedSeq
 
 	def getCpStatements(iri: IRI): Iterator[Statement] = glob.access:
 		given CpLens = lenses.cpLens
-		getStatements(Some(iri), None, None).map(stripContext)
+		getStatements(iri, null, null).map(stripContext)
 
 	def keepMeaningful(updates: Seq[RdfUpdate]): IndexedSeq[RdfUpdate] = glob.access: glConn ?=>
 		given conn: MetaConn = lenses.envriLens(using glConn)
@@ -151,7 +151,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		)
 
 
-	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): TSC2V[Seq[TcStation[T]]] =
+	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
 
 
@@ -241,7 +241,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		Validated.sequence(seqV)
 
 
-	protected def getTcId[T <: TC](uri: IRI)(using tcConf: TcConf[T]): TSC2V[Option[TcId[T]]] =
+	protected def getTcId[T <: TC](uri: IRI)(using tcConf: TcConf[T], conn: TSC): Validated[Option[TcId[T]]] =
 		val tcIdPred = tcConf.tcIdPredicate(metaVocab)
 		getOptionalString(uri, tcIdPred).map(_.map(tcConf.makeId))
 
@@ -249,11 +249,5 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 	private def stationClass[T <: TC](using tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
 
 	private def getDirectClassMembers(cls: IRI)(using TSC): IndexedSeq[IRI] = getPropValueHolders(RDF.TYPE, cls)
-
-	private def getPropValueHolders(prop: IRI, v: Value)(using TSC): IndexedSeq[IRI] =
-		getStatements(None, Some(prop), Some(v))
-			.map(_.getSubject)
-			.collect{case iri: IRI => iri}
-			.toIndexedSeq
 
 end IcosMetaInstancesFetcher

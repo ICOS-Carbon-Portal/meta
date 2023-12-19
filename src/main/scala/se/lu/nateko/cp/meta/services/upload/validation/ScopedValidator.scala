@@ -43,7 +43,6 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider.getOptInstant
 
 private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 
@@ -87,23 +86,19 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean)(using ItemConn): Try[NotUsed] =
 
 		val allowedPlainColl: Option[IRI] =
-			if partialUpload then getStatements(None, Some(metaVocab.dcterms.hasPart), Some(except))
-				.collect:
-					case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) &&
-						hasStatement(coll, metaVocab.isNextVersionOf, item) => coll
-				.toIndexedSeq
+			if partialUpload then getPropValueHolders(metaVocab.dcterms.hasPart, except)
+				.filter: coll =>
+					isPlainCollection(coll) && hasStatement(coll, metaVocab.isNextVersionOf, item)
 				.headOption
 			else None
 
-		val deprs = getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.collect:
-				case Rdf4jStatement(depr, _, _) if {
-						if partialUpload then allowedPlainColl match
-							case Some(coll) => coll != depr
-							case None => !isPlainCollection(depr)
-						else
-							depr != except
-					} => depr
+		val deprs = getPropValueHolders(metaVocab.isNextVersionOf, item)
+			.filter: depr =>
+				if partialUpload then allowedPlainColl match
+					case Some(coll) => coll != depr
+					case None => !isPlainCollection(depr)
+				else
+					depr != except
 			.toIndexedSeq
 
 		val otherDeprs = if amongCompleted then deprs.filter(isComplete) else deprs
@@ -132,8 +127,8 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri, DocConn | DobjConn): Try[Dto] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then Success(dto)
 		else
-			val allDuplicates = getStatements(None, Some(metaVocab.hasName), Some(vf.createLiteral(dto.fileName)))
-				.collect{case Rdf4jStatement(subj, _, _) if isCompleted(subj) && !isDeprecated(subj) => subj.toJava}
+			val allDuplicates = getPropValueHolders(metaVocab.hasName, vf.createLiteral(dto.fileName))
+				.collect{case subj if isCompleted(subj) && !isDeprecated(subj) => subj.toJava}
 				.collect{case Hash.Object(hash) if hash != dto.hashSum => hash} //can re-upload metadata for existing object
 				.toIndexedSeq
 
@@ -154,11 +149,11 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 	end validateFileName
 
 	private def isCompleted(item: IRI)(using DobjConn | DocConn): Boolean =
-		hasStatement(Some(item), Some(metaVocab.hasSizeInBytes), None)
+		hasStatement(item, metaVocab.hasSizeInBytes, null)
 
 	private def isDeprecated(item: IRI)(using ItemConn): Boolean =
-		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-			.collect{case Rdf4jStatement(subj, _, _) if isComplete(subj) => true}
+		getPropValueHolders(metaVocab.isNextVersionOf, item)
+			.filter(isComplete)
 			.toIndexedSeq
 			.nonEmpty
 
@@ -186,10 +181,10 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 		case _ => ok
 	} else ok
 
-	def validateMoratorium(meta: DataObjectDto)(using Envri): TSC2[Try[NotUsed]] =
+	def validateMoratorium(meta: DataObjectDto)(using Envri, DobjConn): Try[NotUsed] =
 		meta.references.flatMap(_.moratorium).fold(ok): moratorium =>
 			val iri = vocab.getStaticObject(meta.hashSum)
-			val uploadComplete = hasStatement(Some(iri), Some(metaVocab.hasSizeInBytes), None)
+			val uploadComplete = hasStatement(iri, metaVocab.hasSizeInBytes, null)
 
 			def validateMoratorium =
 				if moratorium.compareTo(Instant.now()) > 0 then ok

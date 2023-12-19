@@ -3,6 +3,8 @@ package se.lu.nateko.cp.meta.services.upload.completion
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.RdfLens.DobjConn
+import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
@@ -19,40 +21,43 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 private class TimeSeriesUploadCompleter(
 	extract: TimeSeriesExtract | SpatialTimeSeriesExtract,
+	lens: DobjLens,
 	handles: HandleNetClient,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
 )(using Envri) extends PidMinter(handles, vocab):
 
 	private val factory = vocab.factory
-	import TriplestoreConnection.{TSC2, getStatements}
+	import TriplestoreConnection.{getStatements}
 
-	override def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate] = extract match
+	override def getUpdates(hash: Sha256Sum)(using tsc: TriplestoreConnection): Seq[RdfUpdate] =
+		given DobjConn = lens(using tsc)
+		extract match
 
-		case TimeSeriesExtract(ingestionExtract, rowsInfo) =>
-			tabularExtractUpdates(hash, ingestionExtract) ++ nRowsUpdates(hash, rowsInfo)
+			case TimeSeriesExtract(ingestionExtract, rowsInfo) =>
+				tabularExtractUpdates(hash, ingestionExtract) ++ nRowsUpdates(hash, rowsInfo)
 
-		case SpatialTimeSeriesExtract(ingestionExtract, spatial) =>
-			val news = StatementsProducer(vocab, metaVocab).getGeoFeatureStatements(hash, spatial)
+			case SpatialTimeSeriesExtract(ingestionExtract, spatial) =>
+				val news = StatementsProducer(vocab, metaVocab).getGeoFeatureStatements(hash, spatial)
 
-			val objUri = vocab.getStaticObject(hash)
-			val oldCovs = getStatements(Some(objUri), Some(metaVocab.hasSpatialCoverage), None).toIndexedSeq
+				val objUri = vocab.getStaticObject(hash)
+				val oldCovs = getStatements(objUri, metaVocab.hasSpatialCoverage, null).toIndexedSeq
 
-			val olds = oldCovs ++ oldCovs.collect{
-				case Rdf4jStatement(_, _, coverage: IRI) =>
-					getStatements(Some(coverage), None, None)
-			}.flatten
+				val olds = oldCovs ++ oldCovs.collect{
+					case Rdf4jStatement(_, _, coverage: IRI) =>
+						getStatements(coverage, null, null)
+				}.flatten
 
-			val coverageUpdates = MetadataUpdater.diff(olds, news, factory)
-			val intervalUpdates = tabularExtractUpdates(hash, ingestionExtract)
+				val coverageUpdates = MetadataUpdater.diff(olds, news, factory)
+				val intervalUpdates = tabularExtractUpdates(hash, ingestionExtract)
 
-			coverageUpdates ++ intervalUpdates
+				coverageUpdates ++ intervalUpdates
 
 
-	private def tabularExtractUpdates(hash: Sha256Sum, extract: TabularIngestionExtract): TSC2[Seq[RdfUpdate]] =
+	private def tabularExtractUpdates(hash: Sha256Sum, extract: TabularIngestionExtract)(using DobjConn): Seq[RdfUpdate] =
 		val objUri = vocab.getStaticObject(hash)
 
-		val olds = getStatements(Some(objUri), Some(metaVocab.hasActualColumnNames), None).toIndexedSeq
+		val olds = getStatements(objUri, metaVocab.hasActualColumnNames, null).toIndexedSeq
 
 		val news = extract.actualColumns.toIndexedSeq.map { cols =>
 			val colsJson = printAsJsonArray(cols)
@@ -61,7 +66,7 @@ private class TimeSeriesUploadCompleter(
 		MetadataUpdater.diff(olds, news, factory) ++ acqusitionIntervalUpdates(hash, extract.interval)
 
 
-	private def acqusitionIntervalUpdates(hash: Sha256Sum, interval: TimeInterval): TSC2[Seq[RdfUpdate]] =
+	private def acqusitionIntervalUpdates(hash: Sha256Sum, interval: TimeInterval)(using DobjConn): Seq[RdfUpdate] =
 		val acqUri = vocab.getAcquisition(hash)
 
 		val news = IndexedSeq(
@@ -69,18 +74,18 @@ private class TimeSeriesUploadCompleter(
 			factory.createStatement(acqUri, metaVocab.prov.endedAtTime, vocab.lit(interval.stop))
 		)
 
-		val olds = getStatements(Some(acqUri), Some(metaVocab.prov.startedAtTime), None).toIndexedSeq ++
-			getStatements(Some(acqUri), Some(metaVocab.prov.endedAtTime), None)
+		val olds = getStatements(acqUri, metaVocab.prov.startedAtTime, null).toIndexedSeq ++
+			getStatements(acqUri, metaVocab.prov.endedAtTime, null)
 
 		MetadataUpdater.diff(olds, news, factory)
 
 
-	private def nRowsUpdates(hash: Sha256Sum, rowsInfo: Option[Int]): TSC2[Seq[RdfUpdate]] = rowsInfo match
+	private def nRowsUpdates(hash: Sha256Sum, rowsInfo: Option[Int])(using DobjConn): Seq[RdfUpdate] = rowsInfo match
 		case None => Nil
 		case Some(nRows) =>
 			val objUri = vocab.getStaticObject(hash)
 			val news = Seq(factory.createStatement(objUri, metaVocab.hasNumberOfRows, vocab.lit(nRows)))
-			val olds = getStatements(Some(objUri), Some(metaVocab.hasNumberOfRows), None).toIndexedSeq
+			val olds = getStatements(objUri, metaVocab.hasNumberOfRows, null).toIndexedSeq
 			MetadataUpdater.diff(olds, news, factory)
 
 end TimeSeriesUploadCompleter

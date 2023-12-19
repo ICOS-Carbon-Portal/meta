@@ -10,6 +10,8 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID
@@ -55,27 +57,25 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 		cotransact
 	)
 
-	def withContexts(read: Seq[IRI], write: IRI) = new Rdf4jInstanceServer(repo, read, write)
+	override def withContexts(read: Seq[IRI], write: IRI) = new Rdf4jInstanceServer(repo, read, write)
 
-	def getConnection(): TriplestoreConnection = Rdf4jTriplestoreConnection(writeContext, readContexts, repo.getConnection())
+	override def getConnection(): TriplestoreConnection & SparqlRunner =
+		Rdf4jTriplestoreConnection(writeContext, readContexts, repo.getConnection())
 
 	override def shutDown(): Unit = repo.shutDown()
 
 end Rdf4jInstanceServer
 
 
-class Rdf4jTriplestoreConnection(val primaryContext: IRI, val readContexts: Seq[IRI], conn: RepositoryConnection) extends TriplestoreConnection:
+class Rdf4jTriplestoreConnection(
+	val primaryContext: IRI, val readContexts: Seq[IRI], conn: RepositoryConnection
+) extends TriplestoreConnection with SparqlRunner:
+
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
+		Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
 
 	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
 		conn.hasStatement(subject, predicate, obj, false, readContexts*)
-
-	override def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
-		conn.hasStatement(subject.getOrElse(null), predicate.getOrElse(null), obj.getOrElse(null), false, readContexts*)
-
-	override def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement] =
-		Rdf4jIterationIterator(
-			conn.getStatements(subject.getOrElse(null), predicate.getOrElse(null), obj.getOrElse(null), false, readContexts*)
-		)
 
 	override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection =
 		Rdf4jTriplestoreConnection(primary, read, conn)

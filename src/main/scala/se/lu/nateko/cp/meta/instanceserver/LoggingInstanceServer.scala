@@ -33,6 +33,6 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 
 	def withContexts(read: Seq[IRI], write: IRI) = new LoggingInstanceServer(inner.withContexts(read, write), log)
 
-	def getConnection(): TriplestoreConnection = inner.getConnection()
+	override def getConnection() = inner.getConnection()
 
 end LoggingInstanceServer

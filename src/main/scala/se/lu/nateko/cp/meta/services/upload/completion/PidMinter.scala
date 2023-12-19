@@ -12,7 +12,7 @@ import scala.concurrent.Future
 
 class PidMinter(handles: HandleNetClient, vocab: CpVocab)(using Envri) extends FormatSpecificCompleter:
 
-	def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate] = Nil
+	override def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate] = Nil
 
 	final def finalize(hash: Sha256Sum): Future[Report] =
 

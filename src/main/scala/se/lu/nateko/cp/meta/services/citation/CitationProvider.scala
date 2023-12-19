@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.api.RdfLens.{GlobConn, MetaConn}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
@@ -66,8 +66,8 @@ class CitationProvider(
 	val vocab = new CpVocab(repo.getValueFactory)
 
 	val doiCiter: CitationClient =
-		val dois: List[Doi] = server.access: conn ?=>
-			conn.getStatements(None, Some(metaVocab.hasDoi), None)
+		val dois: List[Doi] = server.access:
+			getStatements(null, metaVocab.hasDoi, null)
 				.map(_.getObject.stringValue)
 				.toList.distinct.flatMap:
 					Doi.parse(_).toOption
@@ -76,32 +76,33 @@ class CitationProvider(
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, log)
 
-	// TODO Make sure all context switching is done to read e.g. documents while reading a station, etc.
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
 		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 
-	def getCitation(res: Resource): Option[String] = server.access:
+	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
+		given GlobConn = RdfLens.global(using conn)
 		getDoiCitation(res).orElse:
 			getCitableItem(res).flatMap(_.references.citationString)
 
 	def getReferences(res: Resource): Option[References] = server.access:
-		getCitableItem(res).map(_.references)
+		getCitableItem(res)(using RdfLens.global).map(_.references)
 
 	def getLicence(res: Resource): Option[Licence] = server.access:
 		for
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+			given MetaConn <- lenses.metaInstanceLens.result
 			lic <- citer.getLicence(iri).result
 		yield lic
 
-	private def getDoiCitation(res: Resource): TSC2[Option[String]] = toIRI(res).flatMap{iri =>
+	private def getDoiCitation(res: Resource)(using GlobConn): Option[String] = toIRI(res).flatMap{iri =>
 		getStringValues(iri, metaVocab.hasDoi).headOption
 			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
 	}
 
-	private def getCitableItem(res: Resource): TSC2[Option[CitableItem]] = toIRI(res).flatMap: iri =>
+	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
 		if
 			hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 			hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
@@ -113,13 +114,12 @@ class CitationProvider(
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI): TSC2[Option[StaticObject]] = conn ?=> for
+	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
 		given Envri <- inferObjectEnvri(maybeDobj)
-		given GlobConn = RdfLens.global(using conn)
 		obj <- metaReader.fetchStaticObject(maybeDobj).result
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI): TSC2[Option[StaticCollection]] = conn ?=> for
+	private def getStaticColl(maybeColl: IRI)(using conn: TSC): Option[StaticCollection] = for
 		given Envri <- inferCollEnvri(maybeColl)
 		given GlobConn = RdfLens.global(using conn)
 		coll <- metaReader.fetchStaticColl(maybeColl, None).result

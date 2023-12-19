@@ -206,13 +206,11 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			)
 			.map(vf.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
 
-		val provStOpt: Option[IRI] = lblConn
-			.getStatements(None, Some(prodStLink), Some(vocab.lit(stat.toJava)))
-			.toIndexedSeq
-			.collect{
-				case Rdf4jStatement(provSt, _, _) if lblConn.hasStatement(Some(provSt), Some(appStatus), None) => provSt
-			}
-			.headOption
+		val provStOpt: Option[IRI] =
+			getPropValueHolders(prodStLink, vocab.lit(stat.toJava))(using lblConn)
+				.filter: provSt =>
+					lblConn.hasStatement(provSt, appStatus, null)
+				.headOption
 
 		val labelingDate = provStOpt
 			.filter{ provSt => lblConn
@@ -223,7 +221,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			}
 
 		val discontinued: Boolean = provStOpt.fold(true){provSt =>
-			!lblConn.hasStatement(Some(provSt), Some(stationId), None)
+			!lblConn.hasStatement(provSt, stationId, null)
 		}
 
 		labelingDate.sinkOption.map(_.flatten -> discontinued)
@@ -279,13 +277,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	end getStationTimeSerMeta
 
 	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
-		val deploymentVs = getStatements(None, Some(metaVocab.atOrganization), Some(stationUri))
+		val deploymentVs = getPropValueHolders(metaVocab.atOrganization, stationUri)
 			.collect:
-				case Rdf4jStatement(depl, _, _) if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
-					val instrs = getStatements(None, Some(metaVocab.ssn.hasDeployment), Some(depl))
-						.collect:
-							case Rdf4jStatement(instr, _, _) => instr
-						.toList
+				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+					val instrs = getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList
 					val instr = instrs match
 						case Nil => Validated.error(s"No instruments for deployment $depl")
 						case one :: Nil => Validated.ok(one)
@@ -305,7 +300,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 
 	protected def getSpatioTempMeta(
 		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]
-	): (DobjConn, DocConn) ?=> Validated[SpatioTemporalMeta] = (dobjConn, docConn) ?=>
+	)(using dobjConn: DobjConn, docConn: DocConn): Validated[SpatioTemporalMeta] =
 
 		val coverageV: Validated[GeoFeature] =
 			for

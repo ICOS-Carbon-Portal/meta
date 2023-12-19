@@ -1,24 +1,23 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.IRI
-
+import se.lu.nateko.cp.meta.api.RdfLens.CollConn
+import se.lu.nateko.cp.meta.api.RdfLens.DocConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.api.RdfLens.{CollConn, DocConn}
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.net.URI
 
 
 class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
@@ -38,10 +37,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		else Validated.error("collection does not exist")
 
 	def getParentCollections(dobj: IRI)(using CollConn): Validated[Seq[UriResource]] =
-		val allParentColls = getStatements(None, Some(dct.hasPart), Some(dobj))
-			.map(_.getSubject)
-			.collect{case iri: IRI => iri}
-			.toIndexedSeq
+		val allParentColls = getPropValueHolders(dct.hasPart, dobj).toIndexedSeq
 
 		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
@@ -56,7 +52,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
 
 		val membersV = Validated.sequence:
-			getUriValues[CollConn](coll, dct.hasPart).map: item =>
+			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
 				else getPlainStaticObject(item)
 
@@ -80,9 +76,9 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				creator = creator,
 				title = title,
 				description = description,
-				nextVersion = getNextVersionAsUri[CollConn](coll),
-				latestVersion = getLatestVersion[CollConn](coll),
-				previousVersion = getPreviousVersions[CollConn](coll).headOption.map(_.toJava),
+				nextVersion = getNextVersionAsUri(coll)(using collConn),
+				latestVersion = getLatestVersion(coll)(using collConn),
+				previousVersion = getPreviousVersions(coll)(using collConn).headOption.map(_.toJava),
 				doi = doi,
 				documentation = documentation,
 				references = References.empty

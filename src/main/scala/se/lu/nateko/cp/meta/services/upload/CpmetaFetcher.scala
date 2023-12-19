@@ -229,24 +229,22 @@ trait CpmetaReader:
 				yield
 					feature.withOptLabel(labelOpt).withUri(covUri.toJava)
 
-	def getNextVersionAsUri[C <: ItemConn](item: IRI): C ?=> OptionalOneOrSeq[URI] =
+	def getNextVersionAsUri(item: IRI)(using ItemConn): OptionalOneOrSeq[URI] =
 		OptionalOneOrSeq.fromSeq(getNextVersions(item).map(_.toJava))
 
-	private def getNextVersions[C <: ItemConn](item: IRI): C ?=> IndexedSeq[IRI] =
-		getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-		.flatMap:
-			case Rdf4jStatement(next, _, _) =>
+	private def getNextVersions(item: IRI)(using ItemConn): IndexedSeq[IRI] =
+		getPropValueHolders(metaVocab.isNextVersionOf, item)
+			.flatMap: next =>
 				if isPlainCollection(next)
 				then getUriValues(next, metaVocab.dcterms.hasPart)
 				else Seq(next)
-			case _ => Nil //should not happen in practice, but just in case, for completeness
-		.filter(isComplete)
-		.toIndexedSeq
+			.filter(isComplete)
+			.toIndexedSeq
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
 		resourceHasType(item, metaVocab.plainCollectionClass)
 
-	def isComplete(item: IRI): ItemConn ?=> Boolean =
+	def isComplete(item: IRI)(using ItemConn): Boolean =
 		import metaVocab.*
 		val itemTypes = getUriValues(item, RDF.TYPE).toSet
 		itemTypes.contains(collectionClass) || (
@@ -254,11 +252,11 @@ trait CpmetaReader:
 			getUriValues(item, dcterms.hasPart).exists(isComplete)
 		) || (
 			if itemTypes.containsEither(docObjectClass, dataObjectClass)
-			then hasStatement(Some(item), Some(hasSizeInBytes), None)
+			then hasStatement(item, hasSizeInBytes, null)
 			else true //we are probably using a wrong context, so have to assume the item is complete
 		)
 
-	def getLatestVersion[C <: ItemConn](item: IRI): C ?=> OneOrSeq[URI] =
+	def getLatestVersion(item: IRI)(using ItemConn): OneOrSeq[URI] =
 		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
 			val nextVersions = getNextVersions(item).flatMap: next =>
 				if seen.contains(next)
@@ -272,12 +270,12 @@ trait CpmetaReader:
 	def getPreviousVersion[C <: ItemConn](item: IRI): C ?=> OptionalOneOrSeq[IRI] =
 		OptionalOneOrSeq.fromSeq(getPreviousVersions(item))
 
-	def getPreviousVersions[C <: ItemConn](item: IRI): C ?=> IndexedSeq[IRI] =
+	def getPreviousVersions(item: IRI)(using ItemConn): IndexedSeq[IRI] =
 		getUriValues(item, metaVocab.isNextVersionOf) ++
-		getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap:
-			case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
+		getPropValueHolders(metaVocab.dcterms.hasPart, item).flatMap: coll =>
+			if isPlainCollection(coll) then
 				getUriValues(coll, metaVocab.isNextVersionOf)
-			case _ => Nil
+			else Nil
 
 	def getValTypeLookup(datasetSpec: IRI): MetaConn ?=> Validated[VarMetaLookup] =
 		for
@@ -398,8 +396,8 @@ trait CpmetaReader:
 				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
 				ownerOrg <- owner.map(getOrganization).sinkOption
 				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
-				partOf <- getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr))
-					.map(_.getSubject).collect{ case iri: IRI => getInstrumentLite(iri)}.toList.headOption.sinkOption
+				partOf <- getPropValueHolders(metaVocab.hasInstrumentComponent, instr)
+					.map(getInstrumentLite).headOption.sinkOption
 				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
 			yield
 				Instrument(

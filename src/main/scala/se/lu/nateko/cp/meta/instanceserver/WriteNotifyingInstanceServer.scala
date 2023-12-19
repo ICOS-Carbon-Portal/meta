@@ -27,7 +27,7 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 	def readContexts = inner.readContexts
 	def writeContext = inner.writeContext
 	def withContexts(read: Seq[IRI], write: IRI) = inner.withContexts(read, write)
-	def getConnection(): TriplestoreConnection = inner.getConnection()
+	override def getConnection() = inner.getConnection()
 
 	override def shutDown(): Unit = inner.shutDown()
 

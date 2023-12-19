@@ -231,7 +231,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 	private def validateActors(meta: DataObjectDto)(using MetaConn): Try[NotUsed] =
 
-		def isOrg(iri: IRI) = hasStatement(Some(iri), Some(metaVocab.hasName), None)
+		def isOrg(iri: IRI) = hasStatement(iri, metaVocab.hasName, null)
 		def isPerson(iri: IRI) = resourceHasType(iri, metaVocab.personClass)
 		def isActor(iri: IRI) = isOrg(iri) || isPerson(iri)
 

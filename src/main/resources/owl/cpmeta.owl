@@ -1569,8 +1569,14 @@
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip">
         <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
-        <rdfs:domain rdf:resource="https://meta.fieldsites.se/ontologies/sites/Station"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ES"/>
+                    <rdf:Description rdf:about="https://meta.fieldsites.se/ontologies/sites/Station"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
         <rdfs:comment>measured in mm</rdfs:comment>
         <rdfs:label>mean annual precipitation</rdfs:label>

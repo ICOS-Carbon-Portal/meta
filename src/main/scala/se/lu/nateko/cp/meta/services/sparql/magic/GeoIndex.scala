@@ -1,23 +1,25 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.roaringbitmap.RoaringBitmap
+import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.algorithm.ConvexHull
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import scala.collection.mutable.ArrayBuffer
-import se.lu.nateko.cp.meta.core.data.Position
-import scala.util.Success
-import scala.util.Failure
 import org.locationtech.jts.geom.Point
-import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Polygon
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.GeoJson
+import se.lu.nateko.cp.meta.core.data.LatLonBox
+import se.lu.nateko.cp.meta.core.data.Position
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.IteratorHasAsJava
+import scala.util.Failure
+import scala.util.Success
 
 
 case class GeoEvent(
@@ -38,29 +40,29 @@ trait Cluster:
 	def area: Geometry
 	def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap
 
-case class CompositeCluster(box: Geometry, children: IndexedSeq[Cluster]) extends Cluster: // this should be cluster, using SimpleCluster for now to debug
-	override val area: Geometry = calculateBoundingBox(children.map(_.area))
+trait SimpleCluster extends Cluster:
+	protected def objectIds = new MutableRoaringBitmap
+	def filter: ImmutableRoaringBitmap = objectIds
+	def addObject(objIdx: Int, geometry: Geometry): SimpleCluster
+	def removeObject(objIdx: Int, geometry: Geometry): SimpleCluster
+	//def addObjectId(id: Int): Unit = _objectIds.add(id)
 
-	def addChild(c: Cluster): CompositeCluster = CompositeCluster(box, children :+ c)
+
+case class CompositeCluster(area: Geometry, children: IndexedSeq[Cluster]) extends Cluster:
+
+	//TODO Consider that the cluster may need to be added to one of the children, not on the top level as a direct child
+	def addChild(c: Cluster): CompositeCluster = CompositeCluster(area, children :+ c)
 
 	override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
+
 		val jtsBbox = getBoundingBoxAsJtsGeometry(bbox)
-		if jtsBbox.contains(box) then
-			val childrenFilter = children.map(_.getFilter(bbox, otherFilter)).fold(new MutableRoaringBitmap)((b1, b2)=>
-				ImmutableRoaringBitmap.or(b1, b2)
-			) // return all filters
-			otherFilter.fold(childrenFilter)(other => ImmutableRoaringBitmap.and(other, childrenFilter))
-		else if jtsBbox.intersects(area) then
-			var matchingObjects = new MutableRoaringBitmap
-			val matchingIds = children.filter(_.area.intersects(jtsBbox)).map(_.getFilter(bbox, otherFilter))
 
-			matchingIds.foreach(ids =>
-				matchingObjects = ImmutableRoaringBitmap.or(matchingObjects, ids)
-			)
-
-			otherFilter.fold(matchingObjects)(other => ImmutableRoaringBitmap.and(other, matchingObjects))
+		if jtsBbox.intersects(area) then
+			ImmutableRoaringBitmap.or(children.map(_.getFilter(bbox, otherFilter)).iterator.asJava)
 		else
 			new MutableRoaringBitmap
+
+end CompositeCluster
 
 def getBoundingBoxAsJtsGeometry(bbox: LatLonBox): Geometry =
 	val point1 = new Coordinate(bbox.max.lon, bbox.max.lat)
@@ -73,81 +75,79 @@ def getBoundingBoxAsJtsGeometry(bbox: LatLonBox): Geometry =
 
 	f.toGeometry(boundingBox)
 
-trait SimpleCluster(area: Geometry) extends Cluster:
-	protected val _objectIds = new MutableRoaringBitmap
-	def objectIds: ImmutableRoaringBitmap = _objectIds
-	def addObject(objIdx: Int, geometry: Geometry): SimpleCluster
-	def removeObject(objIdx: Int, geometry: Geometry): SimpleCluster
-	//def addObjectId(id: Int): Unit = _objectIds.add(id)
 
-case class DenseCluster(area: Geometry) extends SimpleCluster(area):
+class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
 
+	//TODO Use DobjCov class instead of the pair of arguments
 	override def addObject(objIdx: Int, geometry: Geometry): SimpleCluster =
 		if geometry == area then
-			_objectIds.add(objIdx)
+			objectIds.add(objIdx)
 			this
 		else
 			val incomingDataCov = DataObjCov(objIdx, geometry)
 			val currentDataCovs = new ArrayBuffer[DataObjCov]()
 
-			// would it be better to keep a list?
-			val it = _objectIds.iterator()
-			while it.hasNext() do
-				val objId = it.next()
+			objectIds.forEach: objId =>
 				currentDataCovs.addOne(DataObjCov(objId, area))
 
-			SparseCluster(geometry, currentDataCovs.toSeq ++ Seq(incomingDataCov))
+			SparseCluster(geometry, currentDataCovs.toSeq ++ Seq(incomingDataCov), objectIds)
 
 	override def removeObject(objIdx: Int, geometry: Geometry): SimpleCluster =
-		_objectIds.remove(objIdx)
+		objectIds.remove(objIdx)
 		this
 
 	override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 		val bboxGeometry = getBoundingBoxAsJtsGeometry(bbox)
 
-		if bboxGeometry.intersects(area) then
-			otherFilter.fold(_objectIds)(other => ImmutableRoaringBitmap.and(other, _objectIds))
+		if bboxGeometry.intersects(area) then filter
 		else new MutableRoaringBitmap
 
-case class SparseCluster(area: Geometry, children: Seq[DataObjCov]) extends SimpleCluster(area):
-
-	children.foreach(child => _objectIds.add(child.idx))
+class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: MutableRoaringBitmap) extends SimpleCluster:
 
 	override def addObject(objIdx: Int, geometry: Geometry): SimpleCluster =
+		//TODO Consider which data structure to use for fast append/prepend
 		val newChildren = children :+ DataObjCov(objIdx, geometry)
-		_objectIds.add(objIdx)
+		objectIds.add(objIdx)
 
 		if (area.contains(geometry)) then
-			SparseCluster(area, newChildren)
+			SparseCluster(area, newChildren, objectIds)
 		else
-			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren)
+			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
 
 	override def removeObject(objIdx: Int, geometry: Geometry): SimpleCluster =
+		// TODO Review this method
 		val newChildren = children.filter(_.idx != objIdx)
 		val newGeometries = newChildren.map(_.geo)
 
-		if (newGeometries.forall(_ == newGeometries.head)) then
-			DenseCluster(newGeometries.head)
+		//TODO Will crash for empty newGeometries
+		if newGeometries.forall(_ == newGeometries.head) then
+			DenseCluster(newGeometries.head, objectIds)
 		else
-			_objectIds.remove(objIdx)
-			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren)
+			objectIds.remove(objIdx)
+			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
 
 	override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 		val jtsBbox = getBoundingBoxAsJtsGeometry(bbox)
 
 		if jtsBbox.contains(area) then
-			otherFilter.fold(_objectIds)(other => ImmutableRoaringBitmap.and(other, _objectIds))
+			objectIds
 		else if jtsBbox.intersects(area) then
-			val matchingObjects = new MutableRoaringBitmap
-			val matchingIds = children.filter(_.geo.intersects(jtsBbox)).map(_.idx)
 
-			matchingIds.foreach(matchingObjects.add)
-			otherFilter.fold(matchingObjects)(other => ImmutableRoaringBitmap.and(other, matchingObjects))
+			val otherTest: Int => Boolean = otherFilter.fold[Int => Boolean](_ => true)(_.contains)
+
+			val matchingObjects = new MutableRoaringBitmap
+
+			children.foreach: dobjCov =>
+				if otherTest(dobjCov.idx) && jtsBbox.intersects(dobjCov.geo)
+				then matchingObjects.add(dobjCov.idx)
+
+			matchingObjects
 		else
 			new MutableRoaringBitmap
 
 
 def createEmptyTopClusters(f: GeometryFactory): IndexedSeq[CompositeCluster] =
+	//TODO Create child subclusters for the European cluster
 	val envelopes = IndexedSeq(
 		new Envelope(-180, -60, 0, 90),
 		new Envelope(-60, 60, 0, 90), // Europe
@@ -159,32 +159,20 @@ def createEmptyTopClusters(f: GeometryFactory): IndexedSeq[CompositeCluster] =
 
 	envelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty))
 
+//TODO Make this class to a module with internal classes, to share the GeometryFactory
 class GeoIndex:
 	val f = GeometryFactory()
-	var allClusters: Map[String, SimpleCluster] = Map.empty
-	var topClusters: IndexedSeq[CompositeCluster] = createEmptyTopClusters(f)
-
-	// start with splitting the world in boxes
-	// fill boxes with clusters
-	def createNewCluster(event: GeoEvent): SimpleCluster =
-		DenseCluster(event.geometry).addObject(event.objIdx, event.geometry)
+	private val allClusters = mutable.Map.empty[String, SimpleCluster]
+	private var topClusters: IndexedSeq[CompositeCluster] = createEmptyTopClusters(f)
 
 	def put(event: GeoEvent): Unit =
-		val existingCluster = allClusters.get(event.clusterId)
-		val updatedCluster = existingCluster.map(_.addObject(event.objIdx, event.geometry)).getOrElse(createNewCluster(event))
-		allClusters = allClusters.updated(event.clusterId, updatedCluster)
+		val updatedCluster = allClusters
+			.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
+			.addObject(event.objIdx, event.geometry)
+		allClusters.update(event.clusterId, updatedCluster)
 
-		val found = topClusters.zipWithIndex.collect{
-			case tc if tc._1.box.intersects(updatedCluster.area) => tc
-		}
-
-		found.foreach((cluster, index) => 
-			topClusters = topClusters.updated(index, topClusters(index).addChild(updatedCluster))
-		)
+	def placeCluster(cluster: SimpleCluster): Unit =
+		topClusters = topClusters.map(_.addChild(cluster))
 
 	def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
-		val jtsBbox = getBoundingBoxAsJtsGeometry(bbox)
-		val intersectingClusters = topClusters.filter(_.box.intersects(jtsBbox))
-
-		intersectingClusters.map(c => c.getFilter(bbox, otherFilter)).fold(new MutableRoaringBitmap)((b1, b2) =>
-			ImmutableRoaringBitmap.or(b1, b2))
+		ImmutableRoaringBitmap.or(topClusters.map(_.getFilter(bbox, otherFilter)).iterator.asJava)

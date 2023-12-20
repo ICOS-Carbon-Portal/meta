@@ -5,6 +5,7 @@ import com.opencsv.CSVReaderBuilder
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.CoordinateSequence
 import org.locationtech.jts.geom.Envelope
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.LinearRing
@@ -24,7 +25,6 @@ import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
-import org.locationtech.jts.geom.Geometry
 
 class GeoIndexTest extends AnyFunSpec{
 
@@ -43,7 +43,6 @@ class GeoIndexTest extends AnyFunSpec{
 		val index = GeoIndex()
 		val events = parseCsvLines()
 		events.foreach(index.put)
-		val gf = GeometryFactory()
 
 		it("find matching indices"):
 			val europe = LatLonBox(Position.ofLatLon(33, -15), Position.ofLatLon(73, 35), None, None)
@@ -56,6 +55,9 @@ class GeoIndexTest extends AnyFunSpec{
 			assert(returned.toArray() === Array(13))
 			//println("-------------------- returned -----------------")
 			//println(returned.toString())
+
+	describe("Clustering"):
+		val gf = GeometryFactory()
 
 		it("add same geometries to dense cluster"):
 			val coordinate = new Coordinate(0, 0)
@@ -92,7 +94,7 @@ class GeoIndexTest extends AnyFunSpec{
 class GeoRow(header: Map[String, Int], row: Array[String]) extends Dynamic:
 	private def cell(name: String): String = row(header(name))
 
-	def selectDynamic(name: String) = cell(name)
+	def selectDynamic(name: String): String = cell(name)
 
 class GeoEventParser(headerLine: Array[String]):
 	private val header: Map[String, Int] = headerLine.zipWithIndex.toMap
@@ -102,9 +104,8 @@ class GeoEventParser(headerLine: Array[String]):
 	def hasOwnMinMax(lonMax: String, lonMin: String, latMax: String, latMin: String): Boolean =
 		Seq(lonMax, lonMin, latMax, latMin).forall(_.length > 0)
 
-	def parseRow(line: Array[String], idx: Int): IndexedSeq[GeoEvent] =
+	def parseRow(line: Array[String], idx: Int): Seq[GeoEvent] =
 		val row = GeoRow(header, line)
-		val events = Buffer.empty[GeoEvent]
 
 		val stationOpt = if row.station.length > 0 then Some(row.station) else None
 
@@ -114,34 +115,34 @@ class GeoEventParser(headerLine: Array[String]):
 			val ownGeo = reader.read(row.ownGeoJson)
 
 			ownGeo match
-				case coll: GeometryCollection => 
-					val nbrOfGeometries = coll.getNumGeometries()
-					for (i <- 0 to nbrOfGeometries - 1)
-						val pt = coll.getGeometryN(i)
-						events.append(GeoEvent(idx, true, pt, pt.toString()))
-				case _ => events.append(GeoEvent(idx, true, ownGeo, ownGeo.toString()))
+				case coll: GeometryCollection =>
+					(0 until coll.getNumGeometries).map: gIdx =>
+						val pt = coll.getGeometryN(gIdx)
+						GeoEvent(idx, true, pt, pt.toString())
+				case _ =>
+					Seq(GeoEvent(idx, true, ownGeo, ownGeo.toString()))
 
 		else if row.samplingLon.length > 0 && row.samplingLat.length > 0 then
 			val coordinate = new Coordinate(row.samplingLon.toDouble, row.samplingLat.toDouble)
 			val samplingPoint = f.createPoint(coordinate)
-			events.append(GeoEvent(idx, true, samplingPoint, samplingPoint.toString()))
+			Seq(GeoEvent(idx, true, samplingPoint, samplingPoint.toString()))
 
 		else if row.siteGeoJson.length > 0 then
 			val siteGeo = reader.read(row.siteGeoJson)
-			events.append(GeoEvent(idx, true, siteGeo, getClusterId(siteGeo.toString())))
+			Seq(GeoEvent(idx, true, siteGeo, getClusterId(siteGeo.toString())))
 
 		else if hasOwnMinMax(row.lonMax, row.lonMin, row.latMax, row.latMin) then
-			val bbox = getBoundingBox(row.lonMax, row.lonMin, row.latMax, row.latMin, f)
-			events.append(GeoEvent(idx, true, bbox, bbox.toString()))
+			val bbox = getBoundingBox(row.lonMax, row.lonMin, row.latMax, row.latMin)
+			Seq(GeoEvent(idx, true, bbox, bbox.toString()))
 
 		else if stationOpt.isDefined && row.stationLon.length > 0 && row.stationLat.length > 0 then
 			val coordinate = new Coordinate(row.stationLon.toDouble, row.stationLat.toDouble)
 			val stationPoint = f.createPoint(coordinate)
-			events.append(GeoEvent(idx, true, stationPoint, stationPoint.toString()))
-		events.toIndexedSeq
+			Seq(GeoEvent(idx, true, stationPoint, stationPoint.toString()))
+		else Seq.empty
 	end parseRow
 
-	def getBoundingBox(lonMax: String, lonMin: String, latMax: String, latMin: String, f: GeometryFactory): Geometry =
+	def getBoundingBox(lonMax: String, lonMin: String, latMax: String, latMin: String): Geometry =
 		val lowerLeftPoint = new Coordinate(lonMin.toDouble, latMin.toDouble)
 		val upperRightPoint = new Coordinate(lonMax.toDouble, latMax.toDouble)
 

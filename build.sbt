@@ -131,8 +131,8 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
 			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test",
-			"org.locationtech.jts"   % "jts-core"							% "1.19.0",
-			"org.locationtech.jts.io" % "jts-io-common" 					% "1.19.0"
+			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
+			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0"
 		),
 
 		cpDeployTarget := "cpmeta",

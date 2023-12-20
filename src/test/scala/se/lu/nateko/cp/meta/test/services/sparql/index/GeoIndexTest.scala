@@ -24,6 +24,7 @@ import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
+import org.locationtech.jts.geom.Geometry
 
 class GeoIndexTest extends AnyFunSpec{
 
@@ -68,7 +69,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 			dc.addObject(1, pt)
 			val filterSecond = dc.getFilter(LatLonBox(Position.ofLatLon(-5, -5), Position.ofLatLon(5, 5), None, None), None)
-			
+
 			assert(filterSecond.getCardinality == 2)
 
 		it("creates SparseCluster when DenseCluster receives new geometry"):
@@ -116,7 +117,7 @@ class GeoEventParser(headerLine: Array[String]):
 				case coll: GeometryCollection => 
 					val nbrOfGeometries = coll.getNumGeometries()
 					for (i <- 0 to nbrOfGeometries - 1)
-						val pt = coll.getGeometryN(i) // more generic than pt?
+						val pt = coll.getGeometryN(i)
 						events.append(GeoEvent(idx, true, pt, pt.toString()))
 				case _ => events.append(GeoEvent(idx, true, ownGeo, ownGeo.toString()))
 
@@ -140,19 +141,8 @@ class GeoEventParser(headerLine: Array[String]):
 		events.toIndexedSeq
 	end parseRow
 
-	def getBoundingBox(lonMax: String, lonMin: String, latMax: String, latMin: String, f: GeometryFactory): Polygon =
+	def getBoundingBox(lonMax: String, lonMin: String, latMax: String, latMin: String, f: GeometryFactory): Geometry =
 		val lowerLeftPoint = new Coordinate(lonMin.toDouble, latMin.toDouble)
 		val upperRightPoint = new Coordinate(lonMax.toDouble, latMax.toDouble)
 
-		val boundingBox = new Envelope(lowerLeftPoint, upperRightPoint)
-
-		val shell = Array(
-			new Coordinate(boundingBox.getMinX, boundingBox.getMinY),
-			new Coordinate(boundingBox.getMaxX, boundingBox.getMinY),
-			new Coordinate(boundingBox.getMaxX, boundingBox.getMaxY),
-			new Coordinate(boundingBox.getMinX, boundingBox.getMaxY),
-			new Coordinate(boundingBox.getMinX, boundingBox.getMinY)
-		)
-
-		val linearRing = f.createLinearRing(shell)
-		f.createPolygon(linearRing, null)
+		f.toGeometry(new Envelope(lowerLeftPoint, upperRightPoint))

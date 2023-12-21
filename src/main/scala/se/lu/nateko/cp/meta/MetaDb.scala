@@ -43,16 +43,17 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.DoiService
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.io.Closeable
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import java.net.URI
 
 
 class MetaDb (
@@ -62,28 +63,25 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: Repository,
+	val magicRepo: Repository,
 	val store: CpNativeStore,
 	val config: CpmetaConfig
-)(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable{
+)(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable:
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
-	def metaReader = store.getCitationProvider.metaReader
+	def metaReader: StaticObjectReader = store.getCitationProvider.metaReader
+	def vanillaRepo: Repository = store.getCitationProvider.repo
+	def vanillaGlob: InstanceServer = store.getCitationProvider.server
 
-	val uriSerializer: UriSerializer = new Rdf4jUriSerializer(repo, vocab, metaVocab, lenses, store.getCitationClient,config)
+	val uriSerializer: UriSerializer =
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, store.getCitationClient, config)
 
-	lazy val vanillaGlob: InstanceServer =
-		val vanillaSail = store.getBaseSail()
-		val vanillaRepo = new SailRepository(vanillaSail)
-		new Rdf4jInstanceServer(vanillaRepo)
-
-	override def close(): Unit = {
+	override def close(): Unit =
 		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
-		repo.shutDown()
-	}
+		magicRepo.shutDown()
 
-}
+end MetaDb
 
 object MetaDb:
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
@@ -160,6 +158,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val repo = new SailRepository(native)
 		repo.init()
+		val vanillaRepo = native.getCitationProvider.repo
 
 		val config: CpmetaConfig = if(native.isFreshInit)
 				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
@@ -172,7 +171,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
 			val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config)(using ctxt).andThen{
+			makeInstanceServers(vanillaRepo, Ingestion.allProviders, config)(using ctxt).andThen{
 				case _ =>
 					ctxt.shutdown()
 					log.info("instance servers created")
@@ -187,7 +186,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(repo, native.getCitationProvider, instanceServers, config)
+			val uploadService = makeUploadService(vanillaRepo, native.getCitationProvider, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 

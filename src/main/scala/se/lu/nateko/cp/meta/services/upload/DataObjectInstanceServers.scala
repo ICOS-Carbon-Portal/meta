@@ -15,7 +15,6 @@ import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Station
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer.AtMostOne
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
@@ -32,7 +31,7 @@ import scala.util.Try
 
 
 class DataObjectInstanceServers(
-	repo: Repository,
+	val vanillaGlobal: InstanceServer,
 	citationProvider: CitationProvider,
 	metaServers: Map[Envri, InstanceServer],
 	collectionServers: Map[Envri, InstanceServer],
@@ -42,14 +41,13 @@ class DataObjectInstanceServers(
 
 	export citationProvider.{vocab, metaVocab, metaReader, lenses}
 	import RdfLens.GlobConn
-	val global: InstanceServer = new Rdf4jInstanceServer(repo)
 
 	def getInstServerForFormat(format: IRI)(using envri: Envri): Validated[InstanceServer] =
 		new Validated(perFormat.get(envri).flatMap(_.get(format))).require:
 			s"ENVRI $envri unknown or has no instance server configured for data object format '$format'"
 
 	def getInstServerForStaticObj(objHash: Sha256Sum)(using Envri): Validated[InstanceServer] =
-		global.access: conn ?=>
+		vanillaGlobal.access: conn ?=>
 			given GlobConn = RdfLens.global(using conn)
 			val objIri = vocab.getStaticObject(objHash)
 			if metaReader.docObjExists(objIri) then docServer

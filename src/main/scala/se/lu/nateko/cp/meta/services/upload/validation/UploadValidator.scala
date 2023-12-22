@@ -60,7 +60,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 	private val scoped = ScopedValidator(vocab, metaVocab)
 
 	def validateObject(meta: ObjectUploadDto, uploader: UserId)(using Envri): Try[ObjectUploadDto] =
-		servers.global.access:
+		servers.vanillaGlobal.access:
 			for
 				given DocConn <- lenses.documentLens.toTry(new MetadataException(_))
 				dto <- meta match

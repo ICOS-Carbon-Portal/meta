@@ -22,7 +22,6 @@ import java.time.LocalDate
 import scala.util.Try
 
 trait InstanceServer extends AutoCloseable:
-	import InstanceServer.*
 
 	/**
 	 * Makes a new IRI for the new instance, but does not add any triples to the repository.
@@ -36,14 +35,12 @@ trait InstanceServer extends AutoCloseable:
 	def getConnection(): TriplestoreConnection & SparqlRunner
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement]
-	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit]
 	def shutDown(): Unit
 
 	final def access[T](read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
 		val conn = getConnection()
 		try read(using conn) finally conn.close()
-
 
 	final def filterNotContainedStatements(statements: IterableOnce[Statement]): IndexedSeq[Statement] = access: conn ?=>
 		statements.iterator.filterNot(conn.hasStatement).toIndexedSeq
@@ -55,26 +52,11 @@ trait InstanceServer extends AutoCloseable:
 
 	final override def close(): Unit = shutDown()
 
-	final def getInstances(classUri: IRI): IndexedSeq[IRI] =
-		getStatements(None, Some(RDF.TYPE), Some(classUri))
-			.map(_.getSubject)
-			.collect{case uri: IRI => uri}
-			.toIndexedSeq
-
-	final def getStatements(instUri: IRI): IndexedSeq[Statement] = getStatements(Some(instUri), None, None).toIndexedSeq
-
-	final def getValues(instUri: IRI, propUri: IRI): IndexedSeq[Value] =
-		getStatements(Some(instUri), Some(propUri), None)
-			.map(_.getObject)
-			.toIndexedSeq
-
 	final def add(statements: Statement*): Try[Unit] = addAll(statements)
 	final def remove(statements: Statement*): Try[Unit] = removeAll(statements)
 
 	final def addInstance(instUri: IRI, classUri: IRI): Try[Unit] =
 		add(factory.createStatement(instUri, RDF.TYPE, classUri))
-
-	final def removeInstance(instUri: IRI): Unit = removeAll(getStatements(instUri))
 
 	final def addPropertyValue(instUri: IRI, propUri: IRI, value: Value): Try[Unit] =
 		add(factory.createStatement(instUri, propUri, value))
@@ -89,46 +71,7 @@ trait InstanceServer extends AutoCloseable:
 		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))()
 	}
 
-	final def getUriValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[IRI] = {
-		val values = getValues(subj, pred).collect{case uri: IRI => uri}.distinct
-		assertCardinality(values.size, exp, s"IRI value(s) of $pred for $subj")
-		values
-	}
-
-	final def getTypes(res: IRI): IndexedSeq[IRI] = getValues(res, RDF.TYPE).collect{
-		case classUri: IRI => classUri
-	}
-
-	final def getLiteralValues(subj: IRI, pred: IRI, dType: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] = {
-		val values = getValues(subj, pred).collect{
-			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
-		}.distinct
-		assertCardinality(values.size, exp, s"${dType.getLocalName} value(s) of $pred for $subj")
-		values
-	}
-
-	final def getStringValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[String] =
-		getLiteralValues(subj, pred, XSD.STRING, exp)
-
-	final def getIntValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[Int] =
-		getLiteralValues(subj, pred, XSD.INTEGER, exp).map(_.toInt)
-
-	final def getUriLiteralValues(subj: IRI, pred: IRI, exp: CardinalityExpectation = Default): IndexedSeq[JavaUri] =
-		getLiteralValues(subj, pred, XSD.ANYURI, exp).map(new JavaUri(_))
-
 end InstanceServer
-
-object InstanceServer:
-
-	export CardinalityExpectation.{AtMostOne, AtLeastOne, ExactlyOne, Default}
-
-	private def assertCardinality(actual: Int, expectation: CardinalityExpectation, errorTip: => String): Unit =
-		expectation match
-			case Default => ()
-			case AtMostOne => assert(actual <= 1, s"Expected at most one $errorTip, but got $actual")
-			case AtLeastOne => assert(actual >= 1, s"Expected at least one $errorTip, but got $actual")
-			case ExactlyOne => assert(actual == 1, s"Expected exactly one $errorTip, but got $actual")
-
 
 trait TriplestoreConnection extends AutoCloseable:
 	def primaryContext: IRI
@@ -153,9 +96,8 @@ trait TriplestoreConnection extends AutoCloseable:
 
 
 object TriplestoreConnection:
+	import Validated.CardinalityExpectation.{AtLeastOne, AtMostOne, ExactlyOne}
 	type TSC = TriplestoreConnection
-
-	import InstanceServer.*
 
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using conn: TSC): CloseableIterator[Statement] =
 		conn.getStatements(subject, predicate, obj)

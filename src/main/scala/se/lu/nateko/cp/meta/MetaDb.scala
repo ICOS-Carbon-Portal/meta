@@ -186,13 +186,14 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(vanillaRepo, native.getCitationProvider, instanceServers, config)
+			val uploadService = makeUploadService(native.getCitationProvider, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
-				new StationLabelingService(instanceServers, onto, fileService, conf, log)
+				val metaVocab = native.getCitationProvider.metaVocab
+				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, log)
 			}
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
@@ -202,14 +203,14 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 	}
 
 	private def makeUploadService(
-		repo: Repository,
 		citationProvider: CitationProvider,
 		instanceServers: Map[String, InstanceServer],
 		config: CpmetaConfig
 	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
-		given factory: ValueFactory = repo.getValueFactory
+		val vanillaGlob: InstanceServer = citationProvider.server
+		given factory: ValueFactory = vanillaGlob.factory
 		given EnvriConfigs = config.core.envriConfigs
 
 		val perFormatServers: Map[Envri, Map[IRI, InstanceServer]] = config.instanceServers.forDataObjects.map{
@@ -224,9 +225,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val uploadConf = config.dataUploadService
 
-		val sparqlRunner = new Rdf4jSparqlRunner(repo)
+		val vanillaRepo = citationProvider.repo
+		val sparqlRunner = new Rdf4jSparqlRunner(vanillaRepo)
 
-		val dataObjServers = new DataObjectInstanceServers(repo, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

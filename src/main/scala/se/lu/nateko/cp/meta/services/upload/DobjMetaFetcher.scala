@@ -15,7 +15,6 @@ import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.parseJsonStringArray
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -24,7 +23,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 
 trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+	import TriplestoreConnection.*
 
 	def getSpecification(spec: IRI): DocConn ?=> Validated[DataObjectSpec] =
 		for

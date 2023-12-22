@@ -25,7 +25,8 @@ object Manual {
 	def fromInstFileToDb(ncycles: Int): Unit = {
 		val server = TestConfig.instServer
 		val log = getLog
-		val stats = server.getStatements(None, None, None).toIndexedSeq
+		val stats = server.access: conn ?=>
+			conn.getStatements(null, null, null).toIndexedSeq
 		val assertions = stats.map(RdfUpdate(_, true))
 		val retractions = stats.map(RdfUpdate(_, false))
 

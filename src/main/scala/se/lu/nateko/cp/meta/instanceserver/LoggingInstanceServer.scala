@@ -17,9 +17,6 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]) =
 		inner.getStatements(subject, predicate, obj)
 
-	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
-		inner.hasStatement(subject, predicate, obj)
-
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
 		inner.applyAll(updates){
 			log.appendAll(updates)

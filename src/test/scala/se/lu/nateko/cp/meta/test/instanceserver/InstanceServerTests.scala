@@ -39,7 +39,10 @@ class InstanceServerTests extends AnyFunSpec{
 			loggingServer.addInstance(person2, person)
 			loggingServer.addPropertyValue(person1, hasName, factory.createLiteral("John"))
 			loggingServer.addPropertyValue(person2, hasName, factory.createLiteral("Jane"))
-			loggingServer.removeInstance(person1)
+
+			loggingServer.removeAll:
+				loggingServer.access: conn ?=>
+					conn.getStatements(person1, null, null).toIndexedSeq
 
 			it("logs all the RDF updates properly"){
 				val updates = log.updates.toSeq

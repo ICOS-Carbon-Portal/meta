@@ -17,6 +17,7 @@ import se.lu.nateko.cp.doi.meta.Name
 import se.lu.nateko.cp.doi.meta.NameIdentifier
 import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
 import se.lu.nateko.cp.doi.meta.Title
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -132,7 +133,7 @@ class CitationMaker(
 			ownLicOpt <- getOptLic(dobj, metaVocab.dcterms.license)
 			lic <- ownLicOpt.getOrElseV:
 				for
-					specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
+					specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
 					specLicOpt <- getImpliedLic(specIri)
 					lic <- specLicOpt.getOrElseV:
 						for

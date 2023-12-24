@@ -94,7 +94,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		for
 			org <- getOrganization(stat)
 			id <- getSingleString(stat, metaVocab.hasStationId)
-			location <- getStationLocation(stat, Some(org.name))
+			locationOpt <- getStationLocation(stat, Some(org.name)).optional
 			coverageUri <- getOptionalUri(stat, metaVocab.hasSpatialCoverage)
 			coverage <- coverageUri.map(getCoverage[MetaConn]).sinkOption
 			responsibleOrganizationUri <- getOptionalUri(stat, metaVocab.hasResponsibleOrganization)
@@ -106,7 +106,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			Station(
 				org = org,
 				id = id,
-				location = Some(location),
+				location = locationOpt,
 				coverage = coverage,
 				responsibleOrganization = responsibleOrganization,
 				specificInfo = specificInfo,

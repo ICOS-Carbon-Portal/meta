@@ -45,21 +45,18 @@ class RdfReader(metaReader: DobjMetaReader, glob: InstanceServer, lenses: Metafl
 		fetcher.getCurrentState[T]
 
 	def getTcUsages(iri: IRI): IndexedSeq[Statement] = glob.access:
-		given MetaLens = lenses.envriLens
-		getStatements(null, null, iri).map(stripContext).toIndexedSeq
+		getStatements(null, null, iri)(using lenses.envriLens).map(stripContext).toIndexedSeq
 
 	def getTcStatements(iri: IRI): IndexedSeq[Statement] = glob.access:
-		given MetaLens = lenses.envriLens
-		getStatements(iri).map(stripContext).toIndexedSeq
+		getStatements(iri)(using lenses.envriLens).map(stripContext).toIndexedSeq
 
-	def getCpStatements(iri: IRI): Iterator[Statement] = glob.access:
-		given CpLens = lenses.cpLens
-		getStatements(iri, null, null).map(stripContext)
+	def getCpStatements(iri: IRI): IndexedSeq[Statement] = glob.access:
+		getStatements(iri, null, null)(using lenses.cpLens).map(stripContext).toIndexedSeq
 
 	def keepMeaningful(updates: Seq[RdfUpdate]): IndexedSeq[RdfUpdate] = glob.access: glConn ?=>
-		given conn: MetaConn = lenses.envriLens(using glConn)
+		val conn: MetaConn = lenses.envriLens(using glConn)
 		val (adds, dels) = updates.partition(_.isAssertion)
-		val meaningfulAdds = adds.filter(u => conn.hasStatement(u.statement))
+		val meaningfulAdds = adds.filterNot(u => conn.hasStatement(u.statement))
 		val primConn = conn.primaryContextView
 		val meaningfulDels = dels.filter(dupd => primConn.hasStatement(dupd.statement))
 		(meaningfulDels ++ meaningfulAdds).toIndexedSeq

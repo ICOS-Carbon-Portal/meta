@@ -53,7 +53,7 @@ object RdfLens:
 	opaque type DobjConn >: GlobConn <: MetaConn = TriplestoreConnection
 	opaque type DocConn >: GlobConn <: MetaConn = TriplestoreConnection
 	opaque type CollConn >: GlobConn <: MetaConn = TriplestoreConnection
-	opaque type EnvriMetaConn >: GlobConn <: MetaConn = TriplestoreConnection
+	//opaque type EnvriMetaConn >: GlobConn <: MetaConn = TriplestoreConnection
 	opaque type CpMetaConn >: GlobConn <: MetaConn = TriplestoreConnection
 
 	type ItemConn = DobjConn | DocConn | CollConn
@@ -63,7 +63,7 @@ object RdfLens:
 	type DocLens = RdfLens[DocConn]
 	type DobjLens = RdfLens[DobjConn]
 	type GlobLens = RdfLens[GlobConn]
-	type EnvriLens = RdfLens[EnvriMetaConn]
+	//type EnvriLens = RdfLens[EnvriMetaConn]
 	type CpLens = RdfLens[CpMetaConn]
 
 	def metaLens(primaryCtxt: URI, readCtxts: Seq[URI]): MetaLens = mkLens[MetaConn](primaryCtxt, readCtxts, identity)

@@ -24,7 +24,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	given EnvriConfigs = Map(
-		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
+		Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/"), null)
 	)
 
 	type A = ATC.type
@@ -38,7 +38,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		tcId = aId("43"),
 		core = Station(
 			org = Organization(
-				self = UriResource(new URI("http://test.icos.eu/resources/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
+				self = UriResource(new URI("http://test.icos.eu/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
 				name = "Airplane 1",
 				email = None,
 				website = None,
@@ -69,10 +69,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val state = init(Nil, _ => Nil)
 
 		When("an ATC-state snapshot with single station is inserted")
-
-		val initUpdates = state.calc.calcDiff(atcInitSnap(jane)).result.get.toIndexedSeq
+		val diffV = state.calc.calcDiff(atcInitSnap(jane))
+		val initUpdates = diffV.result.get.toIndexedSeq
 
 		it("Then it results in expected sequence of RDF updates"){
+			assert(diffV.errors.isEmpty)
 			assert(initUpdates.forall(_.isAssertion))
 			assert(initUpdates.size >= 13) //the number may change if metadata model changes
 		}
@@ -82,7 +83,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		And("reading current TC state back produces expected value")
 
 		it("(has the expected PI, the station and the role)"){
-			val s = state.reader.getCurrentState[A].result.get
+			val sV = state.reader.getCurrentState[A]
+			assert(sV.errors.isEmpty)
+			val s = sV.result.get
 			assert(s.stations.size === 1)
 			assert(s.stations.head === airCpStation)
 			assert(s.instruments.isEmpty)
@@ -212,9 +215,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val initSnap = atcInitSnap(jane)
 		val state = init(initSnap :: Nil, _.getStatements(jane))
 		When("a no-change metadata update comes")
-		val initUpdates = state.calc.calcDiff(initSnap).result.get
+		val diffV = state.calc.calcDiff(initSnap)
+		val initUpdates = diffV.result.get
 		state.tcServer.applyAll(initUpdates)()
 		it("erases all the duplicate statements about the researcher from the TC/ICOS RDF graph"):
+			assert(diffV.errors.isEmpty)
 			assert(initUpdates.length === 5)
 			assert(initUpdates.forall(_.isAssertion == false))
 
@@ -245,7 +250,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val tcServer = new Rdf4jInstanceServer(repo, Seq(tcGraphIri, cpGraphIri), tcGraphIri)
 		val cpServer = new Rdf4jInstanceServer(repo, cpGraphIri)
 
-		cpServer.addAll(cpOwn(rdfMaker))
+		val cpOwnStats = cpOwn(rdfMaker)
+		cpServer.addAll(cpOwnStats)
 
 		tcServer.addAll(initTcState.flatMap(getStatements(rdfMaker, _)))
 		val metaReader = new DobjMetaReader(vocab):

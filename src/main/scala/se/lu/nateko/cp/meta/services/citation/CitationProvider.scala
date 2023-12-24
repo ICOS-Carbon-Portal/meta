@@ -77,6 +77,7 @@ class CitationProvider(
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, log)
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
+
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
 		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)

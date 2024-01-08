@@ -103,7 +103,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				assertCORS()
 				assert(responseAs[String].contains("selecct"))
 
-		it("Error in prologue"):
+		it("'Biblioinfo' query on a broken object returns empty result list"):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -115,11 +115,11 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				"""
 
 			testRoute(query):
-				assert(status === StatusCodes.InternalServerError)
+				assert(status === StatusCodes.OK)
 				assertCORS()
-				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
+				assert(responseAs[String].trim == "dobj,cit")
 
-		it("Error later in response"):
+		it("Broken object is excluded from a 'biblioinfo' query on multiple objects"):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -130,7 +130,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 							?dobj cpmeta:hasObjectSpec ?specUri .
 							?dobj cpmeta:hasBiblioInfo ?cit .
 						}
-						limit 50
+						limit 5
 					}
 					UNION
 					{
@@ -145,7 +145,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			testRoute(query):
 				assert(status == StatusCodes.OK)
 				assertCORS()
-				assert(responseAs[String].contains("org.eclipse.rdf4j.sail.SailException: head of empty String"))
+				assert(!responseAs[String].contains(objUri))
 
 		val longRunningQuery = """
 			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

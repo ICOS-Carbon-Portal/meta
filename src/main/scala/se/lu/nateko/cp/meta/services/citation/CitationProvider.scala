@@ -120,9 +120,8 @@ class CitationProvider(
 		obj <- metaReader.fetchStaticObject(maybeDobj).result
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI)(using conn: TSC): Option[StaticCollection] = for
+	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] = for
 		given Envri <- inferCollEnvri(maybeColl)
-		given GlobConn = RdfLens.global(using conn)
 		coll <- metaReader.fetchStaticColl(maybeColl, None).result
 	yield coll
 

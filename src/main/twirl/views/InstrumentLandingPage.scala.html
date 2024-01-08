@@ -5,9 +5,10 @@
 @import landpagesnips._
 @import eu.icoscp.envri.Envri
 
-@(instr: Instrument)(implicit envri: Envri, conf: EnvriConfig)
+@(instr: Instrument, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, Some(title), subHeading = Some("Instrument")){
 	<div class="row gy-2">
+		@errorList(errors)
 		<div class="col-md-8">
 			<div class="row gy-2">
 				@for(name <- instr.name) {

@@ -57,7 +57,7 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 		val cpVocab = CpVocab(factory)
 		val metaVocab = CpmetaVocab(factory)
 		val sparqler = Rdf4jSparqlRunner(repo)
-		val updater = ObjMetadataUpdater(cpVocab, metaVocab, sparqler)
+		val updater = ObjMetadataUpdater(cpVocab, metaVocab)
 		val server = Rdf4jInstanceServer(repo, "http://meta.icos-cp.eu/tests/metaupdater/")
 		Setup(cpVocab, metaVocab, updater, server, factory)
 
@@ -104,14 +104,15 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 			server.addAll(initTriples.map(factory.createStatement.tupled))
 
 			it("each of the new objects is 'responsible' for its own props and membership in the deprecating collection"):
-				updater.getCurrentStatements(newHash2, server).map: stats =>
+				server.access:
+					val stats = updater.getCurrentStatements(newHash2)
 					//stats.foreach(println)
 					assert(stats.size === 2) //file name plus membership
 			When("one of the objects is excluded from the deprecating collection")
 			it("the other object 'assumes responsibility' over the collection's RDF statements"):
 				server.remove(factory.createStatement(coll, metaVocab.dcterms.hasPart, cpVocab.getStaticObject(newHash1))) 
-
-				updater.getCurrentStatements(newHash2, server).map: stats =>
+				server.access:
+					val stats = updater.getCurrentStatements(newHash2)
 					assert(stats.size === 4)
 
 		describe("one object with provenance being deprecated by another"):
@@ -130,15 +131,16 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 			server.addAll(initTriples.map(factory.createStatement.tupled))
 
 			it("returns own object props and submission provenance"):
-				updater.getCurrentStatements(objHash, server).map: stats =>
+				server.access:
+					val stats = updater.getCurrentStatements(objHash)
 					assert(stats.size === 5) //file name, submission provenance triples, acquisition provenance triples
 
 			When("new version of the object is added, and the new object is queried")
 			it("returns triples with deprecation link but without old object's statements"): 
 				server.addAll(newVTriples.map(factory.createStatement.tupled))
 				server.add(factory.createStatement(cpVocab.getStaticObject(newObjHash), metaVocab.isNextVersionOf, cpVocab.getStaticObject(objHash)))
-
-				updater.getCurrentStatements(newObjHash, server).map: stats =>
+				server.access:
+					val stats = updater.getCurrentStatements(newObjHash)
 					assert(stats.size === 6) //file name, submission provenance triples, acquisition provenance triples
 
 end MetadataUpdaterTests

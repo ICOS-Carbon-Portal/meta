@@ -45,7 +45,7 @@ class TestDb {
 
 	val akkaConf = ConfigFactory.defaultReference()
 		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("ERROR"))
-	private val system = ActorSystem("sparqlRegrTesting", akkaConf)
+	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
 	import system.{dispatcher, log}
 
 	val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
@@ -59,7 +59,7 @@ class TestDb {
 			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
 		val citerFactory: CitationProviderFactory =
-			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService, log)
+			sail => CitationProvider(sail, dois => CitationClientDummy, metaConf)
 
 		val rdfConf = RdfStorageConfig(
 			path = dir.toString,

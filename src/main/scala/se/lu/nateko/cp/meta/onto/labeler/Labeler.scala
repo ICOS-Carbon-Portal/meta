@@ -2,33 +2,36 @@ package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.ResourceDto
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import org.semanticweb.owlapi.model.OWLAnnotationProperty
 import org.semanticweb.owlapi.model.OWLEntity
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.search.EntitySearcher
+import se.lu.nateko.cp.meta.ResourceDto
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.TSC
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getValues
 import se.lu.nateko.cp.meta.utils.owlapi.*
-import org.semanticweb.owlapi.model.OWLAnnotationProperty
+
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-trait InstanceLabeler {
+trait InstanceLabeler:
 
 	// rdfs:label is the default, to be overridden in some implementations
-	def getLabel(instUri: IRI, instServer: InstanceServer): String =
-		getRdfsLabel(instUri, instServer).getOrElse(instUri.stringValue)
+	def getLabel(instUri: IRI)(using TSC): String =
+		getRdfsLabel(instUri).getOrElse(instUri.stringValue)
 
-	final def getRdfsLabel(instUri: IRI, instServer: InstanceServer): Option[String] =
-		instServer.getValues(instUri, RDFS.LABEL).headOption.map(_.stringValue)
+	final def getRdfsLabel(instUri: IRI)(using TSC): Option[String] =
+		getValues(instUri, RDFS.LABEL).headOption.map(_.stringValue)
 
-	final def getRdfsComment(instUri: IRI, instServer: InstanceServer): Option[String] =
-		instServer.getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
+	final def getRdfsComment(instUri: IRI)(using TSC): Option[String] =
+		getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
 
-	final def getInfo(instUri: IRI, instServer: InstanceServer) = ResourceDto(
-		displayName = getLabel(instUri, instServer),
+	final def getInfo(instUri: IRI)(using TSC) = ResourceDto(
+		displayName = getLabel(instUri),
 		uri = java.net.URI.create(instUri.stringValue),
-		comment = getRdfsComment(instUri, instServer)
+		comment = getRdfsComment(instUri)
 	)
-}
+
 
 object Labeler{
 

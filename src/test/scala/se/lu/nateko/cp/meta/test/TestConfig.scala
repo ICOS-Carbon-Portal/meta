@@ -33,7 +33,7 @@ object TestConfig {
 		val instOnt = factory.createIRI(instOntUri)
 		val ont = factory.createIRI(ontUri)
 		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
-		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
+		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), instOnt)
 	}
 
 	private val prefixManager: PrefixManager =

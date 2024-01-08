@@ -1,0 +1,11 @@
+@(errors: Seq[String])
+@if(errors.nonEmpty) {
+	<div class="col-md-12">
+		@for(error <- errors){
+			<div class="alert alert-warning d-flex align-items-center">
+				<i class="fas fa-exclamation-triangle pe-2"></i>
+				<div>@error</div>
+			</div>
+		}
+	</div>
+}

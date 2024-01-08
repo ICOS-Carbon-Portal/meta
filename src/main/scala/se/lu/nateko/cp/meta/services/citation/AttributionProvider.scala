@@ -1,102 +1,82 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import java.net.URI
-import java.time.Instant
-import java.{util => ju}
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.repository.Repository
-
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.data.Agent
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.core.data.Orcid
+import se.lu.nateko.cp.meta.core.data.Organization
 import se.lu.nateko.cp.meta.core.data.Person
-import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.core.data.Station
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.metaflow.Role
-import se.lu.nateko.cp.meta.metaflow.PI
-import se.lu.nateko.cp.meta.metaflow.Administrator
+import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.services.upload.CpmetaFetcher
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.metaflow.Administrator
+import se.lu.nateko.cp.meta.metaflow.PI
+import se.lu.nateko.cp.meta.metaflow.Role
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.upload.CpmetaReader
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.net.URI
+import java.time.Instant
+import java.{util => ju}
+import scala.collection.mutable
 import scala.util.Try
 import scala.util.Using
-import se.lu.nateko.cp.meta.core.data.Organization
-import scala.collection.mutable
 
-final class AttributionProvider(repo: Repository, vocab: CpVocab) extends CpmetaFetcher{
+final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 	import AttributionProvider.*
+	import TriplestoreConnection.*
+	given ValueFactory = vocab.factory
 
-	override val server = new Rdf4jInstanceServer(repo)
-	private val sparql = new Rdf4jSparqlRunner(repo)
-
-	def getAuthors(dobj: DataObject): Seq[Person] = dobj.specificInfo.fold[Seq[Person]](
-		_ => Nil,
-		l2 => getMemberships(l2.acquisition.station.org.self.uri)
-			.filter(getTcSpecificFilter(dobj))
+	def getAuthors(dobj: DataObject)(using MetaConn): Validated[Seq[Person]] = dobj.specificInfo.fold(
+		_ => Validated.ok(Nil),
+		l2 => getMemberships(l2.acquisition.station.org.self.uri).map(
+			_.filter(getTcSpecificFilter(dobj))
 			.filter(_.role.isRelevantFor(dobj))
 			.toIndexedSeq
 			.sorted
 			.map(_.person)
 			.distinct
+		)
 	)
 
-	def getMemberships(org: URI): IndexedSeq[Membership] = sparqlAndParse{
-			s"""select distinct ?person $roleDetailsVars where{
-			|	?memb <${metaVocab.atOrganization}> <$org> .
-			|	?person <${metaVocab.hasMembership}> ?memb .
-			|	$roleDetailsQuerySegment
-			|}""".stripMargin
-		}{bs =>
-			for(person <- parsePerson(bs); role <- parseRoleDetails(bs)) yield Membership(person, role)
-		}
+	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] =
+		Validated.sequence:
+			for
+				memb <- getPropValueHolders(metaVocab.atOrganization, org.toRdf)
+				person <- getPropValueHolders(metaVocab.hasMembership, memb)
+			yield for
+				person <- getPerson(person)
+				role <- readRoleDetails(memb)
+			yield Membership(person, role)
 
-	def getPersonRoles(person: URI): IndexedSeq[PersonRole] = sparqlAndParse{
-			s"""select distinct ?org $roleDetailsVars where{
-			|	<$person> <${metaVocab.hasMembership}> ?memb .
-			|	?memb <${metaVocab.atOrganization}> ?org .
-			|	$roleDetailsQuerySegment
-			|}""".stripMargin
-		}{bs =>
-			for(org <- parseUriRes(bs, "org");role <- parseRoleDetails(bs)) yield PersonRole(org, role)
-		}
 
-	private def sparqlAndParse[T](query: String)(parser: BindingSet => Option[T]): IndexedSeq[T] =
-		Using(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.toIndexedSeq).get
-			.flatMap(parser)
+	def getPersonRoles(person: URI)(using MetaConn): Validated[IndexedSeq[PersonRole]] =
+		Validated.sequence:
+			getUriValues(person.toRdf,  metaVocab.hasMembership).map: memb =>
+				for
+					org <- getLabeledResource(memb, metaVocab.atOrganization)
+					role <- readRoleDetails(memb)
+				yield PersonRole(org, role)
 
-	private val roleDetailsVars = "?role ?weight ?extra ?start ?end"
-	private val roleDetailsQuerySegment = s"""?memb <${metaVocab.hasRole}> ?role .
-		|	OPTIONAL{?memb <${metaVocab.hasAttributionWeight}> ?weight }
-		|	OPTIONAL{?memb <${metaVocab.hasExtraRoleInfo}> ?extra }
-		|	OPTIONAL{?memb <${metaVocab.hasStartTime}> ?start }
-		|	OPTIONAL{?memb <${metaVocab.hasEndTime}> ?end }""".stripMargin
 
-	private def parseRoleDetails(bs: BindingSet): Option[RoleDetails] = parseUriRes(bs, "role").map{role =>
-		RoleDetails(
-			role,
-			getOptInstant(bs, "start"),
-			getOptInstant(bs, "end"),
-			getOptInt(bs, "weight"),
-			getOptLiteral(bs, "extra", XSD.STRING).map(_.stringValue)
-		)
-	}
-
-	private def parsePerson(bs: BindingSet) = Option(bs.getValue("person")).collect{
-		case iri: IRI => Try{getPerson(iri)}.toOption
-	}.flatten
-
-	private def parseUriRes(bs: BindingSet, varName: String): Option[UriResource] = Option(bs.getValue(varName)).collect{
-		case iri: IRI => getLabeledResource(iri)
-	}
+	private def readRoleDetails(memb: IRI)(using MetaConn): Validated[RoleDetails] =
+		for
+			role <- getLabeledResource(memb, metaVocab.hasRole)
+			start <- getOptionalInstant(memb, metaVocab.hasStartTime)
+			stop <- getOptionalInstant(memb, metaVocab.hasEndTime)
+			weight <- getOptionalInt(memb, metaVocab.hasAttributionWeight)
+			extra <- getOptionalString(memb, metaVocab.hasExtraRoleInfo)
+		yield
+			RoleDetails(role, start, stop, weight, extra)
 
 	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
 		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
@@ -114,9 +94,9 @@ final class AttributionProvider(repo: Repository, vocab: CpVocab) extends Cpmeta
 			speciesOk.getOrElse(true)
 		}) else
 			_ => true
-}
+end AttributionProvider
 
-object AttributionProvider{
+object AttributionProvider:
 
 	case class RoleDetails(role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
@@ -161,13 +141,4 @@ object AttributionProvider{
 		.orElseBy((pr: PersonRole) => pr.role.start)
 		.reverse
 
-	def getOptLiteral(bs: BindingSet, name: String, litType: IRI): Option[Literal] = Option(bs.getValue(name)).collect{
-		case lit: Literal if(lit.getDatatype == litType) => lit
-	}
-
-	def getOptInstant(bs: BindingSet, name: String): Option[Instant] = getOptLiteral(bs, name, XSD.DATETIME)
-		.map(lit => Instant.parse(lit.stringValue))
-
-	def getOptInt(bs: BindingSet, name: String): Option[Int] = getOptLiteral(bs, name, XSD.INTEGER)
-		.map(lit => lit.intValue)
-}
+end AttributionProvider

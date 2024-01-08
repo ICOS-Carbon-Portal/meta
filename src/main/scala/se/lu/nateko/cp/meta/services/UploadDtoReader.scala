@@ -25,14 +25,14 @@ import UriSerializer.Hash
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*
 
-	def readDto(uri: Uri): Option[UploadDto] = uri.path match{
+	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
 		case Hash.Object(_) =>
 			uriSer.fetchStaticObject(uri).map(objToDto)
 
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
 
-		case _ => None
+		case _ => Validated.error(s"URI $uri does lookes like neither object nor collection")
 	}
 }
 

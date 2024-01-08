@@ -86,14 +86,15 @@ class AdminRouting(
 
 			val dryRun = dryRunOpt.getOrElse(true)
 
-			val updatesStream = updates.collect{
-				//OBS Blank-node-subject statements will be dropped here
-				case s @ Rdf4jStatement(subj, pred, obj) if insert ^ server.hasStatement(subj, pred, obj) => RdfUpdate(s, insert)
-			}.to(LazyList)
+			val updatesList = server.access: conn ?=>
+				updates.collect:
+					//OBS Blank-node-subject statements will be dropped here
+					case s @ Rdf4jStatement(subj, pred, obj) if insert ^ conn.hasStatement(subj, pred, obj) => RdfUpdate(s, insert)
+				.toIndexedSeq
 
-			if(!dryRun) server.applyAll(updatesStream)()
+			if(!dryRun) server.applyAll(updatesList)()
 
-			val responseLines = updatesStream.map{upd =>
+			val responseLines = updatesList.map{upd =>
 				ByteString(s"${if(upd.isAssertion) "+" else "-"} ${upd.statement}\n")
 			}
 

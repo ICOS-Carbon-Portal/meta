@@ -9,7 +9,7 @@ import se.lu.nateko.cp.doi.DoiMeta
 import CommonJsonSupport.TypeField
 import scala.reflect.ClassTag
 
-object JsonSupport extends CommonJsonSupport{
+object JsonSupport extends CommonJsonSupport:
 
 	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
@@ -271,4 +271,5 @@ object JsonSupport extends CommonJsonSupport{
 			}
 	}
 
-}
+end JsonSupport
+

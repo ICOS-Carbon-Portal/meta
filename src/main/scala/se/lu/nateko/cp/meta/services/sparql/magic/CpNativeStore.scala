@@ -59,7 +59,8 @@ class CpNativeStore(
 				case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
 			}
 
-	def getCitationClient: CitationClient = nativeSail.enricher.citer.doiCiter
+	def getCitationProvider: CitationProvider = nativeSail.enricher.citer
+	def getCitationClient: CitationClient = getCitationProvider.doiCiter
 
 	override def init(): Unit = {
 		if(isFreshInit) log.warning(

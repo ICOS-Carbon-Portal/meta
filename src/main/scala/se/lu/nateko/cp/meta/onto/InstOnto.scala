@@ -1,29 +1,30 @@
 package se.lu.nateko.cp.meta.onto
 
-import java.net.URI
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.OWL
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.query.UpdateExecutionException
+import org.semanticweb.owlapi.model.{IRI => OwlIri}
+import se.lu.nateko.cp.meta.*
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.net.URI
 import scala.util.Failure
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.query.UpdateExecutionException
-import org.semanticweb.owlapi.model.{IRI => OwlIri}
+import TriplestoreConnection.*
 
-import se.lu.nateko.cp.meta.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-
-class InstOnto (instServer: InstanceServer, val onto: Onto){
+class InstOnto (instServer: InstanceServer, val onto: Onto):
 
 	private given factory: ValueFactory = instServer.factory
 
@@ -45,17 +46,12 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		DataRangeDto(XSD.ANYURI.toJava, Nil)
 	)
 
-	def getWriteContext: URI = {
-		val writeContexts = instServer.writeContexts
-		val nCtxts = writeContexts.length
-		assert(nCtxts == 1, s"Expected exactly one write context, found $nCtxts")
-		writeContexts.head.toJava
-	}
+	def getWriteContext: URI = instServer.writeContext.toJava
 
-	def getIndividuals(classUri: URI): Seq[ResourceDto] = {
+	def getIndividuals(classUri: URI): Seq[ResourceDto] = instServer.access:
 		val labeler = onto.getLabelerForClassIndividuals(classUri)
-		instServer.getInstances(classUri.toRdf).map(labeler.getInfo(_, instServer))
-	}
+		getPropValueHolders(RDF.TYPE, classUri.toRdf).map(labeler.getInfo)
+
 
 	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
 		assert(individClassUri != null)//just to silence the not-used warning;
@@ -64,18 +60,18 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		rangeClassUris.flatMap(getIndividuals)
 	}
 
-	def getIndividual(uri: URI): IndividualDto = {
+	def getIndividual(uri: URI): IndividualDto = instServer.access:
 		val labeler = onto.getUniversalLabeler
 		val iri = uri.toRdf
 
 		val classInfo: ClassDto = {
-			val theType = InstanceServerUtils.getSingleType(iri, instServer)
+			val theType = InstOnto.getSingleType(iri)
 			val mainInfo = onto.getClassInfo(theType.toJava)
 			val extraProps: Seq[PropertyDto] = Seq(rdfsLabelInfo, rdfsCommentInfo, rdfsSeeAlsoInfo)
 			mainInfo.copy(properties = extraProps ++ mainInfo.properties)
 		}
 
-		val values: Seq[ValueDto] = instServer.getStatements(iri).collect{
+		val values: Seq[ValueDto] = getStatements(iri).collect{
 			case Rdf4jStatement(_, pred, value: Literal) =>
 				val prop = onto.factory.getOWLDataProperty(OwlIri.create(pred.toJava))
 				LiteralValueDto(
@@ -93,38 +89,38 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case Rdf4jStatement(_, pred, value: IRI)  if(pred != RDF.TYPE) =>
 				val prop = onto.factory.getOWLObjectProperty(OwlIri.create(pred.toJava))
 				ObjectValueDto(
-					value = labeler.getInfo(value, instServer),
+					value = labeler.getInfo(value),
 					property = onto.rdfsLabeling(prop)
 				)
 		}
 
 		IndividualDto(
-			resource = labeler.getInfo(iri, instServer),
+			resource = labeler.getInfo(iri),
 			owlClass = classInfo,
 			values = values
 		)
-	}
+	end getIndividual
 
-	def hasIndividual(uriStr: String): Boolean =
-		instServer.hasStatement(Some(factory.createIRI(uriStr)), None, None)
+	def hasIndividual(uriStr: String): Boolean = instServer.access: conn ?=>
+		conn.hasStatement(factory.createIRI(uriStr), null, null)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
 		else Try{
-			val uri = instServer.factory.createIRI(uriStr)
-			val typeUri = instServer.factory.createIRI(typeUriStr)
+			val uri = factory.createIRI(uriStr)
+			val typeUri = factory.createIRI(typeUriStr)
 			instServer.addInstance(uri, typeUri)
 		}.flatten
 	}
 
-	def deleteIndividual(uriStr: String): Try[Unit] = Try{
-		val uri = instServer.factory.createIRI(uriStr)
-		val asSubject = instServer.getStatements(uri)
-		val asObject = instServer.getStatements(None, None, Some(uri))
-		instServer.removeAll(asSubject ++ asObject)
-	}
+	def deleteIndividual(uriStr: String): Try[Unit] = Try:
+		val uri = factory.createIRI(uriStr)
+		val toRemove = instServer.access:
+			getStatements(uri) ++ getStatements(null, null, uri)
+		instServer.removeAll(toRemove)
 
-	def performReplacement(replacement: ReplaceDto): Try[Unit] = {
+
+	def performReplacement(replacement: ReplaceDto): Try[Unit] = instServer.access:
 		val updates = Try{
 			val assertion: RdfUpdate = updateDtoToRdfUpdate(replacement.assertion)
 			val retraction: RdfUpdate = updateDtoToRdfUpdate(replacement.retraction)
@@ -135,21 +131,21 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			Seq(retraction, assertion)
 		}
 		updates.flatMap(instServer.applyAll(_)())
-	}
 
-	def applyUpdates(updates: Seq[UpdateDto]): Try[Unit] = {
-		val rdfUpdates = Try(updates.map(updateDtoToRdfUpdate))
+
+	def applyUpdates(updates: Seq[UpdateDto]): Try[Unit] =
+		val rdfUpdates = instServer.access:
+			Try(updates.map(updateDtoToRdfUpdate))
 		rdfUpdates.flatMap(instServer.applyAll(_)())
-	}
-	
-	private def hasStatement(statement: Statement): Boolean = instServer.hasStatement(
-		Some(statement.getSubject.asInstanceOf[IRI]),
-		Some(statement.getPredicate),
-		Some(statement.getObject)
-	)
 
-	private def updateDtoToStatement(update: UpdateDto): Statement = {
-		val classUri = InstanceServerUtils.getSingleType(update.subject.toRdf, instServer)
+	
+	private def hasStatement(statement: Statement)(using conn: TSC): Boolean =
+		statement.getSubject match
+			case subj: IRI => conn.hasStatement(subj, statement.getPredicate, statement.getObject)
+			case _ => false
+
+	private def updateDtoToStatement(update: UpdateDto)(using TSC): Statement =
+		val classUri = InstOnto.getSingleType(update.subject.toRdf)
 
 		val obj: Value = getPropInfo(update.predicate, classUri.toJava) match{
 			case dp: DataPropertyDto =>
@@ -160,7 +156,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 		}
 
 		factory.createStatement(update.subject.toRdf, update.predicate.toRdf, obj)
-	}
+
 
 	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =
 		propUri.toRdf match {
@@ -171,7 +167,25 @@ class InstOnto (instServer: InstanceServer, val onto: Onto){
 			case _ => onto.getPropInfo(propUri, classUri)
 		}
 
-	private def updateDtoToRdfUpdate(update: UpdateDto) =
+	private def updateDtoToRdfUpdate(update: UpdateDto)(using TSC) =
 		RdfUpdate(updateDtoToStatement(update), update.isAssertion)
 
-}
+end InstOnto
+
+object InstOnto:
+	/**
+	 * returns Some type IRI if any, None if none, and throws an AssertionError if the instance has more than one type.
+	 * The type owl:NamedIndividual is disregarded.
+	 */
+	def getSingleTypeIfAny(instUri: IRI)(using TSC): Option[IRI] =
+
+		val types = getTypes(instUri).filter(_ != OWL.NAMEDINDIVIDUAL).distinct
+
+		assert(types.size <= 1, s"Expected individual $instUri to have at most one type, but it had ${types.size}")
+		types.headOption
+
+
+	def getSingleType(instUri: IRI)(using TSC): IRI =
+		val typeIfAny = getSingleTypeIfAny(instUri)
+		assert(typeIfAny.isDefined, s"Instance $instUri has no type")
+		typeIfAny.get

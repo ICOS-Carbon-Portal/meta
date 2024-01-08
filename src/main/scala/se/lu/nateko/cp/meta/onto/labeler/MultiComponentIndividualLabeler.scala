@@ -1,25 +1,27 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import org.semanticweb.owlapi.model.{IRI => OWLIRI, _}
 import org.eclipse.rdf4j.model.IRI
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import org.eclipse.rdf4j.model.Literal
+import org.semanticweb.owlapi.model.{IRI => OWLIRI, _}
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.TSC
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getValues
 
 class MultiComponentIndividualLabeler(
 	components: Seq[DisplayComponent],
 	inner: InstanceLabeler
-) extends InstanceLabeler {
+) extends InstanceLabeler:
 
 
-	private val compMakers = components.map{
-		case DataPropComponent(prop) => getComponent(prop) _
-		case ObjectPropComponent(prop) => getComponent(prop) _
-		case ConstantComponent(value) => (_: IRI, _: InstanceServer) => value
+	private val compMakers: Seq[IRI => TSC ?=> String] = components.map{
+		case DataPropComponent(prop) => getComponent(prop)
+		case ObjectPropComponent(prop) => getComponent(prop)
+		case ConstantComponent(value) => (_: IRI) => (_: TSC) ?=> value
 	}
 
-	override def getLabel(instUri: IRI, instServer: InstanceServer): String = {
+	override def getLabel(instUri: IRI)(using TSC): String = {
 
-		val labelComponents = compMakers.map(_(instUri, instServer))
+		val labelComponents = compMakers.map(_(instUri))
 
 		val nonEmptyExists: Boolean = labelComponents.zip(components).exists{
 			case (_, ConstantComponent(_)) => false
@@ -29,25 +31,24 @@ class MultiComponentIndividualLabeler(
 		if(nonEmptyExists)
 			Labeler.joinComponents(labelComponents)
 		else
-			super.getLabel(instUri, instServer)
+			super.getLabel(instUri)
 	}
 
-	private def getComponent(propIri: OWLIRI)(instUri: IRI, instServer: InstanceServer): String = {
-		val propUri = toUri(propIri, instServer)
-		val values = instServer.getValues(instUri, propUri).collect{
+	private def getComponent(propIri: OWLIRI)(instUri: IRI)(using TSC): String =
+		val propUri = toUri(propIri)
+		val values = getValues(instUri, propUri).collect:
 			case literal: Literal => literal.getLabel
-		}
 		Labeler.joinMultiValues(values)
-	}
 
-	private def getComponent(prop: OWLObjectProperty)(instUri: IRI, instServer: InstanceServer): String = {
-		val propUri = toUri(prop.getIRI, instServer)
-		val values = instServer.getValues(instUri, propUri).collect{
-			case uri: IRI => inner.getLabel(uri, instServer)
-		}
+
+	private def getComponent(prop: OWLObjectProperty)(instUri: IRI)(using TSC): String =
+		val propUri = toUri(prop.getIRI)
+		val values = getValues(instUri, propUri).collect:
+			case uri: IRI => inner.getLabel(uri)
+
 		Labeler.joinMultiValues(values)
-	}
 
-	private def toUri(prop: OWLIRI, instServer: InstanceServer): IRI =
-		instServer.factory.createIRI(prop.toURI.toString)
-}
+	private def toUri(prop: OWLIRI)(using conn: TSC): IRI =
+		conn.factory.createIRI(prop.toURI.toString)
+
+end MultiComponentIndividualLabeler

@@ -1,96 +1,89 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
-
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.RdfLens.CollConn
+import se.lu.nateko.cp.meta.api.RdfLens.DocConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-class CollectionFetcherLite(val server: InstanceServer, vocab: CpVocab) extends CpmetaFetcher {
+import java.net.URI
 
-	val memberProp = metaVocab.dcterms.hasPart
 
-	def getTitle(collUri: IRI): String = getSingleString(collUri, metaVocab.dcterms.title)
+class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
-	def collectionExists(collUri: IRI): Boolean =
-		server.hasStatement(collUri, RDF.TYPE, metaVocab.collectionClass)
+	import metaVocab.{dcterms => dct}
 
-	def fetchLite(collUri: IRI): Option[UriResource] = {
-		if(collectionExists(collUri)) Some(
-			UriResource(collUri.toJava, Some(getTitle(collUri)), Nil)
-		) else None
-	}
+	private def getCollTitle(collUri: IRI)(using CollConn): Validated[String] = getSingleString(collUri, dct.title)
 
-	def getParentCollections(dobj: IRI): Seq[UriResource] = {
-		val allIris = server.getStatements(None, Some(memberProp), Some(dobj))
-			.map(_.getSubject)
-			.collect{case iri: IRI => iri}
-			.toIndexedSeq
+	def collectionExists(collUri: IRI)(using CollConn): Boolean = resourceHasType(collUri, metaVocab.collectionClass)
 
-		val deprecatedColls = allIris.flatMap(getPreviousVersions).toSet
+	def getCreatorIfCollExists(collIri: IRI)(using CollConn): Validated[Option[IRI]] = getOptionalUri(collIri, dct.creator)
 
-		allIris.flatMap(fetchLite).filterNot(res => deprecatedColls.contains(res.uri))
-	}
+	def fetchCollLite(collUri: IRI)(using CollConn): Validated[UriResource] =
+		if collectionExists(collUri) then
+			getCollTitle(collUri).map: title =>
+				UriResource(collUri.toJava, Some(title), Nil)
+		else Validated.error("collection does not exist")
 
-	def getCreatorIfCollExists(hash: Sha256Sum)(using Envri): Option[IRI] = {
-		val collUri = vocab.getCollection(hash)
-		server.getUriValues(collUri, metaVocab.dcterms.creator, InstanceServer.AtMostOne).headOption
-	}
+	def getParentCollections(dobj: IRI)(using CollConn): Validated[Seq[UriResource]] =
+		val allParentColls = getPropValueHolders(dct.hasPart, dobj).toIndexedSeq
 
-	def collectionExists(coll: Sha256Sum)(using Envri): Boolean = collectionExists(vocab.getCollection(coll))
-}
+		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
-class CollectionFetcher(
-	server: InstanceServer,
-	plainFetcher: PlainStaticObjectFetcher,
-	citer: CitationMaker
-) extends CollectionFetcherLite(server, citer.vocab) {collFetcher =>
+		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchCollLite))
 
-	def fetchStatic(hash: Sha256Sum)(using Envri): Option[StaticCollection] = {
-		val collUri = citer.vocab.getCollection(hash)
-		if(collectionExists(collUri)) Some(getExistingStaticColl(collUri, Some(hash)))
-		else None
-	}
+	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum])(using CollConn, DocConn): Validated[StaticCollection] =
+		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
+		else getExistingStaticColl(collUri, hashOpt)
 
-	private def getExistingStaticColl(coll: IRI, hashOpt: Option[Sha256Sum] = None)(using Envri): StaticCollection = {
-		val dct = metaVocab.dcterms
+	private def getExistingStaticColl(
+		coll: IRI, hashOpt: Option[Sha256Sum] = None
+	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
 
-		val members = server.getUriValues(coll, memberProp).map{item =>
-			if(collectionExists(item)) getExistingStaticColl(item)
-			else plainFetcher.getPlainStaticObject(item)
-		}.sortBy(_ match{
-			case coll: StaticCollection => coll.title
-			case dobj: PlainStaticObject => dobj.name
-		})
+		val membersV = Validated.sequence:
+			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
+				if collectionExists(item) then getExistingStaticColl(item)
+				else getPlainStaticObject(item)
 
-		val init = StaticCollection(
-			res = coll.toJava,
-			hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
-			members = members,
-			creator = getOrganization(getSingleUri(coll, dct.creator)),
-			title = getTitle(coll),
-			description = getOptionalString(coll, dct.description),
-			nextVersion = getNextVersionAsUri(coll),
-			latestVersion = getLatestVersion(coll),
-			previousVersion = getPreviousVersion(coll).flattenToSeq.headOption,
-			doi = getOptionalString(coll, metaVocab.hasDoi),
-			documentation = getOptionalUri(coll, RDFS.SEEALSO).map(plainFetcher.getPlainStaticObject),
-			references = References.empty
-		)
-		val citerRefs = citer.getItemCitationInfo(init)
-		//TODO Consider adding collection-specific logic for licence information
-		val updatedRefs = citerRefs.copy(title = Some(init.title))
-		init.copy(references = updatedRefs)
-	}
+		for
+			creatorUri <- getSingleUri[CollConn](coll, dct.creator)
+			members <- membersV
+			creator <- getOrganization(creatorUri)(using collConn)
+			title <- getCollTitle(coll)
+			description <- getOptionalString[CollConn](coll, dct.description)
+			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
+			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
+			documentation <- documentationUriOpt.map(getPlainStaticObject).sinkOption
+		yield
+			val init = StaticCollection(
+				res = coll.toJava,
+				hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
+				members = members.sortBy:
+					case coll: StaticCollection => coll.title
+					case dobj: PlainStaticObject => dobj.name
+				,
+				creator = creator,
+				title = title,
+				description = description,
+				nextVersion = getNextVersionAsUri(coll)(using collConn),
+				latestVersion = getLatestVersion(coll)(using collConn),
+				previousVersion = getPreviousVersions(coll)(using collConn).headOption.map(_.toJava),
+				doi = doi,
+				documentation = documentation,
+				references = References.empty
+			)
+			//TODO Consider adding collection-specific logic for licence information
+			init.copy(references = citer(init).copy(title = Some(init.title)))
 
-}
+end CollectionReader

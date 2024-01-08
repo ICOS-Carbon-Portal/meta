@@ -16,30 +16,36 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
-trait LifecycleService { self: StationLabelingService =>
+trait LifecycleService:
+	self: StationLabelingService =>
 
 	import LifecycleService.*
+	import LabelingDb.{ProvConn, LblAppConn, AnyLblConn}
+	import TriplestoreConnection.{getStringValues, getStatements}
 
 	private val mailer = SendMail(config.mailing, log)
 
-	def updateStatus(station: URI, newStatus: String, newStatusComment: Option[String], user: UserId)(implicit ctxt: ExecutionContext): Try[Unit] = {
+	def updateStatus(
+		station: URI, newStatus: String, newStatusComment: Option[String], user: UserId
+	)(using ExecutionContext): Try[Unit] = db.accessLbl:
 		val stationUri = factory.createIRI(station)
 
-		for(
-			toStatus <- lookupAppStatus(newStatus);
-			fromStatus <- getCurrentStatus(stationUri);
+		for
+			toStatus <- lookupAppStatus(newStatus)
+			fromStatus <- getCurrentStatus(stationUri)
 			_ <- authorizeTransition(fromStatus, toStatus, user, stationUri)
-		) yield {
+		yield
 			updateStatusComment(stationUri, newStatusComment)
-			if(fromStatus != toStatus){
+			if fromStatus != toStatus then
 				writeStatusChange(toStatus, stationUri)
 				sendMailOnStatusUpdate(fromStatus, toStatus, newStatusComment, stationUri, user)
-			}
-		}
-	}
 
-	private def authorizeTransition(fromStatus: AppStatus, toStatus: AppStatus, user: UserId, stationUri: IRI): Try[Unit] =
+
+	private def authorizeTransition(
+		fromStatus: AppStatus, toStatus: AppStatus, user: UserId, stationUri: IRI
+	)(using AnyLblConn): Try[Unit] =
 		if(fromStatus == toStatus){
 
 			if(Role.values.exists(role => userHasRole(user, role, stationUri)))
@@ -54,22 +60,22 @@ trait LifecycleService { self: StationLabelingService =>
 				Failure(new UnauthorizedStationUpdateException(s"User lacks the role of $role for station $stationUri"))
 		}
 
-	private def updateStatusComment(stationUri: IRI, newStatusCommentOpt: Option[String]): Unit = {
-		val currentCommentStats = getStatements(stationUri, vocab.hasAppStatusComment)
+	private def updateStatusComment(stationUri: IRI, newStatusCommentOpt: Option[String])(using LblAppConn): Unit = {
+		val currentCommentStats = getStatements(stationUri, vocab.hasAppStatusComment, null).toIndexedSeq
 
 		val newCommentStats = newStatusCommentOpt.toSeq.map{newStatusComment =>
 			factory.createStatement(stationUri, vocab.hasAppStatusComment, factory.createLiteral(newStatusComment))
 		}
-		server.applyDiff(currentCommentStats, newCommentStats)
+		db.applyLblDiff(currentCommentStats, newCommentStats)
 	}
 
-	private def getTcUsers(station: IRI): Seq[String] = lookupStationClass(station)
+	private def getTcUsers(station: IRI)(using AnyLblConn): Seq[String] = lookupStationClass(station)
 		.flatMap(cls => config.tcUserIds.get(cls.toJava))
 		.toSeq
 		.flatten
 		.map(_.toLowerCase)
 
-	private def userHasRole(user: UserId, role: Role, station: IRI): Boolean = role match{
+	private def userHasRole(user: UserId, role: Role, station: IRI)(using AnyLblConn): Boolean = role match{
 		case Role.PI =>
 			userIsPiOrDeputy(user, station)
 		case Role.TC =>
@@ -78,36 +84,39 @@ trait LifecycleService { self: StationLabelingService =>
 			config.dgUserId.equalsIgnoreCase(user.email)
 	}
 
-	private def getCurrentStatus(station: IRI): Try[AppStatus] = {
-		server.getStringValues(station, vocab.hasApplicationStatus)
+	private def getCurrentStatus(station: IRI)(using LblAppConn): Try[AppStatus] = {
+		getStringValues(station, vocab.hasApplicationStatus)
 			.headOption
 			.map(lookupAppStatus)
 			.getOrElse(Success(AppStatus.neverSubmitted))
 	}
 
-	private def stationIsAtmospheric(station: IRI): Boolean =
+	private def stationIsAtmospheric(station: IRI)(using AnyLblConn): Boolean =
 		lookupStationClass(station).map(_ == vocab.atmoStationClass).getOrElse(false)
 
-	private def getStatements(subject: IRI, predicate: IRI): IndexedSeq[Statement] =
-		server.getStatements(Some(subject), Some(predicate), None).toIndexedSeq
 
-	private def writeStatusChange(to: AppStatus, station: IRI): Unit = {
-		val current = getStatements(station, vocab.hasApplicationStatus) ++ getStatements(station, vocab.hasAppStatusDate)
+	private def writeStatusChange(to: AppStatus, station: IRI)(using LblAppConn): Unit =
+
+		val current = (
+			getStatements(station, vocab.hasApplicationStatus, null) ++
+			getStatements(station, vocab.hasAppStatusDate, null)
+		).toIndexedSeq
+
 		val newStats = Seq(
 			factory.createStatement(station, vocab.hasApplicationStatus, vocab.lit(to.toString)),
 			factory.createStatement(station, vocab.hasAppStatusDate, vocab.lit(java.time.Instant.now()))
 		)
-		server.applyDiff(current, newStats)
-	}
+		db.applyLblDiff(current, newStats)
+
 
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
-	)(implicit ctxt: ExecutionContext): Unit = if(config.mailing.mailSendingActive) Future{
+	)(using ExecutionContext, AnyLblConn): Unit = if config.mailing.mailSendingActive then Future:
 
 		val stationId = lookupStationId(station).getOrElse("???")
 
-		(from, to) match{
+		(from, to) match
 			case (_, AppStatus.step1submitted) =>
 				val recipients: Seq[String] = getTcUsers(station)
 				val subject = "Application for labeling received"
@@ -151,9 +160,8 @@ trait LifecycleService { self: StationLabelingService =>
 				mailer.send(recipients, subject, body, cc)
 
 			case _ => ()
-		}
-	}
-}
+	end sendMailOnStatusUpdate
+end LifecycleService
 
 object LifecycleService{
 

@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.onto.Onto
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import se.lu.nateko.cp.meta.services.MetadataException
 
 
 class StationLabelingService(
@@ -23,8 +24,8 @@ class StationLabelingService(
 	protected val config: LabelingServiceConfig,
 	protected val log: LoggingAdapter
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService:
-	import LabelingDb.AnyLblConn
-	import TriplestoreConnection.{getStringValues, getUriValues}
+	import LabelingDb.{LblAppConn, ProvConn}
+	import TriplestoreConnection.{getStringValues, getUriValues, getOptionalString, getSingleString}
 
 	protected val db = LabelingDb(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),
@@ -35,25 +36,28 @@ class StationLabelingService(
 	protected val vocab = new StationsVocab(factory)
 	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
 
-	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId)(using AnyLblConn): Unit =
+	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId)(using ProvConn): Unit =
 		if(!userIsPiOrDeputy(uploader, stationUri)) throw new UnauthorizedStationUpdateException(
 			"Only PIs are authorized to update station's info"
 		)
 
-	protected def userIsPiOrDeputy(user: UserId, station: IRI)(using AnyLblConn): Boolean = {
+	protected def userIsPiOrDeputy(user: UserId, station: IRI)(using ProvConn): Boolean = {
 		getStationPiOrDeputyEmails(station).contains(user.email.toLowerCase)
 	}
 
-	protected def getPiEmails(piUri: IRI)(using AnyLblConn): Seq[String] =
+	protected def getPiEmails(piUri: IRI)(using ProvConn): Seq[String] =
 		getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
 
-	protected def lookupStationClass(stationUri: IRI)(using AnyLblConn): Option[IRI] =
+	protected def lookupStationClass(stationUri: IRI)(using ProvConn): Option[IRI] =
 		InstOnto.getSingleTypeIfAny(stationUri)
 
-	protected def lookupStationId(stationUri: IRI)(using AnyLblConn): Option[String] =
-		getStringValues(stationUri, vocab.hasShortName).headOption
+	protected def lookupLblStationId(stationUri: IRI)(using LblAppConn): Option[String] =
+		getOptionalString(stationUri, vocab.hasShortName).getOrThrow(new MetadataException(_))
 
-	protected def getStationPiOrDeputyEmails(stationUri: IRI)(using AnyLblConn): Seq[String] = (
+	protected def lookupProvStationId(stationUri: IRI)(using ProvConn): String =
+		getSingleString(stationUri, vocab.hasShortName).getOrThrow(new MetadataException(_))
+
+	protected def getStationPiOrDeputyEmails(stationUri: IRI)(using ProvConn): Seq[String] = (
 		getUriValues(stationUri, vocab.hasPi) ++
 		getUriValues(stationUri, vocab.hasDeputyPi)
 	).flatMap(getPiEmails)

@@ -10,7 +10,6 @@ object LabelingDb:
 	opaque type ProvConn <: TriplestoreConnection = TriplestoreConnection
 	opaque type LblAppConn <: TriplestoreConnection = TriplestoreConnection
 	opaque type IcosConn <: TriplestoreConnection = TriplestoreConnection
-	type AnyLblConn = ProvConn | LblAppConn
 
 	private def asProv(conn: TriplestoreConnection): ProvConn = conn
 	private def asLbl(conn: TriplestoreConnection): LblAppConn = conn
@@ -37,6 +36,9 @@ class LabelingDb(
 
 	def accessProv[T](reader: ProvConn ?=> T): T = provServer.access: conn ?=>
 		reader(using asProv(conn))
+
+	def provView(using conn: TriplestoreConnection): ProvConn = asProv:
+		conn.withContexts(provServer.writeContext, provServer.readContexts)
 
 	def accessLbl[T](reader: LblAppConn ?=> T): T = lblServer.access: conn ?=>
 		reader(using asLbl(conn))

@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.Statement
 
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
@@ -16,25 +17,25 @@ import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
 trait LifecycleService:
 	self: StationLabelingService =>
 
 	import LifecycleService.*
-	import LabelingDb.{ProvConn, LblAppConn, AnyLblConn}
+	import LabelingDb.{ProvConn, LblAppConn}
 	import TriplestoreConnection.{getStringValues, getStatements}
 
 	private val mailer = SendMail(config.mailing, log)
 
 	def updateStatus(
 		station: URI, newStatus: String, newStatusComment: Option[String], user: UserId
-	)(using ExecutionContext): Try[Unit] = db.accessLbl:
+	)(using ExecutionContext): Try[Unit] = db.accessLbl: lblConn ?=>
 		val stationUri = factory.createIRI(station)
 
 		for
 			toStatus <- lookupAppStatus(newStatus)
 			fromStatus <- getCurrentStatus(stationUri)
+			given ProvConn = db.provView(using lblConn)
 			_ <- authorizeTransition(fromStatus, toStatus, user, stationUri)
 		yield
 			updateStatusComment(stationUri, newStatusComment)
@@ -45,7 +46,7 @@ trait LifecycleService:
 
 	private def authorizeTransition(
 		fromStatus: AppStatus, toStatus: AppStatus, user: UserId, stationUri: IRI
-	)(using AnyLblConn): Try[Unit] =
+	)(using ProvConn): Try[Unit] =
 		if(fromStatus == toStatus){
 
 			if(Role.values.exists(role => userHasRole(user, role, stationUri)))
@@ -69,20 +70,20 @@ trait LifecycleService:
 		db.applyLblDiff(currentCommentStats, newCommentStats)
 	}
 
-	private def getTcUsers(station: IRI)(using AnyLblConn): Seq[String] = lookupStationClass(station)
+	private def getTcUsers(station: IRI)(using ProvConn): Seq[String] = lookupStationClass(station)
 		.flatMap(cls => config.tcUserIds.get(cls.toJava))
 		.toSeq
 		.flatten
 		.map(_.toLowerCase)
 
-	private def userHasRole(user: UserId, role: Role, station: IRI)(using AnyLblConn): Boolean = role match{
+	private def userHasRole(user: UserId, role: Role, station: IRI)(using ProvConn): Boolean = role match
 		case Role.PI =>
 			userIsPiOrDeputy(user, station)
 		case Role.TC =>
 			getTcUsers(station).contains(user.email.toLowerCase)
 		case Role.DG =>
 			config.dgUserId.equalsIgnoreCase(user.email)
-	}
+
 
 	private def getCurrentStatus(station: IRI)(using LblAppConn): Try[AppStatus] = {
 		getStringValues(station, vocab.hasApplicationStatus)
@@ -91,7 +92,7 @@ trait LifecycleService:
 			.getOrElse(Success(AppStatus.neverSubmitted))
 	}
 
-	private def stationIsAtmospheric(station: IRI)(using AnyLblConn): Boolean =
+	private def stationIsAtmospheric(station: IRI)(using ProvConn): Boolean =
 		lookupStationClass(station).map(_ == vocab.atmoStationClass).getOrElse(false)
 
 
@@ -112,9 +113,9 @@ trait LifecycleService:
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
-	)(using ExecutionContext, AnyLblConn): Unit = if config.mailing.mailSendingActive then Future:
+	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailing.mailSendingActive then Future:
 
-		val stationId = lookupStationId(station).getOrElse("???")
+		val stationId = lookupLblStationId(station).getOrElse(lookupProvStationId(station))
 
 		(from, to) match
 			case (_, AppStatus.step1submitted) =>

@@ -44,12 +44,12 @@ trait StationInfoService:
 			.map(factory.createIRI).get
 
 		val (currentInfo, newInfo) = db.accessLbl:
-
-			assertThatWriteIsAuthorized(stationUri, uploader)
+			val provConn = db.provView
+			assertThatWriteIsAuthorized(stationUri, uploader)(using provConn)
 
 			val newInfo: Seq[Statement] =
 				for
-					classUri <- lookupStationClass(stationUri).toSeq
+					classUri <- lookupStationClass(stationUri)(using provConn).toSeq
 					(fieldName, fieldValue) <- info.fields.collect:
 						case (name, JsString(value)) => (name, value)
 					propUri = vocab.getProperty(fieldName)

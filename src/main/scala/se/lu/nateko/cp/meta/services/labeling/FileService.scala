@@ -37,7 +37,7 @@ trait FileService:
 
 			val station = factory.createIRI(stationUri)
 
-			assertThatWriteIsAuthorized(station, uploader)
+			assertThatWriteIsAuthorized(station, uploader)(using db.provView)
 
 			val stationUriBytes = stationUri.getBytes(StandardCharsets.UTF_8)
 			val hash = fileStorage.saveAsFile(fileContent, Some(stationUriBytes))

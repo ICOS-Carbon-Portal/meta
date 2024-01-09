@@ -134,50 +134,54 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 
 	def updateValidIfObjectNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
-		objectKindSameIfNotNew(dto).flatMap(_ => dto match {
-			case dobj: DataObjectDto => submitterAndFormatAreSameIfObjectNotNew(dobj, submittingOrg)
-			case _: DocObjectDto => submitterIsSameIfObjNotNew(dto, submittingOrg)
-		})
+		val objIri = vocab.getStaticObject(dto.hashSum)
+		for
+			_ <- objectKindSameIfNotNew(dto, objIri)
+			_ <- submitterIsSameIfObjNotNew(objIri, submittingOrg)
+			res <- dto match
+				case dobj: DataObjectDto => formatIsSameIfObjectNotNew(dobj, objIri, submittingOrg)
+				case _ => ok
+		yield res
 
-	private def objectKindSameIfNotNew(dto: ObjectUploadDto)(using Envri, GlobConn): Try[NotUsed] = dto match{
+	private def objectKindSameIfNotNew(dto: ObjectUploadDto, objIri: IRI)(using GlobConn): Try[NotUsed] = dto match
 		case _: DataObjectDto =>
-			if resourceHasType(vocab.getStaticObject(dto.hashSum), metaVocab.docObjectClass)
+			if resourceHasType(objIri, metaVocab.docObjectClass)
 			then userFail("Cannot accept data object upload as there is already a document object with id " + dto.hashSum.id)
 			else Success(NotUsed)
 		case _: DocObjectDto =>
-			if resourceHasType(vocab.getStaticObject(dto.hashSum), metaVocab.dataObjectClass)
+			if resourceHasType(objIri, metaVocab.dataObjectClass)
 			then userFail("Cannot accept document object upload as there is already a data object with id " + dto.hashSum.id)
 			else Success(NotUsed)
-	}
-
-	private def submitterAndFormatAreSameIfObjectNotNew(meta: DataObjectDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
-		val formatValidation: Validated[NotUsed] =
-			for
-				newFormat <- metaReader.getObjSpecFormat(meta.objectSpecification.toRdf)
-				oldFormat <- metaReader.getObjFormatForDobj(vocab.getStaticObject(meta.hashSum))
-				res <- if oldFormat === newFormat then Validated.ok(NotUsed) else Validated.error(
-					s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
-				)
-			yield res
-
-		formatValidation.toTry(UnauthorizedUploadException(_)).flatMap{_ => submitterIsSameIfObjNotNew(meta, submittingOrg)}
 
 
-	private def submitterIsSameIfObjNotNew(dto: ObjectUploadDto, submittingOrg: URI)(using Envri, GlobConn): Try[NotUsed] =
-		val objIri = vocab.getStaticObject(dto.hashSum)
-		val submitterOpt = metaReader.getObjSubmitter(objIri).result
-		submitterOpt.fold(ok): subm =>
-			if(subm === submittingOrg) ok else authFail(
+	private def formatIsSameIfObjectNotNew(meta: DataObjectDto, objIri: IRI, submittingOrg: URI)(using GlobConn): Try[NotUsed] =
+		def specFormat(spec: IRI): Try[IRI] = metaReader.getObjSpecFormat(spec).toTry(new MetadataException(_))
+
+		getSingleUri(objIri, metaVocab.hasObjectSpec).result.fold(ok/* object is new */): oldSpec =>
+			//object is not new
+
+			val newSpec = meta.objectSpecification.toRdf
+			if oldSpec === newSpec then ok else
+				for
+					newFormat <- specFormat(newSpec)
+					oldFormat <- specFormat(oldSpec)
+					res <- if oldFormat === newFormat then ok else authFail:
+						s"Object exists and has format $oldFormat. Upload with format $newFormat is therefore impossible."
+				yield res
+
+
+	private def submitterIsSameIfObjNotNew(objIri: IRI, submittingOrg: URI)(using GlobConn): Try[NotUsed] =
+		metaReader.getObjSubmitter(objIri).result.fold(ok): subm =>
+			if subm === submittingOrg then ok else authFail:
 				s"Object exists and was submitted by $subm. Upload on behalf of $submittingOrg is therefore impossible."
-			)
 
 
-	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[NotUsed] = {
+	private def userAuthorizedBySubmitter(submConf: DataSubmitterConfig, uploader: UserId): Try[NotUsed] =
 		val userId = uploader.email
-		if(!submConf.authorizedUserIds.contains(userId))
-			authFail(s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'")
+		if !submConf.authorizedUserIds.contains(userId) then authFail:
+			s"User '$userId' is not authorized to upload on behalf of submitter '${submConf.submittingOrganization}'"
 		else ok
-	}
+
 
 	private def userAuthorizedByThemesAndProjects(spec: DataObjectSpec, submConf: DataSubmitterConfig): Try[NotUsed] = {
 		if(!submConf.authorizedThemes.fold(true)(_.contains(spec.theme.self.uri)))

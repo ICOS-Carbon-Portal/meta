@@ -23,7 +23,6 @@ import scala.util.Success
 import javax.xml.crypto.Data
 import akka.http.scaladsl.settings.ParserSettings.ErrorLoggingVerbosity.Simple
 
-
 case class GeoEvent(
 	objIdx: Int,
 	isAssertion: Boolean,
@@ -51,32 +50,43 @@ case class CompositeCluster(area: Geometry, var children: IndexedSeq[Cluster]) e
 			child.printTree(level + 1)
 		}
 
-	def allSimpleClusters: Boolean = 
-		children.forall:
+	def allSimpleClusters(c: IndexedSeq[Cluster]): Boolean =
+		c.forall:
 			case _: SimpleCluster => true
 			case _ => false
+			
+	def addCluster(c: Cluster): CompositeCluster =
+		c match
+			case sc: SimpleCluster => addSimpleCluster(sc)
+			case cc: CompositeCluster => addCompositeCluster(cc)
+
+	def addCompositeCluster(c: CompositeCluster): CompositeCluster =	
+		if area.contains(c.area) then
+			CompositeCluster(area, c +: children)
+		else this	
 
 
 	//TODO: Test this function
-	def addChild(c: Cluster): CompositeCluster =
-		if (area.contains(c.area)) then
-			if (children.isEmpty || allSimpleClusters) then
+	def addSimpleCluster(c: SimpleCluster): CompositeCluster =
+		if area.intersects(c.area) then
+			if (allSimpleClusters(c +: children) || children.isEmpty) then
 				CompositeCluster(area, c +: children)
 			else
 				var addedToSubCluster = false
-				children = children.map {child =>
-					child match
-						// First case should not happen, currently happens in test
-						// Is this a good approach? 
-						case _: SimpleCluster => throw Error("A composite cluster can not contain both simple and composite clusters")
-						case cc: CompositeCluster =>
-							if (cc.area.contains(c.area))
-								addedToSubCluster = true
-								cc.addChild(c)
-							else cc
+				children = children.map {
+					case sc: SimpleCluster => throw Error("A composite cluster can not contain both simple and composite clusters")
+					case cc: CompositeCluster =>
+						val newCluster = cc.addCluster(c)
+						if newCluster.children != children then
+							addedToSubCluster = true
+							newCluster
+						else cc
 				}
 
-				if !addedToSubCluster then CompositeCluster(area, c +: children)
+				if !addedToSubCluster then
+					c match
+						case cc: CompositeCluster => CompositeCluster(area, c +: children)
+						case sc: SimpleCluster => throw Error("Simple cluster didn't fit in any of top clusters")
 				else
 					this
 		else this
@@ -113,7 +123,7 @@ def createEmptyTopClusters(f: GeometryFactory): IndexedSeq[CompositeCluster] =
 		new Envelope(-180, -60, -90, 0),
 		new Envelope(-60, 60, -90, 0),
 		new Envelope(60, 180, -90, 0)
-	)
+	) // Envelope(maxLon, minLon, maxLat, minLat)
 
 	val europeLongitudes = IndexedSeq(-60, -30, 0, 30) 
 	val europeLatitudes = IndexedSeq(90, 60, 30)
@@ -127,9 +137,8 @@ def createEmptyTopClusters(f: GeometryFactory): IndexedSeq[CompositeCluster] =
 	val topLevelClusters = topLevelEnvelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty)).toBuffer
 	val europeClusters = europeEnvelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty))
 
-	// add all europe clusters to top level europe cluster
 	for (c <- europeClusters)
-		topLevelClusters(1) = topLevelClusters(1).addChild(c)
+		topLevelClusters(1) = topLevelClusters(1).addCluster(c)
 
 	// topLevelClusters.foreach(_.printTree(1))
 
@@ -196,7 +205,7 @@ class GeoIndex:
 		//TODO: Fix bug related to sparse cluster creation (sparse cluster should not be created with one point as area)
 		override def addObject(dobjCov: DataObjCov): SimpleCluster =
 			//TODO Consider which data structure to use for fast append/prepend
-			val newChildren = dobjCov +: children
+			val newChildren = children :+ dobjCov
 			objectIds.add(dobjCov.idx)
 
 			if (area.contains(dobjCov.geo)) then
@@ -241,7 +250,7 @@ class GeoIndex:
 		allClusters.update(event.clusterId, updatedCluster)
 
 	def placeCluster(cluster: SimpleCluster): Unit =
-		topClusters = topClusters.map(_.addChild(cluster))
+		topClusters = topClusters.map(_.addCluster(cluster))
 		// topClusters.foreach(_.printTree(1))
 
 

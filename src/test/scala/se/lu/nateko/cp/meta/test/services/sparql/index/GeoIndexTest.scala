@@ -42,10 +42,10 @@ class GeoIndexTest extends AnyFunSpec{
 	describe("Insert objects into index"):
 		val index = GeoIndex()
 		val events = parseCsvLines()
-		events.foreach(index.put)
+		events.foreach(index.putQuickly)
+		index.arrangeClusters()
 
 		index.allClusters.values.foreach(println)
-		index.allClusters.values.foreach(index.placeCluster)
 
 		it("find matching indices"):
 			val europe = LatLonBox(Position.ofLatLon(33, -15), Position.ofLatLon(73, 35), None, None)

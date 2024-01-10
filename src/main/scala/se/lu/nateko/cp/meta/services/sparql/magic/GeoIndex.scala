@@ -38,57 +38,40 @@ def calculateBoundingBox(shapes: Seq[Geometry]): Geometry =
 	collection.getEnvelope()
 
 
-case class CompositeCluster(area: Geometry, var children: IndexedSeq[Cluster]) extends Cluster:
+// TODO can area be more specific
+class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) extends Cluster:
 
 	def printTree(level: Int): Unit =
-		for (i <- 1 until level) {
+		for (i <- 1 until level)
 			print("\t")
-		}
-		println(area.toString())
-		
-		for (child <- children) {
-			child.printTree(level + 1)
-		}
 
-	def allSimpleClusters(c: IndexedSeq[Cluster]): Boolean =
-		c.forall:
-			case _: SimpleCluster => true
-			case _ => false
-			
+		println(area.toString())
+
+		for (child <- children)
+			child.printTree(level + 1)
+
+
+	def allSimpleClusters(c: IndexedSeq[Cluster]): Boolean = c.forall(_.isInstanceOf[SimpleCluster])
+
 	def addCluster(c: Cluster): CompositeCluster =
 		c match
 			case sc: SimpleCluster => addSimpleCluster(sc)
 			case cc: CompositeCluster => addCompositeCluster(cc)
 
 	def addCompositeCluster(c: CompositeCluster): CompositeCluster =	
-		if area.contains(c.area) then
-			CompositeCluster(area, c +: children)
-		else this	
+		if area.contains(c.area) then CompositeCluster(area, c +: children)
+		else this
 
 
 	//TODO: Test this function
 	def addSimpleCluster(c: SimpleCluster): CompositeCluster =
 		if area.intersects(c.area) then
-			if (allSimpleClusters(c +: children) || children.isEmpty) then
-				CompositeCluster(area, c +: children)
+			if (allSimpleClusters(c +: children) || children.isEmpty) then CompositeCluster(area, c +: children)
 			else
-				var addedToSubCluster = false
-				children = children.map {
+				CompositeCluster(area, children.map:
 					case sc: SimpleCluster => throw Error("A composite cluster can not contain both simple and composite clusters")
-					case cc: CompositeCluster =>
-						val newCluster = cc.addCluster(c)
-						if newCluster.children != children then
-							addedToSubCluster = true
-							newCluster
-						else cc
-				}
-
-				if !addedToSubCluster then
-					c match
-						case cc: CompositeCluster => CompositeCluster(area, c +: children)
-						case sc: SimpleCluster => throw Error("Simple cluster didn't fit in any of top clusters")
-				else
-					this
+					case cc: CompositeCluster => cc.addCluster(c)
+				)
 		else this
 
 
@@ -156,103 +139,103 @@ trait SimpleCluster extends Cluster:
 	def removeObject(dobjCov: DataObjCov): SimpleCluster
 	//def addObjectId(id: Int): Unit = _objectIds.add(id)
 
+class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
+
+	override def printTree(level: Int): Unit = 
+		for (i <- 1 until level)
+			print("\t")
+
+		println("dense cluster: " + area.toString())
+
+	override def addObject(dobjCov: DataObjCov): SimpleCluster =
+		// println("add object: " + dobjCov.idx)
+		objectIds.add(dobjCov.idx)
+		if dobjCov.geo == area then // TODO check equality
+			this
+		else
+			val currentDataCovs = new ArrayBuffer[DataObjCov]()
+
+			objectIds.forEach: objId =>
+				currentDataCovs.addOne(DataObjCov(objId, area))
+			
+			currentDataCovs.addOne(dobjCov)
+
+			SparseCluster(dobjCov.geo, currentDataCovs.toSeq, objectIds)
+
+	override def removeObject(dobjCov: DataObjCov): SimpleCluster =
+		objectIds.remove(dobjCov.idx)
+		this
+
+	override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
+		val bboxGeometry = getBoundingBoxAsJtsGeometry(bbox)
+
+		if bboxGeometry.intersects(area) then objectIds
+		else new MutableRoaringBitmap
+	
+class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: MutableRoaringBitmap) extends SimpleCluster:
+
+
+	override def printTree(level: Int): Unit = 
+		for (i <- 1 until level)
+			print("\t")
+
+		println("sparse cluster: " + area.toString())
+
+	//TODO: Fix bug related to sparse cluster creation (sparse cluster should not be created with one point as area)
+	override def addObject(dobjCov: DataObjCov): SimpleCluster =
+		//TODO Consider which data structure to use for fast append/prepend
+		val newChildren = children :+ dobjCov
+		objectIds.add(dobjCov.idx)
+
+		if (area.contains(dobjCov.geo)) then
+			SparseCluster(area, newChildren, objectIds)
+		else
+			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
+
+	override def removeObject(dobjCov: DataObjCov): SimpleCluster =
+		val newChildren = children.filter(_.idx != dobjCov.idx)
+		val newGeometries = newChildren.map(_.geo).toSet
+		objectIds.remove(dobjCov.idx)
+
+		if newGeometries.size == 1 then
+			DenseCluster(newGeometries.head, objectIds)
+		else
+			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
+
+	override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
+		val jtsBbox = getBoundingBoxAsJtsGeometry(bbox)
+
+		if jtsBbox.contains(area) then
+			objectIds
+		else if jtsBbox.intersects(area) then
+
+			val otherTest: Int => Boolean = otherFilter.fold[Int => Boolean](_ => true)(_.contains)
+			val matchingObjects = new MutableRoaringBitmap
+
+			children.foreach: dobjCov =>
+				if otherTest(dobjCov.idx) && jtsBbox.intersects(dobjCov.geo)
+				then matchingObjects.add(dobjCov.idx)
+
+			matchingObjects
+		else
+			new MutableRoaringBitmap
+
 class GeoIndex:
 	val f = GeometryFactory()
 	val allClusters = mutable.Map.empty[String, SimpleCluster]
 	private var topClusters: IndexedSeq[CompositeCluster] = createEmptyTopClusters(f)
 
-	class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
-
-		override def printTree(level: Int): Unit = 
-			for (i <- 1 until level) {
-				print("\t")
-			}
-			println("dense cluster: " + area.toString())
-
-		override def addObject(dobjCov: DataObjCov): SimpleCluster =
-			// println("add object: " + dobjCov.idx)
-			objectIds.add(dobjCov.idx)
-			if dobjCov.geo == area then
-				this
-			else
-				val currentDataCovs = new ArrayBuffer[DataObjCov]()
-
-				objectIds.forEach: objId =>
-					currentDataCovs.addOne(DataObjCov(objId, area))
-
-				SparseCluster(dobjCov.geo, currentDataCovs.toSeq ++ Seq(dobjCov), objectIds)
-
-		override def removeObject(dobjCov: DataObjCov): SimpleCluster =
-			objectIds.remove(dobjCov.idx)
-			this
-
-		override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
-			val bboxGeometry = getBoundingBoxAsJtsGeometry(bbox)
-
-			if bboxGeometry.intersects(area) then objectIds
-			else new MutableRoaringBitmap
-
-
-	class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: MutableRoaringBitmap) extends SimpleCluster:
-
-
-		override def printTree(level: Int): Unit = 
-			for (i <- 1 until level) {
-				print("\t")
-			}
-			println("sparse cluster: " + area.toString())
-
-		//TODO: Fix bug related to sparse cluster creation (sparse cluster should not be created with one point as area)
-		override def addObject(dobjCov: DataObjCov): SimpleCluster =
-			//TODO Consider which data structure to use for fast append/prepend
-			val newChildren = children :+ dobjCov
-			objectIds.add(dobjCov.idx)
-
-			if (area.contains(dobjCov.geo)) then
-				SparseCluster(area, newChildren, objectIds)
-			else
-				SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
-
-		override def removeObject(dobjCov: DataObjCov): SimpleCluster =
-			val newChildren = children.filter(_.idx != dobjCov.idx)
-			val newGeometries = newChildren.map(_.geo)
-
-			//TODO Will crash for empty newGeometries
-			// newGeometries should never be empty => return optional from remove instead?
-			if newGeometries.forall(_ == newGeometries.head) then
-				DenseCluster(newGeometries.head, objectIds)
-			else
-				objectIds.remove(dobjCov.idx)
-				SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
-
-		override def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
-			val jtsBbox = getBoundingBoxAsJtsGeometry(bbox)
-
-			if jtsBbox.contains(area) then
-				objectIds
-			else if jtsBbox.intersects(area) then
-
-				val otherTest: Int => Boolean = otherFilter.fold[Int => Boolean](_ => true)(_.contains)
-				val matchingObjects = new MutableRoaringBitmap
-
-				children.foreach: dobjCov =>
-					if otherTest(dobjCov.idx) && jtsBbox.intersects(dobjCov.geo)
-					then matchingObjects.add(dobjCov.idx)
-
-				matchingObjects
-			else
-				new MutableRoaringBitmap
-
+	// TODO make quick and correct versions
 	def put(event: GeoEvent): Unit =
 		val updatedCluster = allClusters
 			.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
 			.addObject(DataObjCov(event.objIdx, event.geometry))
+		// TODO only update if change happened
 		allClusters.update(event.clusterId, updatedCluster)
 
-	def placeCluster(cluster: SimpleCluster): Unit =
+	private def placeCluster(cluster: SimpleCluster): Unit =
 		topClusters = topClusters.map(_.addCluster(cluster))
 		// topClusters.foreach(_.printTree(1))
-
 
 	def getFilter(bbox: LatLonBox, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 		ImmutableRoaringBitmap.or(topClusters.map(_.getFilter(bbox, otherFilter)).iterator.asJava)

@@ -44,6 +44,7 @@ class GeoIndexTest extends AnyFunSpec{
 		val events = parseCsvLines()
 		events.foreach(index.put)
 
+		index.allClusters.values.foreach(println)
 		index.allClusters.values.foreach(index.placeCluster)
 
 		it("find matching indices"):
@@ -52,7 +53,11 @@ class GeoIndexTest extends AnyFunSpec{
 			
 			// westlimit=179.6; southlimit=21.9; eastlimit=-29.9; northlimit=76.7
 			val america = LatLonBox(Position.ofLatLon(21, -99), Position.ofLatLon(50, -29), None, None)
-			val returned = index.getFilter(america, None)
+
+			// westlimit=18.7104; southlimit=64.0408; eastlimit=19.842; northlimit=64.3088
+			val tarfala = LatLonBox(Position.ofLatLon(64.3088, 18.7104), Position.ofLatLon(64.0408, 19.842), None, None)
+
+			val returned = index.getFilter(tarfala, None)
 
 			assert(returned.toArray() === Array(13))
 			//println("-------------------- returned -----------------")
@@ -60,6 +65,8 @@ class GeoIndexTest extends AnyFunSpec{
 
 	describe("Clustering"):
 		val gf = GeometryFactory()
+
+		// 
 
 		//TODO Test DenseCluster and SparseCluster
 		// it("add same geometries to dense cluster"):

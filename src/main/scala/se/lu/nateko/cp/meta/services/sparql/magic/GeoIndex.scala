@@ -43,8 +43,6 @@ def calculateBoundingBox(shapes: Seq[Geometry]): Geometry =
 	val collection = GeometryCollection(shapes.toArray, JtsGeoFactory)
 	collection.getEnvelope()
 
-
-// TODO can area be more specific
 class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) extends Cluster:
 
 	def printTree(level: Int): Unit =
@@ -56,30 +54,29 @@ class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) ex
 		for (child <- children)
 			child.printTree(level + 1)
 
+	def addCluster(c: Cluster): CompositeCluster = if !overlaps(c) then this else
+		var hasAddedToChildren: Boolean = false
 
-	def allSimpleClusters(c: IndexedSeq[Cluster]): Boolean = c.forall(_.isInstanceOf[SimpleCluster])
+		val newChildren = children.map:
+			case sc: SimpleCluster => sc
+			case cc: CompositeCluster =>
+				val newCc = cc.addCluster(c)
+				if newCc.ne(cc) then hasAddedToChildren = true
+				newCc
 
-	def addCluster(c: Cluster): CompositeCluster =
-		c match
-			case sc: SimpleCluster => addSimpleCluster(sc)
-			case cc: CompositeCluster => addCompositeCluster(cc)
+		val updatedChildren = if hasAddedToChildren then newChildren else newChildren :+ c
 
-	def addCompositeCluster(c: CompositeCluster): CompositeCluster =
-		if area.contains(c.area) then CompositeCluster(area, c +: children)
-		else this
+		CompositeCluster(area, updatedChildren)
 
+	def removeCluster(c: SimpleCluster): CompositeCluster = if !overlaps(c) then this else
+		val newChildren = children.collect:
+			case sc: SimpleCluster if sc != c => sc
+			case cc: CompositeCluster => cc.removeCluster(c)
+		CompositeCluster(area, newChildren)
 
-	//TODO: Test this function
-	def addSimpleCluster(c: SimpleCluster): CompositeCluster =
-		if area.intersects(c.area) then
-			if (allSimpleClusters(c +: children) || children.isEmpty) then CompositeCluster(area, c +: children)
-			else
-				CompositeCluster(area, children.map:
-					case sc: SimpleCluster => throw Error("A composite cluster can not contain both simple and composite clusters")
-					case cc: CompositeCluster => cc.addCluster(c)
-				)
-		else this
-
+	private def overlaps(c: Cluster): Boolean =
+		//TODO Investigate if there is a single test method for this (contains or overlaps)
+		area.contains(c.area) || area.overlaps(c.area)
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 
@@ -202,11 +199,13 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 class GeoIndex:
 	val allClusters = mutable.Map.empty[String, SimpleCluster]
 	private var topClusters: IndexedSeq[CompositeCluster] = createEmptyTopClusters
+	def compositeClusters = topClusters
 
 	def put(event: GeoEvent): Unit = innerPut(event, false)
 	def putQuickly(event: GeoEvent): Unit = innerPut(event, true)
 
 	private def innerPut(event: GeoEvent, quick: Boolean): Unit =
+		//TODO Support the scenario when event.isAssertion == false
 		val clusterExists = allClusters.contains(event.clusterId)
 		val currentCluster = allClusters.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
 		val updatedCluster = currentCluster.addObject(DataObjCov(event.objIdx, event.geometry))
@@ -214,16 +213,12 @@ class GeoIndex:
 		if !clusterExists || clusterChanged then
 			allClusters.update(event.clusterId, updatedCluster)
 		if !quick then
-			if clusterChanged then removeCluster(currentCluster)
+			if clusterChanged then
+				topClusters = topClusters.map(_.removeCluster(currentCluster))
 			if !clusterExists || clusterChanged then placeCluster(updatedCluster)
 
 	private def placeCluster(cluster: SimpleCluster): Unit =
 		topClusters = topClusters.map(_.addCluster(cluster))
-		// topClusters.foreach(_.printTree(1))
-
-	private def removeCluster(cluster: SimpleCluster): Unit =
-		//TODO Implement cluster removal
-		???
 
 	def arrangeClusters(): Unit =
 		allClusters.values.foreach(placeCluster)

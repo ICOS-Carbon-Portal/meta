@@ -25,6 +25,7 @@ import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 class GeoIndexTest extends AnyFunSpec{
 
@@ -44,27 +45,27 @@ class GeoIndexTest extends AnyFunSpec{
 		val events = parseCsvLines()
 		events.foreach(index.putQuickly)
 		index.arrangeClusters()
+		index.compositeClusters.foreach(_.printTree(1))
 
-		index.allClusters.values.foreach(println)
 
 		it("find matching indices"):
-			val europe = LatLonBox(Position.ofLatLon(33, -15), Position.ofLatLon(73, 35), None, None)
-			val world = LatLonBox(Position.ofLatLon(-90, -180), Position.ofLatLon(90, 180), None, None)
+			val europe = mkBoundingBox(Coordinate(-15, 33), Coordinate(35, 73))
+			val world = mkBoundingBox(Coordinate(-180, -90), Coordinate(180, 90))
 			
 			// westlimit=179.6; southlimit=21.9; eastlimit=-29.9; northlimit=76.7
-			val america = LatLonBox(Position.ofLatLon(21, -99), Position.ofLatLon(50, -29), None, None)
+			val america = mkBoundingBox(Coordinate(-99, 21), Coordinate(-29, 50))
 
 			// westlimit=18.7104; southlimit=64.0408; eastlimit=19.842; northlimit=64.3088
-			val tarfala = LatLonBox(Position.ofLatLon(64.3088, 18.7104), Position.ofLatLon(64.0408, 19.842), None, None)
+			val tarfala = mkBoundingBox(Coordinate(18.7104, 64.3088), Coordinate(19.842, 64.0408))
 
-			val returned = index.getFilter(tarfala, None)
+			val returned = index.getFilter(america, None)
 
 			assert(returned.toArray() === Array(13))
 			//println("-------------------- returned -----------------")
 			//println(returned.toString())
 
 	describe("Clustering"):
-		val gf = GeometryFactory()
+		val gf = JtsGeoFactory
 
 		// 
 
@@ -108,7 +109,7 @@ class GeoRow(header: Map[String, Int], row: Array[String]) extends Dynamic:
 
 class GeoEventParser(headerLine: Array[String]):
 	private val header: Map[String, Int] = headerLine.zipWithIndex.toMap
-	private val f = GeometryFactory()
+	private val f = JtsGeoFactory
 	private val reader = GeoJsonReader()
 
 	def hasOwnMinMax(lonMax: String, lonMin: String, latMax: String, latMin: String): Boolean =
@@ -155,5 +156,7 @@ class GeoEventParser(headerLine: Array[String]):
 	def getBoundingBox(lonMax: String, lonMin: String, latMax: String, latMin: String): Geometry =
 		val lowerLeftPoint = new Coordinate(lonMin.toDouble, latMin.toDouble)
 		val upperRightPoint = new Coordinate(lonMax.toDouble, latMax.toDouble)
+		mkBoundingBox(lowerLeftPoint, upperRightPoint)
 
-		f.toGeometry(new Envelope(lowerLeftPoint, upperRightPoint))
+def mkBoundingBox(lowerLeftPoint: Coordinate, upperRightPoint: Coordinate): Geometry =
+	JtsGeoFactory.toGeometry(new Envelope(lowerLeftPoint, upperRightPoint))

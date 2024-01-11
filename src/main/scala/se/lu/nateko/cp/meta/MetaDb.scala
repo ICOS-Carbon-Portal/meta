@@ -171,7 +171,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val serversFut = {
 			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
 			val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config)(using ctxt).andThen{
+			makeInstanceServers(vanillaRepo, Ingestion.allProviders, config)(using ctxt).andThen{
 				case _ =>
 					ctxt.shutdown()
 					log.info("instance servers created")

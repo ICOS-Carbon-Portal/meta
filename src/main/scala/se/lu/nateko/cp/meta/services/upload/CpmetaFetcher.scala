@@ -26,8 +26,13 @@ trait CpmetaReader:
 
 	val metaVocab: CpmetaVocab
 
+	def getPlainDataObject(dobj: IRI)(using DobjConn): Validated[PlainStaticObject] =
+		getPlainStaticObject(dobj)
 
-	def getPlainStaticObject(dobj: IRI): RdfLens.DocConn ?=> Validated[PlainStaticObject] =
+	def getPlainDocObject(dobj: IRI)(using DocConn): Validated[PlainStaticObject] =
+		getPlainStaticObject(dobj)
+
+	private def getPlainStaticObject(dobj: IRI)(using TSC): Validated[PlainStaticObject] =
 		for
 			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
 			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:

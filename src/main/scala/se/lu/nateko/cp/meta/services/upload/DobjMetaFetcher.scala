@@ -9,6 +9,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 
 import scala.util.Try
 
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
@@ -19,11 +20,11 @@ import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.api.RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 
 trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	import TriplestoreConnection.*
+	import RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 	def getSpecification(spec: IRI): DocConn ?=> Validated[DataObjectSpec] =
 		for
@@ -83,7 +84,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 
 	// only usable for doc objects associated to the metadata items (not colls or dobjs)
 	private def getDocumentationObjs(item: IRI): DocConn ?=> Validated[Seq[PlainStaticObject]] =
-		Validated.sequence(getUriValues(item, metaVocab.hasDocumentationObject).map(getPlainStaticObject))
+		Validated.sequence(getUriValues(item, metaVocab.hasDocumentationObject).map(getPlainDocObject))
 
 	def getOptionalStation(station: IRI): DocConn ?=> Validated[Option[Station]] =
 		if hasStatement(station, metaVocab.hasStationId, null) then
@@ -344,9 +345,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			hostUri <- getOptionalUri(prod, metaVocab.wasHostedBy)
 			host <- hostUri.map(getOrganization).sinkOption
 			comment <- getOptionalString(prod, RDFS.COMMENT)
-			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource).map(getPlainStaticObject(_)(using docConn)))
+			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource)
+				.map(getPlainDataObject(_)(using RdfLens.global(using docConn))))
 			documentationUri <- getOptionalUri(prod, RDFS.SEEALSO)
-			documentation <- documentationUri.map(getPlainStaticObject(_)(using docConn)).sinkOption
+			documentation <- documentationUri.map(getPlainDocObject(_)(using docConn)).sinkOption
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
 			DataProduction(

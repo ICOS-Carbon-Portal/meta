@@ -4,6 +4,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.CollConn
 import se.lu.nateko.cp.meta.api.RdfLens.DocConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -54,7 +55,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		val membersV = Validated.sequence:
 			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
 				if collectionExists(item) then getExistingStaticColl(item)
-				else getPlainStaticObject(item)
+				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 		for
 			creatorUri <- getSingleUri[CollConn](coll, dct.creator)
@@ -64,7 +65,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			description <- getOptionalString[CollConn](coll, dct.description)
 			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
-			documentation <- documentationUriOpt.map(getPlainStaticObject).sinkOption
+			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
 		yield
 			val init = StaticCollection(
 				res = coll.toJava,

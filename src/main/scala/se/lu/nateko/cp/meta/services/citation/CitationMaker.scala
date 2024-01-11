@@ -133,14 +133,19 @@ class CitationMaker(
 			ownLicOpt <- getOptLic(dobj, metaVocab.dcterms.license)
 			lic <- ownLicOpt.getOrElseV:
 				for
-					specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
-					specLicOpt <- getImpliedLic(specIri)
-					lic <- specLicOpt.getOrElseV:
-						for
-							projIri <- getSingleUri(specIri, metaVocab.hasAssociatedProject)
-							projLicOpt <- getImpliedLic(projIri)
-						yield
-							projLicOpt.getOrElse(defaultLicence)
+					specIriOpt <- getOptionalUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
+					lic <- specIriOpt match
+						case None => Validated.ok(defaultLicence) //not a data object
+						case Some(specIri) =>
+							for
+								specLicOpt <- getImpliedLic(specIri)
+								lic <- specLicOpt.getOrElseV:
+									for
+										projIri <- getSingleUri(specIri, metaVocab.hasAssociatedProject)
+										projLicOpt <- getImpliedLic(projIri)
+									yield
+										projLicOpt.getOrElse(defaultLicence)
+							yield lic
 				yield lic
 		yield lic
 	end getLicence

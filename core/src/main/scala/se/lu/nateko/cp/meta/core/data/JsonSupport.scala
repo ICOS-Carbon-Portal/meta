@@ -9,7 +9,7 @@ import se.lu.nateko.cp.doi.DoiMeta
 import CommonJsonSupport.TypeField
 import scala.reflect.ClassTag
 
-object JsonSupport extends CommonJsonSupport{
+object JsonSupport extends CommonJsonSupport:
 
 	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
@@ -241,7 +241,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[AtcStationSpecifics] = jsonFormat7(AtcStationSpecifics.apply)
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
 	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
-	given RootJsonFormat[SitesStationSpecifics] = jsonFormat7(SitesStationSpecifics.apply)
+	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
 	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat1(IcosCitiesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"
@@ -271,4 +271,5 @@ object JsonSupport extends CommonJsonSupport{
 			}
 	}
 
-}
+end JsonSupport
+

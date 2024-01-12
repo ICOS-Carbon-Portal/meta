@@ -22,25 +22,27 @@ import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 import java.net.URI
 import java.time.Instant
 import scala.collection.mutable.Buffer
 
-class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: CpmetaVocab) {
+class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private given factory: ValueFactory = vocab.factory
 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
-	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri): Seq[Statement] = {
+	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri, TriplestoreConnection): Seq[Statement] =
 		import meta.hashSum
+		import TriplestoreConnection.getValues
 
 		val objectUri = vocab.getStaticObject(hashSum)
 
@@ -54,7 +56,7 @@ class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: Cpme
 					case Seq() => Iterable.empty
 					case Seq(v) =>
 						val collIri = vocab.getNextVersionColl(v)
-						val isTheOnlyNextVersion = server.getValues(collIri, dct.hasPart).filter(_ != objectUri).isEmpty
+						val isTheOnlyNextVersion = getValues(collIri, dct.hasPart).filter(_ != objectUri).isEmpty
 						val statements = Buffer(makeSt(collIri, dct.hasPart, objectUri))
 
 						if isTheOnlyNextVersion then
@@ -90,7 +92,7 @@ class StatementsProducer(server: InstanceServer, vocab: CpVocab, metaVocab: Cpme
 			makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
 			nextVersionStatements ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
-	}
+	end getObjStatements
 
 	private def getDobjStatements(meta: DataObjectDto)(using Envri): Seq[Statement] =
 		import meta.hashSum

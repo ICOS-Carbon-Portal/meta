@@ -16,6 +16,13 @@ module.exports = React.createClass({
 		this.setState(stateFromNewProps(newProps));
 	},
 
+	componentDidMount: function(){
+		var input = React.findDOMNode(this.refs.dataValueInput);
+		if(!input.value){
+			input.focus();
+		}
+	},
+
 	render: function(){
 		var content = this.state.dataValue.getValue();
 		var validity = this.state.dataValue.getValidity();

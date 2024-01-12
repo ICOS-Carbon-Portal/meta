@@ -26,6 +26,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import scala.language.implicitConversions
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
+import scala.util.Try
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -60,7 +61,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		authRouting: AuthenticationRouting,
 		metaFlows: Seq[MetaUploadService],
 		coreConf: MetaCoreConfig
-	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
+	)(implicit mat: Materializer): Route = handleExceptions(errHandler):
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
@@ -131,7 +132,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		}
-	}
+	end apply
 
-	def reportAccessUri(fut: Future[AccessUri]): Route = onSuccess(fut){au => complete(au.uri.toString)}
+	def reportAccessUri(uriTry: Try[AccessUri]): Route = complete(uriTry.get.uri.toString)
 }

@@ -1,36 +1,40 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.NetCdfExtract
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
-import eu.icoscp.envri.Envri
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 
 
 private class NetCdfUploadCompleter(
-	server: InstanceServer,
 	result: NetCdfExtract,
 	handles: HandleNetClient,
+	lens: DobjLens,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab
-)(implicit ctxt: ExecutionContext, envri: Envri) extends PidMinter(handles, vocab) {
+)(using Envri) extends PidMinter(handles, vocab):
 
+	import TriplestoreConnection.getStatements
 	private val factory = vocab.factory
 
-	override def getUpdates(hash: Sha256Sum): Future[Seq[RdfUpdate]] = Future{
+	override def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate] =
 
 		val olds = result.varInfo.flatMap{vinfo =>
 			val vUri = vocab.getVarInfo(hash, vinfo.name)
 
 			IndexedSeq(metaVocab.hasMinValue, metaVocab.hasMaxValue).flatMap{prop =>
-				server.getStatements(Some(vUri), Some(prop), None)
+				getStatements(vUri, prop, null)(using lens)
 			}
 		}
 
@@ -42,6 +46,3 @@ private class NetCdfUploadCompleter(
 			}
 		}
 		MetadataUpdater.diff(olds, news, factory)
-	}
-
-}

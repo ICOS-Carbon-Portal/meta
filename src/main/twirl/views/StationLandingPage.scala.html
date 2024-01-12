@@ -8,8 +8,10 @@
 @import landpagesnips.*
 @import eu.icoscp.envri.Envri
 
-@(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
+@(stExt: OrganizationExtra[Station], vocab: CpVocab, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(stationShortName(station), header){
+	@errorList(errors)
+	@discontinuedStationWarning(station)
 	@if(webpageDetailsPresent) {
 		@for(details <- station.org.webpageDetails) {
 			@for(cover <- details.coverImage) {
@@ -44,7 +46,7 @@
 						@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
 							@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
 						}
-						@for(meanAnnualPrecip <- etcSpecifics.flatMap(_.meanAnnualPrecip)){
+						@for(meanAnnualPrecip <- ecoSpecifics.flatMap(_.meanAnnualPrecip)){
 							@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
 						}
 						@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){

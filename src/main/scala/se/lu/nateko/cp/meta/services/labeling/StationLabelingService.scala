@@ -1,69 +1,65 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
-
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
 import se.lu.nateko.cp.meta.LabelingServiceConfig
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.onto.Onto
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.FileStorageService
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import akka.event.LoggingAdapter
+import se.lu.nateko.cp.meta.services.MetadataException
 
 
 class StationLabelingService(
 	instanceServers: Map[String, InstanceServer],
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
+	protected val metaVocab: CpmetaVocab,
 	protected val config: LabelingServiceConfig,
 	protected val log: LoggingAdapter
-) extends UserInfoService with StationInfoService with FileService with LifecycleService {
+) extends UserInfoService with StationInfoService with FileService with LifecycleService:
+	import LabelingDb.{LblAppConn, ProvConn}
+	import TriplestoreConnection.{getStringValues, getUriValues, getOptionalString, getSingleString}
 
-	protected val server: InstanceServer = instanceServers(config.instanceServerId)
-	protected val provInfoServer: InstanceServer = instanceServers(config.provisionalInfoInstanceServerId)
-	protected val icosInfoServer: InstanceServer = instanceServers(config.icosMetaInstanceServerId)
-	protected given factory: ValueFactory = provInfoServer.factory
+	protected val db = LabelingDb(
+		provServer = instanceServers(config.provisionalInfoInstanceServerId),
+		lblServer = instanceServers(config.instanceServerId),
+		icosServer = instanceServers(config.icosMetaInstanceServerId)
+	)
+	protected given factory: ValueFactory = metaVocab.factory
 	protected val vocab = new StationsVocab(factory)
-	protected val metaVocab = new CpmetaVocab(factory)
 	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
-	protected val provRdfLog = provInfoServer match{
-		case logging: LoggingInstanceServer => logging.log
-		case _ => throw new Exception(
-			"Configuration error! Provisional stations metadata InstanceServer is expected to be a LoggingInstanceServer"
-		)
-	}
-	protected val labelingRdfLog = server match{
-		case logging: LoggingInstanceServer => logging.log
-		case _ => throw new Exception(
-			"Configuration error! Labeling metadata InstanceServer is expected to be a LoggingInstanceServer"
-		)
-	}
 
-	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId): Unit =
+	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId)(using ProvConn): Unit =
 		if(!userIsPiOrDeputy(uploader, stationUri)) throw new UnauthorizedStationUpdateException(
 			"Only PIs are authorized to update station's info"
 		)
 
-	protected def userIsPiOrDeputy(user: UserId, station: IRI): Boolean = {
+	protected def userIsPiOrDeputy(user: UserId, station: IRI)(using ProvConn): Boolean = {
 		getStationPiOrDeputyEmails(station).contains(user.email.toLowerCase)
 	}
 
-	protected def getPiEmails(piUri: IRI): Seq[String] =
-		provInfoServer.getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
+	protected def getPiEmails(piUri: IRI)(using ProvConn): Seq[String] =
+		getStringValues(piUri, vocab.hasEmail).map(_.toLowerCase)
 
-	protected def lookupStationClass(stationUri: IRI): Option[IRI] =
-		InstanceServerUtils.getSingleTypeIfAny(stationUri, provInfoServer)
+	protected def lookupStationClass(stationUri: IRI)(using ProvConn): Option[IRI] =
+		InstOnto.getSingleTypeIfAny(stationUri)
 
-	protected def lookupStationId(stationUri: IRI): Option[String] =
-		provInfoServer.getStringValues(stationUri, vocab.hasShortName).headOption
+	protected def lookupLblStationId(stationUri: IRI)(using LblAppConn): Option[String] =
+		getOptionalString(stationUri, vocab.hasShortName).getOrThrow(new MetadataException(_))
 
-	protected def getStationPiOrDeputyEmails(stationUri: IRI): Seq[String] = (
-		provInfoServer.getUriValues(stationUri, vocab.hasPi) ++
-		provInfoServer.getUriValues(stationUri, vocab.hasDeputyPi)
+	protected def lookupProvStationId(stationUri: IRI)(using ProvConn): String =
+		getSingleString(stationUri, vocab.hasShortName).getOrThrow(new MetadataException(_))
+
+	protected def getStationPiOrDeputyEmails(stationUri: IRI)(using ProvConn): Seq[String] = (
+		getUriValues(stationUri, vocab.hasPi) ++
+		getUriValues(stationUri, vocab.hasDeputyPi)
 	).flatMap(getPiEmails)
-}
 
+end StationLabelingService

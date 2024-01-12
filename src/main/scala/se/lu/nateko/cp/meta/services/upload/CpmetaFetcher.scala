@@ -4,307 +4,419 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.TcMetaSource
-import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.containsEither
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.containsEither
 
 import java.net.URI
 import scala.util.Try
 
-trait CpmetaFetcher extends FetchingHelper{
-	protected final lazy val metaVocab = new CpmetaVocab(server.factory)
 
-	def getOptionalSpecificationFormat(spec: IRI): Option[IRI] = getOptionalUri(spec, metaVocab.hasFormat)
+trait CpmetaReader:
+	import TriplestoreConnection.*
+	import RdfLens.{MetaConn, DobjConn, DocConn, ItemConn}
 
-	protected def getPosition(iri: IRI): Option[Position] =
-		getLatLon(iri).map{_.copy(
-			alt = getOptionalFloat(iri, metaVocab.hasElevation),
-			label = getOptionalString(iri, RDFS.LABEL),
-			uri = Some(iri.toJava)
-		)}
-	
-	protected def getInstrumentPosition(deploymentIri: IRI): Option[Position] = 
-		getLatLon(deploymentIri).map{_.copy(
-			alt = getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
-		)}
+	val metaVocab: CpmetaVocab
 
-	private def getLatLon(iri: IRI): Option[Position] =
+	def getPlainDataObject(dobj: IRI)(using DobjConn): Validated[PlainStaticObject] =
+		getPlainStaticObject(dobj)
+
+	def getPlainDocObject(dobj: IRI)(using DocConn): Validated[PlainStaticObject] =
+		getPlainStaticObject(dobj)
+
+	private def getPlainStaticObject(dobj: IRI)(using TSC): Validated[PlainStaticObject] =
 		for
-			lat <- getOptionalDouble(iri, metaVocab.hasLatitude)
-			lon <- getOptionalDouble(iri, metaVocab.hasLongitude)
-		yield Position.ofLatLon(lat, lon)
+			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
+			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:
+				case None => getSingleString(dobj, metaVocab.hasName)
+				case Some(title) => Validated.ok(title)
+		yield
+			PlainStaticObject(dobj.toJava, hashsum, fileName)
 
-	protected def getLatLonBox(cov: IRI) = LatLonBox(
-		min = Position.ofLatLon(
-			lat = getSingleDouble(cov, metaVocab.hasSouthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasWesternBound)
-		),
-		max = Position.ofLatLon(
-			lat = getSingleDouble(cov, metaVocab.hasNorthernBound),
-			lon = getSingleDouble(cov, metaVocab.hasEasternBound)
-		),
-		label = getOptionalString(cov, RDFS.LABEL),
-		uri = Some(cov.toJava)
-	)
 
-	protected def getSubmission(subm: IRI): DataSubmission = {
-		val submitter: IRI = getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
-		DataSubmission(
-			submitter = getOrganization(submitter),
-			start = getSingleInstant(subm, metaVocab.prov.startedAtTime),
-			stop = getOptionalInstant(subm, metaVocab.prov.endedAtTime)
-		)
-	}
+	def getPosition[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
+		for
+			latLon <- getLatLon(iri)
+			altOpt <- getOptionalFloat(iri, metaVocab.hasElevation)
+			lblOpt <- getOptionalString(iri, RDFS.LABEL)
+		yield
+			latLon.copy(alt = altOpt, label = lblOpt, uri = Some(iri.toJava))
 
-	protected def getAgent(uri: IRI): Agent = {
-		if(getOptionalString(uri, metaVocab.hasFirstName).isDefined)
-			getPerson(uri)
-		else getOrganization(uri)
-	}
+	def getInstrumentPosition(deploymentIri: IRI): MetaConn ?=> Validated[Position] =
+		for
+			latLon <- getLatLon[MetaConn](deploymentIri)
+			altOpt <- getOptionalFloat(deploymentIri, metaVocab.hasSamplingHeight)
+		yield
+			latLon.copy(alt = altOpt)
 
-	def getOrganization(org: IRI) = Organization(
-		self = getLabeledResource(org),
-		name = getSingleString(org, metaVocab.hasName),
-		email = getOptionalString(org, metaVocab.hasEmail),
-		website = getOptionalUri(org, RDFS.SEEALSO).map(_.toJava),
-		webpageDetails = getOptionalUri(org, metaVocab.hasWebpageElements).map(getWebpageElems)
-	)
+	private def getLatLon[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
+		for
+			lat <- getSingleDouble(iri, metaVocab.hasLatitude)
+			lon <- getSingleDouble(iri, metaVocab.hasLongitude)
+		yield
+			Position.ofLatLon(lat, lon)
 
-	def getWebpageElems(elems: IRI) = WebpageElements(
-		self = getLabeledResource(elems),
-		coverImage = getOptionalUriLiteral(elems, metaVocab.hasCoverImage),
-		linkBoxes = Option(
-			server.getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox).sortBy(_.orderWeight)
-		).filterNot(_.isEmpty)
-	)
+	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI): C ?=> Validated[LatLonBox] =
+		for
+			minLat <- getSingleDouble(cov, metaVocab.hasSouthernBound)
+			minLon <- getSingleDouble(cov, metaVocab.hasWesternBound)
+			maxLat <- getSingleDouble(cov, metaVocab.hasNorthernBound)
+			maxLon <- getSingleDouble(cov, metaVocab.hasEasternBound)
+			lblOpt <- getOptionalString(cov, RDFS.LABEL)
+		yield
+			LatLonBox(
+				min = Position.ofLatLon(minLat, minLon),
+				max = Position.ofLatLon(maxLat, maxLon),
+				label = lblOpt,
+				uri = Some(cov.toJava)
+			)
 
-	def getLinkBox(lbox: IRI) = LinkBox(
-		name = getSingleString(lbox, metaVocab.hasName),
-		coverImage = getSingleUriLiteral(lbox, metaVocab.hasCoverImage),
-		target = getSingleUriLiteral(lbox, metaVocab.hasWebpageLink),
-		orderWeight = getOptionalInt(lbox, metaVocab.hasOrderWeight)
-	)
+	def getSubmission(subm: IRI): (DobjConn | DocConn) ?=> Validated[DataSubmission] =
+		for
+			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+			submitter <- getOrganization(submitterUri)
+			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)
+			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)
+		yield
+			DataSubmission(
+				submitter = submitter,
+				start = start,
+				stop = stop
+			)
 
-	def getPerson(pers: IRI) = Person(
-		self = getLabeledResource(pers),
-		firstName = getSingleString(pers, metaVocab.hasFirstName),
-		lastName = getSingleString(pers, metaVocab.hasLastName),
-		email = getOptionalString(pers, metaVocab.hasEmail),
-		orcid = getOptionalString(pers, metaVocab.hasOrcidId).flatMap(Orcid.unapply)
-	)
+	def getAgent(uri: IRI): MetaConn ?=> Validated[Agent] =
+		getOptionalString(uri, metaVocab.hasFirstName).flatMap: a =>
+			if a.isDefined then
+				getPerson(uri)
+			else
+				getOrganization(uri)
 
-	protected def getProject(project: IRI) = Project(
-		self = getLabeledResource(project),
-		keywords = getOptionalString(project, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-	)
+	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
+		for
+			self <- getLabeledResource(org)
+			name <- getSingleString(org, metaVocab.hasName)
+			emailOpt <- getOptionalString(org, metaVocab.hasEmail)
+			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
+			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
+			webpageDetailsOpt <- webpageUriOpt.map(getWebpageElems).sinkOption
+		yield
+			Organization(
+				self = self,
+				name = name,
+				email = emailOpt,
+				website = websiteOpt.map(_.toJava),
+				webpageDetails = webpageDetailsOpt
+			)
 
-	protected def getObjectFormat(format: IRI) = ObjectFormat(
-		self = getLabeledResource(format),
-		goodFlagValues = Some(server.getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
-	)
+	def getWebpageElems(elems: IRI): MetaConn ?=> Validated[WebpageElements] =
+		for
+			self <- getLabeledResource(elems)
+			coverImageOpt <- getOptionalUriLiteral(elems, metaVocab.hasCoverImage)
+			linkBoxes <- Validated.sequence(getUriValues(elems, metaVocab.hasLinkbox).map(getLinkBox))
+		yield
+			WebpageElements(
+				self = self,
+				coverImage = coverImageOpt,
+				linkBoxes = Option(linkBoxes.sortBy(_.orderWeight)).filterNot(_.isEmpty)
+			)
 
-	protected def getDataTheme(theme: IRI) = DataTheme(
-		self = getLabeledResource(theme),
-		icon = getSingleUriLiteral(theme, metaVocab.hasIcon),
-		markerIcon = getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
-	)
+	def getLinkBox(lbox: IRI): MetaConn ?=> Validated[LinkBox] =
+		for
+			name <- getSingleString(lbox, metaVocab.hasName)
+			coverImage <- getSingleUriLiteral(lbox, metaVocab.hasCoverImage)
+			target <- getSingleUriLiteral(lbox, metaVocab.hasWebpageLink)
+			orderWeightOpt <- getOptionalInt(lbox, metaVocab.hasOrderWeight)
+		yield
+			LinkBox(
+				name = name,
+				coverImage = coverImage,
+				target = target,
+				orderWeight = orderWeightOpt
+			)
 
-	protected def getTemporalCoverage(dobj: IRI) = TemporalCoverage(
-		interval = TimeInterval(
-			start = getSingleInstant(dobj, metaVocab.hasStartTime),
-			stop = getSingleInstant(dobj, metaVocab.hasEndTime)
-		),
-		resolution = getOptionalString(dobj, metaVocab.hasTemporalResolution)
-	)
+	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
+		for
+			self <- getLabeledResource(pers)
+			firstName <- getSingleString(pers, metaVocab.hasFirstName)
+			lastName <- getSingleString(pers, metaVocab.hasLastName)
+			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
+			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)
+		yield
+			Person(
+				self = self,
+				firstName = firstName,
+				lastName = lastName,
+				email = emailOpt,
+				orcid = orcidOpt.flatMap(Orcid.unapply)
+			)
 
-	protected def getStationLocation(stat: IRI, labelOpt: Option[String]): Option[Position] = for(
-		posLat <- getOptionalDouble(stat, metaVocab.hasLatitude);
-		posLon <- getOptionalDouble(stat, metaVocab.hasLongitude);
-		altOpt = getOptionalFloat(stat, metaVocab.hasElevation);
-		stLabel = getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
-	) yield Position(posLat, posLon, altOpt, stLabel, None)
+	def getProject(project: IRI): MetaConn ?=> Validated[Project] =
+		for
+			self <- getLabeledResource(project)
+			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)
+		yield
+			Project(
+				self = self,
+				keywords = keywordsOpt.map(s => parseCommaSepList(s).toIndexedSeq)
+			)
 
-	protected def getSite(site: IRI) = Site(
-		self = getLabeledResource(site),
-		ecosystem = getLabeledResource(site, metaVocab.hasEcosystemType),
-		location = getOptionalUri(site, metaVocab.hasSpatialCoverage).map(getCoverage)
-	)
+	def getObjectFormat(format: IRI): MetaConn ?=> Validated[ObjectFormat] =
+		for
+			self <- getLabeledResource(format)
+		yield
+			ObjectFormat(
+				self = self,
+				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
+			)
 
-	protected def getCoverage(covUri: IRI): GeoFeature =
-		val covClass = getSingleUri(covUri, RDF.TYPE)
+	def getDataTheme(theme: IRI): MetaConn ?=> Validated[DataTheme] =
+		for
+			self <- getLabeledResource(theme)
+			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)
+			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
+		yield DataTheme(self = self, icon = icon, markerIcon = markerIconOpt)
 
-		if covClass === metaVocab.latLonBoxClass then
-			getLatLonBox(covUri)
-		else if covClass === metaVocab.positionClass then
-			getPosition(covUri).getOrElse(throw MetadataException(s"Could not read Position from URI $covUri"))
-		else GeoJson
-			.toFeature(getSingleString(covUri, metaVocab.asGeoJSON))
-			.get
-			.withOptLabel(getOptionalString(covUri, RDFS.LABEL))
-			.withUri(covUri.toJava)
+	def getTemporalCoverage[C <: DobjConn](dobj: IRI): C ?=> Validated[TemporalCoverage] =
+		for
+			start <- getSingleInstant(dobj, metaVocab.hasStartTime)
+			stop <- getSingleInstant(dobj, metaVocab.hasEndTime)
+			resolutionOpt <- getOptionalString(dobj, metaVocab.hasTemporalResolution)
+		yield
+			TemporalCoverage(
+				interval = TimeInterval(
+					start = start,
+					stop = stop
+				),
+				resolution = resolutionOpt
+			)
 
-	protected def getNextVersionAsUri(item: IRI): OptionalOneOrSeq[URI] =
-		getNextVersions(item) match
-			case Nil => None
-			case Seq(single) => Some(Left(single.toJava))
-			case many => Some(Right(many.map(_.toJava)))
+	def getStationLocation(stat: IRI, labelOpt: Option[String]): MetaConn ?=> Validated[Position] =
+		for
+			posLat <- getSingleDouble(stat, metaVocab.hasLatitude)
+			posLon <- getSingleDouble(stat, metaVocab.hasLongitude)
+			altOpt <- getOptionalFloat(stat, metaVocab.hasElevation)
+			stLabelOpt <- getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
+		yield
+			Position(posLat, posLon, altOpt, stLabelOpt, None)
 
-	private def getNextVersions(item: IRI): Seq[IRI] = server
-		.getStatements(None, Some(metaVocab.isNextVersionOf), Some(item))
-		.flatMap{
-			case Rdf4jStatement(next, _, _) =>
+	def getSite(site: IRI): MetaConn ?=> Validated[Site] =
+		for
+			self <- getLabeledResource(site)
+			ecosystem <- getLabeledResource(site, metaVocab.hasEcosystemType)
+			locationUriOpt <- getOptionalUri(site, metaVocab.hasSpatialCoverage)
+			location <- locationUriOpt.map(getCoverage[MetaConn]).sinkOption
+		yield
+			Site(
+				self = self,
+				ecosystem = ecosystem,
+				location = location
+			)
+
+	def getCoverage[C >: DobjConn <: MetaConn](covUri: IRI): C ?=> Validated[GeoFeature] =
+		getSingleUri(covUri, RDF.TYPE).flatMap: covClass =>
+			if covClass === metaVocab.latLonBoxClass then
+				getLatLonBox(covUri)
+			else if covClass === metaVocab.positionClass then
+				getPosition(covUri).require(s"Could not read Position from URI $covUri")
+			else
+				for
+					geoJson <- getSingleString(covUri, metaVocab.asGeoJSON)
+					labelOpt <- getOptionalString(covUri, RDFS.LABEL)
+					feature <- Validated.fromTry(GeoJson.toFeature(geoJson))
+				yield
+					feature.withOptLabel(labelOpt).withUri(covUri.toJava)
+
+	def getNextVersionAsUri(item: IRI)(using ItemConn): OptionalOneOrSeq[URI] =
+		OptionalOneOrSeq.fromSeq(getNextVersions(item).map(_.toJava))
+
+	private def getNextVersions(item: IRI)(using ItemConn): IndexedSeq[IRI] =
+		getPropValueHolders(metaVocab.isNextVersionOf, item)
+			.flatMap: next =>
 				if isPlainCollection(next)
-				then server.getUriValues(next, metaVocab.dcterms.hasPart)
+				then getUriValues(next, metaVocab.dcterms.hasPart)
 				else Seq(next)
-			case _ => Nil //should not happen in practice, but just in case, for completeness
-		}
-		.filter(isComplete)
-		.toIndexedSeq
+			.filter(isComplete)
+			.toIndexedSeq
 
-	protected def isPlainCollection(item: IRI): Boolean =
-		server.resourceHasType(item, metaVocab.plainCollectionClass)
+	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
+		resourceHasType(item, metaVocab.plainCollectionClass)
 
-	protected def isComplete(item: IRI): Boolean =
+	def isComplete(item: IRI)(using ItemConn): Boolean =
 		import metaVocab.*
-		val itemTypes = server.getUriValues(item, RDF.TYPE).toSet
-
+		val itemTypes = getUriValues(item, RDF.TYPE).toSet
 		itemTypes.contains(collectionClass) || (
 			itemTypes.contains(plainCollectionClass) &&
-			server.getUriValues(item, dcterms.hasPart).exists(isComplete)
+			getUriValues(item, dcterms.hasPart).exists(isComplete)
 		) || (
 			if itemTypes.containsEither(docObjectClass, dataObjectClass)
-			then server.hasStatement(Some(item), Some(hasSizeInBytes), None)
-			else true //we are probably using a wrong InstanceServer, so have to assume the item is complete
+			then hasStatement(item, hasSizeInBytes, null)
+			else true //we are probably using a wrong context, so have to assume the item is complete
 		)
 
-	protected def getLatestVersion(item: IRI): OneOrSeq[URI] =
-
+	def getLatestVersion(item: IRI)(using ItemConn): OneOrSeq[URI] =
 		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
-			val nextVersions = getNextVersions(item).flatMap{next =>
+			val nextVersions = getNextVersions(item).flatMap: next =>
 				if seen.contains(next)
 				then Nil
 				else latest(next, seen + next)
-			}
 			if nextVersions.isEmpty then Seq(item) else nextVersions
-
 		latest(item, Set.empty).map(_.toJava) match
 			case Seq(single) => Left(single)
 			case many => Right(many)
 
+	def getPreviousVersion[C <: ItemConn](item: IRI): C ?=> OptionalOneOrSeq[IRI] =
+		OptionalOneOrSeq.fromSeq(getPreviousVersions(item))
 
-	protected def getPreviousVersion(item: IRI): OptionalOneOrSeq[URI] =
-		val allPrevVersions: Seq[IRI] =
-			server.getUriValues(item, metaVocab.isNextVersionOf) ++
-			server.getStatements(None, Some(metaVocab.dcterms.hasPart), Some(item)).flatMap{
-				case Rdf4jStatement(coll, _, _) if isPlainCollection(coll) =>
-					server.getUriValues(coll, metaVocab.isNextVersionOf)
-				case _ => Nil
-			}
-		allPrevVersions.map(_.toJava) match
-			case Nil => None
-			case Seq(single) => Some(Left(single))
-			case many => Some(Right(many))
+	def getPreviousVersions(item: IRI)(using ItemConn): IndexedSeq[IRI] =
+		getUriValues(item, metaVocab.isNextVersionOf) ++
+		getPropValueHolders(metaVocab.dcterms.hasPart, item).flatMap: coll =>
+			if isPlainCollection(coll) then
+				getUriValues(coll, metaVocab.isNextVersionOf)
+			else Nil
 
+	def getValTypeLookup(datasetSpec: IRI): MetaConn ?=> Validated[VarMetaLookup] =
+		for
+			datasetVars <- getDatasetVars(datasetSpec)
+			datasetColumns <- getDatasetColumns(datasetSpec)
+		yield
+			VarMetaLookup(datasetVars ++ datasetColumns)
 
-	protected def getPreviousVersions(item: IRI): Seq[URI] = getPreviousVersion(item).flattenToSeq
+	def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): DobjConn ?=> Validated[Option[VarMeta]] =
+		for
+			minValue <- getOptionalDouble(vi, metaVocab.hasMinValue)
+			maxValue <- getOptionalDouble(vi, metaVocab.hasMaxValue)
+			varNameOpt <- getOptionalString(vi, RDFS.LABEL)
+		yield
+			for
+				varName <- varNameOpt
+				varMeta <- vtLookup.lookup(varName)
+			yield
+				varMeta.copy(
+					minMax = minValue.flatMap(min => maxValue.map(min -> _))
+				)
 
-	def getValTypeLookup(datasetSpec: IRI) = VarMetaLookup(
-		getDatasetVars(datasetSpec) ++ getDatasetColumns(datasetSpec)
-	)
+	def getValueType(vt: IRI): MetaConn ?=> Validated[ValueType] =
+		for
+			labeledResource <- getLabeledResource(vt)
+			quantityKindUri <- getOptionalUri(vt, metaVocab.hasQuantityKind)
+			quantityKind <- quantityKindUri.map(getLabeledResource).sinkOption
+			unit <- getOptionalString(vt, metaVocab.hasUnit)
+		yield
+			ValueType(labeledResource, quantityKind, unit)
 
-	protected def getL3VarInfo(vi: IRI, vtLookup: VarMetaLookup): Option[VarMeta] = for(
-		varName <- getOptionalString(vi, RDFS.LABEL);
-		varMeta <- vtLookup.lookup(varName)
-	) yield
-		varMeta.copy(
-			minMax = getOptionalDouble(vi, metaVocab.hasMinValue).flatMap{min =>
-				getOptionalDouble(vi, metaVocab.hasMaxValue).map(min -> _)
-			}
-		)
-
-
-	protected def getValueType(vt: IRI) = ValueType(
-		getLabeledResource(vt),
-		getOptionalUri(vt, metaVocab.hasQuantityKind).map(getLabeledResource),
-		getOptionalString(vt, metaVocab.hasUnit)
-	)
-
-	private def getDatasetVars(ds: IRI) =
+	private def getDatasetVars(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasVariable, hasVariableTitle, isRegexVariable, isOptionalVariable)
 
-	private def getDatasetColumns(ds: IRI) =
+	private def getDatasetColumns(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasColumn, hasColumnTitle, isRegexColumn, isOptionalColumn)
 
-	private def getDatasetVarsOrCols(ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI): Seq[DatasetVariable] =
-		server.getUriValues(ds, varProp).map{dv =>
-			val flaggedCols = server.getUriValues(dv, metaVocab.isQualityFlagFor).map(_.toJava)
-			DatasetVariable(
-				self = getLabeledResource(dv),
-				title = getSingleString(dv, titleProp),
-				valueType = getValueType(getSingleUri(dv, metaVocab.hasValueType)),
-				valueFormat = getOptionalUri(dv, metaVocab.hasValueFormat).map(_.toJava),
-				isFlagFor = Some(flaggedCols).filterNot(_.isEmpty),
-				isRegex = getOptionalBool(dv, regexProp).getOrElse(false),
-				isOptional = getOptionalBool(dv, optProp).getOrElse(false)
-			)
-		}
-
-	protected def getInstrumentLite(instr: IRI): UriResource = {
-		inline def model = getOptionalString(instr, metaVocab.hasModel).filter(_ != TcMetaSource.defaultInstrModel)
-		inline def serialNumber = getOptionalString(instr, metaVocab.hasSerialNumber).filter(_ != TcMetaSource.defaultSerialNum)
-
-		val label = getOptionalString(instr, metaVocab.hasName).orElse{
-			(model, serialNumber) match
-				case (None, None) => None
-				case (None, nbr) => nbr
-				case (m, None) => m
-				case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
-		}.getOrElse{
-			instr.getLocalName
-		}
-
-		val comments = server.getStringValues(instr, RDFS.COMMENT)
-
-		UriResource(instr.toJava, Some(label), comments)
-	}
-
-	def getInstrumentDeployment(iri: IRI, instrument: IRI): InstrumentDeployment =
-		val stationIri = getSingleUri(iri, metaVocab.atOrganization)
-
-		InstrumentDeployment(
-			instrument = getInstrumentLite(instrument),
-			station = getOrganization(stationIri),
-			pos = getInstrumentPosition(iri),
-			variableName = getOptionalString(iri, metaVocab.hasVariableName),
-			forProperty = getOptionalUri(iri, metaVocab.ssn.forProperty).map(getLabeledResource),
-			start = getOptionalInstant(iri, metaVocab.hasStartTime),
-			stop = getOptionalInstant(iri, metaVocab.hasEndTime)
+	private def getDatasetVarsOrCols(
+		ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI
+	): MetaConn ?=> Validated[Seq[DatasetVariable]] =
+		Validated.sequence(getUriValues(ds, varProp).map: dv =>
+			for
+				self <- getLabeledResource(dv)
+				title <- getSingleString(dv, titleProp)
+				valueTypeUri <- getSingleUri(dv, metaVocab.hasValueType)
+				valueType <- getValueType(valueTypeUri)
+				valueFormat <- getOptionalUri(dv, metaVocab.hasValueFormat)
+				isRegex <- getOptionalBool(dv, regexProp)
+				isOptional <- getOptionalBool(dv, optProp)
+			yield
+				val flaggedCols = getUriValues(dv, metaVocab.isQualityFlagFor).map(_.toJava)
+				DatasetVariable(
+					self = self,
+					title = title,
+					valueType = valueType,
+					valueFormat = valueFormat.map(_.toJava),
+					isFlagFor = Some(flaggedCols).filterNot(_.isEmpty),
+					isRegex = isRegex.getOrElse(false),
+					isOptional = isOptional.getOrElse(false)
+				)
 		)
 
+	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
+		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
+		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
 
-	def getInstrument(instr: IRI): Option[Instrument] =
-		if server.resourceHasType(instr, metaVocab.instrumentClass) then Some(
-			Instrument(
-				self = getInstrumentLite(instr),
-				model = getSingleString(instr, metaVocab.hasModel),
-				serialNumber = getSingleString(instr, metaVocab.hasSerialNumber),
-				name = getOptionalString(instr, metaVocab.hasName),
-				vendor = getOptionalUri(instr, metaVocab.hasVendor).map(getOrganization),
-				owner = getOptionalUri(instr, metaVocab.hasInstrumentOwner).map(getOrganization),
-				parts = server.getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite),
-				partOf = server.getStatements(None, Some(metaVocab.hasInstrumentComponent), Some(instr)).map(_.getSubject).collect{
-					case iri: IRI => getInstrumentLite(iri)
-				}.toList.headOption,
-				deployments = server.getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr))
+		for
+			model <- modelValid
+			serialNumber <- serialNumberValid
+			name <- getOptionalString(instr, metaVocab.hasName)
+		yield
+			val label = name.orElse:
+				(model, serialNumber) match
+					case (None, None) => None
+					case (None, nbr) => nbr
+					case (m, None) => m
+					case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
+			.getOrElse:
+				instr.getLocalName
+
+			val comments = getStringValues(instr, RDFS.COMMENT)
+
+			UriResource(instr.toJava, Some(label), comments)
+
+	def getInstrumentDeployment(iri: IRI, instrument: IRI): MetaConn ?=> Validated[InstrumentDeployment] =
+		for
+			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
+			instrument <- getInstrumentLite(instrument)
+			station <- getOrganization(stationIri)
+			pos <- getInstrumentPosition(iri).optional
+			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
+			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
+			forProperty <- forPropertyOpt.map(getLabeledResource).sinkOption
+			start <- getOptionalInstant(iri, metaVocab.hasStartTime)
+			stop <- getOptionalInstant(iri, metaVocab.hasEndTime)
+		yield
+			InstrumentDeployment(
+				instrument = instrument,
+				station = station,
+				pos = pos,
+				variableName = variableNameOpt,
+				forProperty = forProperty,
+				start = start,
+				stop = stop
 			)
-		) else None
 
-}
+	def getInstrument(instr: IRI): MetaConn ?=> Validated[Instrument] =
+		if resourceHasType(instr, metaVocab.instrumentClass) then
+			for
+				self <- getInstrumentLite(instr)
+				model <- getSingleString(instr, metaVocab.hasModel)
+				serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
+				name <- getOptionalString(instr, metaVocab.hasName)
+				vendor <- getOptionalUri(instr, metaVocab.hasVendor)
+				vendorOrg <- vendor.map(getOrganization).sinkOption
+				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
+				ownerOrg <- owner.map(getOrganization).sinkOption
+				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
+				partOf <- getPropValueHolders(metaVocab.hasInstrumentComponent, instr)
+					.map(getInstrumentLite).headOption.sinkOption
+				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
+			yield
+				Instrument(
+					self = self,
+					model = model,
+					serialNumber = serialNumber,
+					name = name,
+					vendor = vendorOrg,
+					owner = ownerOrg,
+					parts = parts,
+					partOf = partOf,
+					deployments = deployments
+				)
+		else
+			Validated.error(s"$instr is not an instrument")
+
+end CpmetaReader

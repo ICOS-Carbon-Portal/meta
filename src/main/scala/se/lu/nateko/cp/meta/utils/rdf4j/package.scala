@@ -23,6 +23,7 @@ import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnection
 
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import akka.http.scaladsl.model.Uri
 
 extension(factory: ValueFactory){
 	def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
@@ -51,6 +52,9 @@ extension (uri: JavaUri){
 	def ===(other: IRI): Boolean = ===(other.toJava)
 	def ===(other: JavaUri): Boolean = uri.toString == other.toString
 }
+
+extension (uri: Uri)
+	def toRdf(using factory: ValueFactory): IRI = factory.createIRI(uri.toString)
 
 extension [T](res: CloseableIteration[T, _])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{

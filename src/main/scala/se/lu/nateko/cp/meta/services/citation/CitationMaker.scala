@@ -1,19 +1,32 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import akka.event.LoggingAdapter
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.SKOS
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.doi.DoiMeta
+import se.lu.nateko.cp.doi.meta.Contributor
+import se.lu.nateko.cp.doi.meta.Creator
+import se.lu.nateko.cp.doi.meta.Description
+import se.lu.nateko.cp.doi.meta.DescriptionType
+import se.lu.nateko.cp.doi.meta.GenericName
+import se.lu.nateko.cp.doi.meta.Name
+import se.lu.nateko.cp.doi.meta.NameIdentifier
+import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
+import se.lu.nateko.cp.doi.meta.Title
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -29,18 +42,6 @@ import scala.util.Success
 import scala.util.Try
 
 import CitationStyle.*
-import se.lu.nateko.cp.doi.DoiMeta
-import akka.event.LoggingAdapter
-import se.lu.nateko.cp.doi.meta.Title
-import se.lu.nateko.cp.doi.meta.Description
-import se.lu.nateko.cp.doi.meta.DescriptionType
-import se.lu.nateko.cp.doi.meta.Creator
-import se.lu.nateko.cp.doi.meta.Name
-import se.lu.nateko.cp.doi.meta.GenericName
-import se.lu.nateko.cp.doi.meta.NameIdentifier
-import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
-import se.lu.nateko.cp.doi.meta.Contributor
-import eu.icoscp.envri.Envri
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -51,82 +52,102 @@ private class CitationInfo(
 	val citText: Option[String],
 )
 
-class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCoreConfig, log: LoggingAdapter) extends FetchingHelper:
+class CitationMaker(
+	doiCiter: PlainDoiCiter,
+	vocab: CpVocab,
+	metaVocab: CpmetaVocab,
+	coreConf: MetaCoreConfig,
+	log: LoggingAdapter
+):
 	import CitationMaker.*
+	import Validated.getOrElseV
+	import TriplestoreConnection.*
+	import RdfLens.{DobjConn, DocConn, MetaConn}
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
 	private def defaultTimezoneId(using envri: Envri): String = envriConfs(envri).defaultTimezoneId
 
-	val server = new Rdf4jInstanceServer(repo)
-	val vocab = new CpVocab(server.factory)
-	private val metaVocab = new CpmetaVocab(server.factory)
-	val attrProvider = new AttributionProvider(repo, vocab)
+	val attrProvider = new AttributionProvider(vocab, metaVocab)
 
-	def getItemCitationInfo(item: CitableItem) = item.references.copy(
+	def getItemCitationInfo(item: CitableItem): References = item.references.copy(
 		citationString = getDoiCitation(item, CitationStyle.HTML),
 		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
 		citationRis    = getDoiCitation(item, CitationStyle.ris),
 		doi = getDoiMeta(item)
 	)
 
-	def getCitationInfo(sobj: StaticObject)(using envri: Envri): References =
-		val citInfo = sobj match
-			case doc:  DocObject  => getDocCitation(doc)
-			case dobj: DataObject => envri match
-				case Envri.SITES | Envri.ICOSCities => getSitesCitation(dobj)
-				case Envri.ICOS => getIcosCitation(dobj)
+	def getCitationInfo(sobj: StaticObject)(using Envri, DocConn | DobjConn): Validated[References] =
+		for
+			citInfo <- sobj match
+				case doc:  DocObject  => Validated(getDocCitation(doc))
+				case dobj: DataObject => summon[Envri] match
+					case Envri.SITES | Envri.ICOSCities => Validated(getSitesCitation(dobj))
+					case Envri.ICOS => getIcosCitation(dobj)
+			dobj = vocab.getStaticObject(sobj.hash)
+			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
+			theLicence <- getLicence(dobj)
+		yield
+			val keywords = keywordsS.map(s => parseCommaSepList(s).toIndexedSeq)
+			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
-		val dobj = vocab.getStaticObject(sobj.hash)
-		val keywords = getOptionalString(dobj, metaVocab.hasKeywords).map(s => parseCommaSepList(s).toIndexedSeq)
-		val theLicence = getLicence(sobj.hash)
-		val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
-
-		val coreRefs = sobj.references.copy(
-			citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
-			citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-			citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
-			doi = getDoiMeta(sobj),
-			authors = citInfo.authors,
-			title = citInfo.title,
-			licence = Some(theLicence),
-			keywords = keywords
-		)
-
-		sobj match
-			case data: DataObject => coreRefs.copy(
-				temporalCoverageDisplay = citInfo.tempCovDisplay,
-				acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
+			val coreRefs = sobj.references.copy(
+				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
+				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				doi = getDoiMeta(sobj),
+				authors = citInfo.authors,
+				title = citInfo.title,
+				licence = Some(theLicence),
+				keywords = keywords
 			)
-			case _: DocObject => coreRefs
+
+			sobj match
+				case data: DataObject => coreRefs.copy(
+					temporalCoverageDisplay = citInfo.tempCovDisplay,
+					acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
+				)
+				case _: DocObject => coreRefs
 
 	end getCitationInfo
 
 
-	def getLicence(dobj: Sha256Sum)(using Envri): Licence =
-		val uri = vocab.getStaticObject(dobj)
+	def getLicence(dobj: IRI)(using Envri, DobjConn | DocConn): Validated[Licence] =
 
-		def getOptLic(licUri: IRI): Option[Licence] = for(
-			name <- getOptionalString(licUri, RDFS.LABEL);
-			webpage = getOptionalUri(licUri, RDFS.SEEALSO).getOrElse(licUri).toJava;
-			baseLicence = getOptionalUri(licUri, SKOS.EXACT_MATCH).map(_.toJava)
-		) yield Licence(licUri.toJava, name, webpage, baseLicence)
+		def getLic(licUri: IRI): Validated[Licence] = for
+			name <- getSingleString(licUri, RDFS.LABEL)
+			webpageOpt <- getOptionalUri(licUri, RDFS.SEEALSO)
+			baseLicence <- getOptionalUri(licUri, SKOS.EXACT_MATCH)
+		yield
+			val webpage = webpageOpt.getOrElse(licUri).toJava
+			Licence(licUri.toJava, name, webpage, baseLicence.map(_.toJava))
 
-		def getImpliedLic(term: IRI): Option[Licence] = getOptionalUri(term, metaVocab.impliesDefaultLicence)
-			.flatMap(getOptLic)
+		def getOptLic(res: IRI, licPred: IRI): Validated[Option[Licence]] =
+			for
+				optLicUri <- getOptionalUri(res, licPred)
+				optLic <- Validated.sinkOption(optLicUri.map(getLic))
+			yield optLic
 
-		def getSpec = getOptionalUri(uri, metaVocab.hasObjectSpec)
+		inline def getImpliedLic(term: IRI) = getOptLic(term, metaVocab.impliesDefaultLicence)
 
-		getOptionalUri(uri, metaVocab.dcterms.license)
-			.flatMap(getOptLic) //obj-level licence declaration
-			.orElse(getSpec.flatMap(getImpliedLic)) //spec-level
-			.orElse{ //project-level
-				for(
-					spec <- getSpec;
-					proj <- getOptionalUri(spec, metaVocab.hasAssociatedProject);
-					lic <- getImpliedLic(proj)
-				) yield lic
-			}
-			.getOrElse(defaultLicence)
+		for
+			ownLicOpt <- getOptLic(dobj, metaVocab.dcterms.license)
+			lic <- ownLicOpt.getOrElseV:
+				for
+					specIriOpt <- getOptionalUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
+					lic <- specIriOpt match
+						case None => Validated.ok(defaultLicence) //not a data object
+						case Some(specIri) =>
+							for
+								specLicOpt <- getImpliedLic(specIri)
+								lic <- specLicOpt.getOrElseV:
+									for
+										projIri <- getSingleUri(specIri, metaVocab.hasAssociatedProject)
+										projLicOpt <- getImpliedLic(projIri)
+									yield
+										projLicOpt.getOrElse(defaultLicence)
+							yield lic
+				yield lic
+		yield lic
 	end getLicence
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
@@ -155,7 +176,7 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 					None
 		yield doiMeta
 
-	private def getIcosCitation(dobj: DataObject)(using Envri): CitationInfo = {
+	private def getIcosCitation(dobj: DataObject)(using Envri, MetaConn): Validated[CitationInfo] =
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
@@ -186,37 +207,37 @@ class CitationMaker(doiCiter: PlainDoiCiter, repo: Repository, coreConf: MetaCor
 				}
 		)
 
-		val authors: Seq[Agent] =
+		val authorsV: Validated[Seq[Agent]] =
 			import AttributionProvider.agentOrdering
 			def productionAgents = dobj.production.toSeq.flatMap(prod =>
 				prod.creator +: prod.contributors.sorted
 			)
-			val all =
-				if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
-					if isIcosProject then attrProvider.getAuthors(dobj)
-					else (attrProvider.getAuthors(dobj) ++ productionAgents).sorted
-				else productionAgents
-			all.distinct
+			if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
+				attrProvider.getAuthors(dobj).map: attrAuthors =>
+					if isIcosProject then attrAuthors
+					else (attrAuthors ++ productionAgents).sorted
+			else Validated.ok(productionAgents)
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val projName = if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
 		val yearOpt = productionTime(dobj).map(getYear(zoneId))
 
-		val citText = for(
-			title <- titleOpt;
-			pidUrl <- pidUrlOpt;
-			year <- yearOpt;
-			projName <- projName
-		) yield {
-			val authorsStr = authors.map{
-				case p: Person => s"${p.lastName}, ${p.firstName.head}."
-				case o: Organization => o.name
-			}.mkString(", ")
-			s"${authorsStr} ($year). $title, $projName, $pidUrl"
-		}
+		authorsV.map: authors =>
+			val citText = for(
+				title <- titleOpt;
+				pidUrl <- pidUrlOpt;
+				year <- yearOpt;
+				projName <- projName
+			) yield {
+				val authorsStr = authors.map{
+					case p: Person => s"${p.lastName}, ${p.firstName.head}."
+					case o: Organization => o.name
+				}.mkString(", ")
+				s"${authorsStr} ($year). $title, $projName, $pidUrl"
+			}
 
-		new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
-	}
+			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
+	end getIcosCitation
 
 	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo =
 		val zoneId = ZoneId.of(defaultTimezoneId)

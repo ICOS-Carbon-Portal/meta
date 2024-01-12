@@ -3,9 +3,10 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import landpagesnips.*
 
-@(persExtra: PersonExtra)(implicit envri: Envri, conf: EnvriConfig)
+@(persExtra: PersonExtra, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, Some(title), subHeading = Some("Person")){
 	<div class="row gy-2">
+		@errorList(errors)
 		<div class="col-md-8">
 			<div class="row gy-2">
 				@property("First name", pers.firstName)

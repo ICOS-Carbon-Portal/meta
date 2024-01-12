@@ -34,7 +34,7 @@ object IcosMetaFlow:
 				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
 			)
 
-		val sparql = Rdf4jSparqlRunner(db.repo)
+		val sparql = Rdf4jSparqlRunner(db.vanillaRepo)
 
 		val diff = StateDiffApplier(db, flowConf, log)
 

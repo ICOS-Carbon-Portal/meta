@@ -4,9 +4,10 @@
 @import se.lu.nateko.cp.meta.api.OrganizationExtra
 @import landpagesnips.*
 
-@(orgExt: OrganizationExtra[Organization])(implicit envri: Envri, conf: EnvriConfig)
+@(orgExt: OrganizationExtra[Organization], errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
 @ServerSidePage(title, Some(header), subHeading = Some("Organization")){
 	<div class="row gy-2">
+		@errorList(errors)
 		<div class="col-md-8">
 			<div class="row gy-2">
 				@property("Name", org.name)

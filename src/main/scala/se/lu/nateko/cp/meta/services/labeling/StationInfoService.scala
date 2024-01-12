@@ -1,20 +1,24 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.IRI
-
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.core.data.DataTheme
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.JsObject
 import spray.json.JsString
-import java.time.Instant
-import org.eclipse.rdf4j.model.Literal
-import java.net.URI
-import se.lu.nateko.cp.meta.core.data.DataTheme
-import se.lu.nateko.cp.meta.instanceserver.InstanceServerUtils
-import se.lu.nateko.cp.meta.instanceserver.FetchingHelper
 
-trait StationInfoService { self: StationLabelingService =>
+import java.net.URI
+import java.time.Instant
+
+trait StationInfoService:
+	self: StationLabelingService =>
+
+	import TriplestoreConnection.*
+	import LabelingDb.{ProvConn, IcosConn}
 
 	private lazy val dataTypeInfos = {
 		import org.semanticweb.owlapi.model.IRI
@@ -33,33 +37,38 @@ trait StationInfoService { self: StationLabelingService =>
 			.toMap
 	}
 
-	def saveStationInfo(info: JsObject, uploader: UserId): Unit = {
+	def saveStationInfo(info: JsObject, uploader: UserId): Unit =
 
 		val stationUri = info.fields.get("stationUri")
 			.collect{case JsString(str) => str}
 			.map(factory.createIRI).get
 
-		assertThatWriteIsAuthorized(stationUri, uploader)
+		val (currentInfo, newInfo) = db.accessLbl:
+			val provConn = db.provView
+			assertThatWriteIsAuthorized(stationUri, uploader)(using provConn)
 
-		val newInfo: Seq[Statement] = for(
-			classUri <- lookupStationClass(stationUri).toSeq;
-			(fieldName, fieldValue) <- info.fields.collect{case (name, JsString(value)) => (name, value)};
-			propUri = vocab.getProperty(fieldName);
-			dataType <- lookupDatatype(classUri.toJava, propUri.toJava).toSeq
-		) yield {
-			val lit = factory.createLiteral(fieldValue, dataType)
-			factory.createStatement(stationUri, propUri, lit)
-		}
+			val newInfo: Seq[Statement] =
+				for
+					classUri <- lookupStationClass(stationUri)(using provConn).toSeq
+					(fieldName, fieldValue) <- info.fields.collect:
+						case (name, JsString(value)) => (name, value)
+					propUri = vocab.getProperty(fieldName)
+					dataType <- lookupDatatype(classUri.toJava, propUri.toJava).toSeq
+				yield
+					val lit = factory.createLiteral(fieldValue, dataType)
+					factory.createStatement(stationUri, propUri, lit)
 
-		val currentInfo = server.getStatements(stationUri)
+			getStatements(stationUri) -> newInfo
 
-		server.applyDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
-	}
+		db.applyLblDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
+
+	end saveStationInfo
+
 
 	def labelingHistory: Seq[StationLabelingHistory] =
 		import vocab.{hasShortName, hasApplicationStatus}
 
-		val histLookup = (provRdfLog.timedUpdates ++ labelingRdfLog.timedUpdates)
+		val histLookup = (db.provRdfLog.timedUpdates ++ db.labelingRdfLog.timedUpdates)
 			.foldLeft(Map.empty[IRI, LabelingHistory]){case (map, (ts, upd)) =>
 				if(!upd.isAssertion) map else upd.statement match{
 					case Rdf4jStatement(stationIri, `hasShortName`, _) =>
@@ -71,8 +80,13 @@ trait StationInfoService { self: StationLabelingService =>
 					case _ => map
 				}
 			}
-		val histIter = for((iri, hist) <- histLookup; stInfo <- getStationBasicInfo(iri))
-			yield new StationLabelingHistory(stInfo, hist)
+		val histIter = db.accessIcos: icosConn ?=>
+			db.accessProv:
+				for
+					(iri, hist) <- histLookup
+					stInfo <- getStationBasicInfo(iri, icosConn)
+				yield
+					new StationLabelingHistory(stInfo, hist)
 		histIter.toSeq.sorted(using StationLabelingHistory.histOrder)
 
 
@@ -107,30 +121,29 @@ trait StationInfoService { self: StationLabelingService =>
 		case _ => true
 	}
 
-	private def getStationBasicInfo(provUri: IRI): Option[StationBasicInfo] = {
-		val provIdOpt = provInfoServer.getStringValues(provUri, vocab.hasShortName).headOption
-		val provNameOpt = provInfoServer.getStringValues(provUri, vocab.hasLongName).headOption
-		val themeOpt = InstanceServerUtils.getSingleTypeIfAny(provUri, provInfoServer).collect{
+	private def getStationBasicInfo(provUri: IRI, icosConn: IcosConn)(using ProvConn): Option[StationBasicInfo] =
+		val provIdOpt = getStringValues(provUri, vocab.hasShortName).headOption
+		val provNameOpt = getStringValues(provUri, vocab.hasLongName).headOption
+		val themeOpt = InstOnto.getSingleTypeIfAny(provUri).collect:
 			case t if t === vocab.atmoStationClass => "Atmosphere"
 			case t if t === vocab.ecoStationClass => "Ecosystem"
 			case t if t === vocab.oceStationClass => "Ocean"
-		}
-		val provClassOpt = provInfoServer.getStringValues(provUri, vocab.hasStationClass).headOption
-		val prodUriOpt = provInfoServer.getUriLiteralValues(provUri, vocab.hasProductionCounterpart).headOption.map(_.toRdf)
+
+		val provClassOpt = getStringValues(provUri, vocab.hasStationClass).headOption
+		val prodUriOpt = getUriLiteralValues(provUri, vocab.hasProductionCounterpart).headOption.map(_.toRdf)
 
 		def prodStr(pred: IRI): Option[String] =
-			prodUriOpt.flatMap(prodUri => icosInfoServer.getStringValues(prodUri, pred).headOption)
+			prodUriOpt.flatMap(prodUri => getSingleString(prodUri, pred)(using icosConn).result)
 
-		val labelingProgress =
-			val provFetcher = FetchingHelper(provInfoServer)
-			def progrDate(pred: IRI): Option[Instant] = provFetcher.getOptionalInstant(provUri, pred)
-			LabelingProgressDates(
-				step1start = progrDate(vocab.step1StartDate),
-				step1approval = progrDate(vocab.step1EndDate),
-				step2start = progrDate(vocab.step2StartDate),
-				step2approval = progrDate(vocab.step2EndDate),
-				labelled = progrDate(vocab.labelingEndDate)
-			)
+		def progrDate(pred: IRI): Option[Instant] = getOptionalInstant(provUri, pred).result.get
+
+		val labelingProgress = LabelingProgressDates(
+			step1start = progrDate(vocab.step1StartDate),
+			step1approval = progrDate(vocab.step1EndDate),
+			step2start = progrDate(vocab.step2StartDate),
+			step2approval = progrDate(vocab.step2EndDate),
+			labelled = progrDate(vocab.labelingEndDate)
+		)
 
 		for(provId <- provIdOpt; provName <- provNameOpt; theme <- themeOpt; provClass <- provClassOpt) yield
 			StationBasicInfo(
@@ -143,11 +156,11 @@ trait StationInfoService { self: StationLabelingService =>
 				theme = theme,
 				provClass = provClass,
 				prodClass = prodStr(metaVocab.hasStationClass),
-				joinYear = provInfoServer.getIntValues(provUri, vocab.labelingJoinYear).headOption,
+				joinYear = getIntValues(provUri, vocab.labelingJoinYear).headOption,
 				labelingProgressOverrides = labelingProgress
 			)
-	}
-}
+	end getStationBasicInfo
+end StationInfoService
 
 case class LabelingProgressDates(
 	step1start: Option[Instant],

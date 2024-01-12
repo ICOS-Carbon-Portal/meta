@@ -20,14 +20,18 @@ import eu.icoscp.envri.Envri
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
-abstract class MetadataUpdater(vocab: CpVocab) {
+abstract class MetadataUpdater(vocab: CpVocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
 	protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability
 
-	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement], server: InstanceServer)(using Envri): Seq[RdfUpdate] = {
+	def calculateUpdates(
+		hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement]
+	)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
+
 		val statDiff = if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
 			val oldBySp = new BySubjPred(oldStatements)
 			val newBySp = new BySubjPred(newStatements)
@@ -47,13 +51,13 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 		}
 		val ret = statDiff.filter{//keep only the effectful ones
 			case RdfUpdate(Rdf4jStatement(s, p, o), isAssertion) =>
-				isAssertion != server.hasStatement(s, p, o)
+				isAssertion != summon[TriplestoreConnection].hasStatement(s, p, o)
 			case _ => true
 		}
 
 		ret
-	}
-}
+	end calculateUpdates
+end MetadataUpdater
 
 class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab) {
 	import MetadataUpdater.*
@@ -66,7 +70,7 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 	}
 }
 
-class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab):
+class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
@@ -75,7 +79,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
 	}
 
-	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
+	override protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability =
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
 		val (subj, pred) = sp
@@ -89,15 +93,14 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(pred === metaVocab.dcterms.license) Sticky
 		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain
-	}
 
-	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(using ExecutionContext, Envri): Future[Seq[Statement]] =
+
+	def getCurrentStatements(hash: Sha256Sum)(using envri: Envri, conn: TriplestoreConnection, sp: SparqlRunner): Seq[Statement] =
 		val objUri = vocab.getStaticObject(hash)
-		if !server.hasStatement(Some(objUri), None, None) then Future.successful(Nil)
+		if !conn.hasStatement(objUri, null, null) then Nil
 		else
-			val fromClauses = server.writeContexts.map(graph => s"FROM <$graph>").mkString("\n")
 			val query = SparqlQuery(s"""construct{?s ?p ?o}
-				|$fromClauses
+				|FROM <${conn.primaryContext}>
 				|where{
 				|{
 				|	{
@@ -123,7 +126,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
 			
-			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
+			sp.evaluateGraphQuery(query).toIndexedSeq
 		end if
 	end getCurrentStatements
 

@@ -73,8 +73,7 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 				var uri = uriBase + uriOrSuffix.trim().replace(/ /g, '_');
 			}
 
-			_.extend(this.state, {candidateUri: uri, uriAvailable: false});
-			this.publishState()
+			_.extend(this.state, {candidateUri: uri, uriAvailable: true});
 
 			var self = this;
 			uriCheck(uri, function(checkRes){

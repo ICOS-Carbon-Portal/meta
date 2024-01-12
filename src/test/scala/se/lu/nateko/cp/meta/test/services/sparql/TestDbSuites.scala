@@ -14,4 +14,4 @@ class TestDbSuites extends Suite with BeforeAndAfterAll:
 		TestDb.instance.cleanup()
 		super.afterAll()
 
-	override def nestedSuites = Vector(new QueryTests, new SparqlRouteTests)
+	override def nestedSuites = IndexedSeq(new QueryTests, new SparqlRouteTests)

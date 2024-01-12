@@ -15,7 +15,7 @@ module.exports = function(typesStore, checkUriOrSuffixAction, createIndividualAc
 				<input
 					type="text" className="form-control" placeholder="New instance's id"
 					style={inputStyle} onChange={this.changeHandler} ref="newUriOrSuffixInput"
-					onKeyDown={this.keyDownHandler}
+					onKeyDown={this.keyDownHandler} autoFocus
 				/>
 
 				<span className="input-group-text" onClick={this.clickHandler}>

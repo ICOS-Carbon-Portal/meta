@@ -18,7 +18,6 @@ import se.lu.nateko.cp.doi.meta.NameIdentifier
 import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
 import se.lu.nateko.cp.doi.meta.Title
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
@@ -63,6 +62,7 @@ class CitationMaker(
 	import CitationMaker.*
 	import Validated.getOrElseV
 	import TriplestoreConnection.*
+	import RdfLens.{DobjConn, DocConn, MetaConn}
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 
 	private def defaultTimezoneId(using envri: Envri): String = envriConfs(envri).defaultTimezoneId
@@ -76,11 +76,11 @@ class CitationMaker(
 		doi = getDoiMeta(item)
 	)
 
-	def getCitationInfo(sobj: StaticObject)(using envri: Envri, mc: MetaConn): Validated[References] =
+	def getCitationInfo(sobj: StaticObject)(using Envri, DocConn | DobjConn): Validated[References] =
 		for
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
-				case dobj: DataObject => envri match
+				case dobj: DataObject => summon[Envri] match
 					case Envri.SITES | Envri.ICOSCities => Validated(getSitesCitation(dobj))
 					case Envri.ICOS => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
@@ -111,7 +111,7 @@ class CitationMaker(
 	end getCitationInfo
 
 
-	def getLicence(dobj: IRI)(using Envri, MetaConn): Validated[Licence] =
+	def getLicence(dobj: IRI)(using Envri, DobjConn | DocConn): Validated[Licence] =
 
 		def getLic(licUri: IRI): Validated[Licence] = for
 			name <- getSingleString(licUri, RDFS.LABEL)

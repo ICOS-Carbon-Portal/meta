@@ -90,11 +90,11 @@ class CitationProvider(
 	def getReferences(res: Resource): Option[References] = server.access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
 
-	def getLicence(res: Resource): Option[Licence] = server.access:
+	def getLicence(res: Resource): Option[Licence] = server.access: conn ?=>
 		for
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
-			given MetaConn <- lenses.metaInstanceLens.result
+			given GlobConn = RdfLens.global(using conn)
 			lic <- citer.getLicence(iri).result
 		yield lic
 

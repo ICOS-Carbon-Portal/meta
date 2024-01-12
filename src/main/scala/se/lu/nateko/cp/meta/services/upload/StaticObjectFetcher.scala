@@ -47,8 +47,8 @@ class StaticObjectReader(
 		getObjFormatForDobj(dobjIri).flatMap: objFormat =>
 			lenses.dataObjectLens(objFormat.toJava)
 
-	def dataObjExists(dobj: IRI): GlobConn ?=> Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
-	def docObjExists(dobj: IRI): DocConn ?=> Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
+	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
+	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
 
 	def getExistingDataObject(dobj: IRI)(using envri: Envri, dobjConn: DobjConn): Validated[DataObject] =
 		for
@@ -97,7 +97,7 @@ class StaticObjectReader(
 			init.copy(references = refs)
 	end getExistingDataObject
 
-	def getExistingDocumentObject(doc: IRI)(using Envri): DocConn ?=> Validated[DocObject] =
+	def getExistingDocumentObject(doc: IRI)(using Envri, DocConn): Validated[DocObject] =
 		for
 			hash <- getHashsum(doc, metaVocab.hasSha256sum)
 			fileName <- getSingleString(doc, metaVocab.hasName)

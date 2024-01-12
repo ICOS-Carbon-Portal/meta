@@ -26,6 +26,7 @@ import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.test.Playground.delete
 
 class GeoIndexTest extends AnyFunSpec{
 
@@ -45,8 +46,12 @@ class GeoIndexTest extends AnyFunSpec{
 		val events = parseCsvLines()
 		events.foreach(index.putQuickly)
 		index.arrangeClusters()
-		index.compositeClusters.foreach(_.printTree(1))
+		// index.compositeClusters.foreach(_.printTree(1))
 
+		val lastEvent = events.last
+		// index.put(GeoEvent(lastEvent.objIdx, false, lastEvent.geometry, lastEvent.clusterId))
+
+		// index.compositeClusters.foreach(_.printTree(1))
 
 		it("find matching indices"):
 			val europe = mkBoundingBox(Coordinate(-15, 33), Coordinate(35, 73))
@@ -61,6 +66,18 @@ class GeoIndexTest extends AnyFunSpec{
 			val returned = index.getFilter(america, None)
 
 			assert(returned.toArray() === Array(13))
+
+		it("test remove methods"):
+			val deleteEvents = events.map(e => GeoEvent(e.objIdx, false, e.geometry, e.clusterId))
+			deleteEvents.foreach(index.put)
+
+			val america = mkBoundingBox(Coordinate(-99, 21), Coordinate(-29, 50))
+			val returned = index.getFilter(america, None)
+
+			index.compositeClusters.foreach(_.printTree(1))
+
+			assert(returned.toArray() === Array[Int]())
+
 			//println("-------------------- returned -----------------")
 			//println(returned.toString())
 

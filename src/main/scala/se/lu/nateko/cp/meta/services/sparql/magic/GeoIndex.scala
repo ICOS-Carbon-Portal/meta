@@ -27,7 +27,7 @@ trait SimpleCluster extends Cluster:
 	protected def objectIds = new MutableRoaringBitmap
 	def filter: ImmutableRoaringBitmap = objectIds
 	def addObject(dobjCov: DataObjCov): SimpleCluster
-	def removeObject(dobjCov: DataObjCov): SimpleCluster
+	def removeObject(dobjCov: DataObjCov): Option[SimpleCluster]
 	//def addObjectId(id: Int): Unit = _objectIds.add(id)
 
 case class GeoEvent(
@@ -127,9 +127,8 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 		println("dense cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
-		// println("add object: " + dobjCov.idx)
 		objectIds.add(dobjCov.idx)
-		if dobjCov.geo == area then // TODO check equality
+		if dobjCov.geo == area then
 			this
 		else
 			val currentDataCovs = new ArrayBuffer[DataObjCov]()
@@ -141,9 +140,11 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 
 			SparseCluster(dobjCov.geo, currentDataCovs.toSeq, objectIds)
 
-	override def removeObject(dobjCov: DataObjCov): SimpleCluster =
+	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
 		objectIds.remove(dobjCov.idx)
-		this
+
+		if objectIds.isEmpty() then None else Some(this)
+
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 		if bbox.intersects(area) then objectIds
@@ -158,9 +159,7 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 
 		println("sparse cluster: " + area.toString())
 
-	//TODO: Fix bug related to sparse cluster creation (sparse cluster should not be created with one point as area)
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
-		//TODO Consider which data structure to use for fast append/prepend
 		val newChildren = children :+ dobjCov
 		objectIds.add(dobjCov.idx)
 
@@ -169,15 +168,16 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 		else
 			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
 
-	override def removeObject(dobjCov: DataObjCov): SimpleCluster =
+	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
 		val newChildren = children.filter(_.idx != dobjCov.idx)
 		val newGeometries = newChildren.map(_.geo).toSet
 		objectIds.remove(dobjCov.idx)
 
-		if newGeometries.size == 1 then
-			DenseCluster(newGeometries.head, objectIds)
+		if newGeometries.size == 0 then None
+		else if newGeometries.size == 1 then
+			Some(DenseCluster(newGeometries.head, objectIds))
 		else
-			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
+			Some(SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds))
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 
@@ -204,18 +204,44 @@ class GeoIndex:
 	def put(event: GeoEvent): Unit = innerPut(event, false)
 	def putQuickly(event: GeoEvent): Unit = innerPut(event, true)
 
+	private def replaceCluster(currentCluster: SimpleCluster, updatedCluster: SimpleCluster) =
+		topClusters = topClusters.map(_.removeCluster(currentCluster))
+		placeCluster(updatedCluster)
+
+	private def removeCluster(clusterId: String, cluster: SimpleCluster) =
+		topClusters = topClusters.map(_.removeCluster(cluster))
+		allClusters.remove(clusterId)
+
+	private def remove(event: GeoEvent, currentCluster: SimpleCluster): Unit =
+		val updatedCluster = currentCluster.removeObject(DataObjCov(event.objIdx, event.geometry))
+
+		updatedCluster match
+			case None => removeCluster(event.clusterId, currentCluster)
+			case Some(c) =>
+				currentCluster match
+					case dc: DenseCluster => replaceCluster(currentCluster, c)
+					case sc: SparseCluster =>
+						val clusterChanged = updatedCluster.ne(currentCluster)
+						if clusterChanged then
+							allClusters.update(event.clusterId, c)
+							replaceCluster(currentCluster, c)
+
 	private def innerPut(event: GeoEvent, quick: Boolean): Unit =
-		//TODO Support the scenario when event.isAssertion == false
 		val clusterExists = allClusters.contains(event.clusterId)
 		val currentCluster = allClusters.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
-		val updatedCluster = currentCluster.addObject(DataObjCov(event.objIdx, event.geometry))
-		val clusterChanged = clusterExists && (updatedCluster.ne(currentCluster))
-		if !clusterExists || clusterChanged then
-			allClusters.update(event.clusterId, updatedCluster)
-		if !quick then
-			if clusterChanged then
-				topClusters = topClusters.map(_.removeCluster(currentCluster))
-			if !clusterExists || clusterChanged then placeCluster(updatedCluster)
+
+		if event.isAssertion then
+			val updatedCluster = currentCluster.addObject(DataObjCov(event.objIdx, event.geometry))
+			val clusterChanged = clusterExists && (updatedCluster.ne(currentCluster))
+			if !clusterExists || clusterChanged then
+				allClusters.update(event.clusterId, updatedCluster)
+			if !quick then
+				if clusterChanged then
+					topClusters = topClusters.map(_.removeCluster(currentCluster))
+				if !clusterExists || clusterChanged then placeCluster(updatedCluster)
+		else
+			if clusterExists then remove(event, currentCluster)
+
 
 	private def placeCluster(cluster: SimpleCluster): Unit =
 		topClusters = topClusters.map(_.addCluster(cluster))

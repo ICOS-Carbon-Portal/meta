@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
@@ -162,11 +163,10 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
 		val newChildren = children :+ dobjCov
 		objectIds.add(dobjCov.idx)
-
-		if (area.contains(dobjCov.geo)) then
-			SparseCluster(area, newChildren, objectIds)
-		else
-			SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds)
+		val newArea = if area.contains(dobjCov.geo) then area else
+			val joined = GeometryCollection(Array(area, dobjCov.geo), JtsGeoFactory)
+			ConcaveHull(joined).getHull()
+		SparseCluster(newArea, newChildren, objectIds)
 
 	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
 		val newChildren = children.filter(_.idx != dobjCov.idx)
@@ -177,7 +177,9 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 		else if newGeometries.size == 1 then
 			Some(DenseCluster(newGeometries.head, objectIds))
 		else
-			Some(SparseCluster(calculateBoundingBox(newChildren.map(_.geo)), newChildren, objectIds))
+			val joined = GeometryCollection(newGeometries.toArray, JtsGeoFactory)
+			val newArea = ConcaveHull(joined).getHull()
+			Some(SparseCluster(newArea, newChildren, objectIds))
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 

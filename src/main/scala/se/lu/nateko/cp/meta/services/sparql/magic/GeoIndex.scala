@@ -38,7 +38,7 @@ case class GeoEvent(
 	clusterId: String
 )
 
-class DataObjCov(val idx: Int, val geo: Geometry)
+case class DataObjCov(val idx: Int, val geo: Geometry)
 
 def calculateBoundingBox(shapes: Seq[Geometry]): Geometry =
 	val collection = GeometryCollection(shapes.toArray, JtsGeoFactory)
@@ -55,29 +55,31 @@ class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) ex
 		for (child <- children)
 			child.printTree(level + 1)
 
-	def addCluster(c: Cluster): CompositeCluster = if !overlaps(c) then this else
+	def addCluster(c: Cluster): CompositeCluster = if !belongs(c) then this else
 		var hasAddedToChildren: Boolean = false
 
-		val newChildren = children.map:
-			case sc: SimpleCluster => sc
-			case cc: CompositeCluster =>
-				val newCc = cc.addCluster(c)
-				if newCc.ne(cc) then hasAddedToChildren = true
-				newCc
+		val newChildren = if c.area.contains(area) then children else
+			children.map:
+				case sc: SimpleCluster => sc
+				case cc: CompositeCluster =>
+					val newCc = cc.addCluster(c)
+					if newCc.ne(cc) then hasAddedToChildren = true
+					newCc
 
 		val updatedChildren = if hasAddedToChildren then newChildren else newChildren :+ c
 
 		CompositeCluster(area, updatedChildren)
 
-	def removeCluster(c: SimpleCluster): CompositeCluster = if !overlaps(c) then this else
+	def removeCluster(c: SimpleCluster): CompositeCluster = if !belongs(c) then this else
 		val newChildren = children.collect:
 			case sc: SimpleCluster if sc != c => sc
 			case cc: CompositeCluster => cc.removeCluster(c)
 		CompositeCluster(area, newChildren)
 
-	private def overlaps(c: Cluster): Boolean =
-		//TODO Investigate if there is a single test method for this (contains or overlaps)
-		area.contains(c.area) || area.overlaps(c.area)
+	private def belongs(c: Cluster): Boolean = c match
+		case cc: CompositeCluster => area.contains(cc.area)
+		case sc: SimpleCluster => area.intersects(sc.area)
+
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
 
@@ -90,7 +92,11 @@ end CompositeCluster
 
 
 def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
+
 	val f = JtsGeoFactory
+
+	val root = new Envelope(-180, 180, -90, 90)
+
 	val topLevelEnvelopes = IndexedSeq(
 		new Envelope(-180, -60, 0, 90), // America
 		new Envelope(-60, 60, 0, 90), // Europe
@@ -99,6 +105,8 @@ def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
 		new Envelope(-60, 60, -90, 0),
 		new Envelope(60, 180, -90, 0)
 	) // Envelope(maxLon, minLon, maxLat, minLat)
+
+	val worldLevelClusters = topLevelEnvelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty)).toBuffer
 
 	val europeLongitudes = IndexedSeq(-60, -30, 0, 30) 
 	val europeLatitudes = IndexedSeq(90, 60, 30)
@@ -109,11 +117,15 @@ def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
 		for (lat <- europeLatitudes)
 			europeEnvelopes.append(new Envelope(lon + 30, lon, lat - 30, lat))
 
-	val topLevelClusters = topLevelEnvelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty)).toBuffer
 	val europeClusters = europeEnvelopes.map(e => CompositeCluster(f.toGeometry(e), IndexedSeq.empty))
 
 	for (c <- europeClusters)
-		topLevelClusters(1) = topLevelClusters(1).addCluster(c)
+		worldLevelClusters(1) = worldLevelClusters(1).addCluster(c)
+		
+	val topLevelClusters = IndexedSeq(CompositeCluster(f.toGeometry(root), IndexedSeq.empty)).toBuffer
+
+	for (w <- worldLevelClusters)
+		topLevelClusters(0) = topLevelClusters(0).addCluster(w)
 
 	// topLevelClusters.foreach(_.printTree(1))
 
@@ -128,18 +140,22 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 		println("dense cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
-		objectIds.add(dobjCov.idx)
 		if dobjCov.geo == area then
+			objectIds.add(dobjCov.idx)
 			this
 		else
 			val currentDataCovs = new ArrayBuffer[DataObjCov]()
 
 			objectIds.forEach: objId =>
 				currentDataCovs.addOne(DataObjCov(objId, area))
-			
+
 			currentDataCovs.addOne(dobjCov)
 
-			SparseCluster(dobjCov.geo, currentDataCovs.toSeq, objectIds)
+			val joined = GeometryCollection(Array(area, dobjCov.geo), JtsGeoFactory)
+
+			objectIds.add(dobjCov.idx)
+
+			SparseCluster(ConcaveHull(joined).getHull(), currentDataCovs.toSeq, objectIds)
 
 	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
 		objectIds.remove(dobjCov.idx)
@@ -214,7 +230,7 @@ class GeoIndex:
 		topClusters = topClusters.map(_.removeCluster(cluster))
 		allClusters.remove(clusterId)
 
-	private def remove(event: GeoEvent, currentCluster: SimpleCluster): Unit =
+	def remove(event: GeoEvent, currentCluster: SimpleCluster): Unit =
 		val updatedCluster = currentCluster.removeObject(DataObjCov(event.objIdx, event.geometry))
 
 		updatedCluster match

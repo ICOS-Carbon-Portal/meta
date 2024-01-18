@@ -31,7 +31,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 	import PageContentMarshalling.*
 
-	given staticObjectMarshaller (using Envri, EnvriConfig) : ToResponseMarshaller[() => Validated[StaticObject]] =
+	given staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
 		import statisticsClient.executionContext
 		val template: PageTemplate[StaticObject] = (obj, errors) =>
 			for(

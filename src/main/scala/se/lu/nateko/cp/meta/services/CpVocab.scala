@@ -110,6 +110,7 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 
 	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
+	val cfCompliantNetcdfSpec = getObjectSpecification(UriId("arbitraryCfNetcdf"))(using Envri.ICOS)
 
 end CpVocab
 

@@ -5,12 +5,13 @@
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.{given,*}
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
+@import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.meta.utils.*
 @import landpagesnips.*
 @import eu.icoscp.envri.Envri
 
-@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
+@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig, vocab: CpVocab)
 @ServerSidePage(
 	pageTitle,
 	Some(pageHeading),

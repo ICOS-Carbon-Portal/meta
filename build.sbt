@@ -124,7 +124,7 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
 			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.5",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.7",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,

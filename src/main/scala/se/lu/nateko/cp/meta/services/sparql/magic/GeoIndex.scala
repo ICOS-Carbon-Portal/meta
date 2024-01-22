@@ -18,6 +18,7 @@ import scala.util.Failure
 import scala.util.Success
 
 val JtsGeoFactory = new GeometryFactory()
+val ConcaveHullLengthRatio = 0.8
 
 trait Cluster:
 	def area: Geometry
@@ -127,8 +128,6 @@ def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
 	for (w <- worldLevelClusters)
 		topLevelClusters(0) = topLevelClusters(0).addCluster(w)
 
-	// topLevelClusters.foreach(_.printTree(1))
-
 	topLevelClusters.toIndexedSeq
 
 class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
@@ -155,7 +154,7 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 
 			objectIds.add(dobjCov.idx)
 
-			SparseCluster(ConcaveHull(joined).getHull(), currentDataCovs.toSeq, objectIds)
+			SparseCluster(ConcaveHull.concaveHullByLengthRatio(joined, ConcaveHullLengthRatio), currentDataCovs.toSeq, objectIds)
 
 	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
 		objectIds.remove(dobjCov.idx)
@@ -181,7 +180,7 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 		objectIds.add(dobjCov.idx)
 		val newArea = if area.contains(dobjCov.geo) then area else
 			val joined = GeometryCollection(Array(area, dobjCov.geo), JtsGeoFactory)
-			ConcaveHull(joined).getHull()
+			ConcaveHull.concaveHullByLengthRatio(joined, ConcaveHullLengthRatio)
 		SparseCluster(newArea, newChildren, objectIds)
 
 	override def removeObject(dobjCov: DataObjCov): Option[SimpleCluster] =
@@ -194,7 +193,7 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 			Some(DenseCluster(newGeometries.head, objectIds))
 		else
 			val joined = GeometryCollection(newGeometries.toArray, JtsGeoFactory)
-			val newArea = ConcaveHull(joined).getHull()
+			val newArea = ConcaveHull.concaveHullByLengthRatio(joined, ConcaveHullLengthRatio)
 			Some(SparseCluster(newArea, newChildren, objectIds))
 
 	override def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
@@ -257,9 +256,7 @@ class GeoIndex:
 				if clusterChanged then
 					topClusters = topClusters.map(_.removeCluster(currentCluster))
 				if !clusterExists || clusterChanged then placeCluster(updatedCluster)
-		else
-			if clusterExists then remove(event, currentCluster)
-
+		else remove(event, currentCluster)
 
 	private def placeCluster(cluster: SimpleCluster): Unit =
 		topClusters = topClusters.map(_.addCluster(cluster))

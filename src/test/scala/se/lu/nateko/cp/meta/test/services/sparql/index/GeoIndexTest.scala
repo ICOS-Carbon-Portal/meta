@@ -2,22 +2,22 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVReaderBuilder
+import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.CoordinateSequence
 import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.LinearRing
 import org.locationtech.jts.geom.Point
-import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.io.geojson.GeoJsonReader
+import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.Vars.stationLon
+import se.lu.nateko.cp.meta.services.sparql.magic.DataObjCov
 import se.lu.nateko.cp.meta.services.sparql.magic.DenseCluster
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoEvent
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndex
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.SparseCluster
 
 import java.io.FileReader
@@ -25,16 +25,12 @@ import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import org.roaringbitmap.buffer.MutableRoaringBitmap
-import se.lu.nateko.cp.meta.services.sparql.magic.DataObjCov
-import scala.collection.mutable.ArrayBuffer
-import org.locationtech.jts.algorithm.hull.ConcaveHull
 
 class GeoIndexTest extends AnyFunSpec{
 
-	val testFile = "src/test/resources/geocov_small.txt"
+	// val testFile = "src/test/resources/geocov_small.txt"
 	// val testFile = "src/test/resources/geocov_medium.txt"
+	val testFile = "src/test/resources/test_input_2.txt"
 
 	def parseCsvLines(): IndexedSeq[GeoEvent] =
 		val csvParser = new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build
@@ -91,7 +87,6 @@ class GeoIndexTest extends AnyFunSpec{
 
 	describe("Clustering"):
 		val gf = GeometryFactory()
-		val index = GeoIndex()
 
 		def createDenseCluster(pt: Geometry, nbrOfObjs: Int): DenseCluster =
 			val bitmap = new MutableRoaringBitmap
@@ -165,6 +160,14 @@ class GeoIndexTest extends AnyFunSpec{
 			assert(!res.isDefined)
 			assert(filter.getCardinality == 0)
 
+		it("remove from empty cluster does nothing"):
+			val pt = samplePts(0)
+			val dc = createDenseCluster(pt, 0)
+
+			val res = dc.removeObject(DataObjCov(0, pt))
+
+			assert(!res.isDefined)
+
 		it("remove geometry from sparse cluster"):
 			val threePointCluster = createSparseCluster(samplePts, 3)
 
@@ -189,50 +192,72 @@ class GeoIndexTest extends AnyFunSpec{
 
 					assert(!empty.isDefined)
 
-		// TODO split in two tests
-		it("put event in index and remove"):
-			val event = GeoEvent(0, true, samplePts(0), samplePts(0).toString)
+	describe("R-tree"):
+		def initIndex = GeoIndex()
+		val gf = GeometryFactory()
+
+		val samplePt = gf.createPoint(new Coordinate(0, 0))
+		val globalBbox = mkBoundingBox(Coordinate(-180, -60), Coordinate(180, 90))
+
+		it("put event in index with putQuickly and arrangeClusters"):
+			val index = initIndex
+			val event = GeoEvent(0, true, samplePt, samplePt.toString)
 
 			index.putQuickly(event)
-			index.compositeClusters.foreach(_.printTree(1))
-
-			val res0 = index.getFilter(globalBbox, None)
-
-			assert(res0.getCardinality() == 0)
-
 			index.arrangeClusters()
-			index.compositeClusters.foreach(_.printTree(1))
 
 			val res = index.getFilter(globalBbox, None)
 
 			assert(res.getCardinality() == 1)
 			assert(index.allClusters.values.size == 1)
 
-			index.put(GeoEvent(event.objIdx, false, event.geometry, event.clusterId))
-
-			index.compositeClusters.foreach(_.printTree(1))
-
-			val res2 = index.getFilter(globalBbox, None)
-
-			assert(res2.getCardinality() == 0)
-		
-		// TODO assert object is on top level
-		it("global data obj is placed on top level"):
-			val globalCov = gf.toGeometry(new Envelope(-180, 180, -90, 90))
-
-			val event = GeoEvent(0, true, globalCov, globalCov.toString)
+		it("put event in index with put"):
+			val index = initIndex
+			val event = GeoEvent(0, true, samplePt, samplePt.toString)
 
 			index.put(event)
-
-			index.compositeClusters.foreach(_.printTree(1))
 
 			val res = index.getFilter(globalBbox, None)
 
 			assert(res.getCardinality() == 1)
-}
+			assert(index.allClusters.values.size == 1)
+		
+		it("remove event from empty index"):
+			val index = initIndex
+			val event = GeoEvent(0, false, samplePt, samplePt.toString)
 
-// TODO Test with different types of geometries
-// TODO Delete when cluster is empty
+			index.put(event)
+
+			val res = index.getFilter(globalBbox, None)
+
+			assert(res.getCardinality() == 0)
+			assert(index.allClusters.values.size == 0)
+
+		it("remove event from index with one cluster"):
+			val index = initIndex
+			val event = GeoEvent(0, true, samplePt, samplePt.toString)
+
+			index.put(event)
+			index.put(GeoEvent(event.objIdx, false, event.geometry, event.clusterId))
+
+			val res = index.getFilter(globalBbox, None)
+
+			assert(res.getCardinality() == 0)
+			assert(index.allClusters.values.size == 0)
+
+		it("global data obj is placed on top level"):
+			val index = initIndex
+			val globalCov = gf.toGeometry(new Envelope(-180, 180, -90, 90))
+			val event = GeoEvent(0, true, globalCov, globalCov.toString)
+
+			index.put(event)
+
+			val topLevelCluster = index.compositeClusters(0)
+
+			assert(topLevelCluster.children.exists(c =>
+				c.isInstanceOf[DenseCluster] && c.area == globalCov
+			))
+}
 
 class GeoRow(header: Map[String, Int], row: Array[String]) extends Dynamic:
 	private def cell(name: String): String = row(header(name))

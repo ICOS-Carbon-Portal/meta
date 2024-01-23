@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
@@ -32,7 +33,10 @@ import java.util.concurrent.ArrayBlockingQueue
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.compiletime.uninitialized
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.Failure
+import scala.util.Success
 
 import CpIndex.*
 
@@ -61,12 +65,11 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
 
 	import data.*
-
-	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
-		this(sail, IndexData(nObjects))(log)
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
+		this(sail, geo, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly(_
@@ -142,10 +145,15 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 
 	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
 		case And(filters) =>
-			collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match{
-				case None => Some(emptyBitmap)
-				case Some(bms) => and(bms)
-			}
+			val geoFilts = filters.collect{case gf: GeoFilter => gf}
+
+			if geoFilts.isEmpty then andFiltering(filters) else
+				val nonGeoFilts = filters.filter:
+					case gf: GeoFilter => false
+					case _ => true
+				val nonGeoBm = andFiltering(nonGeoFilts)
+				val geoBms = geoFilts.flatMap(geoFiltering(_, nonGeoBm))
+				if geoBms.isEmpty then nonGeoBm else and(geoBms)
 
 		case Not(filter) => filtering(filter) match {
 			case None => Some(emptyBitmap)
@@ -163,6 +171,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 				case _ => None
 			}
 			case boo: BoolProperty => Some(boolBitmap(boo))
+			case _: GeoProp => None
 		}
 
 		case ContFilter(property, condition) =>
@@ -185,6 +194,9 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			}.toSeq
 		)
 
+		case gf: GeoFilter =>
+			geoFiltering(gf, None)
+
 		case Or(filters) =>
 			collectUnless(filters.iterator.map(filtering))(_.isEmpty).flatMap{bmOpts =>
 				or(bmOpts.flatten)
@@ -195,6 +207,21 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		case Nothing =>
 			Some(emptyBitmap)
 	}
+
+	private def andFiltering(filters: Seq[Filter]): Option[ImmutableRoaringBitmap] =
+		collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match
+			case None => Some(emptyBitmap)
+			case Some(bms) => and(bms)
+
+	private def geoFiltering(filter: GeoFilter, andFilter: Option[ImmutableRoaringBitmap]): Option[ImmutableRoaringBitmap] =
+		geo.value match
+			case None =>
+				throw MetadataException("Geo index is not ready, please try again in a few minutes")
+			case Some(Success(geoIndex)) => filter.property match
+				case GeoOverlaps =>
+					Some(geoIndex.getFilter(filter.geo, andFilter))
+			case Some(Failure(exc)) =>
+				throw Exception("Geo indexing failed", exc)
 
 	private def negate(bm: ImmutableRoaringBitmap) =
 		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)

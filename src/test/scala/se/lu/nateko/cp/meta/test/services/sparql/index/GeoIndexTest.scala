@@ -252,9 +252,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 			index.put(event)
 
-			val topLevelCluster = index.compositeClusters(0)
-
-			assert(topLevelCluster.children.exists(c =>
+			assert(index.rootCluster.children.exists(c =>
 				c.isInstanceOf[DenseCluster] && c.area == globalCov
 			))
 }

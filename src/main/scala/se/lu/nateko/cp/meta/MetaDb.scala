@@ -41,6 +41,7 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -153,8 +154,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val lenses = getLenses(config0.instanceServers, config0.dataUploadService)
 		val citerFactory = CitationProviderFactory(citCache, metaCache, config0)
-		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
-		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, citerFactory, log)
+		val indexUpdaterFactory = IndexHandler(_, _, system.scheduler, log)
+		val geoProvider = new GeoIndexProvider
+		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, geoProvider, citerFactory, log)
 
 		val repo = new SailRepository(native)
 		repo.init()

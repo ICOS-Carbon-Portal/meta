@@ -169,6 +169,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		def propVar(prop: Property, steps: IRI*) = endVar(steps*).map(_ -> prop)
 		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
+		//TODO Support GeoOverlaps property here
 		Seq(
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),

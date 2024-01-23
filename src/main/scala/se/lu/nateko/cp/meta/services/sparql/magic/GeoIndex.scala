@@ -92,7 +92,7 @@ class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) ex
 end CompositeCluster
 
 
-def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
+def createClusterHierarchy: CompositeCluster =
 
 	val f = JtsGeoFactory
 
@@ -123,12 +123,12 @@ def createEmptyTopClusters: IndexedSeq[CompositeCluster] =
 	for (c <- europeClusters)
 		worldLevelClusters(1) = worldLevelClusters(1).addCluster(c)
 		
-	val topLevelClusters = IndexedSeq(CompositeCluster(f.toGeometry(root), IndexedSeq.empty)).toBuffer
+	var rootCluster = CompositeCluster(f.toGeometry(root), IndexedSeq.empty)
 
-	for (w <- worldLevelClusters)
-		topLevelClusters(0) = topLevelClusters(0).addCluster(w)
+	for w <- worldLevelClusters do
+		rootCluster = rootCluster.addCluster(w)
 
-	topLevelClusters.toIndexedSeq
+	rootCluster
 
 class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
 
@@ -215,21 +215,34 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 
 class GeoIndex:
 	val allClusters = mutable.Map.empty[String, SimpleCluster]
-	private var topClusters: IndexedSeq[CompositeCluster] = createEmptyTopClusters
-	def compositeClusters = topClusters
+	private var _rootCluster: CompositeCluster = createClusterHierarchy
+	def rootCluster = _rootCluster
 
 	def put(event: GeoEvent): Unit = innerPut(event, false)
 	def putQuickly(event: GeoEvent): Unit = innerPut(event, true)
 
-	private def replaceCluster(currentCluster: SimpleCluster, updatedCluster: SimpleCluster) =
-		topClusters = topClusters.map(_.removeCluster(currentCluster))
-		placeCluster(updatedCluster)
+	def arrangeClusters(): Unit =
+		allClusters.values.foreach(placeCluster)
 
-	private def removeCluster(clusterId: String, cluster: SimpleCluster) =
-		topClusters = topClusters.map(_.removeCluster(cluster))
-		allClusters.remove(clusterId)
+	def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
+		_rootCluster.getFilter(bbox, otherFilter)
 
-	def remove(event: GeoEvent, currentCluster: SimpleCluster): Unit =
+	private def innerPut(event: GeoEvent, quick: Boolean): Unit =
+		val clusterExists = allClusters.contains(event.clusterId)
+		val currentCluster = allClusters.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
+
+		if event.isAssertion then
+			val updatedCluster = currentCluster.addObject(DataObjCov(event.objIdx, event.geometry))
+			val clusterChanged = clusterExists && (updatedCluster.ne(currentCluster))
+			if !clusterExists || clusterChanged then
+				allClusters.update(event.clusterId, updatedCluster)
+			if !quick then
+				if clusterChanged then
+					_rootCluster = _rootCluster.removeCluster(currentCluster)
+				if !clusterExists || clusterChanged then placeCluster(updatedCluster)
+		else remove(event, currentCluster)
+
+	private def remove(event: GeoEvent, currentCluster: SimpleCluster): Unit =
 		val updatedCluster = currentCluster.removeObject(DataObjCov(event.objIdx, event.geometry))
 
 		updatedCluster match
@@ -243,26 +256,13 @@ class GeoIndex:
 							allClusters.update(event.clusterId, c)
 							replaceCluster(currentCluster, c)
 
-	private def innerPut(event: GeoEvent, quick: Boolean): Unit =
-		val clusterExists = allClusters.contains(event.clusterId)
-		val currentCluster = allClusters.getOrElseUpdate(event.clusterId, DenseCluster(event.geometry, new MutableRoaringBitmap))
-
-		if event.isAssertion then
-			val updatedCluster = currentCluster.addObject(DataObjCov(event.objIdx, event.geometry))
-			val clusterChanged = clusterExists && (updatedCluster.ne(currentCluster))
-			if !clusterExists || clusterChanged then
-				allClusters.update(event.clusterId, updatedCluster)
-			if !quick then
-				if clusterChanged then
-					topClusters = topClusters.map(_.removeCluster(currentCluster))
-				if !clusterExists || clusterChanged then placeCluster(updatedCluster)
-		else remove(event, currentCluster)
-
 	private def placeCluster(cluster: SimpleCluster): Unit =
-		topClusters = topClusters.map(_.addCluster(cluster))
+		_rootCluster = _rootCluster.addCluster(cluster)
 
-	def arrangeClusters(): Unit =
-		allClusters.values.foreach(placeCluster)
+	private def replaceCluster(currentCluster: SimpleCluster, updatedCluster: SimpleCluster) =
+		_rootCluster = _rootCluster.removeCluster(currentCluster)
+		placeCluster(updatedCluster)
 
-	def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap =
-		ImmutableRoaringBitmap.or(topClusters.map(_.getFilter(bbox, otherFilter)).iterator.asJava)
+	private def removeCluster(clusterId: String, cluster: SimpleCluster) =
+		_rootCluster = _rootCluster.removeCluster(cluster)
+		allClusters.remove(clusterId)

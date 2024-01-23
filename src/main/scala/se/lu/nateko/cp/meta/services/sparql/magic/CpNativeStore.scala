@@ -19,12 +19,14 @@ import java.nio.file.Paths
 import scala.compiletime.uninitialized
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.util.Failure
 import scala.util.Success
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
-	listenerFactory: CpIndex => SailConnectionListener,
+	listenerFactory: (CpIndex, Future[GeoIndex]) => SailConnectionListener,
+	geoFactory: GeoIndexProvider,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
 ) extends SailWrapper{
@@ -84,9 +86,12 @@ class CpNativeStore(
 			None
 		} else {
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")
-			val idx = idxData.fold(new CpIndex(nativeSail)(log))(idx => new CpIndex(nativeSail, idx)(log))
+			val geoPromise = Promise[GeoIndex]()
+			val geoFut = geoPromise.future
+			val idx = idxData.fold(new CpIndex(nativeSail, geoFut)(log))(idx => new CpIndex(nativeSail, geoFut, idx)(log))
 			idx.flush()
-			nativeSail.listener = listenerFactory(idx)
+			nativeSail.listener = listenerFactory(idx, geoFut)
+			geoPromise.completeWith(geoFactory(nativeSail, idx, getCitationProvider.metaVocab))
 			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			Some(idx)
 		}

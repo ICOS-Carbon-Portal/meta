@@ -46,22 +46,29 @@ import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
 import scala.reflect.ClassTag
 import scala.util.Failure
 
-class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends SailConnectionListener {
+class IndexHandler(
+	index: CpIndex,
+	geo: Future[GeoIndex],
+	scheduler: Scheduler,
+	log: LoggingAdapter
+)(using ExecutionContext) extends SailConnectionListener:
 
 	//important that this is a val, not a def, otherwise throttle will work very wrongly
 	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
-	def statementAdded(s: Statement): Unit = {
+	// TODO handle changes for GeoIndex
+	def statementAdded(s: Statement): Unit =
 		index.put(RdfUpdate(s, true))
 		flushIndex()
-	}
 
-	def statementRemoved(s: Statement): Unit = {
+
+	// TODO handle changes for GeoIndex
+	def statementRemoved(s: Statement): Unit =
 		index.put(RdfUpdate(s, false))
 		flushIndex()
-	}
 
-}
+
+end IndexHandler
 
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global

@@ -23,6 +23,7 @@ npm-debug.log
 .metals/
 .bloop/
 .bsp/
+.scala-build/
 .vscode/
 project/metals.sbt
 /.idea

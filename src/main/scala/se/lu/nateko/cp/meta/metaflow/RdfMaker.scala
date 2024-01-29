@@ -240,7 +240,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		depl.stop.map{stop =>
 			(deplIri, meta.hasEndTime, vocab.lit(stop))
 		} ++:
-		depl.variable.flatMap(vocab.lookupIcosDatasetVar).map{dsVarRes =>
+		depl.variable.flatMap(vocab.lookupIcosEcoDatasetVar).map{dsVarRes =>
 			(deplIri, meta.ssn.forProperty, dsVarRes)
 		}.toList
 	}

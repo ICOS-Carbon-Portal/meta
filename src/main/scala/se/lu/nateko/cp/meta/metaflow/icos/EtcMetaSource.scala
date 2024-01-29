@@ -622,7 +622,7 @@ object EtcMetaSource{
 
 		pass1.groupMap{
 			// group by sensor id and variable type (e.g. "TS" for TS_2_2_1)
-			(sensorId, depl) => sensorId -> depl.variable.map(_.takeWhile(_ != '_'))
+			(sensorId, depl) => sensorId -> depl.variable.flatMap(CpVocab.getEcoVariableFamily).orElse(depl.variable)
 		}(_._2)
 		.toSeq
 		.flatMap:

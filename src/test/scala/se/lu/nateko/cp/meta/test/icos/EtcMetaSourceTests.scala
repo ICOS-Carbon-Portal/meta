@@ -28,11 +28,11 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 	describe("mergeInstrDeployments"){
 		val input = Seq(
-			"sens1" -> mkDepl(22, "SE-Htm", p1, "VAR_1", "2020-05-02T10:00:00Z"),
-			"sens1" -> mkDepl(22, "SE-Htm", p2, "VAR_1", "2020-06-02T10:00:00Z"),
-			"sens2" -> mkDepl(22, "SE-Htm", p2, "VAR_1", "2020-07-02T10:00:00Z"),
-			"sens1" -> mkDepl( 2, "SE-Deg", p3, "VAR_x", "2020-06-15T10:00:00Z"),
-			"sens3" -> mkDepl( 2, "SE-Deg", p3, "VAR_x", "2019-05-01T10:00:00Z"),
+			"sens1" -> mkDepl(22, "SE-Htm", p1, "SWC_1_1_1", "2020-05-02T10:00:00Z"),
+			"sens1" -> mkDepl(22, "SE-Htm", p2, "SWC_1_1_1", "2020-06-02T10:00:00Z"),
+			"sens2" -> mkDepl(22, "SE-Htm", p2, "SWC_1_1_1", "2020-07-02T10:00:00Z"),
+			"sens1" -> mkDepl( 2, "SE-Deg", p3, "SWC_2_1_1", "2020-06-15T10:00:00Z"),
+			"sens3" -> mkDepl( 2, "SE-Deg", p3, "SWC_2_1_1", "2019-05-01T10:00:00Z"),
 		)
 
 		it("works on empty input"){
@@ -51,16 +51,16 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 			assert(output === Map(
 				"sens1" -> Seq(
-					mkDepl(22, "SE-Htm", p1_2, "VAR_1", "2020-05-02T10:00:00Z", Some("2020-06-15T10:00:00Z"), Some("sens1_0")),
-					mkDepl( 2, "SE-Deg", p3, "VAR_x", "2020-06-15T10:00:00Z", None, Some("sens1_1"))
+					mkDepl(22, "SE-Htm", p1_2, "SWC_1_1_1", "2020-05-02T10:00:00Z", Some("2020-06-15T10:00:00Z"), Some("sens1_0")),
+					mkDepl( 2, "SE-Deg", p3, "SWC_2_1_1", "2020-06-15T10:00:00Z", None, Some("sens1_1"))
 				),
 
 				"sens2" -> Seq(
-					mkDepl(22, "SE-Htm", p2, "VAR_1", "2020-07-02T10:00:00Z", None, Some("sens2_0"))
+					mkDepl(22, "SE-Htm", p2, "SWC_1_1_1", "2020-07-02T10:00:00Z", None, Some("sens2_0"))
 				),
 
 				"sens3" -> Seq(
-					mkDepl( 2, "SE-Deg", p3, "VAR_x", "2019-05-01T10:00:00Z", Some("2020-06-15T10:00:00Z"), Some("sens3_0"))
+					mkDepl( 2, "SE-Deg", p3, "SWC_2_1_1", "2019-05-01T10:00:00Z", Some("2020-06-15T10:00:00Z"), Some("sens3_0"))
 				)
 
 			))

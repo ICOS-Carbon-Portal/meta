@@ -92,35 +92,29 @@ class GeoIndexProvider(using ExecutionContext):
 		// 		val geom = geoFeatureToJtsGeometry(gf)
 		// 		Seq(GeoEvent(idx, true, geom, getClusterId(geom)))))
 
-		def getStationPt(idx: Int, coverage: IRI, clusterId: Option[String]): Validated[Seq[GeoEvent]] =
-			val validatedPoint = geoLookup.stationLatLons.get(coverage).fold(Validated.error(""))(pt => Validated.ok(pt)).flatten
-			validatedPoint.map(geom => Seq(GeoEvent(idx, true, geom, getClusterId(geom))))
+		def getStationPt(idx: Int, station: IRI, clusterId: Option[String]): Seq[GeoEvent] =
+			geoLookup.stationLatLons.get(station).toSeq.map: geom =>
+				GeoEvent(idx, true, geom, getClusterId(geom))
 
-		def getStation(item: IRI): Validated[String] =
-			val acq = getSingleUri(item, metaVocab.wasAcquiredBy)
+		def getStation(dobj: IRI): Validated[IRI] =
+			for
+				acq <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
+				stationUri <- getSingleUri(acq, metaVocab.prov.wasAssociatedWith)
+			yield stationUri
 
-			val station = acq.flatMap(acqUri =>
-				val stationUri = getSingleUri(acqUri, metaVocab.prov.wasAssociatedWith)
-				stationUri
-			)
-
-			station.map(_.toString)
 
 		def getStationClusterId(dobj: IRI): Option[String] =
-			getSingleUri(dobj, metaVocab.dataObjectSpecClass).flatMap: spec =>
-				val dataType = getSingleUri(spec, metaVocab.hasSpecificDatasetType)
-				val datasetType = dataType.map(geoLookup.datasetTypes)
-				val station = getStation(dobj)
-
-				datasetType.map(dsType =>
-					if dsType == DatasetType.StationTimeSeries then station.result else None
-				)
-			.result.flatten
+			val stationV = for
+				spec <- getSingleUri(dobj, metaVocab.hasObjectSpec)
+					if geoLookup.datasetTypes.get(spec) == Some(DatasetType.StationTimeSeries)
+				station <- getStation(dobj)
+			yield station.toString
+			stationV.result
 
 		// ownGeoJson > samplingPt > site > latLonBox > stationPt
 
 		// borde man spara vilket objekt eventet tillhör
-		val itemsWithCoverage: Iterator[GeoEvent] = getStatements(null, RDF.TYPE, metaVocab.dataObjectClass)
+		val geoEvents: Iterator[GeoEvent] = getStatements(null, RDF.TYPE, metaVocab.dataObjectClass)
 			.collect:
 				case Rdf4jStatement(dobj, _, _) => dobj
 			.flatMap: dobj =>
@@ -128,43 +122,37 @@ class GeoIndexProvider(using ExecutionContext):
 					val idx = cpIndex.getObjEntry(objHash).idx
 					val stationClusterId = getStationClusterId(dobj)
 
-					if hasStatement(dobj, metaVocab.hasSpatialCoverage, null) then
-						getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>
-							// if hasStatement(cov, metaVocab.asGeoJSON, null) then
-							val ownGeoJson = getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
-												getOwnGeoJson(idx, geoJson, stationClusterId)
-
-							ownGeoJson.or:
-								getLatLonBox(idx, cov, stationClusterId)
-					else
+					getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>
+						getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
+							getOwnGeoJson(idx, geoJson, stationClusterId)
+						.or:
+							getLatLonBox(idx, cov, stationClusterId)
+					.or:
 						getSingleUri(dobj, metaVocab.wasAcquiredBy).flatMap: acq =>
-							val stationPointEvents = 
-								getSingleUri(acq, metaVocab.prov.wasAssociatedWith).flatMap: station =>
-									getStationPt(idx, acq, stationClusterId)
-
-							val samplingPointEvents = getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>
+							getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>
 								getSamplingPt(idx, acq, stationClusterId)
-
-							val siteEvents =
-								getSingleUri(acq, metaVocab.wasPerformedAt).flatMap: site =>
-									getSingleUri(site, metaVocab.hasSpatialCoverage).flatMap: cov =>
-										getSingleString(cov, metaVocab.asGeoJSON).map: siteGeoJson =>
-											val siteClusterId = site.toString()
-											getOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
-										 	// site id??
-
-							samplingPointEvents.or(siteEvents).or(stationPointEvents)
-				.result.toIndexedSeq.flatten
+							.or:
+								for
+									site <- getSingleUri(acq, metaVocab.wasPerformedAt)
+									cov <- getSingleUri(site, metaVocab.hasSpatialCoverage)
+									siteGeoJson <- getSingleString(cov, metaVocab.asGeoJSON)
+								yield
+									val siteClusterId = site.toString()
+									getOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
+							.or:
+								getSingleUri(acq, metaVocab.prov.wasAssociatedWith).map: station =>
+									getStationPt(idx, station, stationClusterId)
+				.result.toSeq.flatten
 
 		var objCounter = 0
 
 
 		val startTime = System.currentTimeMillis()
-		itemsWithCoverage.foreach(event =>
+		geoEvents.foreach: event =>
 			if objCounter % 1000 == 0 then println(s"Object nbr $objCounter being processed")
 			geo.putQuickly(event)
 			objCounter = objCounter + 1
-		)
+
 		val endTime = System.currentTimeMillis()
 		println(s"Put took ${endTime - startTime} ms")
 

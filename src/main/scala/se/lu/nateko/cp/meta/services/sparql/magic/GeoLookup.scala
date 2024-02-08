@@ -21,15 +21,15 @@ class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 	val metaVocab = staticObjReader.metaVocab
 	val reader = GeoJsonReader()
 
-	val stationLatLons: Map[IRI, Validated[Geometry]] =
+	val stationLatLons: Map[IRI, Geometry] =
 		getStatements(null, metaVocab.hasStationId, null)
-			.map:
+			.flatMap:
 				case Rdf4jStatement(station, _, _) =>
-					val pt = staticObjReader.getLatLon(station).map(p => 
+					val ptV = staticObjReader.getLatLon(station).map(p =>
 						val coordinate = new Coordinate(p.lon, p.lat)
 						JtsGeoFactory.createPoint(coordinate))
-					station -> pt
-				// case _ => None
+					ptV.result.map(station -> _)
+				case _ => None
 			.toMap
 
 	val coverages: Iterator[IRI] =

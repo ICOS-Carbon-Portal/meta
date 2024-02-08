@@ -57,7 +57,7 @@ trait CpmetaReader:
 		yield
 			latLon.copy(alt = altOpt)
 
-	private def getLatLon[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
+	def getLatLon[C >: DobjConn <: MetaConn](iri: IRI)(using C): Validated[Position] =
 		for
 			lat <- getSingleDouble(iri, metaVocab.hasLatitude)
 			lon <- getSingleDouble(iri, metaVocab.hasLongitude)

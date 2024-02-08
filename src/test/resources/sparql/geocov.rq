@@ -17,4 +17,5 @@ select * where{
 	}
 	OPTIONAL{ ?dobj cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?ownGeoJson }
 	OPTIONAL{ ?dobj cpmeta:hasSpatialCoverage [cpmeta:hasEasternBound ?lonMax; cpmeta:hasWesternBound ?lonMin; cpmeta:hasNorthernBound ?latMax; cpmeta:hasSouthernBound ?latMin ]}
+	?dobj geo:sfIntersects/geo:asWKT "POLYGON(...)"^^geo:wktLiteral .
 }

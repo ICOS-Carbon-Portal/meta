@@ -218,8 +218,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			case None =>
 				throw MetadataException("Geo index is not ready, please try again in a few minutes")
 			case Some(Success(geoIndex)) => filter.property match
-				case GeoOverlaps =>
-					Some(geoIndex.getFilter(filter.geo, andFilter))
+				case GeoIntersects => Some(geoIndex.getFilter(filter.geo, andFilter))
 			case Some(Failure(exc)) =>
 				throw Exception("Geo indexing failed", exc)
 
@@ -259,7 +258,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
+	def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
 			val oe = new ObjEntry(hash, objs.length, "")
 			objs += oe
 			idLookup += hash -> oe.idx

@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID
 import scala.util.Try
+import org.eclipse.rdf4j.sail.SailConnection
 
 class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
 
@@ -93,3 +94,20 @@ class Rdf4jTriplestoreConnection(
 		Rdf4jIterationIterator(rdf4jIter)
 
 end Rdf4jTriplestoreConnection
+
+class Rdf4jSailConnection(
+	val primaryContext: IRI, val readContexts: Seq[IRI], conn: SailConnection, val factory: ValueFactory
+) extends TriplestoreConnection:
+
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
+		Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
+
+	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+		conn.hasStatement(subject, predicate, obj, false, readContexts*)
+
+	override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection =
+		Rdf4jSailConnection(primary, read, conn, factory)
+
+	override def close(): Unit = conn.close()
+
+end Rdf4jSailConnection

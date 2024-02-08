@@ -160,11 +160,11 @@ object FilterPatternSearch{
 
 		case _: BoolProperty => None
 
-		case GeoOverlaps => v.asOptInstanceOf[Literal].flatMap: lit =>
+		case GeoIntersects => v.asOptInstanceOf[Literal].flatMap: lit =>
 			val dt = lit.getDatatype()
 			if dt === GEO.WKT_LITERAL then
-				Try(new WKTReader().read(dt.stringValue())).toOption.map: geom =>
-					GeoFilter(GeoOverlaps, geom)
+				Try(new WKTReader().read(lit.stringValue())).toOption.map: geom =>
+					GeoFilter(GeoIntersects, geom)
 			else None
 	}
 

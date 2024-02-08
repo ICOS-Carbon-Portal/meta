@@ -25,6 +25,10 @@ import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
+import se.lu.nateko.cp.meta.core.crypto.Md5Sum
+// put in more central place to avoid repetition
+def getClusterId(geom: Geometry): String =
+	Md5Sum.ofStringBytes(geom.toString()).toString
 
 class GeoIndexTest extends AnyFunSpec{
 
@@ -201,7 +205,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 		it("put event in index with putQuickly and arrangeClusters"):
 			val index = initIndex
-			val event = GeoEvent(0, true, samplePt, samplePt.toString)
+			val event = GeoEvent(0, true, samplePt, getClusterId(samplePt))
 
 			index.putQuickly(event)
 			index.arrangeClusters()
@@ -213,7 +217,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 		it("put event in index with put"):
 			val index = initIndex
-			val event = GeoEvent(0, true, samplePt, samplePt.toString)
+			val event = GeoEvent(0, true, samplePt, getClusterId(samplePt))
 
 			index.put(event)
 
@@ -224,7 +228,7 @@ class GeoIndexTest extends AnyFunSpec{
 		
 		it("remove event from empty index"):
 			val index = initIndex
-			val event = GeoEvent(0, false, samplePt, samplePt.toString)
+			val event = GeoEvent(0, false, samplePt, getClusterId(samplePt))
 
 			index.put(event)
 
@@ -235,7 +239,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 		it("remove event from index with one cluster"):
 			val index = initIndex
-			val event = GeoEvent(0, true, samplePt, samplePt.toString)
+			val event = GeoEvent(0, true, samplePt, getClusterId(samplePt))
 
 			index.put(event)
 			index.put(GeoEvent(event.objIdx, false, event.geometry, event.clusterId))
@@ -248,7 +252,7 @@ class GeoIndexTest extends AnyFunSpec{
 		it("global data obj is placed on top level"):
 			val index = initIndex
 			val globalCov = gf.toGeometry(new Envelope(-180, 180, -90, 90))
-			val event = GeoEvent(0, true, globalCov, globalCov.toString)
+			val event = GeoEvent(0, true, globalCov, getClusterId(globalCov))
 
 			index.put(event)
 
@@ -275,7 +279,8 @@ class GeoEventParser(headerLine: Array[String]):
 
 		val stationOpt = if row.station.length > 0 then Some(row.station) else None
 
-		def getClusterId(geometry: String) = stationOpt.getOrElse(geometry)
+		def getStationOrGeometry(geometry: Geometry) = 
+			stationOpt.fold(getClusterId(geometry))(Md5Sum.ofStringBytes(_).toString)
 
 		if row.ownGeoJson.length > 0 then
 			val ownGeo = reader.read(row.ownGeoJson)
@@ -284,27 +289,27 @@ class GeoEventParser(headerLine: Array[String]):
 				case coll: GeometryCollection =>
 					(0 until coll.getNumGeometries).map: gIdx =>
 						val pt = coll.getGeometryN(gIdx)
-						GeoEvent(idx, true, pt, pt.toString())
+						GeoEvent(idx, true, pt, getClusterId(pt))
 				case _ =>
-					Seq(GeoEvent(idx, true, ownGeo, ownGeo.toString()))
+					Seq(GeoEvent(idx, true, ownGeo, getClusterId(ownGeo)))
 
 		else if row.samplingLon.length > 0 && row.samplingLat.length > 0 then
 			val coordinate = new Coordinate(row.samplingLon.toDouble, row.samplingLat.toDouble)
 			val samplingPoint = f.createPoint(coordinate)
-			Seq(GeoEvent(idx, true, samplingPoint, samplingPoint.toString()))
+			Seq(GeoEvent(idx, true, samplingPoint, getClusterId(samplingPoint)))
 
 		else if row.siteGeoJson.length > 0 then
 			val siteGeo = reader.read(row.siteGeoJson)
-			Seq(GeoEvent(idx, true, siteGeo, getClusterId(siteGeo.toString())))
+			Seq(GeoEvent(idx, true, siteGeo, getStationOrGeometry(siteGeo)))
 
 		else if hasOwnMinMax(row.lonMax, row.lonMin, row.latMax, row.latMin) then
 			val bbox = getBoundingBox(row.lonMax, row.lonMin, row.latMax, row.latMin)
-			Seq(GeoEvent(idx, true, bbox, bbox.toString()))
+			Seq(GeoEvent(idx, true, bbox, getClusterId(bbox)))
 
 		else if stationOpt.isDefined && row.stationLon.length > 0 && row.stationLat.length > 0 then
 			val coordinate = new Coordinate(row.stationLon.toDouble, row.stationLat.toDouble)
 			val stationPoint = f.createPoint(coordinate)
-			Seq(GeoEvent(idx, true, stationPoint, stationPoint.toString()))
+			Seq(GeoEvent(idx, true, stationPoint, getClusterId(stationPoint)))
 		else Seq.empty
 	end parseRow
 

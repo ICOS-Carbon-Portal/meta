@@ -91,7 +91,7 @@ class CpNativeStore(
 			val idx = idxData.fold(new CpIndex(nativeSail, geoFut)(log))(idx => new CpIndex(nativeSail, geoFut, idx)(log))
 			idx.flush()
 			nativeSail.listener = listenerFactory(idx, geoFut)
-			geoPromise.completeWith(geoFactory(nativeSail, idx, getCitationProvider.metaVocab))
+			geoPromise.completeWith(geoFactory(nativeSail, idx, getCitationProvider.metaReader))
 			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			Some(idx)
 		}

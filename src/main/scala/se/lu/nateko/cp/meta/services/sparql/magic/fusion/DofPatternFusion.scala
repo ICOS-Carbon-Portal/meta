@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import DofPatternFusion.*
+import org.eclipse.rdf4j.model.vocabulary.GEO
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -169,7 +170,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		def propVar(prop: Property, steps: IRI*) = endVar(steps*).map(_ -> prop)
 		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
-		//TODO Support GeoOverlaps property here
+		val sfIntersects: IRI = meta.factory.createIRI(GEO.NAMESPACE, "sfIntersects")
 		Seq(
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),
@@ -187,6 +188,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			propVar(DataEnd        , meta.hasEndTime    ),
 			propVar(DataEnd        , meta.wasAcquiredBy  , meta.prov.endedAtTime      ),
 			propVar(SamplingHeight , meta.wasAcquiredBy  , meta.hasSamplingHeight     ),
+			propVar(GeoIntersects  , sfIntersects        , GEO.AS_WKT                 ),
 		).flatten.toMap
 	}
 

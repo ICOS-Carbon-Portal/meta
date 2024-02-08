@@ -56,7 +56,7 @@ case object DataStart extends DateProperty
 case object DataEnd extends DateProperty
 
 sealed trait GeoProp extends Property{type ValueType = Geometry}
-case object GeoOverlaps extends GeoProp
+case object GeoIntersects extends GeoProp
 
 sealed trait CategProp extends Property{type ValueType <: AnyRef}
 

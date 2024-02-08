@@ -24,6 +24,9 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 		if(result.isDefined) this
 		else new Validated[U](Some(fallback), errors)
 
+	def or[U >: T](alt: => Validated[U]): Validated[U] =
+		if(result.isDefined) this else alt
+
 	def map[U](f: T => U): Validated[U] = tryTransform(new Validated(result.map(f), errors))
 
 	def flatMap[U](f: T => Validated[U]): Validated[U] = tryTransform{

@@ -20,6 +20,7 @@ import java.net.{URI => JavaUri}
 import java.time.Instant
 import java.time.LocalDate
 import scala.util.Try
+import org.eclipse.rdf4j.sail.SailConnection
 
 trait InstanceServer extends AutoCloseable:
 

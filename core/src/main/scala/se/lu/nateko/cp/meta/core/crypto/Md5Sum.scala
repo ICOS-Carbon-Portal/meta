@@ -4,6 +4,7 @@ import java.util.Arrays
 
 import scala.util.Failure
 import scala.util.Try
+import java.security.MessageDigest
 
 class Md5Sum(private val bytes: Array[Byte]) {
 
@@ -33,4 +34,8 @@ object Md5Sum {
 		new Exception("Could not parse MD5 hashsum, expected a hex-encoded 16-byte array")
 	))
 
+	def ofStringBytes(str: String): Md5Sum =
+		val digest = MessageDigest.getInstance("MD5")
+		digest.update(str.getBytes("UTF-8"))
+		Md5Sum(digest.digest())
 }

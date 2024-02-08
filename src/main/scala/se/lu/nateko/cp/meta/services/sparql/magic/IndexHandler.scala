@@ -45,6 +45,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.Property
 import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
 import scala.reflect.ClassTag
 import scala.util.Failure
+import scala.util.Success
 
 class IndexHandler(
 	index: CpIndex,
@@ -58,6 +59,9 @@ class IndexHandler(
 
 	// TODO handle changes for GeoIndex
 	def statementAdded(s: Statement): Unit =
+		// geo.onComplete:
+		// 	case Success(geoIndex) => geoIndex.put()
+		// 	case Failure(exception) => ???
 		index.put(RdfUpdate(s, true))
 		flushIndex()
 

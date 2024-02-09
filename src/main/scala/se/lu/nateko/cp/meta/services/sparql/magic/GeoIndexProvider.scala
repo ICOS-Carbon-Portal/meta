@@ -44,64 +44,14 @@ class GeoIndexProvider(using ExecutionContext):
 		val metaVocab = staticObjReader.metaVocab
 		val geo = new GeoIndex
 		val JtsGeoFactory = new GeometryFactory()
-		val reader = GeoJsonReader()
 		val geoLookup = GeoLookup(staticObjReader)
-
-		def geoFeatureToJtsGeometry(gf: GeoFeature): Geometry =
-			val jsonStr = GeoJson.fromFeature(gf).toString
-			reader.read(jsonStr)
-
-		def getClusterId(geom: Geometry): String =
-			Md5Sum.ofStringBytes(geom.toString()).toString
-
-		def getOwnGeoJson(idx: Int, jsonStr: String, clusterId: Option[String]): Seq[GeoEvent] =
-			val geom = reader.read(jsonStr)
-			geom match
-				case coll: GeometryCollection =>
-					(0 until coll.getNumGeometries).map: gIdx =>
-						val pt = coll.getGeometryN(gIdx)
-						GeoEvent(idx, true, pt, clusterId.getOrElse(getClusterId(pt)))
-				case _ =>
-					Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(getClusterId(geom))))
-
-		def getSamplingPt(idx: Int, coverage: IRI, clusterId: Option[String]): Validated[Seq[GeoEvent]] =
-			val lat = getSingleDouble(coverage, metaVocab.hasLatitude)
-			val lon = getSingleDouble(coverage, metaVocab.hasLongitude)
-
-			val pt = lat.flatMap(a => lon.map(b => (a, b)))
-
-			pt.map: (lat, lon) =>
-				val coordinate = new Coordinate(lon, lat)
-				val pt = JtsGeoFactory.createPoint(coordinate)
-				Seq(GeoEvent(idx, true, pt, clusterId.getOrElse(getClusterId(pt))))
-
-		def getLatLonBox(idx: Int, coverage: IRI, clusterId: Option[String]): Validated[Seq[GeoEvent]] = 
-			staticObjReader.getLatLonBox(coverage).map(box =>
-				val jtsBbox = geoFeatureToJtsGeometry(box)
-				Seq(GeoEvent(idx, true, jtsBbox, clusterId.getOrElse(getClusterId(jtsBbox))))
-			)
-
-		// def getSiteLocation(idx: Int, coverage: IRI, clusterId: Option[String]) =
-		// 	val location = staticObjReader.getCoverage(coverage)
-		// 	location.map: gf =>
-		// 		val jtsLocation = geoFeatureToJtsGeometry(gf)
-		// 		Seq(GeoEvent(idx, true, jtsLocation, clusterId.getOrElse(getClusterId(jtsLocation))))
-
-		// def getSite(idx: Int, coverage: IRI) =
-		// 	staticObjReader.getSite(coverage).map(site => site.location.fold(Nil)(gf => 
-		// 		val geom = geoFeatureToJtsGeometry(gf)
-		// 		Seq(GeoEvent(idx, true, geom, getClusterId(geom)))))
-
-		def getStationPt(idx: Int, station: IRI, clusterId: Option[String]): Seq[GeoEvent] =
-			geoLookup.stationLatLons.get(station).toSeq.map: geom =>
-				GeoEvent(idx, true, geom, getClusterId(geom))
+		val event = GeoEventProducer(staticObjReader)
 
 		def getStation(dobj: IRI): Validated[IRI] =
 			for
 				acq <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
 				stationUri <- getSingleUri(acq, metaVocab.prov.wasAssociatedWith)
 			yield stationUri
-
 
 		def getStationClusterId(dobj: IRI): Option[String] =
 			val stationV = for
@@ -111,9 +61,6 @@ class GeoIndexProvider(using ExecutionContext):
 			yield station.toString
 			stationV.result
 
-		// ownGeoJson > samplingPt > site > latLonBox > stationPt
-
-		// borde man spara vilket objekt eventet tillhör
 		val geoEvents: Iterator[GeoEvent] = getStatements(null, RDF.TYPE, metaVocab.dataObjectClass)
 			.collect:
 				case Rdf4jStatement(dobj, _, _) => dobj
@@ -124,13 +71,13 @@ class GeoIndexProvider(using ExecutionContext):
 
 					getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>
 						getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
-							getOwnGeoJson(idx, geoJson, stationClusterId)
+							event.ofOwnGeoJson(idx, geoJson, stationClusterId)
 						.or:
-							getLatLonBox(idx, cov, stationClusterId)
+							Validated(event.ofLatLonBox(idx, cov, stationClusterId)) //??
 					.or:
 						getSingleUri(dobj, metaVocab.wasAcquiredBy).flatMap: acq =>
 							getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>
-								getSamplingPt(idx, acq, stationClusterId)
+								event.ofSamplingPt(idx, acq, stationClusterId)
 							.or:
 								for
 									site <- getSingleUri(acq, metaVocab.wasPerformedAt)
@@ -138,18 +85,17 @@ class GeoIndexProvider(using ExecutionContext):
 									siteGeoJson <- getSingleString(cov, metaVocab.asGeoJSON)
 								yield
 									val siteClusterId = site.toString()
-									getOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
+									event.ofOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
 							.or:
 								getSingleUri(acq, metaVocab.prov.wasAssociatedWith).map: station =>
-									getStationPt(idx, station, stationClusterId)
+									event.ofStationPt(idx, station, stationClusterId)
 				.result.toSeq.flatten
 
 		var objCounter = 0
 
-
 		val startTime = System.currentTimeMillis()
 		geoEvents.foreach: event =>
-			if objCounter % 1000 == 0 then println(s"Object nbr $objCounter being processed")
+			if objCounter % 100000 == 0 then println(s"Object nbr $objCounter being processed")
 			geo.putQuickly(event)
 			objCounter = objCounter + 1
 
@@ -157,6 +103,7 @@ class GeoIndexProvider(using ExecutionContext):
 		println(s"Put took ${endTime - startTime} ms")
 
 		geo.arrangeClusters()
+		println("arranged clusters")
 		val endOfAll = System.currentTimeMillis()
 
 		println(s"Everything took ${endOfAll - startTime} ms")

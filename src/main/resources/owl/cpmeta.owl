@@ -22,15 +22,15 @@
     <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/">
         <cc:license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/"/>
         <dc:creator rdf:resource="http://meta.icos-cp.eu/resources/people/Oleg%20Mirzov"/>
-        <dc:description xml:lang="en">OWL vocabulary describing metadata of two environmental research infrastructures: ICOS and SITES</dc:description>
+        <dc:description xml:lang="en">OWL vocabulary describing metadata of two environmental research infrastructures: ICOS and SITES, as well as of spin-off project ICOS Cities</dc:description>
         <dc:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2015-05-18</dc:issued>
-        <dc:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2023-01-24</dc:modified>
+        <dc:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-19</dc:modified>
         <dc:publisher rdf:resource="http://meta.icos-cp.eu/resources/organizations/CP"/>
-        <dc:rights>Copyright © 2023 ICOS ERIC</dc:rights>
+        <dc:rights>Copyright © 2024 ICOS ERIC</dc:rights>
         <dc:title xml:lang="en">Ontology of Integrated Carbon Observation System (ICOS)</dc:title>
         <vann:preferredNamespacePrefix>cpmeta</vann:preferredNamespacePrefix>
         <vann:preferredNamespaceUri>http://meta.icos-cp.eu/ontologies/cpmeta/</vann:preferredNamespaceUri>
-        <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.0</owl:versionInfo>
+        <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.1</owl:versionInfo>
     </owl:Ontology>
     
 

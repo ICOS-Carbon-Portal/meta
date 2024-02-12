@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
-
 class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 	val metaVocab = staticObjReader.metaVocab
 	val reader = GeoJsonReader()
@@ -22,9 +21,6 @@ class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 	def geoFeatureToJtsGeometry(gf: GeoFeature): Geometry =
 		val jsonStr = GeoJson.fromFeature(gf).toString
 		reader.read(jsonStr)
-
-	def getClusterId(geom: Geometry): String =
-		Md5Sum.ofStringBytes(geom.toString()).toString
 
 	val stationLatLons: Map[IRI, Geometry] =
 		getStatements(null, metaVocab.hasStationId, null)
@@ -75,3 +71,8 @@ class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 					staticObjReader.getSpecDatasetType(spec).result.map(spec -> _)
 				case _ => None
 			.toMap
+
+object GeoLookup:
+
+	def getClusterId(geom: Geometry): String =
+		Md5Sum.ofStringBytes(geom.toString()).toString

@@ -19,13 +19,13 @@ class GeoEventProducer(staticObjReader: StaticObjectReader)(using conn: GlobConn
 	def getEventsFromCollection(coll: GeometryCollection, idx: Int, clusterId: Option[String]): Seq[GeoEvent] =
 		(0 until coll.getNumGeometries).map: gIdx =>
 			val pt = coll.getGeometryN(gIdx)
-			GeoEvent(idx, true, pt, clusterId.getOrElse(geoLookup.getClusterId(pt)))
+			GeoEvent(idx, true, pt, clusterId.getOrElse(GeoLookup.getClusterId(pt)))
 
 	def ofOwnGeoJson(idx: Int, jsonStr: String, clusterId: Option[String]): Seq[GeoEvent] =
 		val geom = reader.read(jsonStr)
 		geom match
 			case coll: GeometryCollection => getEventsFromCollection(coll, idx, clusterId)
-			case _ => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(geoLookup.getClusterId(geom))))
+			case _ => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))
 
 	def ofSamplingPt(idx: Int, coverage: IRI, clusterId: Option[String]): Validated[Seq[GeoEvent]] =
 		val lat = getSingleDouble(coverage, metaVocab.hasLatitude)
@@ -36,7 +36,7 @@ class GeoEventProducer(staticObjReader: StaticObjectReader)(using conn: GlobConn
 		pt.map: (lat, lon) =>
 			val coordinate = new Coordinate(lon, lat)
 			val pt = JtsGeoFactory.createPoint(coordinate)
-			Seq(GeoEvent(idx, true, pt, clusterId.getOrElse(geoLookup.getClusterId(pt))))
+			Seq(GeoEvent(idx, true, pt, clusterId.getOrElse(GeoLookup.getClusterId(pt))))
 
 	def ofLatLonBox(idx: Int, coverage: IRI, clusterId: Option[String]): Seq[GeoEvent] =
 		val latLonBoxClusterID = geoLookup.latLonBoxIds.get(coverage)
@@ -50,4 +50,4 @@ class GeoEventProducer(staticObjReader: StaticObjectReader)(using conn: GlobConn
 		geoLookup.stationLatLons.get(station).toSeq.flatMap: geom =>
 			geom match
 				case coll: GeometryCollection => getEventsFromCollection(coll, idx, clusterId)
-				case geom => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(geoLookup.getClusterId(geom))))
+				case geom => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))

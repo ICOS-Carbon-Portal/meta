@@ -9,7 +9,7 @@
 @import eu.icoscp.envri.Envri
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, Some(getDoiTitle(coll.references).getOrElse(coll.title)), headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, Some(coll.title), headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
 		@errorList(extras.errors)
 		@newerVersionsAlert(coll, "collection")
@@ -17,12 +17,9 @@
 		<div class="col-md-8">
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@coll.references.doi.fold{
-					@for(description <- coll.description){
-						@property("Description", description)
-					}
-				}{doiMeta =>
-					@doiMetaProperties(doiMeta)
+				@for(description <- coll.description){ @property("Description", description) }
+				@for(doiMeta <- coll.references.doi){
+					@doiMetaProperties(doiMeta, coll.description.isDefined)
 				}
 				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)

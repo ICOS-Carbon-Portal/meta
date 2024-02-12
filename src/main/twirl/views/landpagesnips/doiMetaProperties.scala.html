@@ -3,9 +3,9 @@
 @import se.lu.nateko.cp.doi.meta.Rights
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
 
-@(doiMeta: DoiMeta)
+@(doiMeta: DoiMeta, hasDescription: Boolean)
 @for(descr <- doiMeta.descriptions){
-	@property(s"Description (${descr.descriptionType})", descr.description)
+	@property(s"${if hasDescription then "DOI Description" else "Description"} (${descr.descriptionType})", descr.description)
 }
 @if(doiMeta.creators.length > 0){
 	@htmlProperty{Creators}(personList(doiMeta.creators))

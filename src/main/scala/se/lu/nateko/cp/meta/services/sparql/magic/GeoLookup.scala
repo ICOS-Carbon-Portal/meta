@@ -1,22 +1,18 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.eclipse.rdf4j.model.IRI
-import org.locationtech.jts.geom.Point
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import org.locationtech.jts.geom.Coordinate
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.DatasetType
 import org.eclipse.rdf4j.model.vocabulary.RDF
-import se.lu.nateko.cp.meta.core.crypto.Md5Sum
+import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.io.geojson.GeoJsonReader
-import se.lu.nateko.cp.meta.utils.Validated
-import org.locationtech.jts.geom.GeometryCollection
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.core.crypto.Md5Sum
+import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 
 class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):

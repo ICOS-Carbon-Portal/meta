@@ -1,21 +1,16 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.locationtech.jts.algorithm.hull.ConcaveHull
-import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.Point
-import org.locationtech.jts.geom.Polygon
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IteratorHasAsJava
-import scala.util.Failure
-import scala.util.Success
 
 val JtsGeoFactory = new GeometryFactory()
 val ConcaveHullLengthRatio = 0.8
@@ -136,7 +131,7 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 		for (i <- 1 until level)
 			print("\t")
 
-		println("dense cluster: " + area.toString())
+		println("Dense cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
 		if dobjCov.geo == area then
@@ -173,7 +168,7 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 		for (i <- 1 until level)
 			print("\t")
 
-		println("sparse cluster: " + area.toString())
+		println("Sparse cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
 		val newChildren = children :+ dobjCov

@@ -1,24 +1,13 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.sail.Sail
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.Envelope
-import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.Point
-import org.locationtech.jts.io.geojson.GeoJsonReader
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.core.crypto.Md5Sum
 import se.lu.nateko.cp.meta.core.data.DatasetType
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -28,8 +17,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Using
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import scala.concurrent.Awaitable
 
 class GeoIndexProvider(using ExecutionContext):
 
@@ -73,7 +60,7 @@ class GeoIndexProvider(using ExecutionContext):
 						getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
 							event.ofOwnGeoJson(idx, geoJson, stationClusterId)
 						.or:
-							Validated(event.ofLatLonBox(idx, cov, stationClusterId)) //??
+							Validated(event.ofLatLonBox(idx, cov, stationClusterId))
 					.or:
 						getSingleUri(dobj, metaVocab.wasAcquiredBy).flatMap: acq =>
 							getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>

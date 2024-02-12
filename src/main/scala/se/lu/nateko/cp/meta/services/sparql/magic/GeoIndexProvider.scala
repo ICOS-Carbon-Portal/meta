@@ -80,21 +80,14 @@ class GeoIndexProvider(using ExecutionContext):
 
 		var objCounter = 0
 
-		val startTime = System.currentTimeMillis()
 		geoEvents.foreach: event =>
-			if objCounter % 100000 == 0 then println(s"Object nbr $objCounter being processed")
+			// if objCounter % 100000 == 0 then println(s"Object nbr $objCounter being processed")
 			geo.putQuickly(event)
 			objCounter = objCounter + 1
 
-		val endTime = System.currentTimeMillis()
-		println(s"Put took ${endTime - startTime} ms")
-
 		geo.arrangeClusters()
-		println("arranged clusters")
-		val endOfAll = System.currentTimeMillis()
 
-		println(s"Everything took ${endOfAll - startTime} ms")
-		println("Total number of objects: " + objCounter)
+		println("Geo index initialized with info on " + objCounter + " data objects")
 
 		geo
 

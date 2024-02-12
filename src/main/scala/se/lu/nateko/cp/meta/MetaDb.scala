@@ -156,7 +156,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		val citerFactory = CitationProviderFactory(citCache, metaCache, config0)
 		val indexUpdaterFactory = IndexHandler(_, _, system.scheduler, log)
 		val geoProvider = new GeoIndexProvider
-		println("instance of geo? " + geoProvider)
 		val native = new CpNativeStore(config0.rdfStorage, indexUpdaterFactory, geoProvider, citerFactory, log)
 
 		val repo = new SailRepository(native)

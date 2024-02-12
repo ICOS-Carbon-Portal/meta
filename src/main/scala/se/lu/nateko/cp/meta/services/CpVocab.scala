@@ -96,20 +96,11 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 			case Envri.SITES =>  "objspecs/"
 		getRelative(suffix, lastSegment)
 
-	def lookupIcosDatasetVar(varName: String): Option[IRI] =
-		given BaseUriProvider = icosBup
-
-		if """^SWC_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName) then
-			Some(getRelativeRaw("cpmeta/SWC_n_n_n"))
-
-		else if """^TS_\d{1,2}_\d{1,2}_\d{1,2}$""".r.matches(varName) then
-			Some(getRelativeRaw("cpmeta/TS_n_n_n"))
-
-		else
-			None
-
+	def lookupIcosEcoDatasetVar(varName: String): Option[IRI] = getEcoVariableFamily(varName).map: fam =>
+		getRelativeRaw(s"cpmeta/${fam}_n_n_n")(using icosBup)
 
 	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
+	val cfCompliantNetcdfSpec = getObjectSpecification(UriId("arbitraryCfNetcdf"))(using Envri.ICOS)
 
 end CpVocab
 
@@ -127,6 +118,8 @@ object CpVocab{
 	val RolesPrefix = "roles/"
 	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
 	val LabeledStationStatus = "STEP3APPROVED"
+	val EcoVarFamilyRegex = """^(.+)_\d{1,2}_\d{1,2}_\d{1,2}$""".r
+	val KnownEcoVarFamilies = Set("SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT")
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)
@@ -181,5 +174,9 @@ object CpVocab{
 			None
 
 	def getPersonCpId(firstName: String, lastName: String) = UriId(s"${urlEncode(firstName)}_${urlEncode(lastName)}")
+
+	def getEcoVariableFamily(varName: String): Option[String] = varName match
+		case EcoVarFamilyRegex(famName) if KnownEcoVarFamilies.contains(famName) => Some(famName)
+		case _ => None
 
 }

@@ -115,6 +115,7 @@ class Rdf4jUriSerializer(
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
 
+	given CpVocab = vocab
 	import pcm.{staticObjectMarshaller, statCollMarshaller}
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller

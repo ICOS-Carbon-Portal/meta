@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.views
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.CpVocab
 import spray.json.*
 
 import java.net.URI
@@ -40,9 +41,10 @@ object LandingPageHelpers:
 	}
 
 	extension (dobj: DataObject)
-		def previewEnabled: Boolean =
+		def previewEnabled(using vocab: CpVocab): Boolean =
 			dobj.submission.stop.fold(false)(_.isBefore(Instant.now)) && (
 				dobj.isPreviewable ||
+				dobj.specification.self.uri === vocab.cfCompliantNetcdfSpec ||
 				dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
 				dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
 			)

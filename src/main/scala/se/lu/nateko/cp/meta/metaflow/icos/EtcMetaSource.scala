@@ -618,22 +618,28 @@ object EtcMetaSource{
 			}.toSeq :+ fused.last
 		}
 
-		pass1.groupMap(_._1)(_._2).view.mapValues{depls =>
-			val deplsSorted = depls.toSeq.sortBy(_.start)
-			deplsSorted.sliding(2,1).collect{
-				case Seq(d1, d2) =>
-					// allow multiple simultaneous vars by single sensor
-					if d1.start == d2.start && d1.pos == d2.pos
-					then d1
-					else d1.copy(stop = minOptInst(d1.stop, d2.start))
-			}.toSeq :+ deplsSorted.last
-		}.map{
-			case (instrId, depls) =>
-				val deplsWithIds = depls.zipWithIndex.map{
-					case (depl, idx) => depl.copy(cpId = new UriId(s"${instrId}_$idx"))
-				}
-				instrId -> deplsWithIds
-		}.toMap
+		val deplOrd = Ordering.by((d: InstrumentDeployment[E]) => d.start).orElseBy(_.variable)
+
+		pass1.groupMap{
+			// group by sensor id and variable type (e.g. "TS" for TS_2_2_1)
+			(sensorId, depl) => sensorId -> depl.variable.flatMap(CpVocab.getEcoVariableFamily).orElse(depl.variable)
+		}(_._2)
+		.toSeq
+		.flatMap:
+			case ((sensorId, _), depls) =>
+				val deplsSorted = depls.toSeq.sortBy(_.start)
+				val deplsWithStopDates = deplsSorted.sliding(2,1).collect{
+					case Seq(d1, d2) =>
+						d1.copy(stop = minOptInst(d1.stop, d2.start))
+				}.toSeq :+ deplsSorted.last
+				deplsWithStopDates.map(sensorId -> _)
+		.groupMap(_._1)(_._2)
+		.map:
+			case (sensorId, depls) =>
+				val deplsWithIds = depls.toSeq.sorted(using deplOrd).zipWithIndex.map:
+					case (depl, idx) => depl.copy(cpId = new UriId(s"${sensorId}_$idx"))
+
+				sensorId -> deplsWithIds
 	}
 
 	private def minOptInst(i1: Option[Instant], i2: Option[Instant]): Option[Instant] =

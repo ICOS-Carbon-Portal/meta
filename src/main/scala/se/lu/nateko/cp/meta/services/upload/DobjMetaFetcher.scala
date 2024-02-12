@@ -176,25 +176,26 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		else Validated.ok(NoStationSpecifics)
 	end getStationSpecifics
 
-	private def getBasicIcosSpecifics(stat: IRI, thematicCenter: IRI): DocConn ?=> Validated[IcosStationSpecifics] = mc ?=>
+	private def getBasicIcosSpecifics(stat: IRI, thematicCenter: IRI)(using DocConn): Validated[IcosStationSpecifics] =
 		for
-			(lblDate, discont) <- getLabelingDateAndDiscontinuation(stat)
+			lblDate <- getLabelingDate(stat)
 			themeUri <- getOptionalUri(thematicCenter, metaVocab.hasDataTheme)
 			theme <- themeUri.map(getDataTheme).sinkOption
 			stationClass <- getOptionalString(stat, metaVocab.hasStationClass)
 			timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
+			discontOpt <- getOptionalBool(stat, metaVocab.isDiscontinued)
 			documentation <- getDocumentationObjs(stat)
 		yield
 			OtcStationSpecifics(
 				theme = theme,
 				stationClass = stationClass.map(IcosStationClass.valueOf),
 				labelingDate = lblDate,
-				discontinued = discont,
+				discontinued = discontOpt.getOrElse(false),
 				timeZoneOffset = timeZoneOffset,
 				documentation = documentation
 			)
 
-	private def getLabelingDateAndDiscontinuation(stat: IRI): MetaConn ?=> Validated[(Option[LocalDate], Boolean)] = conn ?=>
+	private def getLabelingDate(stat: IRI)(using conn: TSC): Validated[Option[LocalDate]] =
 		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
 		val vf = conn.factory
 
@@ -203,32 +204,23 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			"http://meta.icos-cp.eu/resources/stationlabeling/"
 		).map(vf.createIRI)
 
-		val lblConn = conn.withReadContexts(ctxts)
+		// overriding the graph view to the labeling graphs only
+		given TSC = conn.withReadContexts(ctxts)
 
-		val Seq(prodStLink, appStatus, statusDate, stationId) = Seq(
-				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate", "hasShortName"
+		val Seq(prodStLink, appStatus, statusDate) = Seq(
+				"hasProductionCounterpart", "hasApplicationStatus", "hasAppStatusDate"
 			)
 			.map(vf.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", _))
 
-		val provStOpt: Option[IRI] =
-			getPropValueHolders(prodStLink, vocab.lit(stat.toJava))(using lblConn)
-				.filter: provSt =>
-					lblConn.hasStatement(provSt, appStatus, null)
-				.headOption
+		val labelingDate = getPropValueHolders(prodStLink, vocab.lit(stat.toJava))
+			.filter: provSt =>
+				hasStatement(provSt, appStatus, vf.createLiteral(CpVocab.LabeledStationStatus))
+			.headOption
+			.map: labeledSt =>
+				getOptionalInstant(labeledSt, statusDate)
+					.map(_.map(_.atZone(ZoneId.of("UTC")).toLocalDate))
 
-		val labelingDate = provStOpt
-			.filter{ provSt => lblConn
-				.hasStatement(provSt, appStatus, vf.createLiteral(CpVocab.LabeledStationStatus))
-			}
-			.map{labeledSt => getOptionalInstant(labeledSt, statusDate)
-				.map(_.map(_.atZone(ZoneId.of("UTC")).toLocalDate))
-			}
-
-		val discontinued: Boolean = provStOpt.fold(true){provSt =>
-			!lblConn.hasStatement(provSt, stationId, null)
-		}
-
-		labelingDate.sinkOption.map(_.flatten -> discontinued)
+		labelingDate.sinkOption.map(_.flatten)
 
 	protected def getStationTimeSerMeta(
 		dobj: IRI, vtLookup: VarMetaLookup, prod: Option[DataProduction], docConn: DocConn

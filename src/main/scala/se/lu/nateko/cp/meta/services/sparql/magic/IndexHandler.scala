@@ -45,12 +45,10 @@ import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
-import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
@@ -71,10 +69,7 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 				case Rdf4jStatement(dobj, pred, _) if pred === metaVocab.hasSizeInBytes =>
 					geo.onComplete:
 						case Success((geoIndex, events)) =>
-							Using(sail.getConnection()): conn =>
-								val sailConn = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
-								given GlobConn = RdfLens.global(using sailConn)
-
+							sail.accessEagerly:
 								events.getDobjEvents(dobj).foreach: evs =>
 									evs.foreach(geoIndex.put)
 						case _ =>

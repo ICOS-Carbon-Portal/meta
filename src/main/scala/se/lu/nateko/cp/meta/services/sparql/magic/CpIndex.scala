@@ -12,11 +12,13 @@ import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -72,16 +74,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		this(sail, geo, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
 		var statementCount = 0
-		sail.accessEagerly(_
-			.getStatements(null, null, null, false)
-			.asPlainScalaIterator
-			.foreach{s =>
+		sail.accessEagerly:
+			getStatements(null, null, null)
+			.foreach: s =>
 				put(RdfUpdate(s, true))
 				statementCount += 1
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
-			}
-		)
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
@@ -270,21 +269,19 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		if(q.remainingCapacity == 0) flush()
 	}
 
-	def flush(): Unit = if(!q.isEmpty) writeLocked{
-		if(!q.isEmpty) {
+	def flush(): Unit = if !q.isEmpty then writeLocked:
+		if !q.isEmpty then
 			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
 			q.drainTo(list)
-
-			list.forEach{
-				case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-					processUpdate(subj, pred, obj, isAssertion)
-				case _ => ()
-			}
+			sail.accessEagerly:
+				list.forEach:
+					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
+						processUpdate(subj, pred, obj, isAssertion)
+					case _ => ()
 			list.clear()
-		}
-	}
 
-	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
+
+	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -430,12 +427,12 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 									deprecated.add(oe.idx)
 								case _ => subj match
 									case CpVocab.NextVersColl(_) =>
-										if sail.accessEagerly(nextVersCollIsComplete(subj, _))
+										if nextVersCollIsComplete(subj)
 										then deprecated.add(oe.idx)
 									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!sail.accessEagerly(_.hasStatement(null, isNextVersionOf, obj, false))
+						!hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -526,34 +523,29 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		initOk.add(obj.idx)
 	}
 
-	private def nextVersCollIsComplete(obj: IRI, conn: SailConnection): Boolean =
-		conn.getStatements(obj, vocab.dcterms.hasPart, null, false).asPlainScalaIterator
-			.collect{
+	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
+		getStatements(obj, vocab.dcterms.hasPart, null)
+			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
 					oe.isNextVersion = true
 					oe.size > -1
 				}
-			}
 			.flatten
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfDirectPrevVers(deprecator: IRI): IndexedSeq[Int] = sail.accessEagerly{conn =>
-		conn.getStatements(deprecator, vocab.isNextVersionOf, null, false)
-			.asPlainScalaIterator
-			.flatMap{
+	private def getIdxsOfDirectPrevVers(deprecator: IRI)(using GlobConn): IndexedSeq[Int] =
+		getStatements(deprecator, vocab.isNextVersionOf, null)
+			.flatMap:
 				st => modForDobj(st.getObject)(_.idx)
-			}
 			.toIndexedSeq
-	}
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI): Option[Int] = sail.accessEagerly{_
-		.getStatements(null, vocab.dcterms.hasPart, deprecator, false)
-		.asPlainScalaIterator
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI)(using GlobConn): Option[Int] =
+		getStatements(null, vocab.dcterms.hasPart, deprecator)
 		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
 		.toIndexedSeq
 		.headOption
-	}
+
 end CpIndex
 
 object CpIndex:

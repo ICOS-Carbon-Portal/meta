@@ -1,14 +1,6 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
-import java.net.{ URI => JavaUri }
-import java.time.Instant
-
-import scala.collection.AbstractIterator
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import scala.util.Using
-
+import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.IRI
@@ -21,9 +13,20 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnection
-
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
+
+import java.net.{ URI => JavaUri }
+import java.time.Instant
+import scala.collection.AbstractIterator
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
+
+
 
 extension(factory: ValueFactory){
 	def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
@@ -109,9 +112,11 @@ end extension
 
 
 extension (sail: Sail)
-	def accessEagerly[T](accessor: SailConnection => T): T =
+	def accessEagerly[T](accessor: GlobConn ?=> T): T =
 		val conn = sail.getConnection()
-		try accessor(conn) finally conn.close()
+		val tsc = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
+		val globCon = RdfLens.global(using tsc)
+		try accessor(using globCon) finally conn.close()
 
 
 def asString(lit: Literal): Option[String] = if(lit.getDatatype === XSD.STRING) Some(lit.stringValue) else None

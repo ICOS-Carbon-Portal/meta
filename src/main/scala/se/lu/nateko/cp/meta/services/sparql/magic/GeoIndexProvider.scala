@@ -1,13 +1,12 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.sail.Sail
-import org.locationtech.jts.geom.GeometryFactory
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -16,80 +15,44 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 import scala.util.Using
 
-class GeoIndexProvider(using ExecutionContext):
+class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
 
-	def apply(sail: Sail, cpIndex: CpIndex, staticObjReader: StaticObjectReader): Future[GeoIndex] = Future(
+	def apply(
+		sail: Sail, cpIndex: CpIndex, staticObjReader: StaticObjectReader
+	): Future[(GeoIndex, GeoEventProducer)] = Future:
 		Future.fromTry:
 			Using(sail.getConnection): conn =>
-				given GlobConn = RdfLens.global(using Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory))
-				index(cpIndex, staticObjReader)
-	).flatten
+				val sailConn = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
+				given GlobConn = RdfLens.global(using sailConn)
+				val geoLookup = GeoLookup(staticObjReader)
+				val events = GeoEventProducer(cpIndex, staticObjReader, geoLookup)
+				makeIndex(events).map(_ -> events)
+			.flatten
+	.flatten
 
-	private def index(cpIndex: CpIndex, staticObjReader: StaticObjectReader)(using conn: GlobConn): GeoIndex =
-		val metaVocab = staticObjReader.metaVocab
-		val geo = new GeoIndex
-		val JtsGeoFactory = new GeometryFactory()
-		val geoLookup = GeoLookup(staticObjReader)
-		val event = GeoEventProducer(staticObjReader)
+	private def makeIndex(events: GeoEventProducer)(using GlobConn): Try[GeoIndex] =
+		val dobjStIter = getStatements(null, RDF.TYPE, events.metaVocab.dataObjectClass)
+		Using(dobjStIter): dobjSts =>
+			val geo = new GeoIndex
+			var objCounter = 0
 
-		def getStation(dobj: IRI): Validated[IRI] =
-			for
-				acq <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
-				stationUri <- getSingleUri(acq, metaVocab.prov.wasAssociatedWith)
-			yield stationUri
+			dobjSts
+				.collect:
+					case Rdf4jStatement(dobj, _, _) => dobj
+				.flatMap: dobj =>
+					events.getDobjEvents(dobj).result.getOrElse(Seq.empty)
+				.foreach: event =>
+					if objCounter % 500000 == 0 then log.info(s"Added $objCounter objects to the geo index...")
+					geo.putQuickly(event)
+					objCounter = objCounter + 1
 
-		def getStationClusterId(dobj: IRI): Option[String] =
-			val stationV = for
-				spec <- getSingleUri(dobj, metaVocab.hasObjectSpec)
-					if geoLookup.datasetTypes.get(spec) == Some(DatasetType.StationTimeSeries)
-				station <- getStation(dobj)
-			yield station.toString
-			stationV.result
+			geo.arrangeClusters()
 
-		val geoEvents: Iterator[GeoEvent] = getStatements(null, RDF.TYPE, metaVocab.dataObjectClass)
-			.collect:
-				case Rdf4jStatement(dobj, _, _) => dobj
-			.flatMap: dobj =>
-				getHashsum(dobj, metaVocab.hasSha256sum).flatMap: objHash =>
-					val idx = cpIndex.getObjEntry(objHash).idx
-					val stationClusterId = getStationClusterId(dobj)
+			log.info("Geo index initialized with info on " + objCounter + " data objects")
 
-					getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>
-						getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
-							event.ofOwnGeoJson(idx, geoJson, stationClusterId)
-						.or:
-							Validated(event.ofLatLonBox(idx, cov, stationClusterId))
-					.or:
-						getSingleUri(dobj, metaVocab.wasAcquiredBy).flatMap: acq =>
-							getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>
-								event.ofSamplingPt(idx, acq, stationClusterId)
-							.or:
-								for
-									site <- getSingleUri(acq, metaVocab.wasPerformedAt)
-									cov <- getSingleUri(site, metaVocab.hasSpatialCoverage)
-									siteGeoJson <- getSingleString(cov, metaVocab.asGeoJSON)
-								yield
-									val siteClusterId = site.toString()
-									event.ofOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
-							.or:
-								getSingleUri(acq, metaVocab.prov.wasAssociatedWith).map: station =>
-									event.ofStationPt(idx, station, stationClusterId)
-				.result.toSeq.flatten
-
-		var objCounter = 0
-
-		geoEvents.foreach: event =>
-			// if objCounter % 100000 == 0 then println(s"Object nbr $objCounter being processed")
-			geo.putQuickly(event)
-			objCounter = objCounter + 1
-
-		geo.arrangeClusters()
-
-		println("Geo index initialized with info on " + objCounter + " data objects")
-
-		geo
+			geo
 
 end GeoIndexProvider
-

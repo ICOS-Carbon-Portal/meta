@@ -64,7 +64,7 @@ trait CpmetaReader:
 		yield
 			Position.ofLatLon(lat, lon)
 
-	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI): C ?=> Validated[LatLonBox] =
+	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI)(using C): Validated[LatLonBox] =
 		for
 			minLat <- getSingleDouble(cov, metaVocab.hasSouthernBound)
 			minLon <- getSingleDouble(cov, metaVocab.hasWesternBound)

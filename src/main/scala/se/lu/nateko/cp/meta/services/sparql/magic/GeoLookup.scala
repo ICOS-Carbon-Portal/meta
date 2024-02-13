@@ -42,26 +42,18 @@ class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 				case _ => None
 			.toMap
 
-	val latLonBoxIds: Map[IRI, Md5Sum] =
-		getStatements(null, RDF.TYPE, metaVocab.latLonBoxClass)
-			.collect:
-				case Rdf4jStatement(cov, _, _) => 
-					cov -> Md5Sum.ofStringBytes(cov.toString())
-		.toMap
 
-	val latLonBoxGeometries: Map[Md5Sum, Geometry] =
+	val latLonBoxGeometries: Map[IRI, Geometry] =
 		getStatements(null, RDF.TYPE, metaVocab.latLonBoxClass)
 			.collect:
 				case Rdf4jStatement(cov, _, _) => cov
 			.flatMap: cov =>
-				val clusterId = latLonBoxIds.get(cov)
 				staticObjReader.getLatLonBox(cov).map: bbox =>
-					val jtsBbox = geoFeatureToJtsGeometry(bbox)
-					clusterId.map(_ -> jtsBbox)
+					cov -> geoFeatureToJtsGeometry(bbox)
 				.or:
 					getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
-						clusterId.map(_ -> reader.read(geoJson))
-				.result.flatten
+						cov -> reader.read(geoJson)
+				.result
 		.toMap
 
 	val datasetTypes: Map[IRI, DatasetType] =
@@ -71,6 +63,7 @@ class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 					staticObjReader.getSpecDatasetType(spec).result.map(spec -> _)
 				case _ => None
 			.toMap
+end GeoLookup
 
 object GeoLookup:
 

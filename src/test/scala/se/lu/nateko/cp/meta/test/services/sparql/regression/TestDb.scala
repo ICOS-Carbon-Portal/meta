@@ -70,8 +70,8 @@ class TestDb {
 			recreateCpIndexAtStartup = true
 		)
 
-		val indexUpdaterFactory = IndexHandler(_, _, system.scheduler, log)
-		val geoFactory = GeoIndexProvider()
+		val indexUpdaterFactory = IndexHandler(system.scheduler)
+		val geoFactory = GeoIndexProvider(log)
 
 		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
 

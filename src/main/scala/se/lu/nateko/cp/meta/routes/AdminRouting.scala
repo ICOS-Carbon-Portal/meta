@@ -17,7 +17,6 @@ import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
 

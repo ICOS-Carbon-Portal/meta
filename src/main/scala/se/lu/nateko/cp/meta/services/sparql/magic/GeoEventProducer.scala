@@ -5,49 +5,78 @@ import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.Validated
 
-class GeoEventProducer(staticObjReader: StaticObjectReader)(using conn: GlobConn):
+class GeoEventProducer(cpIndex: CpIndex, staticObjReader: StaticObjectReader, geoLookup: GeoLookup):
 	val metaVocab = staticObjReader.metaVocab
-	val geoJsonReader = GeoJsonReader()
-	val geoLookup = GeoLookup(staticObjReader)
+	private val geoJsonReader = GeoJsonReader()
 
-	def reader = geoJsonReader
+	def getDobjEvents(dobj: IRI)(using GlobConn): Validated[Seq[GeoEvent]] =
+		getHashsum(dobj, metaVocab.hasSha256sum).flatMap: objHash =>
+			val idx = cpIndex.getObjEntry(objHash).idx
+			val stationClusterId = getStationClusterId(dobj)
 
-	def getEventsFromCollection(coll: GeometryCollection, idx: Int, clusterId: Option[String]): Seq[GeoEvent] =
+			getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>
+				getSingleString(cov, metaVocab.asGeoJSON).map: geoJson =>
+					ofOwnGeoJson(idx, geoJson, stationClusterId)
+				.or:
+					Validated(ofLatLonBox(idx, cov, stationClusterId))
+			.or:
+				getSingleUri(dobj, metaVocab.wasAcquiredBy).flatMap: acq =>
+					getSingleUri(acq, metaVocab.hasSamplingPoint).flatMap: samplingPt =>
+						ofSamplingPt(idx, samplingPt, stationClusterId)
+					.or:
+						for
+							site <- getSingleUri(acq, metaVocab.wasPerformedAt)
+							cov <- getSingleUri(site, metaVocab.hasSpatialCoverage)
+							siteGeoJson <- getSingleString(cov, metaVocab.asGeoJSON)
+						yield
+							val siteClusterId = site.toString()
+							ofOwnGeoJson(idx, siteGeoJson, Some(siteClusterId))
+					.or:
+						getSingleUri(acq, metaVocab.prov.wasAssociatedWith).map: station =>
+							ofStationPt(idx, station, stationClusterId)
+
+	private def getStationClusterId(dobj: IRI)(using GlobConn): Option[String] =
+		for
+			spec <- getSingleUri(dobj, metaVocab.hasObjectSpec)
+				if geoLookup.datasetTypes.get(spec).contains(DatasetType.StationTimeSeries)
+			acq <- getSingleUri(dobj, metaVocab.wasAcquiredBy)
+			station <- getSingleUri(acq, metaVocab.prov.wasAssociatedWith)
+		yield station.toString
+	.result
+
+	private def getEventsFromCollection(coll: GeometryCollection, idx: Int, clusterId: Option[String]): Seq[GeoEvent] =
 		(0 until coll.getNumGeometries).map: gIdx =>
 			val pt = coll.getGeometryN(gIdx)
 			GeoEvent(idx, true, pt, clusterId.getOrElse(GeoLookup.getClusterId(pt)))
 
-	def ofOwnGeoJson(idx: Int, jsonStr: String, clusterId: Option[String]): Seq[GeoEvent] =
-		val geom = reader.read(jsonStr)
-		geom match
-			case coll: GeometryCollection => getEventsFromCollection(coll, idx, clusterId)
-			case _ => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))
+	private def ofOwnGeoJson(idx: Int, jsonStr: String, clusterId: Option[String]): Seq[GeoEvent] =
+		geoJsonReader.read(jsonStr) match
+			case coll: GeometryCollection =>
+				getEventsFromCollection(coll, idx, clusterId)
+			case geom =>
+				Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))
 
-	def ofSamplingPt(idx: Int, coverage: IRI, clusterId: Option[String]): Validated[Seq[GeoEvent]] =
-		val lat = getSingleDouble(coverage, metaVocab.hasLatitude)
-		val lon = getSingleDouble(coverage, metaVocab.hasLongitude)
-
-		val pt = lat.flatMap(a => lon.map(b => (a, b)))
-
-		pt.map: (lat, lon) =>
+	private def ofSamplingPt(idx: Int, coverage: IRI, clusterId: Option[String])(using GlobConn): Validated[Seq[GeoEvent]] =
+		for
+			lat <- getSingleDouble(coverage, metaVocab.hasLatitude)
+			lon <- getSingleDouble(coverage, metaVocab.hasLongitude)
+		yield
 			val coordinate = new Coordinate(lon, lat)
 			val pt = JtsGeoFactory.createPoint(coordinate)
 			Seq(GeoEvent(idx, true, pt, clusterId.getOrElse(GeoLookup.getClusterId(pt))))
 
-	def ofLatLonBox(idx: Int, coverage: IRI, clusterId: Option[String]): Seq[GeoEvent] =
-		val latLonBoxClusterID = geoLookup.latLonBoxIds.get(coverage)
-		val jtsBbox = latLonBoxClusterID.flatMap(id =>
-			geoLookup.latLonBoxGeometries.get(id))
+	private def ofLatLonBox(idx: Int, coverage: IRI, clusterId: Option[String]): Seq[GeoEvent] =
+		geoLookup.latLonBoxGeometries.get(coverage).toSeq.map: jtsBbox =>
+			GeoEvent(idx, true, jtsBbox, clusterId.getOrElse(GeoLookup.getClusterId(jtsBbox)))
 
-		jtsBbox.toSeq.map: bbox =>
-			GeoEvent(idx, true, bbox, clusterId.getOrElse(latLonBoxClusterID.toString()))
+	private def ofStationPt(idx: Int, station: IRI, clusterId: Option[String]): Seq[GeoEvent] =
+		geoLookup.stationLatLons.get(station).toSeq.flatMap:
+			case coll: GeometryCollection => getEventsFromCollection(coll, idx, clusterId)
+			case geom => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))
 
-	def ofStationPt(idx: Int, station: IRI, clusterId: Option[String]): Seq[GeoEvent] =
-		geoLookup.stationLatLons.get(station).toSeq.flatMap: geom =>
-			geom match
-				case coll: GeometryCollection => getEventsFromCollection(coll, idx, clusterId)
-				case geom => Seq(GeoEvent(idx, true, geom, clusterId.getOrElse(GeoLookup.getClusterId(geom))))
+end GeoEventProducer

@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
 import akka.actor.Scheduler
-import akka.event.LoggingAdapter
 import akka.event.NoLogging
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
@@ -46,30 +45,43 @@ import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
-
-class IndexHandler(
-	index: CpIndex,
-	geo: Future[GeoIndex],
-	scheduler: Scheduler,
-	log: LoggingAdapter
-)(using ExecutionContext) extends SailConnectionListener:
-
-	//important that this is a val, not a def, otherwise throttle will work very wrongly
-	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
-
-	// TODO handle changes for GeoIndex
-	def statementAdded(s: Statement): Unit =
-		// geo.onComplete:
-		// 	case Success(geoIndex) => geoIndex.put()
-		// 	case Failure(exception) => ???
-		index.put(RdfUpdate(s, true))
-		flushIndex()
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 
-	// TODO handle changes for GeoIndex
-	def statementRemoved(s: Statement): Unit =
-		index.put(RdfUpdate(s, false))
-		flushIndex()
+class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
+
+	def getListener(
+		sail: Sail,
+		metaVocab: CpmetaVocab,
+		index: CpIndex,
+		geo: Future[(GeoIndex, GeoEventProducer)]
+	) = new SailConnectionListener:
+		//important that this is a val, not a def, otherwise throttle will work very wrongly
+		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
+
+		def statementAdded(s: Statement): Unit =
+			index.put(RdfUpdate(s, true))
+			flushIndex()
+			s match
+				case Rdf4jStatement(dobj, pred, _) if pred === metaVocab.hasSizeInBytes =>
+					geo.onComplete:
+						case Success((geoIndex, events)) =>
+							Using(sail.getConnection()): conn =>
+								val sailConn = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
+								given GlobConn = RdfLens.global(using sailConn)
+
+								events.getDobjEvents(dobj).foreach: evs =>
+									evs.foreach(geoIndex.put)
+						case _ =>
+
+		def statementRemoved(s: Statement): Unit =
+			index.put(RdfUpdate(s, false))
+			flushIndex()
 
 
 end IndexHandler

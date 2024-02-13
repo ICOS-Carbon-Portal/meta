@@ -16,7 +16,7 @@ import scala.util.Using
 
 class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
 
-	def apply(
+	def index(
 		sail: Sail, cpIndex: CpIndex, staticObjReader: StaticObjectReader
 	): Future[(GeoIndex, GeoEventProducer)] = Future:
 		sail.accessEagerly:
@@ -30,15 +30,16 @@ class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
 			val geo = new GeoIndex
 			var objCounter = 0
 
+			log.info("Starting to add data objects to geo index")
 			dobjSts
 				.collect:
 					case Rdf4jStatement(dobj, _, _) => dobj
 				.flatMap: dobj =>
 					events.getDobjEvents(dobj).result.getOrElse(Seq.empty)
 				.foreach: event =>
-					if objCounter % 500000 == 0 then log.info(s"Added $objCounter objects to the geo index...")
 					geo.putQuickly(event)
 					objCounter = objCounter + 1
+					if objCounter % 500000 == 0 then log.info(s"Added $objCounter objects to the geo index...")
 
 			geo.arrangeClusters()
 

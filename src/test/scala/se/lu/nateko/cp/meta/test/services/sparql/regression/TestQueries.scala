@@ -976,18 +976,6 @@ object TestQueries {
 	FILTER(CONTAINS(str(?spec), "meta.icos-cp.eu"))
 	?spec rdfs:label ?dataType .
 	?spec cpmeta:hasDataLevel ?dataLevel .
-	#FILTER(?dataLevel < 3)
 	}
-	# Abisko Stordalen station
-	#?dobj geo:sfIntersects/geo:asWKT "POLYGON((19.045207 68.35593, 19.045208 68.35595, 19.045209 68.35595, 19.045209 68.35593, 19.045207 68.35593))"^^geo:wktLiteral .
-
-	# US-WPT station (Ohio)
-	#?dobj geo:sfIntersects/geo:asWKT "POLYGON((-84.8216751814 40.599603385, -80.9935470819 40.599603385, -80.9935470819 42.428823568, -84.8216751814 42.428823568, -84.8216751814 40.599603385))"^^geo:wktLiteral .
-
-	# South america
-	#?dobj geo:sfIntersects/geo:asWKT "POLYGON((-81.4502 -55.2591, -81.4502 12.4371, -34.7296 12.4371, -34.7296 -55.2591, -81.4502 -55.2591))"^^geo:wktLiteral .
-
-	# La Reunión
-	#?dobj geo:sfIntersects/geo:asWKT "POLYGON((55.3840 -21.0795, 55.3841 -21.0797, 55.3842 -21.0797, 55.3842 -21.0795, 55.3840 -21.0795))"^^geo:wktLiteral .
 	"""
 }

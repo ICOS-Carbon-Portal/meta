@@ -152,7 +152,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 					case _ => true
 				val nonGeoBm = andFiltering(nonGeoFilts)
 				val geoBms = geoFilts.flatMap(geoFiltering(_, nonGeoBm))
-				if geoBms.isEmpty then nonGeoBm else and(geoBms)
+				if geoBms.isEmpty then nonGeoBm else and(geoBms ++ nonGeoBm)
 
 		case Not(filter) => filtering(filter) match {
 			case None => Some(emptyBitmap)

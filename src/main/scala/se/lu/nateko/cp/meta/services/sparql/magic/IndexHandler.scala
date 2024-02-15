@@ -73,6 +73,7 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 								events.getDobjEvents(dobj).foreach: evs =>
 									evs.foreach(geoIndex.put)
 						case _ =>
+				case _ =>
 
 		def statementRemoved(s: Statement): Unit =
 			index.put(RdfUpdate(s, false))

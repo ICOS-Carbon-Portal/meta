@@ -219,7 +219,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		val landingPage = JsString(landingPageUri.toString)
 
 		val licenceJs = references.licence
-			.map(lic => JsString(lic.baseLicence.toString))
+			.map(lic => JsString(lic.url.toString))
 			.getOrElse{
 				val doiLicUris = for
 					doi        <- references.doi.toSeq

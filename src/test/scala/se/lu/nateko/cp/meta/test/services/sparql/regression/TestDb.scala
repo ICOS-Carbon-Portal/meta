@@ -30,6 +30,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
@@ -69,9 +70,10 @@ class TestDb {
 			recreateCpIndexAtStartup = true
 		)
 
-		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
+		val indexUpdaterFactory = IndexHandler(system.scheduler)
+		val geoFactory = GeoIndexProvider(log)
 
-		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, citerFactory, log)
+		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
 
 		val repo0 = new SailRepository(makeSail)
 		val factory = repo0.getValueFactory

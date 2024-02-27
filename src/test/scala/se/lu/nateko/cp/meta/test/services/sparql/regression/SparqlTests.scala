@@ -512,4 +512,14 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 			"coll" -> f.createIRI("https://meta.icos-cp.eu/collections/qrhcaIUVRky49JrFtGFsuYvv"),
 		)
 	}
+
+	describeQ(TestQueries.geoFilter, "Statistics of data object origins with geo filter", 50, 0){
+		f => Map(
+			"dataType" -> f.createLiteral("ETC NRT Fluxes"),
+			"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/ES_SE-Sto"),
+			"dataLevel" -> f.createLiteral("1", XSD.INTEGER),
+			"count" -> f.createLiteral("1", XSD.INT),
+			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
+		)
+	}
 }

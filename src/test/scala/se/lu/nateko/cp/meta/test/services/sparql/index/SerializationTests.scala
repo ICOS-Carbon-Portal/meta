@@ -41,10 +41,10 @@ class SerializationTests extends AsyncFunSpec{
 
 	def roundTrip(sail: Sail): Future[(CpIndex, CpIndex)] =
 		for(
-			idx <- Future(CpIndex(sail, 5)(NoLogging));
+			idx <- Future(CpIndex(sail, Future.never, 5)(NoLogging));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
-		) yield idx -> CpIndex(sail, data)(NoLogging)
+		) yield idx -> CpIndex(sail, Future.never, data)(NoLogging)
 
 	describe("CpIndex created from test RDF in a turtle file, and round-tripped"){
 		val repo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)

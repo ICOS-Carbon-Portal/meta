@@ -52,6 +52,7 @@ object Main extends App with CpmetaJsonProtocol{
 		idxOpt <- optIndexDataFut;
 		_ = db.store.initSparqlMagicIndex(idxOpt);
 		route = MainRoute(db, metaflow, config);
+		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
 		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
 	) yield {
 		sys.addShutdownHook{

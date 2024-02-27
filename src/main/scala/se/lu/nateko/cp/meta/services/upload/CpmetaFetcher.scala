@@ -57,14 +57,14 @@ trait CpmetaReader:
 		yield
 			latLon.copy(alt = altOpt)
 
-	private def getLatLon[C >: DobjConn <: MetaConn](iri: IRI): C ?=> Validated[Position] =
+	def getLatLon[C >: DobjConn <: MetaConn](iri: IRI)(using C): Validated[Position] =
 		for
 			lat <- getSingleDouble(iri, metaVocab.hasLatitude)
 			lon <- getSingleDouble(iri, metaVocab.hasLongitude)
 		yield
 			Position.ofLatLon(lat, lon)
 
-	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI): C ?=> Validated[LatLonBox] =
+	def getLatLonBox[C >: DobjConn <: MetaConn](cov: IRI)(using C): Validated[LatLonBox] =
 		for
 			minLat <- getSingleDouble(cov, metaVocab.hasSouthernBound)
 			minLon <- getSingleDouble(cov, metaVocab.hasWesternBound)

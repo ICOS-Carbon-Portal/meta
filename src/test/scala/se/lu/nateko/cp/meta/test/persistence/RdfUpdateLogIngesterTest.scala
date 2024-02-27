@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.vocabulary.OWL
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import org.eclipse.rdf4j.common.iteration.Iterations
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class RdfUpdateLogIngesterTest extends AnyFunSpec{
 
@@ -18,7 +19,7 @@ class RdfUpdateLogIngesterTest extends AnyFunSpec{
 			val person = f.createIRI("http://www.icos-cp.eu/ontology/Person")
 			val statement = f.createStatement(person, RDF.TYPE, OWL.CLASS, ctxt)
 
-			val iter = Iterator(RdfUpdate(statement, true))
+			val iter = CloseableIterator.Wrap(Iterator(RdfUpdate(statement, true)), () => ())
 			val repo = RdfUpdateLogIngester.ingestIntoMemory(iter, ctxt)
 			val conn = repo.getConnection
 			val statements = Iterations.asList(conn.getStatements(null, null, null, false, ctxt)).toArray

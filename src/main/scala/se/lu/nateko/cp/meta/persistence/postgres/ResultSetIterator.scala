@@ -6,7 +6,9 @@ import java.sql.Connection
 
 class ResultSetIterator[T](connectionFactory: () => Connection, resultFactory: ResultSet => T, selectQuery: String) extends CloseableIterator[T]{
 	private val conn = connectionFactory()
+	conn.setAutoCommit(false)
 	private val st = conn.createStatement()
+	st.setFetchSize(ResultSetIterator.chunkSize)
 	private val rs = st.executeQuery(selectQuery)
 
 	private var doesHaveNext = false
@@ -42,3 +44,6 @@ class ResultSetIterator[T](connectionFactory: () => Connection, resultFactory: R
 		if(!doesHaveNext) close()
 	}
 }
+
+object ResultSetIterator:
+	val chunkSize = 5000

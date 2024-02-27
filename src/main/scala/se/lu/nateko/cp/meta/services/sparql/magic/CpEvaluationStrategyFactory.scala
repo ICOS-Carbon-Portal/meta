@@ -120,6 +120,7 @@ class CpEvaluationStrategyFactory(
 				case SubmissionEnd   => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
 				case DataStart       => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
 				case DataEnd         => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
+				case _: GeoProp      => (_, _) => ()
 			}
 		}
 

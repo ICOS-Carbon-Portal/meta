@@ -1,28 +1,32 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.asOptInstanceOf
-
-import java.time.Instant
-
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.GEO
+import org.eclipse.rdf4j.query.algebra.And
+import org.eclipse.rdf4j.query.algebra.Compare
+import org.eclipse.rdf4j.query.algebra.Exists
+import org.eclipse.rdf4j.query.algebra.Filter
+import org.eclipse.rdf4j.query.algebra.Join
+import org.eclipse.rdf4j.query.algebra.Not
+import org.eclipse.rdf4j.query.algebra.Or
+import org.eclipse.rdf4j.query.algebra.StatementPattern
+import org.eclipse.rdf4j.query.algebra.ValueConstant
+import org.eclipse.rdf4j.query.algebra.ValueExpr
+import org.eclipse.rdf4j.query.algebra.Var
+import org.eclipse.rdf4j.query.algebra.{Regex => RdfRegex}
+import org.locationtech.jts.io.WKTReader
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import org.eclipse.rdf4j.query.algebra.{Filter, ValueExpr}
-import org.eclipse.rdf4j.query.algebra.{And, Or, Not, Exists}
-import org.eclipse.rdf4j.query.algebra.Compare
-import org.eclipse.rdf4j.query.algebra.{Regex => RdfRegex}
-import org.eclipse.rdf4j.query.algebra.Var
-import org.eclipse.rdf4j.query.algebra.ValueConstant
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.IRI
+import java.time.Instant
 import scala.util.Try
 import scala.util.matching.Regex
-import org.eclipse.rdf4j.query.algebra.StatementPattern
-import org.eclipse.rdf4j.query.algebra.Join
 
 class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	import FilterPatternSearch.*
@@ -156,6 +160,12 @@ object FilterPatternSearch{
 
 		case _: BoolProperty => None
 
+		case GeoIntersects => v.asOptInstanceOf[Literal].flatMap: lit =>
+			val dt = lit.getDatatype()
+			if dt === GEO.WKT_LITERAL then
+				Try(new WKTReader().read(lit.stringValue())).toOption.map: geom =>
+					GeoFilter(GeoIntersects, geom)
+			else None
 	}
 
 

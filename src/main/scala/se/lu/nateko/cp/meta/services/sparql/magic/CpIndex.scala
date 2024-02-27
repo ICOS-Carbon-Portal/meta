@@ -12,13 +12,16 @@ import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
@@ -32,7 +35,10 @@ import java.util.concurrent.ArrayBlockingQueue
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.compiletime.uninitialized
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.Failure
+import scala.util.Success
 
 import CpIndex.*
 
@@ -61,24 +67,20 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
 
 	import data.*
-
-	def this(sail: Sail, nObjects: Int = 10000)(log: LoggingAdapter) = {
-		this(sail, IndexData(nObjects))(log)
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
+		this(sail, geo, IndexData(nObjects))(log)
 		//Mass-import of the statistics data
 		var statementCount = 0
-		sail.accessEagerly(_
-			.getStatements(null, null, null, false)
-			.asPlainScalaIterator
-			.foreach{s =>
+		sail.accessEagerly:
+			getStatements(null, null, null)
+			.foreach: s =>
 				put(RdfUpdate(s, true))
 				statementCount += 1
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
-			}
-		)
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
@@ -142,10 +144,15 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 
 	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
 		case And(filters) =>
-			collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match{
-				case None => Some(emptyBitmap)
-				case Some(bms) => and(bms)
-			}
+			val geoFilts = filters.collect{case gf: GeoFilter => gf}
+
+			if geoFilts.isEmpty then andFiltering(filters) else
+				val nonGeoFilts = filters.filter:
+					case gf: GeoFilter => false
+					case _ => true
+				val nonGeoBm = andFiltering(nonGeoFilts)
+				val geoBms = geoFilts.flatMap(geoFiltering(_, nonGeoBm))
+				if geoBms.isEmpty then nonGeoBm else and(geoBms ++ nonGeoBm)
 
 		case Not(filter) => filtering(filter) match {
 			case None => Some(emptyBitmap)
@@ -163,6 +170,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 				case _ => None
 			}
 			case boo: BoolProperty => Some(boolBitmap(boo))
+			case _: GeoProp => None
 		}
 
 		case ContFilter(property, condition) =>
@@ -185,6 +193,9 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 			}.toSeq
 		)
 
+		case gf: GeoFilter =>
+			geoFiltering(gf, None)
+
 		case Or(filters) =>
 			collectUnless(filters.iterator.map(filtering))(_.isEmpty).flatMap{bmOpts =>
 				or(bmOpts.flatten)
@@ -195,6 +206,20 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		case Nothing =>
 			Some(emptyBitmap)
 	}
+
+	private def andFiltering(filters: Seq[Filter]): Option[ImmutableRoaringBitmap] =
+		collectUnless(filters.iterator.flatMap(filtering))(_.isEmpty) match
+			case None => Some(emptyBitmap)
+			case Some(bms) => and(bms)
+
+	private def geoFiltering(filter: GeoFilter, andFilter: Option[ImmutableRoaringBitmap]): Option[ImmutableRoaringBitmap] =
+		geo.value match
+			case None =>
+				throw MetadataException("Geo index is not ready, please try again in a few minutes")
+			case Some(Success(geoIndex)) => filter.property match
+				case GeoIntersects => Some(geoIndex.getFilter(filter.geo, andFilter))
+			case Some(Failure(exc)) =>
+				throw Exception("Geo indexing failed", exc)
 
 	private def negate(bm: ImmutableRoaringBitmap) =
 		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
@@ -232,7 +257,7 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	private def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
+	def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
 			val oe = new ObjEntry(hash, objs.length, "")
 			objs += oe
 			idLookup += hash -> oe.idx
@@ -244,21 +269,19 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		if(q.remainingCapacity == 0) flush()
 	}
 
-	def flush(): Unit = if(!q.isEmpty) writeLocked{
-		if(!q.isEmpty) {
+	def flush(): Unit = if !q.isEmpty then writeLocked:
+		if !q.isEmpty then
 			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
 			q.drainTo(list)
-
-			list.forEach{
-				case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-					processUpdate(subj, pred, obj, isAssertion)
-				case _ => ()
-			}
+			sail.accessEagerly:
+				list.forEach:
+					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
+						processUpdate(subj, pred, obj, isAssertion)
+					case _ => ()
 			list.clear()
-		}
-	}
 
-	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean): Unit = {
+
+	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -404,12 +427,12 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 									deprecated.add(oe.idx)
 								case _ => subj match
 									case CpVocab.NextVersColl(_) =>
-										if sail.accessEagerly(nextVersCollIsComplete(subj, _))
+										if nextVersCollIsComplete(subj)
 										then deprecated.add(oe.idx)
 									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!sail.accessEagerly(_.hasStatement(null, isNextVersionOf, obj, false))
+						!hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -500,34 +523,29 @@ class CpIndex(sail: Sail, data: IndexData)(log: LoggingAdapter) extends ReadWrit
 		initOk.add(obj.idx)
 	}
 
-	private def nextVersCollIsComplete(obj: IRI, conn: SailConnection): Boolean =
-		conn.getStatements(obj, vocab.dcterms.hasPart, null, false).asPlainScalaIterator
-			.collect{
+	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
+		getStatements(obj, vocab.dcterms.hasPart, null)
+			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
 					oe.isNextVersion = true
 					oe.size > -1
 				}
-			}
 			.flatten
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfDirectPrevVers(deprecator: IRI): IndexedSeq[Int] = sail.accessEagerly{conn =>
-		conn.getStatements(deprecator, vocab.isNextVersionOf, null, false)
-			.asPlainScalaIterator
-			.flatMap{
+	private def getIdxsOfDirectPrevVers(deprecator: IRI)(using GlobConn): IndexedSeq[Int] =
+		getStatements(deprecator, vocab.isNextVersionOf, null)
+			.flatMap:
 				st => modForDobj(st.getObject)(_.idx)
-			}
 			.toIndexedSeq
-	}
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI): Option[Int] = sail.accessEagerly{_
-		.getStatements(null, vocab.dcterms.hasPart, deprecator, false)
-		.asPlainScalaIterator
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI)(using GlobConn): Option[Int] =
+		getStatements(null, vocab.dcterms.hasPart, deprecator)
 		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
 		.toIndexedSeq
 		.headOption
-	}
+
 end CpIndex
 
 object CpIndex:

@@ -17,13 +17,14 @@ import { sensorsDeployments } from './queries/sensorsDeployments';
 import { hoVsTc } from './queries/hoVsTcStationDiscrepancies';
 import { atcSpeciesAndHeights } from './queries/atcSpeciesAndHeights';
 import { dupL2s } from './queries/duplicateL2s';
+import { geoFilter } from './queries/geoFilter.js';
 
 import { stations as sitesStations } from './queries/SITES/stations';
 import { locations as sitesLocations } from './queries/SITES/locations';
 import { samplingPoints as sitesSamplingPoints } from './queries/SITES/samplingPoints';
 
 const envri = typeof location !== 'undefined' && location.host.indexOf('fieldsites.se') >= 0 ? "SITES" : "ICOS";
-const host = envri === "SITES" ? 'https://meta.fieldsites.se/' : 'https://meta.icos-cp.eu/';
+const host = envri === "SITES" ? 'meta.fieldsites.se' : 'meta.icos-cp.eu';
 
 const icosQueries = [
 	{name:"Table of stations", query: stationsTable},
@@ -45,7 +46,8 @@ const icosQueries = [
 	{name:"ATC species and sampling heights (in the data)", query: atcSpeciesAndHeights},
 	{name:"ETC METEOSENS sensor deployments demo", query: sensorsDeployments},
 	{name:"OTC SOCAT polygon-approximated tracks", query: concaveHulls},
-	{name:"ETC, labelling app form values", query: etcLabelingValues}
+	{ name: "ETC, labelling app form values", query: etcLabelingValues },
+	{ name: "Geo filter", query: geoFilter(host) }
 ];
 const sitesQueries = [
 	{ name: "Stations", query: sitesStations },
@@ -54,6 +56,7 @@ const sitesQueries = [
 	{ name: "Documents", query: existingDocuments(host) },
 	{ name: "Locations", query: sitesLocations },
 	{ name: "Sampling points", query: sitesSamplingPoints },
+	{ name: "Geo filter", query: geoFilter(host) }
 ]
 const queries = envri === "SITES" ? sitesQueries : icosQueries;
 

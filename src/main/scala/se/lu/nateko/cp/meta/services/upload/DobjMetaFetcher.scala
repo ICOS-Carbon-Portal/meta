@@ -26,7 +26,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	import TriplestoreConnection.*
 	import RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
-	def getSpecification(spec: IRI): DocConn ?=> Validated[DataObjectSpec] =
+	def getSpecification(spec: IRI)(using DocConn): Validated[DataObjectSpec] =
 		for
 			self <- getLabeledResource(spec)
 			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)
@@ -35,8 +35,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			dataTheme <- getDataTheme(dataThemeUri)
 			formatUri <- getSingleUri(spec, metaVocab.hasFormat)
 			format <- getObjectFormat(formatUri)
-			specificDatasetTypeUri <- getSingleUri(spec, metaVocab.hasSpecificDatasetType)
-			specificDatasetType <- getDatasetType(specificDatasetTypeUri)
+			specificDatasetType <- getSpecDatasetType(spec)
 			encoding <- getLabeledResource(spec, metaVocab.hasEncoding)
 			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)
 			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)
@@ -76,6 +75,9 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				self = self,
 				resolution = resolution
 			)
+
+	def getSpecDatasetType(spec: IRI)(using MetaConn): Validated[DatasetType] =
+		getSingleUri(spec, metaVocab.hasSpecificDatasetType).flatMap(getDatasetType)
 
 	private def getDatasetType(iri: IRI): Validated[DatasetType] =
 		if (iri === metaVocab.stationTimeSeriesDs) Validated.ok(DatasetType.StationTimeSeries)

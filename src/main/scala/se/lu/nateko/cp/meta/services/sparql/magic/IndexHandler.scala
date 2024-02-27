@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
 import akka.actor.Scheduler
-import akka.event.LoggingAdapter
 import akka.event.NoLogging
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
@@ -45,23 +44,43 @@ import se.lu.nateko.cp.meta.services.sparql.index.Property
 import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
 import scala.reflect.ClassTag
 import scala.util.Failure
+import scala.util.Success
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
-class IndexHandler(index: CpIndex, scheduler: Scheduler, log: LoggingAdapter)(using ExecutionContext) extends SailConnectionListener {
 
-	//important that this is a val, not a def, otherwise throttle will work very wrongly
-	private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
+class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 
-	def statementAdded(s: Statement): Unit = {
-		index.put(RdfUpdate(s, true))
-		flushIndex()
-	}
+	def getListener(
+		sail: Sail,
+		metaVocab: CpmetaVocab,
+		index: CpIndex,
+		geo: Future[(GeoIndex, GeoEventProducer)]
+	) = new SailConnectionListener:
+		//important that this is a val, not a def, otherwise throttle will work very wrongly
+		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
-	def statementRemoved(s: Statement): Unit = {
-		index.put(RdfUpdate(s, false))
-		flushIndex()
-	}
+		def statementAdded(s: Statement): Unit =
+			index.put(RdfUpdate(s, true))
+			flushIndex()
+			s match
+				case Rdf4jStatement(dobj, pred, _) if pred === metaVocab.hasSizeInBytes =>
+					geo.onComplete:
+						case Success((geoIndex, events)) =>
+							sail.accessEagerly:
+								events.getDobjEvents(dobj).foreach: evs =>
+									evs.foreach(geoIndex.put)
+						case _ =>
+				case _ =>
 
-}
+		def statementRemoved(s: Statement): Unit =
+			index.put(RdfUpdate(s, false))
+			flushIndex()
+
+
+end IndexHandler
 
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global

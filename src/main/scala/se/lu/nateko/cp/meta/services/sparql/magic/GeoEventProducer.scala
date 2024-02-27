@@ -7,11 +7,10 @@ import org.locationtech.jts.io.geojson.GeoJsonReader
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
-class GeoEventProducer(cpIndex: CpIndex, staticObjReader: StaticObjectReader, geoLookup: GeoLookup):
-	val metaVocab = staticObjReader.metaVocab
+class GeoEventProducer(cpIndex: CpIndex, metaVocab: CpmetaVocab, geoLookup: GeoLookup):
 	private val geoJsonReader = GeoJsonReader()
 
 	def getDobjEvents(dobj: IRI)(using GlobConn): Validated[Seq[GeoEvent]] =

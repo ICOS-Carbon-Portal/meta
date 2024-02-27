@@ -88,7 +88,7 @@ class GeoIndexTest extends AnyFunSpec{
 			assert(returned.toArray() === Array[Int]())
 
 	describe("Clustering"):
-		val gf = GeometryFactory()
+		val gf = JtsGeoFactory
 
 		def createDenseCluster(pt: Geometry, nbrOfObjs: Int): DenseCluster =
 			val bitmap = new MutableRoaringBitmap
@@ -196,7 +196,7 @@ class GeoIndexTest extends AnyFunSpec{
 
 	describe("R-tree"):
 		def initIndex = GeoIndex()
-		val gf = GeometryFactory()
+		val gf = JtsGeoFactory
 
 		val samplePt = gf.createPoint(new Coordinate(0, 0))
 		val globalBbox = mkBoundingBox(Coordinate(-180, -60), Coordinate(180, 90))

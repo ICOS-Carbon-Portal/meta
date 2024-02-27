@@ -13,6 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 import scala.util.Using
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
 
@@ -21,11 +22,12 @@ class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
 	): Future[(GeoIndex, GeoEventProducer)] = Future:
 		sail.accessEagerly:
 			val geoLookup = GeoLookup(staticObjReader)
-			val events = GeoEventProducer(cpIndex, staticObjReader, geoLookup)
-			makeIndex(events) -> events
+			val metaVocab = staticObjReader.metaVocab
+			val events = GeoEventProducer(cpIndex, metaVocab, geoLookup)
+			makeIndex(events, metaVocab) -> events
 
-	private def makeIndex(events: GeoEventProducer)(using GlobConn): GeoIndex =
-		val dobjStIter = getStatements(null, RDF.TYPE, events.metaVocab.dataObjectClass)
+	private def makeIndex(events: GeoEventProducer, metaVocab: CpmetaVocab)(using GlobConn): GeoIndex =
+		val dobjStIter = getStatements(null, RDF.TYPE, metaVocab.dataObjectClass)
 		Using(dobjStIter): dobjSts =>
 			val geo = new GeoIndex
 			var objCounter = 0

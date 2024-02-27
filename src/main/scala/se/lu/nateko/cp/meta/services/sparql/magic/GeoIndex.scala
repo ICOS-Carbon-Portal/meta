@@ -18,14 +18,12 @@ val ConcaveHullLengthRatio = 0.8
 trait Cluster:
 	def area: Geometry
 	def getFilter(bbox: Geometry, otherFilter: Option[ImmutableRoaringBitmap]): ImmutableRoaringBitmap
-	def printTree(level: Int): Unit
 
 trait SimpleCluster extends Cluster:
 	protected def objectIds = new MutableRoaringBitmap
 	def filter: ImmutableRoaringBitmap = objectIds
 	def addObject(dobjCov: DataObjCov): SimpleCluster
 	def removeObject(dobjCov: DataObjCov): Option[SimpleCluster]
-	//def addObjectId(id: Int): Unit = _objectIds.add(id)
 
 case class GeoEvent(
 	objIdx: Int,
@@ -42,14 +40,15 @@ def calculateBoundingBox(shapes: Seq[Geometry]): Geometry =
 
 class CompositeCluster(val area: Geometry, val children: IndexedSeq[Cluster]) extends Cluster:
 
-	def printTree(level: Int): Unit =
-		for (i <- 1 until level)
-			print("\t")
+	//TODO This code should be moved out of the Cluster classes, if it's still needed
+	// override def printTree(level: Int): Unit =
+	// 	for (i <- 1 until level)
+	// 		print("\t")
 
-		println(area.toString())
+	// 	println(area.toString())
 
-		for (child <- children)
-			child.printTree(level + 1)
+	// 	for (child <- children)
+	// 		child.printTree(level + 1)
 
 	def addCluster(c: Cluster): CompositeCluster = if !belongs(c) then this else
 		var hasAddedToChildren: Boolean = false
@@ -127,11 +126,11 @@ def createClusterHierarchy: CompositeCluster =
 
 class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends SimpleCluster:
 
-	override def printTree(level: Int): Unit = 
-		for (i <- 1 until level)
-			print("\t")
+	// override def printTree(level: Int): Unit =
+	// 	for (i <- 1 until level)
+	// 		print("\t")
 
-		println("Dense cluster: " + area.toString())
+	// 	println("Dense cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
 		if dobjCov.geo == area then
@@ -164,11 +163,11 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 
 class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: MutableRoaringBitmap) extends SimpleCluster:
 
-	override def printTree(level: Int): Unit = 
-		for (i <- 1 until level)
-			print("\t")
+	// override def printTree(level: Int): Unit =
+	// 	for (i <- 1 until level)
+	// 		print("\t")
 
-		println("Sparse cluster: " + area.toString())
+	// 	println("Sparse cluster: " + area.toString())
 
 	override def addObject(dobjCov: DataObjCov): SimpleCluster =
 		val newChildren = children :+ dobjCov

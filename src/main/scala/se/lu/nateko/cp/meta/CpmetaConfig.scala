@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.EmailConfig
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
@@ -117,15 +118,6 @@ case class UploadServiceConfig(
 	etc: EtcConfig
 )
 
-case class EmailConfig(
-	mailSendingActive: Boolean,
-	smtpServer: String,
-	username: String,
-	password: String,
-	fromAddress: String,
-	logBccAddress: Option[String]
-)
-
 case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
@@ -134,6 +126,7 @@ case class LabelingServiceConfig(
 	dgUserId: String,
 	riComEmail: String,
 	calLabEmails: Seq[String],
+	mailSendingActive: Boolean,
 	mailing: EmailConfig,
 	ontoId: String
 )
@@ -233,8 +226,8 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
-	given RootJsonFormat[EmailConfig] = jsonFormat6(EmailConfig.apply)
-	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
+	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
+	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)

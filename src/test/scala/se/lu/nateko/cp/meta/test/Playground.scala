@@ -18,7 +18,8 @@ import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import eu.icoscp.envri.Envri
 import scala.collection.concurrent.TrieMap
 import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.meta.mail.SendMail
+import se.lu.nateko.cp.cpauth.core.EmailSender
+
 
 object Playground {
 
@@ -104,10 +105,9 @@ object Playground {
 		}
 	}
 
-	def mailSender = {
+	def mailSender =
 		val conf = ConfigLoader.default.stationLabelingService.get.mailing
-		SendMail(conf.copy(mailSendingActive = true), system.log)
-	}
+		EmailSender(conf)
 
 //	def printEtcStationsTable(): Unit = etcMetaSrc.fetchFromEtc().map(etcStationTable).foreach{rows =>
 //		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)

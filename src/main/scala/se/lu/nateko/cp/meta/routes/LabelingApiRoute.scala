@@ -53,19 +53,19 @@ object LabelingApiRoute extends CpmetaJsonProtocol:
 	private given Unmarshaller[String, URI] = Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
 
 	def apply(
-		service: Option[StationLabelingService], authRouting: AuthenticationRouting
+		service: Option[StationLabelingService], authRouting: AuthenticationRouting, adminUsers: Seq[String]
 	)(using Materializer): Route =
 		pathPrefix("labeling"){
 			service match
 				case Some(lblService) =>
-					handleExceptions(exceptionHandler){inner(lblService, authRouting)}
+					handleExceptions(exceptionHandler){inner(lblService, authRouting, adminUsers)}
 				case None =>
 					inline def msg = "Labeling service has not been enabled on this server"
 					complete(StatusCodes.ServiceUnavailable -> msg)
 		}
 
 	private def inner(
-		service: StationLabelingService, authRouting: AuthenticationRouting
+		service: StationLabelingService, authRouting: AuthenticationRouting, adminUsers: Seq[String]
 	)(using mat: Materializer): Route =
 
 		implicit val ctxt = mat.executionContext
@@ -109,7 +109,11 @@ object LabelingApiRoute extends CpmetaJsonProtocol:
 						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader)
 						complete(StatusCodes.OK)
 					}
-				}
+				} ~
+				path("testemailing"):
+					authRouting.allowUsers(adminUsers):
+						service.sendTestEmail("labeling email test", "Test successful if you got this")
+						complete(StatusCodes.OK)
 			}
 		} ~
 		get:

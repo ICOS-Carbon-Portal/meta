@@ -5,10 +5,10 @@ import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 
+import se.lu.nateko.cp.cpauth.core.EmailSender
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.mail.SendMail
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
@@ -25,7 +25,7 @@ trait LifecycleService:
 	import LabelingDb.{ProvConn, LblAppConn}
 	import TriplestoreConnection.{getStringValues, getStatements}
 
-	private val mailer = SendMail(config.mailing, log)
+	private val mailer = EmailSender(config.mailing)
 
 	def updateStatus(
 		station: URI, newStatus: String, newStatusComment: Option[String], user: UserId
@@ -109,11 +109,17 @@ trait LifecycleService:
 		)
 		db.applyLblDiff(current, newStats)
 
+	def sendTestEmail(subj: String, text: String): Unit =
+		if config.mailSendingActive then
+			log.info(s"Sending a test email to following recepients: ${config.mailing.logBccAddress.mkString}")
+			mailer.sendText(Nil, subj, text)
+		else
+			log.info("Emailing test requested, but mail sending disabled, so not sending anything")
 
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
-	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailing.mailSendingActive then Future:
+	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailSendingActive then Future:
 
 		val stationId = lookupLblStationId(station).getOrElse(lookupProvStationId(station))
 
@@ -121,7 +127,7 @@ trait LifecycleService:
 			case (_, AppStatus.step1submitted) =>
 				val recipients: Seq[String] = getTcUsers(station)
 				val subject = "Application for labeling received"
-				val body = views.html.LabelingEmailSubmitted1(user, stationId).body
+				val body = views.html.LabelingEmailSubmitted1(user, stationId)
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
@@ -129,7 +135,7 @@ trait LifecycleService:
 				val calLabRecipients = if(stationIsAtmospheric(station)) config.calLabEmails else Nil
 				val recipients = (getTcUsers(station) :+ config.dgUserId) ++ calLabRecipients
 				val subject = s"Labeling Step2 activated for $stationId"
-				val body = views.html.LabelingEmailActivated2(user, stationId).body
+				val body = views.html.LabelingEmailActivated2(user, stationId)
 
 				mailer.send(recipients, subject, body, cc = Seq(user.email))
 
@@ -148,14 +154,14 @@ trait LifecycleService:
 				val recipients = getStationPiOrDeputyEmails(station)
 				val cc = getTcUsers(station) :+ config.riComEmail
 				val subject = s"Labeling Step2 ${status} for $stationId"
-				val body = views.html.LabelingEmailDecided2(stationId, status, comment).body
+				val body = views.html.LabelingEmailDecided2(stationId, status, comment)
 
 				mailer.send(recipients, subject, body, cc)
 
 			case (_, AppStatus.step3approved) =>
 				val recipients = getStationPiOrDeputyEmails(station)
 				val subject = s"Labeling complete for $stationId"
-				val body = views.html.LabelingEmailApproved3(stationId).body
+				val body = views.html.LabelingEmailApproved3(stationId)
 				val cc = Seq(config.riComEmail)
 
 				mailer.send(recipients, subject, body, cc)

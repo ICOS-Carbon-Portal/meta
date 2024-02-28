@@ -82,13 +82,14 @@ val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
 fetchGCMDKeywords := {
 	import scala.sys.process._
 	val log = streams.value.log
+	val target = file("./src/main/resources/gcmdkeywords.json")
 	val exitCode = (
 		url("https://gcmd.earthdata.nasa.gov/kms/concepts/concept_scheme/sciencekeywords/?format=json") #>
 		Seq("jq", ".concepts | map(.prefLabel)") #>
-		file("./src/main/resources/gcmdkeywords.json")
+		target
 	).!
 	if(exitCode == 0) log.info("Fetched GCMD keywords list")
-	else sys.error("Error while fetching GCMD keywords list")
+	else log.error(s"Error while fetching GCMD keywords list! Check that the machine you are deploying from has an older file at $target")
 }
 
 lazy val meta = (project in file("."))

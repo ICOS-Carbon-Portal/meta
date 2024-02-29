@@ -1,3 +1,5 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
@@ -82,14 +84,20 @@ val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
 fetchGCMDKeywords := {
 	import scala.sys.process._
 	val log = streams.value.log
-	val target = file("./src/main/resources/gcmdkeywords.json")
+	val jsonPath = "./src/main/resources/gcmdkeywords.json"
+	val tmpFile = file(jsonPath + "~")
 	val exitCode = (
 		url("https://gcmd.earthdata.nasa.gov/kms/concepts/concept_scheme/sciencekeywords/?format=json") #>
 		Seq("jq", ".concepts | map(.prefLabel)") #>
-		target
+		tmpFile
 	).!
-	if(exitCode == 0) log.info("Fetched GCMD keywords list")
-	else log.error(s"Error while fetching GCMD keywords list! Check that the machine you are deploying from has an older file at $target")
+	if(exitCode == 0) {
+		Files.move(tmpFile.toPath, file(jsonPath).toPath, REPLACE_EXISTING)
+		log.info("Fetched GCMD keywords list")
+	} else log.error(
+		"Error while fetching GCMD keywords list! Check that the machine " +
+		s"you are deploying from has an older file at $jsonPath"
+	)
 }
 
 lazy val meta = (project in file("."))
@@ -97,7 +105,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.9.0",
+		version := "0.10.0",
 		scalacOptions ++= commonScalacOptions,
 
 		excludeDependencies ++= Seq(

@@ -1,11 +1,12 @@
 #!/usr/bin/env -S scala-cli shebang
 
-//> using toolkit latest
+//> using toolkit default
 //> using dep org.eclipse.rdf4j:rdf4j-rio-turtle:4.3.8
 //> using dep org.eclipse.rdf4j:rdf4j-sail-memory:4.3.8
 //> using dep org.eclipse.rdf4j:rdf4j-repository-sail:4.3.8
 //> using dep com.github.scopt::scopt:4.1.0
 //> using file "FDPClient.scala"
+import scala.util.Using
 
 import java.io.{StringReader,StringWriter}
 import os.*
@@ -21,13 +22,13 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore
 import scopt.OParser
 
 
-private val ShowMetadata = "showMetadata"
-private val UploadL2Icos = "uploadL2ICOS"
-private val UploadDatasetFromFile = "uploadDatasetFromFile"
-private val DeleteAllDatasets = "deleteAllDatasets"
+val ShowMetadata = "showMetadata"
+val UploadL2Icos = "uploadL2ICOS"
+val UploadDatasetFromFile = "uploadDatasetFromFile"
+val DeleteAllDatasets = "deleteAllDatasets"
 
 val sparqlEndpoint: Uri = uri"https://meta.icos-cp.eu/sparql"
-val ConstructQueryFile = os.pwd / "src" / "main" / "scala-cli" / "fdp" / "resources" / "fdp.rq"
+val ConstructQueryFile = os.pwd / "resources" / "icosImport.rq"
 
 case class Config(
 	host: String = "",
@@ -79,45 +80,47 @@ OParser.parse(parser, args, Config()) match
 			case _ => println("Error: wrong usage\nTry --help for more information")
 	case _ =>
 
+def initFdp(config: Config): FDPClient =
+	FDPClient.interactiveInit(uri"${config.host}")
+
 def showMetadata(config: Config) =
 	val uri = s"${config.host.toString()}${config.path.toString()}"
 	val ttl = quickRequest.get(uri"$uri").send().body
 	println(ttl)
 
 def uploadL2ICOS(config: Config) =
-	val fdp = FDPClient(uri"${config.host}")
+	val fdp = initFdp(config)
 	val catalogUri = uri"${config.host}/catalog/${config.catalog}"
 	val constructQuery = os.read(ConstructQueryFile)
-	val model = buildModel(constructQuery)
+	val model = importFromIcos(constructQuery)
 	val repo = createRepo(model)
-	val conn = repo.getConnection()
-	val limit = if config.nDatasets > 0 then s" LIMIT ${config.nDatasets}" else ""
-	val datasetsQuery = s"SELECT ?subj WHERE { ?subj <${RDF.TYPE}> <${DCAT.DATASET}> }$limit"
-	val datasetsRes = conn.prepareTupleQuery(datasetsQuery).evaluate()
-	datasetsRes.forEach: bindings =>
-		val dataset = uri"${bindings.getValue("subj").toString}"
-		val fdpInputQuery = constructDatasetSparqlQuery(catalogUri, dataset)
-		val writer = new StringWriter
-		val turtleWriter = Rio.createWriter(RDFFormat.TURTLE, writer)
-		val preparedQuery = conn.prepareGraphQuery(fdpInputQuery)
-		preparedQuery.evaluate(turtleWriter)
-		fdp.postAndPublishDatasets(writer.toString())
-	datasetsRes.close()
-	conn.close()
+	Using.Manager: use =>
+		val conn = use(repo.getConnection())
+		val limit = if config.nDatasets > 0 then s" LIMIT ${config.nDatasets}" else ""
+		val datasetsQuery = s"SELECT ?subj WHERE { ?subj a <${DCAT.DATASET}> }$limit"
+		val datasetsResult = use(conn.prepareTupleQuery(datasetsQuery).evaluate())
+		datasetsResult.forEach: bindings =>
+			val dataset = uri"${bindings.getValue("subj").toString}"
+			val fdpInputQuery = constructDatasetSparqlQuery(catalogUri, dataset)
+			val writer = new StringWriter
+			val turtleWriter = Rio.createWriter(RDFFormat.TURTLE, writer)
+			val preparedQuery = conn.prepareGraphQuery(fdpInputQuery)
+			preparedQuery.evaluate(turtleWriter)
+			fdp.postAndPublishDatasets(writer.toString())
 
 def uploadDatasetFromFile(config: Config) =
-	val fdp = FDPClient(uri"${config.host}")
+	val fdp = initFdp(config)
 	val catalogUri = fdp.host.addPath(Seq("catalog", config.catalog))
 	val ttl = os.read(stringToPath(config.inputTtlFile))
 	fdp.postAndPublishDatasets(ttl)
 
-def deleteAllDatasets(config: Config) =
-	val fdp = FDPClient(uri"${config.host}")
+def deleteAllDatasets(config: Config): Unit =
+	val fdp = initFdp(config)
 	val uri = fdp.host.addPath(Seq("catalog", config.catalog)).addParam("format", "ttl")
 	val ttl = quickRequest.get(uri).send().body
 	val model = Rio.parse(StringReader(ttl), "", RDFFormat.TURTLE)
 	val subj = iri(fdp.host.addPath(Seq("dataset", "")).toString())
-	val datasets = model.getStatements(subj, LDP.CONTAINS, null).forEach: st =>
+	model.getStatements(subj, LDP.CONTAINS, null).forEach: st =>
 		val dataset = st.getObject().toString()
 		fdp.deleteDataset(uri"$dataset")
 
@@ -127,36 +130,23 @@ def stringToPath(path: String): os.Path =
 	else os.Path(os.RelPath(path), base = os.pwd)
 
 def sparqlConstruct(query: String): String = sparql(query, "text/turtle")
+
 def sparql(query: String, acceptType: String): String =
 	val headers = Map("Accept" -> acceptType, "Content-Type" -> "text/plain")
 	val resp: Response[String] = quickRequest.post(sparqlEndpoint).headers(headers).body(query).send()
 	resp.body
 
-def buildModel(query: String) =
+def importFromIcos(query: String): Model =
 	val ttlString = sparqlConstruct(query)
 	Rio.parse(StringReader(ttlString), "", RDFFormat.TURTLE)
 
-def createRepo(model: Model) =
+def createRepo(model: Model): SailRepository =
 	val repo = SailRepository(MemoryStore())
-	val conn = repo.getConnection()
-	conn.add(model)
-	conn.close()
-	repo
+	Using(repo.getConnection()): conn =>
+		conn.add(model)
+		repo
+	.get
 
-
-def getColumnsDatasetSparqlQuery(dataset: Uri): String =
-	val datasetId = dataset.pathSegments.segments.last.v
-	s"""
-		|PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|
-		|SELECT ?col
-		|WHERE {
-		|	VALUES ?dobj { <https://meta.icos-cp.eu/objects/$datasetId> }
-		|	?dobj cpmeta:hasObjectSpec ?dobjSpec .
-		|	?dobjSpec cpmeta:containsDataset ?dsSpec .
-		|	?dsSpec cpmeta:hasColumn ?col .
-		|}
-	""".stripMargin
 
 def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 	s"""

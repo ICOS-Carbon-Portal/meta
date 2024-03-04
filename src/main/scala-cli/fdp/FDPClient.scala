@@ -11,23 +11,8 @@ import java.io.StringReader
 case class User(email: String, password: String) derives ReadWriter
 case class Token(token: String) derives ReadWriter
 
-class FDPClient(hostUri: Uri):
-
-	private val jsonJson = Map("Content-Type" -> "application/json", "Accept" -> "application/json")
-	private val turtleTurtle = Map("Content-Type" -> "text/turtle", "Accept" -> "text/turtle")
-
-	val host = hostUri
-	print("Enter your email: ")
-	private val email = System.console().readLine()
-	print("Enter your password: ")
-	private val password = System.console().readPassword()
-	private val token = getToken(User(email.mkString, password.mkString))
-
-	def getToken(user: User): String =
-		val uri = host.addPath("tokens")
-		val body = upickle.default.write(user)
-		val resp: Response[String] = quickRequest.post(uri).headers(jsonJson).body(body).send()
-		upickle.default.read[Token](resp.body).token
+class FDPClient private(val host: Uri, token: String):
+	import FDPClient.*
 
 	def postDataset(ttl: String): IndexedSeq[Uri] =
 		val uri = host.addPath("dataset")
@@ -51,7 +36,23 @@ class FDPClient(hostUri: Uri):
 
 	def deleteDataset(dataset: Uri): Response[String] =
 		quickRequest.delete(dataset).auth.bearer(token).send()
+end FDPClient
 
 object FDPClient:
-	def apply(hostUri: Uri) =
-		new FDPClient(hostUri)
+	private val jsonJson = Map("Content-Type" -> "application/json", "Accept" -> "application/json")
+	private val turtleTurtle = Map("Content-Type" -> "text/turtle", "Accept" -> "text/turtle")
+
+	def apply(host: Uri, user: User): FDPClient =
+		val uri = host.addPath("tokens")
+		val body = upickle.default.write(user)
+		val resp: Response[String] = quickRequest.post(uri).headers(jsonJson).body(body).send()
+		val token = upickle.default.read[Token](resp.body).token
+		new FDPClient(host, token)
+
+	def interactiveInit(host: Uri): FDPClient =
+		print("Enter your email: ")
+		val email = System.console().readLine()
+		print("Enter your password: ")
+		val password = System.console().readPassword()
+		val user = User(email.mkString, password.mkString)
+		apply(host, user)

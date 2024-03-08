@@ -33,6 +33,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.production.toSeq.flatMap{
 		_.contributors
 			.map(agent => toDoiCreator(agent).toContributor(ContributorType.Producer))
+			.toSeq
 			.distinct
 	}
 

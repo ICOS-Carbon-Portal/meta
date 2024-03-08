@@ -130,7 +130,7 @@ object UploadDtoReader{
 
 	private def dataProductionToDto(prod: DataProduction) = DataProductionDto(
 		creator = prod.creator.self.uri,
-		contributors = prod.contributors.map(_.self.uri),
+		contributors = prod.contributors.map(_.self.uri).toSeq,
 		hostOrganization = prod.host.map(_.self.uri),
 		comment = prod.comment,
 		sources = Option(prod.sources.map(_.hash)),

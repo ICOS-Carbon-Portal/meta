@@ -124,7 +124,8 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.map(toFundingReference)
 
 		val geoLocations = dataObjs
-			.flatMap(_.coverage)
+			.flatMap(_.acquisition)
+			.flatMap(_.station.location)
 			.distinct
 			.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
 

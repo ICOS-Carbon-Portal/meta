@@ -16,10 +16,14 @@ import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
+import scala.collection.mutable
+import se.lu.nateko.cp.meta.core.data.GeoTrack
 
 import java.time.Instant
 import java.time.Year
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.core.data.DatasetType
+import se.lu.nateko.cp.meta.services.sparql.index.GeoFilter
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
@@ -123,11 +127,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = dataObjs
-			.flatMap(_.acquisition)
-			.flatMap(_.station.location)
-			.distinct
-			.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
+		val geoLocations = DoiGeoLocationCreator.representativeCov(dataObjs)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),

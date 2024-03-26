@@ -11,6 +11,16 @@ import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Circle
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.core.data.Pin
+import org.locationtech.jts.algorithm.hull.ConcaveHull
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
+import org.locationtech.jts.geom.GeometryCollection
+import org.locationtech.jts.io.geojson.GeoJsonReader
+import org.locationtech.jts.geom.Geometry
+import se.lu.nateko.cp.meta.core.data.GeoJson
+import org.locationtech.jts.geom.Polygon as JtsPolygon
+import org.locationtech.jts.geom.Point as JtsPoint
+import org.locationtech.jts.geom.LineString as JtsLineString
 
 object DoiGeoLocationConverter {
 
@@ -26,7 +36,7 @@ object DoiGeoLocationConverter {
 		)
 	}
 
-	private def toLatLonBox(circle: Circle) = {
+	def toLatLonBox(circle: Circle) = {
 		val metersPerDegree = 111111
 		val center = circle.center
 		val latRadius = circle.radius / metersPerDegree
@@ -58,6 +68,14 @@ object DoiGeoLocationConverter {
 			)), box.label
 		)
 
+	// Not yet supported by DataCite
+	// def toDoiGeoLocationWithPolygon(polygon: Polygon): GeoLocation =
+	// 	GeoLocation(None, None, Some(
+	// 		Seq(GeoLocationPolygon(
+	// 			polygon.vertices.map(v => GeoLocationPoint(Some(Longitude(v.lon)), Some(Latitude(v.lat))))))
+	// 		), polygon.label
+	// 	)
+
 	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
 		geoCoverage match {
 			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
@@ -68,5 +86,20 @@ object DoiGeoLocationConverter {
 			case Polygon(vertices, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(vertices, label)))
 			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
 		}
+	
+	def jtsPolygonToDoiBox(polygon: JtsPolygon): GeoLocation =
+		val envelope = polygon.getEnvelopeInternal
 
+		GeoLocation(None, Some(
+			GeoLocationBox(
+				Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
+				Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
+			)), None
+		)
+
+	def fromJtsToDoiGeoLocation(geometry: Geometry): Seq[GeoLocation] =
+		geometry match
+			case point: JtsPoint => Seq(toDoiGeoLocationWithPoint(Position.ofLatLon(point.getY(), point.getX())))
+			case polygon: JtsPolygon => Seq(jtsPolygonToDoiBox(polygon))
+			case _ => ??? // TODO Error handling
 }

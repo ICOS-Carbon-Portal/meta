@@ -63,8 +63,7 @@ case class DataAcquisition(
 			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None, None).flatten)
 		)
 		.orElse(siteFeature)
-		.orElse(station.location)
-		.orElse(station.coverage)
+		.orElse(station.fullCoverage)
 
 	private def siteFeature = site.flatMap(_.location)
 }

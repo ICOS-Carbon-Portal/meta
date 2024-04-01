@@ -7,9 +7,8 @@ module.exports = function(typesStore, checkUriOrSuffixAction, createIndividualAc
 
 		render: function(){
 
-			var uriValid = this.state.uriAvailable;
-			var icon = uriValid ? 'plus' : 'times';
-			var inputStyle = uriValid ? {} : {backgroundColor: 'pink'};
+			var icon = this.state.uriAvailable ? 'plus' : 'times';
+			var inputStyle = this.state.uriAvailable === false ? {backgroundColor: 'pink'} : {};
 
 			return <div className="input-group" style={{marginBottom: '10px'}}>
 				<input

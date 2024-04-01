@@ -70,10 +70,10 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 
 			if(!uri || uri.length == 0){
 				var uriBase = this.state.types[this.state.chosenIdx].newInstanceBaseUri;
-				var uri = uriBase + uriOrSuffix.trim().replace(/ /g, '_');
+				var uri = uriBase + encodeURIComponent(uriOrSuffix.trim().replace(/ /g, '_'))
 			}
 
-			_.extend(this.state, {candidateUri: uri, uriAvailable: true});
+			_.extend(this.state, {candidateUri: uri, uriAvailable: undefined})
 
 			var self = this;
 			uriCheck(uri, function(checkRes){

@@ -1,26 +1,26 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import se.lu.nateko.cp.meta.core.data.GeoTrack.apply
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.doi.meta.GeoLocation
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
-import se.lu.nateko.cp.meta.core.data.GeoTrack
-import se.lu.nateko.cp.meta.core.data.Polygon
-import se.lu.nateko.cp.meta.core.data.Circle
-import se.lu.nateko.cp.doi.meta.*
-import se.lu.nateko.cp.meta.core.data.Pin
 import org.locationtech.jts.algorithm.hull.ConcaveHull
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
-import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.locationtech.jts.geom.Geometry
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import org.locationtech.jts.geom.Polygon as JtsPolygon
-import org.locationtech.jts.geom.Point as JtsPoint
+import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.LineString as JtsLineString
+import org.locationtech.jts.geom.Point as JtsPoint
+import org.locationtech.jts.geom.Polygon as JtsPolygon
+import org.locationtech.jts.io.geojson.GeoJsonReader
+import se.lu.nateko.cp.doi.meta.GeoLocation
+import se.lu.nateko.cp.doi.meta.*
+import se.lu.nateko.cp.meta.core.data.Circle
+import se.lu.nateko.cp.meta.core.data.FeatureCollection
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.GeoJson
+import se.lu.nateko.cp.meta.core.data.GeoTrack
+import se.lu.nateko.cp.meta.core.data.GeoTrack.apply
+import se.lu.nateko.cp.meta.core.data.LatLonBox
+import se.lu.nateko.cp.meta.core.data.Pin
+import se.lu.nateko.cp.meta.core.data.Polygon
+import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 object DoiGeoLocationConverter {
 
@@ -55,7 +55,7 @@ object DoiGeoLocationConverter {
 		)
 	}
 
-	private def toDoiGeoLocationWithPoint(pos: Position): GeoLocation =
+	def toDoiGeoLocationWithPoint(pos: Position): GeoLocation =
 		GeoLocation(Some(
 			GeoLocationPoint(Some(Longitude(pos.lon)), Some(Latitude(pos.lat)))
 		), None, pos.label)
@@ -87,7 +87,7 @@ object DoiGeoLocationConverter {
 			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
 		}
 	
-	def jtsPolygonToDoiBox(polygon: JtsPolygon): GeoLocation =
+	def jtsPolygonToDoiBox(polygon: Geometry): GeoLocation =
 		val envelope = polygon.getEnvelopeInternal
 
 		GeoLocation(None, Some(
@@ -97,9 +97,9 @@ object DoiGeoLocationConverter {
 			)), None
 		)
 
-	def fromJtsToDoiGeoLocation(geometry: Geometry): Seq[GeoLocation] =
+	def fromJtsToDoiGeoLocation(geometry: Geometry): GeoLocation =
 		geometry match
-			case point: JtsPoint => Seq(toDoiGeoLocationWithPoint(Position.ofLatLon(point.getY(), point.getX())))
-			case polygon: JtsPolygon => Seq(jtsPolygonToDoiBox(polygon))
-			case _ => ??? // TODO Error handling
+			case point: JtsPoint => toDoiGeoLocationWithPoint(Position.ofLatLon(point.getY(), point.getX()))
+			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
+			case g => jtsPolygonToDoiBox(g)
 }

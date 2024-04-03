@@ -28,26 +28,27 @@ object IcosMetaFlow:
 		given Envri = Envri.ICOS
 		val log = summon[ActorSystem].log
 
-		val otcServer = db.instanceServers(flowConf.otcMetaInstanceServerId) match
-			case wnis: WriteNotifyingInstanceServer => wnis
-			case _ => throw Exception(
-				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
-			)
-
-		val sparql = Rdf4jSparqlRunner(db.vanillaRepo)
-
 		val diff = StateDiffApplier(db, flowConf, log)
 
 		def startFlow[TC <: IcosTC: TcConf](src: TcMetaSource[TC]): () => Unit =
 			src.state.to(Sink.foreach(diff.apply[TC])).run()
 
+		val etcRun =
+			if etcConf.ingestFileMeta then
+				startFlow(EtcMetaSource(etcConf, db.vocab))
+			else () => ()
+
+		val otcRun = db.instanceServers.get(flowConf.otcMetaInstanceServerId) match
+			case None => () => ()
+			case Some(otcServer: WriteNotifyingInstanceServer) =>
+				val sparql = Rdf4jSparqlRunner(db.vanillaRepo)
+				startFlow(OtcMetaSource(otcServer, sparql, log))
+			case _ => throw Exception:
+				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
+
 		val atcSource = AtcMetaSource(flowConf.atcUpload)
 
-		val cancellers = Seq(
-			startFlow(atcSource),
-			startFlow(OtcMetaSource(otcServer, sparql, log)),
-			startFlow(EtcMetaSource(etcConf, db.vocab))
-		)
+		val cancellers = Seq(startFlow(atcSource), etcRun, otcRun)
 
 		MetaFlow(Seq(atcSource), () => cancellers.foreach(_.apply()))
 	end init

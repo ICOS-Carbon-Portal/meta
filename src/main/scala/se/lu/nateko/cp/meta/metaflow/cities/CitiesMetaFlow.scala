@@ -7,10 +7,13 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.MetaUploadConf
+import se.lu.nateko.cp.meta.metaflow.icos.ATC
+import se.lu.nateko.cp.meta.metaflow.icos.AtcConf
+import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 
 object CitiesMetaFlow:
 	def init(
@@ -27,11 +30,14 @@ object CitiesMetaFlow:
 
 		val Seq(de,fr,ch) = Seq("DE", "FR", "CH").flatMap(CountryCode.unapply)
 
+		val atcSource = AtcMetaSource(flowConf.atcUpload)
+
 		MetaFlow.join(
 			Seq(
 				startFlow[MunichMidLow.type](flowConf.munichUpload, de),
 				startFlow[ParisMidLow.type](flowConf.parisUpload, fr),
-				startFlow[ZurichMidLow.type](flowConf.zurichUpload, ch)
+				startFlow[ZurichMidLow.type](flowConf.zurichUpload, ch),
+				MetaFlow(Seq(atcSource), atcSource.state.to(Sink.foreach(diff.apply[ATC.type])).run())
 			)
 		)
 	end init

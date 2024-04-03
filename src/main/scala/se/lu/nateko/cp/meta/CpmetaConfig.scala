@@ -70,7 +70,8 @@ case class CitiesMetaFlowConfig(
 	citiesMetaInstanceServerId: String,
 	munichUpload: MetaUploadConf,
 	parisUpload: MetaUploadConf,
-	zurichUpload: MetaUploadConf
+	zurichUpload: MetaUploadConf,
+	atcUpload: MetaUploadConf
 ) extends MetaFlowConfig
 
 case class MetaUploadConf(dirName: String, uploader: String)
@@ -199,7 +200,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
-	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat5(CitiesMetaFlowConfig.apply)
+	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat6(CitiesMetaFlowConfig.apply)
 	given RootJsonFormat[MetaFlowConfig] with
 		def write(mfc: MetaFlowConfig): JsValue = mfc match
 			case icos: IcosMetaFlowConfig => icos.toTypedJson(IcosFlow)

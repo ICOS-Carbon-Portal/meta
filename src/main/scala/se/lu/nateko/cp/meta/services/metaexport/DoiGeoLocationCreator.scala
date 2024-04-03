@@ -69,7 +69,7 @@ object DoiGeoLocationCreator:
 					added = true
 				else if hull.intersects(res(i)) then
 					val joined = GeometryCollection(Array(hull, res(i)), JtsGeoFactory)
-					val newHull = ConcaveHull.concaveHullByLengthRatio(joined, ConcaveHullLengthRatio)
+					val newHull = joined.union()
 					res(i) = newHull
 					added = true
 				i += 1

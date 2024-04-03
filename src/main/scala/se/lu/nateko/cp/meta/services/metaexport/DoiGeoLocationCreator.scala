@@ -30,6 +30,11 @@ object JtsGeoFeatureConverter:
 
 	def toCollection(points: Seq[Position]) =
 		GeometryCollection(points.toArray.map(toPoint), JtsGeoFactory)
+	
+	def toPolygon(polygon: Polygon): JtsPolygon =
+		val firstPoint = polygon.vertices.headOption.toArray
+		val vertices = (polygon.vertices.toArray ++ firstPoint).map(v => Coordinate(v.lon, v.lat))
+		JtsGeoFactory.createPolygon(vertices)
 
 
 object DoiGeoLocationCreator:
@@ -37,16 +42,18 @@ object DoiGeoLocationCreator:
 
 	def createHulls(geoFeatures: Seq[GeoFeature]): Seq[Geometry] =
 		geoFeatures.map: g =>
-			toCollection(extractPoints(g)).convexHull
+			g match
+				case b: LatLonBox => JtsGeoFeatureConverter.toPolygon(b.asPolygon)
+				case c: Circle => JtsGeoFeatureConverter.toPolygon(DoiGeoLocationConverter.toLatLonBox(c).asPolygon)
+				case poly: Polygon => JtsGeoFeatureConverter.toPolygon(poly)
+				case other => ConcaveHull.concaveHullByLengthRatio(toCollection(extractPoints(other)), ConcaveHullLengthRatio)
 
 	private def extractPoints(g: GeoFeature): Seq[Position] = g match
 		case p: Position => Seq(p)
 		case pin: Pin => Seq(pin.position)
-		case b: LatLonBox => b.asPolygon.vertices
-		case c: Circle => DoiGeoLocationConverter.toLatLonBox(c).asPolygon.vertices
 		case gt: GeoTrack => gt.points
-		case poly: Polygon => poly.vertices
 		case fc: FeatureCollection => fc.features.flatMap(extractPoints)
+		case _ => Seq.empty
 
 
 	def mergeHulls(hulls: Seq[Geometry]): Seq[Geometry] =
@@ -62,8 +69,7 @@ object DoiGeoLocationCreator:
 					added = true
 				else if hull.intersects(res(i)) then
 					val joined = GeometryCollection(Array(hull, res(i)), JtsGeoFactory)
-					// TODO Test concave hull again
-					val newHull = joined.convexHull()
+					val newHull = ConcaveHull.concaveHullByLengthRatio(joined, ConcaveHullLengthRatio)
 					res(i) = newHull
 					added = true
 				i += 1

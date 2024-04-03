@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.services.upload
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.LineString as JtsLineString
 import org.locationtech.jts.geom.Point as JtsPoint
 import org.locationtech.jts.geom.Polygon as JtsPolygon
 import org.locationtech.jts.io.geojson.GeoJsonReader

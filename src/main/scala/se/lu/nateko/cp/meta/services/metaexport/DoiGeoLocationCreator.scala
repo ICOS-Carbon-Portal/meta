@@ -40,21 +40,26 @@ object JtsGeoFeatureConverter:
 object DoiGeoLocationCreator:
 	import JtsGeoFeatureConverter.*
 
+	def geoFeatureToJtsGeometry(gf: GeoFeature): Seq[Geometry] =
+		val pointTest: PartialFunction[GeoFeature, Position] =
+			case pos: Position => pos
+
+		gf match
+			case b: LatLonBox => Seq(JtsGeoFeatureConverter.toPolygon(b.asPolygon))
+			case c: Circle => Seq(JtsGeoFeatureConverter.toPolygon(DoiGeoLocationConverter.toLatLonBox(c).asPolygon))
+			case poly: Polygon => Seq(JtsGeoFeatureConverter.toPolygon(poly))
+			case p: Position => Seq(toPoint(p))
+			case pin: Pin => Seq(toPoint(pin.position))
+			case gt: GeoTrack => Seq(ConcaveHull.concaveHullByLengthRatio(toCollection(gt.points), ConcaveHullLengthRatio))
+			case fc: FeatureCollection =>
+				val fcPoints = fc.features.collect(pointTest)
+				val pointHull = ConcaveHull.concaveHullByLengthRatio(toCollection(fcPoints), ConcaveHullLengthRatio)
+				val otherGeometries = fc.features.filterNot(pointTest.isDefinedAt)
+				Seq(pointHull) ++ otherGeometries.flatMap(geoFeatureToJtsGeometry)
+
+
 	def createHulls(geoFeatures: Seq[GeoFeature]): Seq[Geometry] =
-		geoFeatures.map: g =>
-			g match
-				case b: LatLonBox => JtsGeoFeatureConverter.toPolygon(b.asPolygon)
-				case c: Circle => JtsGeoFeatureConverter.toPolygon(DoiGeoLocationConverter.toLatLonBox(c).asPolygon)
-				case poly: Polygon => JtsGeoFeatureConverter.toPolygon(poly)
-				case other => ConcaveHull.concaveHullByLengthRatio(toCollection(extractPoints(other)), ConcaveHullLengthRatio)
-
-	private def extractPoints(g: GeoFeature): Seq[Position] = g match
-		case p: Position => Seq(p)
-		case pin: Pin => Seq(pin.position)
-		case gt: GeoTrack => gt.points
-		case fc: FeatureCollection => fc.features.flatMap(extractPoints)
-		case _ => Seq.empty
-
+		geoFeatures.flatMap(geoFeatureToJtsGeometry)
 
 	def mergeHulls(hulls: Seq[Geometry]): Seq[Geometry] =
 
@@ -78,9 +83,7 @@ object DoiGeoLocationCreator:
 		res.toSeq
 
 	def representativeCov(dataObjs: Seq[DataObject]): Seq[GeoLocation] =
-		var geoFeatures: Seq[GeoFeature] = dataObjs.flatMap(_.coverage).flatMap:
-			case fc: FeatureCollection => fc.features
-			case other => Seq(other)
+		var geoFeatures: Seq[GeoFeature] = dataObjs.flatMap(_.coverage)
 
 		val stationTest: PartialFunction[GeoFeature, Position] =
 			case pos: Position if pos.label.isDefined => pos

@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 import TestGeoFeatures.*
+import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
 
 // Test data:
 
@@ -24,18 +25,13 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val wktReader = new WKTReader(JtsGeoFactory)
 			geomStrings.map(wktReader.read)
 
-		it("calling createHulls with empty seq does nothing"):
-			val hulls = createHulls(Seq())
-
-			assert(hulls == Seq())
-		
-		it("calling mergeHulls with empty seq does nothing"):
-			val hulls = mergeHulls(Seq())
+		it("calling mergeSimpleGeoms with empty seq does nothing"):
+			val hulls = mergeSimpleGeoms(Seq())
 
 			assert(hulls == Seq())
 
-		it("createHulls from ecosystem data"):
-			val hulls = createHulls(TestGeoFeatures.geoFeatures)
+		it("simple geometries from ecosystem data"):
+			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
 
 			val expectedGeometries = convertStringsToJTS(
 				"POINT (2.780096 48.476357)",
@@ -46,19 +42,19 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				"POLYGON ((2.785777 48.475908, 2.787856 48.478101, 2.786875 48.479848, 2.786456 48.480506, 2.785678 48.480789, 2.784824 48.480814, 2.783953 48.480794, 2.783584 48.480944, 2.783067 48.480903, 2.782683 48.480689, 2.777622 48.477977, 2.775239 48.476735, 2.779432 48.47323, 2.782723 48.474982, 2.783961 48.473986, 2.785777 48.475908)))"
 			)
 
-			assert(hulls == expectedGeometries)
+			assert(geoms == expectedGeometries)
 
-		it("mergeHulls from ecosystem data"):
-			val hulls = createHulls(TestGeoFeatures.geoFeatures)
-			val mergedHulls = mergeHulls(hulls)
+		it("mergeSimpleGeoms from ecosystem data"):
+			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
+			val merged = mergeSimpleGeoms(geoms)
 
-			for (hull <- hulls)
-				assert(mergedHulls.exists(_.covers(hull)))
+			for (geom <- geoms)
+				assert(merged.exists(_.covers(geom)))
 
-			assert(mergedHulls.length == 1)
+			assert(merged.length == 1)
 
-		it("createHulls from ocean data"):
-			val hulls = createHulls(TestGeoFeatures.oceanGeoTracks)
+		it("simple geometries from ocean data"):
+			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
 
 			val expectedGeometries = convertStringsToJTS(
 				"POLYGON ((-52.267 63.864, -52.275 63.996, -51.726 64.159, -22.047 64.188, -6.766 62, 11.164 57.669, 11.364 57.49, 12.654 56.036, 10.852 56.056, -1.746 59.746, -43.881 59.562, -52.267 63.864))",
@@ -66,18 +62,18 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				"POLYGON ((-48.399 59.791, -52.265 64.002, -51.722 64.167, -23.225 64.141, -6.766 62, -0.776 60.901, 11.13 57.679, 12.667 56.014, 10.823 56.052, 10.414 56.115, 6.649 57.807, -42.663 59.102, -48.399 59.791)))"
 			)
 
-			assert(hulls == expectedGeometries)
+			assert(geoms == expectedGeometries)
 
 		it("mergeHulls from ocean data"):
-			val hulls = createHulls(TestGeoFeatures.oceanGeoTracks)
-			val mergedHulls = mergeHulls(hulls)
+			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
+			val merged = mergeSimpleGeoms(geoms)
 
-			for (hull <- hulls)
-				val hullVertices = hull.getCoordinates().map(JtsGeoFactory.createPoint)
-				assert(mergedHulls.exists(h =>
-					hullVertices.forall(h.covers)
+			for (geom <- geoms)
+				val vertices = geom.getCoordinates().map(JtsGeoFactory.createPoint)
+				assert(merged.exists(h =>
+					vertices.forall(h.covers)
 				))
 
-			assert(mergedHulls.length == 1)
+			assert(merged.length == 1)
 
 end DoiGeoLocationCreatorTests

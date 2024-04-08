@@ -11,14 +11,9 @@ import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 import TestGeoFeatures.*
 import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
+import se.lu.nateko.cp.doi.meta.GeoLocationBox
 
-// Test data:
 
-// large collection:
-// https://metalocal.icos-cp.eu/collections/T2wsrJcHPvTLl2dFf375dQ4h
-
-// small collection:
-// https://metalocal.icos-cp.eu/collections/QoycFqCewfdEXsTxZMU6XJH9
 class DoiGeoLocationCreatorTests extends AnyFunSpec:
 	describe("DoiGeoLocationCreator"):
 		def convertStringsToJTS(geomStrings: String*): Seq[Geometry] =
@@ -29,6 +24,31 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val hulls = mergeSimpleGeoms(Seq())
 
 			assert(hulls == Seq())
+
+		it("two polygons that overlap get merged correctly"):
+			val reader = WKTReader()
+			val p1 = reader.read("POLYGON ((0.9624173 62.2648867, 0.6987455 59.5310102, 6.4995267 61.2882154, 2.456558 61.603294, 5.0493314 62.8722139, 0.918472 62.5498498, 0.9624173 62.2648867))")
+			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
+
+			val expected = reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))")
+			val merged = mergeSimpleGeoms(Seq(p1, p2))
+
+			assert(merged(0) == expected)
+
+		it("data object with less than 30 points will remain points"):
+			val geoms = TestGeoFeatures.modisWithFewerPoints
+			val featureCollection = geoms(0).features
+
+			val merged = representativeCoverage(geoms)
+
+			assert(featureCollection.size == merged.size)
+
+		it("data object with more than 30 points will cluster the points"):
+			val geoms = TestGeoFeatures.modisWithMorePoints
+			val merged = representativeCoverage(geoms)
+
+			assert(geoms.toSeq != merged)
+			merged(0).geoLocationBox.map(box => assert(box.isInstanceOf[GeoLocationBox]))
 
 		it("simple geometries from ecosystem data"):
 			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)

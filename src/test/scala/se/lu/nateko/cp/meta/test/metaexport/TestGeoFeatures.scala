@@ -4,6 +4,8 @@ import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
 
 object TestGeoFeatures:
+
+	// https://meta.icos-cp.eu/collections/QoycFqCewfdEXsTxZMU6XJH9
 	val geoFeatures = Vector(
 					Position(48.476357,2.780096,Some(103.0f),Some("FR-Fon"),None),
 					Circle(Position(48.475868,2.780064,None,None,None),25.2,None,None),
@@ -96,3 +98,77 @@ object TestGeoFeatures:
 							Position(64.002,-52.265,None,None,None),
 							Position(64.167,-51.722,None,None,None)
 						),None,Some(URI("http://meta.icos-cp.eu/resources/spcov_13JNLkPUbi75EpLhujK8CtQK"))))
+
+		// https://meta.icos-cp.eu/objects/qtCBVnL4CL_GGscXknBHLPFN	
+		val modisWithFewerPoints = Vector(
+			FeatureCollection(
+				Vector(
+					Position(-22.283,133.249,None,Some("AU-ASM"),None),
+					Position(-13.0769,131.1178,None,Some("AU-Ade"),None),
+					Position(-34.0021,140.5891,None,Some("AU-Cpr"),None),
+					Position(-33.6152,150.7236,None,Some("AU-Cum"),None),
+					Position(-14.0633,131.3181,None,Some("AU-DaP"),None),
+					Position(-14.1593,131.3881,None,Some("AU-DaS"),None),
+					Position(-15.2588,132.3706,None,Some("AU-Dry"),None),
+					Position(-23.8587,148.4746,None,Some("AU-Emr"),None),
+					Position(-12.5452,131.3072,None,Some("AU-Fog"),None),
+					Position(-30.1913,120.6541,None,Some("AU-GWW"),None),
+					Position(-31.3764,115.7138,None,Some("AU-Gin"),None),
+					Position(-12.4943,131.1523,None,Some("AU-How"),None),
+					Position(-34.4704,140.6551,None,Some("AU-Lox"),None),
+					Position(-14.5636,132.4776,None,Some("AU-RDF"),None),
+					Position(-36.6499,145.5759,None,Some("AU-Rig"),None),
+					Position(-17.1175,145.6301,None,Some("AU-Rob"),None),
+					Position(-17.1507,133.3502,None,Some("AU-Stp"),None),
+					Position(-22.287,133.64,None,Some("AU-TTE"),None),
+					Position(-35.6566,148.1517,None,Some("AU-Tum"),None),
+					Position(-37.4259,145.1878,None,Some("AU-Wac"),None),
+					Position(-36.6732,145.0294,None,Some("AU-Whr"),None),
+					Position(-37.4222,144.0944,None,Some("AU-Wom"),None),
+					Position(-34.988282,146.291606,None,Some("AU-Ync"),None),
+					Position(-15.4427,167.192001,None,Some("VU-Coc"),None)),None,None))
+
+		// https://metalocal.icos-cp.eu/objects/DwQ18YNv6YN4ELts5LwmbQZw
+		val modisWithMorePoints = Vector(
+			FeatureCollection(
+				Vector(
+					Position(51.971,4.927,None,Some("NL-Ca1"),None),
+					Position(52.003611,4.805556,None,Some("NL-Haa"),None),
+					Position(52.24035,5.071301,None,Some("NL-Hor"),None),
+					Position(51.953602,4.9029,None,Some("NL-Lan"),None),
+					Position(52.166581,5.743556,None,Some("NL-Loo"),None),
+					Position(53.398922,6.356028,None,Some("NL-Lut"),None),
+					Position(51.65,4.639083,None,Some("NL-Mol"),None),
+					Position(78.186,15.923,None,Some("NO-Adv"),None),
+					Position(78.921631,11.831085,None,Some("NO-Blv"),None),
+					Position(60.372386,11.078142,None,Some("NO-Hur"),None),
+					Position(52.762199,16.309401,None,Some("PL-Wet"),None),
+					Position(39.138414,-8.332689,None,Some("PT-Cor"),None),
+					Position(38.6394,-8.6018,None,Some("PT-Esp"),None),
+					Position(38.540639,-8.000056,None,Some("PT-Mi1"),None),
+					Position(38.476501,-8.02455,None,Some("PT-Mi2"),None),
+					Position(68.362389,18.79475,None,Some("SE-Abi"),None),
+					Position(64.182029,19.556539,None,Some("SE-Deg"),None),
+					Position(56.265469,13.553514,None,Some("SE-Faj"),None),
+					Position(64.112778,19.456944,None,Some("SE-Fla"),None),
+					Position(56.09763,13.41897,None,Some("SE-Htm"),None),
+					Position(58.34063,13.101768,None,Some("SE-Lnn"),None),
+					Position(60.086497,17.479503,None,Some("SE-Nor"),None),
+					Position(64.1725,19.738,None,Some("SE-Ros"),None),
+					Position(60.125,17.918056,None,Some("SE-Sk1"),None),
+					Position(60.129667,17.840056,None,Some("SE-Sk2"),None),
+					Position(68.354149,19.050333,None,Some("SE-St1"),None),
+					Position(68.356003,19.04521,None,Some("SE-Sto"),None),
+					Position(64.25611,19.7745,None,Some("SE-Svb"),None),
+					Position(78.186,15.923,None,Some("SJ-Adv"),None),
+					Position(78.921631,11.831085,None,Some("SJ-Blv"),None),
+					Position(49.120778,20.1635,None,Some("SK-Tat"),None),
+					Position(55.7925,-3.24362,None,Some("UK-AMo"),None),
+					Position(55.866,-3.205778,None,Some("UK-EBu"),None),
+					Position(55.906944,-2.858611,None,Some("UK-ESa"),None),
+					Position(56.607222,-3.798056,None,Some("UK-Gri"),None),
+					Position(51.153533,-0.8583,None,Some("UK-Ham"),None),
+					Position(51.783798,-0.47608,None,Some("UK-Her"),None),
+					Position(51.45,-1.266667,None,Some("UK-PL3"),None),
+					Position(51.2071,-2.82864,None,Some("UK-Tad"),None)),None,None)
+				)

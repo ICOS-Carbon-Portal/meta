@@ -107,16 +107,7 @@ class StaticObjectReader(
 			doiOpt <- getOptionalString(doc, metaVocab.hasDoi)
 			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
 			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
-			authors <- getUriValues(doc, metaVocab.dcterms.creator) match
-				case IndexedSeq(contribSeq) if getTypes(contribSeq).contains(RDF.SEQ) =>
-					Validated.sequence:
-						getStatements(contribSeq, null, null).toIndexedSeq
-														.filter(s => s.getPredicate.getLocalName.matches("^_\\d+$"))
-														.sortBy(s => s.getPredicate.getLocalName)
-														.map(_.getObject)
-														.collect:
-															case contrib: IRI => getAgent(contrib)
-				case several => Validated.sequence(several.map(getAgent(_))).map(_.toSet)
+			authors <- getContributors(doc, metaVocab.dcterms.creator)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(doc)(using collectionLens)
 			init = DocObject(

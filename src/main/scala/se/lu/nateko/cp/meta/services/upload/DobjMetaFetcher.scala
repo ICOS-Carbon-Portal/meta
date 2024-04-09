@@ -331,11 +331,24 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				variables = Some(variables.flatten).filterNot(_.isEmpty)
 			)
 
-	protected def getDataProduction(obj: IRI, prod: IRI, docConn: DocConn): DobjConn ?=> Validated[DataProduction] =
+	protected def getDataProduction(obj: IRI, prod: IRI, docConn: DocConn)(using DobjConn): Validated[DataProduction] =
 		for
 			creatorUri <- getSingleUri(prod, metaVocab.wasPerformedBy)
 			creator <- getAgent(creatorUri)
-			contributors <- Validated.sequence(getUriValues(prod, metaVocab.wasParticipatedInBy).map(getAgent))
+			contributors <-
+				getUriValues(prod, metaVocab.wasParticipatedInBy) match
+					case IndexedSeq(contribSeq) if getTypes(contribSeq).contains(RDF.SEQ) =>
+						Validated.sequence:
+							getStatements(contribSeq, null, null).toIndexedSeq
+								.filter(s => s.getPredicate.getLocalName.matches("^_\\d+$"))
+								.sortBy(s => s.getPredicate.getLocalName)
+								.map(_.getObject)
+								.collect:
+									case contrib: IRI => getAgent(contrib)
+					case several => Validated
+						.sequence:
+							several.map(getAgent(_))
+						.map(_.toSet)
 			hostUri <- getOptionalUri(prod, metaVocab.wasHostedBy)
 			host <- hostUri.map(getOrganization).sinkOption
 			comment <- getOptionalString(prod, RDFS.COMMENT)

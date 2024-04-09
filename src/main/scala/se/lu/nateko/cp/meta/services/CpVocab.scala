@@ -82,6 +82,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getAcquisition(hash: Sha256Sum)(using Envri) = getRelativeRaw(AcqPrefix + hash.id)
 	def getProduction(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + hash.id)
+	def getProductionContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + ContribsPrefix + hash.id)
+	def getDocContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ContribsPrefix + hash.id)
 	def getSubmission(hash: Sha256Sum)(using Envri) = getRelativeRaw(SubmPrefix + hash.id)
 	def getSpatialCoverage(hash: Sha256Sum)(using Envri): IRI = getSpatialCoverage(UriId(hash.id))
 	def getSpatialCoverage(id: UriId)(using Envri) = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
@@ -112,6 +114,7 @@ object CpVocab{
 	val NextVersionCollPrefix = "nextvcoll_"
 	val AcqPrefix = "acq_"
 	val ProdPrefix = "prod_"
+	val ContribsPrefix = "contribs_"
 	val SubmPrefix = "subm_"
 	val SpatCovPrefix = "spcov_"
 	val VarInfoPrefix = "varinfo_"

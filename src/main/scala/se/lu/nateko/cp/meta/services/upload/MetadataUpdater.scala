@@ -111,6 +111,11 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
 				|	} UNION {
+				|		<$objUri> <${metaVocab.wasProducedBy}> ?prod .
+				|		?prod <${metaVocab.wasParticipatedInBy}> ?s .
+				|		?s a rdf:Seq .
+				|		?s ?p ?o
+				|	} UNION {
 				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
 				|			a <${metaVocab.plainCollectionClass}> ;
 				|			<${metaVocab.isNextVersionOf}> [] .

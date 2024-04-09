@@ -39,6 +39,20 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private given factory: ValueFactory = vocab.factory
 
+	def getAuthorsStatements(authors: Seq[URI], objectUri: IRI, hash: Sha256Sum)(using Envri): Iterable[Statement] =
+		if authors.length <= 1 then
+			authors.map: author =>
+				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
+		else
+			val contribsSeq = vocab.getDocContribList(hash)
+			Seq(
+				makeSt(contribsSeq, RDF.TYPE, RDF.SEQ),
+				makeSt(objectUri, metaVocab.dcterms.creator, contribsSeq),
+			) ++
+			authors.zipWithIndex.map: (contrib, index) =>
+				val idxProp = factory.createIRI(RDF.NAMESPACE + "_" + (index + 1))
+				makeSt(contribsSeq, idxProp, contrib.toRdf)
+ 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
 	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri, TriplestoreConnection): Seq[Statement] =
 		import meta.hashSum
@@ -74,9 +88,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			) ++
 			makeSt(objectUri, metaVocab.dcterms.title, doc.title.map(vocab.lit)) ++
 			makeSt(objectUri, metaVocab.dcterms.description, doc.description.map(vocab.lit)) ++
-			doc.authors.map{ author =>
-				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
-			}
+			getAuthorsStatements(doc.authors, objectUri, hashSum)
 		}
 		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
 			_ === CitationMaker.defaultLicence.url
@@ -227,7 +239,25 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(using Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
+
+		val contribStatements: Seq[Statement] =
+			if prod.contributors.length <= 1 then
+				prod.contributors.map: contrib =>
+					makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)
+
+			else
+				val contribsSeq = vocab.getProductionContribList(hash)
+				Seq(
+					makeSt(contribsSeq, RDF.TYPE, RDF.SEQ),
+					makeSt(productionUri, metaVocab.wasParticipatedInBy, contribsSeq),
+				) ++
+				prod.contributors.zipWithIndex.map: (contrib, index) =>
+					val idxProp = factory.createIRI(RDF.NAMESPACE + "_" + (index + 1))
+					makeSt(contribsSeq, idxProp, contrib.toRdf)
+
+
 		val objectUri = vocab.getStaticObject(hash)
+
 		Seq(
 			makeSt(objectUri, metaVocab.wasProducedBy, productionUri),
 			makeSt(productionUri, RDF.TYPE, metaVocab.productionClass),
@@ -237,9 +267,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
 		makeSt(productionUri, RDFS.SEEALSO, prod.documentation.map(vocab.getStaticObject)) ++
 		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
-		prod.contributors.map{ contrib =>
-			makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)
-		} ++
+		contribStatements ++
 		prod.sources.getOrElse(Nil).map{srcHash =>
 			val src = vocab.getStaticObject(srcHash)
 			makeSt(objectUri, metaVocab.prov.hadPrimarySource, src)

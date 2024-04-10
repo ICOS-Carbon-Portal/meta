@@ -350,7 +350,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		for
 			creatorUri <- getSingleUri(prod, metaVocab.wasPerformedBy)
 			creator <- getAgent(creatorUri)
-			contributors <- getContributors(obj, metaVocab.wasParticipatedInBy)
+			contributors <- getContributors(prod, metaVocab.wasParticipatedInBy)
 			hostUri <- getOptionalUri(prod, metaVocab.wasHostedBy)
 			host <- hostUri.map(getOrganization).sinkOption
 			comment <- getOptionalString(prod, RDFS.COMMENT)

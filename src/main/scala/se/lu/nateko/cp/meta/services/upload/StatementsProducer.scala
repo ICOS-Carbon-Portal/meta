@@ -39,12 +39,12 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private given factory: ValueFactory = vocab.factory
 
-	def getContribStatements(contribPredicate: IRI, contributors: Seq[URI], objectUri: IRI, hash: Sha256Sum)(using Envri): Iterable[Statement] =
+	def getContribStatements(contribPredicate: IRI, contributors: Seq[URI], objectUri: IRI, makeSeqIri: => IRI)(using Envri): Iterable[Statement] =
 		if contributors.length <= 1 then
 			contributors.map: contributor =>
 				makeSt(objectUri, contribPredicate, contributor.toRdf)
 		else
-			val contribsSeq = vocab.getDocContribList(hash)
+			val contribsSeq = makeSeqIri
 			Seq(
 				makeSt(contribsSeq, RDF.TYPE, RDF.SEQ),
 				makeSt(objectUri, contribPredicate, contribsSeq),
@@ -88,7 +88,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			) ++
 			makeSt(objectUri, metaVocab.dcterms.title, doc.title.map(vocab.lit)) ++
 			makeSt(objectUri, metaVocab.dcterms.description, doc.description.map(vocab.lit)) ++
-			getContribStatements(metaVocab.dcterms.creator, doc.authors, objectUri, hashSum)
+			getContribStatements(metaVocab.dcterms.creator, doc.authors, objectUri, vocab.getDocContribList(doc.hashSum))
 		}
 		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
 			_ === CitationMaker.defaultLicence.url
@@ -240,9 +240,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(using Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
 
-		val contribStatements: Seq[Statement] = getContribStatements(
-			metaVocab.wasParticipatedInBy, prod.contributors, productionUri, hash
-		).toSeq
+		val contribStatements = getContribStatements(
+			metaVocab.wasParticipatedInBy, prod.contributors, productionUri, vocab.getProductionContribList(hash)
+		)
 
 		val objectUri = vocab.getStaticObject(hash)
 

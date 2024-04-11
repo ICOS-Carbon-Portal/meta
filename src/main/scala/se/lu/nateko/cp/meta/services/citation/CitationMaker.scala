@@ -209,9 +209,14 @@ class CitationMaker(
 
 		val authorsV: Validated[Seq[Agent]] =
 			import AttributionProvider.agentOrdering
-			def productionAgents = dobj.production.toSeq.flatMap(prod =>
-				prod.creator +: prod.contributors.sorted
-			)
+			def productionAgents = dobj.production.toSeq.flatMap: prod =>
+				prod.contributors match
+					case seq: Seq[Agent] =>
+						if seq.contains(prod.creator)
+						then seq
+						else prod.creator +: seq
+					case iter => prod.creator +: iter.toSeq.sorted
+
 			if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
 				attrProvider.getAuthors(dobj).map: attrAuthors =>
 					if isIcosProject then attrAuthors

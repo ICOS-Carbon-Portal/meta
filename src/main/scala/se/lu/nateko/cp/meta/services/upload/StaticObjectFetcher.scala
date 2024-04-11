@@ -107,7 +107,7 @@ class StaticObjectReader(
 			doiOpt <- getOptionalString(doc, metaVocab.hasDoi)
 			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
 			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
-			authors <- Validated.sequence(getUriValues(doc, metaVocab.dcterms.creator).map(getAgent))
+			authors <- getContributors(doc, metaVocab.dcterms.creator)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(doc)(using collectionLens)
 			init = DocObject(
@@ -125,7 +125,7 @@ class StaticObjectReader(
 				parentCollections = parendColls,
 				references = References.empty.copy(
 					title = titleOpt,
-					authors = Option(authors)
+					authors = Option(authors.toSeq)
 				)
 			)
 			refs <- citer.getCitationInfo(init)

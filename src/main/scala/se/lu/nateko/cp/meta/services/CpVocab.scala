@@ -122,7 +122,11 @@ object CpVocab{
 	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
 	val LabeledStationStatus = "STEP3APPROVED"
 	val EcoVarFamilyRegex = """^(.+)_\d{1,2}_\d{1,2}_\d{1,2}$""".r
-	val KnownEcoVarFamilies = Set("SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT", "TA", "RH")
+	val KnownEcoVarFamilies = Set(
+		"SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT", "TA", "RH", "PPFD_IN", "PPFD_OUT",
+		"PPFD_BC_IN", "PPFD_BC_OUT", "PPFD_DIF", "SW_DIF", "G", "WTD", "PA", "P", "D_SNOW", "P_SNOW",
+		"WS", "WD"
+	)
 
 	object Acquisition{
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)

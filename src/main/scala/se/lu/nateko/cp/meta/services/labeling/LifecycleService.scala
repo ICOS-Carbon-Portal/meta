@@ -109,10 +109,11 @@ trait LifecycleService:
 		)
 		db.applyLblDiff(current, newStats)
 
-	def sendTestEmail(subj: String, text: String): Unit =
+	def sendTestEmail(addr: Option[String], subj: String, text: String): Unit =
 		if config.mailSendingActive then
-			log.info(s"Sending a test email to following recepients: ${config.mailing.logBccAddress.mkString}")
-			mailer.sendText(Nil, subj, text)
+			val allReceps = addr.toSeq ++ config.mailing.logBccAddress
+			log.info(s"Sending a test email to following recepients: ${allReceps.mkString(", ")}")
+			mailer.sendText(addr.toSeq, subj, text)
 		else
 			log.info("Emailing test requested, but mail sending disabled, so not sending anything")
 

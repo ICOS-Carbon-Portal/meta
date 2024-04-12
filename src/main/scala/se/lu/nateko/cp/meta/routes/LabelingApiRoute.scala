@@ -113,7 +113,7 @@ object LabelingApiRoute extends CpmetaJsonProtocol:
 				path("testemailing"):
 					parameter("address".optional): addr =>
 						authRouting.allowUsers(adminUsers):
-							service.sendTestEmail(addr, "labeling email test", "Test successful if you got this")
+							service.sendTestEmail(addr)
 							complete(StatusCodes.OK)
 			}
 		} ~

@@ -1,22 +1,23 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import java.net.URI
-
+import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
-
+import play.twirl.api.Html
 import se.lu.nateko.cp.cpauth.core.EmailSender
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.Try
-import scala.util.Success
+import java.net.URI
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 trait LifecycleService:
 	self: StationLabelingService =>
@@ -109,11 +110,12 @@ trait LifecycleService:
 		)
 		db.applyLblDiff(current, newStats)
 
-	def sendTestEmail(addr: Option[String], subj: String, text: String): Unit =
+	def sendTestEmail(addr: Option[String]): Unit =
 		if config.mailSendingActive then
+			val subj = "labeling email test"
 			val allReceps = addr.toSeq ++ config.mailing.logBccAddress
-			log.info(s"Sending a test email to following recepients: ${allReceps.mkString(", ")}")
-			mailer.sendText(addr.toSeq, subj, text)
+			val body = views.html.CpEmail(subj)(Html("<p>Test successful if you got this</p>"))
+			mailWithLogging(addr.toSeq, subj, body)
 		else
 			log.info("Emailing test requested, but mail sending disabled, so not sending anything")
 
@@ -130,7 +132,7 @@ trait LifecycleService:
 				val subject = "Application for labeling received"
 				val body = views.html.LabelingEmailSubmitted1(user, stationId)
 
-				mailer.send(recipients, subject, body, cc = Seq(user.email))
+				mailWithLogging(recipients, subject, body, cc = Seq(user.email))
 
 			case (AppStatus.step1approved, AppStatus.step2ontrack) =>
 				val calLabRecipients = if(stationIsAtmospheric(station)) config.calLabEmails else Nil
@@ -138,7 +140,7 @@ trait LifecycleService:
 				val subject = s"Labeling Step2 activated for $stationId"
 				val body = views.html.LabelingEmailActivated2(user, stationId)
 
-				mailer.send(recipients, subject, body, cc = Seq(user.email))
+				mailWithLogging(recipients, subject, body, cc = Seq(user.email))
 
 			case (_, AppStatus.step2approved) | (_, AppStatus.step2stalled) | (_, AppStatus.step2delayed) if(from != AppStatus.step3approved) =>
 				val status: String = to match{
@@ -157,7 +159,7 @@ trait LifecycleService:
 				val subject = s"Labeling Step2 ${status} for $stationId"
 				val body = views.html.LabelingEmailDecided2(stationId, status, comment)
 
-				mailer.send(recipients, subject, body, cc)
+				mailWithLogging(recipients, subject, body, cc)
 
 			case (_, AppStatus.step3approved) =>
 				val recipients = getStationPiOrDeputyEmails(station)
@@ -165,13 +167,19 @@ trait LifecycleService:
 				val body = views.html.LabelingEmailApproved3(stationId)
 				val cc = Seq(config.riComEmail)
 
-				mailer.send(recipients, subject, body, cc)
+				mailWithLogging(recipients, subject, body, cc)
 
 			case _ => ()
 	end sendMailOnStatusUpdate
+
+	private def mailWithLogging(to: Seq[String], subject: String, body: Html, cc: Seq[String] = Nil): Unit =
+		val allReceps = to ++ cc ++ config.mailing.logBccAddress
+		log.info(s"Sending labeling email to ${allReceps.mkString(", ")} with subject: $subject")
+		mailer.send(to, subject, body, cc)
+
 end LifecycleService
 
-object LifecycleService{
+object LifecycleService:
 
 	enum AppStatus(title: String):
 		case neverSubmitted    extends AppStatus("NEVER SUBMITTED")
@@ -271,4 +279,4 @@ object LifecycleService{
 		Failure(new IllegalLabelingStatusException(msg))
 	}(Success.apply)
 
-}
+end LifecycleService

@@ -124,15 +124,6 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 		}
 	end hasNoOtherDeprecators
 
-	def validateFileFormat[Dto <: ObjectUploadDto](dto: Dto, spec: DataObjectSpec)(using Envri, DocConn | DobjConn): Try[NotUsed] =
-		val fileExtension = dto.fileName.split("\\.").last
-
-		if spec.format.self.uri === metaVocab.netCDFTimeSeriesFormat || spec.format.self.uri === metaVocab.netCDFSpatialFormat then
-			if fileExtension == "nc" then ok else userFail("Expected NetCDF file")
-		else if spec.format.self.uri === metaVocab.microsoftExcelFormat then
-			if fileExtension == "xlsx" then ok else userFail("Expected Microsoft Excel file")
-		else ok
-
 	def validateFileName[Dto <: ObjectUploadDto](dto: Dto)(using Envri, DocConn | DobjConn): Try[Dto] =
 		if dto.duplicateFilenameAllowed && !dto.autodeprecateSameFilenameObjects then Success(dto)
 		else

@@ -102,9 +102,11 @@ object Backend {
 		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
 
 		//TODO Find a good place for the ZIP obj format URI constant
-		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
+		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive") ||
+						spec.format == URI("https://meta.icos-cp.eu/ontologies/cpmeta/excel")
+		val isNetCDF = spec.format == URI("http://meta.icos-cp.eu/resources/cpmeta/nonStandardSpatialNetcdf")
 
-		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip){
+		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip || isNetCDF){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>
@@ -114,7 +116,7 @@ object Backend {
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
 			fetchOk("validating data object", url, new RequestInit{
-				body = if isZip then file.slice(0, 100) else file
+				body = if isZip || isNetCDF then file.slice(0, 100) else file
 				method = HttpMethod.PUT
 				headers = Dictionary("Content-Type" -> "application/octet-stream")
 				credentials = RequestCredentials.include

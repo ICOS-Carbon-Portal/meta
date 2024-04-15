@@ -91,6 +91,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				_ <- validateTemporalCoverage(meta, spec)
 				_ <- validateSpatialCoverage(meta)
 				_ <- noProductionProvenanceIfL0(meta, spec)
+				_ <- scoped.validateFileFormat(meta, spec)
 				amended <- scoped.validateFileName(meta)
 				_ <- scoped.validateMoratorium(amended)
 			yield amended

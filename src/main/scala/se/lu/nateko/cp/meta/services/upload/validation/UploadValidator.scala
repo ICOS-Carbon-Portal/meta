@@ -91,6 +91,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				_ <- validateTemporalCoverage(meta, spec)
 				_ <- validateSpatialCoverage(meta)
 				_ <- noProductionProvenanceIfL0(meta, spec)
+				_ <- validateFormatsByFileExt(meta, spec)
 				amended <- scoped.validateFileName(meta)
 				_ <- scoped.validateMoratorium(amended)
 			yield amended
@@ -309,6 +310,20 @@ class UploadValidator(servers: DataObjectInstanceServers):
 	private val formatsWithRowInfoInHeader = Set(
 		metaVocab.wdcggFormat, metaVocab.atcProductFormat, metaVocab.netCDFTimeSeriesFormat, metaVocab.asciiAtcFlaskTimeSer
 	)
+
+	private def validateFormatsByFileExt(dto: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
+		val fileExtension = dto.fileName.split("\\.").last
+
+		val formatUri = spec.format.self.uri
+		inline def isNetCdf = formatUri === metaVocab.netCDFTimeSeriesFormat || formatUri === metaVocab.netCDFSpatialFormat
+		inline def isExcel = formatUri === metaVocab.microsoftExcelFormat
+
+		if isNetCdf && fileExtension != "nc" then
+			userFail("Expected NetCDF file")
+		else if isExcel && fileExtension != "xlsx" then
+			userFail("Expected Microsoft Excel file")
+		else ok
+
 
 	private def validateForFormat(meta: DataObjectDto, spec: DataObjectSpec, subm: DataSubmitterConfig)(using Envri, MetaConn): Validated[NotUsed] =
 

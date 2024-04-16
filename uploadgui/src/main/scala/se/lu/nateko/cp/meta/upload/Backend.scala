@@ -20,8 +20,11 @@ import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.doi.Doi
 import scala.scalajs.js.Dictionary
+import se.lu.nateko.cp.meta.OntoConstants.FormatUris.*
+import scala.language.strictEquality
 
 object Backend {
+	given CanEqual[URI, URI] = CanEqual.derived
 
 	import SparqlQueries.*
 
@@ -101,10 +104,8 @@ object Backend {
 
 		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
 
-		//TODO Find a good place for the ZIP obj format URI constant
-		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive") ||
-						spec.format == URI("https://meta.icos-cp.eu/ontologies/cpmeta/excel")
-		val isNetCDF = spec.format == URI("http://meta.icos-cp.eu/resources/cpmeta/nonStandardSpatialNetcdf")
+		val isZip = spec.format == zipArchive || spec.format == excel
+		val isNetCDF = spec.format == netCdf || spec.format == netCdfTimeSeries
 
 		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip || isNetCDF){
 

@@ -314,10 +314,14 @@ class UploadValidator(servers: DataObjectInstanceServers):
 	private def validateFormatsByFileExt(dto: DataObjectDto, spec: DataObjectSpec): Try[NotUsed] =
 		val fileExtension = dto.fileName.split("\\.").last
 
-		if spec.format.self.uri === metaVocab.netCDFTimeSeriesFormat || spec.format.self.uri === metaVocab.netCDFSpatialFormat then
-			if fileExtension == "nc" then ok else userFail("Expected NetCDF file")
-		else if spec.format.self.uri === metaVocab.microsoftExcelFormat then
-			if fileExtension == "xlsx" then ok else userFail("Expected Microsoft Excel file")
+		val formatUri = spec.format.self.uri
+		inline def isNetCdf = formatUri === metaVocab.netCDFTimeSeriesFormat || formatUri === metaVocab.netCDFSpatialFormat
+		inline def isExcel = formatUri === metaVocab.microsoftExcelFormat
+
+		if isNetCdf && fileExtension != "nc" then
+			userFail("Expected NetCDF file")
+		else if isExcel && fileExtension != "xlsx" then
+			userFail("Expected Microsoft Excel file")
 		else ok
 
 

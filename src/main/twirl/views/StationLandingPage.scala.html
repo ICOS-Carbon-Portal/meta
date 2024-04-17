@@ -232,19 +232,17 @@
 	@if(webpageDetailsPresent) {
 		<h2 class="fs-3 mt-5">Detailed information</h2>
 	}
+	@property("Station ID", station.id)
+	@for(cc <- station.countryCode){ @property("Country code", cc.code) }
 	@for(icos <- icosSpecifics){
 		@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.hasOceanTheme(icos))){
 			@property("Discontinued", "(former ICOS station)")
 		}
-		@property("Station ID", station.id)
 		@for(wigos <- wigosId){
 			@property("WIGOS ID", wigos)
 		}
 		@for(cls <- icos.stationClass){
 			@property("ICOS Station class", cls.toString)
-		}
-		@for(cc <- station.countryCode){
-			@property("Country code", cc.code)
 		}
 		@for(lblDate <- icos.labelingDate){
 			@property("ICOS Labeling date", lblDate.toString)

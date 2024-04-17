@@ -232,9 +232,9 @@
 	@if(webpageDetailsPresent) {
 		<h2 class="fs-3 mt-5">Detailed information</h2>
 	}
-	@for(icos <- icosSpecifics){ 
+	@for(icos <- icosSpecifics){
 		@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.hasOceanTheme(icos))){
-			@property("Discontinued", "(former ICOS station)" ) 
+			@property("Discontinued", "(former ICOS station)")
 		}
 	}
 	@property("Station ID", station.id)

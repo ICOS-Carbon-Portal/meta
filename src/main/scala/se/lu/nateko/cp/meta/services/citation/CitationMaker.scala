@@ -81,8 +81,8 @@ class CitationMaker(
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
 				case dobj: DataObject => summon[Envri] match
-					case Envri.SITES | Envri.ICOSCities => Validated(getSitesCitation(dobj))
-					case Envri.ICOS => getIcosCitation(dobj)
+					case Envri.SITES => Validated(getSitesCitation(dobj))
+					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
 			theLicence <- getLicence(dobj)

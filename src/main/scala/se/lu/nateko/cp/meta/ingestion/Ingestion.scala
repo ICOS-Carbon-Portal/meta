@@ -51,6 +51,10 @@ object Ingestion {
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("http://meta.icos-cp.eu/resources/cpmeta/")
 			),
+			"cpMetaCityInstances" -> new RemoteRdfGraphIngester(
+				endpoint = new URI("https://citymeta.icos-cp.eu/sparql"),
+				rdfGraph = new URI("https://citymeta.icos-cp.eu/resources/cpmeta/")
+			),
 			"icosInstances" -> new RemoteRdfGraphIngester(
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("http://meta.icos-cp.eu/resources/icos/")

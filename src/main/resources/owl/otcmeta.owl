@@ -5,7 +5,8 @@
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:skos="http://www.w3.org/2004/02/skos/core#">
     <owl:Ontology rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/"/>
     
 
@@ -44,7 +45,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">applied to</rdfs:label>
+        <rdfs:label>applied to</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -56,16 +57,6 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
         <rdfs:label>role&apos;s organization</rdfs:label>
-    </owl:ObjectProperty>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/canMeasure -->
-
-    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/canMeasure">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ValueType"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">can measure</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -83,7 +74,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">device</rdfs:label>
+        <rdfs:label>is instance of a device</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -94,7 +85,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funder"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">funder</rdfs:label>
+        <rdfs:label>funder</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -104,7 +95,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasFunding">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has funding</rdfs:label>
+        <rdfs:label>has funding</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -114,7 +105,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">geographical region</rdfs:label>
+        <rdfs:label>geographical region</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -138,14 +129,14 @@
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-                    <!-- Instrument and Sensor TO BE REMOVED -->
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">manufacturer</rdfs:label>
+        <rdfs:comment>TODO: only Device must become the domain in the future</rdfs:comment>
+        <rdfs:label>manufacturer</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -163,7 +154,7 @@
                 </owl:unionOf>
             </owl:Class>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">owner</rdfs:label>
+        <rdfs:label>owner</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -174,7 +165,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">responsible organization</rdfs:label>
+        <rdfs:label>responsible organization</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -190,34 +181,19 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasValueType -->
-    <!-- TO BE REMOVED -->
-
-    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasValueType">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ValueType"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">value type</rdfs:label>
-    </owl:ObjectProperty>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable">
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
-                    <!-- Device and Sensor TO BE REMOVED -->
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measures</rdfs:label>
+        <rdfs:label>measures variable</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -228,7 +204,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of instrument</rdfs:label>
+        <rdfs:label>of instrument</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -239,7 +215,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of platform</rdfs:label>
+        <rdfs:label>of platform</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -250,7 +226,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">of sensor</rdfs:label>
+        <rdfs:label>of sensor</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -261,7 +237,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to instrument</rdfs:label>
+        <rdfs:label>to instrument</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -272,7 +248,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/InstrumentDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to platform</rdfs:label>
+        <rdfs:label>to platform</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -283,7 +259,31 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/PlatformDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">to station</rdfs:label>
+        <rdfs:label>to station</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/2004/02/skos/core#closeMatch -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/2004/02/skos/core#closeMatch">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#SymmetricProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+        <rdfs:label>close match (SKOS)</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/2004/02/skos/core#exactMatch -->
+
+    <owl:ObjectProperty rdf:about="http://www.w3.org/2004/02/skos/core#exactMatch">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2004/02/skos/core#closeMatch"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#SymmetricProperty"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#TransitiveProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+        <rdfs:label>exact match (SKOS)</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -305,7 +305,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">air intake position</rdfs:label>
+        <rdfs:label>air intake position</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -317,7 +317,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">award number</rdfs:label>
+        <rdfs:label>award number</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -329,7 +329,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">award title</rdfs:label>
+        <rdfs:label>award title</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -341,7 +341,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">award URI</rdfs:label>
+        <rdfs:label>award URI</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -361,34 +361,10 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">country code</rdfs:label>
+        <rdfs:label>country code</rdfs:label>
     </owl:DatatypeProperty>
     
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/deviceSkos -->
 
-    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/deviceSkos">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L22 device</rdfs:label>
-    </owl:DatatypeProperty>
-
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/variableTypeSkos -->
-
-    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/variableTypeSkos">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">type (SKOS)</rdfs:label>
-    </owl:DatatypeProperty>
-
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos -->
-
-    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos">
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measures (SKOS)</rdfs:label>
-    </owl:DatatypeProperty>
 
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/exhaustPosition -->
 
@@ -396,7 +372,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">exhaust position</rdfs:label>
+        <rdfs:label>exhaust position</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -408,7 +384,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funder"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">funder identifier</rdfs:label>
+        <rdfs:label>funder identifier</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -424,23 +400,23 @@
                 <owl:oneOf>
                     <rdf:Description>
                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Crossref Funder ID</rdf:first>
+                        <rdf:first>Crossref Funder ID</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
                                 <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">GRID</rdf:first>
+                                <rdf:first>GRID</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
                                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ISNI</rdf:first>
+                                        <rdf:first>ISNI</rdf:first>
                                         <rdf:rest>
                                             <rdf:Description>
                                                 <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Other</rdf:first>
+                                                <rdf:first>Other</rdf:first>
                                                 <rdf:rest>
                                                     <rdf:Description>
                                                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ROR</rdf:first>
+                                                        <rdf:first>ROR</rdf:first>
                                                         <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                                     </rdf:Description>
                                                 </rdf:rest>
@@ -454,7 +430,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">funder identifier type</rdfs:label>
+        <rdfs:label>funder identifier type</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -471,7 +447,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attribution weight</rdfs:label>
+        <rdfs:label>attribution weight</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -482,19 +458,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Calibration"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">date</rdfs:label>
-    </owl:DatatypeProperty>
-    
-
-
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/hasDefaultUnit -->
-    <!-- TO BE REMOVED -->
-
-    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasDefaultUnit">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/ValueType"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">default unit</rdfs:label>
+        <rdfs:label>date</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -512,7 +476,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">deployment schedule</rdfs:label>
+        <rdfs:label>deployment schedule</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -530,7 +494,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">discrete sampling schedule</rdfs:label>
+        <rdfs:label>discrete sampling schedule</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -548,7 +512,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">documentation comment</rdfs:label>
+        <rdfs:label>documentation comment</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -565,8 +529,8 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">URL link to a PID/DOI landing page of a document</rdfs:comment>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">documentation reference</rdfs:label>
+        <rdfs:comment>URL link to a PID/DOI landing page of a document</rdfs:comment>
+        <rdfs:label>documentation reference</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -586,7 +550,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">E-mail</rdfs:label>
+        <rdfs:label>E-mail</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -616,7 +580,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">first name</rdfs:label>
+        <rdfs:label>first name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -627,7 +591,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICES platform code</rdfs:label>
+        <rdfs:label>ICES platform code</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -645,7 +609,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">instrument setup</rdfs:label>
+        <rdfs:label>instrument setup</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -656,7 +620,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">last name</rdfs:label>
+        <rdfs:label>last name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -679,7 +643,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">latitude</rdfs:label>
+        <rdfs:label>latitude</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -702,7 +666,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">longitude</rdfs:label>
+        <rdfs:label>longitude</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -713,7 +677,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">middle name</rdfs:label>
+        <rdfs:label>middle name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -726,14 +690,14 @@
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-                    <!-- Instrument and Sensor TO BE REMOVED -->
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">model</rdfs:label>
+        <rdfs:comment>TODO: only Device will have model name in the future</rdfs:comment>
+        <rdfs:label>model</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -755,7 +719,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Name</rdfs:label>
+        <rdfs:label>Name</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -775,7 +739,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Orcid ID</rdfs:label>
+        <rdfs:label>Orcid ID</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -786,7 +750,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">title</rdfs:label>
+        <rdfs:label>title</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -797,7 +761,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">picture URL</rdfs:label>
+        <rdfs:label>picture URL</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -808,7 +772,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">port of call</rdfs:label>
+        <rdfs:label>port of call</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -826,7 +790,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">reporting frequency</rdfs:label>
+        <rdfs:label>reporting frequency</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -837,7 +801,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">resolution</rdfs:label>
+        <rdfs:label>resolution</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -855,7 +819,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">retrieval method</rdfs:label>
+        <rdfs:label>retrieval method</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -873,7 +837,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sampling frequency</rdfs:label>
+        <rdfs:label>sampling frequency</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -944,15 +908,15 @@
                 <owl:oneOf>
                     <rdf:Description>
                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1</rdf:first>
+                        <rdf:first>1</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
                                 <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2</rdf:first>
+                                <rdf:first>2</rdf:first>
                                 <rdf:rest>
                                     <rdf:Description>
                                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Associated</rdf:first>
+                                        <rdf:first>Associated</rdf:first>
                                         <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                                     </rdf:Description>
                                 </rdf:rest>
@@ -962,7 +926,7 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ICOS station class</rdfs:label>
+        <rdfs:label>ICOS station class</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -973,7 +937,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">station id</rdfs:label>
+        <rdfs:label>station id</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -984,7 +948,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">uncertainty</rdfs:label>
+        <rdfs:label>uncertainty</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -995,7 +959,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">unit</rdfs:label>
+        <rdfs:label>unit</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1010,11 +974,11 @@
                 <owl:oneOf>
                     <rdf:Description>
                         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">calculated</rdf:first>
+                        <rdf:first>calculated</rdf:first>
                         <rdf:rest>
                             <rdf:Description>
                                 <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#string">measured</rdf:first>
+                                <rdf:first>measured</rdf:first>
                                 <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
                             </rdf:Description>
                         </rdf:rest>
@@ -1022,7 +986,17 @@
                 </owl:oneOf>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">origin of variable</rdfs:label>
+        <rdfs:label>origin of variable</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:label>measures (SKOS)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1033,7 +1007,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">water intake depth</rdfs:label>
+        <rdfs:label>water intake depth</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1053,7 +1027,7 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/AcademicInstitution">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Academic Institution</rdfs:label>
+        <rdfs:label>Academic Institution</rdfs:label>
     </owl:Class>
     
 
@@ -1099,7 +1073,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Calibration</rdfs:label>
+        <rdfs:label>Calibration</rdfs:label>
     </owl:Class>
     
 
@@ -1108,7 +1082,7 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Commercial Company</rdfs:label>
+        <rdfs:label>Commercial Company</rdfs:label>
     </owl:Class>
     
 
@@ -1122,6 +1096,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Device -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName"/>
@@ -1134,8 +1109,8 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Abstract device, whom Instrument and Sensor are concrete physical instances of</rdfs:comment>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Device</rdfs:label>
+        <rdfs:comment>Abstract device, whom Instrument and Sensor are concrete physical instances of</rdfs:comment>
+        <rdfs:label>Device</rdfs:label>
     </owl:Class>
     
 
@@ -1144,7 +1119,7 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Drifting Buoy</rdfs:label>
+        <rdfs:label>Drifting Buoy</rdfs:label>
     </owl:Class>
     
 
@@ -1177,10 +1152,9 @@
 
 
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Instrument -->
-    <!-- TO BE MADE A SUBCLASS OF DEVICE -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument">
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Instrument</rdfs:label>
+        <rdfs:label>Instrument</rdfs:label>
     </owl:Class>
     
 
@@ -1201,7 +1175,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Instrument Deployment</rdfs:label>
+        <rdfs:label>Instrument Deployment</rdfs:label>
     </owl:Class>
     
 
@@ -1229,7 +1203,7 @@
             <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Funder"/>
             <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
         </owl:disjointUnionOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Organization</rdfs:label>
+        <rdfs:label>Organization</rdfs:label>
     </owl:Class>
     
 
@@ -1249,7 +1223,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Person</rdfs:label>
+        <rdfs:label>Person</rdfs:label>
     </owl:Class>
     
 
@@ -1289,7 +1263,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Platform Deployment</rdfs:label>
+        <rdfs:label>Platform Deployment</rdfs:label>
     </owl:Class>
     
 
@@ -1309,7 +1283,7 @@
                 <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sensor</rdfs:label>
+        <rdfs:label>Sensor</rdfs:label>
     </owl:Class>
     
 
@@ -1330,7 +1304,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sensor Deployment</rdfs:label>
+        <rdfs:label>Sensor Deployment</rdfs:label>
     </owl:Class>
     
 
@@ -1363,24 +1337,10 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/ValueType -->
-    <!-- TO BE REMOVED -->
-
-    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/ValueType">
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Value Type</rdfs:label>
-    </owl:Class>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Variable -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Variable">
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasValueType"/>
-                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasName"/>
@@ -1393,8 +1353,14 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Variable</rdfs:label>
+        <rdfs:label>Variable</rdfs:label>
     </owl:Class>
+    
+
+
+    <!-- http://www.w3.org/2004/02/skos/core#Concept -->
+
+    <owl:Class rdf:about="http://www.w3.org/2004/02/skos/core#Concept"/>
     
 
 
@@ -1413,7 +1379,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/arcticRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Arctic</rdfs:label>
+        <rdfs:label>Arctic</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1422,7 +1388,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/dataSubmitter">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Data submitter</rdfs:label>
+        <rdfs:label>Data submitter</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1431,7 +1397,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/engineer">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Engineer</rdfs:label>
+        <rdfs:label>Engineer</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1440,7 +1406,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/indianOceanRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Indian Ocean</rdfs:label>
+        <rdfs:label>Indian Ocean</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1449,7 +1415,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/northAtlanticRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">North Atlantic</rdfs:label>
+        <rdfs:label>North Atlantic</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1458,7 +1424,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/northPacificRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">North Pacific</rdfs:label>
+        <rdfs:label>North Pacific</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1467,7 +1433,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/pi">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Principal investigator</rdfs:label>
+        <rdfs:label>Principal investigator</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1476,7 +1442,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/researcher">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Researcher</rdfs:label>
+        <rdfs:label>Researcher</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1485,7 +1451,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/southernOceanRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Southern Ocean</rdfs:label>
+        <rdfs:label>Southern Ocean</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1494,7 +1460,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/tropicalAtlanticRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Tropical Atlantic</rdfs:label>
+        <rdfs:label>Tropical Atlantic</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -1503,11 +1469,11 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/tropicalPacificRegion">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion"/>
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Tropical Pacific</rdfs:label>
+        <rdfs:label>Tropical Pacific</rdfs:label>
     </owl:NamedIndividual>
 </rdf:RDF>
 
 
 
-<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+<!-- Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi -->
 

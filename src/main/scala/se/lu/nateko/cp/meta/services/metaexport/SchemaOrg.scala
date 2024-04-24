@@ -298,12 +298,17 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 	private def objCommonJson(obj: StaticObject): JsObject =
 		val partOf = asOptArray(obj.parentCollections)(coll => JsString(coll.uri.toString))
 		val basedOn = asOptArray(obj.previousVersion.flattenToSeq)(fromPreviousVersion)
+		val status =
+			if obj.size.isEmpty then "Incomplete"
+			else if obj.nextVersion.nonEmpty then "Deprecated"
+			else "Published"
 		JsObject(
 			"alternateName"         -> JsString(obj.fileName),
 			"datePublished"         -> asOptJsString(obj.submission.stop.map(LocalDate.ofInstant(_, ZoneOffset.UTC).toString)),
 			"isPartOf"              -> partOf,
 			"provider"              -> fromAgent(obj.submission.submitter),
 			"isBasedOn"             -> basedOn,
+			"creativeWorkStatus"    -> JsString(status)
 		) ++ commonJson(obj)
 
 	private def fromPreviousVersion(url: URI) = JsObject(

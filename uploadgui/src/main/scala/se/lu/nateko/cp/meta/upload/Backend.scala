@@ -106,6 +106,7 @@ object Backend {
 
 		val isZip = spec.format == zipArchive || spec.format == excel
 		val isNetCDF = spec.format == netCdf || spec.format == netCdfTimeSeries
+		val isNonIngestableNetCDF = isNetCDF && spec.dataset.isEmpty
 
 		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip || isNetCDF){
 
@@ -116,8 +117,8 @@ object Backend {
 			}
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
-			fetchOk("validating data object", url, new RequestInit{
-				body = if isZip || isNetCDF then file.slice(0, 100) else file
+			fetchOk("validate data object", url, new RequestInit{
+				body = if isZip || isNonIngestableNetCDF then file.slice(0, 100) else file
 				method = HttpMethod.PUT
 				headers = Dictionary("Content-Type" -> "application/octet-stream")
 				credentials = RequestCredentials.include

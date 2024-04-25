@@ -330,8 +330,9 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				productionInfo = prod,
 				variables = Some(variables.flatten).filterNot(_.isEmpty)
 			)
-	
-	def getContributors(objIri: IRI, contribPredicate: IRI)(using conn: DobjConn | DocConn) = 
+
+	def getContributors(objIri: IRI, contribPredicate: IRI)(using conn: DobjConn | DocConn): Validated[IndexedSeq[Agent]] = 
+		import se.lu.nateko.cp.meta.services.citation.AttributionProvider.agentOrdering
 		getUriValues(objIri, contribPredicate) match
 			case IndexedSeq(contribSeq) if getTypes(contribSeq).contains(RDF.SEQ) =>
 				Validated.sequence:
@@ -344,7 +345,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			case several => Validated
 				.sequence:
 					several.map(getAgent(_))
-				.map(_.toSet)
+				.map(_.sorted)
 
 	protected def getDataProduction(obj: IRI, prod: IRI, docConn: DocConn)(using DobjConn): Validated[DataProduction] =
 		for

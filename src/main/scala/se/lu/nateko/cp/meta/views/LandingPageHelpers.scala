@@ -55,21 +55,6 @@ object LandingPageHelpers:
 		case org: Organization =>
 			org.name
 	}
-	given Ordering[Agent] with{
-
-		override def compare(a1: Agent, a2: Agent): Int = {
-			val majorComp = typeComp(a1, a2)
-			if(majorComp == 0)
-				implicitly[Ordering[String]].compare(agentString(a1), agentString(a2))
-			else majorComp
-		}
-
-		private def typeComp(a1: Agent, a2: Agent): Int = (a1, a2) match {
-			case (_: Organization, _: Person) => 1 //people are listed before orgs
-			case (_: Person, _: Organization) => -1
-			case _ => 0
-		}
-	}
 
 	given Ordering[UriResource] = Ordering.by[UriResource, String]{res =>
 		res.label.getOrElse(res.uri.getPath.split('/').last)

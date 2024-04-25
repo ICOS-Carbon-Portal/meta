@@ -70,7 +70,7 @@ case class DataAcquisition(
 
 case class DataProduction(
 	creator: Agent,
-	contributors: Iterable[Agent],
+	contributors: Seq[Agent],
 	host: Option[Organization],
 	comment: Option[String],
 	sources: Seq[PlainStaticObject],

@@ -190,10 +190,10 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 		def delay(delay: FiniteDuration): Future[Unit] =
 			val promise = Promise[Unit]()
-			val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-			scheduler.schedule(new Runnable {
+			val runnable = new Runnable {
 				def run(): Unit = promise.success(())
-			}, delay.toMillis, TimeUnit.MILLISECONDS)
+			}
+			system.scheduler.scheduleOnce(delay, runnable)
 			promise.future
 
 		it("Too many parallel queries result in timeout responses"):

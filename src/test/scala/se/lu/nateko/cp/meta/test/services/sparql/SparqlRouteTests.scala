@@ -186,7 +186,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				val request = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
 				route(request)
 				route(request)
-				Thread.sleep(100) // to ensure that the third query gets started last
+				Thread.sleep(500) // to ensure that the third query gets started last
 				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
 				testRoute(query, ip):
 					assertCORS()

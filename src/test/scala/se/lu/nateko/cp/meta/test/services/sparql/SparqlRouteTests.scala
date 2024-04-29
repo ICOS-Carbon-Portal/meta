@@ -26,8 +26,18 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
+import java.util.concurrent.FutureTask
+import java.util.concurrent.RunnableFuture
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Promise
+import scala.util.Success
+import scala.util.Failure
+import java.util.concurrent.ScheduledExecutorService
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-@DoNotDiscover
+// @DoNotDiscover
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
 
 	import system.{log}
@@ -178,6 +188,14 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
+		def delay(delay: FiniteDuration): Future[Unit] =
+			val promise = Promise[Unit]()
+			val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+			scheduler.schedule(new Runnable {
+				def run(): Unit = promise.success(())
+			}, delay.toMillis, TimeUnit.MILLISECONDS)
+			promise.future
+
 		it("Too many parallel queries result in timeout responses"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
@@ -186,10 +204,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				val request = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
 				route(request)
 				route(request)
-				Thread.sleep(500) // to ensure that the third query gets started last
 				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
-				testRoute(query, ip):
-					assertCORS()
-					assert(status == StatusCodes.RequestTimeout)
+				val delayFuture = delay(100.millis) // to ensure that the third query gets started last
+				delayFuture.flatMap(_ =>
+					testRoute(query, ip):
+						assertCORS()
+						assert(status == StatusCodes.RequestTimeout)
+				)
 
 end SparqlRouteTests

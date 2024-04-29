@@ -26,18 +26,10 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
-import java.util.concurrent.FutureTask
-import java.util.concurrent.RunnableFuture
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
-import scala.util.Success
-import scala.util.Failure
-import java.util.concurrent.ScheduledExecutorService
 import scala.concurrent.duration.FiniteDuration
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
-// @DoNotDiscover
+@DoNotDiscover
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
 
 	import system.{log}

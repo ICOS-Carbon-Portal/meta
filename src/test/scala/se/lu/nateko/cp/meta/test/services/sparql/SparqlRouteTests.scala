@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.pattern.after
 import eu.icoscp.envri.Envri
 import org.scalatest.DoNotDiscover
 import org.scalatest.compatible.Assertion
@@ -26,8 +27,6 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
-import scala.concurrent.Promise
-import scala.concurrent.duration.FiniteDuration
 
 @DoNotDiscover
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
@@ -180,14 +179,6 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		def delay(delay: FiniteDuration): Future[Unit] =
-			val promise = Promise[Unit]()
-			val runnable = new Runnable {
-				def run(): Unit = promise.success(())
-			}
-			system.scheduler.scheduleOnce(delay, runnable)
-			promise.future
-
 		it("Too many parallel queries result in timeout responses"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
@@ -197,11 +188,9 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				route(request)
 				route(request)
 				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
-				val delayFuture = delay(100.millis) // to ensure that the third query gets started last
-				delayFuture.flatMap(_ =>
+				after(100.millis): // to ensure that the third query gets started last
 					testRoute(query, ip):
 						assertCORS()
 						assert(status == StatusCodes.RequestTimeout)
-				)
 
 end SparqlRouteTests

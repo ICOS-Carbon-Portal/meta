@@ -3,7 +3,7 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.3.3"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",

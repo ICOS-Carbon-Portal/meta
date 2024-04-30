@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.pattern.after
 import eu.icoscp.envri.Envri
 import org.scalatest.DoNotDiscover
 import org.scalatest.compatible.Assertion
@@ -186,10 +187,10 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				val request = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
 				route(request)
 				route(request)
-				Thread.sleep(100) // to ensure that the third query gets started last
 				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
-				testRoute(query, ip):
-					assertCORS()
-					assert(status == StatusCodes.RequestTimeout)
+				after(100.millis): // to ensure that the third query gets started last
+					testRoute(query, ip):
+						assertCORS()
+						assert(status == StatusCodes.RequestTimeout)
 
 end SparqlRouteTests

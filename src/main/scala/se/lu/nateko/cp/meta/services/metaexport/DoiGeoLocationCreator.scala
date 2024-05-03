@@ -26,11 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 
 object DoiGeoLocationCreator:
 
-	val MaxFreeRepresentativePoints = 30
-
 	import JtsGeoFeatureConverter.*
 
-	def representativeCoverage(geoFeatures: Seq[GeoFeature]): Seq[GeoLocation] =
+	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxFreePoints: Int): Seq[GeoLocation] =
 		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries))
 
 		val pointTest: PartialFunction[Geometry, JtsPoint] =
@@ -39,7 +37,7 @@ object DoiGeoLocationCreator:
 		val points = merged.collect(pointTest)
 
 		val resGeoms =
-			if points.size <= MaxFreeRepresentativePoints then
+			if points.size <= maxFreePoints then
 				merged
 			else
 				val otherGeometries = merged.filterNot(pointTest.isDefinedAt)

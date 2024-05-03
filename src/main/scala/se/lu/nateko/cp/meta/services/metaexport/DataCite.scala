@@ -124,7 +124,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = DoiGeoLocationCreator.representativeCoverage(dataObjs.flatMap(_.coverage))
+		val geoLocations = DoiGeoLocationCreator.representativeCoverage(dataObjs.flatMap(_.coverage), 100)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),

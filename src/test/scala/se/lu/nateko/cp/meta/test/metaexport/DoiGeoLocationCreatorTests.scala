@@ -35,17 +35,17 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 
 			assert(merged(0) == expected)
 
-		it("data object with less than 30 points will remain points"):
+		it("data object with less than maximum allowed free points will remain points"):
 			val geoms = TestGeoFeatures.modisWithFewerPoints
 			val featureCollection = geoms(0).features
 
-			val merged = representativeCoverage(geoms)
+			val merged = representativeCoverage(geoms, 30)
 
 			assert(featureCollection.size == merged.size)
 
-		it("data object with more than 30 points will cluster the points"):
+		it("data object with more than maximum allowe free points will cluster the points"):
 			val geoms = TestGeoFeatures.modisWithMorePoints
-			val merged = representativeCoverage(geoms)
+			val merged = representativeCoverage(geoms, 30)
 
 			assert(geoms.toSeq != merged)
 			merged(0).geoLocationBox.map(box => assert(box.isInstanceOf[GeoLocationBox]))

@@ -213,10 +213,8 @@ class CitationMaker(
 				if prod.contributors.contains(prod.creator) then prod.contributors
 				else prod.creator +: prod.contributors
 
-			if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
-				attrProvider.getAuthors(dobj).map: attrAuthors =>
-					if isIcosProject then attrAuthors
-					else (attrAuthors ++ productionAgents).sorted
+			if productionAgents.isEmpty && isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
+				attrProvider.getAuthors(dobj)
 			else Validated.ok(productionAgents)
 
 		val pidUrlOpt = getPidUrl(dobj)

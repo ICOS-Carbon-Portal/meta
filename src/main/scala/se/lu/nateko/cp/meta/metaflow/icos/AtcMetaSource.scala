@@ -130,7 +130,7 @@ object AtcMetaSource{
 	def parseLocalDate(ts: String): Validated[LocalDate] = Validated(LocalDate.parse(ts.take(10)))
 
 	def parseStationClass(s: String): Validated[IcosStationClass] =
-		if s == "0" then new Validated(None, Nil)
+		if s == "0" || s == "NO" then new Validated(None, Nil)
 		else Validated(IcosStationClass.valueOf(s))
 
 	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){

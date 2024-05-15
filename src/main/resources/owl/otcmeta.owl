@@ -1100,7 +1100,7 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer"/>
-                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
+                <owl:someValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>

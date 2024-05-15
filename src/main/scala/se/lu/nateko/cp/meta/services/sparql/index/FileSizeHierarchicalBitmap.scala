@@ -2,12 +2,13 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.ObjEntry
+import scala.collection.IndexedSeq
 
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing file sizes in bytes
 */
-object FileSizeHierarchicalBitmap{
+object FileSizeHierarchicalBitmap:
 	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
@@ -20,16 +21,12 @@ object FileSizeHierarchicalBitmap{
 		((logScaled & (0xfL << shift)) >> shift).toShort
 	}
 
-	def apply(idx: IndexData): HierarchicalBitmap[Long] = {
-		given Geo[Long] = LongGeo(idx)
+	def apply(objs: IndexedSeq[ObjEntry]): HierarchicalBitmap[Long] = {
+		given Geo[Long] = LongGeo(objs)
 		new HierarchicalBitmap[Long](0, None)
 	}
 
-	class LongGeo(idx: IndexData) extends Geo[Long]{
-		private def this() = this(null)//for Kryo deserialization
+	class LongGeo(objs: IndexedSeq[ObjEntry]) extends Geo[Long]:
 		val spilloverThreshold: Int = SpilloverThreshold
-		def keyLookup(value: Int): Long = idx.objs(value).size
+		def keyLookup(value: Int): Long = objs(value).size
 		def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
-	}
-
-}

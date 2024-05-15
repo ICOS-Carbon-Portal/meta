@@ -72,7 +72,7 @@ case object Submitter extends UriProperty
 case object VariableName extends StringCategProp
 case object Keyword extends StringCategProp
 
-object Property{
+object Property{       
 	import scala.deriving.Mirror.SumOf
 	import scala.compiletime.{erasedValue, summonInline}
 	type ConcreteProp = Property & Singleton

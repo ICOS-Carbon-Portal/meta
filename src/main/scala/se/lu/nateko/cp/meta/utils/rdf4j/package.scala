@@ -61,7 +61,8 @@ extension (uri: Uri)
 
 extension [T](res: CloseableIteration[T, _])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
-		override def hasNext: Boolean = res.hasNext()
+		override def hasNext: Boolean = try res.hasNext() catch case _ => false
+
 		override def next(): T = res.next()
 	}
 

@@ -40,6 +40,7 @@ object Main extends App with CpmetaJsonProtocol{
 			}
 			indexDataFut.map(Option(_)).recover{
 				case err =>
+					err.printStackTrace()
 					log.warning(s"Failed to restore SPARQL index (${err.getMessage})")
 					None
 			}

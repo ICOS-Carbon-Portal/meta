@@ -9,8 +9,9 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.KryoDataInput
 import com.esotericsoftware.kryo.io.KryoDataOutput
 import com.esotericsoftware.kryo.io.Output
-import com.esotericsoftware.kryo.serializers.ClosureSerializer
+// import com.esotericsoftware.kryo.serializers.ClosureSerializer
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer
+import com.esotericsoftware.kryo.serializers.OptionalSerializers.OptionalSerializer
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.util.Values
@@ -28,9 +29,10 @@ import se.lu.nateko.cp.meta.utils.async.throttle
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.invoke.SerializedLambda
+// import java.lang.invoke.SerializedLambda
 import java.nio.file.Files
 import java.nio.file.Paths
+import scala.collection.IndexedSeq
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
@@ -42,6 +44,8 @@ import java.io.InputStream
 import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import se.lu.nateko.cp.meta.services.sparql.index.Property
 import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
+import se.lu.nateko.cp.meta.services.sparql.index.CategProp
+import se.lu.nateko.cp.meta.services.sparql.index.ContProp
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
@@ -49,6 +53,23 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataStartGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataEndGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.FileNameGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmStartGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmEndGeo
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Coord
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
+import scala.collection.mutable.ArrayBuffer
+import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap.LongGeo
+import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap
+import se.lu.nateko.cp.meta.services.sparql.index.SamplingHeightHierarchicalBitmap
+import scala.jdk.OptionConverters.*
+import scala.jdk.javaapi.OptionConverters.*
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
+import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
 
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
@@ -89,16 +110,15 @@ object IndexHandler{
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	val kryo = Kryo()
-	kryo.setRegistrationRequired(false)
-	kryo.setReferences(true)
+	kryo.setRegistrationRequired(true)
+	kryo.setReferences(false)
 	kryo.register(classOf[Array[Object]])
-	kryo.register(classOf[Class[?]])
-	kryo.register(classOf[SerializedLambda])
-	kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
+	// kryo.register(classOf[Class[?]])
+	// kryo.register(classOf[SerializedLambda])
+	// kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
 	kryo.register(classOf[IRI], IriSerializer)
 	kryo.register(classOf[NativeIRI], IriSerializer)
 	kryo.register(classOf[MemIRI], IriSerializer)
-	kryo.register(classOf[Some[?]], OptionSomeSerializer)
 	kryo.register(classOf[None.type], SingletonSerializer(None))
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
@@ -106,9 +126,25 @@ object IndexHandler{
 	kryo.register(classOf[ObjEntry])
 	kryo.register(classOf[StatKey])
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
+	kryo.register(classOf[Property])
+	kryo.register(classOf[BoolProperty])
+	kryo.register(classOf[Array[Array[Any]]])
+	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
+	kryo.register(classOf[BoolProperty])
+	kryo.register(classOf[IndexData], IndexDataSerializer)
+	kryo.register(classOf[ArrayBuffer[_]])
+	kryo.register(classOf[scala.math.Ordering.Long.type])
+	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type])
+	kryo.register(classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo])
+	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type])
+	kryo.register(classOf[Option[_]], OptionSerializer)
+	kryo.register(classOf[Some[_]], OptionSerializer)
 	Property.allConcrete.foreach{prop =>
 		kryo.register(prop.getClass, SingletonSerializer(prop))
 	}
+
+	// HierarchicalBitmap.Geo[Float].allConcrete.foreach: g =>
+	// 	kryo.register(g.getClass, SingletonSerializer(g))
 
 	def store(idx: CpIndex): Future[Done] = Future{
 		dropStorage()
@@ -142,14 +178,14 @@ object IndexHandler{
 }
 
 object RoaringSerializer extends Serializer[MutableRoaringBitmap] {
-		override def write(kryo: Kryo, output: Output, bitmap: MutableRoaringBitmap): Unit =
-			bitmap.serialize(new KryoDataOutput(output));
+	override def write(kryo: Kryo, output: Output, bitmap: MutableRoaringBitmap): Unit =
+		bitmap.serialize(new KryoDataOutput(output))
 
-		override def read(kryo: Kryo, input: Input, tpe: Class[_ <: MutableRoaringBitmap]): MutableRoaringBitmap = {
-			val bitmap = new MutableRoaringBitmap()
-			bitmap.deserialize(new KryoDataInput(input))
-			bitmap;
-		}
+	override def read(kryo: Kryo, input: Input, tpe: Class[_ <: MutableRoaringBitmap]): MutableRoaringBitmap = {
+		val bitmap = new MutableRoaringBitmap()
+		bitmap.deserialize(new KryoDataInput(input))
+		bitmap
+	}
 }
 
 object Sha256HashSerializer extends Serializer[Sha256Sum] {
@@ -164,12 +200,46 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 	}
 }
 
-object OptionSomeSerializer extends Serializer[Some[?]]{
-	override def write(kryo: Kryo, output: Output, some: Some[?]): Unit =
-		kryo.writeClassAndObject(output, some.value)
-	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Some[?]]): Some[?] =
-		Some(kryo.readClassAndObject(input))
-}
+object IndexDataSerializer extends Serializer[IndexData]:
+	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
+		kryo.register(classOf[HierarchicalBitmap.Geo[?]], GeoSerializer(data.objs))
+		output.writeInt(data.objs.size)
+		kryo.writeObject(output, data.objs)
+		kryo.writeObject(output, data.idLookup)
+		kryo.writeObject(output, data.stats)
+		kryo.writeObject(output, data.boolMap)
+		kryo.writeObject(output, data.categMaps)
+		kryo.writeObject(output, data.contMap)
+		kryo.writeObject(output, data.initOk)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IndexData]): IndexData =
+		//TODO Get rid of the type cast below. Really should not be needed.
+		def readObj[T](using ct: ClassTag[T]): T = kryo.readObject[T](input, ct.runtimeClass.asInstanceOf[Class[T]])
+		val nObjs = input.readInt()
+		val objs = readObj[ArrayBuffer[ObjEntry]]
+		kryo.register(classOf[HierarchicalBitmap.Geo[?]], GeoSerializer(objs))
+		IndexData(nObjs)(
+			objs = objs,
+			idLookup = readObj[AnyRefMap[Sha256Sum, Int]],
+			stats = readObj[AnyRefMap[StatKey, MutableRoaringBitmap]],
+			boolMap = readObj[AnyRefMap[BoolProperty, MutableRoaringBitmap]],
+			categMaps = readObj[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]],
+			contMap = readObj[AnyRefMap[ContProp, HierarchicalBitmap[?]]],
+			initOk = readObj[MutableRoaringBitmap]
+		)
+
+
+object HierarchicalBitmapSerializer extends Serializer[HierarchicalBitmap[?]]:
+
+	override def write(kryo: Kryo, output: Output, bitmap: HierarchicalBitmap[?]): Unit =
+		bitmap.serialize(new KryoDataOutput(output), kryo.writeObject(output, _))
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: HierarchicalBitmap[?]]): HierarchicalBitmap[?] =
+		HierarchicalBitmap.deserialize(new KryoDataInput(input), [T] => (cls: Class[T]) =>
+			kryo.readObject(input, cls))
+			// val concreteClass = cls.runtimeClass
+			// kryo.readClassAndObject(input).asInstanceOf[concreteClass])
+
 
 object IriSerializer extends Serializer[IRI]{
 	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
@@ -197,3 +267,51 @@ class SingletonSerializer[T <: Singleton](s: T) extends Serializer[T]{
 	override def write(kryo: Kryo, output: Output, s: T): Unit = {}
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = s
 }
+
+object OptionSerializer extends Serializer[Option[?]]:
+
+	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
+		kryo.writeClassAndObject(output, option.getOrElse(null))
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[?]]): Option[?] =
+		Option(kryo.readClassAndObject(input))
+
+class GeoSerializer(objs: IndexedSeq[ObjEntry]) extends Serializer[Geo[?]]:
+	override def write(kryo: Kryo, output: Output, geo: Geo[?]): Unit =
+		geo match
+			case dateTimeLG: DataStartGeo =>
+				output.writeString("DataStartGeo")
+			case dateTimeLG: DataEndGeo =>
+				output.writeString("DataEndGeo")
+			case dateTimeLG: SubmStartGeo =>
+				output.writeString("SubmStartGeo")
+			case dateTimeLG: SubmEndGeo =>
+				output.writeString("SubmEndGeo")
+			case fileSizeLongGeo: FileSizeHierarchicalBitmap.LongGeo =>
+				output.writeString("FileSizeGeo")
+			case gs: FileNameGeo =>
+				output.writeString("FileNameGeo")
+			case gf: SamplingHeightHierarchicalBitmap.SamplingHeightGeo =>
+				output.writeString("SamplingHeightGeo")
+			case _ => throw IllegalArgumentException("Unknown geo type")
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Geo[?]]): Geo[?] =
+		input.readString() match
+			case "DataStartGeo" => DataStartGeo(objs)
+			case "DataEndGeo"   => DataEndGeo(objs)
+			case "SubmStartGeo" => SubmStartGeo(objs)
+			case "SubmEndGeo"   => SubmEndGeo(objs)
+			case "FileSizeGeo"  => FileSizeHierarchicalBitmap.LongGeo(objs)
+			case "FileNameGeo"  => FileNameGeo(objs)
+			case "SamplingHeightGeo" =>
+				SamplingHeightHierarchicalBitmap.SamplingHeightGeo(objs)
+			case other => throw new IllegalArgumentException(s"Unknown Geo type: $other")
+
+// object OptionShortSerializer extends Serializer[Option[Short]]:
+
+// 	override def write(kryo: Kryo, output: Output, option: Option[Short]): Unit =
+// 		output.writeBoolean(option.isDefined)
+// 		for short <- option do output.writeShort(short)
+
+// 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[Short]]): Option[Short] =
+// 		if input.readBoolean() then Some(input.readShort()) else None

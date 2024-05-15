@@ -14,7 +14,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	private val EnableTrace = false
 
 	def initBm(strings: Array[String]): HierarchicalBitmap[String] = {
-		val bm = StringHierarchicalBitmap(strings.apply)
+		val bm = StringHierarchicalBitmap(StringGeo(strings.apply))
 		strings.indices.foreach(i => bm.add(strings(i), i))
 		bm
 	}

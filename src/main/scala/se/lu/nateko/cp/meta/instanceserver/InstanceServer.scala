@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator.empty
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.CardinalityExpectation
 import se.lu.nateko.cp.meta.utils.Validated.validateSize
@@ -16,7 +17,7 @@ import se.lu.nateko.cp.meta.utils.parseInstant
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
-import java.net.{URI => JavaUri}
+import java.net.URI as JavaUri
 import java.time.Instant
 import java.time.LocalDate
 import scala.util.Try
@@ -64,12 +65,10 @@ trait InstanceServer extends AutoCloseable:
 	final def removePropertyValue(instUri: IRI, propUri: IRI, value: Value): Try[Unit] =
 		remove(factory.createStatement(instUri, propUri, value))
 
-	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit = {
-		val toRemove = from.diff(to)
-		val toAdd = to.diff(from)
+	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
+		val updates = MetadataUpdater.diff(from, to, factory)
+		applyAll(updates)()
 
-		applyAll(toRemove.map(RdfUpdate(_, false)) ++ toAdd.map(RdfUpdate(_, true)))()
-	}
 
 end InstanceServer
 

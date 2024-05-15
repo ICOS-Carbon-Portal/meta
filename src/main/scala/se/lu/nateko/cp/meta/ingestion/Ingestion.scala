@@ -107,13 +107,13 @@ object Ingestion {
 			} else {
 				val newRepo = Loading.fromStatements(newStatements)
 				val source = use(new Rdf4jInstanceServer(newRepo))
-				val updates = computeDiff(target.writeContextsView, source).toIndexedSeq
+				val updates = computeDiff(target.writeContextsView, source)
 				target.applyAll(updates)()
 			}
 		}
 	}
 
-	private def computeDiff(from: InstanceServer, to: InstanceServer): Seq[RdfUpdate] = {
+	private def computeDiff(from: InstanceServer, to: InstanceServer): IndexedSeq[RdfUpdate] = {
 		val toRemove = to.filterNotContainedStatements(from.getStatements(None, None, None))
 		val toAdd = from.filterNotContainedStatements(to.getStatements(None, None, None))
 

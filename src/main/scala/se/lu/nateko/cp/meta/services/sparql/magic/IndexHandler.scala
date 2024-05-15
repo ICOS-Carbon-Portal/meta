@@ -110,8 +110,8 @@ object IndexHandler{
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	val kryo = Kryo()
-	kryo.setRegistrationRequired(true)
-	kryo.setReferences(false)
+	kryo.setRegistrationRequired(false)
+	kryo.setReferences(true)
 	kryo.register(classOf[Array[Object]])
 	// kryo.register(classOf[Class[?]])
 	// kryo.register(classOf[SerializedLambda])
@@ -127,18 +127,17 @@ object IndexHandler{
 	kryo.register(classOf[StatKey])
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
 	kryo.register(classOf[Property])
-	kryo.register(classOf[BoolProperty])
 	kryo.register(classOf[Array[Array[Any]]])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
-	kryo.register(classOf[BoolProperty])
 	kryo.register(classOf[IndexData], IndexDataSerializer)
-	kryo.register(classOf[ArrayBuffer[_]])
-	kryo.register(classOf[scala.math.Ordering.Long.type])
-	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type])
-	kryo.register(classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo])
-	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type])
-	kryo.register(classOf[Option[_]], OptionSerializer)
-	kryo.register(classOf[Some[_]], OptionSerializer)
+	kryo.register(classOf[ArrayBuffer[?]])
+	kryo.register(classOf[Option[?]], OptionSerializer)
+	kryo.register(classOf[Some[?]], OptionSerializer)
+	kryo.register(classOf[None.type], OptionSerializer)
+	kryo.register(classOf[scala.math.Ordering[?]], OrderingSerializer)
+	kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
+	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
+	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type], OrderingSerializer)
 	Property.allConcrete.foreach{prop =>
 		kryo.register(prop.getClass, SingletonSerializer(prop))
 	}
@@ -202,7 +201,7 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 
 object IndexDataSerializer extends Serializer[IndexData]:
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
-		kryo.register(classOf[HierarchicalBitmap.Geo[?]], GeoSerializer(data.objs))
+		registerGeoSerializer(kryo, data.objs)
 		output.writeInt(data.objs.size)
 		kryo.writeObject(output, data.objs)
 		kryo.writeObject(output, data.idLookup)
@@ -217,7 +216,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		def readObj[T](using ct: ClassTag[T]): T = kryo.readObject[T](input, ct.runtimeClass.asInstanceOf[Class[T]])
 		val nObjs = input.readInt()
 		val objs = readObj[ArrayBuffer[ObjEntry]]
-		kryo.register(classOf[HierarchicalBitmap.Geo[?]], GeoSerializer(objs))
+		registerGeoSerializer(kryo, objs)
 		IndexData(nObjs)(
 			objs = objs,
 			idLookup = readObj[AnyRefMap[Sha256Sum, Int]],
@@ -228,6 +227,19 @@ object IndexDataSerializer extends Serializer[IndexData]:
 			initOk = readObj[MutableRoaringBitmap]
 		)
 
+	private def registerGeoSerializer(kryo: Kryo, objs: IndexedSeq[ObjEntry]): Unit =
+		val ser = GeoSerializer(objs)
+		kryo.register(classOf[HierarchicalBitmap.Geo[?]], ser)
+		kryo.register(classOf[DataStartGeo], ser)
+		kryo.register(classOf[DataEndGeo], ser)
+		kryo.register(classOf[SubmStartGeo], ser)
+		kryo.register(classOf[SubmEndGeo], ser)
+		kryo.register(classOf[FileSizeHierarchicalBitmap.LongGeo], ser)
+		kryo.register(classOf[FileNameGeo], ser)
+		kryo.register(classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo], ser)
+
+end IndexDataSerializer
+
 
 object HierarchicalBitmapSerializer extends Serializer[HierarchicalBitmap[?]]:
 
@@ -235,10 +247,10 @@ object HierarchicalBitmapSerializer extends Serializer[HierarchicalBitmap[?]]:
 		bitmap.serialize(new KryoDataOutput(output), kryo.writeObject(output, _))
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: HierarchicalBitmap[?]]): HierarchicalBitmap[?] =
-		HierarchicalBitmap.deserialize(new KryoDataInput(input), [T] => (cls: Class[T]) =>
-			kryo.readObject(input, cls))
-			// val concreteClass = cls.runtimeClass
-			// kryo.readClassAndObject(input).asInstanceOf[concreteClass])
+		HierarchicalBitmap.deserialize(
+			new KryoDataInput(input),
+			[T] => (cls: Class[T]) => kryo.readObject(input, cls)
+		)
 
 
 object IriSerializer extends Serializer[IRI]{
@@ -269,7 +281,6 @@ class SingletonSerializer[T <: Singleton](s: T) extends Serializer[T]{
 }
 
 object OptionSerializer extends Serializer[Option[?]]:
-
 	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
 		kryo.writeClassAndObject(output, option.getOrElse(null))
 
@@ -305,13 +316,26 @@ class GeoSerializer(objs: IndexedSeq[ObjEntry]) extends Serializer[Geo[?]]:
 			case "FileNameGeo"  => FileNameGeo(objs)
 			case "SamplingHeightGeo" =>
 				SamplingHeightHierarchicalBitmap.SamplingHeightGeo(objs)
-			case other => throw new IllegalArgumentException(s"Unknown Geo type: $other")
+			case other =>
+				throw IllegalArgumentException(s"Unknown Geo type: $other")
 
-// object OptionShortSerializer extends Serializer[Option[Short]]:
 
-// 	override def write(kryo: Kryo, output: Output, option: Option[Short]): Unit =
-// 		output.writeBoolean(option.isDefined)
-// 		for short <- option do output.writeShort(short)
+object OrderingSerializer extends Serializer[Ordering[?]]:
 
-// 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[Short]]): Option[Short] =
-// 		if input.readBoolean() then Some(input.readShort()) else None
+	override def write(kryo: Kryo, output: Output, ord: Ordering[?]): Unit =
+		val magicString = ord match
+			case Ordering.Long => "Long"
+			case Ordering.Float.IeeeOrdering => "Float"
+			case StringHierarchicalBitmap.StringOrdering => "String"
+			case other =>
+				throw IllegalArgumentException(s"Unknown Ordering type: $other")
+		output.writeString(magicString)
+
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Ordering[?]]): Ordering[?] =
+		input.readString() match
+			case "Long" => Ordering.Long
+			case "Float" => Ordering.Float.IeeeOrdering
+			case "String" => StringHierarchicalBitmap.StringOrdering
+			case other =>
+				throw IllegalArgumentException(s"Unknown Ordering type: $other")

@@ -6,7 +6,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import HierarchicalBitmap.*
-import StringHierarchicalBitmap.Ord
+import StringHierarchicalBitmap.{StringOrdering => Ord, StringGeo}
 import scala.util.Random
 
 class StringHierarchicalBitmapTests extends AnyFunSpec{

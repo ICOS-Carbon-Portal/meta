@@ -323,16 +323,16 @@ object HierarchicalBitmap{
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
-	// out.writeInt(depth)
-	// innerWriter(coord)
-	// innerWriter(geo)
-	// innerWriter(ord)
-	// values.serialize(out)
-	// out.writeInt(depth)
-	// innerWriter(children)
-	// innerWriter(firstKey)
-	// out.writeBoolean(seenDifferentKeys)
-	// return classOf[blabla]
+		// out.writeInt(depth)
+		// out.writeBoolean(coord.isDefined)
+		// for short <- coord do out.writeShort(short)
+		// innerWriter(geo)
+		// innerWriter(ord)
+		// values.serialize(out)
+		// out.writeInt(depth)
+		// innerWriter(children)
+		// innerWriter(firstKey)
+		// out.writeBoolean(seenDifferentKeys)
 
 	def deserialize[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
 		// println("START TO DESERIALIZE")

@@ -122,7 +122,7 @@ trait LifecycleService:
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
-	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailSendingActive then Future:
+	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailSendingActive then Future{
 
 		val stationId = lookupLblStationId(station).getOrElse(lookupProvStationId(station))
 
@@ -170,6 +170,8 @@ trait LifecycleService:
 				mailWithLogging(recipients, subject, body, cc)
 
 			case _ => ()
+		}.failed.foreach: err =>
+			log.error(err, s"Problem sending email about status update from $from to $to for station $station")
 	end sendMailOnStatusUpdate
 
 	private def mailWithLogging(to: Seq[String], subject: String, body: Html, cc: Seq[String] = Nil): Unit =

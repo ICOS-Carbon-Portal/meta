@@ -38,7 +38,6 @@ object SamplingHeightHierarchicalBitmap{
 	}
 
 	class SamplingHeightGeo(objs: IndexedSeq[ObjEntry]) extends Geo[Float]{
-		private def this() = this(null)//for Kryo deserialization
 		val spilloverThreshold: Int = SpilloverThreshold
 		def keyLookup(value: Int): Float = objs(value).samplingHeight
 		def coordinate(key: Float, depth: Int): Coord = getCoordinate(key, depth)

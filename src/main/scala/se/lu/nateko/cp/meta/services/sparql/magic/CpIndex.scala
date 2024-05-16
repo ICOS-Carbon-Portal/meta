@@ -46,9 +46,7 @@ import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
-	private def this() = this(null, null, null, null)//for Kryo deserialization
-}
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
 
 trait ObjSpecific{
@@ -71,7 +69,6 @@ trait ObjInfo extends ObjSpecific{
 }
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
-	private def this() = this(null, null, null)(null)//for Kryo deserialization
 
 	import data.*
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {

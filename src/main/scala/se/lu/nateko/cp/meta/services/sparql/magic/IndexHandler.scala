@@ -70,6 +70,7 @@ import scala.jdk.OptionConverters.*
 import scala.jdk.javaapi.OptionConverters.*
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
+import java.util.Optional
 
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
@@ -105,14 +106,18 @@ end IndexHandler
 
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global
+	import com.esotericsoftware.minlog.Log
 
+	Log.DEBUG()
 	def storagePath = Paths.get("./sparqlMagicIndex.bin")
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	val kryo = Kryo()
-	kryo.setRegistrationRequired(false)
-	kryo.setReferences(true)
+	kryo.setRegistrationRequired(true)
+	kryo.setReferences(false)
+	//kryo.register(classOf[Object])
 	kryo.register(classOf[Array[Object]])
+	kryo.register(classOf[Array[ObjEntry]])
 	// kryo.register(classOf[Class[?]])
 	// kryo.register(classOf[SerializedLambda])
 	// kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
@@ -124,26 +129,24 @@ object IndexHandler{
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
 	kryo.register(classOf[ObjEntry])
-	kryo.register(classOf[StatKey])
+	kryo.register(classOf[StatKey], StatKeySerializer)
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
 	kryo.register(classOf[Property])
 	kryo.register(classOf[Array[Array[Any]]])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
 	kryo.register(classOf[IndexData], IndexDataSerializer)
-	kryo.register(classOf[ArrayBuffer[?]])
-	kryo.register(classOf[Option[?]], OptionSerializer)
-	kryo.register(classOf[Some[?]], OptionSerializer)
-	kryo.register(classOf[None.type], OptionSerializer)
+	kryo.register(classOf[Optional[?]])
+	kryo.register(classOf[Option[?]], WildOptionSerializer)
+	kryo.register(classOf[Some[?]], WildOptionSerializer)
+	kryo.register(classOf[None.type], WildOptionSerializer)
 	kryo.register(classOf[scala.math.Ordering[?]], OrderingSerializer)
 	kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
 	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
 	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type], OrderingSerializer)
+	val defaultSer = kryo.getDefaultSerializer(classOf[AnyRef])
 	Property.allConcrete.foreach{prop =>
 		kryo.register(prop.getClass, SingletonSerializer(prop))
 	}
-
-	// HierarchicalBitmap.Geo[Float].allConcrete.foreach: g =>
-	// 	kryo.register(g.getClass, SingletonSerializer(g))
 
 	def store(idx: CpIndex): Future[Done] = Future{
 		dropStorage()
@@ -203,7 +206,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
 		registerGeoSerializer(kryo, data.objs)
 		output.writeInt(data.objs.size)
-		kryo.writeObject(output, data.objs)
+		kryo.writeObject(output, data.objs.toArray)
 		kryo.writeObject(output, data.idLookup)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
@@ -215,10 +218,10 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		//TODO Get rid of the type cast below. Really should not be needed.
 		def readObj[T](using ct: ClassTag[T]): T = kryo.readObject[T](input, ct.runtimeClass.asInstanceOf[Class[T]])
 		val nObjs = input.readInt()
-		val objs = readObj[ArrayBuffer[ObjEntry]]
+		val objs = readObj[Array[ObjEntry]]
 		registerGeoSerializer(kryo, objs)
 		IndexData(nObjs)(
-			objs = objs,
+			objs = ArrayBuffer.from(objs),
 			idLookup = readObj[AnyRefMap[Sha256Sum, Int]],
 			stats = readObj[AnyRefMap[StatKey, MutableRoaringBitmap]],
 			boolMap = readObj[AnyRefMap[BoolProperty, MutableRoaringBitmap]],
@@ -253,13 +256,12 @@ object HierarchicalBitmapSerializer extends Serializer[HierarchicalBitmap[?]]:
 		)
 
 
-object IriSerializer extends Serializer[IRI]{
+object IriSerializer extends Serializer[IRI]:
 	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
-		kryo.writeObject(output, iri.stringValue)
+		output.writeString(iri.stringValue())
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI =
-		Values.iri(kryo.readObject(input, classOf[String]))
-}
+		Values.iri(input.readString())
 
 
 class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Object)] => T) extends Serializer[T]{
@@ -279,13 +281,6 @@ class SingletonSerializer[T <: Singleton](s: T) extends Serializer[T]{
 	override def write(kryo: Kryo, output: Output, s: T): Unit = {}
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = s
 }
-
-object OptionSerializer extends Serializer[Option[?]]:
-	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
-		kryo.writeClassAndObject(output, option.getOrElse(null))
-
-	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[?]]): Option[?] =
-		Option(kryo.readClassAndObject(input))
 
 class GeoSerializer(objs: IndexedSeq[ObjEntry]) extends Serializer[Geo[?]]:
 	override def write(kryo: Kryo, output: Output, geo: Geo[?]): Unit =
@@ -339,3 +334,37 @@ object OrderingSerializer extends Serializer[Ordering[?]]:
 			case "String" => StringHierarchicalBitmap.StringOrdering
 			case other =>
 				throw IllegalArgumentException(s"Unknown Ordering type: $other")
+
+class OptionSerializer[T <: AnyRef](inner: Serializer[T])(using ct: ClassTag[T]) extends Serializer[Option[T]]:
+	override def write(kryo: Kryo, output: Output, option: Option[T]): Unit =
+		kryo.writeObjectOrNull(output, option.getOrElse(null), inner)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[T]]): Option[T] =
+		Option(kryo.readObjectOrNull[T](input, ct.runtimeClass.asInstanceOf[Class[T]], inner))
+
+object WildOptionSerializer extends Serializer[Option[?]]:
+	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
+		kryo.writeObject(output, option.toJava)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[?]]): Option[?] =
+		kryo.readObject(input, classOf[Optional[?]]).toScala
+
+
+object IriOptionSerializer extends OptionSerializer[IRI](IriSerializer)
+
+
+object StatKeySerializer extends Serializer[StatKey]:
+
+	override def write(kryo: Kryo, output: Output, key: StatKey): Unit =
+		kryo.writeObject(output, key.spec)
+		kryo.writeObject(output, key.submitter)
+		kryo.writeObject(output, key.site, IriOptionSerializer)
+		kryo.writeObject(output, key.station, IriOptionSerializer)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: StatKey]): StatKey =
+		StatKey(
+			spec = kryo.readObject(input, classOf[IRI]),
+			submitter = kryo.readObject(input, classOf[IRI]),
+			site = kryo.readObject(input, classOf[Option[IRI]], IriOptionSerializer),
+			station = kryo.readObject(input, classOf[Option[IRI]], IriOptionSerializer)
+		)

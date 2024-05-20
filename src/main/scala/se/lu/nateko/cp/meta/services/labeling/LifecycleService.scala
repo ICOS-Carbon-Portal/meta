@@ -122,9 +122,9 @@ trait LifecycleService:
 	private def sendMailOnStatusUpdate(
 		from: AppStatus, to: AppStatus, statusComment: Option[String],
 		station: IRI, user: UserId
-	)(using ExecutionContext, ProvConn, LblAppConn): Unit = if config.mailSendingActive then Future{
+	)(using ProvConn, LblAppConn): Unit = if config.mailSendingActive then
 
-		val stationId = lookupLblStationId(station).getOrElse(lookupProvStationId(station))
+		lazy val stationId = lookupLblStationId(station).getOrElse(lookupProvStationId(station))
 
 		(from, to) match
 			case (_, AppStatus.step1submitted) =>
@@ -170,14 +170,14 @@ trait LifecycleService:
 				mailWithLogging(recipients, subject, body, cc)
 
 			case _ => ()
-		}.failed.foreach: err =>
-			log.error(err, s"Problem sending email about status update from $from to $to for station $station")
 	end sendMailOnStatusUpdate
 
 	private def mailWithLogging(to: Seq[String], subject: String, body: Html, cc: Seq[String] = Nil): Unit =
-		val allReceps = to ++ cc ++ config.mailing.logBccAddress
-		log.info(s"Sending labeling email to ${allReceps.mkString(", ")} with subject: $subject")
-		mailer.send(to, subject, body, cc)
+		import scala.concurrent.ExecutionContext.Implicits.global
+		Future:
+			val allReceps = to ++ cc ++ config.mailing.logBccAddress
+			log.info(s"Sending labeling email to ${allReceps.mkString(", ")} with subject: $subject")
+			mailer.send(to, subject, body, cc)
 
 end LifecycleService
 

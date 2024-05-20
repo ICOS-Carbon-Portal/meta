@@ -104,27 +104,21 @@ end IndexHandler
 
 object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global
-	import com.esotericsoftware.minlog.Log
+	//import com.esotericsoftware.minlog.Log
+	//Log.DEBUG()
 
-	//  Log.DEBUG()
-	Log.INFO()
 	def storagePath = Paths.get("./sparqlMagicIndex.bin")
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	val kryo = Kryo()
 	kryo.setRegistrationRequired(true)
 	kryo.setReferences(false)
-	//kryo.register(classOf[Object])
 	kryo.register(classOf[Array[Object]])
+	kryo.register(classOf[Array[Array[Any]]])
 	kryo.register(classOf[Array[ObjEntry]])
-	// kryo.register(classOf[Class[?]])
-	// kryo.register(classOf[SerializedLambda])
-	// kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
-	// kryo.register(classOf[java.lang.Record])
 	kryo.register(classOf[IRI], IriSerializer)
 	kryo.register(classOf[NativeIRI], IriSerializer)
 	kryo.register(classOf[MemIRI], IriSerializer)
-	kryo.register(classOf[None.type], SingletonSerializer(None))
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
@@ -132,7 +126,6 @@ object IndexHandler{
 	kryo.register(classOf[StatKey], StatKeySerializer)
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
 	kryo.register(classOf[Property])
-	kryo.register(classOf[Array[Array[Any]]])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
 	kryo.register(classOf[IndexData], IndexDataSerializer)
 	kryo.register(classOf[Option[?]], WildOptionSerializer)
@@ -142,10 +135,9 @@ object IndexHandler{
 	kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
 	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
 	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type], OrderingSerializer)
-	val defaultSer = kryo.getDefaultSerializer(classOf[AnyRef])
-	Property.allConcrete.foreach{prop =>
+
+	Property.allConcrete.foreach: prop =>
 		kryo.register(prop.getClass, SingletonSerializer(prop))
-	}
 
 	def store(idx: CpIndex): Future[Done] = Future{
 		dropStorage()
@@ -264,6 +256,7 @@ object IriSerializer extends Serializer[IRI]:
 
 class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Object)] => T) extends Serializer[T]{
 	override def write(kryo: Kryo, output: Output, m: T): Unit =
+		//kryo.writeObjectOrNull(output, if m == null then null else m.iterator.map(_.toArray).toArray, classOf[Array[Array[Object]]])
 		kryo.writeObject(output, m.iterator.map(_.toArray).toArray)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = {

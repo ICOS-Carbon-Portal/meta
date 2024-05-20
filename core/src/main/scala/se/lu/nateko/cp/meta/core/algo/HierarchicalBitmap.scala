@@ -1,15 +1,17 @@
 package se.lu.nateko.cp.meta.core.algo
 
+import org.roaringbitmap.RoaringBitmap
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+import org.roaringbitmap.buffer.MutableRoaringBitmap
+
+import java.io.DataInput
+import java.io.DataOutput
+import java.io.Serializable
+import java.util as ju
 import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import org.roaringbitmap.buffer.MutableRoaringBitmap
-import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+
 import HierarchicalBitmap.*
-import java.{util => ju}
-import java.io.Serializable
-import org.roaringbitmap.RoaringBitmap
-import java.io.DataOutput
-import java.io.DataInput
 
 /**
  * Assumptions:
@@ -20,7 +22,7 @@ import java.io.DataInput
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable{
+class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable:
 
 	private var values = emptyBitmap
 	private var n = 0
@@ -28,42 +30,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	private var firstKey: Option[K] = None
 	private var seenDifferentKeys: Boolean = false
 
-	private def serializePrivateState(out: java.io.DataOutput, innerWriter: AnyRef => Unit) =
-		innerWriter(values)
-		out.writeInt(n)
-		innerWriter(children)
-		innerWriter(firstKey)
-		out.writeBoolean(seenDifferentKeys)
-
-	private def deserializePrivateState(in: java.io.DataInput, innerReader: [T] => Class[T] => T) =
-		values = innerReader(classOf[MutableRoaringBitmap])
-		n = in.readInt()
-		children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
-		firstKey = innerReader(classOf[Option[K]])
-		seenDifferentKeys = in.readBoolean()
-
-	def serialize(out: java.io.DataOutput, innerWriter: AnyRef => Unit): Unit =
-		serializeConstructorVariables(out, innerWriter, depth, coord, geo, ord)
-		serializePrivateState(out, innerWriter)
-
 	def all: ImmutableRoaringBitmap = values
-
-// 	 /**
-//    * Deserialize (retrieve) this bitmap.
-//    * See format specification at https://github.com/RoaringBitmap/RoaringFormatSpec
-//    *
-//    * The current bitmap is overwritten.
-//    *
-//    * @param in the DataInput stream
-//    * @throws IOException Signals that an I/O exception has occurred.
-//    */
-//   public void deserialize(DataInput in) throws IOException {
-//     try {
-//       this.highLowContainer.deserialize(in);
-//     } catch(InvalidRoaringFormat cookie) {
-//       throw cookie.toIOException();// we convert it to an IOException
-//     }
-//   }
 
 	/**
 	 * Adds the value. If the value is present, it is purged first
@@ -273,7 +240,26 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	private def nextLevel(key: K): Coord = geo.coordinate(key, depth + 1)
 	private def thisLevel(key: K): Coord = geo.coordinate(key, depth)
 	private def emptyBitmap = MutableRoaringBitmap.bitmapOf()
-}
+
+	def serialize(out: DataOutput, innerWriter: AnyRef => Unit): Unit =
+		serializeConstructorVariables(out, innerWriter, depth, coord, geo, ord)
+		serializePrivateState(out, innerWriter)
+
+	private def serializePrivateState(out: DataOutput, innerWriter: AnyRef => Unit) =
+		innerWriter(values)
+		out.writeInt(n)
+		innerWriter(children)
+		innerWriter(firstKey)
+		out.writeBoolean(seenDifferentKeys)
+
+	private def deserializePrivateState(in: DataInput, innerReader: [T] => Class[T] => T) =
+		values = innerReader(classOf[MutableRoaringBitmap])
+		n = in.readInt()
+		children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
+		firstKey = innerReader(classOf[Option[K]])
+		seenDifferentKeys = in.readBoolean()
+
+end HierarchicalBitmap
 
 
 object HierarchicalBitmap{
@@ -300,8 +286,13 @@ object HierarchicalBitmap{
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
+	def deserialize[K](in: DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
+		val bm = deserializeConstructorVariables[K](in, innerReader)
+		bm.deserializePrivateState(in, innerReader)
+		bm
+
 	private def serializeConstructorVariables[K](
-		out: java.io.DataOutput,
+		out: DataOutput,
 		innerWriter: AnyRef => Unit,
 		depth: Int,
 		coord: Option[Coord],
@@ -313,17 +304,12 @@ object HierarchicalBitmap{
 		innerWriter(geo)
 		innerWriter(ord)
 
-	private def deserializeConstructorVariables[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T) =
-		val initDepth = in.readInt()
-		val initCoord = innerReader(classOf[Option[Coord]])
+	private def deserializeConstructorVariables[K](in: DataInput, innerReader: [T] => Class[T] => T) =
+		val depth = in.readInt()
+		val coord = innerReader(classOf[Option[Coord]])
 		val geo = innerReader(classOf[Geo[K]])
 		val ord = innerReader(classOf[Ordering[K]])
-		new HierarchicalBitmap[K](initDepth, initCoord)(using geo, ord)
-
-	def deserialize[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
-		val bm = deserializeConstructorVariables[K](in, innerReader)
-		bm.deserializePrivateState(in, innerReader)
-		bm
+		new HierarchicalBitmap[K](depth, coord)(using geo, ord)
 
 	// private def time[T](comp: => T): T = {
 	// 	val start = System.nanoTime

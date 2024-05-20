@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+import se.lu.nateko.cp.meta.services.sparql.index.*
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -28,6 +29,7 @@ import scala.concurrent.Future
 import scala.util.Using
 import com.esotericsoftware.kryo.io.{Output, Input}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class SerializationTests extends AsyncFunSpec{
 
@@ -115,6 +117,11 @@ class SerializationTests extends AsyncFunSpec{
 			val fiSii = Values.iri("http://meta.icos-cp.eu/resources/stations/ES_FI-Sii")
 			val filter = CategFilter(Station, Seq(Some(fiSii)))
 			idx.fetch(DataObjectFetch(filter, None, 0)).toSeq.size
+		}
+
+		origAndCopy("correctly fetches dobjs", 2){ idx =>
+			val res = idx.fetch(DataObjectFetch(And(List(Exists(FileName), Exists(SubmissionEnd))), Some(SortBy(SubmissionEnd, true)),0)).toSeq
+			res.size
 		}
 
 		origAndCopy("has two stations", 2)(

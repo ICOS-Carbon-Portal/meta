@@ -28,32 +28,25 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	private var firstKey: Option[K] = None
 	private var seenDifferentKeys: Boolean = false
 
-	def initPrivateState(
-		values: MutableRoaringBitmap,
-		n: Int,
-		children: HashMap[Coord, HierarchicalBitmap[K]],
-		firstKey: Option[K],
-		seenDifferentKeys: Boolean
-	) =
-		this.values = values
-		this.n = n
-		this.children = children
-		this.firstKey = firstKey
-		this.seenDifferentKeys = seenDifferentKeys
-
-	def serialize(out: java.io.DataOutput, innerWriter: AnyRef => Unit): Unit =
-		// println("START TO SERIALIZE HierarchicalBitmap")
-		out.writeInt(depth)
-		out.writeBoolean(coord.isDefined)
-		for short <- coord do out.writeShort(short)
-		innerWriter(geo)
-		innerWriter(ord)
+	def serializePrivateState(out: java.io.DataOutput, innerWriter: AnyRef => Unit) =
 		innerWriter(values)
-		out.writeInt(depth)
 		innerWriter(children)
 		innerWriter(firstKey)
 		out.writeBoolean(seenDifferentKeys)
-		// println("DONE WITH SERIALIZE HierarchicalBitmap")
+
+	def deserializePrivateState(in: java.io.DataInput, innerReader: [T] => Class[T] => T, depth: Int) =
+		n = depth
+
+		values = innerReader(classOf[MutableRoaringBitmap])
+		children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
+		firstKey = innerReader[Option[K]](classOf[Option[K]])
+		seenDifferentKeys = in.readBoolean()
+
+	def serialize(out: java.io.DataOutput, innerWriter: AnyRef => Unit): Unit =
+		out.writeInt(depth)
+
+		serializeConstructorVariables(out, innerWriter, this)
+		serializePrivateState(out, innerWriter)
 
 	def all: ImmutableRoaringBitmap = values
 
@@ -285,19 +278,6 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 }
 
 
-// def getConcreteGeoClass[K](geo: Geo[K]) =
-// 	geo match
-// 		case dateTimeLG: DatetimeHierarchicalBitmap.LongGeo =>
-// 			classOf[DatetimeHierarchicalBitmap.LongGeo]
-// 		case _ => throw IllegalArgumentException("...placeholder...")
-		// case fileSizeLongGeo: FileSizeHierarchicalBitmap.LongGeo =>
-		// 	classOf[FileSizeHierarchicalBitmap.LongGeo]
-		// case gs: StringHierarchicalBitmap.StringGeo =>
-		// 	classOf[StringHierarchicalBitmap.StringGeo]
-		// case gf: SamplingHeightHierarchicalBitmap.SamplingHeightGeo =>
-		// 	classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo]	
-
-
 object HierarchicalBitmap{
 	type Coord = Short
 	trait Geo[K] extends Serializable{
@@ -322,43 +302,25 @@ object HierarchicalBitmap{
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
-		// out.writeInt(depth)
-		// out.writeBoolean(coord.isDefined)
-		// for short <- coord do out.writeShort(short)
-		// innerWriter(geo)
-		// innerWriter(ord)
-		// innerWriter(values)
-		// out.writeInt(depth)
-		// innerWriter(children)
-		// innerWriter(firstKey)
-		// out.writeBoolean(seenDifferentKeys)
+	def serializeConstructorVariables[K](out: java.io.DataOutput, innerWriter: AnyRef => Unit, bitmapInstance: HierarchicalBitmap[K])(using geo: Geo[K], ord: Ordering[K]) =
+		out.writeBoolean(bitmapInstance.coord.isDefined)
+		for short <- bitmapInstance.coord do out.writeShort(short)
+		innerWriter(geo)
+		innerWriter(ord)
 
-	def deserialize[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
-		// println("START TO DESERIALIZE")
-		val initDepth = in.readInt()
-
+	def deserializeConstructorVariables[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T, initDepth: Int) =
 		val initCoord = if in.readBoolean() then Some(in.readShort()) else None
-
 		val geo = innerReader(classOf[Geo[K]])
 		val ord = innerReader(classOf[Ordering[K]])
 
-		val values = innerReader(classOf[MutableRoaringBitmap])
+		new HierarchicalBitmap[K](initDepth, initCoord)(using geo, ord)
 
-		val n = in.readInt()
-		val children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
-		val firstKey = innerReader[Option[K]](classOf[Option[K]])
-		val seenDifferentKeys = in.readBoolean()
+	def deserialize[K](in: java.io.DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
+		val initDepth = in.readInt()
 
-		// val childrenSize = in.readInt()
-		// for (_ <- 0 until childrenSize)
-		// 	val coord = in.readShort()
-		// 	val hierarchicalBitmap = HierarchicalBitmap.deserialize[K](in, innerReader)
-		// 	children += (coord -> hierarchicalBitmap)
+		val resultingBitmap = deserializeConstructorVariables[K](in, innerReader, initDepth)
+		resultingBitmap.deserializePrivateState(in, innerReader, initDepth)
 
-
-		val resultingBitmap = new HierarchicalBitmap[K](initDepth, initCoord)(using geo, ord)
-		resultingBitmap.initPrivateState(values, n, children, firstKey, seenDifferentKeys)
-		// println("resulting bitmap: " + resultingBitmap)
 		resultingBitmap
 
 	// private def time[T](comp: => T): T = {

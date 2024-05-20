@@ -9,9 +9,7 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.KryoDataInput
 import com.esotericsoftware.kryo.io.KryoDataOutput
 import com.esotericsoftware.kryo.io.Output
-// import com.esotericsoftware.kryo.serializers.ClosureSerializer
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer
-import com.esotericsoftware.kryo.serializers.OptionalSerializers.OptionalSerializer
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.util.Values
@@ -108,7 +106,8 @@ object IndexHandler{
 	import scala.concurrent.ExecutionContext.Implicits.global
 	import com.esotericsoftware.minlog.Log
 
-	Log.DEBUG()
+	//  Log.DEBUG()
+	Log.INFO()
 	def storagePath = Paths.get("./sparqlMagicIndex.bin")
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
@@ -121,6 +120,7 @@ object IndexHandler{
 	// kryo.register(classOf[Class[?]])
 	// kryo.register(classOf[SerializedLambda])
 	// kryo.register(classOf[ClosureSerializer.Closure], new ClosureSerializer())
+	// kryo.register(classOf[java.lang.Record])
 	kryo.register(classOf[IRI], IriSerializer)
 	kryo.register(classOf[NativeIRI], IriSerializer)
 	kryo.register(classOf[MemIRI], IriSerializer)
@@ -135,7 +135,6 @@ object IndexHandler{
 	kryo.register(classOf[Array[Array[Any]]])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
 	kryo.register(classOf[IndexData], IndexDataSerializer)
-	kryo.register(classOf[Optional[?]])
 	kryo.register(classOf[Option[?]], WildOptionSerializer)
 	kryo.register(classOf[Some[?]], WildOptionSerializer)
 	kryo.register(classOf[None.type], WildOptionSerializer)
@@ -215,19 +214,18 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.writeObject(output, data.initOk)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IndexData]): IndexData =
-		//TODO Get rid of the type cast below. Really should not be needed.
-		def readObj[T](using ct: ClassTag[T]): T = kryo.readObject[T](input, ct.runtimeClass.asInstanceOf[Class[T]])
+		def readObj[T](cls: Class[T]): T = kryo.readObject[T](input, cls)
 		val nObjs = input.readInt()
-		val objs = readObj[Array[ObjEntry]]
+		val objs = readObj(classOf[Array[ObjEntry]])
 		registerGeoSerializer(kryo, objs)
 		IndexData(nObjs)(
 			objs = ArrayBuffer.from(objs),
-			idLookup = readObj[AnyRefMap[Sha256Sum, Int]],
-			stats = readObj[AnyRefMap[StatKey, MutableRoaringBitmap]],
-			boolMap = readObj[AnyRefMap[BoolProperty, MutableRoaringBitmap]],
-			categMaps = readObj[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]],
-			contMap = readObj[AnyRefMap[ContProp, HierarchicalBitmap[?]]],
-			initOk = readObj[MutableRoaringBitmap]
+			idLookup = readObj(classOf[AnyRefMap[Sha256Sum, Int]]),
+			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
+			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
+			categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
+			contMap = readObj(classOf[AnyRefMap[ContProp, HierarchicalBitmap[?]]]),
+			initOk = readObj(classOf[MutableRoaringBitmap])
 		)
 
 	private def registerGeoSerializer(kryo: Kryo, objs: IndexedSeq[ObjEntry]): Unit =
@@ -269,7 +267,7 @@ class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Objec
 		kryo.writeObject(output, m.iterator.map(_.toArray).toArray)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = {
-		val nested = kryo.readObject[Array[Array[Object]]](input, classOf[Array[Array[Object]]])
+		val nested = kryo.readObject(input, classOf[Array[Array[Object]]])
 		buildr(nested.iterator.map{arr => arr(0) -> arr(1)})
 	}
 }
@@ -344,10 +342,14 @@ class OptionSerializer[T <: AnyRef](inner: Serializer[T])(using ct: ClassTag[T])
 
 object WildOptionSerializer extends Serializer[Option[?]]:
 	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
-		kryo.writeObject(output, option.toJava)
+		output.writeBoolean(option.isDefined)
+		for v <- option do
+			kryo.writeClassAndObject(output, v)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[?]]): Option[?] =
-		kryo.readObject(input, classOf[Optional[?]]).toScala
+		if input.readBoolean() then
+			Option(kryo.readClassAndObject(input))
+		else None
 
 
 object IriOptionSerializer extends OptionSerializer[IRI](IriSerializer)

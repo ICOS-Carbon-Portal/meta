@@ -48,7 +48,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		for short <- coord do out.writeShort(short)
 		innerWriter(geo)
 		innerWriter(ord)
-		values.serialize(out)
+		innerWriter(values)
 		out.writeInt(depth)
 		innerWriter(children)
 		innerWriter(firstKey)
@@ -327,7 +327,7 @@ object HierarchicalBitmap{
 		// for short <- coord do out.writeShort(short)
 		// innerWriter(geo)
 		// innerWriter(ord)
-		// values.serialize(out)
+		// innerWriter(values)
 		// out.writeInt(depth)
 		// innerWriter(children)
 		// innerWriter(firstKey)
@@ -339,13 +339,14 @@ object HierarchicalBitmap{
 
 		val initCoord = if in.readBoolean() then Some(in.readShort()) else None
 
-		val geo = innerReader[Geo[K]](classOf[Geo[K]])
-		val ord = innerReader[Ordering[K]](classOf[Ordering[K]])
+		val geo = innerReader(classOf[Geo[K]])
+		val ord = innerReader(classOf[Ordering[K]])
 
-		val values = innerReader[MutableRoaringBitmap](classOf[MutableRoaringBitmap])
+		val values = innerReader(classOf[MutableRoaringBitmap])
 
 		val n = in.readInt()
-		val children = innerReader[HashMap[Coord, HierarchicalBitmap[K]]](classOf[HashMap[Coord, HierarchicalBitmap[K]]])
+		val children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
+		val firstKey = innerReader[Option[K]](classOf[Option[K]])
 		val seenDifferentKeys = in.readBoolean()
 
 		// val childrenSize = in.readInt()
@@ -354,7 +355,6 @@ object HierarchicalBitmap{
 		// 	val hierarchicalBitmap = HierarchicalBitmap.deserialize[K](in, innerReader)
 		// 	children += (coord -> hierarchicalBitmap)
 
-		val firstKey = innerReader[Option[K]](classOf[Option[K]])
 
 		val resultingBitmap = new HierarchicalBitmap[K](initDepth, initCoord)(using geo, ord)
 		resultingBitmap.initPrivateState(values, n, children, firstKey, seenDifferentKeys)

@@ -26,8 +26,29 @@ import java.io.ByteArrayOutputStream
 import java.time.Instant
 import scala.concurrent.Future
 import scala.util.Using
+import com.esotericsoftware.kryo.io.{Output, Input}
+import org.roaringbitmap.buffer.MutableRoaringBitmap
 
 class SerializationTests extends AsyncFunSpec{
+
+	def printToBytesAndParseBack[T](obj: T): T =
+		val os = ByteArrayOutputStream()
+		val output = new Output(os)
+		IndexHandler.kryo.writeClassAndObject(output, obj)
+		output.close()
+		val bytes = os.toByteArray()
+		val hexdump = bytes
+			.map: byte =>
+				if byte > 31 && byte < 127 then " " + byte.toChar.toString
+				else Sha256Sum.formatByte(byte)
+			.sliding(10, 10)
+			.map(_.mkString(" "))
+			.mkString("\n")
+		println(hexdump)
+		val is = ByteArrayInputStream(bytes)
+		val input = Input(is)
+		IndexHandler.kryo.readClassAndObject(input).asInstanceOf[T]
+
 
 	def saveToBytes(idx: CpIndex): Future[Array[Byte]] = {
 		val os = ByteArrayOutputStream()
@@ -39,16 +60,17 @@ class SerializationTests extends AsyncFunSpec{
 		IndexHandler.restoreFromStream(is)
 	}
 
-	def roundTrip(sail: Sail): Future[(CpIndex, CpIndex)] =
+	def roundTrip(sail: Sail) = //: Future[(CpIndex, CpIndex)] =
 		for(
 			idx <- Future(CpIndex(sail, Future.never, 5)(NoLogging));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
 		) yield idx -> CpIndex(sail, Future.never, data)(NoLogging)
 
+
 	describe("CpIndex created from test RDF in a turtle file, and round-tripped"){
 		val repo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
-		val idxFut: Future[(CpIndex, CpIndex)] = roundTrip(repo.getSail).andThen{_ =>
+		val idxFut = roundTrip(repo.getSail).andThen{_ =>
 			repo.shutDown()
 		}
 		val toData: CpIndex => IndexData = _.serializableData.asInstanceOf[IndexData]
@@ -61,6 +83,16 @@ class SerializationTests extends AsyncFunSpec{
 				assertResult(expectation, "(de-/serialized index)")(theTest(idx1))
 			}
 		}
+
+		// it("serializes IndexData fragment"):
+		// 	idxFut.map: fresh =>
+		// 		val data = toData(fresh)
+		// 		val roundTrip = printToBytesAndParseBack(data)//, classOf[MutableRoaringBitmap])
+		// 		println("Original:")
+		// 		println(data)// foreach println
+		// 		println("Round trip result:")
+		// 		println(roundTrip)
+		// 		assert(true)
 
 		origAndCopy("should contain expected number of objects", 2)(_.size)
 

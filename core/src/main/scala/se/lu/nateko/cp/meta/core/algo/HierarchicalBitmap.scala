@@ -35,7 +35,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		innerWriter(firstKey)
 		out.writeBoolean(seenDifferentKeys)
 
-	def deserializePrivateState(in: java.io.DataInput, innerReader: [T] => Class[T] => T) =
+	private def deserializePrivateState(in: java.io.DataInput, innerReader: [T] => Class[T] => T) =
 		values = innerReader(classOf[MutableRoaringBitmap])
 		n = in.readInt()
 		children = innerReader(classOf[HashMap[Coord, HierarchicalBitmap[K]]])
@@ -43,7 +43,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		seenDifferentKeys = in.readBoolean()
 
 	def serialize(out: java.io.DataOutput, innerWriter: AnyRef => Unit): Unit =
-		serializeConstructorVariables(depth, out, innerWriter, this)
+		serializeConstructorVariables(out, innerWriter, depth, coord, geo, ord)
 		serializePrivateState(out, innerWriter)
 
 	def all: ImmutableRoaringBitmap = values

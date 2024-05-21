@@ -115,12 +115,9 @@ object IndexHandler{
 	kryo.setRegistrationRequired(true)
 	kryo.setReferences(false)
 	kryo.register(classOf[Array[Object]])
-	kryo.register(classOf[Array[Array[Any]]])
+	kryo.register(classOf[Array[Array[Object]]])
+	kryo.register(classOf[Array[IRI]])
 	kryo.register(classOf[Array[ObjEntry]])
-	kryo.register(classOf[IRI], IriSerializer)
-	kryo.register(classOf[NativeIRI], IriSerializer)
-	kryo.register(classOf[MemIRI], IriSerializer)
-	kryo.register(classOf[SimpleIRI], IriSerializer)
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
@@ -170,6 +167,7 @@ object IndexHandler{
 	}.andThen{
 		case Failure(_) => is.close()
 	}
+
 }
 
 object RoaringSerializer extends Serializer[MutableRoaringBitmap] {
@@ -197,10 +195,18 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 
 object IndexDataSerializer extends Serializer[IndexData]:
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
-		registerGeoSerializer(kryo, data.objs)
 		output.writeInt(data.objs.size)
+
+		registerIriSerializer(kryo, IriSerializer)
+		registerGeoSerializer(kryo, data.objs)
+
+		val iriIndex = buildIriIndex(data.objs)
+		kryo.writeObject(output, iriIndex)
+
+		val iriWriteIndex = iriIndex.zipWithIndex.toMap
+		registerIriSerializer(kryo, IndexedIriWriter(iriWriteIndex))
+
 		kryo.writeObject(output, data.objs.toArray)
-		kryo.writeObject(output, data.idLookup)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
 		kryo.writeObject(output, data.categMaps)
@@ -208,13 +214,20 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.writeObject(output, data.initOk)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IndexData]): IndexData =
-		def readObj[T](cls: Class[T]): T = kryo.readObject[T](input, cls)
 		val nObjs = input.readInt()
+
+		def readObj[T](cls: Class[T]): T = kryo.readObject[T](input, cls)
+
+		registerIriSerializer(kryo, IriSerializer)
+		val iriIndex = readObj(classOf[Array[IRI]])
+		registerIriSerializer(kryo, IndexedIriReader(iriIndex))
 		val objs = readObj(classOf[Array[ObjEntry]])
+
 		registerGeoSerializer(kryo, objs)
+
 		IndexData(nObjs)(
 			objs = ArrayBuffer.from(objs),
-			idLookup = readObj(classOf[AnyRefMap[Sha256Sum, Int]]),
+			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
 			categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
@@ -232,6 +245,20 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.register(classOf[FileSizeHierarchicalBitmap.LongGeo], ser)
 		kryo.register(classOf[FileNameGeo], ser)
 		kryo.register(classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo], ser)
+
+	private def registerIriSerializer(kryo: Kryo, serializer: Serializer[IRI]): Unit =
+		kryo.register(classOf[IRI], serializer)
+		kryo.register(classOf[NativeIRI], serializer)
+		kryo.register(classOf[MemIRI], serializer)
+		kryo.register(classOf[SimpleIRI], serializer)
+
+	private def buildIriIndex(objs: ArrayBuffer[ObjEntry]): Array[IRI] = objs
+		.iterator
+		.flatMap: o =>
+			Iterator(o.spec, o.submitter, o.station, o.site)
+		.filter(_ != null)
+		.distinct
+		.toArray
 
 end IndexDataSerializer
 
@@ -254,6 +281,18 @@ object IriSerializer extends Serializer[IRI]:
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI =
 		Values.iri(input.readString())
+
+class IndexedIriWriter(index: Map[IRI, Int]) extends Serializer[IRI]:
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI = ???
+	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
+		val idx = if iri == null then -1 else index(iri)
+		output.writeInt(idx)
+
+class IndexedIriReader(index: IndexedSeq[IRI]) extends Serializer[IRI]:
+	override def write(kryo: Kryo, output: Output, iri: IRI): Unit = ???
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI =
+		val idx = input.readInt()
+		if idx < 0 then null else index(idx)
 
 
 class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Object)] => T) extends Serializer[T]{

@@ -69,6 +69,7 @@ import scala.jdk.javaapi.OptionConverters.*
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
 import java.util.Optional
+import org.eclipse.rdf4j.model.impl.SimpleIRI
 
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
@@ -119,6 +120,7 @@ object IndexHandler{
 	kryo.register(classOf[IRI], IriSerializer)
 	kryo.register(classOf[NativeIRI], IriSerializer)
 	kryo.register(classOf[MemIRI], IriSerializer)
+	kryo.register(classOf[SimpleIRI], IriSerializer)
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)

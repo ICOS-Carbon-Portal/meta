@@ -127,9 +127,9 @@ object IndexHandler{
 	kryo.register(classOf[Property])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
 	kryo.register(classOf[IndexData], IndexDataSerializer)
-	kryo.register(classOf[Option[?]], WildOptionSerializer)
-	kryo.register(classOf[Some[?]], WildOptionSerializer)
-	kryo.register(classOf[None.type], WildOptionSerializer)
+	kryo.register(classOf[Option[?]], OptionSerializer)
+	kryo.register(classOf[Some[?]], OptionSerializer)
+	kryo.register(classOf[None.type], OptionSerializer)
 	kryo.register(classOf[scala.math.Ordering[?]], OrderingSerializer)
 	kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
 	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
@@ -367,14 +367,7 @@ object OrderingSerializer extends Serializer[Ordering[?]]:
 			case other =>
 				throw IllegalArgumentException(s"Unknown Ordering type: $other")
 
-class OptionSerializer[T <: AnyRef](inner: Serializer[T])(using ct: ClassTag[T]) extends Serializer[Option[T]]:
-	override def write(kryo: Kryo, output: Output, option: Option[T]): Unit =
-		kryo.writeObjectOrNull(output, option.getOrElse(null), inner)
-
-	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Option[T]]): Option[T] =
-		Option(kryo.readObjectOrNull[T](input, ct.runtimeClass.asInstanceOf[Class[T]], inner))
-
-object WildOptionSerializer extends Serializer[Option[?]]:
+object OptionSerializer extends Serializer[Option[?]]:
 	override def write(kryo: Kryo, output: Output, option: Option[?]): Unit =
 		output.writeBoolean(option.isDefined)
 		for v <- option do
@@ -386,21 +379,18 @@ object WildOptionSerializer extends Serializer[Option[?]]:
 		else None
 
 
-object IriOptionSerializer extends OptionSerializer[IRI](IriSerializer)
-
-
 object StatKeySerializer extends Serializer[StatKey]:
 
 	override def write(kryo: Kryo, output: Output, key: StatKey): Unit =
 		kryo.writeObject(output, key.spec)
 		kryo.writeObject(output, key.submitter)
-		kryo.writeObject(output, key.site, IriOptionSerializer)
-		kryo.writeObject(output, key.station, IriOptionSerializer)
+		kryo.writeObjectOrNull(output, key.site.getOrElse(null), classOf[IRI])
+		kryo.writeObjectOrNull(output, key.station.getOrElse(null), classOf[IRI])
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: StatKey]): StatKey =
 		StatKey(
 			spec = kryo.readObject(input, classOf[IRI]),
 			submitter = kryo.readObject(input, classOf[IRI]),
-			site = kryo.readObject(input, classOf[Option[IRI]], IriOptionSerializer),
-			station = kryo.readObject(input, classOf[Option[IRI]], IriOptionSerializer)
+			site = Option(kryo.readObjectOrNull(input, classOf[IRI])),
+			station = Option(kryo.readObjectOrNull(input, classOf[IRI]))
 		)

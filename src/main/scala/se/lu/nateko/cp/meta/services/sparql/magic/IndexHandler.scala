@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
 import akka.actor.Scheduler
-import akka.event.NoLogging
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
@@ -12,65 +11,57 @@ import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.impl.SimpleIRI
 import org.eclipse.rdf4j.model.util.Values
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnectionListener
-import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import org.eclipse.rdf4j.sail.nativerdf.model.NativeIRI
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
+import se.lu.nateko.cp.meta.services.sparql.index.CategProp
+import se.lu.nateko.cp.meta.services.sparql.index.ContProp
+import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap
+import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap.LongGeo
+import se.lu.nateko.cp.meta.services.sparql.index.Property
+import se.lu.nateko.cp.meta.services.sparql.index.SamplingHeightHierarchicalBitmap
+import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataEndGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataStartGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.FileNameGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.ObjEntry
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmEndGeo
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmStartGeo
 import se.lu.nateko.cp.meta.utils.async.throttle
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
-// import java.lang.invoke.SerializedLambda
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 import scala.collection.IndexedSeq
 import scala.collection.mutable.AnyRefMap
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.util.Using
-import java.io.OutputStream
-import java.io.InputStream
-import org.eclipse.rdf4j.sail.memory.model.MemIRI
-import se.lu.nateko.cp.meta.services.sparql.index.Property
-import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
-import se.lu.nateko.cp.meta.services.sparql.index.CategProp
-import se.lu.nateko.cp.meta.services.sparql.index.ContProp
+import scala.jdk.OptionConverters.*
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.===
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataStartGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.DataEndGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.FileNameGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmStartGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.SubmEndGeo
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Coord
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
-import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
-import scala.collection.mutable.ArrayBuffer
-import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap.LongGeo
-import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.index.SamplingHeightHierarchicalBitmap
-import scala.jdk.OptionConverters.*
-import scala.jdk.javaapi.OptionConverters.*
-import se.lu.nateko.cp.meta.utils.asOptInstanceOf
-import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
-import java.util.Optional
-import org.eclipse.rdf4j.model.impl.SimpleIRI
-
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 
@@ -140,7 +131,9 @@ object IndexHandler{
 
 	def store(idx: CpIndex): Future[Done] = Future{
 		dropStorage()
-		storeToStream(idx, FileOutputStream(storagePath.toFile))
+		val fos = FileOutputStream(storagePath.toFile)
+		val gzos = new GZIPOutputStream(fos)
+		storeToStream(idx, gzos)
 	}.flatten
 
 	def storeToStream(idx: CpIndex, os: OutputStream): Future[Done] = Future{
@@ -153,7 +146,8 @@ object IndexHandler{
 	}
 
 	def restore(): Future[IndexData] = Future{
-		val is = FileInputStream(storagePath.toFile)
+		val fis = FileInputStream(storagePath.toFile)
+		val is = new GZIPInputStream(fis)
 		restoreFromStream(is).andThen{
 			case _ => dropStorage()
 		}

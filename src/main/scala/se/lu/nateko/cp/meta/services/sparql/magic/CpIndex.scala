@@ -571,13 +571,12 @@ object CpIndex:
 	}
 
 	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
-		private def this() = this(null, 0, null)//for Kryo deserialization
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
 		var station: IRI = uninitialized
 		var site: IRI = uninitialized
 		var size: Long = -1
-		var fName: String = uninitialized
+		var fName: String = ""
 		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue

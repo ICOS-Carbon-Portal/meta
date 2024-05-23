@@ -118,10 +118,10 @@ object IndexHandler{
 	kryo.register(classOf[Array[Array[Object]]])
 	kryo.register(classOf[Array[IRI]])
 	kryo.register(classOf[Array[ObjEntry]])
+	kryo.register(classOf[Array[String]])
 	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
-	kryo.register(classOf[ObjEntry])
 	kryo.register(classOf[StatKey], StatKeySerializer)
 	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
 	kryo.register(classOf[Property])
@@ -198,13 +198,18 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		output.writeInt(data.objs.size)
 
 		registerIriSerializer(kryo, IriSerializer)
-		registerGeoSerializer(kryo, data.objs)
 
 		val iriIndex = buildIriIndex(data.objs)
 		kryo.writeObject(output, iriIndex)
 
+		val prefixIndex = buildPrefixIndex(data.objs)
+		kryo.writeObject(output, prefixIndex)
+
 		val iriWriteIndex = iriIndex.zipWithIndex.toMap
 		registerIriSerializer(kryo, IndexedIriWriter(iriWriteIndex))
+
+		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
+		registerGeoSerializer(kryo, data.objs)
 
 		kryo.writeObject(output, data.objs.toArray)
 		kryo.writeObject(output, data.stats)
@@ -221,6 +226,10 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		registerIriSerializer(kryo, IriSerializer)
 		val iriIndex = readObj(classOf[Array[IRI]])
 		registerIriSerializer(kryo, IndexedIriReader(iriIndex))
+
+		val prefixIndex = readObj(classOf[Array[String]])
+		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
+
 		val objs = readObj(classOf[Array[ObjEntry]])
 
 		registerGeoSerializer(kryo, objs)
@@ -252,6 +261,13 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.register(classOf[MemIRI], serializer)
 		kryo.register(classOf[SimpleIRI], serializer)
 
+	private def buildPrefixIndex(objs: ArrayBuffer[ObjEntry]): Array[String] = objs
+		.iterator
+		.map: o =>
+			o.prefix
+		.distinct
+		.toArray
+
 	private def buildIriIndex(objs: ArrayBuffer[ObjEntry]): Array[IRI] = objs
 		.iterator
 		.flatMap: o =>
@@ -262,6 +278,52 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 end IndexDataSerializer
 
+class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[ObjEntry]:
+
+	override def write(kryo: Kryo, output: Output, obj: ObjEntry): Unit =
+		kryo.writeObject(output, obj.hash)
+		output.writeInt(obj.idx)
+
+		output.writeInt(prefixIndex.indexOf(obj.prefix))
+
+		kryo.writeObjectOrNull(output, obj.spec, classOf[IRI])
+		kryo.writeObjectOrNull(output, obj.submitter, classOf[IRI])
+		kryo.writeObjectOrNull(output, obj.station, classOf[IRI])
+		kryo.writeObjectOrNull(output, obj.site, classOf[IRI])
+
+		output.writeLong(obj.size)
+		output.writeString(obj.fName)
+		output.writeFloat(obj.samplingHeight)
+		output.writeLong(obj.dataStart)
+		output.writeLong(obj.dataEnd)
+		output.writeLong(obj.submissionStart)
+		output.writeLong(obj.submissionEnd)
+		output.writeBoolean(obj.isNextVersion)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: ObjEntry]): ObjEntry =
+		val objEntry = ObjEntry(
+			hash = kryo.readObject[Sha256Sum](input, classOf[Sha256Sum]),
+			idx = input.readInt(),
+			prefix = prefixIndex(input.readInt())
+		)
+
+		objEntry.spec = kryo.readObjectOrNull(input, classOf[IRI])
+		objEntry.submitter = kryo.readObjectOrNull(input, classOf[IRI])
+		objEntry.station = kryo.readObjectOrNull(input, classOf[IRI])
+		objEntry.site = kryo.readObjectOrNull(input, classOf[IRI])
+
+		objEntry.size = input.readLong()
+		objEntry.fName = input.readString()
+		objEntry.samplingHeight = input.readFloat()
+		objEntry.dataStart = input.readLong()
+		objEntry.dataEnd = input.readLong()
+		objEntry.submissionStart = input.readLong()
+		objEntry.submissionEnd = input.readLong()
+		objEntry.isNextVersion = input.readBoolean()
+
+		objEntry
+
+end ObjEntrySerializer
 
 object HierarchicalBitmapSerializer extends Serializer[HierarchicalBitmap[?]]:
 

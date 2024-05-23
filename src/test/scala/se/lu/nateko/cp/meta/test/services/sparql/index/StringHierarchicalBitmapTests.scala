@@ -60,6 +60,13 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 			testFilter(EqualsFilter(newKey), Seq(idx))(bm)
 			testFilter(EqualsFilter(oldKey), Seq())(bm)
 		}
+
+		it("remove a value"){
+			val idx = 444
+			val oldKey = arr(idx)
+			bm.remove(oldKey, idx)
+			assert(!bm.all.contains(idx))
+		}
 	}
 
 	describe("string ordering"){

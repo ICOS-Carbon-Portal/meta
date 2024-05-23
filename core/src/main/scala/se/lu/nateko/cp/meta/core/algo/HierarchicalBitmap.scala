@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.core.algo
 
-import org.roaringbitmap.RoaringBitmap
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
@@ -63,18 +62,22 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 
 		val wasPresentInSelf = values.contains(value)
 
-		children.map: innerChildren =>
-			val wasPresentInChildren = (innerChildren.nonEmpty) && {
-				val coord = nextLevel(key)
-				innerChildren.get(coord).map(_.remove(key, value)).getOrElse(false)
-			}
+		val wasPresentInChildren =
+			children.map: innerChildren =>
+				(innerChildren.nonEmpty) && {
+					val coord = nextLevel(key)
+					innerChildren.get(coord).map(_.remove(key, value)).getOrElse(false)
+				}
+			.getOrElse(false)
 
-			if((wasPresentInChildren || innerChildren.isEmpty) && wasPresentInSelf){
-				values.remove(value)
-				n -= 1
-			}
-			wasPresentInChildren || innerChildren.isEmpty && wasPresentInSelf
-		.getOrElse(false)
+		val innerChildrenIsEmpty = children.map(_.isEmpty).getOrElse(true)
+
+		if((wasPresentInChildren || innerChildrenIsEmpty) && wasPresentInSelf){
+			values.remove(value)
+			n -= 1
+		}
+
+		wasPresentInChildren || innerChildrenIsEmpty && wasPresentInSelf
 	}
 
 	private def purgeValueIfPresent(value: Int): Boolean =

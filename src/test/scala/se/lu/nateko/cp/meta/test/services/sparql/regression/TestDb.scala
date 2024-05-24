@@ -75,23 +75,40 @@ class TestDb {
 
 		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
 
-		val repo0 = new SailRepository(makeSail)
-		val factory = repo0.getValueFactory
+		/**
+		 * Repo is recreated three times; the first two times to ingest triples
+		 * and simulate a fresh init of the triple store, and a third time
+		 * to simulate serialization/deserialization of the Sparql index.
+		 * **/
+		val repo0Fut: Future[Repository] =
+			val repo0 = SailRepository(makeSail)
+			val factory = repo0.getValueFactory
 
-		val fut = executeSequentially(TestDb.graphIriToFile){(uriStr, filename) =>
-			val graphIri = factory.createIRI(uriStr)
-			val server = Rdf4jInstanceServer(repo0, graphIri)
-			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-			Ingestion.ingest(server, ingester, factory).map(_ => Done)
-		}
-		fut.map{_ =>
-			repo0.shutDown()
-			val sail = makeSail
-			val repo1 = new SailRepository(sail)
-			repo1.init()
-			sail.initSparqlMagicIndex(None)
-			repo1
-		}
+			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+				val graphIri = factory.createIRI(uriStr)
+				val server = Rdf4jInstanceServer(repo0, graphIri)
+				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+				Ingestion.ingest(server, ingester, factory).map(_ => Done)
+			.map: _ =>
+				repo0
+		for
+			repo0 <- repo0Fut
+			repo1 = {
+				repo0.shutDown()
+				val repo1 = makeSail
+				repo1.init()
+				repo1.initSparqlMagicIndex(None)
+				repo1
+			}
+			_ <- repo1.makeReadonly("Test")
+			_ = repo1.shutDown()
+			idxData <- IndexHandler.restore()
+		yield
+			val repo2 = makeSail
+			repo2.init()
+			repo2.initSparqlMagicIndex(Some(idxData))
+			SailRepository(repo2)
+
 	}
 
 	def cleanup(): Unit = {

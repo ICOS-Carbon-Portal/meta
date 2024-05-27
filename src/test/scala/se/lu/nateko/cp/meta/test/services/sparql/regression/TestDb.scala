@@ -76,10 +76,12 @@ class TestDb {
 		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
 
 		/**
-		 * Repo is recreated three times; the first two times to ingest triples
-		 * and simulate a fresh init of the triple store, and a third time
-		 * to simulate serialization/deserialization of the Sparql index.
-		 * **/
+		The repo is created three times:
+			0) to ingest the test RDF file into a fresh new triplestore
+			1) to restart the triplestore to create the magic SPARQL index
+			2) to dump the SPARQL index to disk, re-start, read the index
+			data structure, and initialize the index from it
+		**/
 		val repo0Fut: Future[Repository] =
 			val repo0 = SailRepository(makeSail)
 			val factory = repo0.getValueFactory

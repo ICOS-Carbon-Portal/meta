@@ -37,7 +37,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	 * @throws java.lang.AssertionError if the value is already present.
 	 * @return `true` if the value was new, `false` if it had to be purged first
 	*/
-	def add(key: K, value: Int): Boolean = {
+	def add(key: K, value: Int): Boolean =
 
 		val wasPresent = purgeValueIfPresent(value)
 
@@ -47,45 +47,38 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 
 		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
-		if(children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)) {
-			children = None
-			values.forEach{v => addToChild(geo.keyLookup(v), v)}
-		}
+		if children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)
+		then values.forEach{v => addToChild(geo.keyLookup(v), v)}
+
 		!wasPresent
-	}
+
 
 	/**
 	 * Removes the value, returning true if value was present and false otherwise.
 	 * @param key must be the same as the one supplied when the value was added.
 	 */
-	def remove(key: K, value: Int): Boolean = {
-
+	def remove(key: K, value: Int): Boolean =
 		val wasPresentInSelf = values.contains(value)
 
-		val wasPresentInChildren =
-			children.map: innerChildren =>
-				(innerChildren.nonEmpty) && {
-					val coord = nextLevel(key)
-					innerChildren.get(coord).map(_.remove(key, value)).getOrElse(false)
-				}
-			.getOrElse(false)
+		val childrenIsEmpty = children.fold(true)(_.isEmpty)
 
-		val innerChildrenIsEmpty = children.map(_.isEmpty).getOrElse(true)
+		val wasPresentInChildren = !childrenIsEmpty && children.fold(false): ch =>
+			val coord = nextLevel(key)
+			ch.get(coord).fold(false)(_.remove(key, value))
 
-		if((wasPresentInChildren || innerChildrenIsEmpty) && wasPresentInSelf){
+		if (wasPresentInChildren || childrenIsEmpty) && wasPresentInSelf then
 			values.remove(value)
 			n -= 1
-		}
 
-		wasPresentInChildren || innerChildrenIsEmpty && wasPresentInSelf
-	}
+		wasPresentInChildren || childrenIsEmpty && wasPresentInSelf
+
 
 	private def purgeValueIfPresent(value: Int): Boolean =
 		if(values.contains(value)){
 			values.remove(value)
 			n -= 1
-			children.foreach: innerChildren =>
-				if(innerChildren.nonEmpty) innerChildren.valuesIterator.foreach(_.purgeValueIfPresent(value))
+			children.foreach: ch =>
+				ch.valuesIterator.foreach(_.purgeValueIfPresent(value))
 			true
 		} else false
 
@@ -94,19 +87,15 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		case Some(fKey) => seenDifferentKeys = !ord.equiv(key, fKey)
 	}
 
-	private def addToChild(key: K, value: Int): Unit = {
+	private def addToChild(key: K, value: Int): Unit =
 		val coord = nextLevel(key)
 
-		def addToChildren() =
-			children.foreach: innerChildren =>
-				val child = innerChildren.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1, Some(coord)))
-				child.add(key, value)
+		if children.isEmpty then children = Some(HashMap.empty)
 
-		if (children.isDefined) then addToChildren()
-		else
-			children = Some(HashMap.empty)
-			addToChildren()
-	}
+		children.foreach: ch =>
+			val child = ch.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1, Some(coord)))
+			child.add(key, value)
+
 
 	def iterateSorted(filter: Option[ImmutableRoaringBitmap] = None, offset: Int = 0, sortDescending: Boolean = false): Iterator[Int] = {
 
@@ -120,12 +109,12 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 			if(sortDescending) ascending.reverse else ascending
 		}
 
-		implicit val iter = new IterationInstruction(filter, valComp, coordOrd)
+		given IterationInstruction = new IterationInstruction(filter, valComp, coordOrd)
 
 		open(innerIterate(offset))
 	}
 
-	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult =
+	private def innerIterate(offset: Int)(using iter: IterationInstruction): OffsetOrResult =
 		if(offset >= n){
 			val amount = iter.filter.fold(n){filter =>
 				ImmutableRoaringBitmap.andCardinality(values, filter)
@@ -174,17 +163,15 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		// 	println(s"Rejecting child with coord $c and depth ${depth + 1}")
 		// 	false
 		// }
-		def inner(borderFilter: Coord => Boolean, wholeChildFilter: Coord => Boolean) =
-			children.map: innerChildren =>
-				MutableRoaringBitmap.or(
-					innerChildren.collect{
-						//println(s"taking whole child at coord $coord and depth ${depth + 1}")
-						case (coord, bm) if wholeChildFilter(coord) => bm.values
-						//println(s"will filter child at coord $coord and depth ${depth + 1}")
-						case (coord, bm) if borderFilter(coord) => bm.filter(req)
-						//case (coord, _) if logAndreject(coord) => ???
-					}.toSeq*)
-			.getOrElse(MutableRoaringBitmap())
+		def inner(borderFilter: Coord => Boolean, wholeChildFilter: Coord => Boolean) = MutableRoaringBitmap.or(
+			children.toSeq.flatten.collect:
+				//println(s"taking whole child at coord $coord and depth ${depth + 1}")
+				case (coord, bm) if wholeChildFilter(coord) => bm.values
+				//println(s"will filter child at coord $coord and depth ${depth + 1}")
+				case (coord, bm) if borderFilter(coord) => bm.filter(req)
+				//case (coord, _) if logAndreject(coord) => ???
+			* //use the seq above as varargs
+		)
 
 		if(children.isEmpty){
 			//println(s"No children, depth $depth")

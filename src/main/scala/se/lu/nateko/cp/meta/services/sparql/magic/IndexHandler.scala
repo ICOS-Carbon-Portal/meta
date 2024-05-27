@@ -257,8 +257,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 	private def buildPrefixIndex(objs: ArrayBuffer[ObjEntry]): Array[String] = objs
 		.iterator
-		.map: o =>
-			o.prefix
+		.map(_.prefix)
 		.distinct
 		.toArray
 
@@ -353,7 +352,6 @@ class IndexedIriReader(index: IndexedSeq[IRI]) extends Serializer[IRI]:
 
 class MapSerializer[T <: collection.Map[?,?]](buildr: IterableOnce[(Object,Object)] => T) extends Serializer[T]{
 	override def write(kryo: Kryo, output: Output, m: T): Unit =
-		//kryo.writeObjectOrNull(output, if m == null then null else m.iterator.map(_.toArray).toArray, classOf[Array[Array[Object]]])
 		kryo.writeObject(output, m.iterator.map(_.toArray).toArray)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = {

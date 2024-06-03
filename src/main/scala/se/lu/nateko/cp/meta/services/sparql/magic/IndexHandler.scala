@@ -118,6 +118,7 @@ object IndexHandler{
 	kryo.register(classOf[Property])
 	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
 	kryo.register(classOf[IndexData], IndexDataSerializer)
+	OrderingSerializer.register(kryo)
 	OptionSerializer.register(kryo)
 
 	Property.allConcrete.foreach: prop =>
@@ -198,7 +199,6 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
 		GeoSerializer.register(kryo, data.objs)
-		OrderingSerializer.register(kryo)
 
 		kryo.writeObject(output, data.objs.toArray)
 		kryo.writeObject(output, data.stats)
@@ -222,7 +222,6 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		val objs = readObj(classOf[Array[ObjEntry]])
 
 		GeoSerializer.register(kryo, objs)
-		OrderingSerializer.register(kryo)
 
 		IndexData(nObjs)(
 			objs = ArrayBuffer.from(objs),
@@ -353,12 +352,12 @@ class SingletonSerializer[T <: Singleton](s: T) extends Serializer[T]{
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = s
 }
 
-object GeoSerializer:
+object GeoSerializer extends Serializer[Geo[?]]:
+	private val geos = HashMap.empty[Int, Geo[?]]
+
 	def register(kryo: Kryo, objs: IndexedSeq[ObjEntry]): Unit =
-		val geos = HashMap.empty[Int, Geo[?]]
-		val ser = GeoSerializer(geos)
 		def regGeo(geo: Geo[?]): Unit =
-			val reg = kryo.register(geo.getClass, ser)
+			val reg = kryo.register(geo.getClass, this)
 			geos += reg.getId -> geo
 
 		regGeo(DataStartGeo(objs))
@@ -368,9 +367,7 @@ object GeoSerializer:
 		regGeo(FileSizeHierarchicalBitmap.LongGeo(objs))
 		regGeo(FileNameGeo(objs))
 		regGeo(SamplingHeightHierarchicalBitmap.SamplingHeightGeo(objs))
-		kryo.register(classOf[HierarchicalBitmap.Geo[?]], ser)
-
-class GeoSerializer private(geos: HashMap[Int, Geo[?]]) extends Serializer[Geo[?]]:
+		kryo.register(classOf[HierarchicalBitmap.Geo[?]], this)
 
 	override def write(kryo: Kryo, output: Output, geo: Geo[?]): Unit =
 		kryo.writeClass(output, geo.getClass)
@@ -379,27 +376,25 @@ class GeoSerializer private(geos: HashMap[Int, Geo[?]]) extends Serializer[Geo[?
 		val geoReg = kryo.readClass(input)
 		geos.getOrElse(geoReg.getId, throw IllegalArgumentException(s"Unknown Geo class: $geoReg"))
 
-object OrderingSerializer:
+object OrderingSerializer extends Serializer[Ordering[?]]:
+	private val ords = HashMap.empty[Int, Ordering[?]]
+
 	def register(kryo: Kryo): Unit =
-		val ords = HashMap.empty[Int, Ordering[?]]
-		val ser = OrderingSerializer(ords)
 		def regOrd(ord: Ordering[?]): Unit =
-			val reg = kryo.register(ord.getClass, ser)
+			val reg = kryo.register(ord.getClass, this)
 			ords += reg.getId -> ord
 
 		regOrd(scala.math.Ordering.Long)
 		regOrd(StringHierarchicalBitmap.StringOrdering)
 		regOrd(scala.math.Ordering.Float.IeeeOrdering)
-		kryo.register(classOf[scala.math.Ordering[?]], ser)
-
-class OrderingSerializer private(ords: HashMap[Int, Ordering[?]]) extends Serializer[Ordering[?]]:
+		kryo.register(classOf[scala.math.Ordering[?]], this)
 
 	override def write(kryo: Kryo, output: Output, ord: Ordering[?]): Unit =
 		kryo.writeClass(output, ord.getClass)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Ordering[?]]): Ordering[?] =
 		val ordReg = kryo.readClass(input)
-		ords.getOrElse(ordReg.getId, throw IllegalArgumentException(s"Unknown Ord class: $ordReg"))
+		ords.getOrElse(ordReg.getId, throw IllegalArgumentException(s"Unknown Ordering class: $ordReg"))
 
 object OptionSerializer extends Serializer[Option[?]]:
 

@@ -121,10 +121,7 @@ object IndexHandler{
 	kryo.register(classOf[Option[?]], OptionSerializer)
 	kryo.register(classOf[Some[?]], OptionSerializer)
 	kryo.register(classOf[None.type], OptionSerializer)
-	kryo.register(classOf[scala.math.Ordering[?]], OrderingSerializer)
-	kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
-	kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
-	kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type], OrderingSerializer)
+	OrderingSerializer.register(kryo)
 
 	Property.allConcrete.foreach: prop =>
 		kryo.register(prop.getClass, SingletonSerializer(prop))
@@ -203,7 +200,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		registerIriSerializer(kryo, IndexedIriWriter(iriWriteIndex))
 
 		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
-		registerGeoSerializer(kryo, data.objs)
+		GeoSerializer.register(kryo, data.objs)
 
 		kryo.writeObject(output, data.objs.toArray)
 		kryo.writeObject(output, data.stats)
@@ -226,7 +223,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		val objs = readObj(classOf[Array[ObjEntry]])
 
-		registerGeoSerializer(kryo, objs)
+		GeoSerializer.register(kryo, objs)
 
 		IndexData(nObjs)(
 			objs = ArrayBuffer.from(objs),
@@ -237,17 +234,6 @@ object IndexDataSerializer extends Serializer[IndexData]:
 			contMap = readObj(classOf[AnyRefMap[ContProp, HierarchicalBitmap[?]]]),
 			initOk = readObj(classOf[MutableRoaringBitmap])
 		)
-
-	private def registerGeoSerializer(kryo: Kryo, objs: IndexedSeq[ObjEntry]): Unit =
-		val ser = GeoSerializer(objs)
-		kryo.register(classOf[HierarchicalBitmap.Geo[?]], ser)
-		kryo.register(classOf[DataStartGeo], ser)
-		kryo.register(classOf[DataEndGeo], ser)
-		kryo.register(classOf[SubmStartGeo], ser)
-		kryo.register(classOf[SubmEndGeo], ser)
-		kryo.register(classOf[FileSizeHierarchicalBitmap.LongGeo], ser)
-		kryo.register(classOf[FileNameGeo], ser)
-		kryo.register(classOf[SamplingHeightHierarchicalBitmap.SamplingHeightGeo], ser)
 
 	private def registerIriSerializer(kryo: Kryo, serializer: Serializer[IRI]): Unit =
 		kryo.register(classOf[IRI], serializer)
@@ -368,40 +354,40 @@ class SingletonSerializer[T <: Singleton](s: T) extends Serializer[T]{
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: T]): T = s
 }
 
-class GeoSerializer(objs: IndexedSeq[ObjEntry]) extends Serializer[Geo[?]]:
+object GeoSerializer:
+	def register(kryo: Kryo, objs: IndexedSeq[ObjEntry]): Unit =
+		val geos = HashMap.empty[Int, Geo[?]]
+		val ser = GeoSerializer(geos)
+		def regGeo(geo: Geo[?]): Unit =
+			val reg = kryo.register(geo.getClass, ser)
+			geos += reg.getId -> geo
+
+		regGeo(DataStartGeo(objs))
+		regGeo(DataEndGeo(objs))
+		regGeo(SubmStartGeo(objs))
+		regGeo(SubmEndGeo(objs))
+		regGeo(FileSizeHierarchicalBitmap.LongGeo(objs))
+		regGeo(FileNameGeo(objs))
+		regGeo(SamplingHeightHierarchicalBitmap.SamplingHeightGeo(objs))
+		kryo.register(classOf[HierarchicalBitmap.Geo[?]], ser)
+
+class GeoSerializer private(geos: HashMap[Int, Geo[?]]) extends Serializer[Geo[?]]:
+
 	override def write(kryo: Kryo, output: Output, geo: Geo[?]): Unit =
-		geo match
-			case dateTimeLG: DataStartGeo =>
-				output.writeString("DataStartGeo")
-			case dateTimeLG: DataEndGeo =>
-				output.writeString("DataEndGeo")
-			case dateTimeLG: SubmStartGeo =>
-				output.writeString("SubmStartGeo")
-			case dateTimeLG: SubmEndGeo =>
-				output.writeString("SubmEndGeo")
-			case fileSizeLongGeo: FileSizeHierarchicalBitmap.LongGeo =>
-				output.writeString("FileSizeGeo")
-			case gs: FileNameGeo =>
-				output.writeString("FileNameGeo")
-			case gf: SamplingHeightHierarchicalBitmap.SamplingHeightGeo =>
-				output.writeString("SamplingHeightGeo")
-			case _ => throw IllegalArgumentException("Unknown geo type")
+		kryo.writeClass(output, geo.getClass)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Geo[?]]): Geo[?] =
-		input.readString() match
-			case "DataStartGeo" => DataStartGeo(objs)
-			case "DataEndGeo"   => DataEndGeo(objs)
-			case "SubmStartGeo" => SubmStartGeo(objs)
-			case "SubmEndGeo"   => SubmEndGeo(objs)
-			case "FileSizeGeo"  => FileSizeHierarchicalBitmap.LongGeo(objs)
-			case "FileNameGeo"  => FileNameGeo(objs)
-			case "SamplingHeightGeo" =>
-				SamplingHeightHierarchicalBitmap.SamplingHeightGeo(objs)
-			case other =>
-				throw IllegalArgumentException(s"Unknown Geo type: $other")
+		val geoReg = kryo.readClass(input)
+		geos.getOrElse(geoReg.getId, throw IllegalArgumentException(s"Unknown Geo class: $geoReg"))
 
 
 object OrderingSerializer extends Serializer[Ordering[?]]:
+
+	def register(kryo: Kryo): Unit =
+		kryo.register(classOf[scala.math.Ordering[?]], OrderingSerializer)
+		kryo.register(classOf[scala.math.Ordering.Long.type], OrderingSerializer)
+		kryo.register(classOf[StringHierarchicalBitmap.StringOrdering.type], OrderingSerializer)
+		kryo.register(classOf[scala.math.Ordering.Float.IeeeOrdering.type], OrderingSerializer)
 
 	override def write(kryo: Kryo, output: Output, ord: Ordering[?]): Unit =
 		val magicString = ord match

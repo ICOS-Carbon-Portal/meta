@@ -132,7 +132,7 @@ lazy val meta = (project in file("."))
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
-			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
+			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.8",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",

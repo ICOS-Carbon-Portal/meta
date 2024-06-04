@@ -6,7 +6,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import HierarchicalBitmap.*
-import StringHierarchicalBitmap.Ord
+import StringHierarchicalBitmap.{StringOrdering => Ord, StringGeo}
 import scala.util.Random
 
 class StringHierarchicalBitmapTests extends AnyFunSpec{
@@ -14,7 +14,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 	private val EnableTrace = false
 
 	def initBm(strings: Array[String]): HierarchicalBitmap[String] = {
-		val bm = StringHierarchicalBitmap(strings.apply)
+		val bm = StringHierarchicalBitmap(StringGeo(strings.apply))
 		strings.indices.foreach(i => bm.add(strings(i), i))
 		bm
 	}
@@ -59,6 +59,13 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 			bm.add(newKey, idx)
 			testFilter(EqualsFilter(newKey), Seq(idx))(bm)
 			testFilter(EqualsFilter(oldKey), Seq())(bm)
+		}
+
+		it("remove a value"){
+			val idx = 444
+			val oldKey = arr(idx)
+			bm.remove(oldKey, idx)
+			assert(!bm.all.contains(idx))
 		}
 	}
 

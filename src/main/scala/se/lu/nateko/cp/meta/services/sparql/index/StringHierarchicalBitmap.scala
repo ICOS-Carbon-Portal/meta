@@ -1,16 +1,15 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
+import scala.collection.IndexedSeq
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 
-object StringHierarchicalBitmap{
+object StringHierarchicalBitmap:
 	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
 
-	given Ord: Ordering[String] = new StringOrdering
-	class StringOrdering extends Ordering[String]{
+	given StringOrdering: Ordering[String] with
 		def compare(x: String, y: String): Int = {
 			val lx = x.length; val ly = y.length
 			val lmin = Math.min(lx, ly)
@@ -26,17 +25,13 @@ object StringHierarchicalBitmap{
 			else if (lx < ly) -1
 			else 1
 		}
-	}
 
-	def fileName(idx: IndexData) = apply(idx.objs(_).fName)
-
-	def apply(kLookup: Int => String): HierarchicalBitmap[String] = {
-		given Geo[String] = StringGeo(kLookup)
+	def apply(geo: Geo[String]) =
+		given Geo[String] = geo
 		new HierarchicalBitmap[String](0, None)
-	}
 
-	class StringGeo(kLookup: Int => String) extends Geo[String]{
-		private def this() = this(null)//for Kryo deserialization
+	class StringGeo(kLookup: Int => String) extends Geo[String]:
+
 		val spilloverThreshold: Int = SpilloverThreshold
 
 		def keyLookup(value: Int): String = kLookup(value)
@@ -46,6 +41,4 @@ object StringHierarchicalBitmap{
 			else if(depth > key.length) Short.MinValue
 			else key.charAt(depth - 1).toShort
 
-	}
-
-}
+end StringHierarchicalBitmap

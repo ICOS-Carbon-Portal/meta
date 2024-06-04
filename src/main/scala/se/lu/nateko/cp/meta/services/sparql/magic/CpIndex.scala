@@ -32,6 +32,7 @@ import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
+import scala.collection.{IndexedSeq => IndSeq}
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.compiletime.uninitialized
@@ -41,11 +42,11 @@ import scala.util.Failure
 import scala.util.Success
 
 import CpIndex.*
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
+import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI]){
-	private def this() = this(null, null, null, null)//for Kryo deserialization
-}
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
 case class StatEntry(key: StatKey, count: Int)
 
 trait ObjSpecific{
@@ -71,7 +72,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 	import data.*
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
-		this(sail, geo, IndexData(nObjects))(log)
+		this(sail, geo, IndexData(nObjects)())(log)
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
@@ -118,9 +119,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = contMap.getOrElseUpdate(prop, prop match {
 		/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-		case FileName =>        StringHierarchicalBitmap.fileName(data)
-		case FileSize =>        FileSizeHierarchicalBitmap(data)
-		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(data)
+		case FileName =>        data.fileNameBm
+		case FileSize =>        FileSizeHierarchicalBitmap(objs)
+		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(objs)
 		case DataStart =>       data.dataStartBm
 		case DataEnd =>         data.dataEndBm
 		case SubmissionStart => data.submStartBm
@@ -553,29 +554,29 @@ object CpIndex:
 
 	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
-	class IndexData(nObjects: Int) extends Serializable{
-		private def this() = this(0)//for Kryo deserialization
-		val idLookup = new AnyRefMap[Sha256Sum, Int](nObjects * 2)
-		val objs = new ArrayBuffer[ObjEntry](nObjects)
-		val boolMap = new AnyRefMap[BoolProperty, MutableRoaringBitmap]
-		val categMaps = new AnyRefMap[CategProp, AnyRefMap[_, MutableRoaringBitmap]]
-		val contMap = new AnyRefMap[ContProp, HierarchicalBitmap[_]]
-		val stats = new AnyRefMap[StatKey, MutableRoaringBitmap]
-		val initOk = emptyBitmap
-		def dataStartBm = DatetimeHierarchicalBitmap(i => objs(i).dataStart)
-		def dataEndBm = DatetimeHierarchicalBitmap(i => objs(i).dataEnd)
-		def submStartBm = DatetimeHierarchicalBitmap(i => objs(i).submissionStart)
-		def submEndBm = DatetimeHierarchicalBitmap(i => objs(i).submissionEnd)
+	class IndexData(nObjects: Int)(
+		val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
+		val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+		val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
+		val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
+		val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
+		val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
+		val initOk: MutableRoaringBitmap = emptyBitmap
+	) extends Serializable{
+		def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
+		def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
+		def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
+		def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
+		def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
 	}
 
 	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
-		private def this() = this(null, 0, null)//for Kryo deserialization
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
 		var station: IRI = uninitialized
 		var site: IRI = uninitialized
 		var size: Long = -1
-		var fName: String = uninitialized
+		var fName: String = ""
 		var samplingHeight: Float = Float.NaN
 		var dataStart: Long = Long.MinValue
 		var dataEnd: Long = Long.MinValue
@@ -597,6 +598,12 @@ object CpIndex:
 
 		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
 	}
+
+	final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
+	final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
+	final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionStart)
+	final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
+	final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
 
 	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.DATETIME =>

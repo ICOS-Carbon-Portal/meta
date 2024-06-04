@@ -1,12 +1,16 @@
 package se.lu.nateko.cp.meta.core.algo
 
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+import org.roaringbitmap.buffer.MutableRoaringBitmap
+
+import java.io.DataInput
+import java.io.DataOutput
+import java.io.Serializable
+import java.util as ju
 import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import org.roaringbitmap.buffer.MutableRoaringBitmap
-import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+
 import HierarchicalBitmap.*
-import java.{util => ju}
-import java.io.Serializable
 
 /**
  * Assumptions:
@@ -17,12 +21,11 @@ import java.io.Serializable
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable{
-	private def this() = this(0, None)(using null, null) //for Kryo deserialization
+class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable:
 
-	private val values = emptyBitmap
+	private var values = emptyBitmap
 	private var n = 0
-	private var children: HashMap[Coord, HierarchicalBitmap[K]] = null
+	private var children: Option[HashMap[Coord, HierarchicalBitmap[K]]] = None
 	private var firstKey: Option[K] = None
 	private var seenDifferentKeys: Boolean = false
 
@@ -34,48 +37,48 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 	 * @throws java.lang.AssertionError if the value is already present.
 	 * @return `true` if the value was new, `false` if it had to be purged first
 	*/
-	def add(key: K, value: Int): Boolean = {
+	def add(key: K, value: Int): Boolean =
 
 		val wasPresent = purgeValueIfPresent(value)
 
 		values.add(value)
 		n += 1
-		if(children != null) addToChild(key, value)
+		if(children.nonEmpty) addToChild(key, value)
 
 		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
-		if(children == null && seenDifferentKeys && (n >= geo.spilloverThreshold)) {
-			children = HashMap.empty
-			values.forEach{v => addToChild(geo.keyLookup(v), v)}
-		}
+		if children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)
+		then values.forEach{v => addToChild(geo.keyLookup(v), v)}
+
 		!wasPresent
-	}
+
 
 	/**
 	 * Removes the value, returning true if value was present and false otherwise.
 	 * @param key must be the same as the one supplied when the value was added.
 	 */
-	def remove(key: K, value: Int): Boolean = {
-
+	def remove(key: K, value: Int): Boolean =
 		val wasPresentInSelf = values.contains(value)
-		val wasPresentInChildren = (children != null) && {
-			val coord = nextLevel(key)
-			children.get(coord).map(_.remove(key, value)).getOrElse(false)
-		}
 
-		if((wasPresentInChildren || children == null) && wasPresentInSelf){
+		val childrenIsEmpty = children.fold(true)(_.isEmpty)
+
+		val wasPresentInChildren = !childrenIsEmpty && children.fold(false): ch =>
+			val coord = nextLevel(key)
+			ch.get(coord).fold(false)(_.remove(key, value))
+
+		if (wasPresentInChildren || childrenIsEmpty) && wasPresentInSelf then
 			values.remove(value)
 			n -= 1
-		}
 
-		wasPresentInChildren || children == null && wasPresentInSelf
-	}
+		wasPresentInChildren || childrenIsEmpty && wasPresentInSelf
+
 
 	private def purgeValueIfPresent(value: Int): Boolean =
 		if(values.contains(value)){
 			values.remove(value)
 			n -= 1
-			if(children != null) children.valuesIterator.foreach(_.purgeValueIfPresent(value))
+			children.foreach: ch =>
+				ch.valuesIterator.foreach(_.purgeValueIfPresent(value))
 			true
 		} else false
 
@@ -84,11 +87,15 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 		case Some(fKey) => seenDifferentKeys = !ord.equiv(key, fKey)
 	}
 
-	private def addToChild(key: K, value: Int): Unit = {
+	private def addToChild(key: K, value: Int): Unit =
 		val coord = nextLevel(key)
-		val child = children.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1, Some(coord)))
-		child.add(key, value)
-	}
+
+		if children.isEmpty then children = Some(HashMap.empty)
+
+		children.foreach: ch =>
+			val child = ch.getOrElseUpdate(coord, new HierarchicalBitmap[K](depth + 1, Some(coord)))
+			child.add(key, value)
+
 
 	def iterateSorted(filter: Option[ImmutableRoaringBitmap] = None, offset: Int = 0, sortDescending: Boolean = false): Iterator[Int] = {
 
@@ -102,19 +109,19 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 			if(sortDescending) ascending.reverse else ascending
 		}
 
-		implicit val iter = new IterationInstruction(filter, valComp, coordOrd)
+		given IterationInstruction = new IterationInstruction(filter, valComp, coordOrd)
 
 		open(innerIterate(offset))
 	}
 
-	private def innerIterate(offset: Int)(implicit iter: IterationInstruction): OffsetOrResult =
+	private def innerIterate(offset: Int)(using iter: IterationInstruction): OffsetOrResult =
 		if(offset >= n){
 			val amount = iter.filter.fold(n){filter =>
 				ImmutableRoaringBitmap.andCardinality(values, filter)
 			}
 			Left(offset - amount)
 
-		} else if(children == null) {
+		} else if(children.isEmpty) {
 
 			val (filtered, amount) = iter.filter.fold(values -> n){filterBm =>
 				val filtered = ImmutableRoaringBitmap.and(values, filterBm)
@@ -136,7 +143,7 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 			} else Right(Iterator.empty)
 
 		} else {
-			val childrenIter: Iterator[HierarchicalBitmap[K]] = children.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2)
+			val childrenIter: Iterator[HierarchicalBitmap[K]] = children.iterator.flatMap(_.toSeq.sortBy(_._1)(iter.coordOrd).iterator.map(_._2))
 
 			if(offset <= 0)
 				Right(childrenIter.flatMap(childIter => open(childIter.innerIterate(0))))
@@ -157,16 +164,16 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 		// 	false
 		// }
 		def inner(borderFilter: Coord => Boolean, wholeChildFilter: Coord => Boolean) = MutableRoaringBitmap.or(
-			children.collect{
+			children.toSeq.flatten.collect:
 				//println(s"taking whole child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if wholeChildFilter(coord) => bm.values
 				//println(s"will filter child at coord $coord and depth ${depth + 1}")
 				case (coord, bm) if borderFilter(coord) => bm.filter(req)
 				//case (coord, _) if logAndreject(coord) => ???
-			}.toSeq*
+			* //use the seq above as varargs
 		)
 
-		if(children == null){
+		if(children.isEmpty){
 			//println(s"No children, depth $depth")
 			if(!seenDifferentKeys){
 				//println("not seen different keys")
@@ -223,7 +230,8 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 	def optimizeAndTrim(): Unit = {
 		values.runOptimize()
 		values.trim()
-		if(children != null) children.valuesIterator.foreach(_.optimizeAndTrim())
+		children.foreach: innerChildren =>
+			if(innerChildren.nonEmpty) innerChildren.valuesIterator.foreach(_.optimizeAndTrim())
 	}
 
 	def filterKey(key: K, filter: FilterRequest[K]): Boolean = filter match{
@@ -236,7 +244,27 @@ class HierarchicalBitmap[K](depth: Int, coord: Option[Coord])(using geo: Geo[K],
 	private def nextLevel(key: K): Coord = geo.coordinate(key, depth + 1)
 	private def thisLevel(key: K): Coord = geo.coordinate(key, depth)
 	private def emptyBitmap = MutableRoaringBitmap.bitmapOf()
-}
+
+	def serialize(out: DataOutput, innerWriter: AnyRef => Unit): Unit =
+		serializeConstructorVariables(out, innerWriter, depth, coord, geo, ord)
+		serializePrivateState(out, innerWriter)
+
+	private def serializePrivateState(out: DataOutput, innerWriter: AnyRef => Unit) =
+		innerWriter(values)
+		out.writeInt(n)
+		innerWriter(children)
+		innerWriter(firstKey)
+		out.writeBoolean(seenDifferentKeys)
+
+	private def deserializePrivateState(in: DataInput, innerReader: [T] => Class[T] => T) =
+		values = innerReader(classOf[MutableRoaringBitmap])
+		n = in.readInt()
+		children = innerReader(classOf[Option[HashMap[Coord, HierarchicalBitmap[K]]]])
+		firstKey = innerReader(classOf[Option[K]])
+		seenDifferentKeys = in.readBoolean()
+
+end HierarchicalBitmap
+
 
 object HierarchicalBitmap{
 	type Coord = Short
@@ -262,6 +290,31 @@ object HierarchicalBitmap{
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
+	def deserialize[K](in: DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
+		val bm = deserializeConstructorVariables[K](in, innerReader)
+		bm.deserializePrivateState(in, innerReader)
+		bm
+
+	private def serializeConstructorVariables[K](
+		out: DataOutput,
+		innerWriter: AnyRef => Unit,
+		depth: Int,
+		coord: Option[Coord],
+		geo: Geo[K],
+		ord: Ordering[K]
+	): Unit =
+		out.writeInt(depth)
+		innerWriter(coord)
+		innerWriter(geo)
+		innerWriter(ord)
+
+	private def deserializeConstructorVariables[K](in: DataInput, innerReader: [T] => Class[T] => T) =
+		val depth = in.readInt()
+		val coord = innerReader(classOf[Option[Coord]])
+		val geo = innerReader(classOf[Geo[K]])
+		val ord = innerReader(classOf[Ordering[K]])
+		new HierarchicalBitmap[K](depth, coord)(using geo, ord)
+
 	// private def time[T](comp: => T): T = {
 	// 	val start = System.nanoTime
 	// 	val res = comp
@@ -269,5 +322,4 @@ object HierarchicalBitmap{
 	// 	println(s"Elapsed $us us")
 	// 	res
 	// }
-
 }

@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.core.algo
 
-import java.time.Instant
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 
 /**
@@ -8,7 +7,7 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
  * (converted to milliseconds since epoch). Internal constants for hierarchy-coordinate calculation
  * algorithm are chosen so that the algorithm works correctly only for years from approximately 1420 AD to 2520 AD
 */
-object DatetimeHierarchicalBitmap{
+object DatetimeHierarchicalBitmap:
 	import HierarchicalBitmap.*
 
 	val SpilloverThreshold = 513
@@ -20,15 +19,12 @@ object DatetimeHierarchicalBitmap{
 		(key.sign * ((vabs & (mask << shift)) >> shift)).toShort
 	}
 
-	def apply(millisLookup: Int => Long): HierarchicalBitmap[Long] = {
-		given Geo[Long] = LongGeo(millisLookup)
+	def apply(geo: Geo[Long]): HierarchicalBitmap[Long] =
+		given Geo[Long] = geo
 		new HierarchicalBitmap[Long](0, None)
-	}
 
-	class LongGeo(lookup: Int => Long) extends Geo[Long]{
-		private def this() = this(null)//for Kryo deserialization
+
+	class DateTimeGeo(lookup: Int => Long) extends Geo[Long]:
 		val spilloverThreshold: Int = SpilloverThreshold
-		def keyLookup(value: Int): Long = lookup(value)
 		def coordinate(key: Long, depth: Int): Coord = getCoordinate(key, depth)
-	}
-}
+		def keyLookup(value: Int): Long = lookup(value)

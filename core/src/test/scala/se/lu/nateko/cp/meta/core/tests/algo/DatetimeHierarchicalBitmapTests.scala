@@ -8,6 +8,7 @@ import java.time.Instant
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Random
 
+import DatetimeHierarchicalBitmap.DateTimeGeo
 import HierarchicalBitmap.*
 
 class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
@@ -25,7 +26,7 @@ class DatetimeHierarchicalBitmapTests extends AnyFunSpec{
 	val bm = initBm(millis)
 
 	def initBm(longs: IndexedSeq[Long]): HierarchicalBitmap[Long] = {
-		val bm = DatetimeHierarchicalBitmap(longs.apply)
+		val bm = DatetimeHierarchicalBitmap(DateTimeGeo(longs.apply(_)))
 		longs.indices.foreach(i => bm.add(longs(i), i))
 		bm
 	}

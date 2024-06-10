@@ -258,11 +258,10 @@ class OtcMetaSource(
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 			|select ?instr ?model ?serNum ?name ?vendor where{
 			|	values ?kind {otc:Instrument otc:Sensor}
-			|	?instr a ?kind .
-			|	optional{ ?instr otc:hasModelName ?model }
+			|	?instr a ?kind ; otc:device ?device .
+			|	?device otc:hasModelName ?model ; otc:hasManufacturer ?vendor .
 			|	optional{ ?instr otc:hasSerialNumber ?serNum }
 			|	optional{ ?instr otc:hasName ?name }
-			|	optional{ ?instr otc:hasManufacturer ?vendor }
 			|}
 		|""".stripMargin
 		getLookupV(q, "instr"){(b, tcId) =>

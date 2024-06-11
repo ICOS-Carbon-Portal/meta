@@ -125,17 +125,8 @@
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
-        <rdfs:comment>TODO: only Device must become the domain in the future</rdfs:comment>
         <rdfs:label>manufacturer</rdfs:label>
     </owl:ObjectProperty>
     
@@ -184,14 +175,7 @@
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable">
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/SensorDeployment"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
         <rdfs:label>measures variable</rdfs:label>
     </owl:ObjectProperty>
@@ -686,17 +670,8 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Instrument"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:comment>TODO: only Device will have model name in the future</rdfs:comment>
         <rdfs:label>model</rdfs:label>
     </owl:DatatypeProperty>
     

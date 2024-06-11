@@ -218,12 +218,14 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		val prefixIndex = readObj(classOf[Array[String]])
 		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
 
-		val objs = readObj(classOf[Array[ObjEntry]])
+		val objs =
+			val arr = readObj(classOf[Array[ObjEntry]])
+			ArrayBuffer.from(arr)
 
 		GeoSerializer.register(kryo, objs)
 
 		IndexData(nObjs)(
-			objs = ArrayBuffer.from(objs),
+			objs = objs,
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),

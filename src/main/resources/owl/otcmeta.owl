@@ -126,7 +126,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
         <rdfs:label>manufacturer</rdfs:label>
     </owl:ObjectProperty>
     
@@ -1076,12 +1076,6 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer"/>
-                <owl:allValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/CommercialCompany"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>

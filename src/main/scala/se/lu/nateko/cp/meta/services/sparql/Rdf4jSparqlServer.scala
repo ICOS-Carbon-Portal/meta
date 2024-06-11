@@ -116,6 +116,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 							protocolOption.evaluator.evaluate(query, outStr)
 						catch case err =>
 							outStr.flush()
+							log.error(err, "SPARQL evaluation error")
 							errPromise.tryFailure(err)
 					},
 					qquoter

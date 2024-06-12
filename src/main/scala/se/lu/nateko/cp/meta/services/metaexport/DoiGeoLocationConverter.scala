@@ -20,8 +20,9 @@ import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledGeometry
 
-object DoiGeoLocationConverter {
+object DoiGeoLocationConverter:
 
 	private def toLatLonBox(shape: Seq[Position], label: Option[String]) = {
 		val latitudes = shape.map(_.lat)
@@ -86,19 +87,19 @@ object DoiGeoLocationConverter {
 			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
 		}
 	
-	def jtsPolygonToDoiBox(polygon: Geometry): GeoLocation =
-		val envelope = polygon.getEnvelopeInternal
+	def jtsPolygonToDoiBox(polygon: LabeledGeometry): GeoLocation =
+		val envelope = polygon.geom.getEnvelopeInternal
 
 		GeoLocation(None, Some(
 			GeoLocationBox(
 				Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
 				Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
-			)), None
+			)), polygon.label
 		)
 
-	def fromJtsToDoiGeoLocation(geometry: Geometry): GeoLocation =
-		geometry match
-			case point: JtsPoint => toDoiGeoLocationWithPoint(Position.ofLatLon(point.getY(), point.getX()))
+	def fromJtsToDoiGeoLocation(geometry: LabeledGeometry): GeoLocation =
+		geometry.geom match
+			case point: JtsPoint => toDoiGeoLocationWithPoint(Position(point.getY(), point.getX(), None, geometry.label, None))
 			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
-			case g => jtsPolygonToDoiBox(g)
-}
+			case g => jtsPolygonToDoiBox(LabeledGeometry(g, geometry.label))
+end DoiGeoLocationConverter

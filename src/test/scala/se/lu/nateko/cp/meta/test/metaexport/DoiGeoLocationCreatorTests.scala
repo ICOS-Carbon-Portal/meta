@@ -30,8 +30,8 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val p1 = reader.read("POLYGON ((0.9624173 62.2648867, 0.6987455 59.5310102, 6.4995267 61.2882154, 2.456558 61.603294, 5.0493314 62.8722139, 0.918472 62.5498498, 0.9624173 62.2648867))")
 			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
-			val expected = reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))")
-			val merged = mergeSimpleGeoms(Seq(p1, p2))
+			val expected = LabeledGeometry(reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))"), None)
+			val merged = mergeSimpleGeoms(Seq(LabeledGeometry(p1, None), LabeledGeometry(p2, None)))
 
 			assert(merged(0) == expected)
 
@@ -62,14 +62,14 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				"POLYGON ((2.785777 48.475908, 2.787856 48.478101, 2.786875 48.479848, 2.786456 48.480506, 2.785678 48.480789, 2.784824 48.480814, 2.783953 48.480794, 2.783584 48.480944, 2.783067 48.480903, 2.782683 48.480689, 2.777622 48.477977, 2.775239 48.476735, 2.779432 48.47323, 2.782723 48.474982, 2.783961 48.473986, 2.785777 48.475908)))"
 			)
 
-			assert(geoms == expectedGeometries)
+			assert(geoms.map(_.geom) == expectedGeometries)
 
 		it("mergeSimpleGeoms from ecosystem data"):
 			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
 			val merged = mergeSimpleGeoms(geoms)
 
 			for (geom <- geoms)
-				assert(merged.exists(_.covers(geom)))
+				assert(merged.exists(_.geom.covers(geom.geom)))
 
 			assert(merged.length == 1)
 
@@ -82,18 +82,28 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				"POLYGON ((-48.399 59.791, -52.265 64.002, -51.722 64.167, -23.225 64.141, -6.766 62, -0.776 60.901, 11.13 57.679, 12.667 56.014, 10.823 56.052, 10.414 56.115, 6.649 57.807, -42.663 59.102, -48.399 59.791)))"
 			)
 
-			assert(geoms == expectedGeometries)
+			assert(geoms.map(_.geom) == expectedGeometries)
 
 		it("mergeHulls from ocean data"):
 			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
 			val merged = mergeSimpleGeoms(geoms)
 
-			for (geom <- geoms)
-				val vertices = geom.getCoordinates().map(JtsGeoFactory.createPoint)
+			for (labeledGeom <- geoms)
+				val vertices = labeledGeom.geom.getCoordinates().map(JtsGeoFactory.createPoint)
 				assert(merged.exists(h =>
-					vertices.forall(h.covers)
+					vertices.forall(h.geom.covers)
 				))
 
 			assert(merged.length == 1)
+
+		it("keeps labels if there are no station labels"):
+			val res = filterStationNames(Some("P_1_1_1"))
+
+			assert(res == Some("P_1_1_1"))
+
+		it("filters out other labels if there are station labels"):
+			val res = filterStationNames(Some("P_1_1_1, GL-ZaH"))
+
+			assert(res == Some("GL-ZaH"))
 
 end DoiGeoLocationCreatorTests

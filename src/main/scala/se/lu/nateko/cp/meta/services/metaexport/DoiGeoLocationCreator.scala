@@ -28,15 +28,16 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 object DoiGeoLocationCreator:
 	
 	import JtsGeoFeatureConverter.*
-	case class LabeledGeometry(geom: Geometry, label: Option[String])
-
-	def filterStationNames(initLabels: Option[String]): Option[String] =
-		initLabels.map(labels =>
-			val validStationNames: List[String] = labels.split(", ").toList.collect:
-				case StationId(station) => station.id
-
-			if (validStationNames.isEmpty) then labels else validStationNames.mkString(", ")
-		)
+	case class StationLabel(label: String)
+	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
+		export geom.getArea
+		def merge(other: LabeledJtsGeo): Option[LabeledJtsGeo] =
+			inline def mergedLabels = labels ++ other.labels.filterNot(labels.contains)
+			if geom.contains(other.geom) then
+				Some(this.copy(labels = mergedLabels))
+			else if geom.intersects(other.geom) then
+				Some(LabeledJtsGeo(geom.union(other.geom), mergedLabels))
+			else None
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxFreePoints: Int): Seq[GeoLocation] =
 		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries))
@@ -51,47 +52,38 @@ object DoiGeoLocationCreator:
 				merged
 			else
 				val otherGeometries = merged.filterNot(g => pointTest.isDefinedAt(g.geom))
-				val allPointsLabels = points.flatMap(_.label)
-				val combinedPtsLabel = if (allPointsLabels.isEmpty) None else Some(allPointsLabels.mkString(", "))
 				val pointsHull = concaveHull(makeCollection(points.map(_.geom)))
-				otherGeometries :+ LabeledGeometry(pointsHull, filterStationNames(combinedPtsLabel))
+				otherGeometries :+ LabeledJtsGeo(pointsHull, points.flatMap(_.labels))
 
 		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
 	end representativeCoverage
 
-	def mergeSimpleGeoms(gs: Seq[LabeledGeometry]): Seq[LabeledGeometry] =
+	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
 
-		val sortedGeoms = gs.map(hull => (hull, -hull.geom.getArea)).sortBy(_._2).map(_._1)
-		var res: ArrayBuffer[LabeledGeometry] = ArrayBuffer.empty
+		val sortedGeoms = gs.map(hull => (hull, -hull.getArea())).sortBy(_._2).map(_._1)
+		var res: ArrayBuffer[LabeledJtsGeo] = ArrayBuffer.empty
 
 		for labeledGeom <- sortedGeoms do
-			val geom = labeledGeom.geom
-			val label = labeledGeom.label.getOrElse("")
 			var i = 0
 			var added = false
-			while (i < res.length && !added)
-				val newLabel = res(i).label.map(l => 
-					if (!l.contains(label)) then l + ", " + label else l
-				).orElse(if label.nonEmpty then Some(label) else None)
-					
-				if res(i).geom.contains(geom) then
+			while i < res.length && !added do
+
+				res(i).merge(labeledGeom).foreach: mergedGeom =>
 					added = true
-					res(i) = LabeledGeometry(res(i).geom, newLabel)
-				else if geom.intersects(res(i).geom) then
-					res(i) = LabeledGeometry(geom.union(res(i).geom), newLabel)
-					added = true
+					res(i) = mergedGeom
+
 				i += 1
 			if !added then res += labeledGeom
 
-		res.toSeq.map(lg => LabeledGeometry(lg.geom, filterStationNames(lg.label)))
+		res.toSeq
 
 end DoiGeoLocationCreator
 
 object JtsGeoFeatureConverter:
 	import DoiGeoLocationCreator.*
 
-	def toPoint(p: Position): LabeledGeometry =
-		LabeledGeometry(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label)
+	def toPoint(p: Position): LabeledJtsGeo =
+		LabeledJtsGeo(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label.toSeq)
 
 	def makeCollection(geoms: Seq[Geometry]) =
 		GeometryCollection(geoms.toArray, JtsGeoFactory)
@@ -101,12 +93,12 @@ object JtsGeoFeatureConverter:
 	def concaveHull(geom: Geometry) =
 		ConcaveHull.concaveHullByLengthRatio(geom, ConcaveHullLengthRatio)
 
-	def toPolygon(polygon: Polygon): LabeledGeometry =
+	def toPolygon(polygon: Polygon): LabeledJtsGeo =
 		val firstPoint = polygon.vertices.headOption.toArray
 		val vertices = (polygon.vertices.toArray ++ firstPoint).map(v => Coordinate(v.lon, v.lat))
-		LabeledGeometry(JtsGeoFactory.createPolygon(vertices), polygon.label)
+		LabeledJtsGeo(JtsGeoFactory.createPolygon(vertices), polygon.label.toSeq)
 
-	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledGeometry] = gf match
+	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledJtsGeo] = gf match
 		case b: LatLonBox => Seq(toPolygon(b.asPolygon))
 		case c: Circle =>
 			val box = DoiGeoLocationConverter.toLatLonBox(c)
@@ -114,6 +106,6 @@ object JtsGeoFeatureConverter:
 		case poly: Polygon => Seq(toPolygon(poly))
 		case p: Position => Seq(toPoint(p))
 		case pin: Pin => Seq(toPoint(pin.position))
-		case gt: GeoTrack => Seq(LabeledGeometry(concaveHull(toCollection(gt.points)), gt.label))
+		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
 		case fc: FeatureCollection =>
 			fc.features.flatMap(toSimpleGeometries)

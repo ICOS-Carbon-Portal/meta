@@ -30,8 +30,8 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val p1 = reader.read("POLYGON ((0.9624173 62.2648867, 0.6987455 59.5310102, 6.4995267 61.2882154, 2.456558 61.603294, 5.0493314 62.8722139, 0.918472 62.5498498, 0.9624173 62.2648867))")
 			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
-			val expected = LabeledGeometry(reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))"), None)
-			val merged = mergeSimpleGeoms(Seq(LabeledGeometry(p1, None), LabeledGeometry(p2, None)))
+			val expected = LabeledJtsGeo(reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))"), Nil)
+			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
 
 			assert(merged(0) == expected)
 
@@ -95,15 +95,5 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				))
 
 			assert(merged.length == 1)
-
-		it("keeps labels if there are no station labels"):
-			val res = filterStationNames(Some("P_1_1_1"))
-
-			assert(res == Some("P_1_1_1"))
-
-		it("filters out other labels if there are station labels"):
-			val res = filterStationNames(Some("P_1_1_1, GL-ZaH"))
-
-			assert(res == Some("GL-ZaH"))
 
 end DoiGeoLocationCreatorTests

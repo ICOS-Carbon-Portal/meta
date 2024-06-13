@@ -6,8 +6,8 @@ import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.Point as JtsPoint
 import org.locationtech.jts.geom.Polygon as JtsPolygon
 import org.locationtech.jts.io.geojson.GeoJsonReader
-import se.lu.nateko.cp.doi.meta.GeoLocation
 import se.lu.nateko.cp.doi.meta.*
+import se.lu.nateko.cp.doi.meta.GeoLocation
 import se.lu.nateko.cp.meta.core.data.Circle
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.GeoFeature
@@ -18,9 +18,10 @@ import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Pin
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledGeometry
 
 object DoiGeoLocationConverter:
 
@@ -86,20 +87,35 @@ object DoiGeoLocationConverter:
 			case Polygon(vertices, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(vertices, label)))
 			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
 		}
-	
-	def jtsPolygonToDoiBox(polygon: LabeledGeometry): GeoLocation =
+
+	def jtsPolygonToDoiBox(polygon: LabeledJtsGeo): GeoLocation =
 		val envelope = polygon.geom.getEnvelopeInternal
 
 		GeoLocation(None, Some(
 			GeoLocationBox(
 				Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
 				Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
-			)), polygon.label
+			)), mergeLabels(polygon)
 		)
 
-	def fromJtsToDoiGeoLocation(geometry: LabeledGeometry): GeoLocation =
+	def fromJtsToDoiGeoLocation(geometry: LabeledJtsGeo): GeoLocation =
 		geometry.geom match
-			case point: JtsPoint => toDoiGeoLocationWithPoint(Position(point.getY(), point.getX(), None, geometry.label, None))
+			case point: JtsPoint => toDoiGeoLocationWithPoint:
+				Position.ofLatLon(point.getY(), point.getX()).withOptLabel:
+					mergeLabels(geometry)
 			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
-			case g => jtsPolygonToDoiBox(LabeledGeometry(g, geometry.label))
+			case g => jtsPolygonToDoiBox(geometry)
+
+	def mergeLabels(geo: LabeledJtsGeo): Option[String] =
+		val AtcRegex = "^[A-Z]{3}$".r
+
+		def lblOrder(l: String): Int = l match
+			case StationId(_) => 0
+			case AtcRegex() => 1
+			case "TA" => 100
+			case _ => 10
+
+		Option(geo.labels.distinct).filterNot(_.isEmpty)
+			.map(_.sortBy(lblOrder).mkString(", "))
+
 end DoiGeoLocationConverter

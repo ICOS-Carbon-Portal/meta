@@ -64,7 +64,7 @@ lazy val metaCore = (project in file("core"))
 
 val akkaVersion = "2.6.18"
 val akkaHttpVersion = "10.2.8"
-val rdf4jVersion = "4.0.1"
+val rdf4jVersion = "4.3.12"
 val owlApiVersion = "5.1.20"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
@@ -122,10 +122,13 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
+			"org.lwjgl"              % "lwjgl"                              % "3.3.3" classifier("natives-linux"),
+			"org.lwjgl"              % "lwjgl-lmdb"                         % "3.3.3" classifier("natives-linux"),
 			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),

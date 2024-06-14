@@ -68,14 +68,19 @@ object DoiGeoLocationCreator:
 			var added = false
 			while i < res.length && !added do
 
-				res(i).merge(labeledGeom).foreach: mergedGeom =>
-					added = true
-					res(i) = mergedGeom
+				res(i).merge(labeledGeom) match
+					case Some(mergedGeom) =>
+						added = true
+						res(i) = mergedGeom
+					case None =>
+						//no overlap, therefore no merge, do nothing
 
 				i += 1
+			//if could not merge with any, add as new
 			if !added then res += labeledGeom
 
 		res.toSeq
+	end mergeSimpleGeoms
 
 end DoiGeoLocationCreator
 

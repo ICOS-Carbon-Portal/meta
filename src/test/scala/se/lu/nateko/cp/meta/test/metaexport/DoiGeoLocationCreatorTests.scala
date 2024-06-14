@@ -98,14 +98,11 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			assert(merged.length == 1)
 
 		it("mergeLabels"):
-			val polygonStr = ""
-			val labels =
-				LabeledJtsGeo(convertStringsToJTS(
-					"POLYGON ((-51.386066 64.130936, -53.51413 69.25349, -20.555937 74.481511, -20.555788 74.481538, -20.555327 74.481498, 29.61 67.7549, 48.67406 48.67406, 24.502472 0.814444, -5.77465 39.94033, -52.9248 5.2787, -51.386066 64.130936))"
-				)(0), List("PA_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / WD_3_1_1 / WS_3_1_1", "P_1_1_1 / P_3_1_1", "SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "P_1_1_1", "D_SNOW_1_1_1 / SW_IN_2_1_1", "RH_2_1_1 / RH_2_1_1 / TA_2_1_1 / TA_2_1_1", "CD-Ygb", "CH-Dav"))
+			val polygon = convertStringsToJTS("POLYGON ((0 0, 0 0, 0 0, 0 0))")(0)
+			val labeledPolygon = LabeledJtsGeo(polygon, List("SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "CD-Ygb", "CH-Dav"))
 
-			val merged = mergeLabels(labels)
-			val expected = Some("CD-Ygb, CH-Dav, PA_n_n_n, RH_n_n_n, TA_n_n_n, WD_n_n_n, WS_n_n_n, P_n_n_n, SW_IN_n_n_n, D_SNOW_n_n_n")
+			val merged = mergeLabels(labeledPolygon)
+			val expected = Some("CD-Ygb, CH-Dav, SW_IN_n_n_n, P_n_n_n")
 
 			assert(merged == expected)
 

@@ -97,6 +97,8 @@ def authorStats = allEntries.toSeq.groupBy(_.author).iterator.map(parseAuthorSta
 
 //authorStats.sortBy(_.nCommits).foreach(println)
 
+// these logs were obtained by command of the form:
+// git log --pretty=format:"%h %an %ad %s" --date=short --numstat --no-color > repo_name_numstats.txt
 val NumStatsRegex = """^(\d+)\s+(\d+)\s+.+\.(\w+)$""".r
 
 case class NumStats(linesAdded: Int, linesGrown: Int):

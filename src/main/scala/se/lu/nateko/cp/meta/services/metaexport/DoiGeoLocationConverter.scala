@@ -108,6 +108,12 @@ object DoiGeoLocationConverter:
 
 	def mergeLabels(geo: LabeledJtsGeo): Option[String] =
 		val AtcRegex = "^[A-Z]{3}$".r
+		val variableRegex = ".+_\\d+_\\d+_\\d+".r
+
+		def replaceNumbersInVarNames(l: String): String = l match
+			case variableRegex() =>
+				variableRegex.replaceAllIn(l, _.group(0).replaceAll("\\d+", "n"))
+			case _ => l
 
 		def lblOrder(l: String): Int = l match
 			case StationId(_) => 0
@@ -115,7 +121,7 @@ object DoiGeoLocationConverter:
 			case "TA" => 100
 			case _ => 10
 
-		Option(geo.labels.distinct).filterNot(_.isEmpty)
-			.map(_.sortBy(lblOrder).mkString(", "))
+		Option(geo.labels.flatMap(_.split("/")).map(l => replaceNumbersInVarNames(l.trim))).filterNot(_.isEmpty)
+			.map(_.distinct.sortBy(lblOrder).mkString(", "))
 
 end DoiGeoLocationConverter

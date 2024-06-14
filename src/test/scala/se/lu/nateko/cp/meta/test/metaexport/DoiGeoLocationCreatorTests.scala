@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import TestGeoFeatures.*
 import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
 import se.lu.nateko.cp.doi.meta.GeoLocationBox
+import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
 
 
 class DoiGeoLocationCreatorTests extends AnyFunSpec:
@@ -30,7 +31,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val p1 = reader.read("POLYGON ((0.9624173 62.2648867, 0.6987455 59.5310102, 6.4995267 61.2882154, 2.456558 61.603294, 5.0493314 62.8722139, 0.918472 62.5498498, 0.9624173 62.2648867))")
 			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
-			val expected = LabeledJtsGeo(reader.read("POLYGON ((0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895))"), Nil)
+			val expected = LabeledJtsGeo(reader.read("POLYGON ((3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096))"), Nil)
 			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
 
 			assert(merged(0) == expected)
@@ -95,5 +96,17 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 				))
 
 			assert(merged.length == 1)
+
+		it("mergeLabels"):
+			val polygonStr = ""
+			val labels =
+				LabeledJtsGeo(convertStringsToJTS(
+					"POLYGON ((-51.386066 64.130936, -53.51413 69.25349, -20.555937 74.481511, -20.555788 74.481538, -20.555327 74.481498, 29.61 67.7549, 48.67406 48.67406, 24.502472 0.814444, -5.77465 39.94033, -52.9248 5.2787, -51.386066 64.130936))"
+				)(0), List("PA_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / RH_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / TA_3_1_1 / WD_3_1_1 / WS_3_1_1", "P_1_1_1 / P_3_1_1", "SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "P_1_1_1", "D_SNOW_1_1_1 / SW_IN_2_1_1", "RH_2_1_1 / RH_2_1_1 / TA_2_1_1 / TA_2_1_1", "CD-Ygb", "CH-Dav"))
+
+			val merged = mergeLabels(labels)
+			val expected = Some("CD-Ygb, CH-Dav, PA_n_n_n, RH_n_n_n, TA_n_n_n, WD_n_n_n, WS_n_n_n, P_n_n_n, SW_IN_n_n_n, D_SNOW_n_n_n")
+
+			assert(merged == expected)
 
 end DoiGeoLocationCreatorTests

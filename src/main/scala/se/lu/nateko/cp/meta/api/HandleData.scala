@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.api
 
 import spray.json.*
-import java.net.URL
 import DefaultJsonProtocol.*
+import java.net.URI
 
 sealed trait HandleData
 
@@ -55,7 +55,7 @@ sealed trait HandleValue{
 	def index: Int
 }
 
-case class UrlHandleValue(index: Int, url: URL) extends HandleValue
+case class UrlHandleValue(index: Int, url: URI) extends HandleValue
 case class AdminHandleValue(index: Int, admin: AdminValue) extends HandleValue
 case class AnyHandleValue(index: Int, `type`: String, data: HandleData) extends HandleValue
 
@@ -78,7 +78,7 @@ object HandleValue{
 			val v = json.convertTo[AnyHandleValue]
 			v.data match {
 				case StringHandleData(str) if v.`type` == UrlType =>
-					UrlHandleValue(v.index, new URL(str))
+					UrlHandleValue(v.index, new URI(str))
 				case AdminHandleData(admin) if v.`type` == HsAdminType =>
 					AdminHandleValue(v.index, admin)
 				case _ =>

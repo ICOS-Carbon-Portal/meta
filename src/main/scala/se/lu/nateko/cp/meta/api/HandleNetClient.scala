@@ -23,7 +23,6 @@ import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 
 import java.io.FileInputStream
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -40,6 +39,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import java.net.URI
 
 class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, mat: Materializer){
 	import HandleNetClient.*
@@ -95,7 +95,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, ma
 			})
 	}
 
-	def get(suffix: String)(using Envri): Future[URL] = {
+	def get(suffix: String)(using Envri): Future[URI] = {
 		hdlRequest(
 			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix))),
 		).flatMap(
@@ -111,7 +111,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, ma
 		)
 	}
 
-	def createOrRecreate(suffix: String, target: URL)(using Envri): Future[Done] = if(conf.dryRun) ok else {
+	def createOrRecreate(suffix: String, target: URI)(using Envri): Future[Done] = if(conf.dryRun) ok else {
 		val payload = HandleValues(
 			UrlHandleValue(1, target) ::
 			AdminHandleValue(

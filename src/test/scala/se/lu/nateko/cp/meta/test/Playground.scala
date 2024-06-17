@@ -39,7 +39,7 @@ object Playground {
 	def stop() = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
-		handles.createOrRecreate(postfix, new java.net.URL(targetUrl))
+		handles.createOrRecreate(postfix, new java.net.URI(targetUrl))
 	}
 
 //	def create(targetUrl: String): String = wait{

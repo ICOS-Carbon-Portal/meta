@@ -31,7 +31,7 @@ object DoiGeoLocationCreator:
 	case class StationLabel(label: String)
 	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 		export geom.getArea
-		def merge(other: LabeledJtsGeo): Option[LabeledJtsGeo] =
+		def mergeIfIntersects(other: LabeledJtsGeo): Option[LabeledJtsGeo] =
 			inline def mergedLabels = labels ++ other.labels.filterNot(labels.contains)
 			if geom.contains(other.geom) then
 				Some(this.copy(labels = mergedLabels))
@@ -68,7 +68,7 @@ object DoiGeoLocationCreator:
 			var added = false
 			while i < res.length && !added do
 
-				res(i).merge(labeledGeom) match
+				res(i).mergeIfIntersects(labeledGeom) match
 					case Some(mergedGeom) =>
 						added = true
 						res(i) = mergedGeom

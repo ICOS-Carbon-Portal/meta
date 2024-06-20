@@ -16,13 +16,14 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 
 import java.io.FileInputStream
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -39,7 +40,6 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import java.net.URI
 
 class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, mat: Materializer){
 	import HandleNetClient.*

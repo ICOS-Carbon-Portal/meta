@@ -52,8 +52,7 @@ object DoiGeoLocationCreator:
 				merged
 			else
 				val otherGeometries = merged.filterNot(g => pointTest.isDefinedAt(g.geom))
-				val pointsHull = concaveHull(makeCollection(points.map(_.geom)))
-				otherGeometries :+ LabeledJtsGeo(pointsHull, points.flatMap(_.labels))
+				otherGeometries ++ KMeans.generateClusters(points)
 
 		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
 	end representativeCoverage

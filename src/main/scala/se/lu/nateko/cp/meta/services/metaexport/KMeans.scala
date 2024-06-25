@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.services.metaexport
 import org.locationtech.jts.algorithm.Centroid
 import org.locationtech.jts.geom.Point
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
-import scala.util.control.Breaks.{break, breakable}
 
 import JtsGeoFeatureConverter.*
 
@@ -13,16 +12,16 @@ object KMeans:
 
 		var centroids: Seq[Point] = geoms.take(k).map(_.geom.getCentroid)
 		var clusters = Iterable.empty[Seq[LabeledJtsGeo]]
+		var change = Double.MaxValue
 
-		breakable:
+		while change > epsilon do
 			clusters = geoms.groupBy(findNearestCentroid(_, centroids)).values
 			val newCentroids = clusters.map(computeCentroidWithJts).toSeq
-			val change = centroids.zip(newCentroids)
+			change = centroids.zip(newCentroids)
 				.map: (oldp, newp) =>
 					Math.abs(oldp.getX - newp.getX) + Math.abs(oldp.getY - newp.getY)
 				.max
-			if change < epsilon then break
-			else centroids = newCentroids
+			centroids = newCentroids
 
 		clusters
 			.map: cluster =>

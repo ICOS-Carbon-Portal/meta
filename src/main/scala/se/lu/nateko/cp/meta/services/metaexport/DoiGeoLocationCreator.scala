@@ -39,23 +39,12 @@ object DoiGeoLocationCreator:
 				Some(LabeledJtsGeo(geom.union(other.geom), mergedLabels))
 			else None
 
-	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxFreePoints: Int): Seq[GeoLocation] =
+	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[GeoLocation] =
 		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries))
-
-		val pointTest: PartialFunction[Geometry, JtsPoint] =
-			case p: JtsPoint => p
-
-		val points = merged.filter(g => pointTest.isDefinedAt(g.geom))
-
 		val resGeoms =
-			if points.size <= maxFreePoints then
-				merged
-			else
-				val otherGeometries = merged.filterNot(g => pointTest.isDefinedAt(g.geom))
-				otherGeometries ++ KMeans.generateClusters(points)
-
+			if merged.size <= maxNgeoms then merged
+			else KMeans.cluster(merged, maxNgeoms, 1e-5)
 		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
-	end representativeCoverage
 
 	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
 

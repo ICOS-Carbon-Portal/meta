@@ -95,25 +95,24 @@ object DoiGeoLocationConverter:
 			GeoLocationBox(
 				Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
 				Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
-			)), mergeLabels(polygon)
+			)), mergeLabels(polygon.labels)
 		)
 
 	def fromJtsToDoiGeoLocation(geometry: LabeledJtsGeo): GeoLocation =
 		geometry.geom match
 			case point: JtsPoint => toDoiGeoLocationWithPoint:
 				Position.ofLatLon(point.getY(), point.getX()).withOptLabel:
-					mergeLabels(geometry)
+					mergeLabels(geometry.labels)
 			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
 			case g => jtsPolygonToDoiBox(geometry)
 
-	def mergeLabels(geo: LabeledJtsGeo): Option[String] =
+	def mergeLabels(labels: Seq[String]): Option[String] =
 		val AtcRegex = "^[A-Z]{3}$".r
 		val variableRegex = ".+_\\d+_\\d+_\\d+".r
 
-		def replaceNumbersInVarNames(l: String): String = l match
-			case variableRegex() =>
-				variableRegex.replaceAllIn(l, _.group(0).replaceAll("\\d+", "n"))
-			case _ => l
+		// convert e.g. "TA_13_8_11" to "TA_n_n_n"
+		def reduceIndices(l: String): String =
+			if variableRegex.matches(l) then l.replaceAll("_\\d+", "_n") else l
 
 		def lblOrder(l: String): Int = l match
 			case StationId(_) => 0
@@ -121,7 +120,13 @@ object DoiGeoLocationConverter:
 			case "TA" => 100
 			case _ => 10
 
-		Option(geo.labels.flatMap(_.split("/")).map(l => replaceNumbersInVarNames(l.trim))).filterNot(_.isEmpty)
-			.map(_.distinct.sortBy(lblOrder).mkString(", "))
+		Option(
+			labels
+				.flatMap(_.split("/")
+				.map(l => reduceIndices(l.trim)))
+				.distinct
+				.sortBy(lblOrder)
+				.mkString(", ")
+		).filterNot(_.isEmpty)
 
 end DoiGeoLocationConverter

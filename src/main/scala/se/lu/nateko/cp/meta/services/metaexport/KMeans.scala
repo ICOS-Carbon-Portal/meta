@@ -1,41 +1,42 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
 import org.locationtech.jts.algorithm.Centroid
+import org.locationtech.jts.geom.Point
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
-
-import scala.util.Random
+import scala.util.control.Breaks.{break, breakable}
 
 import JtsGeoFeatureConverter.*
 
 object KMeans:
 
-	def generateClusters(points: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
-		val k = 3 // to be decided
-		val maxIterations = 100 // to be decided
-		val clusters = kMeans(points, k, maxIterations)
+	def cluster(geoms: Seq[LabeledJtsGeo], k: Int, epsilon: Double): Seq[LabeledJtsGeo] =
 
-		clusters.map(cluster => LabeledJtsGeo(
-			concaveHull(makeCollection(cluster.map(_.geom))),
-			cluster.flatMap(_.labels))
-		)
+		var centroids: Seq[Point] = geoms.take(k).map(_.geom.getCentroid)
+		var clusters = Iterable.empty[Seq[LabeledJtsGeo]]
 
-	end generateClusters
+		breakable:
+			clusters = geoms.groupBy(findNearestCentroid(_, centroids)).values
+			val newCentroids = clusters.map(computeCentroidWithJts).toSeq
+			val change = centroids.zip(newCentroids)
+				.map: (oldp, newp) =>
+					Math.abs(oldp.getX - newp.getX) + Math.abs(oldp.getY - newp.getY)
+				.max
+			if change < epsilon then break
+			else centroids = newCentroids
 
-	def kMeans(points: Seq[LabeledJtsGeo], k: Int, maxIterations: Int): Seq[Seq[LabeledJtsGeo]] =
-		val random = new Random()
-		var centroids = points.take(k)
+		clusters
+			.map: cluster =>
+				LabeledJtsGeo(
+					concaveHull(makeCollection(cluster.map(_.geom))),
+					cluster.flatMap(_.labels)
+				)
+			.toSeq
+	end cluster
 
-		for (_ <- 0 until maxIterations)
-			val clusters = points.groupBy(findNearestCentroid(_, centroids))
-			centroids = clusters.values.map(computeCentroidWithJts).toSeq
+	private def findNearestCentroid(geo: LabeledJtsGeo, centroids: Seq[Point]): Point =
+		centroids.minBy(geo.geom.distance)
 
-		points.groupBy(findNearestCentroid(_, centroids)).values.toSeq
-
-	def findNearestCentroid(point: LabeledJtsGeo, centroids: Seq[LabeledJtsGeo]): LabeledJtsGeo =
-		centroids.minBy(labeledC => point.geom.distance(labeledC.geom))
-
-	def computeCentroidWithJts(points: Seq[LabeledJtsGeo]): LabeledJtsGeo =
-		val pointCollection = makeCollection(points.map(_.geom))
-		LabeledJtsGeo(pointCollection.getCentroid, Seq.empty)
+	private def computeCentroidWithJts(points: Seq[LabeledJtsGeo]): Point =
+		makeCollection(points.map(_.geom)).getCentroid
 
 end KMeans

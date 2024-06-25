@@ -16,14 +16,14 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 
 import java.io.FileInputStream
-import java.net.URL
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -95,7 +95,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, ma
 			})
 	}
 
-	def get(suffix: String)(using Envri): Future[URL] = {
+	def get(suffix: String)(using Envri): Future[URI] = {
 		hdlRequest(
 			HttpRequest(uri = Uri(pidFactory.pidUrlStr(suffix))),
 		).flatMap(
@@ -111,7 +111,7 @@ class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, ma
 		)
 	}
 
-	def createOrRecreate(suffix: String, target: URL)(using Envri): Future[Done] = if(conf.dryRun) ok else {
+	def createOrRecreate(suffix: String, target: URI)(using Envri): Future[Done] = if(conf.dryRun) ok else {
 		val payload = HandleValues(
 			UrlHandleValue(1, target) ::
 			AdminHandleValue(

@@ -19,5 +19,5 @@ class PidMinter(handles: HandleNetClient, vocab: CpVocab)(using Envri) extends F
 		val targetUri = vocab.getStaticObject(hash)
 		val suffix = handles.pidFactory.getSuffix(hash)
 
-		handles.createOrRecreate(suffix, new java.net.URL(targetUri.stringValue))
+		handles.createOrRecreate(suffix, new java.net.URI(targetUri.stringValue))
 			.map(_ => new Report(handles.pidFactory.getPid(suffix)))(using ExecutionContext.parasitic)

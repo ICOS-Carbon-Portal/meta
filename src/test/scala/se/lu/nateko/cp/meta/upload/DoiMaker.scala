@@ -23,7 +23,7 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 	val client: DoiClient = {
 		val conf = DoiClientConfig(
-			restEndpoint = URI("https://api.datacite.org/").toURL,
+			restEndpoint = URI("https://api.datacite.org/"),
 			member = DoiMemberConfig("SND.ICOS", password, "10.18160")
 		)
 		val http = new PlainJavaDoiHttp(Some(conf.member.symbol), Some(password))

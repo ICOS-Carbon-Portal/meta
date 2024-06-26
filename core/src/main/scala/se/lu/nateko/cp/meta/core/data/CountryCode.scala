@@ -28,7 +28,7 @@ object CountryCode{
 	def unapply(s: String): Option[CountryCode] =
 		if(pattern.matcher(s).matches) {
 			val code = normalize(s)
-			val country = new Locale("", code).getDisplayCountry
+			val country = Locale.of("", code).getDisplayCountry
 			if(code != country) Some(new CountryCode(code, country))
 			else None
 		} else None

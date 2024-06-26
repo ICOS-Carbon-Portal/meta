@@ -161,7 +161,7 @@ case class RdfStorageConfig(
 )
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URL, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
+case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)

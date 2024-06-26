@@ -11,6 +11,7 @@ import spray.json.{JsNull, JsValue}
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import java.net.URI
 import java.net.URL
 import scala.io.Source
 
@@ -41,7 +42,7 @@ object KmlGeoJsonWorkbench {
 			val cells = line.split("\t", -1)
 			val urlBase = cells(kmzIdx).trim
 			StationId.unapply(cells(idIdx).trim).filterNot(_ => urlBase.isEmpty).map{
-				_ -> new URL(urlBase + "/download")
+				_ -> URI(urlBase + "/download").toURL
 			}
 		}.flatten.toIndexedSeq
 	}

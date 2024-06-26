@@ -1,18 +1,16 @@
 package se.lu.nateko.cp.meta.test.metaexport
 
 import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.services.CpVocab.DataObject
+import se.lu.nateko.cp.doi.meta.GeoLocationBox
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
+import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
+import se.lu.nateko.cp.meta.services.metaexport.KMeans
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
 
 import TestGeoFeatures.*
-import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
-import se.lu.nateko.cp.doi.meta.GeoLocationBox
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
 
 
 class DoiGeoLocationCreatorTests extends AnyFunSpec:
@@ -44,7 +42,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 
 			assert(featureCollection.size == merged.size)
 
-		it("data object with more than maximum allowe free points will cluster the points"):
+		it("data object with more than maximum allowed free points will cluster the points"):
 			val geoms = TestGeoFeatures.modisWithMorePoints
 			val merged = representativeCoverage(geoms, 30)
 
@@ -101,9 +99,34 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val polygon = convertStringsToJTS("POLYGON ((0 0, 0 0, 0 0, 0 0))")(0)
 			val labeledPolygon = LabeledJtsGeo(polygon, List("SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "CD-Ygb", "CH-Dav"))
 
-			val merged = mergeLabels(labeledPolygon)
+			val merged = mergeLabels(labeledPolygon.labels)
 			val expected = Some("CD-Ygb, CH-Dav, SW_IN_n_n_n, P_n_n_n")
 
 			assert(merged == expected)
+
+		it("KMeans should limit the number of geometries to the specified maximum and keep the features"):
+			val geoFeatures = TestGeoFeatures.modisWithFewerPoints.flatMap(toSimpleGeometries)
+			val merged = mergeSimpleGeoms(geoFeatures)
+			val maxNgeoms = 30
+			val clustered = KMeans.cluster(merged, maxNgeoms, 1e-5)
+
+			assert(clustered.length < maxNgeoms)
+			assert(clustered.toSet == geoFeatures.toSet)
+
+		it("KMeans should cluster and reduce the number of geometries to the specified maximum"):
+			val geoFeatures = TestGeoFeatures.modisWithFewerPoints.flatMap(toSimpleGeometries)
+			val merged = mergeSimpleGeoms(geoFeatures)
+			val maxNgeoms = 5
+			val clustered = KMeans.cluster(merged, maxNgeoms, 1e-5)
+
+			val expectedGeometries = List(
+				LabeledJtsGeo(convertStringsToJTS("POLYGON ((140.6551 -34.4704, 140.5891 -34.0021, 146.291606 -34.988282, 150.7236 -33.6152, 148.1517 -35.6566, 145.1878 -37.4259, 144.0944 -37.4222, 140.6551 -34.4704))")(0), List("AU-Cpr", "AU-Cum", "AU-Lox", "AU-Rig", "AU-Tum", "AU-Wac", "AU-Whr", "AU-Wom", "AU-Ync")), 
+				LabeledJtsGeo(convertStringsToJTS("LINESTRING (120.6541 -30.1913, 115.7138 -31.3764)")(0), List("AU-GWW", "AU-Gin")), 
+				LabeledJtsGeo(convertStringsToJTS("POLYGON ((133.3502 -17.1507, 133.64 -22.287, 133.249 -22.283, 133.3502 -17.1507))")(0), List("AU-ASM", "AU-Stp", "AU-TTE")), 
+				LabeledJtsGeo(convertStringsToJTS("POLYGON ((145.6301 -17.1175, 167.192001 -15.4427, 148.4746 -23.8587, 145.6301 -17.1175))")(0), List("AU-Emr", "AU-Rob", "VU-Coc")), 
+				LabeledJtsGeo(convertStringsToJTS("POLYGON ((131.1178 -13.0769, 131.1523 -12.4943, 131.3072 -12.5452, 132.4776 -14.5636, 132.3706 -15.2588, 131.3881 -14.1593, 131.3181 -14.0633, 131.1178 -13.0769))")(0), List("AU-Ade", "AU-DaP", "AU-DaS", "AU-Dry", "AU-Fog", "AU-How", "AU-RDF")))
+
+			assert(clustered.length == maxNgeoms)
+			assert(clustered == expectedGeometries)
 
 end DoiGeoLocationCreatorTests

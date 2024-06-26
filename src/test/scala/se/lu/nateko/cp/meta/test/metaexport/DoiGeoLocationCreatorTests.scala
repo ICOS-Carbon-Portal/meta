@@ -107,7 +107,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 	describe("KMeans"):
 
 		def containsGeometry(geoms: Seq[Geometry], geom: Geometry): Boolean =
-			geoms.exists(g => g.equals(geom) || g.covers(geom))
+			geoms.exists(g => g.covers(geom))
 
 		it("should limit the number of geometries to the specified maximum and keep the features"):
 			val geoFeatures = TestGeoFeatures.modisWithFewerPoints.flatMap(toSimpleGeometries)

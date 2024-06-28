@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.test.metaexport
 
 import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.*

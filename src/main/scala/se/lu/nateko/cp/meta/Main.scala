@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
@@ -18,7 +19,7 @@ import scala.concurrent.duration.DurationInt
 
 object Main extends App with CpmetaJsonProtocol{
 
-	given system: ActorSystem = ActorSystem("cpmeta", config = ConfigLoader.appConfig)
+	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
 	import system.log //force log initialization to avoid deadlocks at startup
 	import system.dispatcher
 

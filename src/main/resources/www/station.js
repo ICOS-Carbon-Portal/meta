@@ -2,7 +2,7 @@ const envri = window.envri;
 
 var queryParams = processQuery(window.location.search);
 
-if (queryParams.coverage || queryParams.station || queryParams.dobj) {
+if (queryParams.coverage || queryParams.station || queryParams.dobj || queryParams.coll) {
 	getGeoJson(queryParams).then(function (geoJsonArray) {
 		initMap(geoJsonArray);
 	});
@@ -192,12 +192,14 @@ function getGeoJson(queryParams) {
 	return queryParams.station
 		? getStationLocations(queryParams.station)
 		: queryParams.dobj
-			? getDobjLocations(queryParams.dobj)
-			: Promise.resolve([{"geoJson": JSON.parse(decodeURIComponent(queryParams.coverage))}]);
+			? getItemLocations(queryParams.dobj)
+			: queryParams.coll
+				? getItemLocations(queryParams.coll)
+				: Promise.resolve([{"geoJson": JSON.parse(decodeURIComponent(queryParams.coverage))}]);
 }
 
-function getDobjLocations(dobjUrl){
-	return getJson(dobjUrl).then(res => {
+function getItemLocations(itemUrl){
+	return getJson(itemUrl).then(res => {
 		return [{geoJson: res.coverageGeo}];
 	});
 }

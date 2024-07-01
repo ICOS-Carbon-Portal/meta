@@ -10,6 +10,7 @@ import CommonJsonSupport.TypeField
 import scala.reflect.ClassTag
 
 object JsonSupport extends CommonJsonSupport:
+	val GeoJsonField = "coverageGeo"
 
 	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
@@ -196,7 +197,7 @@ object JsonSupport extends CommonJsonSupport:
 		def write(dobj: DataObject): JsValue = {
 			val plain = dobj.toJson(defFormat).asJsObject
 			dobj.coverage.fold(plain) { geo =>
-				JsObject(plain.fields + ("coverageGeo" -> GeoJson.fromFeatureWithLabels(geo)))
+				JsObject(plain.fields + (GeoJsonField -> GeoJson.fromFeatureWithLabels(geo)))
 			}
 		}
 	}
@@ -217,7 +218,20 @@ object JsonSupport extends CommonJsonSupport:
 		}
 	}
 
-	given RootJsonFormat[StaticCollection] = jsonFormat12(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] with
+
+		private val defFormat = jsonFormat12(StaticCollection.apply)
+
+		def read(value: JsValue): StaticCollection = value.convertTo(defFormat)
+
+		def write(coll: StaticCollection): JsValue =
+			val plain = coll.toJson(defFormat).asJsObject
+
+			coll.coverage.fold(plain): feature =>
+				val geoJson = GeoJson.fromFeatureWithLabels(feature)
+				JsObject(plain.fields + (GeoJsonField -> geoJson))
+
+
 
 	given RootJsonFormat[StaticDataItem] with{
 

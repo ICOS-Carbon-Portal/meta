@@ -188,8 +188,8 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := {
-			//import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}
-			"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
+			"""import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}"""
+			//"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
 		},
 
 		Test / console / cleanupCommands := "system.terminate()"

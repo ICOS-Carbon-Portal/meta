@@ -21,6 +21,7 @@ import eu.icoscp.envri.Envri
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 abstract class MetadataUpdater(vocab: CpVocab):
 	import MetadataUpdater.*
@@ -74,10 +75,12 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 	import MetadataUpdater.*
 	import StatementStability.*
 
-	private val stickyPredicates = {
+	private val stickyPredicates =
 		import metaVocab.*
-		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
-	}
+		Seq(
+			hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue, dcterms.license,
+			hasSpatialCoverage, asGeoJSON, RDF.TYPE
+		)
 
 	override protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability =
 		val acq = vocab.getAcquisition(hash)
@@ -90,7 +93,6 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 		else if(subj == subm && isProvStartTime) Fixed
 		else if(subj == subm && isProvTime) Sticky
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
-		else if(pred === metaVocab.dcterms.license) Sticky
 		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain
 

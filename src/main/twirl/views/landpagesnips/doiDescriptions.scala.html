@@ -1,10 +1,14 @@
-@import se.lu.nateko.cp.doi.DoiMeta
+@import se.lu.nateko.cp.meta.core.data.CitableItem
 
-@(doiMeta: DoiMeta, hasOtherDescription: Boolean)
-@for(descr <- doiMeta.descriptions){
-	@property(s"$title (${descr.descriptionType})", descr.description)
+@(item: CitableItem, fallbackDescription: Option[String])
+
+@if(item.references.doi.toSeq.flatMap(_.descriptions).isEmpty){
+	@for(description <- fallbackDescription){
+		@property("Description", description)
+	}
 }
-
-@title = @{
-	if hasOtherDescription then "DOI Description" else "Description"
+@for(doiMeta <- item.references.doi){
+	@for(descr <- doiMeta.descriptions){
+		@property(s"Description (${descr.descriptionType})", descr.description)
+	}
 }

@@ -40,15 +40,8 @@
 			@for(specComm <- dobj.specification.self.comments){
 				@property("Description", specComm)
 			}
-			@for(doiMeta <- dobj.references.doi){
-				@doiDescriptions(doiMeta, false)
-			}
+			@doiDescriptions(dobj, dobj.specificInfo.left.toOption.flatMap(_.description))
 			@for(l3meta <- dobj.specificInfo.left.toOption){
-				@if(dobj.references.doi.toSeq.flatMap(_.descriptions).isEmpty){
-					@for(description <- l3meta.description){
-						@property("Description", description)
-					}
-				}
 				@property(s"Temporal coverage from (${conf.defaultTimezoneId})", l3meta.temporal.interval.start.getDateTimeStr)
 				@property(s"Temporal coverage to (${conf.defaultTimezoneId})", l3meta.temporal.interval.stop.getDateTimeStr)
 				@for(resolution <- l3meta.temporal.resolution){

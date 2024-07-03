@@ -34,17 +34,12 @@
 				@for(coll <- doc.parentCollections){
 					@htmlProperty{Part of}{@resourceLink(coll)}
 				}
-				@doc.references.doi.fold{
-					@for(description <- doc.description){
-						@property("Description", description)
-					}
+				@doiMetaProperties(doc, doc.description)
+				@if(doc.references.doi.isEmpty){
 					@authors(doc.references)
 					@for(licence <- doc.references.licence){
 						@licenceProperty(licence)
 					}
-				}{ doiMeta =>
-					@doiDescriptions(doiMeta, false)
-					@doiMetaProperties(doiMeta)
 				}
 				@citations(doc.references)
 				@for(size <- doc.size){

@@ -1,30 +1,32 @@
-@import se.lu.nateko.cp.doi.DoiMeta
 @import se.lu.nateko.cp.doi.meta.Person
 @import se.lu.nateko.cp.doi.meta.Rights
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
+@import se.lu.nateko.cp.meta.core.data.CitableItem
 
-@(doiMeta: DoiMeta)
-
-@if(doiMeta.creators.length > 0){
-	@htmlProperty{Creators}(personList(doiMeta.creators))
-}
-@if(doiMeta.contributors.length > 0){
-	@htmlProperty{Contributors}(personList(doiMeta.contributors))
-}
-@for(pubYear <- doiMeta.publicationYear){
-	@property("Publication year", pubYear.toString)
-}
-@for(publisher <-doiMeta.publisher){
-	@property("Publisher", publisher)
-}
-@if(doiMeta.subjects.length> 0){
-	@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
-}
-@for(rights <- doiMeta.rightsList; rightsSize = rights.length){
-	@if(rightsSize > 0){
-		@htmlProperty{
-			@{if rightsSize == 1 then "Licence" else "Licences"}
-		}(optLinkList(rights, (lic: Rights) => lic.rightsUri, (lic: Rights) => lic.rights))
+@(item: CitableItem, fallbackDescription: Option[String])
+@doiDescriptions(item, fallbackDescription)
+@for(doiMeta <- item.references.doi){
+	@if(doiMeta.creators.length > 0){
+		@htmlProperty{Creators}(personList(doiMeta.creators))
+	}
+	@if(doiMeta.contributors.length > 0){
+		@htmlProperty{Contributors}(personList(doiMeta.contributors))
+	}
+	@for(pubYear <- doiMeta.publicationYear){
+		@property("Publication year", pubYear.toString)
+	}
+	@for(publisher <-doiMeta.publisher){
+		@property("Publisher", publisher)
+	}
+	@if(doiMeta.subjects.length> 0){
+		@property("Subjects", doiMeta.subjects.map(_.subject).mkString(", "))
+	}
+	@for(rights <- doiMeta.rightsList; rightsSize = rights.length){
+		@if(rightsSize > 0){
+			@htmlProperty{
+				@{if rightsSize == 1 then "Licence" else "Licences"}
+			}(optLinkList(rights, (lic: Rights) => lic.rightsUri, (lic: Rights) => lic.rights))
+		}
 	}
 }
 

@@ -159,6 +159,12 @@ lazy val meta = (project in file("."))
 		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
 		cpDeployInfraBranch := "master",
 
+		Compile / unmanagedResources ++= {
+			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
+			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
+			Vector(finalJsFile, mapJsFile)
+		},
+
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
@@ -171,11 +177,7 @@ lazy val meta = (project in file("."))
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		assembly / assembledMappings += {
-			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
-			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
-			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName, mapJsFile -> mapJsFile.getName))
-		},
+		assembly / assemblyRepeatableBuild := false,
 
 		Compile / resources ++= {
 			val jsFile = (uploadgui / Compile / fastOptJS).value.data

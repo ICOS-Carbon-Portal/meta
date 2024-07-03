@@ -19,7 +19,8 @@
 				@doiProperty(coll.doi, handleProxies.doi)
 				@for(description <- coll.description){ @property("Description", description) }
 				@for(doiMeta <- coll.references.doi){
-					@doiMetaProperties(doiMeta, coll.description.isDefined)
+					@doiDescriptions(doiMeta, coll.description.isDefined)
+					@doiMetaProperties(doiMeta)
 				}
 				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)

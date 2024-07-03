@@ -1,0 +1,10 @@
+@import se.lu.nateko.cp.doi.DoiMeta
+
+@(doiMeta: DoiMeta, hasOtherDescription: Boolean)
+@for(descr <- doiMeta.descriptions){
+	@property(s"$title (${descr.descriptionType})", descr.description)
+}
+
+@title = @{
+	if hasOtherDescription then "DOI Description" else "Description"
+}

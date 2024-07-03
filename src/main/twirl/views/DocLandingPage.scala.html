@@ -43,7 +43,8 @@
 						@licenceProperty(licence)
 					}
 				}{ doiMeta =>
-					@doiMetaProperties(doiMeta, false)
+					@doiDescriptions(doiMeta, false)
+					@doiMetaProperties(doiMeta)
 				}
 				@citations(doc.references)
 				@for(size <- doc.size){

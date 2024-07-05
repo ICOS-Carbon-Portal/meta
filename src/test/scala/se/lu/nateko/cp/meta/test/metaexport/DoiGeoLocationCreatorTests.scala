@@ -6,7 +6,6 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.meta.GeoLocationBox
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
 import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
-import se.lu.nateko.cp.meta.services.metaexport.KMeans
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
 

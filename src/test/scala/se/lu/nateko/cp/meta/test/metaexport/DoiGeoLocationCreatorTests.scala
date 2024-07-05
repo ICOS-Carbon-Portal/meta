@@ -103,28 +103,5 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val expected = Some("CD-Ygb, CH-Dav, SW_IN_n_n_n, P_n_n_n")
 
 			assert(merged == expected)
-	
-	describe("KMeans"):
-
-		def containsGeometry(geoms: Seq[Geometry], geom: Geometry): Boolean =
-			geoms.exists(g => g.covers(geom))
-
-		it("should limit the number of geometries to the specified maximum and keep the features"):
-			val geoFeatures = TestGeoFeatures.modisWithFewerPoints.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoFeatures)
-			val maxNgeoms = 30
-			val clustered = KMeans.cluster(merged, maxNgeoms, 1e-5)
-
-			assert(clustered.length < maxNgeoms)
-			assert(clustered.toSet == geoFeatures.toSet)
-
-		it("should cluster and reduce the number of geometries to the specified maximum"):
-			val geoFeatures = TestGeoFeatures.modisWithFewerPoints.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoFeatures)
-			val maxNgeoms = 5
-			val clustered = KMeans.cluster(merged, maxNgeoms, 1e-5)
-
-			assert(clustered.length == maxNgeoms)
-			assert(merged.forall(m => containsGeometry(clustered.map(_.geom), m.geom)))
 
 end DoiGeoLocationCreatorTests

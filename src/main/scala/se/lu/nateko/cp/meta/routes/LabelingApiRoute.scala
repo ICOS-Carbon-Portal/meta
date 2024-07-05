@@ -34,7 +34,7 @@ import scala.util.Try
 import spray.json.RootJsonReader
 import spray.json.DefaultJsonProtocol.RootJsObjectFormat
 
-object LabelingApiRoute extends CpmetaJsonProtocol{
+object LabelingApiRoute extends CpmetaJsonProtocol:
 
 	private val exceptionHandler = ExceptionHandler{
 
@@ -53,9 +53,20 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 	private given Unmarshaller[String, URI] = Unmarshaller(_ => s => Future.fromTry(Try{new URI(s)}))
 
 	def apply(
-		service: StationLabelingService,
-		authRouting: AuthenticationRouting
-	)(implicit mat: Materializer): Route = (handleExceptions(exceptionHandler) & pathPrefix("labeling")){
+		service: Option[StationLabelingService], authRouting: AuthenticationRouting, adminUsers: Seq[String]
+	)(using Materializer): Route =
+		pathPrefix("labeling"){
+			service match
+				case Some(lblService) =>
+					handleExceptions(exceptionHandler){inner(lblService, authRouting, adminUsers)}
+				case None =>
+					inline def msg = "Labeling service has not been enabled on this server"
+					complete(StatusCodes.ServiceUnavailable -> msg)
+		}
+
+	private def inner(
+		service: StationLabelingService, authRouting: AuthenticationRouting, adminUsers: Seq[String]
+	)(using mat: Materializer): Route =
 
 		implicit val ctxt = mat.executionContext
 
@@ -98,29 +109,31 @@ object LabelingApiRoute extends CpmetaJsonProtocol{
 						service.deleteFile(fileInfo.stationUri, fileInfo.file, uploader)
 						complete(StatusCodes.OK)
 					}
-				}
+				} ~
+				path("testemailing"):
+					parameter("address".optional): addr =>
+						authRouting.allowUsers(adminUsers):
+							service.sendTestEmail(addr)
+							complete(StatusCodes.OK)
 			}
 		} ~
-		get{
-			path("userinfo"){
-				authRouting.mustBeLoggedIn{ user =>
+		get:
+			path("userinfo"):
+				authRouting.mustBeLoggedIn: user =>
 					complete(service.getLabelingUserInfo(user))
-				}
-			} ~
-			path("filepack" / Segment){ _ =>
-				parameter("stationId".as[URI]){stationId =>
+			~
+			path("filepack" / Segment): _ =>
+				parameter("stationId".as[URI]): stationId =>
 					complete(service.getFilePack(stationId))
-				}
-			} ~
-			path("labelingHistory.csv" | "labelingHistory"){
+			~
+			path("labelingHistory.csv" | "labelingHistory"):
 				import StationLabelingHistory.*
 				val src = Source(
-					CsvHeader +: service.labelingHistory.toSeq.sortBy(_.station.provId).map(toCsvRow)
+					CsvHeader +: service.labelingHistory.map(toCsvRow)
 				).map(ByteString(_, StandardCharsets.UTF_8))
 
 				complete(HttpEntity(ContentTypes.`text/csv(UTF-8)`, src))
-			}
-		}
-	}
 
-}
+	end inner
+
+end LabelingApiRoute

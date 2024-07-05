@@ -8,7 +8,12 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Outcome
+import org.scalatest.Suite
+import org.scalatest.fixture
 import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig.apply
 import se.lu.nateko.cp.meta.api.CloseableIterator
@@ -25,21 +30,22 @@ import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
+import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.core.data.Envri
 
 class TestDb {
 
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	val akkaConf = ConfigFactory.defaultReference()
 		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("ERROR"))
-	private val system = ActorSystem("sparqlRegrTesting", akkaConf)
+	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
 	import system.{dispatcher, log}
 
 	val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
@@ -53,7 +59,7 @@ class TestDb {
 			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
 		val citerFactory: CitationProviderFactory =
-			sail => CitationProvider(CitationClientDummy, sail, metaConf.core, metaConf.dataUploadService, log)
+			sail => CitationProvider(sail, dois => CitationClientDummy, metaConf)
 
 		val rdfConf = RdfStorageConfig(
 			path = dir.toString,
@@ -63,27 +69,47 @@ class TestDb {
 			recreateCpIndexAtStartup = true
 		)
 
-		val indexUpdaterFactory = (idx: CpIndex) => new IndexHandler(idx, system.scheduler, log)
+		val indexUpdaterFactory = IndexHandler(system.scheduler)
+		val geoFactory = GeoIndexProvider(log)
 
-		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, citerFactory, log)
+		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
 
-		val repo0 = new SailRepository(makeSail)
-		val factory = repo0.getValueFactory
+		/**
+		The repo is created three times:
+			0) to ingest the test RDF file into a fresh new triplestore
+			1) to restart the triplestore to create the magic SPARQL index
+			2) to dump the SPARQL index to disk, re-start, read the index
+			data structure, and initialize the index from it
+		**/
+		val repo0Fut: Future[Repository] =
+			val repo0 = SailRepository(makeSail)
+			val factory = repo0.getValueFactory
 
-		val fut = executeSequentially(TestDb.graphIriToFile){(uriStr, filename) =>
-			val graphIri = factory.createIRI(uriStr)
-			val server = Rdf4jInstanceServer(repo0, graphIri)
-			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-			Ingestion.ingest(server, ingester, factory).map(_ => Done)
-		}
-		fut.map{_ =>
-			repo0.shutDown()
-			val sail = makeSail
-			val repo1 = new SailRepository(sail)
-			repo1.init()
-			sail.initSparqlMagicIndex(None)
-			repo1
-		}
+			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+				val graphIri = factory.createIRI(uriStr)
+				val server = Rdf4jInstanceServer(repo0, graphIri)
+				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+				Ingestion.ingest(server, ingester, factory).map(_ => Done)
+			.map: _ =>
+				repo0
+		for
+			repo0 <- repo0Fut
+			repo1 = {
+				repo0.shutDown()
+				val repo1 = makeSail
+				repo1.init()
+				repo1.initSparqlMagicIndex(None)
+				repo1
+			}
+			_ <- repo1.makeReadonly("Test")
+			_ = repo1.shutDown()
+			idxData <- IndexHandler.restore()
+		yield
+			val repo2 = makeSail
+			repo2.init()
+			repo2.initSparqlMagicIndex(Some(idxData))
+			SailRepository(repo2)
+
 	}
 
 	def cleanup(): Unit = {
@@ -95,7 +121,7 @@ class TestDb {
 	}
 }
 
-object TestDb{
+object TestDb:
 	val graphIriToFile = Seq(
 			"atmprodcsv", "cpmeta", "ecocsv", "etcbin", "etcprodcsv", "excel",
 			"extrastations", "icos", "netcdf", "stationentry", "stationlabeling"
@@ -107,4 +133,5 @@ object TestDb{
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
 		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
-}
+
+	lazy val instance = new TestDb

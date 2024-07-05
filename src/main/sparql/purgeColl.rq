@@ -1,7 +1,15 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?coll ?p ?o .
+	?coll ?p ?o .
+	?collToKeep cpmeta:isNextVersionOf ?lastToDelete .
 } where{
-	bind (<https://meta.icos-cp.eu/collections/4sQmxX_V04zSBx1c9TyS5286> as ?coll)
+	bind (<https://meta.icos-cp.eu/collections/AeFd_Bp0uvGUGhZAh9zXtyLW> as ?coll2022)
+	bind (<https://meta.icos-cp.eu/collections/LKDae89cNpTOKSt1TnK_dRIw> as ?collToKeep)
+	bind (<https://meta.icos-cp.eu/collections/PCpGcxqz3t_KHS83TVQQZ95N> as ?lastToDelete)
+	values ?coll {
+		<https://meta.icos-cp.eu/collections/RVGTI_lByPJy83Dl7DG_xhAG>
+		<https://meta.icos-cp.eu/collections/PCpGcxqz3t_KHS83TVQQZ95N>
+	}
 	?coll ?p ?o
 }
+

@@ -7,8 +7,8 @@ import se.lu.nateko.cp.meta.core.data.TimeInterval
 import java.time.{LocalDateTime, LocalDate}
 import java.net.URL
 
-trait CommonJsonSupport {
-
+trait CommonJsonSupport:
+	import CommonJsonSupport.*
 	given uriFormat: RootJsonFormat[URI] with{
 		def write(uri: URI): JsValue = JsString(uri.toString)
 
@@ -59,6 +59,7 @@ trait CommonJsonSupport {
 
 	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
+	//TODO use analoguos function from cpauthCore
 	def enumFormat[T <: reflect.Enum](valueOf: String => T, values: Array[T]) = new RootJsonFormat[T] {
 		def write(v: T) = JsString(v.toString)
 
@@ -75,7 +76,16 @@ trait CommonJsonSupport {
 		}
 	}
 
-}
+	given [T] (using JsonWriter[T]): RootJsonFormat[WithErrors[T]] with
+		def read(json: JsValue): WithErrors[T] = ??? // should not be needed
+		def write(obj: WithErrors[T]): JsValue =
+			val vanilla = obj.value.toJson.asJsObject
+			if obj.errors.isEmpty then vanilla else JsObject(
+				vanilla.fields + ("errors" -> JsArray(obj.errors.map(JsString(_))*))
+			)
+
+
+end CommonJsonSupport
 
 extension [T: RootJsonWriter](v: T){
 	def toTypedJson(typ: String) = JsObject(
@@ -83,6 +93,7 @@ extension [T: RootJsonWriter](v: T){
 	)
 }
 
-object CommonJsonSupport{
+object CommonJsonSupport:
 	val TypeField = "_type"
-}
+
+	class WithErrors[T](val value: T, val errors: Seq[String])

@@ -51,9 +51,9 @@ object InstanceServerSerializer {
 		.compose(is => new StatementProducer{
 			def statements = is.getStatements(None, None, None)
 			def namespaces = {
-				val ns = new SimpleNamespace("", is.writeContexts.head.stringValue)
+				val ns = new SimpleNamespace("", is.writeContext.stringValue)
 
-				val readNss = is.readContexts.diff(is.writeContexts).map{uri =>
+				val readNss = is.readContexts.diff(Seq(is.writeContext)).map{uri =>
 					val prefix = uri.stringValue.stripSuffix("/").split('/').last
 					new SimpleNamespace(prefix, uri.stringValue)
 				}
@@ -87,9 +87,11 @@ object InstanceServerSerializer {
 					use.acquire(outStr)
 					val rdfWriter = writerFactory.getWriter(outStr)
 					rdfWriter.startRDF()
-					producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
-					statements.foreach(rdfWriter.handleStatement)
-					rdfWriter.endRDF()
+					try
+						producer.namespaces.foreach(ns => rdfWriter.handleNamespace(ns.getPrefix, ns.getName))
+						statements.foreach(rdfWriter.handleStatement)
+					finally
+						rdfWriter.endRDF()
 				}
 				.failed.filter{//swallow the exception raised if entityBytes' consumer cancels
 					case io: IOException =>

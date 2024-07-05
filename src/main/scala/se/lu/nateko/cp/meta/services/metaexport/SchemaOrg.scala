@@ -9,13 +9,18 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiPersonUrl
+import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
 import spray.json.*
 import se.lu.nateko.cp.meta.utils.*
 
 import java.net.URI
 
 import doi.DescriptionType.{Abstract => DoiAbstract}
+import java.time.LocalDate
+import java.time.ZoneOffset
+import se.lu.nateko.cp.doi.meta.PersonalName
+import se.lu.nateko.cp.doi.meta.GenericName
+import eu.icoscp.envri.Envri
 
 object SchemaOrg:
 
@@ -142,11 +147,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		val country: Option[CountryCode] = envri match
 			case Envri.SITES => CountryCode.unapply("SE")
-			case Envri.ICOS => dobj.specificInfo.toOption.flatMap(
-				_.acquisition.station.specificInfo match
-					case iss: IcosStationSpecifics => iss.countryCode
-					case _ => None
-			)
+			case Envri.ICOS | Envri.ICOSCities => dobj.specificInfo.toOption.flatMap(_.acquisition.station.countryCode)
 
 		val spatialCoverage: JsValue = optJs(dobj.coverage)(fromGeoFeature(_, country))
 
@@ -161,7 +162,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		val creator = envri match
 			case Envri.SITES => stationCreator
-			case Envri.ICOS => dobj.references.authors.toSeq.flatten match
+			case Envri.ICOS | Envri.ICOSCities => dobj.references.authors.toSeq.flatten match
 				case Seq() => dobj.production.map(p => fromAgent(p.creator)).getOrElse(stationCreator)
 				case authors => asOptArray(authors)(fromAgent)
 
@@ -218,7 +219,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		val landingPage = JsString(landingPageUri.toString)
 
 		val licenceJs = references.licence
-			.map(lic => JsString(lic.baseLicence.toString))
+			.map(lic => JsString(lic.url.toString))
 			.getOrElse{
 				val doiLicUris = for
 					doi        <- references.doi.toSeq
@@ -233,7 +234,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		//TODO Move to EnvriConfig
 		val publisherLogoUri: String = envri match
 			case Envri.SITES => "https://static.icos-cp.eu/images/sites-logo.png"
-			case Envri.ICOS => "https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png"
+			case Envri.ICOS | Envri.ICOSCities => "https://static.icos-cp.eu/images/ICOS_RI_logo_rgb.png"
 
 		JsObject(
 			"@context"              -> JsString("https://schema.org"),
@@ -280,13 +281,13 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			asOptArray(words.toVector.distinct.sorted)(JsString.apply)
 
 		val creator = refs.doi
-			.map(doiMeta => asOptArray(doiMeta.creators)(fromDoiPerson))
+			.map(doiMeta => asOptArray(doiMeta.creators)(fromDoiAgent))
 			.filter(_ != JsNull)
 			.getOrElse(
 				asOptArray(refs.authors)(fromAgent)
 			)
 
-		val contributor = asOptArray(refs.doi.map(_.contributors))(fromDoiPerson)
+		val contributor = asOptArray(refs.doi.map(_.contributors))(fromDoiAgent)
 
 		description ++ JsObject(
 			"keywords"              -> keywords,
@@ -297,12 +298,17 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 	private def objCommonJson(obj: StaticObject): JsObject =
 		val partOf = asOptArray(obj.parentCollections)(coll => JsString(coll.uri.toString))
 		val basedOn = asOptArray(obj.previousVersion.flattenToSeq)(fromPreviousVersion)
+		val status =
+			if obj.size.isEmpty then "Incomplete"
+			else if obj.nextVersion.nonEmpty then "Deprecated"
+			else "Published"
 		JsObject(
 			"alternateName"         -> JsString(obj.fileName),
-			"datePublished"         -> asOptJsString(obj.submission.stop.map(_.toString)),
+			"datePublished"         -> asOptJsString(obj.submission.stop.map(LocalDate.ofInstant(_, ZoneOffset.UTC).toString)),
 			"isPartOf"              -> partOf,
 			"provider"              -> fromAgent(obj.submission.submitter),
 			"isBasedOn"             -> basedOn,
+			"creativeWorkStatus"    -> JsString(status)
 		) ++ commonJson(obj)
 
 	private def fromPreviousVersion(url: URI) = JsObject(
@@ -329,11 +335,11 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 	private def fromGeoFeature(cov: GeoFeature): JsValue = cov match
 
-		case FeatureCollection(feats, _) => JsArray(
+		case FeatureCollection(feats, _, _) => JsArray(
 			feats.map(fromGeoFeature).toVector
 		)
 
-		case Position(lat, lon, altOpt, _) => JsObject(
+		case Position(lat, lon, altOpt, _, _) => JsObject(
 			Map(
 				"@type"     -> JsString("GeoCoordinates"),
 				"latitude"  -> JsNumber(lat),
@@ -343,7 +349,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			}
 		)
 
-		case Circle(center, radius, _) => JsObject(
+		case Circle(center, radius, _, _) => JsObject(
 			"@type"       -> JsString("GeoCircle"),
 			"geoMidpoint" -> fromGeoFeature(center),
 			"geoRadius"   -> JsNumber(radius)
@@ -357,12 +363,12 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			}
 		)
 
-		case GeoTrack(points, _) => JsObject(
+		case GeoTrack(points, _, _) => JsObject(
 			"@type"     -> JsString("GeoShape"),
 			"polygon"   -> JsString(points.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
 
-		case Polygon(vertices, _) => JsObject(
+		case Polygon(vertices, _, _) => JsObject(
 			"@type"     -> JsString("GeoShape"),
 			"polygon"   -> JsString(vertices.map(p => s"${p.lat6} ${p.lon6}").mkString(" "))
 		)
@@ -374,7 +380,6 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		Map(
 			"@type"  -> JsString("Organization"),
 			"@id"    -> JsString(org.self.uri.toString),
-			"sameAs" -> JsString(org.self.uri.toString),
 			"name"   -> JsString(org.name),
 			"email"  -> asOptJsString(org.email),
 		) ++ parent.map{ parent =>
@@ -382,12 +387,17 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		}
 	)
 
-	private def fromDoiPerson(person: doi.Person): JsObject = JsObject(
-		"@type"      -> JsString("Person"),
-		"@id"        -> asOptJsString(getDoiPersonUrl(person)),
-		"name"       -> JsString(person.name.toString),
-		"affiliation"-> asOptArray(person.affiliation)(fromDoiAff)
-	)
+	private def fromDoiAgent(agent: doi.Person): JsObject =
+		val agentType = agent.name match
+			case _: PersonalName => JsString("Person")
+			case _: GenericName  => JsString("Organization")
+
+		JsObject(
+			"@type"      -> agentType,
+			"@id"        -> asOptJsString(doiAgentUri(agent)),
+			"name"       -> JsString(agent.name.toString),
+			"affiliation"-> asOptArray(agent.affiliation)(fromDoiAff)
+		)
 
 	private def fromDoiAff(affiliation: doi.Affiliation) = JsObject(
 		"@type" -> JsString("Organization"),
@@ -417,7 +427,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 	)
 
 	private def fromGeoFeature(feature: GeoFeature, country: Option[CountryCode] = None): JsValue = feature match
-		case FeatureCollection(geoms, _) =>
+		case FeatureCollection(geoms, _, _) =>
 			JsArray(geoms.map(geo => fromGeoFeature(geo, country)).toVector)
 		case _ =>
 			JsObject(

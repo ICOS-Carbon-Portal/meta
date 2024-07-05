@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.*
 
@@ -9,7 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.{Failure, Success, Try}
 import Utils.*
 import se.lu.nateko.cp.meta.upload.formcomponents.*
-import ItemTypeRadio.*
+import ItemTypeRadio.ItemType.{Collection, Data, Document}
 import UploadApp.{hideAlert, whenDone, progressBar}
 import se.lu.nateko.cp.meta.upload.subforms.*
 import se.lu.nateko.cp.meta.{SpatioTemporalDto, StationTimeSeriesDto}
@@ -133,12 +133,13 @@ class Form(
 			licence = licence,
 			moratorium = moratorium,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			partialUpload = aboutPanel.partialUpload
 		))
 	)
 
 	def specificInfo: Try[Either[SpatioTemporalDto, StationTimeSeriesDto]] = dataPanel.objSpec.flatMap{spec =>
-		if(spec.isSpatiotemporal || (spec.dataset.isEmpty && spec.dataLevel == 3))
+		if(spec.isSpatiotemporal)
 			spatTempPanel.meta(prodPanel.dataProductionDto).map(Left.apply)
 		else for(
 			station <- statTsPanel.station;
@@ -166,6 +167,7 @@ class Form(
 		title <- collPanel.title;
 		description <- collPanel.description;
 		members <- collPanel.members;
+		documentation <- collPanel.documentation;
 		previousVersion <- aboutPanel.previousVersion;
 		doi <- aboutPanel.existingDoi;
 		submitter <- aboutPanel.submitter
@@ -175,7 +177,8 @@ class Form(
 		title = title,
 		description = description,
 		isNextVersionOf = previousVersion,
-		preExistingDoi = doi
+		preExistingDoi = doi,
+		documentation = documentation
 	)
 
 	def documentObjectDto: Try[DocObjectDto] = for(
@@ -202,12 +205,12 @@ class Form(
 			licence = licence,
 			moratorium = None,
 			duplicateFilenameAllowed = aboutPanel.duplicateFilenameAllowed,
-			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects
+			autodeprecateSameFilenameObjects = aboutPanel.autodeprecateSameFilenameObjects,
+			partialUpload = aboutPanel.partialUpload
 		))
 	)
 
 	private def handleDto(): Unit = {
-		hideAlert()
 		if(!aboutPanel.isNewItemOrVersion) {
 			for(
 				metaURL <- aboutPanel.metadataUri.toOption

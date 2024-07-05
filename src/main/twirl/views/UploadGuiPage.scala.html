@@ -1,9 +1,9 @@
 @import java.net.URI
-@import se.lu.nateko.cp.meta.core.data.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
+@import eu.icoscp.envri.Envri
 
 @(devVersion: Boolean, licences: Seq[(URI, String)])(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Upload", "Upload", headerExtra = Some(header), bootstrapJavascript = true){
+@ServerSidePage("Upload", Some("Upload"), headerExtra = Some(header), bootstrapJavascript = true){
 	<style>
 	#main {
 		max-width: 1280px;
@@ -65,6 +65,10 @@
 	#alert-placeholder {
 		white-space: pre-line;
 	}
+	.separator {
+		border-bottom: 1px solid #eee;
+		margin-bottom: 1rem;
+	}
 	@@media (min-width: 480px) {
 		#header-buttons > button {
 			width: auto;
@@ -78,7 +82,7 @@
 		.instrument-block {
 			display: none;
 		}
-	} else {}
+	}
 	</style>
 
 	<div id="main">
@@ -169,20 +173,30 @@
 							</div>
 							<div id="fileoptions-element">
 								<div class="d-flex flex-wrap mb-3" style="gap: 0 1rem">
-									<div id="duplicatefile-checkbox-elem">
-										<input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox"> Allow duplicate filename</input>
+									<div id="duplicatefile-checkbox-elem" class="form-check">
+										<input class="form-check-input" id="duplicatefile-checkbox" role="checkbox" type="checkbox">Allow duplicate filename</input>
 										@helpButton("Allows uploading, even if non-deprecated object(s) with the same file name already exist(s), without deprecating any of the 'duplicates' (For data objects, the limitation applies only within the same object format)")
 									</div>
-									<div id="autodeprecate-checkbox-elem">
-										<input class="form-check-input" id="autodeprecate-checkbox" role="checkbox" type="checkbox"> Auto deprecate</input>
+									<div id="autodeprecate-checkbox-elem" class="form-check">
+										<input class="form-check-input" id="autodeprecate-checkbox" role="checkbox" type="checkbox">Auto deprecate</input>
 										@helpButton("Deprecate same-filename objects (Only concerns non-deprecated ones. For data objects, only those that have the same format are considered)")
 									</div>
 								</div>
 							</div>
-							<div class="mb-3">
-								<label class="form-label" for="previoushash">Previous versions (one hex or base64 hashsum per line) @optional</label>
+							<div class="separator"></div>
+							<div class="mb-2">
+								<label class="form-label" for="previoushash"><span id="previoushash-descr">Previous versions (one hex or base64 hashsum per line)</span> @optional</label>
 								<textarea class="form-control" name="previoushash" id="previoushash" rows="2" cols="80"></textarea>
 							</div>
+							<div>
+								<div class="d-flex flex-wrap mb-3" style="gap: 0 1rem">
+									<div id="partialupload-checkbox-elem" class="form-check">
+										<input class="form-check-input" id="partialupload-checkbox" role="checkbox" type="checkbox">Partial upload</input>
+										@helpButton("Use to allow multiple objects to act together as a new version of a single object")
+									</div>
+								</div>
+							</div>
+							<div class="separator"></div>
 							<div class="mb-3">
 								<label class="form-label" for="existingdoi">Pre-existing DOI @optional</label>
 								<input type="text" id="existingdoi" class="form-control" placeholder="DOI">
@@ -272,7 +286,7 @@
 							</div>
 							@licenceBlock("licenceselect")
 							<div class="mb-3">
-								<label class="form-label" for="moratoriuminput">Moratorium @optional</label>
+								<label class="form-label" for="moratoriuminput">Moratorium (UTC) @optional</label>
 								<input id="moratoriuminput" type="text" placeholder="YYYY-MM-dd'T'HH:mm:ss'Z'" class="form-control">
 							</div>
 						</div>
@@ -469,6 +483,10 @@
 									Description is too long, maximum 5000 characters.
 								</div>
 							</div>
+							<div class="mb-3">
+								<label class="form-label" for="colldoc">Documentation @optional</label>
+								<input id="colldoc" type="text" placeholder="document object hashsum" class="form-control">
+							</div>
 						</div>
 					</div>
 				</section>
@@ -526,7 +544,8 @@
 				</div>
 				<div id="upload-help-modal-body" class="modal-body">
 					<p>The following video is a walkthrough of this upload interface. More information about the metadata properties and scripted uploads is avalaible on <a href="https://github.com/ICOS-Carbon-Portal/meta/blob/master/README.md#upload-instructions-manual" target="_blank">Github</a>.</p>
-					<iframe src="https://www.youtube.com/embed/8TpbRZPaTuU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+					<iframe id="help-modal-iframe" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-
+write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 				</div>
 			</div>
 		</div>
@@ -539,7 +558,7 @@
 }
 
 @optionalsite = @{
-	if (envri == Envri.ICOS) optional else {}
+	if (envri != Envri.SITES) optional else {}
 }
 
 @optional = {
@@ -570,7 +589,7 @@
 	<div class="mb-3 licence-block">
 		<label class="form-label" for=@selectId>Licence @optional</label>
 		<select class="form-select" id=@selectId>
-			<option value="">(inherit default)</option>
+			<option value="">(inherit default or keep current)</option>
 			@for((licUrl, licName) <- licences){
 				<option value=@licUrl>@licName</option>
 			}

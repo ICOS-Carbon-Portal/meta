@@ -1,10 +1,10 @@
 @import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 @import landpagesnips._
-@import se.lu.nateko.cp.meta.core.data.Envri
+@import eu.icoscp.envri.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 @(pageTitle: String)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Metadata Editor", pageTitle, bootstrapJavascript = true){
+@ServerSidePage("Metadata Editor", Some(pageTitle), bootstrapJavascript = true){
 	<script src="https://static.icos-cp.eu/constant/react/0.13.3/react.min.js"></script>
 	<script src="https://static.icos-cp.eu/constant/reflux/0.2.7/reflux.min.js"></script>
 	<!--[if IE]>

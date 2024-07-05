@@ -19,9 +19,10 @@ import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 
 import java.time.Instant
 import java.time.Year
+import se.lu.nateko.cp.meta.utils.Validated
 
 
-class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Seq[StaticObject]):
+class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
 	import DataCite.{*, given}
 
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
@@ -29,15 +30,17 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 
 	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 
-	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.specificInfo.fold(
-		l3 => l3.productionInfo.contributors
+	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.production.toSeq.flatMap{
+		_.contributors
 			.map(agent => toDoiCreator(agent).toContributor(ContributorType.Producer))
-			.distinct,
-		_ => Seq.empty
-	)
+			.toSeq
+			.distinct
+	}
 
 	def getFormat(obj: StaticObject): Option[String] = obj match {
-		case dataObj: DataObject => Some(dataObj.specification.format.label.getOrElse(dataObj.specification.format.uri.toString))
+		case dataObj: DataObject =>
+			val objFormat = dataObj.specification.format.self
+			Some(objFormat.label.getOrElse(objFormat.uri.toString))
 		case docObj: DocObject => docObj.fileName.split('.').lastOption.map(_.toUpperCase)
 	}
 
@@ -100,8 +103,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		rightsList = Some(Seq(cc0)),
 	)
 
-	def makeCollectionDoi(coll: StaticCollection): DoiMeta = {
-		val collObjects = fetchCollObjectsRecursively(coll)
+	def makeCollectionDoi(coll: StaticCollection): Validated[DoiMeta] = fetchCollObjectsRecursively(coll).map: collObjects =>
 
 		val dataObjs = collObjects
 			.collect{ case dobj: DataObject => dobj}
@@ -122,10 +124,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = dataObjs
-			.flatMap(_.coverage)
-			.distinct
-			.flatMap(DoiGeoLocationConverter.toDoiGeoLocation)
+		val geoLocations = DoiGeoLocationCreator.representativeCoverage(dataObjs.flatMap(_.coverage), 100)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
@@ -144,7 +143,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			fundingReferences = Option(funders).filterNot(_.isEmpty),
 			geoLocations = Option(geoLocations).filterNot(_.isEmpty)
 		)
-	}
+	end makeCollectionDoi
 
 	def toFundingReference(funding: Funding) = {
 		val funderIdentifier = funding.funder.id.flatMap((s, idType) => {
@@ -166,7 +165,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def toDoiCreator(p: Agent) = p match {
-		case Organization(_, name, _, _) =>
+		case Organization(_, name, _, _, _) =>
 			Creator(
 				name = GenericName(name),
 				nameIdentifiers = Nil,

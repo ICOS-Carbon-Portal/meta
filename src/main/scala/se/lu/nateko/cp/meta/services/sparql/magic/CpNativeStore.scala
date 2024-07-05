@@ -1,33 +1,32 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import java.io.File
-import java.io.IOException
-import java.nio.file.Paths
-import java.nio.file.Files
-
-import scala.compiletime.uninitialized
-
+import akka.Done
 import akka.event.LoggingAdapter
-
 import org.eclipse.rdf4j.sail.Sail
-
+import org.eclipse.rdf4j.sail.SailConnection
+import org.eclipse.rdf4j.sail.SailConnectionListener
+import org.eclipse.rdf4j.sail.helpers.SailWrapper
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.citation.*
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.utils.async.ok
 
-import org.eclipse.rdf4j.sail.helpers.SailWrapper
-import org.eclipse.rdf4j.sail.SailConnection
-import scala.concurrent.Future
-import akka.Done
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import org.eclipse.rdf4j.sail.SailConnectionListener
+import java.io.File
+import java.io.IOException
+import java.nio.file.FileVisitOption
+import java.nio.file.Files
+import java.nio.file.Paths
+import scala.compiletime.uninitialized
 import scala.concurrent.ExecutionContext
-import scala.util.Success
+import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.util.Failure
+import scala.util.Success
 
 class CpNativeStore(
 	conf: RdfStorageConfig,
-	listenerFactory: CpIndex => SailConnectionListener,
+	listenerFactory: IndexHandler,
+	geoFactory: GeoIndexProvider,
 	citationFactory: CitationProviderFactory,
 	log: LoggingAdapter
 ) extends SailWrapper{
@@ -62,14 +61,17 @@ class CpNativeStore(
 				case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
 			}
 
-	def getCitationClient: CitationClient = nativeSail.enricher.citer.doiCiter
+	def getCitationProvider: CitationProvider = nativeSail.enricher.citer
+	def getCitationClient: CitationClient = getCitationProvider.doiCiter
 
 	override def init(): Unit = {
 		if(isFreshInit) log.warning(
 			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
 		)
 		log.info("Initializing triple store...")
-		nativeSail.setForceSync(!isFreshInit)
+		val forceSync = !isFreshInit
+		log.info(s"Setting force-sync to '$forceSync'")
+		nativeSail.setForceSync(forceSync)
 		nativeSail.init()
 		log.info("Triple store initialized")
 		nativeSail.enricher = StatementsEnricher(citationFactory(nativeSail))
@@ -77,19 +79,22 @@ class CpNativeStore(
 	}
 
 	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit = {
-		cpIndex = if(disableCpIndex){
+		cpIndex = if disableCpIndex then
 			log.info("Magic SPARQL index is disabled")
 			val standardOptimizationsOn = nativeSail.getEvaluationStrategyFactory.getOptimizerPipeline.isPresent
 			log.info(s"Vanilla RDF4J optimizations enabled: $standardOptimizationsOn")
 			None
-		} else {
+		else
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")
-			val idx = idxData.fold(new CpIndex(nativeSail)(log))(idx => new CpIndex(nativeSail, idx)(log))
+			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
+			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
+			val idx = idxData.fold(new CpIndex(nativeSail, geoFut)(log))(idx => new CpIndex(nativeSail, geoFut, idx)(log))
 			idx.flush()
-			nativeSail.listener = listenerFactory(idx)
+			nativeSail.listener = listenerFactory.getListener(nativeSail, getCitationProvider.metaVocab, idx, geoPromise.future)
+			geoPromise.completeWith(geoFactory.index(nativeSail, idx, getCitationProvider.metaReader))
 			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			Some(idx)
-		}
+
 		cpIndex.foreach{idx =>
 			nativeSail.setEvaluationStrategyFactory(
 				new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), idx, nativeSail.enricher)
@@ -105,7 +110,7 @@ class CpNativeStore(
 
 		val didNotExist = !Files.exists(storageDir)
 
-		def storageFiles = Files.walk(storageDir).filter(Files.isRegularFile(_))
+		def storageFiles = Files.walk(storageDir, FileVisitOption.FOLLOW_LINKS).filter(Files.isRegularFile(_))
 
 		if(didNotExist)
 			Files.createDirectories(storageDir)

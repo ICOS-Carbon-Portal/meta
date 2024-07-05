@@ -48,6 +48,8 @@ import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import scala.concurrent.Promise
+import java.util.concurrent.CancellationException
 
 
 class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
@@ -101,15 +103,20 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
-			val qquoter = quoter.logNewQueryStart(queryStr.clientId)
-			val entityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
+			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
+			val errPromise = Promise[ByteString]()
+			val sparqlEntityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val conn = repo.getConnection()
 
 				val sparqlFut = CompletableFuture.runAsync(
 					() => {
-						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
-						protocolOption.evaluator.evaluate(query, outStr)
+						try
+							val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+							protocolOption.evaluator.evaluate(query, outStr)
+						catch case err =>
+							outStr.flush()
+							errPromise.tryFailure(err)
 					},
 					qquoter
 				)
@@ -120,15 +127,18 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
 						else{
 							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+							errPromise.tryFailure(CancellationException())
 							sparqlFut.cancel(true)
 						}
 					}
 				canceller.schedule(cancelling, config.maxQueryRuntimeSec.toLong, TimeUnit.SECONDS)
 
-				sparqlFut.whenCompleteAsync((_, _) =>
+				sparqlFut.whenCompleteAsync((_, err) =>
 					try{outStr.flush(); outStr.close()} finally{
 						qquoter.logQueryFinish()
 						conn.close()
+						if err == null then errPromise.trySuccess(ByteString.empty)
+						else errPromise.tryFailure(err)
 					},
 					sparqlExe
 				)
@@ -143,6 +153,8 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 				}(scalaCanceller)
 				scala.compat.java8.FutureConverters.toScala(sparqlFut)
 			}
+			val errSource = Source.future(errPromise.future)
+			val entityBytes = errSource.merge(sparqlEntityBytes)
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}
@@ -154,10 +166,10 @@ object Rdf4jSparqlServer{
 	private val utf8 = HttpCharsets.`UTF-8`
 	private val xml = ContentType(MediaTypes.`application/xml`, utf8)
 
-	private val jsonSparql = getSparqlContentType("application/sparql-results+json", ".srj")
-	private val xmlSparql = getSparqlContentType("application/sparql-results+xml", ".srx")
-	private val csvSparql = getSparqlContentType("text/csv", ".csv")
-	private val tsvSparql = getSparqlContentType("text/tab-separated-values", ".tsv")
+	val jsonSparql = getSparqlContentType("application/sparql-results+json", ".srj")
+	val xmlSparql = getSparqlContentType("application/sparql-results+xml", ".srx")
+	val csvSparql = getSparqlContentType("text/csv", ".csv")
+	val tsvSparql = getSparqlContentType("text/tab-separated-values", ".tsv")
 
 	def getSparqlContentType(mimeType: String, fileExtension: String): ContentType = {
 		val mediaType = MediaType.custom(mimeType, false, fileExtensions = List(fileExtension))

@@ -1,26 +1,30 @@
 package se.lu.nateko.cp.meta
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.stream.Materializer
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.metaflow.MetaFlow
+import se.lu.nateko.cp.meta.routes.MainRoute
+import se.lu.nateko.cp.meta.services.citation.CitationClient.readCitCache
+import se.lu.nateko.cp.meta.services.citation.CitationClient.readDoiCache
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import se.lu.nateko.cp.meta.icos.MetaFlow
-import se.lu.nateko.cp.meta.routes.MainRoute
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
-
 object Main extends App with CpmetaJsonProtocol{
 
-	given system: ActorSystem = ActorSystem("cpmeta", config = ConfigLoader.appConfig)
+	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
 	import system.log //force log initialization to avoid deadlocks at startup
 	import system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
+	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 
 	val optIndexDataFut: Future[Option[IndexData]] =
@@ -49,6 +53,7 @@ object Main extends App with CpmetaJsonProtocol{
 		idxOpt <- optIndexDataFut;
 		_ = db.store.initSparqlMagicIndex(idxOpt);
 		route = MainRoute(db, metaflow, config);
+		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
 		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
 	) yield {
 		sys.addShutdownHook{

@@ -13,7 +13,6 @@ import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.net.URI
-import java.net.URL
 import scala.concurrent.Future
 import scala.util.Try
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
@@ -24,7 +23,7 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 	val client: DoiClient = {
 		val conf = DoiClientConfig(
-			restEndpoint = new URL("https://api.datacite.org/"),
+			restEndpoint = URI("https://api.datacite.org/"),
 			member = DoiMemberConfig("SND.ICOS", password, "10.18160")
 		)
 		val http = new PlainJavaDoiHttp(Some(conf.member.symbol), Some(password))

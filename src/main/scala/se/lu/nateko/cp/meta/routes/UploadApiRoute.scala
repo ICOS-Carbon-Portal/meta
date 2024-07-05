@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.icos.AtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
@@ -25,6 +25,8 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import scala.language.implicitConversions
+import se.lu.nateko.cp.meta.metaflow.MetaUploadService
+import scala.util.Try
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -57,29 +59,24 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: UploadService,
 		authRouting: AuthenticationRouting,
-		atcMetaSource: AtcMetaSource,
+		metaFlows: Seq[MetaUploadService],
 		coreConf: MetaCoreConfig
-	)(implicit mat: Materializer): Route = handleExceptions(errHandler){
+	)(implicit mat: Materializer): Route = handleExceptions(errHandler):
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
 		pathPrefix("upload"){
-			pathPrefix("atcmeta"){
-				post{
-					path(Segment){tblKind =>
-						authRouting.mustBeLoggedIn{uploader =>
-							onSuccess(Future.fromTry(atcMetaSource.getTableSink(tblKind, uploader))){ sink =>
-								extractDataBytes{data =>
-									onSuccess(data.toMat(sink)(Keep.right).run()){_ =>
+			pathPrefix(Segment){uplServiceId =>
+				metaFlows.find(_.dirName == uplServiceId).fold(reject): uplService =>
+					(post & path(Segment)): tblKind =>
+						authRouting.mustBeLoggedIn: uploader =>
+							onSuccess(Future.fromTry(uplService.getTableSink(tblKind, uploader))): sink =>
+								extractDataBytes: data =>
+									onSuccess(data.toMat(sink)(Keep.right).run()):_ =>
 										complete(StatusCodes.OK)
-									}
-								}
-							}
-						}
-					}
-				} ~
-				getFromBrowseableDirectory(atcMetaSource.getDirectory().toString)
+					~
+					getFromBrowseableDirectory(uplService.directory.toString)
 			} ~
 			post{
 				path("etc"){
@@ -113,15 +110,6 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 			} ~
 			get{
 				import spray.json.*
-				path("etc" / "utcOffset"){
-					parameter("stationId"){
-						case StationId(stationId) =>
-							val offsetJs = service.etcHelper.etcMeta.getUtcOffset(stationId).fold[JsValue](JsNull)(JsNumber(_))
-							complete(offsetJs)
-						case notStation =>
-							complete(StatusCodes.BadRequest -> s"$notStation is not a proper ICOS ETC station id")
-					}
-				} ~
 				extractEnvri { implicit envri =>
 					import MetaCoreConfig.given
 					path("envri"){
@@ -144,7 +132,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 				}
 			}
 		}
-	}
+	end apply
 
-	def reportAccessUri(fut: Future[AccessUri]): Route = onSuccess(fut){au => complete(au.uri.toString)}
+	def reportAccessUri(uriTry: Try[AccessUri]): Route = complete(uriTry.get.uri.toString)
 }

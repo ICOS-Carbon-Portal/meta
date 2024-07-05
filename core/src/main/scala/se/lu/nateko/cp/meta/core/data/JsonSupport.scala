@@ -6,8 +6,11 @@ import se.lu.nateko.cp.meta.core.toTypedJson
 import spray.json.*
 import DefaultJsonProtocol.*
 import se.lu.nateko.cp.doi.DoiMeta
+import CommonJsonSupport.TypeField
+import scala.reflect.ClassTag
 
-object JsonSupport extends CommonJsonSupport{
+object JsonSupport extends CommonJsonSupport:
+	val GeoJsonField = "coverageGeo"
 
 	given RootJsonFormat[UriResource] = jsonFormat3(UriResource.apply)
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
@@ -15,13 +18,22 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
 	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
+	private val vanillaObjectFormatFormat = jsonFormat2(ObjectFormat.apply)
+	given RootJsonFormat[ObjectFormat] with
+		def read(json: JsValue): ObjectFormat = vanillaObjectFormatFormat.read(json)
+		def write(obj: ObjectFormat): JsValue =
+			val vanilla = vanillaObjectFormatFormat.write(obj).asJsObject
+			// extra field for backwards compatibility with the older version of the JSON
+			// (needed by icoscp pylib version 0.1.19 and below)
+			JsObject(vanilla.fields + ("uri" -> obj.self.uri.toJson))
+
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
-	given RootJsonFormat[Position] = jsonFormat4(Position.apply)
+	given RootJsonFormat[Position] = jsonFormat5(Position.apply)
 	given RootJsonFormat[LatLonBox] = jsonFormat4(LatLonBox.apply)
-	given RootJsonFormat[GeoTrack] = jsonFormat2(GeoTrack.apply)
-	given RootJsonFormat[Polygon] = jsonFormat2(Polygon.apply)
-	given RootJsonFormat[Circle] = jsonFormat3(Circle.apply)
+	given RootJsonFormat[GeoTrack] = jsonFormat3(GeoTrack.apply)
+	given RootJsonFormat[Polygon] = jsonFormat3(Polygon.apply)
+	given RootJsonFormat[Circle] = jsonFormat4(Circle.apply)
 	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
 	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
 
@@ -33,47 +45,54 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]{
-		def write(geo: GeoFeature): JsValue = geo match {
-			case llb: LatLonBox => llb.toJson
-			case gt: GeoTrack => gt.toJson
-			case pos: Position => pos.toJson
-			case gpoly: Polygon => gpoly.toJson
-			case geocol: FeatureCollection => geocol.toJson
-			case c: Circle => c.toJson
-			case p: Pin => p.toJson
-		}
+	private object vanillaGeoFeatureFormat extends RootJsonFormat[GeoFeature]:
 
-		def read(value: JsValue): GeoFeature = value match {
+		private def subtypeEntry[T <: GeoFeature : JsonFormat](using tag: ClassTag[T]): (String, JsValue => T) =
+			val name = tag.runtimeClass.getSimpleName
+			(name, _.convertTo[T])
+
+		private val parsers: Map[String, JsValue => GeoFeature] = Map(
+			subtypeEntry[LatLonBox],
+			subtypeEntry[GeoTrack],
+			subtypeEntry[Position],
+			subtypeEntry[Polygon],
+			subtypeEntry[FeatureCollection],
+			subtypeEntry[Circle],
+			subtypeEntry[Pin]
+		)
+
+		def write(geo: GeoFeature): JsValue =
+			val vanilla = geo match
+				case llb: LatLonBox => llb.toJson
+				case gt: GeoTrack => gt.toJson
+				case pos: Position => pos.toJson
+				case gpoly: Polygon => gpoly.toJson
+				case geocol: FeatureCollection => geocol.toJson
+				case c: Circle => c.toJson
+				case p: Pin => p.toJson
+			val allFields = vanilla.asJsObject.fields + (TypeField -> JsString(geo.getClass.getSimpleName))
+			JsObject(allFields)
+
+		def read(value: JsValue): GeoFeature = value match
 			case JsObject(fields) =>
-				if(fields.contains("points"))
-					value.convertTo[GeoTrack]
-				else if(fields.contains("vertices"))
-					value.convertTo[Polygon]
-				else if(fields.contains("min") && fields.contains("max"))
-					value.convertTo[LatLonBox]
-				else if(fields.contains("lat") && fields.contains("lon"))
-					value.convertTo[Position]
-				else if(fields.contains("features"))
-					value.convertTo[FeatureCollection]
-				else if(fields.contains("radius"))
-					value.convertTo[Circle]
-				else if(fields.contains("kind"))
-					value.convertTo[Pin]
-				else
-					deserializationError(s"Unexpected GeoFeature JsObject ${value.compactPrint}")
+				fields.get(TypeField) match
+					case Some(JsString(typeName)) => parsers.get(typeName) match
+						case Some(parser) => parser(value)
+						case None =>
+							val knownTypes = parsers.keys.mkString(", ")
+							deserializationError(s"Unexpected GeoFeature type $typeName, supported types are: $knownTypes")
+					case _ =>
+						deserializationError(s"Expected a $TypeField property representing the type of GeoFeature")
 			case _ =>
 				deserializationError("Expected a JsObject representing a GeoFeature")
-		}
-	}
+	end vanillaGeoFeatureFormat
 
 	given RootJsonFormat[GeoFeature] with{
-		def write(geo: GeoFeature): JsValue = {
+		def write(geo: GeoFeature): JsValue =
 			val base = vanillaGeoFeatureFormat.write(geo)
 			val geoJson = GeoJson.fromFeatureWithLabels(geo)
 			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
 			JsObject(allFields)
-		}
 
 		def read(value: JsValue): GeoFeature = vanillaGeoFeatureFormat.read(value)
 
@@ -81,7 +100,7 @@ object JsonSupport extends CommonJsonSupport{
 
 	given JsonFormat[FeatureCollection] = {
 		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(vanillaGeoFeatureFormat)
-		jsonFormat2(FeatureCollection.apply)
+		jsonFormat3(FeatureCollection.apply)
 	}
 
 	given JsonFormat[Orcid] with{
@@ -96,7 +115,9 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[Organization] = jsonFormat4(Organization.apply)
+	given RootJsonFormat[LinkBox] = jsonFormat4(LinkBox.apply)
+	given RootJsonFormat[WebpageElements] = jsonFormat3(WebpageElements.apply)
+	given RootJsonFormat[Organization] = jsonFormat5(Organization.apply)
 	given RootJsonFormat[InstrumentDeployment] = jsonFormat7(InstrumentDeployment.apply)
 	given RootJsonFormat[Instrument] = jsonFormat9(Instrument.apply)
 	given RootJsonFormat[Person] = jsonFormat5(Person.apply)
@@ -104,7 +125,7 @@ object JsonSupport extends CommonJsonSupport{
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
-	given RootJsonFormat[Station] = jsonFormat8(Station.apply)
+	given RootJsonFormat[Station] = jsonFormat9(Station.apply)
 
 	given RootJsonFormat[Agent] with{
 
@@ -131,7 +152,7 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[TemporalCoverage] = jsonFormat2(TemporalCoverage.apply)
 
 	given RootJsonFormat[ValueType] = jsonFormat3(ValueType.apply)
-	given RootJsonFormat[VarMeta] = jsonFormat6(VarMeta.apply)
+	given RootJsonFormat[VarMeta] = jsonFormat7(VarMeta.apply)
 	given RootJsonFormat[StationTimeSeriesMeta] = jsonFormat5(StationTimeSeriesMeta.apply)
 	given RootJsonFormat[SpatioTemporalMeta] = jsonFormat8(SpatioTemporalMeta.apply)
 
@@ -166,17 +187,17 @@ object JsonSupport extends CommonJsonSupport{
 	given RootJsonFormat[Licence] = jsonFormat4(Licence.apply)
 	import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 	given RootJsonFormat[References] = jsonFormat10(References.apply)
-	given RootJsonFormat[DocObject] = jsonFormat12(DocObject.apply)
+	given RootJsonFormat[DocObject] = jsonFormat13(DocObject.apply)
 
 	given RootJsonFormat[DataObject] with {
-		private given defFormat: RootJsonFormat[DataObject] = jsonFormat13(DataObject.apply)
+		private given defFormat: RootJsonFormat[DataObject] = jsonFormat14(DataObject.apply)
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
 		def write(dobj: DataObject): JsValue = {
 			val plain = dobj.toJson(defFormat).asJsObject
 			dobj.coverage.fold(plain) { geo =>
-				JsObject(plain.fields + ("coverageGeo" -> GeoJson.fromFeatureWithLabels(geo)))
+				JsObject(plain.fields + (GeoJsonField -> GeoJson.fromFeatureWithLabels(geo)))
 			}
 		}
 	}
@@ -197,7 +218,20 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	given RootJsonFormat[StaticCollection] = jsonFormat10(StaticCollection.apply)
+	given RootJsonFormat[StaticCollection] with
+
+		private val defFormat = jsonFormat12(StaticCollection.apply)
+
+		def read(value: JsValue): StaticCollection = value.convertTo(defFormat)
+
+		def write(coll: StaticCollection): JsValue =
+			val plain = coll.toJson(defFormat).asJsObject
+
+			coll.coverage.fold(plain): feature =>
+				val geoJson = GeoJson.fromFeatureWithLabels(feature)
+				JsObject(plain.fields + (GeoJsonField -> geoJson))
+
+
 
 	given RootJsonFormat[StaticDataItem] with{
 
@@ -217,18 +251,18 @@ object JsonSupport extends CommonJsonSupport{
 		}
 	}
 
-	import CommonJsonSupport.TypeField
-
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
-	given RootJsonFormat[AtcStationSpecifics] = jsonFormat8(AtcStationSpecifics.apply)
-	given RootJsonFormat[EtcStationSpecifics] = jsonFormat14(EtcStationSpecifics.apply)
-	given RootJsonFormat[OtcStationSpecifics] = jsonFormat7(OtcStationSpecifics.apply)
-	given RootJsonFormat[SitesStationSpecifics] = jsonFormat6(SitesStationSpecifics.apply)
+	given RootJsonFormat[AtcStationSpecifics] = jsonFormat7(AtcStationSpecifics.apply)
+	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
+	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
+	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
+	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat1(IcosCitiesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"
 	private val EtcSpec = "etc"
 	private val OtcSpec = "otc"
 	private val SitesSpec = "sites"
+	private val CitiesSpec = "cities"
 	given RootJsonFormat[StationSpecifics] with{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
@@ -236,6 +270,7 @@ object JsonSupport extends CommonJsonSupport{
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
 			case etc: OtcStationSpecifics => etc.toTypedJson(OtcSpec)
 			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
+			case cities: IcosCitiesStationSpecifics => cities.toTypedJson(CitiesSpec)
 		}
 
 		def read(value: JsValue) =
@@ -244,9 +279,11 @@ object JsonSupport extends CommonJsonSupport{
 				case Some(JsString(EtcSpec)) => value.convertTo[EtcStationSpecifics]
 				case Some(JsString(OtcSpec)) => value.convertTo[OtcStationSpecifics]
 				case Some(JsString(SitesSpec)) => value.convertTo[SitesStationSpecifics]
+				case Some(JsString(CitiesSpec)) => value.convertTo[IcosCitiesStationSpecifics]
 				case None => NoStationSpecifics
 				case Some(unknType) => deserializationError(s"Unknown StationSpecifics type $unknType")
 			}
 	}
 
-}
+end JsonSupport
+

@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import DofPatternFusion.*
+import org.eclipse.rdf4j.model.vocabulary.GEO
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -132,16 +133,14 @@ class DofPatternFusion(meta: CpmetaVocab){
 				}.distinct.toSeq
 			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_))).optimize
 
-			val namedVarProps = varProps.collect{
+			val namedVarProps = varProps.collect:
 				case (nv: NamedVar, prop) => nv -> prop
-			}
 
-			val engagedVars = namedVarProps.keySet.toSet[QVar]
+			val statPattExprs =
+				val engagedVars = namedVarProps.keySet.toSet[QVar] - dobjVar
+				patt.propPaths.values.flatten.collect:
+					case sp2 if engagedVars.contains(sp2.targetVar) => sp2.sp
 
-			val statPattExprs = patt.propPaths.values.flatten.collect{
-				//filenames are not in the index, need to leave this pattern in the query
-				case sp2 @ StatementPattern2(pred, sp) if pred != meta.hasName && engagedVars.contains(sp2.targetVar) => sp
-			}
 			val assignmentExprs = patt.varValues.collect{
 				case (v, vif) if varProps.contains(v) => vif.providers
 			}.flatten
@@ -171,6 +170,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		def propVar(prop: Property, steps: IRI*) = endVar(steps*).map(_ -> prop)
 		//TODO This approach disregards the possibility of duplicate entries (all but one get discarded)
+		val sfIntersects: IRI = meta.factory.createIRI(GEO.NAMESPACE, "sfIntersects")
 		Seq(
 			propVar(DobjUri),
 			propVar(Spec           , meta.hasObjectSpec ),
@@ -188,6 +188,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 			propVar(DataEnd        , meta.hasEndTime    ),
 			propVar(DataEnd        , meta.wasAcquiredBy  , meta.prov.endedAtTime      ),
 			propVar(SamplingHeight , meta.wasAcquiredBy  , meta.hasSamplingHeight     ),
+			propVar(GeoIntersects  , sfIntersects        , GEO.AS_WKT                 ),
 		).flatten.toMap
 	}
 

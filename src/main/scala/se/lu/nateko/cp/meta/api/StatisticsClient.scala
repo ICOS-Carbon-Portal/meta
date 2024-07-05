@@ -13,13 +13,14 @@ import akka.http.scaladsl.unmarshalling.{Unmarshal, FromEntityUnmarshaller}
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.DocObject
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import spray.json.RootJsonFormat
+import eu.icoscp.envri.Envri
 
 
 object StatisticsClient extends DefaultJsonProtocol {

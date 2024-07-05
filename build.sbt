@@ -1,7 +1,9 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / scalaVersion := "3.3.3"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
@@ -11,14 +13,16 @@ val commonScalacOptions = Seq(
 )
 
 lazy val metaCore = (project in file("core"))
-	.enablePlugins(IcosCpSbtTsGenPlugin)
+	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.7",
+		version := "0.7.18",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
+			"eu.icoscp"             %% "envri"                              % "0.1.0",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
+			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(
@@ -29,15 +33,25 @@ lazy val metaCore = (project in file("core"))
 			"Orcid" -> "string",
 			"JsValue" -> "object",
 			"DoiMeta" -> "object",
-			"CountryCode" -> "string"
+			"CountryCode" -> "string",
 		),
-		cpTsGenSources := {
+		cpCodeGenSources := {
 			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
 			Seq(
 				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
 				dir / "Station.scala", dir / "Instrument.scala", dir / "package.scala"
 			)
 		},
+		cpPyGenTypeMap := Map(
+			"URI" -> "str",
+			"Instant" -> "str",
+			"LocalDate" -> "str",
+			"Sha256Sum" -> "str",
+			"Orcid" -> "str",
+			"JsValue" -> "object",
+			"DoiMeta" -> "object",
+			"CountryCode" -> "str"
+		),
 		publishTo := {
 			val nexus = "https://repo.icos-cp.eu/content/repositories/"
 			if (isSnapshot.value)
@@ -60,7 +74,8 @@ val frontendBuild = taskKey[Unit]("Builds the front end apps")
 frontendBuild := {
 	import scala.sys.process.Process
 	val log = streams.value.log
-	val exitCode = (Process("npm ci") #&& Process("npm run gulp")).!
+	val targetDir = (Compile / classDirectory).value.getAbsolutePath
+	val exitCode = (Process("npm ci") #&& Process(s"npm run gulp -- --target=$targetDir")).!
 	if(exitCode == 0) log.info("Front end build was successfull")
 	else sys.error("Front end build error")
 }
@@ -69,13 +84,20 @@ val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
 fetchGCMDKeywords := {
 	import scala.sys.process._
 	val log = streams.value.log
+	val jsonPath = "./src/main/resources/gcmdkeywords.json"
+	val tmpFile = file(jsonPath + "~")
 	val exitCode = (
 		url("https://gcmd.earthdata.nasa.gov/kms/concepts/concept_scheme/sciencekeywords/?format=json") #>
 		Seq("jq", ".concepts | map(.prefLabel)") #>
-		file("./src/main/resources/gcmdkeywords.json")
+		tmpFile
 	).!
-	if(exitCode == 0) log.info("Fetched GCMD keywords list")
-	else sys.error("Error while fetching GCMD keywords list")
+	if(exitCode == 0) {
+		Files.move(tmpFile.toPath, file(jsonPath).toPath, REPLACE_EXISTING)
+		log.info("Fetched GCMD keywords list")
+	} else log.error(
+		"Error while fetching GCMD keywords list! Check that the machine " +
+		s"you are deploying from has an older file at $jsonPath"
+	)
 }
 
 lazy val meta = (project in file("."))
@@ -83,7 +105,7 @@ lazy val meta = (project in file("."))
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
-		version := "0.7.0",
+		version := "0.10.0",
 		scalacOptions ++= commonScalacOptions,
 
 		excludeDependencies ++= Seq(
@@ -104,26 +126,44 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
-			"org.postgresql"         % "postgresql"                         % "9.4-1201-jdbc41",
+			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
-			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.27",
-			"com.esotericsoftware"   % "kryo"                               % "5.3.0",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.6.5",
-			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.8.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.0",
+			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
+			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.8",
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
-			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test",
+			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
+			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0"
 		),
 
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
-		cpDeployPreAssembly := Def.sequential(metaCore / Test / test, Test / test, frontendBuild, fetchGCMDKeywords).value,
+		cpDeployPreAssembly := Def.sequential(
+			metaCore / clean,
+			uploadgui / clean,
+			clean,
+			metaCore / Test / test,
+			Test / test,
+			frontendBuild,
+			fetchGCMDKeywords
+		).value,
+		cpDeployPlaybook := "core.yml",
+		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
+		cpDeployInfraBranch := "master",
+
+		Compile / unmanagedResources ++= {
+			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
+			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
+			Vector(finalJsFile, mapJsFile)
+		},
 
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
@@ -137,11 +177,7 @@ lazy val meta = (project in file("."))
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		assembly / assembledMappings += {
-			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
-			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
-			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName, mapJsFile -> mapJsFile.getName))
-		},
+		assembly / assemblyRepeatableBuild := false,
 
 		Compile / resources ++= {
 			val jsFile = (uploadgui / Compile / fastOptJS).value.data
@@ -154,8 +190,8 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := {
-			//import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}
-			"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
+			"""import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}"""
+			//"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
 		},
 
 		Test / console / cleanupCommands := "system.terminate()"
@@ -172,8 +208,9 @@ lazy val uploadgui = (project in file("uploadgui"))
 
 		libraryDependencies ++= Seq(
 			"org.scala-js"      %%% "scalajs-dom"       % "2.1.0",
+			"eu.icoscp"         %%% "envri"             % "0.1.0",
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
-			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC6",
+			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC7",
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.0",
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)

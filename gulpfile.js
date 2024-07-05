@@ -5,6 +5,11 @@ var browserify = require('browserify');
 var del = require('del');
 var source = require('vinyl-source-stream');
 var babel = require('babelify');
+var parseArgs = require('minimist');
+
+var args = parseArgs(process.argv.slice(2));
+
+const defaultTarget = 'target';
 
 var projects = ['metaentry', 'labeling', 'sparqlclient'];
 projects.forEach(function(project){
@@ -14,7 +19,7 @@ projects.forEach(function(project){
 		jsx: ['src/main/js/' + project + '/**/*.jsx'],
 		js: ['src/main/js/' + project + '/**/*.js'],
 		common: ['src/main/js/common/**/*.js'],
-		target: 'target/scala-3.2.0/classes/www/',
+		target: (args.target || defaultTarget) + '/www/',
 		bundleFile: project + '.js'
 	};
 
@@ -23,7 +28,7 @@ projects.forEach(function(project){
 	});
 
 	gulp.task('build' + project, function() {
-
+		console.log("Building " + project + " to " + paths.target);
 		return browserify({
 				entries: [paths.main],
 				debug: false,

@@ -11,6 +11,7 @@ import spray.json.{JsNull, JsValue}
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.etcupload.StationId
+import java.net.URI
 import java.net.URL
 import scala.io.Source
 
@@ -41,7 +42,7 @@ object KmlGeoJsonWorkbench {
 			val cells = line.split("\t", -1)
 			val urlBase = cells(kmzIdx).trim
 			StationId.unapply(cells(idIdx).trim).filterNot(_ => urlBase.isEmpty).map{
-				_ -> new URL(urlBase + "/download")
+				_ -> URI(urlBase + "/download").toURL
 			}
 		}.flatten.toIndexedSeq
 	}
@@ -62,7 +63,7 @@ object KmlGeoJsonWorkbench {
 					pm.geometry.toSeq.collect{
 						case poly: Polygon => processPolygon(poly)
 						case p: Point => p.coordinates.collect{
-							case Coordinate(Some(lon), Some(lat), _) => Position(lat, lon, None, None)
+							case Coordinate(Some(lon), Some(lat), _) => Position.ofLatLon(lat, lon)
 						}
 					}.flatten.map(_.withOptLabel(lbl))
 			}.flatten.toList
@@ -70,7 +71,7 @@ object KmlGeoJsonWorkbench {
 		areas match{
 			case Nil => JsNull
 			case feat :: Nil => GeoJson.fromFeature(feat)
-			case multi => GeoJson.fromFeature(FeatureCollection(multi, None))
+			case multi => GeoJson.fromFeature(FeatureCollection(multi, None, None))
 		}
 
 	}
@@ -79,12 +80,12 @@ object KmlGeoJsonWorkbench {
 		poly.outerBoundaryIs.flatMap(_.linearRing).flatMap(_.coordinates).map{coords =>
 
 			val posOriginal = coords.collect{
-				case Coordinate(Some(lon), Some(lat), altOpt) => Position(lat, lon, altOpt.filterNot(_ == 0).map(_.toFloat), None)
+				case Coordinate(Some(lon), Some(lat), altOpt) => Position(lat, lon, altOpt.filterNot(_ == 0).map(_.toFloat), None, None)
 			}
 
 			val positions = (if(areClockwise(posOriginal)) posOriginal.reverse else posOriginal).dropRight(1)
 
-			getCircle(positions).getOrElse(GeoPolygon(positions, None))
+			getCircle(positions).getOrElse(GeoPolygon(positions, None, None))
 		}
 	}
 
@@ -121,7 +122,7 @@ object KmlGeoJsonWorkbench {
 		val maxDeviation = deviations.max / averDist
 
 		if(maxDeviation < 0.03)
-			Some(Circle(Position(centerLat, centerLon, None, None), (averDist * 6371000).toFloat, None))
+			Some(Circle(Position.ofLatLon(centerLat, centerLon), (averDist * 6371000).toFloat, None, None))
 		else
 			None
 	}

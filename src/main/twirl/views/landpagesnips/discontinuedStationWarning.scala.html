@@ -1,0 +1,13 @@
+@import se.lu.nateko.cp.meta.core.data.Station
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.isDiscontinued
+@import eu.icoscp.envri.Envri
+
+@(station: Station)(implicit envri: Envri)
+@if(station.isDiscontinued) {
+	<div class="col-md-12">
+		<div class="alert alert-warning d-flex align-items-center">
+			<i class="fas fa-exclamation-triangle me-2"></i>
+			<div>@(s"${station.org.name} data is no longer updated on the ${envri.shortName} data portal.")</div>
+		</div>
+	</div>
+}

@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
-import scala.language.implicitConversions
 import org.eclipse.rdf4j.model.IRI
+import org.locationtech.jts.geom.Geometry
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 
-import HierarchicalBitmap.FilterRequest
+import scala.language.implicitConversions
 
 case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
 
@@ -31,6 +32,8 @@ object ContFilter{
 	}
 }
 
+final case class GeoFilter(property: GeoProp, geo: Geometry) extends Filter
+
 case class SortBy(property: ContProp, descending: Boolean)
 
 sealed trait Property extends java.io.Serializable{type ValueType}
@@ -51,6 +54,9 @@ case object SubmissionStart extends DateProperty
 case object SubmissionEnd extends DateProperty
 case object DataStart extends DateProperty
 case object DataEnd extends DateProperty
+
+sealed trait GeoProp extends Property{type ValueType = Geometry}
+case object GeoIntersects extends GeoProp
 
 sealed trait CategProp extends Property{type ValueType <: AnyRef}
 

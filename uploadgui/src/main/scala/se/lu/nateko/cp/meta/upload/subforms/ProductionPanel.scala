@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 
 import formcomponents.*
 import Utils.*
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 
 
 class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".production-section"){

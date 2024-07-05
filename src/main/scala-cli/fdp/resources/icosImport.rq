@@ -1,0 +1,75 @@
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix dc: <http://purl.org/dc/elements/1.1/>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dct: <http://purl.org/dc/terms/>
+
+CONSTRUCT {
+	?cat a dcat:Catalog ;
+		dct:description "ICOS Carbon Portal L2 data"^^xsd:string ;
+		dct:title "ICOS L2 data objects"^^xsd:string ;
+		dcat:distribution ?catDistr ;
+		dcat:dataset ?ds .
+
+	?catDistr a dcat:Distribution ;
+		dcat:accessURL <https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%7D> ;
+		dcat:mediaType <http://www.iana.org/assignments/media-types/text/html> .
+
+	?ds a dcat:Dataset .
+	?ds dcat:landingPage ?dobj .
+	?ds owl:sameAs ?dobj .
+	?ds dct:title ?fileName .
+	?ds dct:issued ?submEnd .
+	?ds dct:modified ?modified .
+	?ds dc:type <http://purl.org/dc/dcmitype/Dataset> .
+	?ds dct:description ?description .
+	?ds prov:wasAttributedTo ?station .
+	?ds dct:temporal [
+		a dct:PeriodOfTime ;
+		dcat:startDate ?timeStart ;
+		dcat:endDate ?timeEnd
+	].
+	?ds dcat:theme ?col .
+	?ds dcat:keyword ?colTitle .
+	?ds dcat:distribution [
+		a dcat:Distribution ;
+		dcat:accessURL ?dobj ;
+		dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+		dcat:byteSize ?size ;
+		dcat:downloadURL ?dlUri
+	].
+} WHERE {
+	{
+		SELECT ?dobjSpec (group_concat(?dobjSpecComm; separator=". ") AS ?dobjSpecComment) WHERE {
+			VALUES ?dobjSpec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/ingosArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release> <http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease> <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct> <http://meta.icos-cp.eu/resources/cpmeta/soopL2Product> <http://meta.icos-cp.eu/resources/cpmeta/AirCoreProduct>}
+			OPTIONAL{?dobjSpec rdfs:comment ?dobjSpecComm }
+		}
+		GROUP BY ?dobjSpec
+	}
+	?dobj cpmeta:hasObjectSpec ?dobjSpec .
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStart .
+	?dobj cpmeta:wasAcquiredBy ?acq .
+	?acq prov:startedAtTime ?timeStart ;
+		prov:endedAtTime ?timeEnd ;
+		prov:wasAssociatedWith ?station .
+	?station cpmeta:hasName ?stationName .
+	?dobjSpec rdfs:label ?dobjSpecLabel .
+	?dobjSpec cpmeta:containsDataset ?dsSpec .
+	?dsSpec cpmeta:hasColumn ?col .
+	?col cpmeta:hasColumnTitle ?colTitle .
+	OPTIONAL{?dobj cpmeta:hasActualColumnNames ?actCol} .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
+	OPTIONAL{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
+	BIND ( if(coalesce(?prodTime < ?submStart, false), ?prodTime, ?submStart) AS ?modified)
+	BIND (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objects> AS ?cat )
+	BIND (<http://meta.icos-cp.eu/resources/cpmeta/icosL2objectsDistr> AS ?catDistr )
+	BIND (iri(replace(str(?dobj), "https://meta", "https://data")) AS ?dlUri)
+	BIND (concat(?dobjSpecLabel, ", station ", ?stationName, ". ", coalesce(?dobjSpecComment, "")) AS ?description)
+	BIND (iri(replace(str(?dobj), "/objects/", "/fdp/objects/")) AS ?ds)
+}

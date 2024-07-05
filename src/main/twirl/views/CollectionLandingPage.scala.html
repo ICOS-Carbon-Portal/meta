@@ -3,28 +3,21 @@
 @import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDoiTitle
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.doi.meta.Title
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import landpagesnips._
+@import eu.icoscp.envri.Envri
 
 @(coll: StaticCollection, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(coll.title, getDoiTitle(coll.references).getOrElse(coll.title), CpMenu.default, headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
+@ServerSidePage(coll.title, Some(coll.title), headerExtra = Some(headerExtra), extraMetaTags = Some(schemaOrg), subHeading = Some("Collection")){
 	<div class="row py-2 gy-4">
-		<div class="col-12">
-			@nextVersionAlert(coll.nextVersion)
-		</div>
+		@errorList(extras.errors)
+		@newerVersionsAlert(coll, "collection")
+		@doiMetaAlerts(coll.doi, coll.references.doi)
 		<div class="col-md-8">
-			@doiMetaAlerts(coll.doi, coll.references.doi)
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
-				@coll.references.doi.fold{
-					@for(description <- coll.description){
-						@property("Description", description)
-					}
-				}{doiMeta =>
-					@doiMetaProperties(doiMeta)
-				}
+				@doiMetaProperties(coll, coll.description)
 				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)
 				}
@@ -32,6 +25,14 @@
 					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
 				}
 				@citations(coll.references)
+
+				@for(doc <- coll.documentation){
+					@htmlProperty{Documentation}{
+					<span>
+						<a href=@{doc.res.getRawPath}>@{doc.name}</a>
+					</span>
+					}
+				}
 
 				<h2 class="fs-3 mt-5">Content</h2>
 				@property("Number of items", coll.members.size.toString)
@@ -51,7 +52,15 @@
 		</div>
 		<div class="col-md-4">
 			<div class="row">
-				@card(12, "bg-light"){@Html("")}{
+				@card(12, "bg-light"){
+					@if(coll.coverage.isDefined){
+						<div class="card-img-top">
+							@defining(coll.res.getPath){collLink =>
+								<iframe src="/station/?coll=@collLink"></iframe>
+							}
+						</div>
+					}
+				}{
 					<div class="row gy-2">
 						@htmlProperty{Metadata}{
 							@collMetaDownloadButton(coll, "JSON", "json") •

@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.upload
 
 import java.net.URI
-
+import eu.icoscp.envri.Envri
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils.encodeURIComponent
 import scala.scalajs.js.Thenable.Implicits.thenable2future
 import org.scalajs.dom.File
 import org.scalajs.dom.fetch
-import org.scalajs.dom.raw.XMLHttpRequest
+import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.RequestInit
 import org.scalajs.dom.Headers
 import org.scalajs.dom.RequestCredentials
@@ -17,11 +17,14 @@ import org.scalajs.dom.HttpMethod
 import JsonSupport.given
 import play.api.libs.json.*
 import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig}
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.doi.Doi
 import scala.scalajs.js.Dictionary
+import se.lu.nateko.cp.meta.OntoConstants.FormatUris.*
+import scala.language.strictEquality
 
 object Backend {
+	given CanEqual[URI, URI] = CanEqual.derived
 
 	import SparqlQueries.*
 
@@ -101,10 +104,11 @@ object Backend {
 
 		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
 
-		//TODO Find a good place for the ZIP obj format URI constant
-		val isZip = spec.format == URI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
+		val isZip = spec.format == zipArchive || spec.format == excel
+		val isNetCDF = spec.format == netCdf || spec.format == netCdfTimeSeries
+		val isNonIngestableNetCDF = isNetCDF && spec.dataset.isEmpty
 
-		if(spec.isStationTimeSer || firstVarName.isDefined || isZip){
+		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip || isNetCDF){
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>
@@ -113,9 +117,11 @@ object Backend {
 			}
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
-			fetchOk("validating data object", url, new RequestInit{
-				body = if isZip then file.slice(0, 100) else file
+			fetchOk("validate data object", url, new RequestInit{
+				body = if isZip || isNonIngestableNetCDF then file.slice(0, 100) else file
 				method = HttpMethod.PUT
+				headers = Dictionary("Content-Type" -> "application/octet-stream")
+				credentials = RequestCredentials.include
 			}).map(_ => ())
 		} else Future.successful(())
 	}
@@ -155,7 +161,7 @@ object Backend {
 		.flatMap(_.text())
 
 	def getMetadata(uri: URI): Future[UploadDto] =
-		fetchOk("fetch existing object", s"/dtodownload?uri=$uri")
+		fetchOk("fetch existing object", s"/dtodownload?uri=${encodeURIComponent(uri.toString)}")
 			.flatMap(parseTo[UploadDto])
 
 	def createDraftDoi(uri: URI): Future[Doi] =

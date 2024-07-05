@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.api.CustomVocab
 import java.net.URI
+import se.lu.nateko.cp.meta.OntoConstants.*
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 
@@ -15,10 +16,14 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val atmoDroughtStationClass = getRelativeRaw("AtmoStation")
 	val sailDroneStationClass = getRelativeRaw("SailDrone")
 	val neonStationClass = getRelativeRaw("NeonStation")
+	val cityStationClass = getRelativeRaw("IcosCitiesStation")
 
 	val atmoStationClass = getRelativeRaw("AS")
 	val ecoStationClass = getRelativeRaw("ES")
 	val oceStationClass = getRelativeRaw("OS")
+	val munichStationClass = getRelativeRaw("MunichMidLow")
+	val parisStationClass = getRelativeRaw("ParisMidLow")
+	val zurichStationClass = getRelativeRaw("ZurichMidLow")
 //	val tcClass = getRelativeRaw("ThematicCenter")
 //	val cfClass = getRelativeRaw("CentralFacility")
 	val orgClass = getRelativeRaw("Organization")
@@ -35,6 +40,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val dataObjectSpecClass = getRelativeRaw("DataObjectSpec")
 	val datasetSpecClass = getRelativeRaw("DatasetSpec")
 	val tabularDatasetSpecClass = getRelativeRaw("TabularDatasetSpec")
+	val plainCollectionClass = getRelativeRaw("PlainCollection")
 	val collectionClass = getRelativeRaw("Collection")
 	val spatialCoverageClass = getRelativeRaw("SpatialCoverage")
 	val latLonBoxClass = getRelativeRaw("LatLonBox")
@@ -70,6 +76,12 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val awardURI = getRelativeRaw("awardURI")
 	val impliesDefaultLicence = getRelativeRaw("impliesDefaultLicence")
 
+	val hasWebpageElements = getRelativeRaw("hasWebpageElements")
+	val hasCoverImage = getRelativeRaw("hasCoverImage")
+	val hasLinkbox = getRelativeRaw("hasLinkbox")
+	val hasWebpageLink = getRelativeRaw("hasWebpageLink")
+	val hasOrderWeight = getRelativeRaw("hasOrderWeight")
+
 	val hasSha256sum = getRelativeRaw("hasSha256sum")
 	val hasDoi = getRelativeRaw("hasDoi")
 	val isNextVersionOf = getRelativeRaw("isNextVersionOf")
@@ -89,6 +101,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val containsDataset = getRelativeRaw("containsDataset")
 	val hasObjectSpec = getRelativeRaw("hasObjectSpec")
 	val hasFormat = getRelativeRaw("hasFormat")
+	val hasGoodFlagValue = getRelativeRaw("hasGoodFlagValue")
 	val hasEncoding = getRelativeRaw("hasEncoding")
 	val hasFormatSpecificMeta = getRelativeRaw("hasFormatSpecificMetadata")
 	val hasSpecificDatasetType = getRelativeRaw("hasSpecificDatasetType")
@@ -100,6 +113,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasVariable = getRelativeRaw("hasVariable")
 	val hasVariableTitle = getRelativeRaw("hasVariableTitle")
 	val hasVariableName = getRelativeRaw("hasVariableName")
+	val isQualityFlagFor = getRelativeRaw("isQualityFlagFor")
 	val hasKeywords = getRelativeRaw("hasKeywords")
 	val hasKeyword = getRelativeRaw("hasKeyword")
 	val hasSizeInBytes = getRelativeRaw("hasSizeInBytes")
@@ -127,6 +141,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val isOptionalColumn = getRelativeRaw("isOptionalColumn")
 	val isRegexVariable = getRelativeRaw("isRegexVariable")
 	val isRegexColumn = getRelativeRaw("isRegexColumn")
+	val isDiscontinued = getRelativeRaw("isDiscontinued")
 
 	val personClass = getRelativeRaw("Person")
 	val roleClass = getRelativeRaw("Role")
@@ -155,6 +170,10 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasAtcId = getRelativeRaw("hasAtcId")
 	val hasEtcId = getRelativeRaw("hasEtcId")
 	val hasOtcId = getRelativeRaw("hasOtcId")
+	val hasMunichId = getRelativeRaw("hasMunichId")
+	val hasParisId = getRelativeRaw("hasParisId")
+	val hasZurichId = getRelativeRaw("hasZurichId")
+
 	val hasWigosId = getRelativeRaw("hasWigosId")
 
 	val ancillaryValueClass = getRelativeRaw("AncillaryValue")
@@ -165,11 +184,12 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasAncillaryEntry = getRelativeRaw("hasAncillaryEntry")
 
 	val wdcggFormat = getRelativeRaw("asciiWdcggTimeSer")
-//	val etcFormat = getRelativeRaw("asciiEtcTimeSer")
-	val atcFormat = getRelativeRaw("asciiAtcTimeSer")
 	val atcProductFormat = getRelativeRaw("asciiAtcProductTimeSer")
-//	val socatFormat = getRelativeRaw("asciiOtcSocatTimeSer")
-	val netCDFTimeSeriesFormat = getRelativeRaw("netcdfTimeSeries")
+	val asciiAtcFlaskTimeSer = getRelativeRaw("asciiAtcFlaskTimeSer")
+	val netCDFTimeSeriesFormat = getRelativeRaw(netCdfTsFormatSuff)
+	val netCDFSpatialFormat = getRelativeRaw(netCdfFormatSuff)
+	val microsoftExcelFormat = getRelativeRaw(excelFormatSuff)
+
 
 	object prov extends CustomVocab {
 		val factory = top.factory
@@ -213,7 +233,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 }
 
 object CpmetaVocab{
-	val MetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
+	val MetaPrefix = CpmetaPrefix
 	val SitesPrefix = "https://meta.fieldsites.se/ontologies/sites/"
 	val ProvPrefix = "http://www.w3.org/ns/prov#"
 	val DctermsPrefix = "http://purl.org/dc/terms/"

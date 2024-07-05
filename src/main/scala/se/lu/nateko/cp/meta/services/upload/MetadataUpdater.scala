@@ -16,15 +16,23 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 
-abstract class MetadataUpdater(vocab: CpVocab) {
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import org.eclipse.rdf4j.model.vocabulary.RDF
+
+abstract class MetadataUpdater(vocab: CpVocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
 	protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability
 
-	def calculateUpdates(hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement], server: InstanceServer)(using Envri): Seq[RdfUpdate] = {
+	def calculateUpdates(
+		hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement]
+	)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
+
 		val statDiff = if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
 			val oldBySp = new BySubjPred(oldStatements)
 			val newBySp = new BySubjPred(newStatements)
@@ -42,12 +50,15 @@ abstract class MetadataUpdater(vocab: CpVocab) {
 					diff(oldBySp(sp), newBySp(sp), vocab.factory)
 			})
 		}
-		statDiff.filter{//keep only non-existing ones
-			case RdfUpdate(Rdf4jStatement(s, p, o), true) => !server.hasStatement(s, p, o)
+		val ret = statDiff.filter{//keep only the effectful ones
+			case RdfUpdate(Rdf4jStatement(s, p, o), isAssertion) =>
+				isAssertion != summon[TriplestoreConnection].hasStatement(s, p, o)
 			case _ => true
 		}
-	}
-}
+
+		ret
+	end calculateUpdates
+end MetadataUpdater
 
 class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab) {
 	import MetadataUpdater.*
@@ -60,16 +71,18 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 	}
 }
 
-class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlRunner) extends MetadataUpdater(vocab) {
+class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
-	private val stickyPredicates = {
+	private val stickyPredicates =
 		import metaVocab.*
-		Seq(hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue)
-	}
+		Seq(
+			hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue, dcterms.license,
+			hasSpatialCoverage, asGeoJSON, RDF.TYPE
+		)
 
-	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
+	override protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability =
 		val acq = vocab.getAcquisition(hash)
 		val subm = vocab.getSubmission(hash)
 		val (subj, pred) = sp
@@ -82,31 +95,49 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab, sparql: SparqlR
 		else if(pred === metaVocab.hasSizeInBytes) Fixed
 		else if(stickyPredicates.contains(pred)) Sticky
 		else Plain
-	}
 
-	def getCurrentStatements(hash: Sha256Sum, server: InstanceServer)(implicit ctxt: ExecutionContext, envri: Envri): Future[Seq[Statement]] = {
+
+	def getCurrentStatements(hash: Sha256Sum)(using envri: Envri, conn: TriplestoreConnection, sp: SparqlRunner): Seq[Statement] =
 		val objUri = vocab.getStaticObject(hash)
-		if(!server.hasStatement(Some(objUri), None, None)) Future.successful(Nil)
-		else {
-			val fromClauses = server.writeContexts.map(graph => s"FROM <$graph>").mkString("\n")
+		if !conn.hasStatement(objUri, null, null) then Nil
+		else
 			val query = SparqlQuery(s"""construct{?s ?p ?o}
-				|$fromClauses
+				|FROM <${conn.primaryContext}>
 				|where{
+				|{
 				|	{
 				|		BIND(<$objUri> AS ?s)
-				|		?s ?p ?o
-				|	} UNION
-				|	{
+				|		?s ?p ?o .
+				|	} UNION {
 				|		<$objUri> ?p0 ?s .
 				|		FILTER(?p0 != <${metaVocab.isNextVersionOf}>)
 				|		?s ?p ?o
+				|	} UNION {
+				|		<$objUri> <${metaVocab.wasProducedBy}> ?prod .
+				|		?prod <${metaVocab.wasParticipatedInBy}> ?s .
+				|		?s a rdf:Seq .
+				|		?s ?p ?o
+				|	} UNION {
+				|		?s <${metaVocab.dcterms.hasPart}> <$objUri> ;
+				|			a <${metaVocab.plainCollectionClass}> ;
+				|			<${metaVocab.isNextVersionOf}> [] .
+				|		?s ?p ?o .
+				|		FILTER (
+				|			NOT EXISTS {
+				|				?s <${metaVocab.dcterms.hasPart}> ?anotherNextVers
+				|				FILTER(?anotherNextVers != <$objUri>)
+				|			} || ?p = <${metaVocab.dcterms.hasPart}> && ?o = <$objUri>
+				|		)
 				|	}
+				|}
+				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
 				|}""".stripMargin)
-			Future(sparql.evaluateGraphQuery(query).toIndexedSeq)
-		}
-	}
+			
+			sp.evaluateGraphQuery(query).toIndexedSeq
+		end if
+	end getCurrentStatements
 
-}
+end ObjMetadataUpdater
 
 object MetadataUpdater{
 

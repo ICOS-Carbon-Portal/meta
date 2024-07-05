@@ -18,7 +18,6 @@ import se.lu.nateko.cp.meta.DoiConfig
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.DataProduction
 import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
@@ -31,6 +30,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.utils.Validated
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 
@@ -38,34 +39,36 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionCont
 
 	private def client(using Envri) = doiClientFactory.getClient
 
-	private def saveDoi(meta: DoiMeta)(using Envri): Future[Doi] =
-		client.putMetadata(meta).map(_ => meta.doi)
+	private def saveDoi(meta: DoiMeta)(using Envri): Future[Unit] = client.putMetadata(meta)
 
-	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[StaticObject] = coll.members.flatMap{
-		case plain: PlainStaticObject => fetcher.fetchStaticObject(Uri(plain.res.toString))
-		case coll: StaticCollection => fetchCollObjectsRecursively(coll)
-	}
+	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[Validated[StaticObject]] =
+		coll.members.flatMap:
+			case plain: PlainStaticObject => Seq(fetcher.fetchStaticObject(Uri(plain.res.toString)))
+			case coll: StaticCollection => fetchCollObjectsRecursively(coll)
 
-	def createDraftDoi(dataItemLandingPage: URI)(implicit envri: Envri): Future[Option[Doi]] = {
+
+	def createDraftDoi(dataItemLandingPage: URI)(using Envri): Future[Validated[Doi]] =
 		import UriSerializer.Hash
 		val uri = Uri(dataItemLandingPage.toString)
-		val dataCite = DataCite(s => client.doi(s), fetchCollObjectsRecursively)
+		val dataCite = DataCite(s => client.doi(s), coll => Validated.sequence(fetchCollObjectsRecursively(coll)))
 
-		val doiMetaOpt: Option[DoiMeta] =
-			(uri.path match {
+		val doiMetaV: Validated[DoiMeta] =
+			(uri.path match
 				case Hash.Collection(_)  => fetcher.fetchStaticCollection(uri)
-					.map(dataCite.makeCollectionDoi)
+					.flatMap(dataCite.makeCollectionDoi)
 
 				case Hash.Object(_)      => fetcher.fetchStaticObject(uri)
-					.map{
+					.map:
 						case data: DataObject => dataCite.makeDataObjectDoi(data)
 						case doc: DocObject   => dataCite.makeDocObjectDoi(doc)
-					}
-				case _ => None
-			})
+
+				case _ => Validated.error(s"URI $uri is neither collection nor data/document object")
+			)
 			.map(_.copy(url = Some(dataItemLandingPage.toString)))
 
-		doiMetaOpt.fold(Future.successful(Option.empty[Doi]))(m => saveDoi(m).map(Some(_)))
-	}
+		val doiV = doiMetaV.map(_.doi)
+
+		doiMetaV.result.fold(Future.successful(doiV)): m =>
+			client.putMetadata(m).map(_ => doiV)
 
 }

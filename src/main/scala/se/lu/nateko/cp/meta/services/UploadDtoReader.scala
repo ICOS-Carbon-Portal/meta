@@ -12,15 +12,7 @@ import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DataProduction
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.core.data.StationTimeSeriesMeta
-import se.lu.nateko.cp.meta.core.data.UriResource
+import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
 
@@ -33,14 +25,14 @@ import UriSerializer.Hash
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*
 
-	def readDto(uri: Uri): Option[UploadDto] = uri.path match{
+	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
 		case Hash.Object(_) =>
 			uriSer.fetchStaticObject(uri).map(objToDto)
 
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
 
-		case _ => None
+		case _ => Validated.error(s"URI $uri does lookes like neither object nor collection")
 	}
 }
 
@@ -111,7 +103,8 @@ object UploadDtoReader{
 			licence = obj.references.licence.map(_.url),
 			moratorium = obj.submission.stop.filter(_.compareTo(Instant.now()) > 0),
 			duplicateFilenameAllowed = None,
-			autodeprecateSameFilenameObjects = None
+			autodeprecateSameFilenameObjects = None,
+			partialUpload = None
 		)
 	)
 
@@ -131,12 +124,13 @@ object UploadDtoReader{
 		},
 		preExistingDoi = coll.doi.map(Doi.parse).collect{
 			case Success(doi) => doi
-		}
+		},
+		documentation = coll.documentation.map(_.hash)
 	)
 
 	private def dataProductionToDto(prod: DataProduction) = DataProductionDto(
 		creator = prod.creator.self.uri,
-		contributors = prod.contributors.map(_.self.uri),
+		contributors = prod.contributors.map(_.self.uri).toSeq,
 		hostOrganization = prod.host.map(_.self.uri),
 		comment = prod.comment,
 		sources = Option(prod.sources.map(_.hash)),
@@ -144,8 +138,7 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(box: LatLonBox) = box.uri.fold[Either[LatLonBox, URI]](Left(box)){
-		case CpVocab.SpatialCoverage(_) => Left(box)
-		case uri => Right(uri)
-	}
+	private def readCoverage(gf: GeoFeature): Either[GeoFeature, URI] = gf.uri match
+		case None      => Left(gf)
+		case Some(uri) => Right(uri)
 }

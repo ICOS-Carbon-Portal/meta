@@ -85,7 +85,8 @@ class FluxdataUpload(
 		title = "Drought-2018 atmospheric CO2 Mole Fraction product for 48 stations (96 sample heights)—release 2019-1",
 		description = Some("Atmospheric Greenhouse Gas Mole Fractions of CO2 collected by the Drought-2018 team, covering the period 1979-2018. Final quality controlled Level 2 data, release 2019-1. During the most recent period,  a selected set of stations, after being labelled as ICOS stations, follow the ICOS Atmospheric Station specification V1.3 (https://www.icos-ri.eu/fetch/ba12290c-3714-4dd5-a9f0-c431b9900ad1;1.0). Measurements and data processing for all time series is described in Ramonet, 2019 (doi:xxxxx). All concentrations are calibrated to the WMO X2007 CO2 mole fraction scale in µmole/mole (ppm)."),
 		isNextVersionOf = None,
-		preExistingDoi = Some(Doi("10.18160", "ERE9-9D85"))
+		preExistingDoi = Some(Doi("10.18160", "ERE9-9D85")),
+		documentation = None
 	)
 
 	def getFluxCollDto = StaticCollectionDto(
@@ -94,7 +95,8 @@ class FluxdataUpload(
 		title = "Warm Winter 2020 ecosystem eddy covariance flux product for 73 stations in FLUXNET-Archive format—release 2022-1",
 		description = Some("This is the release of the observational data product for eddy covariance fluxes at 73 stations in the ecosystem domain, part of them outside the ICOS network, covering the period 1989-2020. The data are in the standard format used for the ICOS L2 ecosystem products and also used by other regional networks like AmeriFlux. The processing has been done using the ONEFlux processing pipeline (https://github.com/icos-etc/ONEFlux) and is fully compliant and integrable with the FLUXNET2015 release (https://fluxnet.fluxdata.org/) and other datasets processed with the same pipeline (AmeriFlux, ICOS L2)."),
 		isNextVersionOf = None,//Some(Left(Sha256Sum.fromBase64Url("UZw8ra7OVilmVjATTCgIimpz").get)),
-		preExistingDoi = Some(Doi("10.18160", "2G60-ZHAK"))
+		preExistingDoi = Some(Doi("10.18160", "2G60-ZHAK")),
+		documentation = None
 	)
 
 	def getFilePath(meta: FileEntry): Path = baseDir
@@ -136,7 +138,7 @@ class FluxdataUpload(
 			specificInfo = Right(stationMeta),
 			isNextVersionOf = meta.prevHash.map(Left(_)),
 			preExistingDoi = if(haveDois) Some(Doi("10.18160", DoiMaker.coolDoi(meta.hash))) else None,
-			references = Some(ReferencesDto(Some(Seq("Warm Winter 2020")), None, None, None, None))
+			references = Some(ReferencesDto(Some(Seq("Warm Winter 2020")), None, None, None, None, None))
 		)
 	}
 

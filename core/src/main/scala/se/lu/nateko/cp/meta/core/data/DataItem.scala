@@ -4,8 +4,6 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
-sealed trait DataItem
-
 sealed trait StaticDataItem extends DataItem:
 	def res: URI
 	def hash: Sha256Sum
@@ -23,6 +21,8 @@ sealed trait DataItemCollection extends DataItem {
 	def doi: Option[String]
 }
 
+sealed trait DataItem
+
 final case class StaticCollection(
 	res: URI,
 	hash: Sha256Sum,
@@ -31,15 +31,22 @@ final case class StaticCollection(
 	title: String,
 	description: Option[String],
 	previousVersion: Option[URI],
-	nextVersion: Option[URI],
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: OneOrSeq[URI],
 	doi: Option[String],
+	documentation: Option[PlainStaticObject],
 	references: References
-) extends DataItemCollection with StaticDataItem with CitableItem{
+) extends DataItemCollection with StaticDataItem with CitableItem:
 	type M = StaticDataItem
-}
+
+	def coverage: Option[GeoFeature] = references.doi
+		.flatMap(_.geoLocations)
+		.flatMap(DataCite.geosToCp)
 
 trait CitableItem{
 	def hash: Sha256Sum
 	def doi: Option[String]
 	def references: References
+	def nextVersion: OptionalOneOrSeq[URI]
+	def latestVersion: OneOrSeq[URI]
 }

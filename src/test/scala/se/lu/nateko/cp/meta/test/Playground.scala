@@ -14,11 +14,12 @@ import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
-import se.lu.nateko.cp.meta.icos.EtcMetaSource
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
+import eu.icoscp.envri.Envri
 import scala.collection.concurrent.TrieMap
 import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.meta.mail.SendMail
+import se.lu.nateko.cp.cpauth.core.EmailSender
+
 
 object Playground {
 
@@ -38,7 +39,7 @@ object Playground {
 	def stop() = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
-		handles.createOrRecreate(postfix, new java.net.URL(targetUrl))
+		handles.createOrRecreate(postfix, new java.net.URI(targetUrl))
 	}
 
 //	def create(targetUrl: String): String = wait{
@@ -104,10 +105,9 @@ object Playground {
 		}
 	}
 
-	def mailSender = {
-		val conf = ConfigLoader.default.stationLabelingService.mailing
-		SendMail(conf.copy(mailSendingActive = true), system.log)
-	}
+	def mailSender =
+		val conf = ConfigLoader.default.stationLabelingService.get.mailing
+		EmailSender(conf)
 
 //	def printEtcStationsTable(): Unit = etcMetaSrc.fetchFromEtc().map(etcStationTable).foreach{rows =>
 //		rows.sortBy(_.head).map(_.mkString("\t")).foreach(println)

@@ -918,4 +918,64 @@ object TestQueries {
 			optional { ?valueTypeRes cpmeta:hasUnit ?unit }
 		}
 	"""
+
+	val incompleteUploads = """
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+
+		select ?dobj ?submTime where{
+			?dobj cpmeta:hasName ?fileName .
+			?dobj cpmeta:hasObjectSpec ?spec .
+			FILTER NOT EXISTS { ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime [] }
+			?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submTime
+		}
+		order by desc(?submTime)
+	"""
+	
+	val dataObjsWithCollections = """
+		PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix dcterms: <http://purl.org/dc/terms/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?spec ?coll where{
+			{
+				?dobj cpmeta:hasObjectSpec ?spec .
+				?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+				?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+				FILTER( ?submTime >= '2021-05-24T00:00:00.000Z'^^xsd:dateTime && ?submTime <= '2021-05-27T00:00:00.000Z'^^xsd:dateTime)
+			}
+			?spec cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
+				cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos>;
+				cpmeta:hasDataLevel "2"^^xsd:integer .
+			#?coll a cpmeta:Collection .
+			?coll dcterms:hasPart ?dobj .
+		}
+	"""
+
+	val geoFilter = """
+	prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+	prefix geo: <http://www.opengis.net/ont/geosparql#>
+
+	select ?dataType ?dataLevel ?submitter ?count ?station ?site
+	where{
+		{
+		select ?station ?site ?submitter ?spec (count(?dobj) as ?count) where{
+			?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
+			?dobj cpmeta:hasObjectSpec ?spec .
+			OPTIONAL {?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station }
+			OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
+			?dobj cpmeta:hasSizeInBytes ?size .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			?dobj geo:sfIntersects/geo:asWKT "POLYGON((19.045207 68.35593, 19.045208 68.35595, 19.045209 68.35595, 19.045209 68.35593, 19.045207 68.35593))"^^geo:wktLiteral . # Abisko Stordalen station
+		}
+		group by ?spec ?submitter ?station ?site
+	}
+	FILTER(CONTAINS(str(?spec), "meta.icos-cp.eu"))
+	?spec rdfs:label ?dataType .
+	?spec cpmeta:hasDataLevel ?dataLevel .
+	}
+	"""
 }

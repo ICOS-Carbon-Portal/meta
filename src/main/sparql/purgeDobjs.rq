@@ -1,7 +1,8 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?dobj ?p ?o .
-?o ?p2 ?o2 .
+	?dobj ?p ?o .
+	?o ?p2 ?o2 .
+	?user ?usageProp ?dobj .
 } where{
 	values ?dobj {
 		<https://meta.icos-cp.eu/objects/wwSJw_A90gr71f4_Iz-0TkE2>
@@ -81,6 +82,9 @@ construct {
 		OPTIONAL{
 			?o ?p2 ?o2 .
 			FILTER(?p != cpmeta:isNextVersionOf)
+		}
+		OPTIONAL{
+			?user ?usageProp ?dobj
 		}
 	}
 }

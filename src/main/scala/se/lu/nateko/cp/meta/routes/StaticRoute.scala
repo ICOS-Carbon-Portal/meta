@@ -10,7 +10,7 @@ import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Licence
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -20,12 +20,12 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import scala.language.postfixOps
 import scala.util.Using
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import eu.icoscp.envri.Envri
 
 object StaticRoute {
 
 	private val pages: PartialFunction[(String, Envri, EnvriConfig), Html] = {
-		case ("labeling", _, envriConfig) => views.html.LabelingPage()(envriConfig)
+		case ("labeling", envri, envriConfig) => views.html.LabelingPage()(envriConfig, envri)
 		case ("sparqlclient", envri, envriConfig) => views.html.SparqlClientPage()(envri, envriConfig)
 		case ("station", envri, _) => views.html.StationPage(envri)
 	}
@@ -96,6 +96,9 @@ object StaticRoute {
 				} ~
 				complete(StatusCodes.BadRequest -> "Expected 'query' form field with SPARQL query content")
 			}
+		} ~
+		path("robots.txt"){
+			getFromResource("robots.txt")
 		}
 	}
 

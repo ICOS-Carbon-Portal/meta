@@ -1,14 +1,6 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
-import java.net.{ URI => JavaUri }
-import java.time.Instant
-
-import scala.collection.AbstractIterator
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import scala.util.Using
-
+import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.IRI
@@ -21,8 +13,20 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnection
-
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
+
+import java.net.{ URI => JavaUri }
+import java.time.Instant
+import scala.collection.AbstractIterator
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
+
+
 
 extension(factory: ValueFactory){
 	def createIRI(uri: JavaUri): IRI = factory.createIRI(uri.toString)
@@ -52,14 +56,20 @@ extension (uri: JavaUri){
 	def ===(other: JavaUri): Boolean = uri.toString == other.toString
 }
 
-extension [T](res: CloseableIteration[T, _]){
+extension (uri: Uri)
+	def toRdf(using factory: ValueFactory): IRI = factory.createIRI(uri.toString)
+
+extension [T](res: CloseableIteration[T, _])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
-		override def hasNext: Boolean = res.hasNext()
+		override def hasNext: Boolean = try res.hasNext() catch case _ => false
+
 		override def next(): T = res.next()
 	}
-}
 
-extension (repo: Repository){
+	def asCloseableIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res)
+
+
+extension (repo: Repository)
 
 	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
 	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
@@ -95,16 +105,20 @@ extension (repo: Repository){
 		}
 	}
 
-	def accessEagerly[T](accessor: RepositoryConnection => T): T = {
-		val conn = repo.getConnection
-		try{
-			accessor(conn)
-		}
-		finally{
-			conn.close()
-		}
-	}
-}
+	def accessEagerly[T](accessor: RepositoryConnection => T): T =
+		val conn = repo.getConnection()
+		try accessor(conn) finally conn.close()
+
+end extension
+
+
+extension (sail: Sail)
+	def accessEagerly[T](accessor: GlobConn ?=> T): T =
+		val conn = sail.getConnection()
+		val tsc = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
+		val globCon = RdfLens.global(using tsc)
+		try accessor(using globCon) finally conn.close()
+
 
 def asString(lit: Literal): Option[String] = if(lit.getDatatype === XSD.STRING) Some(lit.stringValue) else None
 

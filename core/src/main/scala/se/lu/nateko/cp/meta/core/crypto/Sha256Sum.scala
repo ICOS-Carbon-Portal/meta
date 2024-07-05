@@ -39,7 +39,7 @@ class Sha256Sum(private val bytes: Array[Byte]) extends java.io.Serializable der
 		}
 		else false
 
-	override def hashCode: Int = Arrays.hashCode(bytes)
+	override def hashCode: Int = Arrays.hashCode(bytes.take(18))
 
 	override def toString: String = base64
 }

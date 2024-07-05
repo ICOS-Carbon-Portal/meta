@@ -4,20 +4,23 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
+import org.scalatest
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.DoNotDiscover
+import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.test.services.sparql.TestDbFixture
+import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
 import se.lu.nateko.cp.meta.utils.rdf4j.createLiteral
-import org.scalatest
+
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
-import se.lu.nateko.cp.meta.utils.rdf4j.createDateTimeLiteral
-import scala.concurrent.ExecutionContext
-import org.scalatest.Informer
 
-
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
+@DoNotDiscover
+class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -28,13 +31,7 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		f
 	}
 
-	lazy val db = new TestDb
-
 	type Rows = Future[IndexedSeq[BindingSet]]
-
-	override def afterAll() = {
-		db.cleanup()
-	}
 
 	def describeQfull(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int
@@ -498,6 +495,31 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			"title" -> f.createLiteral("rtot"), 
 			"unit" -> f.createLiteral("µmol m-2 s-1"), 
 			"valueType" -> f.createLiteral("ecosystem respiration")
+		)
+	}
+
+	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 81, 5){
+		f => Map(
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/UxugPrSsx3GRm6GnUq-iCQGd"),
+			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)
+		)
+	}
+
+	describeQ(TestQueries.dataObjsWithCollections, "Data objects that are part of a collection", 702, 10){
+		f => Map(
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/1BZq2-9V_ulCrak-yCl31Hqd"),
+			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject"),
+			"coll" -> f.createIRI("https://meta.icos-cp.eu/collections/qrhcaIUVRky49JrFtGFsuYvv"),
+		)
+	}
+
+	describeQ(TestQueries.geoFilter, "Statistics of data object origins with geo filter", 50, 0){
+		f => Map(
+			"dataType" -> f.createLiteral("ETC NRT Fluxes"),
+			"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/ES_SE-Sto"),
+			"dataLevel" -> f.createLiteral("1", XSD.INTEGER),
+			"count" -> f.createLiteral("1", XSD.INT),
+			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
 	}
 }

@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.icos.EtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
 
 class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{
@@ -28,9 +28,8 @@ class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: Act
 
 	def stationTcId(station: StationId) = inner.flatMap(_.stationTcId(station))
 
-	private val fetchInterval = 5.hours
-	private val initDelay = if(conf.ingestFileMetaAtStart) Duration.Zero else fetchInterval
-	system.scheduler.scheduleWithFixedDelay(initDelay, fetchInterval)(() => fetchFromEtc())
+	if conf.ingestFileMeta then
+		system.scheduler.scheduleWithFixedDelay(Duration.Zero, 5.hours)(() => fetchFromEtc())
 
 	private def fetchFromEtc(): Unit = metaSrc.getFileMeta.onComplete{
 

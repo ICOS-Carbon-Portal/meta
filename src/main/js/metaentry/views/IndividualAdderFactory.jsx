@@ -1,5 +1,5 @@
 
-module.exports = function(typesStore, checkSuffixAction, createIndividualAction){
+module.exports = function(typesStore, checkUriOrSuffixAction, createIndividualAction){
 
 	return React.createClass({
 
@@ -7,16 +7,14 @@ module.exports = function(typesStore, checkSuffixAction, createIndividualAction)
 
 		render: function(){
 
-			var suffixValid = !!this.state.suffixAvailable;
-			var icon = suffixValid ? 'plus' : 'times';
-			var inputStyle = suffixValid ? {} : {backgroundColor: 'pink'};
+			var icon = this.state.uriAvailable ? 'plus' : 'times';
+			var inputStyle = this.state.uriAvailable === false ? {backgroundColor: 'pink'} : {};
 
 			return <div className="input-group" style={{marginBottom: '10px'}}>
 				<input
 					type="text" className="form-control" placeholder="New instance's id"
-					style={inputStyle} defaultValue={this.state.candidateUriSuffix}
-					onChange={this.changeHandler} ref="newUriSuffInput"
-					onKeyDown={this.keyDownHandler}
+					style={inputStyle} onChange={this.changeHandler} ref="newUriOrSuffixInput"
+					onKeyDown={this.keyDownHandler} autoFocus
 				/>
 
 				<span className="input-group-text" onClick={this.clickHandler}>
@@ -25,33 +23,31 @@ module.exports = function(typesStore, checkSuffixAction, createIndividualAction)
 			</div>;
 		},
 
-		changeHandler: _.debounce(function(){
-			var suffix = React.findDOMNode(this.refs.newUriSuffInput).value;
-			checkSuffixAction(suffix);
-		}, 200),
+		changeHandler: function(){
+			var uriOrSuffix = React.findDOMNode(this.refs.newUriOrSuffixInput).value;
+			checkUriOrSuffixAction(uriOrSuffix);
+		},
 
 		clickHandler: function(){
-			if(this.state.suffixAvailable)
-				createIndividualAction({
-					uri: this.state.candidateUri,
-					type: this.state.chosen,
-					suffix: this.state.candidateUriSuffix
-				});
-			this.cancelAddition();
+			if(this.state.uriAvailable) createIndividualAction({
+				uri: this.state.candidateUri,
+				type: this.state.chosen
+			})
+			this.cancelAddition()
 		},
 
 		keyDownHandler: function(event){
 			if(event.keyCode == 27){ //Esc
 				this.cancelAddition();
 			}else if(event.keyCode == 13){ //Enter
-				this.clickHandler();
+				if(this.state.uriAvailable) this.clickHandler();
 			}
 		},
 
 		cancelAddition: function(){
-			var elem = React.findDOMNode(this.refs.newUriSuffInput);
+			var elem = React.findDOMNode(this.refs.newUriOrSuffixInput);
 			elem.value = null;
-			checkSuffixAction(null);
+			checkUriOrSuffixAction(null);
 			this.props.cancelHandler();
 		}
 	});

@@ -3,17 +3,27 @@ package se.lu.nateko.cp.meta
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.ConfigValueFactory
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
+import se.lu.nateko.cp.cpauth.core.EmailConfig
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
+import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.doi.core.DoiEndpointConfig
 import se.lu.nateko.cp.doi.core.DoiMemberConfig
+import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.Envri
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.toTypedJson
 import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
 import se.lu.nateko.cp.meta.persistence.postgres.DbServer
 import spray.json.*
 
 import java.net.URI
 import java.net.URL
+import java.nio.file.Files
+import java.nio.file.attribute.FileTime
+import scala.collection.mutable.WeakHashMap
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
@@ -24,7 +34,7 @@ case class IngestionConfig(
 )
 
 case class InstanceServerConfig(
-	writeContexts: Seq[URI],
+	writeContext: URI,
 	logName: Option[String],
 	skipLogIngestionAtStart: Option[Boolean],
 	logIngestionFromId: Option[Int],
@@ -43,10 +53,29 @@ case class DataObjectInstServersConfig(
 case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
 	forDataObjects: Map[Envri, DataObjectInstServersConfig],
+	metaFlow: OptionalOneOrSeq[MetaFlowConfig]
+)
+
+sealed trait MetaFlowConfig:
+	def cpMetaInstanceServerId: String
+
+case class IcosMetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	icosMetaInstanceServerId: String,
-	otcMetaInstanceServerId: String
-)
+	otcMetaInstanceServerId: String,
+	atcUpload: MetaUploadConf
+) extends MetaFlowConfig
+
+case class CitiesMetaFlowConfig(
+	cpMetaInstanceServerId: String,
+	citiesMetaInstanceServerId: String,
+	munichUpload: MetaUploadConf,
+	parisUpload: MetaUploadConf,
+	zurichUpload: MetaUploadConf,
+	atcUpload: MetaUploadConf
+) extends MetaFlowConfig
+
+case class MetaUploadConf(dirName: String, uploader: String)
 
 case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
 
@@ -80,7 +109,7 @@ case class EtcConfig(
 	saheatObjSpecId: String,
 	phenocamObjSpecId: String,
 	metaService: URI,
-	ingestFileMetaAtStart: Boolean
+	ingestFileMeta: Boolean
 )
 
 case class UploadServiceConfig(
@@ -91,15 +120,6 @@ case class UploadServiceConfig(
 	etc: EtcConfig
 )
 
-case class EmailConfig(
-	mailSendingActive: Boolean,
-	smtpServer: String,
-	username: String,
-	password: String,
-	fromAddress: String,
-	logBccAddress: Option[String]
-)
-
 case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
@@ -108,6 +128,7 @@ case class LabelingServiceConfig(
 	dgUserId: String,
 	riComEmail: String,
 	calLabEmails: Seq[String],
+	mailSendingActive: Boolean,
 	mailing: EmailConfig,
 	ontoId: String
 )
@@ -141,7 +162,7 @@ case class RdfStorageConfig(
 )
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URL, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
+case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -153,7 +174,7 @@ case class CpmetaConfig(
 	port: Int,
 	httpBindInterface: String,
 	dataUploadService: UploadServiceConfig,
-	stationLabelingService: LabelingServiceConfig,
+	stationLabelingService: Option[LabelingServiceConfig],
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
@@ -166,16 +187,34 @@ case class CpmetaConfig(
 	statsClient: StatsClientConfig
 )
 
-object ConfigLoader extends CpmetaJsonProtocol{
+object ConfigLoader extends CpmetaJsonProtocol:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
+
+	private val IcosFlow = "icos"
+	private val CitiesFlow = "cities"
 
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
 	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
-	given RootJsonFormat[InstanceServersConfig] = jsonFormat5(InstanceServersConfig.apply)
+	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
+	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
+	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat6(CitiesMetaFlowConfig.apply)
+	given RootJsonFormat[MetaFlowConfig] with
+		def write(mfc: MetaFlowConfig): JsValue = mfc match
+			case icos: IcosMetaFlowConfig => icos.toTypedJson(IcosFlow)
+			case cities: CitiesMetaFlowConfig => cities.toTypedJson(CitiesFlow)
+
+		def read(json: JsValue): MetaFlowConfig =
+			json.asJsObject("Expected MetaFlowConfig to be a JSON object").fields.get(TypeField) match
+				case Some(JsString(IcosFlow)) => json.convertTo[IcosMetaFlowConfig]
+				case Some(JsString(CitiesFlow)) => json.convertTo[CitiesMetaFlowConfig]
+				case Some(bad) => deserializationError(s"Unknown type of MetaFlowConfig: $bad")
+				case None => deserializationError(s"Cannot deserialize as MetaFlowConfig, missing field $TypeField")
+
+	given RootJsonFormat[InstanceServersConfig] = jsonFormat3(InstanceServersConfig.apply)
 	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
 	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
 	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
@@ -189,8 +228,8 @@ object ConfigLoader extends CpmetaJsonProtocol{
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
-	given RootJsonFormat[EmailConfig] = jsonFormat6(EmailConfig.apply)
-	given RootJsonFormat[LabelingServiceConfig] = jsonFormat9(LabelingServiceConfig.apply)
+	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
+	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
@@ -201,33 +240,19 @@ object ConfigLoader extends CpmetaJsonProtocol{
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
-	val appConfig: Config = {
-		val confFile = new java.io.File("application.conf").getAbsoluteFile
-		if(!confFile.exists) ConfigFactory.load
-		else
-			ConfigFactory.parseFile(confFile)
-				.withFallback(ConfigFactory.defaultApplication)
-				.withFallback(ConfigFactory.defaultReferenceUnresolved)
-				.resolve
-	}
+	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 
-	private val renderOpts = ConfigRenderOptions.concise.setJson(true)
+	private val submConfCache = WeakHashMap.empty[FileTime, SubmittersConfig]
 
-	val default: CpmetaConfig = {
-		val confJson: String = appConfig.getValue("cpmeta").render(renderOpts)
-
-		confJson.parseJson.convertTo[CpmetaConfig]
-	}
-
-	def submittersConfig: SubmittersConfig = {
+	def submittersConfig: SubmittersConfig =
 		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
-
-		if(confFile.exists) {
-			val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
-			confJson.parseJson.convertTo[SubmittersConfig]
-		} else {
+		if confFile.exists then
+			val key = Files.getLastModifiedTime(confFile.toPath)
+			submConfCache.getOrElseUpdate(
+				key,
+				ConfigFactory.parseFile(confFile).root.parseAs[SubmittersConfig]
+			)
+		else
 			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
-		}
-	}
 
-}
+end ConfigLoader

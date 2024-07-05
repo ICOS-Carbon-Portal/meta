@@ -34,6 +34,7 @@
     "browserify": "^17.0.0",
     "del": "^6.0.0",
     "gulp": "^4.0.2",
+    "minimist": "^1.2.8",
     "vinyl-source-stream": "^2.0.0"
   }
 }

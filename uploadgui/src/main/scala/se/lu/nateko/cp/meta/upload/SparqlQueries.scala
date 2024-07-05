@@ -2,8 +2,8 @@ package se.lu.nateko.cp.meta.upload
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Envri
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.core.data.DatasetType
 
 object SparqlQueries {
 
@@ -31,15 +31,25 @@ object SparqlQueries {
 		|}
 		|order by ?name""".stripMargin
 
-	def stations(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri): String = {
-		val orgClassFilter = orgClass.map(org => s"?station a/rdfs:subClassOf* <$org> .")
+	private def cityStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|SELECT *
+		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|FROM <https://citymeta.icos-cp.eu/resources/cpmeta/>
+		|FROM <https://citymeta.icos-cp.eu/resources/citymeta/>
+		|WHERE {
+		|	$orgFilter
+		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|}
+		|order by ?name""".stripMargin
+
+	def stations(orgClass: Option[URI], producingOrg: Option[URI])(implicit envri: Envri): String =
+		val orgClassFilter = orgClass.map(org => s"?station a <$org> .")
 		val producingOrgFilter: Option[String] = producingOrg.map(org => s"BIND(<$org> AS ?station) .")
 		val orgFilter = Iterable(producingOrgFilter, orgClassFilter).flatten.mkString("\n")
-		envri match {
-			case Envri.SITES => sitesStations(orgFilter)
-			case Envri.ICOS => icosStations(orgFilter)
-		}
-	}
+		envri match
+			case Envri.SITES      => sitesStations(orgFilter)
+			case Envri.ICOS       => icosStations(orgFilter)
+			case Envri.ICOSCities => cityStations(orgFilter)
 
 	def toStation(b: Binding) = Station(new NamedUri(new URI(b("station")), b("name")), b("id"))
 
@@ -69,33 +79,34 @@ object SparqlQueries {
 		|FROM <${from}>
 		|WHERE {
 		|	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ; cpmeta:hasFormat ?format ;
-		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project .
+		|		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project ;
+		|		cpmeta:hasSpecificDatasetType ?dsType .
 		|	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
 		|	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
 		|	OPTIONAL{
 		|		?spec cpmeta:containsDataset ?dataset .
-		|		BIND(EXISTS{?dataset a cpmeta:DatasetSpec} as ?isSpatioTemp)
 		|	}
 		|} order by ?name""".stripMargin
 
-	def objSpecs(implicit envri: Envri): String = envri match {
+	def objSpecs(using envri: Envri): String = envri match
 		case Envri.SITES => objSpecsTempl("https://meta.fieldsites.se/resources/sites/")
 		case Envri.ICOS => objSpecsTempl("http://meta.icos-cp.eu/resources/cpmeta/")
-	}
+		case Envri.ICOSCities => objSpecsTempl("https://citymeta.icos-cp.eu/resources/cpmeta/")
 
 	def toObjSpec(b: Binding) = {
 		def keywords(varname: String) = b.get(varname).map(_.split(",").toSeq).getOrElse(Seq.empty)
+		val dsTypeUri: String = b("dsType")
+		val dsType =
+			if dsTypeUri.endsWith("spatioTemporalDataset")
+			then DatasetType.SpatioTemporal
+			else DatasetType.StationTimeSeries
 
 		ObjSpec(
 			new URI(b("spec")),
 			b("name"),
 			b("dataLevel").toInt,
-			if(b.contains("dataset")) Some(
-				DsSpec(
-					uri = new URI(b("dataset")),
-					dsClass = (if(b("isSpatioTemp").toBoolean) DsSpec.SpatioTemp else DsSpec.StationTimeSer)
-				)
-			) else None,
+			if b.contains("dataset") then Some(new URI(b("dataset"))) else None,
+			dsType,
 			new URI(b("theme")),
 			new URI(b("project")),
 			new URI(b("format")),
@@ -125,10 +136,10 @@ object SparqlQueries {
 		|	optional {?pers cpmeta:hasEmail ?email}
 		|}""".stripMargin
 
-	def people(implicit envri: Envri): String = envri match {
+	def people(using envri: Envri): String = envri match
 		case Envri.SITES => peopleQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
 		case Envri.ICOS => peopleQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
-	}
+		case Envri.ICOSCities => peopleQuery(Seq("https://citymeta.icos-cp.eu/resources/cpmeta/"))
 
 	def toPerson(b: Binding) = NamedUri(new URI(b("pers")), s"""${b("fname")} ${b("lname")}""")
 
@@ -142,12 +153,12 @@ object SparqlQueries {
 		|	optional {?org rdfs:label ?label }
 		|}""".stripMargin
 
-	def organizations(implicit envri: Envri): String = envri match {
+	def organizations(using envri: Envri): String = envri match
 		case Envri.SITES => organizationsQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
 		case Envri.ICOS => organizationsQuery(Seq(
 			"http://meta.icos-cp.eu/ontologies/cpmeta/", "http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"
 		))
-	}
+		case Envri.ICOSCities => organizationsQuery(Seq("https://citymeta.icos-cp.eu/resources/cpmeta/"))
 
 	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
 

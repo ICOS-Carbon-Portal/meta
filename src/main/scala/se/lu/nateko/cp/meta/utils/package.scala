@@ -13,6 +13,10 @@ extension [T](inner: Option[T])
 	def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)
 		.getOrElse(Failure(error))
 
+extension[T](inner: Set[T])
+	def containsEither(elems: T*): Boolean =
+		elems.exists(inner.contains)
+
 def transformEither[L0, R0, L, R](left: L0 => L, right: R0 => R)(either: Either[L0, R0]): Either[L, R] =
 	either.fold[Either[L, R]](l => Left(left(l)), r => Right(right(r)))
 
@@ -30,11 +34,6 @@ def getStackTrace(err: Throwable): String = {
 	err.printStackTrace(new java.io.PrintWriter(traceWriter))
 	traceWriter.toString
 }
-
-extension [T](item: Option[Either[T, Seq[T]]])
-	def flattenToSeq: Seq[T] = item.fold(Seq.empty[T]){either =>
-		either.fold(Seq(_), identity)
-	}
 
 extension (inner: AnyRef)
 	def asOptInstanceOf[T: ClassTag]: Option[T] = inner match{

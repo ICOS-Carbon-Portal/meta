@@ -14,13 +14,19 @@ case class Station(
 	responsibleOrganization: Option[Organization],
 	pictures: Seq[URI],
 	specificInfo: StationSpecifics,
+	countryCode: Option[CountryCode],
 	funding: Option[Seq[Funding]]
 ){
 	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
 		case Nil => None
 		case single :: Nil => Some(single)
-		case multiple => Some(FeatureCollection(multiple, Some(org.name)).flatten)
+		case multiple => Some(FeatureCollection(multiple, Some(org.name), None).flatten) // ?
 	}
+
+	def timeZoneOffset: Option[Int] = specificInfo match
+		case icos: IcosStationSpecifics => icos.timeZoneOffset
+		case cities: IcosCitiesStationSpecifics => cities.timeZoneOffset
+		case _: SitesStationSpecifics | NoStationSpecifics => None
 }
 
 case class Funding(
@@ -38,14 +44,13 @@ enum FunderIdType:
 
 case class Funder(org: Organization, id: Option[(String, FunderIdType)])
 
-sealed trait StationSpecifics
-
 case object NoStationSpecifics extends StationSpecifics
 
 sealed trait EcoStationSpecifics extends StationSpecifics{
 	def climateZone: Option[UriResource]
 	def ecosystems: Seq[UriResource]
 	def meanAnnualTemp: Option[Float]
+	def meanAnnualPrecip: Option[Float]
 }
 
 case class SitesStationSpecifics(
@@ -53,7 +58,9 @@ case class SitesStationSpecifics(
 	ecosystems: Seq[UriResource],
 	climateZone: Option[UriResource],
 	meanAnnualTemp: Option[Float],
+	meanAnnualPrecip: Option[Float],
 	operationalPeriod: Option[String],
+	discontinued: Boolean,
 	documentation: Seq[PlainStaticObject]
 ) extends EcoStationSpecifics
 
@@ -62,10 +69,11 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def stationClass: Option[IcosStationClass]
 	def labelingDate: Option[LocalDate]
 	def discontinued: Boolean
-	def countryCode: Option[CountryCode]
 	def timeZoneOffset: Option[Int]
 	def documentation: Seq[PlainStaticObject]
 }
+
+sealed trait StationSpecifics
 
 case class AtcStationSpecifics(
 	wigosId: Option[String],
@@ -73,7 +81,6 @@ case class AtcStationSpecifics(
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
-	countryCode: Option[CountryCode],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics
@@ -85,7 +92,6 @@ object AtcStationSpecifics{
 		stationClass = base.stationClass,
 		labelingDate = base.labelingDate,
 		discontinued = base.discontinued,
-		countryCode = base.countryCode,
 		timeZoneOffset = base.timeZoneOffset,
 		documentation = base.documentation
 	)
@@ -96,7 +102,6 @@ case class OtcStationSpecifics(
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
-	countryCode: Option[CountryCode],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics
@@ -106,7 +111,6 @@ case class EtcStationSpecifics(
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
-	countryCode: Option[CountryCode],
 	climateZone: Option[UriResource],
 	ecosystemType: Option[UriResource],
 	meanAnnualTemp: Option[Float],
@@ -120,13 +124,14 @@ case class EtcStationSpecifics(
 	override def ecosystems = ecosystemType.toSeq
 }
 
+case class IcosCitiesStationSpecifics(timeZoneOffset: Option[Int]) extends StationSpecifics
+
 object EtcStationSpecifics{
 	def apply(base: IcosStationSpecifics): EtcStationSpecifics = EtcStationSpecifics(
 		theme = base.theme,
 		stationClass = base.stationClass,
 		labelingDate = base.labelingDate,
 		discontinued = base.discontinued,
-		countryCode = base.countryCode,
 		climateZone = None,
 		ecosystemType = None,
 		meanAnnualTemp = None,

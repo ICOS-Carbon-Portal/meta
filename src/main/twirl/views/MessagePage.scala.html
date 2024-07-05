@@ -1,10 +1,10 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import java.net.URI
-@import se.lu.nateko.cp.viewscore.CpMenu
+@import eu.icoscp.envri.Envri
 
 @(title: String, message: String)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(title, title, CpMenu.default){
+@ServerSidePage(title, Some(title)){
 	@for(line <- message.linesIterator) {
 	<p>@line</p>
 	}

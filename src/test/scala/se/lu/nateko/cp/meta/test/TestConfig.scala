@@ -11,8 +11,9 @@ import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLDataProperty
 import org.semanticweb.owlapi.model.OWLObjectProperty
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.core.data.{Envri, EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import java.net.URI
+import eu.icoscp.envri.Envri
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
@@ -32,7 +33,7 @@ object TestConfig {
 		val instOnt = factory.createIRI(instOntUri)
 		val ont = factory.createIRI(ontUri)
 		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
-		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), Seq(instOnt))
+		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), instOnt)
 	}
 
 	private val prefixManager: PrefixManager =

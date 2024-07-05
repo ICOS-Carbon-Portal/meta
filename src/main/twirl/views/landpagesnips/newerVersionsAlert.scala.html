@@ -1,0 +1,29 @@
+@import java.net.URI
+@import se.lu.nateko.cp.meta.core.data.CitableItem
+
+@(item: CitableItem, itemType: String)
+@for(nextUri <- item.nextVersion) {
+	@alertWarning(s"Deprecated $itemType"){
+		@if(nextUri != item.latestVersion){
+			<div>Next version(s): @versionLink(nextUri)</div>
+		}
+		<div>Latest version(s): @versionLink(item.latestVersion)</div>
+	}
+}
+
+@singleVersionLink(uri: URI) = {
+	<a class="alert-link" href=@{uri.getRawPath}>@{uri.toString.split("/").last}</a>
+}
+
+@multipleVersionLinks(uris: Seq[URI]) = {
+	@for((uri, i) <- uris.zipWithIndex){
+		@singleVersionLink(uri) @if(i < (uris.size - 1)){,}
+	}
+}
+
+@versionLink(versions: Either[URI, Seq[URI]]) = {
+	@versions match {
+		case Left(uri) => { @singleVersionLink(uri) }
+		case Right(uris) => { @multipleVersionLinks(uris) }
+	}
+}

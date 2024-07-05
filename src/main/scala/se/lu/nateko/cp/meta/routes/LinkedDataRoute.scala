@@ -10,7 +10,6 @@ import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
@@ -21,6 +20,8 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
 import spray.json.DefaultJsonProtocol.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import eu.icoscp.envri.Envri
+import akka.event.LoggingAdapter
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -29,7 +30,8 @@ object LinkedDataRoute {
 		config: InstanceServersConfig,
 		uriSerializer: UriSerializer,
 		instanceServers: Map[String, InstanceServer],
-		vocab: CpVocab
+		vocab: CpVocab,
+		log: LoggingAdapter
 	)(using envriConfs: EnvriConfigs): Route = {
 
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
@@ -59,7 +61,7 @@ object LinkedDataRoute {
 
 					val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
 						case (id, instServConf)
-							if instServConf.writeContexts.exists(_.toString.endsWith(path)) =>
+							if instServConf.writeContext.toString.endsWith(path) =>
 								instanceServers.get(id).map((id, _))
 					}.flatten
 
@@ -81,8 +83,12 @@ object LinkedDataRoute {
 					case fileName if InspireXmlFilename.matches(fileName) =>
 						(extractUri & extractEnvri){(uri, envri) =>
 							val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
-							uriSerializer.fetchStaticObject(canonUri) match{
+							val objV = uriSerializer.fetchStaticObject(canonUri)
+							objV.result match
 								case Some(dobj: DataObject) =>
+									if objV.errors.nonEmpty then
+										log.warning(s"Problems while reading data object $canonUri\n${objV.errors.mkString("\n")}")
+
 									val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
 									val printer = new scala.xml.PrettyPrinter(120, 3)
 									val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -92,8 +98,8 @@ object LinkedDataRoute {
 										complete(HttpEntity(contentType, fineXml))
 									}
 								case _ =>
-									complete(StatusCodes.NotFound -> s"No data object with SHA-256 hashsum of ${hash.base64Url}")
-							}
+									val msg = s"No data object with SHA-256 hashsum of ${hash.base64Url}\n${objV.errors.mkString("\n")}"
+									complete(StatusCodes.NotFound -> msg)
 						}
 
 					case fileName @ FileNameWithExtension(_, ext) =>

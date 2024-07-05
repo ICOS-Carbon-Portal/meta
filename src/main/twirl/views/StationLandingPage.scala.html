@@ -3,158 +3,118 @@
 @import se.lu.nateko.cp.meta.core.data.*
 @import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.stationUriShortener
 @import akka.http.scaladsl.model.Uri
 @import landpagesnips.*
+@import eu.icoscp.envri.Envri
 
-@(stExt: OrganizationExtra[Station], vocab: CpVocab)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage(stationShortName(station), station.org.name, CpMenu.default){
-	<div class="row form-group">
+@(stExt: OrganizationExtra[Station], vocab: CpVocab, errors: Seq[String])(implicit envri: Envri, conf: EnvriConfig)
+@ServerSidePage(stationShortName(station), header){
+	@errorList(errors)
+	@discontinuedStationWarning(station)
+	@if(webpageDetailsPresent) {
+		@for(details <- station.org.webpageDetails) {
+			@for(cover <- details.coverImage) {
+			<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
+				<div class="col">
+						<h1 class="text-light text-center" style="margin-top: 8vw;">
+							@envri STATION<br><strong style="font-size: calc(1.375rem + 6.5vw);">@{stationShortName(station)}</strong>
+						</h1>
+				</div>
+			</div>
+			}
+			@for(descr <- details.self.comments.headOption){
+			<div class="container-xl">
+				<div class="row">
+					<div class="col text-center lead my-5 p-5 fw-normal">
+						@descr
+					</div>
+				</div>
+			</div>
+			}
+		}
+		<div class="row bg-primary bg-opacity-10">
+			<div class="col">
+				<div class="container-xl">
+					<div class="row justify-content-start justify-content-md-around justify-content-xl-center py-5 text-primary">
+						@for(cc <- station.countryCode){
+							@quickfact(cc.displayCountry, "fa-map-marker-alt")
+						}
+						@for(alt <- station.location.flatMap(_.alt)){
+							@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Altitude"})
+						}
+						@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
+							@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))
+						}
+						@for(meanAnnualPrecip <- ecoSpecifics.flatMap(_.meanAnnualPrecip)){
+							@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
+						}
+						@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
+							@quickfact(climateZone, "fa-image", Some("Climate zone"))
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+		@for(boxes <- station.org.webpageDetails.flatMap(_.linkBoxes)) {
+			@linkBoxes(boxes)
+		}
+		@if(station.fullCoverage.isDefined) {
+			<div class="row my-5">
+				@stationMap
+			</div>
+		}
+	}
+	@webpageDetailsSpecificContainer{
 		<div class="col-sm-8">
 			<div class="row gy-2">
-			@for(icos <- icosSpecifics){
-				@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.oceanTheme === icos.theme.fold[URI](null)(_.self.uri))){
-					@property("Discontinued", "(former ICOS station)")
-				} else {}
-				@property("Station ID", station.id)
-				@for(wigos <- wigosId){
-					@property("WIGOS ID", wigos)
-				}
-				@for(cls <- icos.stationClass){
-					@property("ICOS Station class", cls.toString)
-				}
-				@for(cc <- icos.countryCode){
-					@property("Country code", cc.code)
-				}
-				@for(lblDate <- icos.labelingDate){
-					@property("ICOS Labeling date", lblDate.toString)
-				}
-				@for(tz <- icos.timeZoneOffset){
-					@property("Time zone offset", tz.toString)
-				}
-			}
-			@for(descr <- station.org.self.comments){
-				@property("Description", descr)
-			}
-			@for(eco <- ecoSpecifics){
-				@for(climateZone <- eco.climateZone) {
-					@htmlProperty{Climate zone}{@resourceLink(climateZone)}
-				}
-				@if(eco.ecosystems.isEmpty) {} else {
-					@htmlProperty{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
-						@for((ecoType, i) <- eco.ecosystems.zipWithIndex) {
-							@if(i > 0) {<span> / </span>} else {}
-							@resourceLink(ecoType)
-						}
-					}
-				}
-				@for(temperature <- eco.meanAnnualTemp) {
-					@property("Mean annual temperature", s"$temperature °C")
-				}
-			}
-			@for(eco <- etcSpecifics){
-				@for(meanAnnualPrecip <- eco.meanAnnualPrecip){
-					@property("Mean annual precipitation", s"$meanAnnualPrecip mm")
-				}
-				@for(meanAnnualRad <- eco.meanAnnualRad){
-					@htmlProperty{Mean annual incoming SW radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
-				}
-				@for(doc <- eco.stationDocs){
-					@htmlProperty{Documentation resource}{
-						<a target="_blank" href=@doc>@{doc.toString}</a>
-					}
-				}
-				@for(pub <- eco.stationPubs){
-					@htmlProperty{Data publication}{
-						<a target="_blank" href=@pub>@{pub.toString}</a>
-					}
-				}
-			}
-			@for(sites <- sitesSpecifics){
-				@for(operationalPeriod <- sites.operationalPeriod) {
-					@property("Operational period", operationalPeriod)
-				}
-			}
-			@for(document <- stationDocs) {
-				@htmlProperty{Documentation}{<a href=@{document.res.getRawPath}>@{document.name}</a>}
-			}
-			@for(org <- station.responsibleOrganization) {
-				@htmlProperty{Organization}{
-					<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
-				}
-			}
+				@detailedInformation
 			</div>
-			@for(fundings <- station.funding){
-				<h2 class="fs-3 mt-5">Acknowledgements</h2>
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Funder</th>
-							<th>Award number</th>
-							<th>Award</th>
-							<th>Start date</th>
-							<th>End date</th>
-							<th>Comment</th>
-						</tr>
-					</thead>
-					<tbody>
-						@for(funding <- fundings){
-							<tr>
-								<td>@agentLink(funding.funder.org)</td>
-								<td>@optLinkText(funding.awardNumber, funding.awardUrl)</td>
-								<td>@optLinkText(funding.awardTitle, funding.awardUrl)</td>
-								<td>@(funding.start.fold("")(_.toString))</td>
-								<td>@(funding.stop.fold("")(_.toString))</td>
-								<td>@{funding.self.comments.headOption.getOrElse("")}</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			}
+			@fundingInformation(station.funding)
 			@staff(stExt)
-			@if(station.fullCoverage.isEmpty) {} else {
-				<h2 class="fs-3 mt-5">Location</h2>
-				<div class="row gy-2">
-				@for(pos <- station.location){
-					@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
-					@for(alt <- pos.alt){
-						@property("Elevation", s"${alt.toInt} m")
+			@if(!webpageDetailsPresent) {
+				@if(station.fullCoverage.isDefined) {
+					<h2 class="fs-3 mt-5">Location</h2>
+					<div class="row gy-2">
+						@for(pos <- station.location){
+							@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
+							@for(alt <- pos.alt){
+								@property("Elevation", s"${alt.toInt} m")
+							}
+						}
+					</div>
+					@stationMap
+				}
+				@if(station.pictures.nonEmpty) {
+					<h2 class="fs-3 mt-5">Pictures</h2>
+					@for(picture <- station.pictures) {
+						<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">
 					}
 				}
-				</div>
-				@defining(s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon") { maplink =>
-					<iframe src="@maplink" style="margin-top: 10px;"></iframe>
-					<a href="@maplink">Open map</a>
-				}
-			}
-			@if(station.pictures.isEmpty) {} else {
-				<h2 class="fs-3 mt-5">Pictures</h2>
-				@for(picture <- station.pictures) {
-					<img src="@picture" class="img-fluid" style="margin-bottom: 15px;">
-				}
 			}
 		</div>
-		<div class="col-sm-4 text-center">
-			<div>
-				<a class="btn btn-lg btn-primary my-3" href="@portalLink">
-					Browse data from @stationShortName(station)
-				</a>
+		@if(!webpageDetailsPresent) {
+			<div class="col-sm-4 text-center">
+				<div>
+					<a class="btn btn-lg btn-primary my-3" href="@portalLink">
+						Browse data from @stationShortName(station)
+					</a>
+				</div>
+				@for(email <- station.org.email) {
+					<div class="btn btn-link">
+						<span class="fas fa-envelope"></span>
+						<a href="mailto:@email">@{email}</a>
+					</div>
+				}
+				@for(website <- station.org.website) {
+					<div class="btn btn-link">
+						<span class="fas fa-external-link-alt"></span>
+						<a href="@website">Read more about @stationShortName(station)</a>
+					</div>
+				}
 			</div>
-			@for(email <- station.org.email) {
-				<div class="btn btn-link">
-					<span class="fas fa-envelope"></span>
-					<a href="mailto:@email">@{email}</a>
-				</div>
-			}
-			@for(website <- station.org.website) {
-				<div class="btn btn-link">
-					<span class="fas fa-external-link-alt"></span>
-					<a href="@website">Read more about @stationShortName(station)</a>
-				</div>
-			}
-		</div>
-	</div>
+		}
+	}
 }
 
 @station = @{stExt.org}
@@ -210,7 +170,15 @@
 	}
 }
 
-@icon = @{icosSpecifics.flatMap(_.theme).flatMap(_.markerIcon).getOrElse("")}
+@maplink = @{
+	val icon = icosSpecifics.flatMap(_.theme).flatMap(_.markerIcon).getOrElse("")
+	s"/station/?station=${station.org.self.uri.getRawPath}&icon=$icon"
+}
+
+@stationMap = {
+	<iframe src="@maplink" style="margin-top: 10px;"></iframe>
+	<a href="@maplink">Open map</a>
+}
 
 @optLinkText(text: Option[String], url: Option[URI]) = {
 	@text match{
@@ -227,5 +195,156 @@
 		case None => {
 			<span></span>
 		}
+	}
+}
+
+@quickfact(value: String, icon: String, descr: Option[String] = None) = {
+	<div class="col-4 col-md-2 p-3">
+		<i class="fas @icon display-1"></i>
+		<div class="fs-3 fw-semibold">@value</div>
+		@for(descr <- descr){
+			<div>@descr</div>
+		}
+	</div>
+}
+
+@webpageDetailsPresent = @{station.org.webpageDetails.isDefined}
+
+@header = @{
+	if (webpageDetailsPresent) None else Some(station.org.name)
+}
+
+@webpageDetailsSpecificContainer(inner: Html) = {
+	@if(webpageDetailsPresent){
+		<div class="container-xl">
+			<div class="row form-group mt-3">
+				@inner
+			</div>
+		</div>
+	} else{
+		<div class="row form-group">
+			@inner
+		</div>
+	}
+}
+
+@detailedInformation = {
+	@if(webpageDetailsPresent) {
+		<h2 class="fs-3 mt-5">Detailed information</h2>
+	}
+	@for(icos <- icosSpecifics){
+		@if(icos.discontinued && (icos.labelingDate.isDefined || vocab.hasOceanTheme(icos))){
+			@property("Discontinued", "(former ICOS station)")
+		}
+	}
+	@property("Station ID", station.id)
+	@for(cc <- station.countryCode){ @property("Country code", cc.code) }
+	@for(icos <- icosSpecifics){
+		@for(wigos <- wigosId){
+			@property("WIGOS ID", wigos)
+		}
+		@for(cls <- icos.stationClass){
+			@property("ICOS Station class", cls.toString)
+		}
+		@for(lblDate <- icos.labelingDate){
+			@property("ICOS Labeling date", lblDate.toString)
+		}
+		@for(tz <- icos.timeZoneOffset){
+			@property("Time zone offset", tz.toString)
+		}
+	}
+	@for(descr <- station.org.self.comments){
+		@property("Description", descr)
+	}
+	@for(eco <- ecoSpecifics){
+		@for(climateZone <- eco.climateZone) {
+			@htmlProperty{Climate zone}{@resourceLink(climateZone)}
+		}
+		@if(eco.ecosystems.nonEmpty) {
+			@htmlProperty{@if(eco.ecosystems.length > 1){Main ecosystems} else {Main ecosystem}}{
+				@for((ecoType, i) <- eco.ecosystems.zipWithIndex) {
+					@if(i > 0) {<span> / </span>}
+					@resourceLink(ecoType)
+				}
+			}
+		}
+		@for(temperature <- eco.meanAnnualTemp) {
+			@property("Mean annual temperature", s"$temperature °C")
+		}
+	}
+	@for(eco <- etcSpecifics){
+		@for(meanAnnualPrecip <- eco.meanAnnualPrecip){
+			@property("Mean annual precipitation", s"$meanAnnualPrecip mm")
+		}
+		@for(meanAnnualRad <- eco.meanAnnualRad){
+			@htmlProperty{Mean annual incoming SW radiation}{<span>@meanAnnualRad W/m<sup>2</sup></span>}
+		}
+		@for(doc <- eco.stationDocs){
+			@htmlProperty{Documentation resource}{
+				<a target="_blank" href=@doc>@{doc.toString}</a>
+			}
+		}
+		@for(pub <- eco.stationPubs){
+			@htmlProperty{Data publication}{
+				<a target="_blank" href=@pub>@{pub.toString}</a>
+			}
+		}
+	}
+	@if(webpageDetailsPresent) {
+		@for(pos <- station.location){
+			@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")
+			@for(alt <- pos.alt){
+				@property("Elevation", s"${alt.toInt} m")
+			}
+		}
+	}
+	@for(sites <- sitesSpecifics){
+		@for(operationalPeriod <- sites.operationalPeriod) {
+			@property("Operational period", operationalPeriod)
+		}
+	}
+	@for(document <- stationDocs) {
+		@htmlProperty{Documentation}{<a href=@{document.res.getRawPath}>@{document.name}</a>}
+	}
+	@for(org <- station.responsibleOrganization) {
+		@htmlProperty{Organization}{
+			<a href=@{org.self.uri.getRawPath}>@{org.name}</a>
+		}
+	}
+	@if(webpageDetailsPresent) {
+		@for((picture, i) <- station.pictures.zipWithIndex) {
+			@if(i > 0) {,}
+			@htmlProperty{Pictures}{<a href=@picture>Picture #@{i + 1}</a>}
+		}
+	}
+}
+
+@fundingInformation(fundingOpt: Option[Seq[Funding]]) = {
+	@for(fundings <- fundingOpt){
+		<h2 class="fs-3 mt-5">Acknowledgements</h2>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Funder</th>
+					<th>Award number</th>
+					<th>Award</th>
+					<th>Start date</th>
+					<th>End date</th>
+					<th>Comment</th>
+				</tr>
+			</thead>
+			<tbody>
+				@for(funding <- fundings){
+					<tr>
+						<td>@agentLink(funding.funder.org)</td>
+						<td>@optLinkText(funding.awardNumber, funding.awardUrl)</td>
+						<td>@optLinkText(funding.awardTitle, funding.awardUrl)</td>
+						<td>@(funding.start.fold("")(_.toString))</td>
+						<td>@(funding.stop.fold("")(_.toString))</td>
+						<td>@{funding.self.comments.headOption.getOrElse("")}</td>
+					</tr>
+				}
+			</tbody>
+		</table>
 	}
 }

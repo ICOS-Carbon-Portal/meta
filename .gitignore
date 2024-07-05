@@ -23,6 +23,7 @@ npm-debug.log
 .metals/
 .bloop/
 .bsp/
+.scala-build/
 .vscode/
 project/metals.sbt
 /.idea
@@ -51,6 +52,8 @@ src/main/resources/gcmdkeywords.json
 /fileStorage/
 /rdfStorage/
 /ssl/
-/atcmeta/
+/metaflowUploads/
 /sparqlMagicIndex.bin
+/sparqlMagicIndex.bin.bak
 /citationsCacheDump.json
+/doiMetaCacheDump.json

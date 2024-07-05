@@ -35,9 +35,11 @@ You will be redirected to a page showing, among other things, your API token.
 This token is what your software must use to authenticate itself against CP services.
 It has validity period of 100000 seconds (about 27.8 hours).
 
-Alternatively, the authentication token can be fetched in an automation-friendly way by HTTP-POSTing the username and password as HTML form fields `mail` and `password` to **https://cpauth.icos-cp.eu/password/login**. For example, using a popular command-line tool `curl`, it can be done as follows:
+Alternatively, the authentication token can be fetched in an automation-friendly way by HTTP-POSTing the username and password as HTML form fields `mail` and `password` to **https://cpauth.icos-cp.eu/password/login**. For example, using a popular command-line tool `curl` on Linux, it can be done as follows:
 
-`$ curl --cookie-jar cookies.txt --data "mail=<user email>&password=<password>" https://cpauth.icos-cp.eu/password/login`
+`$ curl --cookie-jar cookies.txt --data "mail=user_email&password=user_password" https://cpauth.icos-cp.eu/password/login`
+
+(please note that both email and the password strings must be URL-encoded, at least when they contain special characters, such as e.g. `+`, `$`, `&`, or spaces; encoding can be done for example using `encodeURIComponent()` function of any Web browser's Javascript console)
 
 The resulting `cookies.txt` file will then contain the authentication cookie token, which can be automatically resent during later requests. (Note for developers: the file must be edited if you want to use it for tests against `localhost`).
 
@@ -109,7 +111,7 @@ For the spatiotemporal data objects, the metadata package has the same general s
 Clarifications:
 
 - `submitterId` will be provided by the CP's technical people. This is not the same as username for logging in with CPauth.
-- `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems.
+- `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems. It's a 32-byte binary sequence, and must be represented as a string property, containing either hex or base64 encoding.
 - `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
 - `specificInfo` for station-specific time series objects
 	- `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
@@ -153,6 +155,7 @@ Clarifications:
 	- `moratorium` (optional) is an ISO 8601 timestamp with the desired publication time in the future (instead of the moment of data upload). The data object will be prevented from being downloaded until the moratorium expires.
 	- `duplicateFilenameAllowed` (optional) boolean flag signalling upload of (potentially) duplicate-filename data/doc object without deprecating the existing object(s) with the same filename (and the same [object format](https://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat), in case of data objects).
 	- `autodeprecateSameFilenameObjects` (optional) boolean flag requesting that all the existing non-deprecated data/doc objects with the same filename (and the same [object format](https://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat), in case of data objects), as the one being uploaded, will be automatically deprecated by this upload.
+	- `partialUpload` (optional) boolean flag signalling that the data/doc object being uploaded is expected to be a part of a group, together deprecating a single other object; if the flag is set to 'true', then the deprecated single object must be specified in the `isNextVersionOf` property of this metadata package.
 
 In HTTP protocol terms, the metadata package upload is performed by HTTP-POSTing its contents to `https://meta.icos-cp.eu/upload` with `application/json` content type and the authentication cookie. For example, using `curl` (`metaPackage.json` and `cookies.txt` must be in the current directory), it can be done as follows:
 
@@ -183,7 +186,8 @@ Carbon Portal supports creation of static collections with constant lists of imm
 	"description": "Optional collection description",
 	"members": ["https://meta.icos-cp.eu/objects/G6PjIjYC6Ka_nummSJ5lO8SV", "https://meta.icos-cp.eu/objects/sdfRNhhI5EN_BckuQQfGpdvE"],
 	"isNextVersionOf": "CkSE78VzQ3bmHBtkMLt4ogJy",
-	"preExistingDoi": "10.18160/VG28-H2QA"
+	"preExistingDoi": "10.18160/VG28-H2QA",
+	"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM"
 }
 ```
 The fields are either self-explanatory, or have the same meaning as for the data object upload.
@@ -234,7 +238,11 @@ To demonstrate some of the possibilities that are accessible via SPARQL, we refe
 
 ---
 
-## Metadata flow (for ATC only)
+## Metadata flow (for ICOS ATC and ICOS Cities mid- and low cost sernsor networks)
+
+Authentication with a pre-configured data portal account is required. The authentication mechanism is the same as for data object upload.
+
+### ATC
 
 The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST requests to URLs of the form
 
@@ -242,7 +250,17 @@ The CSV tables with ATC metadata are to be pushed as payloads of HTTP POST reque
 
 where `<tableName>` is a name used to distinguish different tables, for example "roles", "stations", "instruments", "instrumentsLifecycle", etc.
 
-Authentication with a pre-configured CP account is required. The authentication mechanism is the same as for data object upload.
+### ICOS Cities mid- and low cost sensor networks
+
+The URL to POST metadata files to is of the form
+
+`https://citymeta.icos-cp.eu/upload/midLowCost<city>/<tableName>`
+
+where `<city>` is a city (e.g. `Zurich`, `Paris`, `Munich`) and `<tableName>` is the name of a metadata table (e.g. `sites`). For example, to upload with `curl`:
+
+`$ curl -X POST --data-binary "@zuerich_sites.csv" https://citymeta.icos-cp.eu/upload/midLowCostZurich/sites --cookie "cpauthToken=..."`
+
+
 
 ---
 

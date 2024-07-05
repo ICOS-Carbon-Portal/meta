@@ -7,7 +7,7 @@ select * where{
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?coll}
 	OPTIONAL{?coll cpmeta:hasCitationString ?citation}
 	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-	FILTER(STRSTARTS(str(?coll), "${host}"))
+	FILTER(CONTAINS(str(?coll), "${host}"))
 }
 order by ?title
 `;

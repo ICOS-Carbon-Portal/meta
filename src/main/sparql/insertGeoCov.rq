@@ -1,0 +1,9 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?cov a <http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage> .
+	?cov cpmeta:asGeoJSON "{\"type\":\"LineString\",\"coordinates\":[[15.7,54.201],[15.655,54.859],[15.613,54.889],[15.7,54.903],[15.651,54.959],[15.631,55.347],[15.54,55.527],[15.745,55.651],[15.991,55.572],[15.785,55.661],[16.01,55.572],[15.921,55.732],[16.139,55.62],[15.7,54.201],[15.696,55.389],[15.455,55.562],[15.505,55.349],[15.335,55.518],[15.403,55.284],[15.093,55.413],[15.625,54.884],[16.021,54.328],[15.7,54.201]]}" .
+	<https://meta.icos-cp.eu/objects/vlNbn--sLdLZYQ4vtP2MKkUV> cpmeta:hasSpatialCoverage ?cov .
+
+} where{
+	bind(<http://meta.icos-cp.eu/resources/spcov_vlNbn--sLdLZYQ4vtP2MKkUV> as ?cov)
+}

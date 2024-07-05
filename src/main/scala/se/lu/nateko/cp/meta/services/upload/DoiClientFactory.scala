@@ -6,9 +6,9 @@ import se.lu.nateko.cp.doi.core.DoiReadonlyClient
 import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.DoiConfig
-import se.lu.nateko.cp.meta.core.data.Envri
 
 import scala.concurrent.ExecutionContext
+import eu.icoscp.envri.Envri
 
 class DoiClientFactory(conf: DoiConfig)(using ExecutionContext):
 

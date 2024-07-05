@@ -3,8 +3,8 @@ package se.lu.nateko.cp.meta.test.icos
 import java.time.Instant
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.icos.Membership
-import se.lu.nateko.cp.meta.icos.RolesDiffCalc
+import se.lu.nateko.cp.meta.metaflow.Membership
+import se.lu.nateko.cp.meta.metaflow.RolesDiffCalc
 
 class RolesDiffCalcTests extends AnyFunSpec{
 

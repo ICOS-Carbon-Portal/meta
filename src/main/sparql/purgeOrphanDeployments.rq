@@ -1,0 +1,10 @@
+prefix ssn: <http://www.w3.org/ns/ssn/>
+construct{
+	?depl ?deplProp ?deplVal .
+}
+from <http://meta.icos-cp.eu/resources/icos/>
+where{
+	?depl a ssn:Deployment .
+	filter not exists{ ?inst ssn:hasDeployment ?depl}
+	?depl ?deplProp ?deplVal .
+}

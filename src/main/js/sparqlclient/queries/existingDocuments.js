@@ -5,6 +5,6 @@ select * where{
 	?doc cpmeta:hasName ?fileName .
 	OPTIONAL{?doc cpmeta:hasCitationString ?citation}
 	OPTIONAL{?doc cpmeta:hasBiblioInfo ?bibinfo}
-	FILTER(STRSTARTS(str(?doc), "${host}"))
+	FILTER(CONTAINS(str(?doc), "${host}"))
 }`;
 }

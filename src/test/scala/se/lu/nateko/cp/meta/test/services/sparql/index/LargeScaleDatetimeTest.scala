@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 import java.time.Instant
 import scala.io.Source
-import se.lu.nateko.cp.meta.services.sparql.index.DatetimeHierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index.HierarchicalBitmap.*
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.*
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 class LargeScaleDatetimeTest extends AnyFunSpec{
@@ -37,7 +38,7 @@ object LargeScaleDatetimeTest{
 
 	def makeBm = {
 		val arr = getEntries.toArray
-		val bm = DatetimeHierarchicalBitmap(i => arr(i).dt)
+		val bm = DatetimeHierarchicalBitmap(DateTimeGeo(i => arr(i).dt))
 		arr.indices.foreach{i => bm.add(arr(i).dt, i)}
 		arr -> bm
 	}

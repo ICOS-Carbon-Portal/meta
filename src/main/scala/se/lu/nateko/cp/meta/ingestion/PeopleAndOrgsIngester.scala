@@ -7,13 +7,13 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.icos.Researcher
+import se.lu.nateko.cp.meta.metaflow.Researcher
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.core.data.Envri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator

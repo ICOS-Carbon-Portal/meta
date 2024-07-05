@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
@@ -16,30 +17,69 @@ import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.Envri
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.LatLonBox
 import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.meta.core.data.flattenToSeq
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
+import scala.collection.mutable.Buffer
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private given factory: ValueFactory = vocab.factory
 
+	def getContribStatements(contribPredicate: IRI, contributors: Seq[URI], objectUri: IRI, makeSeqIri: => IRI)(using Envri): Iterable[Statement] =
+		if contributors.length <= 1 then
+			contributors.map: contributor =>
+				makeSt(objectUri, contribPredicate, contributor.toRdf)
+		else
+			val contribsSeq = makeSeqIri
+			Seq(
+				makeSt(contribsSeq, RDF.TYPE, RDF.SEQ),
+				makeSt(objectUri, contribPredicate, contribsSeq),
+			) ++
+			contributors.zipWithIndex.map: (contrib, index) =>
+				val idxProp = factory.createIRI(RDF.NAMESPACE + "_" + (index + 1))
+				makeSt(contribsSeq, idxProp, contrib.toRdf)
+ 
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
-	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri): Seq[Statement] = {
+	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri, TriplestoreConnection): Seq[Statement] =
 		import meta.hashSum
+		import TriplestoreConnection.getValues
 
 		val objectUri = vocab.getStaticObject(hashSum)
+
 		val submissionUri = vocab.getSubmission(hashSum)
+		val dct = metaVocab.dcterms
+
+		val nextVersionStatements =
+			val prevVersions = meta.isNextVersionOf.flattenToSeq
+			if meta.partialUpload then
+				prevVersions match
+					case Seq() => Iterable.empty
+					case Seq(v) =>
+						val collIri = vocab.getNextVersionColl(v)
+						val isTheOnlyNextVersion = getValues(collIri, dct.hasPart).filter(_ != objectUri).isEmpty
+						val statements = Buffer(makeSt(collIri, dct.hasPart, objectUri))
+
+						if isTheOnlyNextVersion then
+							statements += makeSt(collIri, metaVocab.isNextVersionOf, vocab.getStaticObject(v))
+							statements += makeSt(collIri, RDF.TYPE, metaVocab.plainCollectionClass)
+						statements.toIndexedSeq
+					case _ => throw UploadUserErrorException("Partial upload to multiple previous versions is not supported")
+			else
+				makeSt(objectUri, metaVocab.isNextVersionOf, prevVersions.map(vocab.getStaticObject))
 
 		val specificStatements = meta match {
 			case dobj: DataObjectDto => getDobjStatements(dobj)
@@ -48,9 +88,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			) ++
 			makeSt(objectUri, metaVocab.dcterms.title, doc.title.map(vocab.lit)) ++
 			makeSt(objectUri, metaVocab.dcterms.description, doc.description.map(vocab.lit)) ++
-			doc.authors.map{ author =>
-				makeSt(objectUri, metaVocab.dcterms.creator, author.toRdf)
-			}
+			getContribStatements(metaVocab.dcterms.creator, doc.authors, objectUri, vocab.getDocContribList(doc.hashSum))
 		}
 		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
 			_ === CitationMaker.defaultLicence.url
@@ -64,9 +102,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(submissionUri, metaVocab.prov.wasAssociatedWith, submittingOrg.toRdf)
 		) ++
 			makeSt(objectUri, metaVocab.dcterms.license, licUri.map(_.toRdf)) ++
-			makeSt(objectUri, metaVocab.isNextVersionOf, meta.isNextVersionOf.flattenToSeq.map(vocab.getStaticObject)) ++
+			nextVersionStatements ++
 			makeSt(objectUri, metaVocab.hasDoi, meta.preExistingDoi.map(_.toString).map(vocab.lit))
-	}
+	end getObjStatements
 
 	private def getDobjStatements(meta: DataObjectDto)(using Envri): Seq[Statement] =
 		import meta.hashSum
@@ -95,8 +133,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(objectUri, RDF.TYPE, metaVocab.dataObjectClass),
 			makeSt(objectUri, metaVocab.hasObjectSpec, meta.objectSpecification.toRdf),
 		) ++
-		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++
-		moratoriumStatements
+		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++ moratoriumStatements
 	end getDobjStatements
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
@@ -111,43 +148,48 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(_.toString).map(vocab.lit)) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
-			}
+			} ++
+			makeSt(collIri, RDFS.SEEALSO, coll.documentation.map(vocab.getStaticObject))
 	}
 
-	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] = {
+	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] =
 		val objectUri = vocab.getStaticObject(hash)
-		val covUri = vocab.getSpatialCoverage(hash)
+		inline def defaultCovUri = spatial.uri.fold(vocab.getSpatialCoverage(hash))(_.toRdf)
 
-		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
-		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
-		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
-		(spatial match{
+		val (covUri, specificStatements) = spatial match
+			case p: Position => getPositionStatements(p)
 			case LatLonBox(min, max, _, _) =>
-				Seq(
+				val covUri = defaultCovUri
+				covUri -> Seq(
 					makeSt(covUri, RDF.TYPE, metaVocab.latLonBoxClass),
 					makeSt(covUri, metaVocab.hasNorthernBound, vocab.lit(max.lat)),
 					makeSt(covUri, metaVocab.hasSouthernBound, vocab.lit(min.lat)),
 					makeSt(covUri, metaVocab.hasWesternBound, vocab.lit(min.lon)),
 					makeSt(covUri, metaVocab.hasEasternBound, vocab.lit(max.lon))
 				)
-
 			case _ =>
-				Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
-		})
-	}
+				val covUri = defaultCovUri
+				covUri -> Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
 
-	private def getPositionStatements(aquisitionUri: IRI, point: Position)(using Envri): Seq[Statement] = {
-		val samplUri = vocab.getPosition(point)
+		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
+		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
+		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
+		specificStatements
 
-		Seq(
-			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri),
-			makeSt(samplUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XSD.DOUBLE)),
-			makeSt(samplUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XSD.DOUBLE)),
-			makeSt(samplUri, RDF.TYPE, metaVocab.positionClass)
+
+	private def getPositionStatements(point: Position)(using Envri): (IRI, Seq[Statement]) =
+		val posUri = point.uri.fold(vocab.getPosition(point))(_.toRdf)
+
+		val statements = Seq(
+			makeSt(posUri, metaVocab.hasLatitude, vocab.lit(point.lat6, XSD.DOUBLE)),
+			makeSt(posUri, metaVocab.hasLongitude, vocab.lit(point.lon6, XSD.DOUBLE)),
+			makeSt(posUri, RDF.TYPE, metaVocab.positionClass)
 		) ++
-		makeSt(samplUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++
-		makeSt(samplUri, RDFS.LABEL, point.label.map(vocab.lit))
-	}
+		makeSt(posUri, metaVocab.hasElevation, point.alt.map(vocab.lit)) ++
+		makeSt(posUri, RDFS.LABEL, point.label.map(vocab.lit))
+
+		posUri -> statements
+
 
 	private def getSpatioTemporalStatements(hash: Sha256Sum, meta: SpatioTemporalDto)(using Envri): Seq[Statement] = {
 		val objUri = vocab.getStaticObject(hash)
@@ -185,7 +227,11 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasNumberOfRows, meta.nRows.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.startedAtTime, acqStart.map(vocab.lit)) ++
 		makeSt(aquisitionUri, metaVocab.prov.endedAtTime, acqStop.map(vocab.lit)) ++
-		meta.samplingPoint.map(getPositionStatements(aquisitionUri, _)).getOrElse(Seq.empty)++
+		meta.samplingPoint.toSeq.flatMap{pos =>
+			val (samplUri, posStatements) = getPositionStatements(pos)
+			makeSt(aquisitionUri, metaVocab.hasSamplingPoint, samplUri) +:
+			posStatements
+		} ++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
@@ -193,7 +239,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
 	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(using Envri): Seq[Statement] = {
 		val productionUri = vocab.getProduction(hash)
+
+		val contribStatements = getContribStatements(
+			metaVocab.wasParticipatedInBy, prod.contributors, productionUri, vocab.getProductionContribList(hash)
+		)
+
 		val objectUri = vocab.getStaticObject(hash)
+
 		Seq(
 			makeSt(objectUri, metaVocab.wasProducedBy, productionUri),
 			makeSt(productionUri, RDF.TYPE, metaVocab.productionClass),
@@ -203,29 +255,20 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
 		makeSt(productionUri, RDFS.SEEALSO, prod.documentation.map(vocab.getStaticObject)) ++
 		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
-		prod.contributors.map{ contrib =>
-			makeSt(productionUri, metaVocab.wasParticipatedInBy, contrib.toRdf)
-		} ++
+		contribStatements ++
 		prod.sources.getOrElse(Nil).map{srcHash =>
 			val src = vocab.getStaticObject(srcHash)
 			makeSt(objectUri, metaVocab.prov.hadPrimarySource, src)
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] = {
-		spatial match{
-			case Left(feature) =>
-				getGeoFeatureStatements(hash, feature)
-			case Right(existing) =>
-				// TODO Add a validation that 'existing' actually exists
-				/* TODO Protect 'existing' coverage object in the metadata update scenario
-				 *  (otherwise, 'existing' may be removed, if it is in the same RDF graph and not used
-				 *  by this object any more; it may be needed by others)
-				 */
+	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
+		spatial match
+			case Left(feature) => getGeoFeatureStatements(hash, feature)
+			case Right(covUri) =>
 				val objectUri = vocab.getStaticObject(hash)
-				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, existing.toRdf))
-		}
-	}
+				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri.toRdf))
+
 
 	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {
 		val vUri = vocab.getVarInfo(hash, varName)

@@ -1,12 +1,11 @@
 @import se.lu.nateko.cp.meta.core.data.UriResource
-@import se.lu.nateko.cp.meta.core.data.Envri
+@import eu.icoscp.envri.Envri
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
-@import se.lu.nateko.cp.viewscore.CpMenu
 @import se.lu.nateko.cp.meta.views._
 @import landpagesnips._
 
 @(info: ResourceViewInfo)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Metadata Entity Page", info.res.uri.toString, CpMenu.default){
+@ServerSidePage("Metadata Entity Page", Some(info.res.uri.toString)){
 	<div class="row gy-2">
 		<div class="col-md-8">
 			<div class="row gy-2">

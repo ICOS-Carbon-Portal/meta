@@ -42,4 +42,7 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 
 		select.disabled = values.isEmpty
 	}
+
+	def disable() = select.disabled = true
+	def enable() = select.disabled = false
 }

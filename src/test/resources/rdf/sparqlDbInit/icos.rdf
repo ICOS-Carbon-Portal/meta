@@ -1941,7 +1941,6 @@
 	<hasName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CO2-CH4-H2O Picarro Analyzer</hasName>
 	<hasInstrumentOwner xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/organizations/MOHp"/>
 	<hasVendor xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/organizations/Picarro"/>
-	<hasModel xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">CO2/CH4/H2O Picarro Analyzer G2301</hasModel>
 	<hasSerialNumber xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">2295-CFADS2404</hasSerialNumber>
 	<hasAtcId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">457</hasAtcId>
 </rdf:Description>
@@ -10014,7 +10013,7 @@
 <rdf:Description rdf:about="http://meta.icos-cp.eu/resources/people/Radek_Czern%C3%BD">
 	<rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">czerny.r@czechglobe.cz</hasEmail>
-	<hasFirstName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Radek</hasFirstName>
+	<hasFirstName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/"></hasFirstName>
 	<hasLastName xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">Czerný</hasLastName>
 	<hasOrcidId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">https://orcid.org/0000-0002-0381-8620</hasOrcidId>
 	<hasMembership xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="http://meta.icos-cp.eu/resources/memberships/u20LGlMeov56wvvQHowSB5Sx"/>

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.views
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.CpVocab
 import spray.json.*
 
 import java.net.URI
@@ -12,6 +13,7 @@ import java.time.format.DateTimeFormatter
 import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.urlEncode
+import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 object LandingPageHelpers:
 
@@ -39,30 +41,19 @@ object LandingPageHelpers:
 	}
 
 	extension (dobj: DataObject)
-		def hasSupportingPreviewApp: Boolean = dobj.isPreviewable ||
-			dobj.specification.format.uri == CpmetaVocab.icosMultiImageZipUri ||
-			dobj.specification.format.uri == CpmetaVocab.sitesMultiImageZipUri
+		def previewEnabled(using vocab: CpVocab): Boolean =
+			dobj.submission.stop.fold(false)(_.isBefore(Instant.now)) && (
+				dobj.isPreviewable ||
+				dobj.specification.self.uri === vocab.cfCompliantNetcdfSpec ||
+				dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
+				dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
+			)
 
 	def agentString(a: Agent): String = a match {
 		case person: Person =>
 			person.firstName + " " + person.lastName
 		case org: Organization =>
 			org.name
-	}
-	given Ordering[Agent] with{
-
-		override def compare(a1: Agent, a2: Agent): Int = {
-			val majorComp = typeComp(a1, a2)
-			if(majorComp == 0)
-				implicitly[Ordering[String]].compare(agentString(a1), agentString(a2))
-			else majorComp
-		}
-
-		private def typeComp(a1: Agent, a2: Agent): Int = (a1, a2) match {
-			case (_: Organization, _: Person) => 1 //people are listed before orgs
-			case (_: Person, _: Organization) => -1
-			case _ => 0
-		}
 	}
 
 	given Ordering[UriResource] = Ordering.by[UriResource, String]{res =>
@@ -86,10 +77,13 @@ object LandingPageHelpers:
 			uriStr
 	}
 
-	def getDoiPersonUrl(person: DoiMetaPerson): Option[String] = person
-		.nameIdentifiers.flatMap{ni =>
-			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
-		}.headOption
+	def doiAgentUri(agent: DoiMetaPerson): Option[String] = agent
+		.nameIdentifiers.flatMap: ni =>
+			if isUriNaive(ni.nameIdentifier) then
+				Some(ni.nameIdentifier)
+			else ni.scheme.schemeUri.map: uri =>
+				Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/")
+		.headOption
 
 	def getDoiTitle(refs: References): Option[String] =
 		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
@@ -101,4 +95,13 @@ object LandingPageHelpers:
 		s"""https://${conf.dataHost}/portal/#${params}"""
 	}
 
+	extension(station: Station)
+		def isDiscontinued: Boolean =
+			station.specificInfo match
+				case s: IcosStationSpecifics => s.discontinued
+				case s: SitesStationSpecifics => s.discontinued
+				case _ => false
+
+	private def isUriNaive(s: String): Boolean =
+		s.startsWith("https://") || s.startsWith("http://")
 end LandingPageHelpers

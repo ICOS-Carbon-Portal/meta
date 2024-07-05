@@ -11,11 +11,15 @@ sealed trait Agent{
 	def self: UriResource
 	def email: Option[String]
 }
+
+case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
+case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
 case class Organization(
 	self: UriResource,
 	name: String,
 	email: Option[String],
-	website: Option[URI]
+	website: Option[URI],
+	webpageDetails: Option[WebpageElements]
 ) extends Agent
 case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
 
@@ -23,12 +27,13 @@ case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoF
 
 case class Project(self: UriResource, keywords: Option[Seq[String]])
 case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
+case class ObjectFormat(self: UriResource, goodFlagValues: Option[Seq[String]])
 
 case class DataObjectSpec(
 	self: UriResource,
 	project: Project,
 	theme: DataTheme,
-	format: UriResource,
+	format: ObjectFormat,
 	encoding: UriResource,
 	dataLevel: Int,
 	specificDatasetType: DatasetType,
@@ -37,8 +42,6 @@ case class DataObjectSpec(
 	keywords: Option[Seq[String]]
 )
 
-enum DatasetType derives CanEqual:
-	case StationTimeSeries, SpatioTemporal
 
 case class DatasetSpec(
 	self: UriResource,
@@ -57,7 +60,7 @@ case class DataAcquisition(
 
 	def coverage: Option[GeoFeature] = samplingPoint
 		.map(sp => siteFeature
-			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None).flatten)
+			.fold[GeoFeature](sp)(l => FeatureCollection(Seq(sp, l), None, None).flatten)
 		)
 		.orElse(siteFeature)
 		.orElse(station.fullCoverage)
@@ -90,14 +93,15 @@ case class VarMeta(
 	label: String,
 	valueType: ValueType,
 	valueFormat: Option[URI],
+	isFlagFor: Option[Seq[URI]],
 	minMax: Option[(Double, Double)],
-	instrumentDeployment: Option[InstrumentDeployment]
+	instrumentDeployments: Option[Seq[InstrumentDeployment]]
 )
 
 case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
-	spatial: LatLonBox,
+	spatial: GeoFeature,
 	temporal: TemporalCoverage,
 	station: Option[Station],
 	samplingHeight: Option[Float],
@@ -118,7 +122,8 @@ sealed trait StaticObject extends CitableItem{
 	def size: Option[Long]
 	def submission: DataSubmission
 	def previousVersion: OptionalOneOrSeq[URI]
-	def nextVersion: Option[URI]
+	def nextVersion: OptionalOneOrSeq[URI]
+	def latestVersion: OneOrSeq[URI]
 	def parentCollections: Seq[UriResource]
 	def references: References
 
@@ -139,7 +144,8 @@ case class DataObject(
 	specification: DataObjectSpec,
 	specificInfo: Either[SpatioTemporalMeta, StationTimeSeriesMeta],
 	previousVersion: OptionalOneOrSeq[URI],
-	nextVersion: Option[URI],
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: OneOrSeq[URI],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject{
@@ -162,7 +168,8 @@ case class DataObject(
 				l2 => l2.columns
 			).toSeq
 			col <- cols
-			dep <- col.instrumentDeployment
+			deps <- col.instrumentDeployments.toSeq
+			dep <- deps
 			pos <- dep.pos
 		yield
 			pos -> dep.variableName
@@ -173,7 +180,7 @@ case class DataObject(
 			.groupMapReduce(
 				(pos,varname) =>
 					val (lat, lon) = clusterLookup.getOrElse(pos.latlon, pos.latlon)
-					Position(lat, lon, None, None)
+					Position.ofLatLon(lat, lon)
 			)(
 				(_, varNameOpt) => 
 					varNameOpt.getOrElse("").trim
@@ -182,13 +189,13 @@ case class DataObject(
 			).map{
 				(pos, varNames) =>
 					val label = Option(varNames).filterNot(_.isEmpty)
-					Pin(pos.copy(label = label), PinKind.Sensor)
+					Pin(pos.withOptLabel(label), PinKind.Sensor)
 			}
 
 		(acqCov.toSeq ++ deploymentCov) match
 			case Seq() => None
 			case Seq(single) => Some(single)
-			case many => Some(FeatureCollection(many, None).flatten)
+			case many => Some(FeatureCollection(many, None, None).flatten)
 	end coverage
 
 	def keywords: Option[Seq[String]] =
@@ -212,7 +219,8 @@ case class DocObject(
 	description: Option[String],
 	submission: DataSubmission,
 	previousVersion: OptionalOneOrSeq[URI],
-	nextVersion: Option[URI],
+	nextVersion: OptionalOneOrSeq[URI],
+	latestVersion: OneOrSeq[URI],
 	parentCollections: Seq[UriResource],
 	references: References
 ) extends StaticObject

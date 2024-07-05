@@ -1,0 +1,21 @@
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select * where{
+	{
+		select ?spec where {
+			?spec cpmeta:hasDataLevel ?level .
+			filter(?level >= 2)
+		}
+	}
+	?dobj cpmeta:hasObjectSpec ?spec . #<http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults>
+	OPTIONAL{
+		?dobj cpmeta:wasAcquiredBy ?acq .
+		?acq prov:wasAssociatedWith ?station .
+		OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?siteGeoJson }
+		OPTIONAL{ ?acq cpmeta:hasSamplingPoint [cpmeta:hasLatitude ?samplingLat ; cpmeta:hasLongitude ?samplingLon ] }
+		OPTIONAL{ ?station cpmeta:hasLatitude ?stationLat ; cpmeta:hasLongitude ?stationLon }
+	}
+	OPTIONAL{ ?dobj cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?ownGeoJson }
+	OPTIONAL{ ?dobj cpmeta:hasSpatialCoverage [cpmeta:hasEasternBound ?lonMax; cpmeta:hasWesternBound ?lonMin; cpmeta:hasNorthernBound ?latMax; cpmeta:hasSouthernBound ?latMin ]}
+	?dobj geo:sfIntersects/geo:asWKT "POLYGON(...)"^^geo:wktLiteral .
+}

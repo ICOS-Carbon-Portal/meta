@@ -4,11 +4,10 @@ import ItemTypeRadio.*
 
 class ItemTypeRadio(elemId: String, cb: ItemType => Unit) extends Radio[ItemType](elemId, cb, itemTypeParser, itemTypeSerializer)
 
-object ItemTypeRadio {
-	sealed trait ItemType
-	case object Document extends ItemType
-	case object Data extends ItemType
-	case object Collection extends ItemType
+object ItemTypeRadio:
+	import ItemType.*
+	enum ItemType:
+		case Data, Document, Collection
 
 	val itemTypeParser: String => Option[ItemType] = _ match {
 		case "data" => Some(Data)
@@ -24,4 +23,3 @@ object ItemTypeRadio {
 		case Collection => "collection"
 		case Document => "document"
 	}
-}

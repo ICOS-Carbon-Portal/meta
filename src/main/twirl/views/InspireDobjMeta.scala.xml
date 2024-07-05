@@ -1,6 +1,7 @@
 @import se.lu.nateko.cp.meta.services.metaexport.Inspire
 @import se.lu.nateko.cp.meta.core.data._
 @import java.time.Instant
+@import eu.icoscp.envri.Envri
 
 @(dobj: Inspire, envri: Envri, conf: EnvriConfig)
 <?xml version="1.0" encoding="UTF-8"?>
@@ -15,7 +16,7 @@
 	xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0"
 	xmlns:gml="http://www.opengis.net/gml/3.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0 mdb.xsd"
+	xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/1.0/mdb.xsd"
 >
 	<mdb:metadataStandard>
 		@citation(Inspire.StandardVersion){
@@ -154,6 +155,7 @@
 
 		</mri:MD_DataIdentification>
 	</mdb:identificationInfo>
+
 
 </mdb:MD_Metadata>
 

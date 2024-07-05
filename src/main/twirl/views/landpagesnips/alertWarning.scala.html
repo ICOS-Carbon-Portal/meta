@@ -1,0 +1,9 @@
+@(heading: String, condition: Boolean = true)(alertContent: Html)
+@if(condition){
+	<div class="col-md-12">
+		<div class="alert alert-warning">
+			<h4 class="alert-heading">@heading</h4>
+			@alertContent
+		</div>
+	</div>
+}

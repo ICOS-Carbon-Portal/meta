@@ -19,6 +19,7 @@ sealed trait ObjectUploadDto extends UploadDto {
 	def references: Option[ReferencesDto]
 	def duplicateFilenameAllowed = references.flatMap(_.duplicateFilenameAllowed).getOrElse(false)
 	def autodeprecateSameFilenameObjects = references.flatMap(_.autodeprecateSameFilenameObjects).getOrElse(false)
+	def partialUpload = references.flatMap(_.partialUpload).getOrElse(false)
 }
 
 case class DataObjectDto(
@@ -51,7 +52,8 @@ case class StaticCollectionDto(
 	title: String,
 	description: Option[String],
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
-	preExistingDoi: Option[Doi]
+	preExistingDoi: Option[Doi],
+	documentation: Option[Sha256Sum]
 ) extends UploadDto
 
 case class StationTimeSeriesDto(
@@ -70,7 +72,7 @@ case class StationTimeSeriesDto(
 case class SpatioTemporalDto(
 	title: String,
 	description: Option[String],
-	spatial: Either[LatLonBox, URI],
+	spatial: Either[GeoFeature, URI],
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
 	forStation: Option[URI],
@@ -102,5 +104,6 @@ case class ReferencesDto(
 	licence: Option[URI],
 	moratorium: Option[Instant],
 	duplicateFilenameAllowed: Option[Boolean],
-	autodeprecateSameFilenameObjects: Option[Boolean]
+	autodeprecateSameFilenameObjects: Option[Boolean],
+	partialUpload: Option[Boolean]
 )

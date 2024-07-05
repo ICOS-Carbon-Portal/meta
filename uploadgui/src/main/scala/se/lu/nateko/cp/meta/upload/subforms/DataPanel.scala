@@ -95,10 +95,10 @@ class DataPanel(
 		spec <- objSpecSelect.value;
 		dsSpec <- spec.dataset
 	){
-		val variablesInfo = if(dsSpec.dsClass == DsSpec.SpatioTemp)
-				Backend.getDatasetVariables(dsSpec.uri)
+		val variablesInfo = if spec.isSpatiotemporal then
+				Backend.getDatasetVariables(dsSpec)
 			else
-				Backend.getDatasetColumns(dsSpec.uri)
+				Backend.getDatasetColumns(dsSpec)
 		whenDone(variablesInfo){ datasetVars =>
 			val tableHeader = """<table class="table"><thead><th>Label</th><th>Value type</th><th>Unit</th><th>Required</th><th>Regex</th><th>Title</th></thead><tbody>"""
 			varInfoModal.setTitle(s"Variables in ${spec.name}")

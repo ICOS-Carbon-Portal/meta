@@ -5,14 +5,16 @@
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.{given,*}
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
+@import se.lu.nateko.cp.meta.services.CpVocab
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.meta.utils.*
 @import landpagesnips.*
+@import eu.icoscp.envri.Envri
 
-@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig)
+@(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig, vocab: CpVocab)
 @ServerSidePage(
 	pageTitle,
-	pageHeading,
+	Some(pageHeading),
 	headerExtra = headerExtra,
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
@@ -20,24 +22,14 @@
 	tabs = Some(tabs)
 ) {
 	<div class="row py-3 gy-4">
-		<div class="col-12">
-			@nextVersionAlert(dobj.nextVersion)
-		</div>
-		@if(!uploadComplete) {
-			<div class="col-12">
-				<div class="alert alert-warning">
-					<h4 class="alert-heading">Upload incomplete</h4>
-					<div>Metadata uploaded on @dobj.submission.start.getDateTimeStr. Data not uploaded. No PID assigned.</div>
-				</div>
-			</div>
+		@errorList(extras.errors)
+		@for(acquisition <- dobj.acquisition){
+			@discontinuedStationWarning(acquisition.station)
 		}
-		@if(underMoratorium){
-			<div class="col-12">
-				<div class="alert alert-warning">
-					<h4 class="alert-heading">Under moratorium</h4>
-					@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
-				</div>
-			</div>
+		@newerVersionsAlert(dobj, "data")
+		@incompleteUploadAlert(dobj)
+		@alertWarning("Under moratorium", underMoratorium){
+			@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
 		}
 		<div class="col-md-8">
 			<div class="row gy-2">
@@ -48,10 +40,8 @@
 			@for(specComm <- dobj.specification.self.comments){
 				@property("Description", specComm)
 			}
+			@doiDescriptions(dobj, dobj.specificInfo.left.toOption.flatMap(_.description))
 			@for(l3meta <- dobj.specificInfo.left.toOption){
-				@for(description <- l3meta.description){
-					@property("Description", description)
-				}
 				@property(s"Temporal coverage from (${conf.defaultTimezoneId})", l3meta.temporal.interval.start.getDateTimeStr)
 				@property(s"Temporal coverage to (${conf.defaultTimezoneId})", l3meta.temporal.interval.stop.getDateTimeStr)
 				@for(resolution <- l3meta.temporal.resolution){
@@ -142,9 +132,9 @@
 
 			<br>
 
-			@for(variables <- dobj.specificInfo.fold(_.variables, _.columns)){
+			@for(variables <- varMetas){
 				<h2 class="fs-3 mt-5">Previewable variables</h2>
-				<div class="col-md-12">
+				<div class="col-md-12 overflow-auto">
 				<table class="table">
 					<thead>
 						<tr>
@@ -153,14 +143,13 @@
 							<th>Unit</th>
 							@envri match{
 								case Envri.SITES => {}
-								case Envri.ICOS => {
+								case _ => {
 									<th>Quantity kind</th>
 								}
 							}
 							<th>Preview</th>
-							@if(!variables.filter(_.instrumentDeployment.isDefined).isEmpty){
-								<th>Position</th>
-								<th>Instrument</th>
+							@if(instrumentDeploymentsPresent){
+								<th>Instrument Deployments</th>
 							}
 						</tr>
 					</thead>
@@ -172,7 +161,7 @@
 								<td>@(varInfo.valueType.unit.getOrElse(""))</td>
 								@envri match{
 									case Envri.SITES => {}
-									case Envri.ICOS => {
+									case _ => {
 										<td>@(varInfo.valueType.quantityKind.flatMap(_.label).getOrElse(""))</td>
 									}
 								}
@@ -181,13 +170,47 @@
 										<a href=@getPreviewURL(dobj.hash, Some(varInfo.label))>Preview</a>
 									}
 								</td>
-								@for(depl <- varInfo.instrumentDeployment){
-									@for(p <- depl.pos){
-										<td>@p.textSpecification</td>
+								@varInfo.instrumentDeployments.fold{
+									@if(instrumentDeploymentsPresent){
+										<td></td>
 									}
-									<td>@resourceLink(depl.instrument)</td>
+								}{depls =>
+									<td>
+										<table class="table instrument-deployment">
+											<thead>
+												<tr>
+													<th>Time interval</th>
+													<th>Position</th>
+													<th>Instrument</th>
+												</tr>
+											</thead>
+											@for(depl <- depls.sortBy(_.start)){
+												<tr>
+													<td style="white-space: nowrap;">
+														Start: @depl.start.getDateTimeStr
+														<br/>
+														Stop: @depl.stop.getDateTimeStr
+													</td>
+													@depl.pos.fold{
+														<td></td>
+													}{pos =>
+														<td style="white-space: nowrap;">
+															Latitude: @pos.lat6
+															<br/>
+															Longitude: @pos.lon6
+															@for(alt <- pos.alt){
+																<br/>
+																Altitude: @alt m
+															}
+														</td>
+													}</td>
+													<td>@resourceLink(depl.instrument)</td>
+												</tr>
+											}
+										</table>
+									</td>
 								}
-						</tr>
+							</tr>
 						}
 					</tbody>
 				</table>
@@ -218,7 +241,10 @@
 
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Technical information</h2>
-				@resourceproperty("Format", dobj.specification.format)
+				@resourceproperty("Format", dobj.specification.format.self)
+				@for(goodFlags <- dobj.specification.format.goodFlagValues){
+					@property("Good flag values", goodFlags.mkString(", "))
+				}
 				@resourceproperty("Encoding", dobj.specification.encoding)
 				@property("SHA-256 hashsum (hex)", dobj.hash.hex.toLowerCase)
 				@property("SHA-256 hashsum (base64)", dobj.hash.base64)
@@ -334,8 +360,8 @@
 	<span class="badge rounded-pill bg-secondary text-light">@{label}</span>
 }
 
-@contributors(contributors: Seq[Agent]) = {
-	@for((c, i) <- contributors.sorted.zipWithIndex){@Html(contributor(c, i).body.trim())}
+@contributors(contributors: Iterable[Agent]) = {
+	@for((c, i) <- contributors.zipWithIndex){@Html(contributor(c, i).body.trim())}
 }
 
 @contributor(contributor: Agent, i: Int) = {
@@ -353,6 +379,10 @@
 		Envri.SITES -> IndexedSeq(
 			("Home", "https://www.fieldsites.se"),
 			("Data catalogue", s"//${conf.dataHost}/portal"),
+		),
+		Envri.ICOSCities -> IndexedSeq(
+			("Home", "https://www.icos-cp.eu/projects/icos-cities"),
+			("ICOS Cities Data Portal", s"//${conf.dataHost}/portal")
 		)
 	)
 }
@@ -365,7 +395,7 @@
 }
 
 @previewTab = {
-	@if(dobj.hasSupportingPreviewApp) {
+	@if(dobj.previewEnabled) {
 		<a class="nav-link" href="@getPreviewURL(dobj.hash)">Preview</a>
 	} else {
 		<a class="nav-link disabled">No preview available</a>
@@ -381,4 +411,12 @@
 			@previewTab
 		</li>
 	</ul>
+}
+
+@varMetas = @{
+	dobj.specificInfo.fold(_.variables, _.columns)
+}
+
+@instrumentDeploymentsPresent = @{
+	varMetas.exists(_.exists(_.instrumentDeployments.isDefined))
 }

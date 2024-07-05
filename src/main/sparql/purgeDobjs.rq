@@ -1,16 +1,39 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?dobj ?p ?o .
-?o ?p2 ?o2 .
+	?dobj ?p ?o .
+	?o ?p2 ?o2 .
+	?user ?usageProp ?dobj .
 } where{
 	values ?dobj {
-		<https://meta.icos-cp.eu/objects/y-gEd0Ce9MyzrvEg0L1LPpxQ>
+		<https://meta.icos-cp.eu/objects/i-K-P0sKC69iqeJaQAqjAkz8>
+		<https://meta.icos-cp.eu/objects/robtWZkIJcYbI1oc2EF5RZ6E>
+		<https://meta.icos-cp.eu/objects/kQfGl2aC4xjGLVyF5QG832kj>
+		<https://meta.icos-cp.eu/objects/gM02wuCxWAf6H7To-IUxbe5L>
+		<https://meta.icos-cp.eu/objects/8vIzx2tzj57ajdIb6had0Etr>
+		<https://meta.icos-cp.eu/objects/3xFINCet4nloJyfz2eIhUINS>
+		<https://meta.icos-cp.eu/objects/E1gyd-rEj87FBG3pg1bir9UN>
+		<https://meta.icos-cp.eu/objects/c4W8i_BMzcM7DaSG1duIq8tm>
+		<https://meta.icos-cp.eu/objects/1T0s2N9q0qxcEZUzJw8B4i0M>
+		<https://meta.icos-cp.eu/objects/h9Kc9zH8vsa5fXJMJVUT1-fB>
+		<https://meta.icos-cp.eu/objects/sU9QqG515z2UsdG2FRGJh1Oj>
+		<https://meta.icos-cp.eu/objects/O2PuHTPtcJ1DcwK0o13DMXtt>
+		<https://meta.icos-cp.eu/objects/Wa5JWLCXZwPE26wpgWJ_0Mm2>
+		<https://meta.icos-cp.eu/objects/PBjWkMPv_Z_178oTRnuzPewF>
+		<https://meta.icos-cp.eu/objects/oc3-27ZyhBf_6efhLB3zrmDH>
+		<https://meta.icos-cp.eu/objects/YAoLheOnfHS1r0zBEFVr1d_4>
+		<https://meta.icos-cp.eu/objects/xIlAn_asQcOhQY5OTqTBW5Xb>
+		<https://meta.icos-cp.eu/objects/Zd6tyohiEOBs6Pdd9UEyhJgs>
+		<https://meta.icos-cp.eu/objects/Frtb6Oy1kKt_-7sh0w8l-5hJ>
+		<https://meta.icos-cp.eu/objects/fk-jtb-6iX0cns_mPh29K2hL>
 	}
-	graph <http://meta.icos-cp.eu/resources/otcprodcsv/> {
+	graph <http://meta.icos-cp.eu/resources/etcmulti/> {
 		?dobj ?p ?o .
 		OPTIONAL{
 			?o ?p2 ?o2 .
 			FILTER(?p != cpmeta:isNextVersionOf)
+		}
+		OPTIONAL{
+			?user ?usageProp ?dobj
 		}
 	}
 }

@@ -43,7 +43,7 @@ object DoiGeoLocationCreator:
 		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries))
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
-			else KMeans.cluster(merged, maxNgeoms, 1e-5)
+			else ??? // TODO Add second pass clustering
 		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
 
 	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =

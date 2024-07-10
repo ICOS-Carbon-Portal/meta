@@ -31,15 +31,14 @@ case class MultiZipEntry(
   * @return
   */
 def listEntries(multizip: File, etcFileName: String): IndexedSeq[MultiZipEntry] =
-	val cachePath = os.pwd / "checkmultizips_cache" / s"${etcFileName}_${multizip.getName}"
-	if os.exists(cachePath) then
+	val cachePath = os.pwd / "checkmultizips_cache" / multizip.getName
+
+	val unfiltered = if os.exists(cachePath) then
 		read[IndexedSeq[MultiZipEntry]](os.read(cachePath))
 	else
 		Using(FileInputStream(multizip)): fis =>
 			unfoldZip(fis, close = true): (zis, entry) =>
-				if getLevelAndFileNums(entry.getName) != getLevelAndFileNums(etcFileName) then
-					Nil
-				else if entry.getName.endsWith(".zip") then
+				if entry.getName.endsWith(".zip") then
 					unfoldZip(zis): (subZis, subEntry) =>
 						Seq(mkMultiZipEntry(subEntry, subZis))
 				else
@@ -50,6 +49,11 @@ def listEntries(multizip: File, etcFileName: String): IndexedSeq[MultiZipEntry] 
 				entries
 			case Failure(exc) =>
 				throw exc
+
+	val levelAndFileNums = getLevelAndFileNums(etcFileName)
+
+	unfiltered.filter: entry =>
+		getLevelAndFileNums(entry.name) == levelAndFileNums
 
 end listEntries
 

@@ -71,11 +71,11 @@ def report(fname: String, subms: IndexedSeq[Submission]): Unit =
 		val file = os.root / "disk" / "data" / "dataAppStorage" / "etcRawTimeSerMultiZip" / fileName
 		val entries = try listEntries(file.toIO, fname).map(e => e.name -> e).toMap
 			catch case exc: Throwable =>
-				println(s"WARNING $fname (${subm.uri}) could not read ZIP entries: ${exc.getMessage}")
+				//println(s"WARNING $fname (${subm.uri}) could not read ZIP entries: ${exc.getMessage}")
 				Map.empty
 		//println(s"\tFound ${entries.size} entries in version ${subm.uri}")
-		if entries.size > 48 then
-			println(s"WARNING $fname version ${subm.uri} has ${entries.size} subfiles")
+		// if entries.size > 48 then
+		// 	println(s"WARNING $fname version ${subm.uri} has ${entries.size} subfiles")
 		subm -> entries
 
 
@@ -94,21 +94,35 @@ def report(fname: String, subms: IndexedSeq[Submission]): Unit =
 		(subm, entries, missing)
 
 	val (_, lastEntries, lastMissing) = stats.last
+	val oldCompleteExists = stats.dropRight(1).exists(_._3.isEmpty)
 
-	if lastMissing.isEmpty && stats.dropRight(1).forall(_._3.nonEmpty) then
-		println(s"OK $fname, ${subms.length} versions, ${lastEntries.size} subfiles in the latest")
-	else
-		println(s"Reporting on ${subms.length} versions of package $fname")
+	if lastMissing.nonEmpty || oldCompleteExists then
+		println(s"\nReporting on ${subms.length} versions of package $fname")
 		for (subm, entries, missing) <- stats do
 			val status =
 				if missing.isEmpty then s"is OK (${entries.size} subfiles)"
 				else s"has ${entries.size} subfiles but is missing ${missing.size} of the ${latestSubfiles.size} latest subfiles"
 			println(s"\tVersion ${subm.uri} $status")
-		if lastMissing.nonEmpty then
-			println(s"\tWARNING $fname latest submission does not have all the latest subfiles")
+
+		if oldCompleteExists then
+			stats.iterator.dropWhile(_._3.nonEmpty).drop(1).foreach: (subm, _, _) =>
+				println(s"\tSolution: purge ${subm.uri}")
+		else
+			if lastMissing.size < 15 then stats.foreach: (subm, entries, _) =>
+				if lastMissing.forall: (filename, md5) =>
+					entries.get(filename).exists(_.md5 == md5)
+				then
+					println(s"\tSolution: version ${subm.uri} contains files missing in the latest version:")
+					lastMissing.foreach: (filename, md5) =>
+						println(s"\t\t$filename (innermost file content MD5 $md5)")
+	// else
+	// 	println(s"OK $fname, ${subms.length} versions, ${lastEntries.size} subfiles in the latest")
+
 end report
 
-for (fileName, subms) <- submissionsByFilename do
+val allResubmitted = submissionsByFilename
+println(s"Total number of multiple-version daily packages: ${allResubmitted.size}")
+for (fileName, subms) <- allResubmitted do
 	//if fileName.startsWith("BE-Lon") || fileName.startsWith("CH-Dav") then// fileName > "BE-Maa_EC_20220726_L01_F01.zip" then
 	try report(fileName, subms)
 	catch case exc: Throwable =>

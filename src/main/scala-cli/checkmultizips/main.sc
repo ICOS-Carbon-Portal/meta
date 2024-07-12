@@ -108,7 +108,8 @@ def report(fname: String, subms: IndexedSeq[Submission]): Unit =
 			stats.iterator.dropWhile(_._3.nonEmpty).drop(1).foreach: (subm, _, _) =>
 				println(s"\tSolution: purge ${subm.uri}")
 		else
-			if lastMissing.size < 15 then stats.foreach: (subm, entries, _) =>
+			//if lastMissing.size < 15 then
+			stats.foreach: (subm, entries, _) =>
 				if lastMissing.forall: (filename, md5) =>
 					entries.get(filename).exists(_.md5 == md5)
 				then

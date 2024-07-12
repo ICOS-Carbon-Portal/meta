@@ -9,6 +9,7 @@ def sparqlSelect(endpoint: Uri, query: String): Seq[Row] =
 	val qResp = quickRequest
 		.post(endpoint)
 		.header("Accept", "text/csv")
+		//.header("Cache", "no-cache")
 		.body(query)
 		.send()
 	if qResp.code.code != 200 then

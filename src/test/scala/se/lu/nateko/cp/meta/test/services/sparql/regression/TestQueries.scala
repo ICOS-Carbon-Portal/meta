@@ -77,6 +77,7 @@ object TestQueries {
 				IF(bound(?station), "Other", ?stClassOpt)
 			) as ?stationclass)
 		}
+		order by ?spec ?submitter ?station ?site
 	"""
 
 	//from portal front-end app from data project
@@ -950,6 +951,7 @@ object TestQueries {
 			#?coll a cpmeta:Collection .
 			?coll dcterms:hasPart ?dobj .
 		}
+		order by ?dobj
 	"""
 
 	val geoFilter = """

@@ -85,9 +85,10 @@ class CpNativeStore(
 			new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), magicIdx, nativeSail.enricher, magicIdxOpt.isDefined)
 		)
 
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit =
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
 		if disableCpIndex then
 			log.info("Magic SPARQL index is disabled")
+			ok
 		else
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
@@ -99,6 +100,7 @@ class CpNativeStore(
 			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			cpIndex = Some(idx)
 			setupQueryEvaluation(cpIndex)
+			geoFut.map(_ => Done)(using ExecutionContext.parasitic)
 
 
 	override def getConnection(): SailConnection =

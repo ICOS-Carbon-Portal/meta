@@ -45,7 +45,7 @@ class TestDb {
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.withDummyPasswords
 
 	val akkaConf = ConfigFactory.defaultReference()
-		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("ERROR"))
+		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
 	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
 	import system.{dispatcher, log}
 
@@ -105,10 +105,12 @@ class TestDb {
 			_ <- repo1.makeReadonly("Test")
 			_ = repo1.shutDown()
 			idxData <- IndexHandler.restore()
+			repo2 = makeSail
+			_ <- {
+				repo2.init()
+				repo2.initSparqlMagicIndex(Some(idxData))
+			}
 		yield
-			val repo2 = makeSail
-			repo2.init()
-			repo2.initSparqlMagicIndex(Some(idxData))
 			SailRepository(repo2)
 
 	}

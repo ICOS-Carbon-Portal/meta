@@ -92,10 +92,10 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 	describeQ(TestQueries.dataObjOriginStats, "Statistics of data object origins", expectRows = 797, sampleIndex = 100, sortColumn = "spec") {
 		f => Map(
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject"),
-				"countryCode" -> f.createLiteral("DE"),
+				"countryCode" -> f.createLiteral("IT"),
 				"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ATC"),
-				"count" -> f.createLiteral("2", XSD.INT),
-				"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/AS_SSL"),
+				"count" -> f.createLiteral("1", XSD.INTEGER),
+				"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/AS_LMP"),
 				"stationclass" -> f.createLiteral("ICOS")
 			)
 	}
@@ -170,7 +170,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 				"timeStart" -> f.createLiteral("2016-08-18T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("955627", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"), 
-				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432Z", XSD.DATETIME), 
+				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432977Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject")
 			)
 	}
@@ -265,7 +265,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("52584", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/AuW_XXhpYP9I3JChs-KdjZAW"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796Z", XSD.DATETIME), 
+				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796085Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject")
 			)	
 	}
@@ -275,10 +275,10 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 				"samplingHeight" -> f.createLiteral("75.0", XSD.FLOAT), 
 				"timeEnd" -> f.createLiteral("2022-08-10T23:00:00Z", XSD.DATETIME), 
 				"fileName" -> f.createLiteral("ICOS_ATC_NRT_BIR_2022-03-01_2022-08-10_75.0_547_CO2.zip"), 
-				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME), 
+				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME),
 				"size" -> f.createLiteral("54145", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/2m-Tsf7Q8f9Dhqw4nsHh3ECg"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885Z", XSD.DATETIME), 
+				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885254Z", XSD.DATETIME), 
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject")
 			)
 	}
@@ -501,15 +501,15 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 81, 5){
 		f => Map(
 			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/UxugPrSsx3GRm6GnUq-iCQGd"),
-			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)
+			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077671Z", XSD.DATETIME)
 		)
 	}
 
 	describeQ(TestQueries.dataObjsWithCollections, "Data objects that are part of a collection", 702, 10){
 		f => Map(
-			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/1BZq2-9V_ulCrak-yCl31Hqd"),
-			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject"),
-			"coll" -> f.createIRI("https://meta.icos-cp.eu/collections/qrhcaIUVRky49JrFtGFsuYvv"),
+			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/0fYDo93HHTR3HDrK4MDRQ6Q6"),
+			"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject"),
+			"coll" -> f.createIRI("https://meta.icos-cp.eu/collections/0rxjjAdsseI6ujGowmJLcf6k"),
 		)
 	}
 

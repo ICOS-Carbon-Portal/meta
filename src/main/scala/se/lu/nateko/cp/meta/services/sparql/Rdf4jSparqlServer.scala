@@ -80,6 +80,7 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by sparqlExe thread pool)
 	)
 
+	//TODO Re-design to prevent executing the query multiple times concurrently for each content-negotiation option
 	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = try{
 			new SPARQLParser().parseQuery(query.query, CpmetaVocab.MetaPrefix) match {
 				case _: ParsedTupleQuery =>

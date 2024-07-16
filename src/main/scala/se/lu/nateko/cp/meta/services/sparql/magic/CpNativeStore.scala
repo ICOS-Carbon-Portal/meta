@@ -73,17 +73,21 @@ class CpNativeStore(
 		log.info(s"Setting force-sync to '$forceSync'")
 		nativeSail.setForceSync(forceSync)
 		nativeSail.init()
-		log.info("Triple store initialized")
 		nativeSail.enricher = StatementsEnricher(citationFactory(nativeSail))
-		log.info("Initialized citation provider")
+		setupQueryEvaluation(magicIdxOpt = None)
+		log.info("Triple store initialized")
 	}
 
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit = {
-		cpIndex = if disableCpIndex then
+	private def setupQueryEvaluation(magicIdxOpt: Option[CpIndex]): Unit =
+		val magicIdx = magicIdxOpt.getOrElse:
+			new CpIndex(nativeSail, Future.never, IndexData(0)())(log)
+		nativeSail.setEvaluationStrategyFactory(
+			new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), magicIdx, nativeSail.enricher, magicIdxOpt.isDefined)
+		)
+
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Unit =
+		if disableCpIndex then
 			log.info("Magic SPARQL index is disabled")
-			val standardOptimizationsOn = nativeSail.getEvaluationStrategyFactory.getOptimizerPipeline.isPresent
-			log.info(s"Vanilla RDF4J optimizations enabled: $standardOptimizationsOn")
-			None
 		else
 			if(idxData.isEmpty) log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
@@ -93,14 +97,9 @@ class CpNativeStore(
 			nativeSail.listener = listenerFactory.getListener(nativeSail, getCitationProvider.metaVocab, idx, geoPromise.future)
 			geoPromise.completeWith(geoFactory.index(nativeSail, idx, getCitationProvider.metaReader))
 			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
-			Some(idx)
+			cpIndex = Some(idx)
+			setupQueryEvaluation(cpIndex)
 
-		cpIndex.foreach{idx =>
-			nativeSail.setEvaluationStrategyFactory(
-				new CpEvaluationStrategyFactory(nativeSail.getFederatedServiceResolver(), idx, nativeSail.enricher)
-			)
-		}
-	}
 
 	override def getConnection(): SailConnection =
 		if(isFreshInit) nativeSail.getConnection()

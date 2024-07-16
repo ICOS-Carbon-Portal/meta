@@ -27,7 +27,8 @@ import scala.jdk.CollectionConverters.IteratorHasAsJava
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
 	index: CpIndex,
-	enricher: StatementsEnricher
+	enricher: StatementsEnricher,
+	indexEnabled: Boolean
 ) extends DefaultEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
@@ -38,30 +39,31 @@ class CpEvaluationStrategyFactory(
 
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
 
-			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match{
+			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match
 
-				case doFetch: DataObjectFetchNode =>
+				case doFetch: DataObjectFetchNode if indexEnabled =>
 					qEvalStep(bindingsForObjectFetch(doFetch, _))
 
-				case statsFetch: StatsFetchNode =>
+				case statsFetch: StatsFetchNode if indexEnabled =>
 					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 					qEvalStep(_ => statsBindings.iterator)
 
 				case _ => super.precompile(expr, context)
-			}
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
 				logger.debug("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-				val dofps = new DofPatternSearch(metaVocab)
-				val fuser = new DofPatternFusion(metaVocab)
 
-				val pattern = dofps.find(queryExpr)
-				val fusions = fuser.findFusions(pattern)
-				DofPatternRewrite.rewrite(queryExpr, fusions)
+				if indexEnabled then
+					val dofps = new DofPatternSearch(metaVocab)
+					val fuser = new DofPatternFusion(metaVocab)
 
-				logger.debug("Fused query model:\n{}", queryExpr)
+					val pattern = dofps.find(queryExpr)
+					val fusions = fuser.findFusions(pattern)
+					DofPatternRewrite.rewrite(queryExpr, fusions)
+
+					logger.debug("Fused query model:\n{}", queryExpr)
 
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 

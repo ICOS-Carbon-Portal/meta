@@ -5,13 +5,12 @@ import scala.language.reflectiveCalls
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
-import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.AbstractEvaluationStrategyFactory
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.TupleFunctionEvaluationStrategy
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.DefaultEvaluationStrategy
 import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnectionListener
@@ -39,7 +38,7 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeSto
 
 		new AbstractEvaluationStrategyFactory{
 			override def createEvaluationStrategy(dataSet: Dataset, tripleSrc: TripleSource, stats: EvaluationStatistics) =
-				new TupleFunctionEvaluationStrategy(tripleSrc, dataSet, fedResolver, tupleFunctionReg, 0, stats)
+				new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats, false, tupleFunctionReg)
 		}
 	}
 
@@ -57,7 +56,7 @@ class MagicTupleFuncSail(plugins: Seq[MagicTupleFuncPlugin], baseSail: NativeSto
 			dataset: Dataset,
 			bindings: BindingSet,
 			includeInferred: Boolean
-		): CloseableIteration[_ <: BindingSet, QueryEvaluationException] = {
+		): CloseableIteration[_ <: BindingSet] = {
 
 			val expr: TupleExpr = TupleExprCloner.cloneExpr(tupleExpr)
 			plugins.foreach(plugin => expr.visit(plugin.expressionEnricher))

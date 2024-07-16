@@ -6,7 +6,6 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
-import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
@@ -29,13 +28,13 @@ class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
 	index: CpIndex,
 	enricher: StatementsEnricher
-) extends StrictEvaluationStrategyFactory(fedResolver){
+) extends DefaultEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
 		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
-		new StrictEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
+		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
 
@@ -136,7 +135,7 @@ class CpEvaluationStrategyFactory(
 
 	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
 		override def evaluate(bindings: BindingSet) =
-			new CloseableIteratorIteration[BindingSet, QueryEvaluationException](eval(bindings).asJava)
+			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}
 
 }

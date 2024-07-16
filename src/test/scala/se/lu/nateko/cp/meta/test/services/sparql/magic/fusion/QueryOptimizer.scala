@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.impl.EmptyBindingSet
 import org.eclipse.rdf4j.query.impl.SimpleDataset
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
+import org.eclipse.rdf4j.query.algebra.evaluation.optimizer.*
 
 object QueryOptimizer{
 
@@ -11,13 +11,13 @@ object QueryOptimizer{
 		val bindings = new EmptyBindingSet
 
 		Seq( //taken from SailSourceConnection.evaluateInternal
-			new BindingAssigner,
+			new BindingAssignerOptimizer(),
 			//new ConstantOptimizer(strategy),
 			new CompareOptimizer(),
-			new ConjunctiveConstraintSplitter(),
+			new ConjunctiveConstraintSplitterOptimizer(),
 			new DisjunctiveConstraintOptimizer(),
 			new SameTermFilterOptimizer(),
-			new QueryModelNormalizer(),
+			new QueryModelNormalizerOptimizer(),
 			//new QueryJoinOptimizer(sailStore.getEvaluationStatistics()),
 			new IterativeEvaluationOptimizer(),
 			new FilterOptimizer()

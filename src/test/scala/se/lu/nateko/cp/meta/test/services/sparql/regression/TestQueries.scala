@@ -364,29 +364,29 @@ object TestQueries {
 
 	//from icoscp Python library
 	val ATCStations = """
-		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		select *
-		from <http://meta.icos-cp.eu/resources/icos/>
-		where{
+	prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	select *
+	from <http://meta.icos-cp.eu/resources/icos/>
+	where{
 		{
-		select ?station (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
-		where{
-			?station a cpmeta:AS .
-			?piMemb cpmeta:atOrganization ?station  .
-			?piMemb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
-			filter not exists {?piMemb cpmeta:hasEndTime []}
-			?pi cpmeta:hasMembership ?piMemb .
-			?pi cpmeta:hasLastName ?piLname .
-		}
-		group by ?station
+			select ?station (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
+			where{
+				?station a cpmeta:AS .
+				?piMemb cpmeta:atOrganization ?station  .
+				?piMemb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+				filter not exists {?piMemb cpmeta:hasEndTime []}
+				?pi cpmeta:hasMembership ?piMemb .
+				?pi cpmeta:hasLastName ?piLname .
+			}
+			group by ?station
 		}
 		?station cpmeta:hasName ?stationName ;
 			cpmeta:hasStationId ?stationId ;
 			cpmeta:countryCode ?Country ;
 			cpmeta:hasLatitude ?lat ;
 			cpmeta:hasLongitude ?lon .
-		}
-		order by ?Short_name
+	}
+	order by ?stationId
 	"""
 
 	//from icoscp Python library

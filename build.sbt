@@ -64,7 +64,7 @@ lazy val metaCore = (project in file("core"))
 
 val akkaVersion = "2.6.18"
 val akkaHttpVersion = "10.2.8"
-val rdf4jVersion = "4.3.12"
+val rdf4jVersion = "5.0.1"
 val owlApiVersion = "5.1.20"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")

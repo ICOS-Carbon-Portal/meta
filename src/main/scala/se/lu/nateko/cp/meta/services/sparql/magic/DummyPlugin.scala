@@ -8,7 +8,6 @@ import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.sail.Sail
 
@@ -44,7 +43,7 @@ class DummyPlugin extends MagicTupleFuncPlugin {
 		override def getURI: String = "http://meta.icos-cp.eu/ontologies/cpmeta/dummyMagicProp"
 
 		override def evaluate(valueFactory: ValueFactory, args: Value*):
-				CloseableIteration[_ <: java.util.List[_ <: Value], QueryEvaluationException] = {
+				CloseableIteration[_ <: java.util.List[_ <: Value]] = {
 
 			val res0 = new java.util.ArrayList[Literal](1)
 			res0.add(valueFactory.createLiteral(counter))

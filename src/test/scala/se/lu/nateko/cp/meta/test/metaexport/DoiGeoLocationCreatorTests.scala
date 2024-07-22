@@ -4,12 +4,11 @@ import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.meta.GeoLocationBox
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationClustering.*
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
 import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
-
-import TestGeoFeatures.*
 
 
 class DoiGeoLocationCreatorTests extends AnyFunSpec:
@@ -19,7 +18,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			geomStrings.map(wktReader.read)
 
 		it("calling mergeSimpleGeoms with empty seq does nothing"):
-			val hulls = mergeSimpleGeoms(Seq())
+			val hulls = mergeSimpleGeoms(Seq(), None)
 
 			assert(hulls == Seq())
 
@@ -29,7 +28,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
 			val expected = LabeledJtsGeo(reader.read("POLYGON ((3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096))"), Nil)
-			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
+			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)), None)
 
 			assert(merged(0) == expected)
 
@@ -64,7 +63,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 
 		it("mergeSimpleGeoms from ecosystem data"):
 			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoms)
+			val merged = mergeSimpleGeoms(geoms, None)
 
 			for (geom <- geoms)
 				assert(merged.exists(_.geom.covers(geom.geom)))
@@ -84,7 +83,7 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 
 		it("mergeHulls from ocean data"):
 			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoms)
+			val merged = mergeSimpleGeoms(geoms, None)
 
 			for (labeledGeom <- geoms)
 				val vertices = labeledGeom.geom.getCoordinates().map(JtsGeoFactory.createPoint)

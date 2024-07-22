@@ -1,16 +1,12 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import com.fasterxml.jackson.annotation.JsonFormat.Feature
 import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.Point as JtsPoint
-import org.locationtech.jts.geom.Polygon as JtsPolygon
 import se.lu.nateko.cp.doi.meta.GeoLocation
 import se.lu.nateko.cp.meta.core.data.Circle
-import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.FeatureCollection
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoTrack
@@ -22,53 +18,34 @@ import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 
-import scala.collection.mutable.ArrayBuffer
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 object DoiGeoLocationCreator:
-	
 	import JtsGeoFeatureConverter.*
 	case class StationLabel(label: String)
 	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 		export geom.getArea
-		def mergeIfIntersects(other: LabeledJtsGeo): Option[LabeledJtsGeo] =
+
+		def mergeIfIntersects(other: LabeledJtsGeo, epsilon: Option[Double]): Option[LabeledJtsGeo] =
 			inline def mergedLabels = labels ++ other.labels.filterNot(labels.contains)
+			inline def isCloserThanEpsilon = epsilon.map(DoiGeoLocationClustering.getMinGeometryDistance(geom, other.geom) < _).getOrElse(false)
+
 			if geom.contains(other.geom) then
 				Some(this.copy(labels = mergedLabels))
 			else if geom.intersects(other.geom) then
 				Some(LabeledJtsGeo(geom.union(other.geom), mergedLabels))
+			else if isCloserThanEpsilon then
+				val coordinates = geom.getCoordinates() ++ other.geom.getCoordinates()
+				val hull = new ConvexHull(coordinates, JtsGeoFactory).getConvexHull()
+				Some(LabeledJtsGeo(hull, mergedLabels))
 			else None
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[GeoLocation] =
-		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries))
+		val merged = DoiGeoLocationClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
-			else ??? // TODO Add second pass clustering
+			else 
+				DoiGeoLocationClustering.runSecondPass(merged)
 		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
-
-	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
-
-		val sortedGeoms = gs.map(hull => (hull, -hull.getArea())).sortBy(_._2).map(_._1)
-		var res: ArrayBuffer[LabeledJtsGeo] = ArrayBuffer.empty
-
-		for labeledGeom <- sortedGeoms do
-			var i = 0
-			var added = false
-			while i < res.length && !added do
-
-				res(i).mergeIfIntersects(labeledGeom) match
-					case Some(mergedGeom) =>
-						added = true
-						res(i) = mergedGeom
-					case None =>
-						//no overlap, therefore no merge, do nothing
-
-				i += 1
-			//if could not merge with any, add as new
-			if !added then res += labeledGeom
-
-		res.toSeq
-	end mergeSimpleGeoms
 
 end DoiGeoLocationCreator
 

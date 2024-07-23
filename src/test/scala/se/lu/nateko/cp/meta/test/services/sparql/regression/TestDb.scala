@@ -42,8 +42,7 @@ import scala.concurrent.Future
 
 class TestDb {
 
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.withDummyPasswords
-
+	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	val akkaConf = ConfigFactory.defaultReference()
 		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("ERROR"))
 	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)

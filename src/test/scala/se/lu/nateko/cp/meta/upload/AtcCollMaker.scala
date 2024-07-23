@@ -22,7 +22,8 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 	import maker.sparqlHelper.sparql
 
 	def makeColls(): Future[Done] = for(
-		stationToColl <- sparql.select(stationCollsQuery("2022-07-07", "2022-09-22")).map(parseStationColls);
+		stationToColl <- sparql.select(stationCollsQuery("2023-07-03", "2023-07-11")).map(parseStationColls);
+		//_ = println(stationToColl);
 		stationToItems <- sparql.select(dobjStationQuery).map(parseStationObjs);
 		done <- executeSequentially(stationToItems){
 			(makeStationColl(stationToColl) _).tupled
@@ -45,7 +46,7 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
 				// println(dto)
 				// println(doiMeta)
-				// println(s"done for $station")
+				// println(s"done for ${station.org.name}")
 				// ok
 				for
 					_ <- uploader.uploadSingleCollMeta(dto);
@@ -90,12 +91,29 @@ object AtcCollMaker{
 				)
 			}
 		}
+		val geoPoss = for
+			dobj <- samples
+			stSpec <- dobj.specificInfo.toOption
+			station = stSpec.acquisition.station
+			loc <- station.location
+		yield loc
+
+		val geoLocs = geoPoss.distinct.map: pos =>
+			GeoLocation(
+				geoLocationPoint = Some(GeoLocationPoint(
+					pointLatitude = Some(Latitude(pos.lat)),
+					pointLongitude = Some(Longitude(pos.lon))
+				)),
+				geoLocationBox = None,
+				geoLocationPlace = pos.label
+			)
+
 		DoiMeta(
 			doi = doi,
 			creators = creators :+ icosRiCreator,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(2023),
+			publicationYear = Some(2024),
 			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
@@ -109,6 +127,7 @@ object AtcCollMaker{
 			version = Some(Version(1, 0)),
 			rightsList = Some(Seq(DoiMaker.ccby4)),
 			descriptions = dto.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
+			geoLocations = Option(geoLocs).filterNot(_.isEmpty),
 			state = DoiPublicationState.findable,
 			event = Some(DoiPublicationEvent.publish)
 		)
@@ -117,10 +136,11 @@ object AtcCollMaker{
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2023-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2024-1",
 		description = Some(
-			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, and Meteorological Observations, " +
-			s"period up to March 2023, station ${station.org.name}, final quality controlled Level 2 data, release 2023-1"
+			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, meteorology, " +
+			"and flask samples analyzed for CO2, CH4, N2O, CO, H2 and SF6, " +
+			s"period up to March 2024, station ${station.org.name}, final quality controlled Level 2 data, release 2024-1"
 		),
 		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi),

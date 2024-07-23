@@ -1,0 +1,14 @@
+@import se.lu.nateko.cp.meta.core.data.CitableItem
+
+@(item: CitableItem, fallbackDescription: Option[String])
+
+@if(item.references.doi.toSeq.flatMap(_.descriptions).isEmpty){
+	@for(description <- fallbackDescription){
+		@property("Description", description)
+	}
+}
+@for(doiMeta <- item.references.doi){
+	@for(descr <- doiMeta.descriptions){
+		@property(s"Description (${descr.descriptionType})", descr.description)
+	}
+}

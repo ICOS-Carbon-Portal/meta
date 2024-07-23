@@ -1,0 +1,23 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?cityDsSpec ?specProp ?specVal .
+	?cityDsSpec cpmeta:hasColumn ?cityCol .
+	?cityCol ?colProp ?colValue .
+	?cityCol cpmeta:hasValueType ?cityValType .
+	?cityValType ?valTypeProp ?valTypeVal .
+} where{
+	bind(<http://meta.icos-cp.eu/resources/cpmeta/atcMeteoTimeSer> as ?dsSpec)
+	?dsSpec ?specProp ?specVal .
+	filter(?specProp != cpmeta:hasColumn)
+	?dsSpec cpmeta:hasColumn ?col .
+	?col ?colProp ?colValue .
+	filter(?colProp != cpmeta:hasValueType)
+	optional{
+		?col cpmeta:hasValueType ?valType .
+		filter(?valType not in (<http://meta.icos-cp.eu/resources/cpmeta/windSpeed>, <http://meta.icos-cp.eu/resources/cpmeta/windDirection>))
+		?valType ?valTypeProp ?valTypeVal .
+	}
+	bind(iri(replace(str(?col), "http://meta", "https://citymeta")) as ?cityCol)
+	bind(iri(replace(str(?valType), "http://meta", "https://citymeta")) as ?cityValType)
+	bind(iri(replace(str(?dsSpec), "http://meta", "https://citymeta")) as ?cityDsSpec)
+}

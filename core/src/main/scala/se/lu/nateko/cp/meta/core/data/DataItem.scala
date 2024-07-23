@@ -36,9 +36,12 @@ final case class StaticCollection(
 	doi: Option[String],
 	documentation: Option[PlainStaticObject],
 	references: References
-) extends DataItemCollection with StaticDataItem with CitableItem{
+) extends DataItemCollection with StaticDataItem with CitableItem:
 	type M = StaticDataItem
-}
+
+	def coverage: Option[GeoFeature] = references.doi
+		.flatMap(_.geoLocations)
+		.flatMap(DataCite.geosToCp)
 
 trait CitableItem{
 	def hash: Sha256Sum

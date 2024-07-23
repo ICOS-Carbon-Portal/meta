@@ -1,16 +1,90 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 construct {
-?dobj ?p ?o .
-?o ?p2 ?o2 .
+	?dobj ?p ?o .
+	?o ?p2 ?o2 .
+	?user ?usageProp ?dobj .
 } where{
 	values ?dobj {
-		<https://meta.icos-cp.eu/objects/y-gEd0Ce9MyzrvEg0L1LPpxQ>
+		<https://meta.icos-cp.eu/objects/wwSJw_A90gr71f4_Iz-0TkE2>
+		<https://meta.icos-cp.eu/objects/11MfGJV0Ogytw_Pp2Zkr35KD>
+		<https://meta.icos-cp.eu/objects/IJuoPVtHj76Li_gh6L964Lqa>
+		<https://meta.icos-cp.eu/objects/OrMC5AvSJtPqqymLn2YjPv2j>
+		<https://meta.icos-cp.eu/objects/94-8asWE49_1ozbOtrrrtu5i>
+		<https://meta.icos-cp.eu/objects/cOZGByBJmG-NwxYF1w4Pkli4>
+		<https://meta.icos-cp.eu/objects/OjKw-g3Pd8BY9jIksKvRwgt2>
+		<https://meta.icos-cp.eu/objects/dulP7zdpGP_zTgEHfd1eTxOQ>
+		<https://meta.icos-cp.eu/objects/1v-VAAXX1MXiabfTvFNmqAWw>
+		<https://meta.icos-cp.eu/objects/br4FyTnMfMevUjvC5a7eVrm7>
+		<https://meta.icos-cp.eu/objects/03YEKmgpKcaNl43yRhJ9Y9Rg>
+		<https://meta.icos-cp.eu/objects/g_osHQBWqbxwIYVb3cf4IS3a>
+		<https://meta.icos-cp.eu/objects/aSjZLeoBOimQ-F7LI8TimaDk>
+		<https://meta.icos-cp.eu/objects/ztwfIhpUiYTqB77C8qvuOUa2>
+		<https://meta.icos-cp.eu/objects/yyBM-zaMm4BT4LqnwSdQylOz>
+		<https://meta.icos-cp.eu/objects/t1c32qnYi9Pdo_rrQhIfVJaa>
+		<https://meta.icos-cp.eu/objects/nY6lam30THBeJOqnpReFCcT4>
+		<https://meta.icos-cp.eu/objects/HH3SsewCLCfDQ7yMQacfzlx1>
+		<https://meta.icos-cp.eu/objects/vhlpqdi2BirLTxqlGiETCGcC>
+		<https://meta.icos-cp.eu/objects/mt1F8V_aoSCvxqhLRlaeUHam>
+		<https://meta.icos-cp.eu/objects/65cz_eBVEm25V0-uNCYp1DqW>
+		<https://meta.icos-cp.eu/objects/0ja2_jt0iVXLdgtLiFIXQqjO>
+		<https://meta.icos-cp.eu/objects/OqW4Wgm5iglAT6Tb7otslwqD>
+		<https://meta.icos-cp.eu/objects/wZBHzvUZKNfoBAuI2bk1tSO3>
+		<https://meta.icos-cp.eu/objects/ZZySxSeXLgU11atUPOuLGvw7>
+		<https://meta.icos-cp.eu/objects/2Ed0UBfCMRVaUEIg6CEXtbOe>
+		<https://meta.icos-cp.eu/objects/wj74VgrHr0Zj_e9gLmQsabme>
+		<https://meta.icos-cp.eu/objects/AKcSAPfePmmJJxYj4d_ltIVQ>
+		<https://meta.icos-cp.eu/objects/LOIXH4KKK2Qi9yfU9wU3gU28>
+		<https://meta.icos-cp.eu/objects/piH6f1iOPzD2l_XC6FfsvWUN>
+		<https://meta.icos-cp.eu/objects/KlyM5FafXwn3gMs1YR8-iDs7>
+		<https://meta.icos-cp.eu/objects/mXcj_YSOLkA0MVGO9_G8yrZb>
+		<https://meta.icos-cp.eu/objects/_paO25ieSha7joTxiBQGFO14>
+		<https://meta.icos-cp.eu/objects/OEP8cSFa_nF26_yxS0THZQjI>
+		<https://meta.icos-cp.eu/objects/dVc96zTCYADg7uhRlIWmwdAy>
+		<https://meta.icos-cp.eu/objects/1sK4DY_CsvWg7KR8pO8FImV4>
+		<https://meta.icos-cp.eu/objects/PSsNQ9uKh7ce1Ya9QpkdfvrG>
+		<https://meta.icos-cp.eu/objects/boMVaH8UJbTbpw8F1EoxAnzy>
+		<https://meta.icos-cp.eu/objects/_yvVNfB5MShQW4Ak2ll2_bXg>
+		<https://meta.icos-cp.eu/objects/6BZG41TZYz64mgqtux50W-ZT>
+		<https://meta.icos-cp.eu/objects/QrcGGiCJy6cpwLI15c5z3ZlJ>
+		<https://meta.icos-cp.eu/objects/HcEuCTXcM-CqSwL1lRjGR0-h>
+		<https://meta.icos-cp.eu/objects/oOeiA2R_rl-gE1GX19C-PsdE>
+		<https://meta.icos-cp.eu/objects/BYPP6fApTb-nV9k_xIeyK99n>
+		<https://meta.icos-cp.eu/objects/7npCg87IMoJch6-PGCHAAXe0>
+		<https://meta.icos-cp.eu/objects/0gSVHjD-r4vjn7zyADDYCfB5>
+		<https://meta.icos-cp.eu/objects/I1_lpjYCxrGSAaTjam6Kkdif>
+		<https://meta.icos-cp.eu/objects/jRNrxmFx6LmXiPj-ngM3QLZS>
+		<https://meta.icos-cp.eu/objects/3jodNYK1Jwln2bXT-G0hCezX>
+		<https://meta.icos-cp.eu/objects/SJQ36cXxsk7CvJMprxoT99d4>
+		<https://meta.icos-cp.eu/objects/MxRTaYsPLwESjwYTqtocBgau>
+		<https://meta.icos-cp.eu/objects/zr61C_IJSqz1C7_BOTr5gq3L>
+		<https://meta.icos-cp.eu/objects/2LY9fHa0IulhpuUWEfrEtGDI>
+		<https://meta.icos-cp.eu/objects/7s9glHqahC3WFyJn4rqDJ-3k>
+		<https://meta.icos-cp.eu/objects/uey6MTKFfP8Pnt6SJv2DX-iS>
+		<https://meta.icos-cp.eu/objects/gLii4OENygkOXmZykRx2Isf8>
+		<https://meta.icos-cp.eu/objects/eHRLQreeycAMDB2ES7SlYAFP>
+		<https://meta.icos-cp.eu/objects/qzDTZmLjmhlmNTDxCtxknuv2>
+		<https://meta.icos-cp.eu/objects/zj-DYWR9XnO_CcDf2eiMiMbG>
+		<https://meta.icos-cp.eu/objects/dwDJYXsGPtX8CblsUqmYAPb1>
+		<https://meta.icos-cp.eu/objects/hbeIbapU10R0V7gGNZKdIZVH>
+		<https://meta.icos-cp.eu/objects/NFUzOlgsKPpS8eJrcQJa8MQw>
+		<https://meta.icos-cp.eu/objects/gJqruT8tn9DsRn7ozAHVL1Up>
+		<https://meta.icos-cp.eu/objects/rM6yq5_sBdPxaGNvzjrSgJ39>
+		<https://meta.icos-cp.eu/objects/8ErEKbGQ2kSza3xw7JhsXlF3>
+		<https://meta.icos-cp.eu/objects/gMi58U1bI-V1sjUypQK_SLTH>
+		<https://meta.icos-cp.eu/objects/u6_7EFtsdokAumRf_N1AoWEx>
+		<https://meta.icos-cp.eu/objects/D0HNxwo-vcTTYQI-jmlrUpTt>
+		<https://meta.icos-cp.eu/objects/a-PfwD-lhzIzbe2lS8e-Cdjt>
+		<https://meta.icos-cp.eu/objects/Rni6x04Kcfg9K3m7lJGUZCw2>
+		<https://meta.icos-cp.eu/objects/Kyjj07rEwEcDIIf_B7ts0v5F>
 	}
-	graph <http://meta.icos-cp.eu/resources/otcprodcsv/> {
+	graph <http://meta.icos-cp.eu/resources/etcmulti/> {
 		?dobj ?p ?o .
 		OPTIONAL{
 			?o ?p2 ?o2 .
 			FILTER(?p != cpmeta:isNextVersionOf)
+		}
+		OPTIONAL{
+			?user ?usageProp ?dobj
 		}
 	}
 }

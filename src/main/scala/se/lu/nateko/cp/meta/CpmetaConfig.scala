@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
 import se.lu.nateko.cp.cpauth.core.EmailConfig
 import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.cpauth.core.UserId
@@ -161,7 +162,7 @@ case class RdfStorageConfig(
 )
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URL, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
+case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -239,30 +240,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
-	lazy val appConfig: Config = loadWithOverride(localConfigOverride)
-	lazy val default: CpmetaConfig = withOverride(localConfigOverride)
-
-	private lazy val localConfigOverride: Config =
-		val confFile = new java.io.File("application.conf").getAbsoluteFile
-		if confFile.exists then ConfigFactory.parseFile(confFile) else ConfigFactory.empty
-
-	private def loadWithOverride(confOverride: Config): Config = confOverride
-		.withFallback(ConfigFactory.defaultApplication)
-		.withFallback(ConfigFactory.defaultReferenceUnresolved)
-		.resolve
-
-	private val renderOpts = ConfigRenderOptions.concise.setJson(true)
-
-	def withDummyPasswords: CpmetaConfig = withOverride(ConfigFactory.empty()
-		.withValue("cpmeta.rdfLog.credentials.password", ConfigValueFactory.fromAnyRef("dummy"))
-		.withValue("cpmeta.citations.doi.envries.ICOS.password", ConfigValueFactory.fromAnyRef("dummy"))
-		.withValue("cpmeta.citations.doi.envries.SITES.password", ConfigValueFactory.fromAnyRef("dummy"))
-		.withValue("cpmeta.stationLabelingService.mailing.password", ConfigValueFactory.fromAnyRef("dummy"))
-	)
-
-	private def withOverride(confOverride: Config): CpmetaConfig =
-		val confJson: String = loadWithOverride(confOverride).getValue("cpmeta").render(renderOpts)
-		confJson.parseJson.convertTo[CpmetaConfig]
+	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 
 	private val submConfCache = WeakHashMap.empty[FileTime, SubmittersConfig]
 
@@ -270,10 +248,10 @@ object ConfigLoader extends CpmetaJsonProtocol:
 		val confFile = new java.io.File("submitters.conf").getAbsoluteFile
 		if confFile.exists then
 			val key = Files.getLastModifiedTime(confFile.toPath)
-			submConfCache.getOrElseUpdate(key, {
-				val confJson: String = ConfigFactory.parseFile(confFile).root.render(renderOpts)
-				confJson.parseJson.convertTo[SubmittersConfig]
-			})
+			submConfCache.getOrElseUpdate(
+				key,
+				ConfigFactory.parseFile(confFile).root.parseAs[SubmittersConfig]
+			)
 		else
 			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
 

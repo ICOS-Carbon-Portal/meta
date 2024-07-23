@@ -78,9 +78,12 @@ object LandingPageHelpers:
 	}
 
 	def doiAgentUri(agent: DoiMetaPerson): Option[String] = agent
-		.nameIdentifiers.flatMap{ni =>
-			ni.scheme.schemeUri.map(uri => Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/"))
-		}.headOption
+		.nameIdentifiers.flatMap: ni =>
+			if isUriNaive(ni.nameIdentifier) then
+				Some(ni.nameIdentifier)
+			else ni.scheme.schemeUri.map: uri =>
+				Seq(uri.stripSuffix("/"), ni.nameIdentifier).mkString("/")
+		.headOption
 
 	def getDoiTitle(refs: References): Option[String] =
 		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
@@ -92,14 +95,13 @@ object LandingPageHelpers:
 		s"""https://${conf.dataHost}/portal/#${params}"""
 	}
 
-	extension(station: Station) {
-		def isDiscontinued: Boolean = {
-			station.specificInfo match {
+	extension(station: Station)
+		def isDiscontinued: Boolean =
+			station.specificInfo match
 				case s: IcosStationSpecifics => s.discontinued
 				case s: SitesStationSpecifics => s.discontinued
 				case _ => false
-			}
-		}
-}
 
+	private def isUriNaive(s: String): Boolean =
+		s.startsWith("https://") || s.startsWith("http://")
 end LandingPageHelpers

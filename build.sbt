@@ -21,7 +21,7 @@ lazy val metaCore = (project in file("core"))
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
@@ -135,7 +135,7 @@ lazy val meta = (project in file("."))
 			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.8",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.1",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
@@ -159,6 +159,12 @@ lazy val meta = (project in file("."))
 		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
 		cpDeployInfraBranch := "master",
 
+		Compile / unmanagedResources ++= {
+			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
+			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
+			Vector(finalJsFile, mapJsFile)
+		},
+
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
@@ -171,11 +177,7 @@ lazy val meta = (project in file("."))
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},
 
-		assembly / assembledMappings += {
-			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
-			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
-			sbtassembly.MappingSet(None, Vector(finalJsFile -> finalJsFile.getName, mapJsFile -> mapJsFile.getName))
-		},
+		assembly / assemblyRepeatableBuild := false,
 
 		Compile / resources ++= {
 			val jsFile = (uploadgui / Compile / fastOptJS).value.data
@@ -188,8 +190,8 @@ lazy val meta = (project in file("."))
 		reStart / aggregate := false,
 
 		Test / console / initialCommands := {
-			//import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}
-			"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
+			"""import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}"""
+			//"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
 		},
 
 		Test / console / cleanupCommands := "system.terminate()"

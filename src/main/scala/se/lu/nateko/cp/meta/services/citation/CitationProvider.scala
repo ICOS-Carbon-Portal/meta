@@ -115,7 +115,7 @@ class CitationProvider(
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
+	def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
 		given Envri <- inferObjectEnvri(maybeDobj)
 		obj <- metaReader.fetchStaticObject(maybeDobj).result
 	yield obj

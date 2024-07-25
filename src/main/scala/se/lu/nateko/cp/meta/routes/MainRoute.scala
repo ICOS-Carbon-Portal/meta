@@ -43,7 +43,7 @@ object MainRoute {
 		val staticRoute = StaticRoute(sparqler, config.onto)
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
-		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
+		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core, db.uriSerializer)
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
 		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core, sys.log)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab, sys.log)

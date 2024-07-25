@@ -9,23 +9,30 @@ import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.Keep
-import scala.concurrent.Future
-import scala.collection.immutable.Seq
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.ObjectUploadDto
+import se.lu.nateko.cp.meta.StaticCollectionDto
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.DataObject
+import se.lu.nateko.cp.meta.core.data.DocObject
+import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
-import se.lu.nateko.cp.meta.services.*
-import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import scala.language.implicitConversions
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
+import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
+import se.lu.nateko.cp.meta.services.*
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.upload.*
+
+import java.net.URI
+import scala.collection.immutable.Seq
+import scala.concurrent.Future
+import scala.language.implicitConversions
 import scala.util.Try
 
 object UploadApiRoute extends CpmetaJsonProtocol{
@@ -60,11 +67,29 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		service: UploadService,
 		authRouting: AuthenticationRouting,
 		metaFlows: Seq[MetaUploadService],
-		coreConf: MetaCoreConfig
+		coreConf: MetaCoreConfig,
+		fetcher: UriSerializer
 	)(implicit mat: Materializer): Route = handleExceptions(errHandler):
 
 		implicit val configs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
+
+		// TODO should this be here? 
+		def getCollCoverages(members: Seq[URI]): Seq[GeoFeature] = members.flatMap{ uri =>
+				val otherUri = Uri(uri.toString)
+				otherUri.path match{
+				case Hash.Object(_) =>
+					val staticObj = fetcher.fetchStaticObject(otherUri).result
+					staticObj.flatMap: obj =>
+						obj match
+							case dobj: DataObject => dobj.coverage
+							case docObj: DocObject => None
+
+				case Hash.Collection(_) =>
+					fetcher.fetchStaticCollection(otherUri).result.flatMap(_.coverage)
+				case _ => None
+			}
+		}
 
 		pathPrefix("upload"){
 			pathPrefix(Segment){uplServiceId =>
@@ -101,7 +126,8 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 									reportAccessUri(service.registerUpload(uploadMeta, uploader))
 								} ~
 								entity(as[StaticCollectionDto]){collMeta =>
-									reportAccessUri(service.registerStaticCollection(collMeta, uploader))
+									val collCoverages = getCollCoverages(collMeta.members)
+									reportAccessUri(service.registerStaticCollection(collMeta, uploader, collCoverages))
 								}
 							}
 						}

@@ -178,7 +178,8 @@ class Form(
 		description = description,
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
-		documentation = documentation
+		documentation = documentation,
+		coverage = None // Coverage for collection is created in UploadService
 	)
 
 	def documentObjectDto: Try[DocObjectDto] = for(

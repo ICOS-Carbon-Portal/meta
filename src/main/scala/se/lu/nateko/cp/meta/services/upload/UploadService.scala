@@ -29,6 +29,8 @@ import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator
+import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
 
 class AccessUri(val uri: URI)
 
@@ -45,7 +47,7 @@ class UploadService(
 
 	private val uploadLock = new UploadLock
 
-	private given ValueFactory = vocab.factory
+	private given vf: ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
@@ -73,20 +75,26 @@ class UploadService(
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		yield accessUri
 
-
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
-		UploadService.collectionHash(coll.members).flatMap: collHash =>
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId, collCoverages: Seq[GeoFeature])(using Envri): Try[AccessUri] =
+		val collWithCoverage = StaticCollectionDto(
+			coll.submitterId, coll.members, coll.title, coll.description, coll.isNextVersionOf, coll.preExistingDoi, coll.documentation,
+			{
+				val gfs = DoiGeoLocationCreator.representativeCoverage(collCoverages, 100).map(fromJtsToGeoFeature)
+				Some(FeatureCollection(gfs.flatten, None, None))
+			}
+		)
+		UploadService.collectionHash(collWithCoverage.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.vanillaGlobal.access: conn ?=>
 					given GlobConn = RdfLens.global(using conn)
 					for
-						_ <- validator.validateCollection(coll, collHash, uploader);
-						submitterConf <- validator.getSubmitterConfig(coll);
+						_ <- validator.validateCollection(collWithCoverage, collHash, uploader);
+						submitterConf <- validator.getSubmitterConfig(collWithCoverage);
 						submittingOrg = submitterConf.submittingOrganization;
 						collIri = vocab.getCollection(collHash);
 						server <- servers.collectionServer.toTry(new MetadataException(_))
 						updates = server.access:
-							val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
+							val newStatements = statementProd.getCollStatements(collWithCoverage, collIri, submittingOrg)
 							val oldStatements = getStatements(collIri)
 							staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
 						_ <- server.applyAll(updates)()

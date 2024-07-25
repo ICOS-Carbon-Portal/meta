@@ -118,7 +118,8 @@ Measurements have been collected using the following instructions:
 		),
 		isNextVersionOf = None,
 		preExistingDoi = Some(Doi("10.18160", "NNAD-PN5W")),
-		documentation = None
+		documentation = None,
+		coverage = None
 	)
 }
 

@@ -39,13 +39,13 @@ object DoiGeoLocationCreator:
 				Some(LabeledJtsGeo(hull, mergedLabels))
 			else None
 
-	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[GeoLocation] =
+	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[LabeledJtsGeo] =
 		val merged = DoiGeoLocationClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
 			else 
 				DoiGeoLocationClustering.runSecondPass(merged)
-		resGeoms.map(DoiGeoLocationConverter.fromJtsToDoiGeoLocation)
+		resGeoms
 
 end DoiGeoLocationCreator
 

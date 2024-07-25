@@ -34,6 +34,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import java.time.Instant
 import scala.collection.mutable.Buffer
+import se.lu.nateko.cp.meta.metaflow.RdfMaker
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -136,6 +137,10 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++ moratoriumStatements
 	end getDobjStatements
 
+	def getCollectionCoverageStatements(coll: StaticCollectionDto, collIri: IRI)(using Envri) =
+		val rdfMaker = RdfMaker(vocab, metaVocab)
+		rdfMaker.coverageTriples(collIri, coll.coverage)
+
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms
 		Seq(
@@ -146,6 +151,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
 			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.flattenToSeq.map(vocab.getCollection)) ++
 			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(_.toString).map(vocab.lit)) ++
+			getCollectionCoverageStatements(coll, collIri).map(factory.tripleToStatement) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
 			} ++

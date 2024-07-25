@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.upload
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
+import org.locationtech.jts.geom.LineString
 import org.locationtech.jts.geom.Point as JtsPoint
 import org.locationtech.jts.geom.Polygon as JtsPolygon
 import org.locationtech.jts.io.geojson.GeoJsonReader
@@ -105,6 +106,24 @@ object DoiGeoLocationConverter:
 					mergeLabels(geometry.labels)
 			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
 			case g => jtsPolygonToDoiBox(geometry)
+	
+	// TODO uri for geoFeatures?
+	def fromJtsToGeoFeature(geometry: LabeledJtsGeo): Option[GeoFeature] =
+		geometry.geom match
+			case point: JtsPoint => Some(Position.ofLatLon(point.getY, point.getX))
+			case polygon: JtsPolygon => Some(Polygon(vertices = polygon.getCoordinates().map(c => Position.ofLatLon(c.getY, c.getX)), label = mergeLabels(geometry.labels), None))
+			case ls: LineString => Some(GeoTrack(ls.getCoordinates().map(c => Position.ofLatLon(c.getY, c.getX)), label = mergeLabels(geometry.labels), None))
+			case gc: GeometryCollection =>
+				var fcSeq: Seq[GeoFeature] = Seq.empty
+				for (i <- 0 until gc.getNumGeometries)
+					val jtsGeom: Geometry = gc.getGeometryN(i)
+					val geoFeature = fromJtsToGeoFeature(LabeledJtsGeo(jtsGeom, Seq.empty))
+					geoFeature.foreach(gf =>
+						fcSeq = fcSeq :+ gf
+					)
+				Some(FeatureCollection(fcSeq, label = mergeLabels(geometry.labels), None))
+			case other => None // TODO handle this case?
+
 
 	def mergeLabels(labels: Seq[String]): Option[String] =
 		val AtcRegex = "^[A-Z]{3}$".r

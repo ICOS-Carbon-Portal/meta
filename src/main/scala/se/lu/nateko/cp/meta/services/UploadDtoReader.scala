@@ -125,7 +125,8 @@ object UploadDtoReader{
 		preExistingDoi = coll.doi.map(Doi.parse).collect{
 			case Success(doi) => doi
 		},
-		documentation = coll.documentation.map(_.hash)
+		documentation = coll.documentation.map(_.hash),
+		coverage = coll.coverage
 	)
 
 	private def dataProductionToDto(prod: DataProduction) = DataProductionDto(

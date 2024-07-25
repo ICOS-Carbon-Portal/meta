@@ -252,7 +252,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			(iri, meta.hasElevation, vocab.lit(alt))
 		}.toSeq
 
-	private def coverageTriples(iri: IRI, covOpt: Option[GeoFeature]): Seq[Triple] = covOpt match{
+	def coverageTriples(iri: IRI, covOpt: Option[GeoFeature]): Seq[Triple] = covOpt match{
 		case None => Seq.empty
 		case Some(box: LatLonBox) =>
 			val spcovUri = box.uri.map(_.toRdf).getOrElse(vocab.getSpatialCoverage(UriId(iri)))

@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationClustering.*
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
 import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.mergeLabels
+import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.*
 
 
 class DoiGeoLocationCreatorTests extends AnyFunSpec:
@@ -41,11 +41,11 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 			assert(featureCollection.size == merged.size)
 
 		it("data object with more than maximum allowed free points will cluster the points"):
-			val geoms = TestGeoFeatures.modisWithMorePoints
-			val merged = representativeCoverage(geoms, 30)
+			val geoms = toSimpleGeometries(TestGeoFeatures.modisWithMorePoints(0))
+			val merged = representativeCoverage(TestGeoFeatures.modisWithMorePoints, 30)
 
 			assert(geoms.toSeq != merged)
-			merged(0).geoLocationBox.map(box => assert(box.isInstanceOf[GeoLocationBox]))
+			assert(merged.length < geoms.length)
 
 		it("simple geometries from ecosystem data"):
 			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)

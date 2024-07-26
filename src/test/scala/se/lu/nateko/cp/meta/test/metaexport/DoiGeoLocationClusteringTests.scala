@@ -45,11 +45,11 @@ class DoiGeoLocationClusteringTests extends AnyFunSpec:
 			val exampleGeometryCollection: GeometryCollection = geoJsonToGeometry(jsonContent).asInstanceOf[GeometryCollection]
 			val geometries: Seq[LabeledJtsGeo] = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
 
-			println("geometries before: " + geometries.length)
+			// println("geometries before: " + geometries.length)
 
 			val secondPass = DoiGeoLocationClustering.runSecondPass(geometries)
 
-			println("second pass: " + secondPass.length)
-			println("second pass: " + labeledToGeoJson(secondPass))
+			// println("second pass: " + secondPass.length)
+			// println("second pass: " + labeledToGeoJson(secondPass))
 			assert(true)
 end DoiGeoLocationClusteringTests

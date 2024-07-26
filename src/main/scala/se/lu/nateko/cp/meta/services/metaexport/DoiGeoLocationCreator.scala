@@ -43,8 +43,10 @@ object DoiGeoLocationCreator:
 		val merged = DoiGeoLocationClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
-			else 
-				DoiGeoLocationClustering.runSecondPass(merged)
+			else
+				val secondPass = DoiGeoLocationClustering.runSecondPass(merged)
+				val finalMerge = DoiGeoLocationClustering.mergeSimpleGeoms(secondPass, None)
+				finalMerge
 		resGeoms
 
 end DoiGeoLocationCreator
